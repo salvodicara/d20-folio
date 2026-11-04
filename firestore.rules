@@ -798,8 +798,12 @@ service cloud.firestore {
           )
           && (bindings == null
             || (bindings is map
-              && bindings.keys().hasOnly(['spellcastingModifier', 'saveDc'])
+              && bindings.keys().hasOnly(['spellcastingModifier', 'saveDc', 'beneficiaryId'])
               && bindings.get('spellcastingModifier', 0) is number
+              // Whose next attack spends the state (Help: the ally).
+              && bindings.get('beneficiaryId', 'x') is string
+              && bindings.get('beneficiaryId', 'x').size() > 0
+              && bindings.get('beneficiaryId', 'x').size() <= 128
               // The DC a repeat save is made against (edge-case M3).
               && bindings.get('saveDc', 10) is int
               && bindings.get('saveDc', 10) >= 1
@@ -823,8 +827,21 @@ service cloud.firestore {
           && nonEmptyEffectString(operation.get('targetId', ''));
       }
 
+      // The causal inverse of a revoke (an undo): the same occurrence active again.
+      function validMemberReinstateOperation(operation) {
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && nonEmptyEffectString(operation.get('id', ''))
+          && operation.get('kind', '') == 'reinstate'
+          && nonEmptyEffectString(operation.get('effectId', ''))
+          && nonEmptyEffectString(operation.get('actorId', ''))
+          && nonEmptyEffectString(operation.get('targetId', ''));
+      }
+
       function validMemberEffectOperation(operation) {
-        return validMemberApplyOperation(operation) || validMemberRevokeOperation(operation);
+        return validMemberApplyOperation(operation)
+          || validMemberRevokeOperation(operation)
+          || validMemberReinstateOperation(operation);
       }
 
       // Read directly, not through get(): a missing field errors, which refuses the write
@@ -1097,8 +1114,9 @@ service cloud.firestore {
 
     // Campaign subcollections (chronicle, sessions, the REVEALED `notes`) — members
     // of the parent only. (The DM "View Sheet" feature reads the member's real
-    // character doc via the `dmReaders` ACL above — there is no longer a denormalized
-    // full-sheet copy subcollection to gate here.) EXCLUDES `dmNotes`: those are the
+    // character doc through the live campaign-membership read grant on
+    // /users/{uid}/characters/{charId} above — there is no denormalized full-sheet copy
+    // subcollection to gate here.) EXCLUDES `dmNotes`: those are the
     // hidden-note collection gated DM-only ABOVE, and Firestore OR-combines matching
     // rules, so without this exclusion the broad member grant here would defeat the
     // hidden-note gate (a player could read a staged-hidden note through it).

@@ -40,6 +40,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   concentrationConditions?: ReadonlyArray<string>;
   conditionSources?: Record<string, string>;
   seesSource?: Record<string, boolean>;
+  zoneSpent?: Record<string, number>;
   hiddenDc?: number;
   deathSucc?: number;
   deathFail?: number;
@@ -109,6 +110,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "concentrationConditions",
   "conditionSources",
   "seesSource",
+  "zoneSpent",
   "hiddenDc",
   "deathSucc",
   "deathFail",
@@ -193,17 +195,18 @@ export type PersistedPlayStateParseResult =
     };
 
 /** A stored record keeping only the entries of the given type; undefined when empty. */
-function typedRecord<T extends "string" | "boolean">(
+type RecordValue<T> = T extends "string" ? string : T extends "number" ? number : boolean;
+
+function typedRecord<T extends "string" | "boolean" | "number">(
   value: unknown,
   type: T
-): Record<string, T extends "string" ? string : boolean> | undefined {
+): Record<string, RecordValue<T>> | undefined {
   if (!isRecord(value)) return undefined;
-  const entries = Object.entries(value).filter(([, v]) => typeof v === type);
+  const entries = Object.entries(value).filter(
+    ([, v]) => typeof v === type && (type !== "number" || Number.isFinite(v))
+  );
   return entries.length > 0
-    ? (Object.fromEntries(entries) as Record<
-        string,
-        T extends "string" ? string : boolean
-      >)
+    ? (Object.fromEntries(entries) as Record<string, RecordValue<T>>)
     : undefined;
 }
 
@@ -369,6 +372,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   }
   if (session.seesSource && Object.keys(session.seesSource).length > 0) {
     state.seesSource = session.seesSource;
+  }
+  if (session.zoneSpent && Object.keys(session.zoneSpent).length > 0) {
+    state.zoneSpent = session.zoneSpent;
   }
   if (typeof session.hiddenDc === "number") state.hiddenDc = session.hiddenDc;
   if (session.deathSucc !== 0) state.deathSucc = session.deathSucc;
@@ -909,6 +915,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   if (conditionSources) session.conditionSources = conditionSources;
   const seesSource = typedRecord(state.seesSource, "boolean");
   if (seesSource) session.seesSource = seesSource;
+  const zoneSpent = typedRecord(state.zoneSpent, "number");
+  if (zoneSpent) session.zoneSpent = zoneSpent;
   if (typeof state.hiddenDc === "number") session.hiddenDc = state.hiddenDc;
   session.deathSucc = numOr(state.deathSucc, 0);
   session.deathFail = numOr(state.deathFail, 0);

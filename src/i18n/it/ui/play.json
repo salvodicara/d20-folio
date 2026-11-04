@@ -234,7 +234,10 @@
       "reviveWith": "Slot di {{level}}°",
       "reviveWithPact": "Slot del patto di {{level}}°",
       "reviveNoSlot": "Non ti resta uno slot da spendere.",
-      "revived": "{{name}} torna in vita"
+      "revived": "{{name}} torna in vita",
+      "reviveTooLate": "Troppo tardi: la caduta risale a {{minutes}} min fa (il limite è {{limit}} min).",
+      "reviveInTime": "In tempo: caduta {{minutes}} min fa, limite {{limit}} min.",
+      "reviveUnknown": "Momento della caduta sconosciuto: il limite è {{limit}} min."
     },
     "down": {
       "title": "A 0 punti ferita: tiri salvezza contro la morte",

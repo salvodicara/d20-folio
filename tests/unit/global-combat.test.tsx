@@ -597,6 +597,58 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
     expect(h.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "fear-1");
   });
 
+  it("my Spirit Guardians asks whether the creature that ended its turn is inside", () => {
+    const toasts = () => useToastStore.getState().toasts;
+    useCharacterStore.getState().setCharacter({ ...MOCK_CHARACTER, id: "char-1" });
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, "monster-1");
+    const withGoblin = addMonster(campaign.encounter as EncounterState, {
+      name: "Goblin",
+      ac: 15,
+      maxHp: 7,
+      count: 1,
+      initiative: 10,
+    });
+    const zone: CombatEffectOp = {
+      id: "op-zone",
+      kind: "apply",
+      effect: {
+        id: "zone-1",
+        actor: {
+          kind: "pc",
+          combatantId: `pc-${UID}`,
+          memberUid: UID,
+          characterId: "char-1",
+        },
+        target: {
+          kind: "pc",
+          combatantId: `pc-${UID}`,
+          memberUid: UID,
+          characterId: "char-1",
+        },
+        source: { kind: "spell", id: "spirit-guardians", actionId: "cast", castLevel: 3 },
+        payload: { kind: "zone", spellId: "spirit-guardians", spared: [`pc-${UID}`] },
+        duration: { kind: "encounter" },
+      },
+    };
+    const encounter = {
+      ...withGoblin,
+      currentCombatantId: "monster-1",
+      effectOps: [zone],
+    };
+    mount();
+    show(campaign, encounter, 20, false);
+    expect(
+      toasts().some((x) =>
+        /Goblin ends its turn: inside Spirit Guardians\?/.test(String(x.message))
+      )
+    ).toBe(false);
+    show(campaign, { ...encounter, currentCombatantId: `pc-${UID}` }, 20, false);
+    const asked = toasts().find((x) =>
+      /Goblin ends its turn: inside Spirit Guardians\?/.test(String(x.message))
+    );
+    expect(asked?.action?.label).toBe("Inside: roll");
+  });
+
   it("the DM's device ends a monster's grapple when the monster drops", () => {
     const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
     // The viewer runs the table: no PC of theirs in this fight.
@@ -678,5 +730,25 @@ describe("GlobalCombatMount settles in a fight (P0, 2026-11-04)", () => {
     }
     expect(errors.filter((e) => String(e).includes("Maximum update depth"))).toEqual([]);
     expect(writes).toBeLessThan(20);
+  });
+});
+
+describe("GlobalCombatMount — the campaign's table rules", () => {
+  it("projects a varying table's rules onto the attached open character, and none for RAW", () => {
+    useCharacterStore.getState().setCharacter({ ...MOCK_CHARACTER, id: "char-1" });
+    mount();
+    const campaign = campWithEnc("c1", "char-1", 500);
+    act(() =>
+      h.state.campaignsCb?.([
+        { ...campaign, tableRules: { potions: { drink: "action" } } },
+      ])
+    );
+    expect(
+      useCharacterStore.getState().character?.session.tableRules?.potions.drink
+    ).toBe("action");
+    act(() => h.state.campaignsCb?.([campaign]));
+    expect(useCharacterStore.getState().character?.session).not.toHaveProperty(
+      "tableRules"
+    );
   });
 });

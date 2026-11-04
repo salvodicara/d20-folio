@@ -246,11 +246,29 @@ export function ReviveRow({
       },
     });
   };
+  const win = revive.window;
+  const minutes = win?.fallenMinutes != null ? Math.round(win.fallenMinutes) : null;
+  if (win?.within === false) {
+    return (
+      <div className="f-revive">
+        <p className="f-help">
+          {t("play.companions.reviveTooLate", { minutes, limit: win.withinMinutes })}
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="f-revive">
       <p className="f-help">
         {t("play.companions.reviveHint", { minutes: revive.returnsAfterMinutes })}
       </p>
+      {win && (
+        <p className="f-help">
+          {win.within
+            ? t("play.companions.reviveInTime", { minutes, limit: win.withinMinutes })
+            : t("play.companions.reviveUnknown", { limit: win.withinMinutes })}
+        </p>
+      )}
       {revive.slots.length === 0 ? (
         <p className="f-help">{t("play.companions.reviveNoSlot")}</p>
       ) : (

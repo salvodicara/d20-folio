@@ -33,6 +33,7 @@ import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import { useAuthStore } from "@/stores/authStore";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { effectIdsConsumedByAttack, foldCombatEffectOps } from "@/lib/combat-effects";
+import { budgetSpent } from "@/lib/zones";
 
 import type { DamageTrayOffer } from "./damage-tray-store";
 
@@ -95,14 +96,16 @@ function campaignIo(): Promise<typeof import("@/features/campaigns/campaign-io")
  *  an unhandled rejection. */
 function writeFightEffect(
   campaignId: string,
-  op: { append: ActiveCombatEffect } | { revoke: string },
+  op: { append: ActiveCombatEffect } | { revoke: string } | { reinstate: string },
   t: T
 ): void {
   void campaignIo()
     .then((io) =>
       "append" in op
         ? io.appendPersistentCombatEffect(campaignId, op.append)
-        : io.revokePersistentCombatEffect(campaignId, op.revoke)
+        : "revoke" in op
+          ? io.revokePersistentCombatEffect(campaignId, op.revoke)
+          : io.reinstatePersistentCombatEffect(campaignId, op.reinstate)
     )
     .catch(() =>
       useToastStore
@@ -128,6 +131,18 @@ function consumedByAttacks(
     )
   );
   return live.filter((effect) => ids.has(effect.id));
+}
+
+/** Undo a revoke: the same occurrence back (`reinstate`, same id) once the v0.26.0
+ *  rules accept it; before them, a fresh copy as before. */
+function undoRevoke(campaignId: string, effect: ActiveCombatEffect, t: T): void {
+  writeFightEffect(
+    campaignId,
+    combatEffectsV26On()
+      ? { reinstate: effect.id }
+      : { append: { ...effect, id: crypto.randomUUID() } },
+    t
+  );
 }
 
 /** The sourced condition effects a tray apply writes in a fight: each condition on
@@ -332,13 +347,38 @@ export function applyTray(
           for (const spent of consumed)
             writeFightEffect(spentIn, { revoke: spent.id }, t);
           reversals.push(() => {
-            for (const spent of consumed)
-              writeFightEffect(
-                spentIn,
-                { append: { ...spent, id: crypto.randomUUID() } },
-                t
-              );
+            for (const spent of consumed) undoRevoke(spentIn, spent, t);
           });
+        }
+        // A budgeted zone (Guardian of Faith) counts the damage it dealt, and its
+        // effect ends once the total reaches the budget.
+        const zone = offer.zone;
+        if (zone?.budget && effect === "damage") {
+          const taken = applied.reduce((sum, row) => sum + row.amount, 0);
+          const before = store.character.session.zoneSpent?.[zone.effectId] ?? 0;
+          const result = budgetSpent(zone.budget, before, taken);
+          const undoSpent = store.dispatch({
+            kind: "set-zone-spent",
+            effectId: zone.effectId,
+            spent: result.spent,
+          });
+          if (undoSpent) reversals.push(undoSpent);
+          const status = useCombatStatusStore.getState().status;
+          const held = status
+            ? foldCombatEffectOps(status.encounter.effectOps).find(
+                (e) => e.id === zone.effectId
+              )
+            : undefined;
+          if (result.ends && status && held) {
+            writeFightEffect(status.campaignId, { revoke: held.id }, t);
+            useToastStore.getState().showToast({
+              message: t("combat.zoneBudgetSpent", { name: offer.actionName }),
+              duration: 6000,
+            });
+            reversals.push(() => {
+              undoRevoke(status.campaignId, held, t);
+            });
+          }
         }
         // A condition that can end early (Abjure Foes) lands in the fight as a
         // sourced effect, so the fight ends it by itself (`fightConditionEnds`).

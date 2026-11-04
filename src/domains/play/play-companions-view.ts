@@ -15,6 +15,7 @@ import type {
 import { selectCompanionVariant } from "@/lib/compute";
 import type { Locale } from "@/lib/locale";
 import { companionAttackEffects } from "@/lib/play/companion-attack";
+import { companionReviveWindow } from "@/lib/play/companions";
 import type { DamageTrayPlan } from "@/lib/play/damage-tray";
 import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
 import { keepDistancesTogether } from "@/lib/utils";
@@ -59,16 +60,25 @@ export interface ReviveOffer {
   /** The slots that can pay, lowest first; empty when none is left. */
   slots: { level: number; pact: boolean }[];
   returnsAfterMinutes: number;
+  /** How long ago it fell against the catalogue's limit (`companionReviveWindow`);
+   *  `within` null when the fall time is unknown. */
+  window?: ReviveWindow;
 }
+
+export type ReviveWindow = NonNullable<ReturnType<typeof companionReviveWindow>>;
 
 function reviveOf(
   fallen: boolean,
   block: CompanionStatBlock | undefined,
   doc: CharacterDoc,
-  locale: Locale
+  locale: Locale,
+  featureId: string
 ): { revive?: ReviveOffer } {
   const spec = block?.lifecycle?.revive;
-  const offer = fallen && spec ? reviveOffer(spec, doc, locale) : null;
+  const offer =
+    fallen && spec
+      ? reviveOffer(spec, doc, locale, companionReviveWindow(doc, featureId))
+      : null;
   return offer ? { revive: offer } : {};
 }
 
@@ -76,7 +86,8 @@ function reviveOf(
 export function reviveOffer(
   spec: NonNullable<CompanionLifecycle["revive"]>,
   doc: CharacterDoc,
-  locale: Locale
+  locale: Locale,
+  window?: ReviveWindow | null
 ): ReviveOffer | null {
   if (spec.cost.kind !== "spell-slot") return null;
   const min = spec.cost.minLevel;
@@ -85,7 +96,11 @@ export function reviveOffer(
       ? [{ level: r.level, pact: r.pact }]
       : []
   );
-  return { slots, returnsAfterMinutes: spec.returnsAfterMinutes };
+  return {
+    slots,
+    returnsAfterMinutes: spec.returnsAfterMinutes,
+    ...(window ? { window } : {}),
+  };
 }
 
 /** The stat block a companion comes from (its spell's, or its class feature's). */
@@ -114,7 +129,7 @@ export function playCompanions(
         hp: { current: card.fallen ? 0 : (card.current ?? card.hpMax), max: card.hpMax },
         ac: card.ac,
         fallen: card.fallen === true,
-        ...reviveOf(card.fallen === true, block, doc, locale),
+        ...reviveOf(card.fallen === true, block, doc, locale, card.featureId),
         attacks: card.attacks.map((attack) => {
           const catalogue = active?.attacks?.find((a) => a.id === attack.id) ?? null;
           return {

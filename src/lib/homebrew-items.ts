@@ -177,6 +177,7 @@ export const HOMEBREW_ITEM_FIELD_SCHEMAS: {
       revealedByIdentify: literalSchema(true),
     }
   ),
+  commandWord: literalSchema(true),
   price: stringSchema,
   weight: numberSchema,
   grants: arraySchema(GRANT),

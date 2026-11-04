@@ -62,6 +62,8 @@ export interface CombatEffectBindings {
   spellcastingModifier?: number;
   /** The DC a repeat save against this condition is made against (edge-case M3). */
   saveDc?: number;
+  /** Whose next attack spends the state, when not its creator's (Help: the ally). */
+  beneficiaryId?: string;
 }
 
 /** Exact state delta performed together with applying an effect. Persisting the landed
@@ -121,6 +123,15 @@ export type CombatEffectOp =
   | {
       id: string;
       kind: "revoke";
+      effectId: string;
+      actorId: string;
+      targetId: string;
+    }
+  /** The causal inverse of a revoke (an undo): the same occurrence, same id, active
+   *  again, so its identity (stacking, what consumes it, its source) holds. */
+  | {
+      id: string;
+      kind: "reinstate";
       effectId: string;
       actorId: string;
       targetId: string;

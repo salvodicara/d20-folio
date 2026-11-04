@@ -6,6 +6,7 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
+import type { TableRules } from "@/lib/table-rules";
 import { equipmentKeyMatches } from "@/lib/equipment-key";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { causalPatch, undoPatch } from "@/lib/play/causal-patch";
@@ -286,6 +287,8 @@ interface CharacterState {
     characterId: string | null,
     effects?: ReadonlyArray<ActiveCombatEffect>
   ) => void;
+  /** Project the campaign's table rules onto the open character (`null`: RAW). */
+  setTableRules: (characterId: string, rules: TableRules | null) => void;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
   /** Persist the current complete play owner through the injected seam. */
@@ -1361,6 +1364,20 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // An edit (not a load) may have stopped an item being held.
     if (editing) endUnheldItemStates(get);
   },
+  setTableRules: (characterId, rules) => {
+    const { character } = get();
+    if (!character || character.id !== characterId) return;
+    // Idempotent: a listener re-sends the same rules; an unchanged write publishes
+    // nothing (no re-render loop).
+    if (JSON.stringify(character.session.tableRules ?? null) === JSON.stringify(rules)) {
+      return;
+    }
+    const session = { ...character.session };
+    if (rules) session.tableRules = rules;
+    else delete session.tableRules;
+    set({ character: { ...character, session } });
+  },
+
   setEncounterEffects: (characterId, effects = []) => {
     const projection = characterId ? { characterId, effects } : null;
     const { character, encounterEffectProjection } = get();

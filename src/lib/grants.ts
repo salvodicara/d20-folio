@@ -2846,6 +2846,7 @@ export function evaluateGrants(
       case "jump-leap":
       case "jump-bonus":
       case "jump-multiplier":
+      case "no-speech":
         rules.push(...(compileGrant(g) ?? []));
         break;
 

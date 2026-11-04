@@ -87,6 +87,8 @@ export type RuleTarget =
   | "jump:run-high"
   /** The largest jump-distance multiplier (Step of the Wind: 2). */
   | "jump:multiplier"
+  /** The creature can't speak (Silence's occupants). */
+  | "speech:none"
   | `prof:save:${string}`
   | `prof:skill:${string}`
   | `prof:expertise:${string}`
@@ -314,6 +316,8 @@ export function compileGrant(grant: Grant): Rule[] | null {
           ];
     case "jump-multiplier":
       return [{ op: "max", target: "jump:multiplier", value: grant.factor }];
+    case "no-speech":
+      return [{ op: "flag", target: "speech:none" }];
     case "save-proficiency":
       return [{ op: "flag", target: `prof:save:${grant.ability}` }];
     case "skill-proficiency":

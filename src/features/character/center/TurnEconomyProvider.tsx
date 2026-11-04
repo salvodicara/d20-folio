@@ -24,8 +24,15 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { speechBlocksCast } from "@/lib/play/speech";
+import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
-import { hitStateWriter, saveSuccessWriter } from "./outcome-offer";
+import {
+  combineWriters,
+  hitStateWriter,
+  saveSuccessWriter,
+  vexWriter,
+} from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
@@ -928,7 +935,11 @@ export function TurnEconomyProvider({
   /** "Search: Perception 17 vs DC 15, success": the toast of a use with its check. */
   function localizeCheckToast(name: string, check: CheckResult): string {
     const skill = t(`skills.${check.skill}`);
-    const succeeded = checkSucceeded(check);
+    // The table may rule that a natural 1 fails a check (M16).
+    const succeeded = checkSucceeded(
+      check,
+      useCharacterStore.getState().character?.session.tableRules ?? RAW_TABLE_RULES
+    );
     return succeeded === undefined
       ? t("combat.checkToast", { name, skill, total: check.total })
       : t("combat.checkDcToast", {
@@ -952,7 +963,11 @@ export function TurnEconomyProvider({
     const plan = damageTrayPlan(action, targets, selfCombatantId());
     if (!plan) return;
     const onSaved = saveSuccessWriter(action, characterId);
-    const onHit = hitStateWriter(action, characterId);
+    // A hit's states: the action's own (Guiding Bolt) and its weapon's Vex.
+    const onHit = combineWriters(
+      hitStateWriter(action, characterId),
+      vexWriter(action, characterId)
+    );
     useDamageTrayStore.getState().show({
       characterId,
       actionName: action.name,
@@ -1236,6 +1251,7 @@ export function TurnEconomyProvider({
         () => {
           if (!guardActionState(action)) return null;
           if (expendsSpellSlot && !spellSlotExpenditureAvailable()) return null;
+          if (refusedSpeech(action)) return null;
           if (!actionPaymentAffordable(action)) {
             refusedPayment(action);
             return null;
@@ -1355,6 +1371,7 @@ export function TurnEconomyProvider({
       { message: castMessage },
       () => {
         if (!canCommit()) return null;
+        if (refusedSpeech(action, metamagicIds)) return null;
         if (!castOptionAffordable(opt) || !metamagicAffordable(metamagicIds)) {
           // Never vanish: say the cast couldn't be paid, and that nothing was spent.
           showToast({ message: t("combat.shortfall.cast"), duration: 4000 });
@@ -1581,6 +1598,18 @@ export function TurnEconomyProvider({
   function actionPaymentAffordable(action: ResolvedAction): boolean {
     const doc = useCharacterStore.getState().character;
     return doc ? actionPaymentAffordableFor(doc, action) : false;
+  }
+
+  /** A cast the caster can't voice (Silence, Incapacitated) is refused, and says so:
+   *  a Verbal component is impossible there. Nothing is spent. */
+  function refusedSpeech(
+    action: ResolvedAction,
+    metamagicIds: ReadonlyArray<string> = []
+  ): boolean {
+    const doc = useCharacterStore.getState().character;
+    if (!doc || !speechBlocksCast(doc, action, metamagicIds)) return false;
+    showToast({ message: t("combat.shortfall.speech"), duration: 4000 });
+    return true;
   }
 
   /** A use refused at payment says why (a cast never vanishes silently). */
@@ -1929,6 +1958,7 @@ export function TurnEconomyProvider({
         () => {
           if (!guardActionState(action)) return null;
           if (expendsSpellSlot && !spellSlotExpenditureAvailable()) return null;
+          if (refusedSpeech(action, cast?.metamagicIds)) return null;
           if (
             cast
               ? !castOptionAffordable(cast.option) ||

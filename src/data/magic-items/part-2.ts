@@ -626,6 +626,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:folding-boat (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "folding-boat",
+    commandWord: true,
     rarity: "rare",
     type: "wondrous",
     attunement: false,
@@ -1681,6 +1682,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:carpet-of-flying (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "carpet-of-flying",
+    commandWord: true,
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,

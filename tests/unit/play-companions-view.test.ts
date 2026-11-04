@@ -122,4 +122,10 @@ describe("reviveOffer", () => {
         ?.slots
     ).toEqual([]);
   });
+
+  it("carries the engine's revive window", () => {
+    const window = { fallenMinutes: 75, withinMinutes: 60, within: false };
+    expect(reviveOffer(spec, MOCK_CHARACTER, "it", window)?.window).toEqual(window);
+    expect(reviveOffer(spec, MOCK_CHARACTER, "it")?.window).toBeUndefined();
+  });
 });

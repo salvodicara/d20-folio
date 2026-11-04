@@ -1,7 +1,12 @@
 # ADR-0002: The append-only action log is the only persisted mutation
 
 **Date**: 2026-09-02
-**Status**: proposed
+**Status**: not adopted (superseded in practice, 2026-11-04)
+**Current state (2026-11-04)**: there is no action log. The live encounter is a field on the campaign doc,
+written in narrow transactional diffs (start/join/end a fight, a member's own initiative row, effect ops); an
+action against a peer patches only the changed fields of that player's `combat/state` in a transaction
+(`writePeerCombatEffect`). Append-only shapes exist only for the campaign session log (`sessionLogs`, one item at a
+time) and the `combat/spends` ledger. See `docs/ARCHITECTURE.md`.
 **Deciders**: owner (offline-first, minimum cost), architecture round
 
 ## Context

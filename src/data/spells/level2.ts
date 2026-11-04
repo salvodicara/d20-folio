@@ -837,12 +837,18 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       lifetime: { kind: "source" },
     },
     targeting: { affinity: "any" },
+    // The creatures entirely inside the Sphere: Immunity to Thunder damage, and
+    // "casting a spell that includes a Verbal component is impossible there".
     grants: [
       {
         type: "while-active",
         activeKey: "spell-silence",
+        recipient: "selected",
         duration: timedSpellDuration(10),
-        grants: [],
+        grants: [
+          { type: "no-speech" },
+          { type: "damage-immunity", damageType: "thunder" },
+        ],
       },
     ],
     source: "SRD",

@@ -80,6 +80,7 @@ import { timestampsToDates } from "@/lib/timestamps-to-dates";
 import { nonEmptyString } from "@/lib/non-empty-string";
 import {
   currentHpDeltaForEffect,
+  effectOccurrenceActive,
   endedEffectSuccessor,
   effectsByActorSource,
   effectsForTarget,
@@ -1331,6 +1332,33 @@ export async function revokePersistentCombatEffect(
 }
 
 /**
+ * Undo a revoke: the same occurrence, same id, active again (its HP delta, if any,
+ * lands again through the fold). Needs the v0.26.0 effect rules; a no-op when the
+ * occurrence is already active or unknown.
+ */
+export async function reinstatePersistentCombatEffect(
+  campaignId: string,
+  effectId: string
+): Promise<void> {
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    const encounter = currentDevEncounter(campaignId);
+    if (!encounter) return;
+    const operation = makeLifecycleOp(encounter.effectOps, effectId, "reinstate");
+    if (operation) appendPersistentCombatEffectOpOptimistic(campaignId, operation);
+    return;
+  }
+  const ref = campaignDoc(campaignId);
+  await runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    const encounter = storedEncounter(snap.data()?.encounter);
+    if (!encounter) return;
+    const operation = makeLifecycleOp(encounter.effectOps, effectId, "reinstate");
+    if (!operation) return;
+    await applyPersistentCombatEffectOperation(txn, ref, encounter, operation);
+  });
+}
+
+/**
  * Revoke every currently-active occurrence owned by one actor/source pair. Each exact
  * inverse (plus any data-declared end state) is appended in one fresh-read transaction,
  * composing with concurrent writes without restoring a stale snapshot. Replaying after
@@ -1642,17 +1670,29 @@ function makeRevokeCombatEffectOp(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   effectId: string
 ): CombatEffectOp | null {
+  return makeLifecycleOp(operations, effectId, "revoke");
+}
+
+/** A revoke ends an active occurrence; a reinstate (its undo) restarts an ended one.
+ *  Each cycle gets its own op id (the first revoke keeps its historical id), so an
+ *  occurrence can be revoked again after a reinstate. */
+function makeLifecycleOp(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  effectId: string,
+  kind: "revoke" | "reinstate"
+): CombatEffectOp | null {
   const current = operations ?? [];
-  if (current.some((entry) => entry.kind === "revoke" && entry.effectId === effectId)) {
-    return null;
-  }
+  if (effectOccurrenceActive(current, effectId) !== (kind === "revoke")) return null;
   const applied = current.find(
     (entry) => entry.kind === "apply" && entry.effect.id === effectId
   );
   if (!applied || applied.kind !== "apply") return null;
+  const before = current.filter(
+    (entry) => entry.kind === kind && entry.effectId === effectId
+  ).length;
   return {
-    id: `revoke:${effectId}`,
-    kind: "revoke",
+    id: before === 0 ? `${kind}:${effectId}` : `${kind}:${effectId}:${String(before)}`,
+    kind,
     effectId,
     actorId: applied.effect.actor.combatantId,
     targetId: applied.effect.target.combatantId,

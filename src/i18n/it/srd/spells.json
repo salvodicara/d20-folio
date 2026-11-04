@@ -2380,6 +2380,9 @@
     "name": "Silenzio",
     "range": "36 metri"
   },
+  "silence.grants.0": {
+    "label": "Silenzio"
+  },
   "silent-image": {
     "description": "L'incantatore crea l'immagine di un oggetto, una creatura o qualche altro fenomeno visibile che non sia più grande di un cubo con spigolo di 4,5 metri. L'immagine compare in un punto situato entro gittata e permane per la durata dell'incantesimo. L'immagine è puramente visiva: non è accompagnata da suoni, odori o altri effetti sensoriali.\n\nCome azione di Magia, il personaggio può far muovere l'immagine verso qualunque posizione entro gittata. Mentre l'immagine è in movimento, l'incantatore può alterarne l'aspetto in modo che i movimenti risultino naturali. Ad esempio, se l'incantatore crea l'immagine di una creatura e decide di farla muovere, può modificarla per simulare il fatto che sta camminando.\n\nL'illusione può essere rivelata da un'interazione fisica, poiché gli oggetti possono attraversarla. Una creatura che effettua l'azione di Studio per esaminare l'immagine può determinare che si tratta di un'illusione superando una prova di Intelligenza (Indagare) contro la CD del tiro salvezza sull'incantesimo. Se una creatura riconosce l'illusione per ciò che è, riesce a vedere attraverso l'immagine.",
     "duration": "Concentrazione, fino a 10 minuti",

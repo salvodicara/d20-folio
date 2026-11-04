@@ -280,6 +280,8 @@ const STANDING_SPELLS = [
     targeting: { affinity: "ally", maxTargets: 1 },
   },
   { id: "conjure-minor-elementals", recipient: "caster" },
+  // The creatures inside the Sphere: no speech, Immunity to Thunder damage.
+  { id: "silence", recipient: "selected", targeting: { affinity: "any" } },
 ] as const satisfies ReadonlyArray<StandingSpellExpectation>;
 
 describe("PROSE sweep — standing buff spells carry while-active grants", () => {

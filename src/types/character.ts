@@ -1069,6 +1069,10 @@ export interface SessionState {
    * occurrences stay in the encounter ledger; solo occurrences stay in `combat/state`.
    * The character codec deliberately never serializes this composed read field. */
   encounterEffects?: ReadonlyArray<ActiveCombatEffect>;
+  /** The rules of the campaign the character plays in (edge-case M16), when its
+   *  table varies them; absent: RAW 2024. A composed read field like
+   *  `encounterEffects`: the codec never serializes it. */
+  tableRules?: import("@/lib/table-rules").TableRules;
   /** Conditions owned by the current solo concentration. `conditions` remains
    * the manual/base layer; consumers read their union through the shared projection. */
   concentrationConditions?: ReadonlyArray<string>;
@@ -1109,6 +1113,9 @@ export interface SessionState {
   /** The table's answer to "can you see its source?", per condition instance
    *  (`effect:<id>` or `condition:<id>`), where the sheet can't derive it (M3). */
   seesSource?: Record<string, boolean>;
+  /** The damage each of the caster's budgeted zones has dealt (Guardian of Faith
+   *  vanishes at 60), by the zone's effect id (M9). */
+  zoneSpent?: Record<string, number>;
   /**
    * RA-12 — the DC to FIND the character while hidden: the successful DC-15
    * Dexterity (Stealth) check TOTAL from the Hide action (SRD 5.2.1 "Hide

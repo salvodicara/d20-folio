@@ -3674,6 +3674,9 @@ export interface SrdMagicItemData {
   attunementBy?: AttunementPrerequisite;
   /** Its curse, when the item is cursed (Berserker Axe). */
   curse?: ItemCurse;
+  /** Its use is a spoken command word («use a command word»): blocked where the
+   *  user can't speak (Silence, Incapacitated). */
+  commandWord?: true;
   /** Suggested price: "400 GP", "B+4000 GP" */
   price?: string;
   /** Healing potion roll (e.g. "2d4+2") — derived display, see SrdEquipmentData. */
