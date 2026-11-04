@@ -308,6 +308,16 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
         },
       ],
     },
+    // The Focus version doubles the jump distance for the turn.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "monk-step-of-the-wind",
+        activatedByAction: ["focused"],
+        duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+        grants: [{ type: "jump-multiplier", factor: 2 }],
+      },
+    ],
     source: "SRD",
   },
   {

@@ -5316,6 +5316,12 @@ function featureActionActivity(
   });
 }
 
+/** The state a feature's action rows enter, and which rows may (`activatedByAction`). */
+type FeatureActivation = Pick<
+  ResolvedAction,
+  "activatesKey" | "activationEndsEarlyOn" | "activeTurnBoundary"
+> & { activatedByAction?: readonly string[] };
+
 /**
  * Activation inference (issue #27 dogfood) — a feature carrying BOTH actions AND
  * a `while-active` grant is an ACTIVATION feature (Rage, Bladesong, Innate
@@ -5325,13 +5331,12 @@ function featureActionActivity(
  * `session.activeFeatures` (lighting the rail chip + every while-active grant)
  * and clears it on undo. The first `while-active` grant is the one it lights.
  */
-function featureActivation(
-  grants: ReadonlyArray<Grant> | undefined
-): Pick<ResolvedAction, "activatesKey" | "activationEndsEarlyOn" | "activeTurnBoundary"> {
+function featureActivation(grants: ReadonlyArray<Grant> | undefined): FeatureActivation {
   const state = grants?.find((g) => g.type === "while-active");
   if (state?.type !== "while-active") return {};
   const duration = state.duration;
   return {
+    ...(state.activatedByAction ? { activatedByAction: state.activatedByAction } : {}),
     activatesKey: state.activeKey,
     activationEndsEarlyOn:
       duration?.kind === "maintained" || duration?.kind === "timed"
@@ -5448,12 +5453,16 @@ function applyActionEffectSummary(
 function featureActionRowFacts(
   action: SrdActionDef,
   sourceId: string,
-  activation: Pick<
-    ResolvedAction,
-    "activatesKey" | "activationEndsEarlyOn" | "activeTurnBoundary"
-  >
+  activation: FeatureActivation
 ) {
-  const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } = activation;
+  // A state that names its entering actions (Step of the Wind: only the Focus
+  // version) is entered by those alone; every other row leaves it alone.
+  const enters =
+    !activation.activatedByAction ||
+    (action.id !== undefined && activation.activatedByAction.includes(action.id));
+  const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } = enters
+    ? activation
+    : {};
   return {
     // Alternate-cost primitive — carried verbatim so `getActionCostOptions`
     // can offer it as a second payment route (Wild Companion: slot OR Wild Shape).
@@ -5612,8 +5621,7 @@ function resolveFeatureActions(
         // A homebrew feature's grants make its action an activation exactly as
         // a catalogue feature's do (a homebrew stance entered by its action).
         const customGrants = homebrewFeatureGrants(featureRef);
-        const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } =
-          featureActivation(customGrants);
+        const activation = featureActivation(customGrants);
         for (const [index, stored] of featureRef.actions.entries()) {
           // The stored action is read only through its one validator: a field
           // the schema rejects is out of play, the stored action untouched.
@@ -5678,11 +5686,7 @@ function resolveFeatureActions(
             pinned: pinnedSet.has(id),
             defaultPinned: false,
             description: customText(stored.description),
-            ...featureActionRowFacts(a, featureRef.instanceId, {
-              activatesKey,
-              activationEndsEarlyOn,
-              activeTurnBoundary,
-            }),
+            ...featureActionRowFacts(a, featureRef.instanceId, activation),
           });
         }
       }
@@ -5694,7 +5698,7 @@ function resolveFeatureActions(
     // The catalogue base key for this feature's strings (name/desc/action descs).
     const featRef = srdRefForFeatureSource(srdFeature);
 
-    const { activatesKey, activationEndsEarlyOn, activeTurnBoundary } = featureActivation(
+    const activation = featureActivation(
       "grants" in srdFeature ? srdFeature.grants : undefined
     );
 
@@ -5944,11 +5948,7 @@ function resolveFeatureActions(
         description: actionOverride?.description
           ? customText(actionOverride.description)
           : featLoc(srdFeature, "description"),
-        ...featureActionRowFacts(action, srdFeature.id, {
-          activatesKey,
-          activationEndsEarlyOn,
-          activeTurnBoundary,
-        }),
+        ...featureActionRowFacts(action, srdFeature.id, activation),
         // USE-APPLIES — deterministic effects this action auto-applies on use
         // (a slot-gated same-source temp-hp grant: Chef's PB temp HP).
         ...(srdUseEffects.length ? { useEffects: srdUseEffects } : {}),

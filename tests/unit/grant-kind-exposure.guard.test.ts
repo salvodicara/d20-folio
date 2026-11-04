@@ -137,6 +137,14 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
   "jump-leap": { via: "deriveJumps", consumer: "src/features/character/hud/LeftHud.tsx" },
+  "jump-bonus": {
+    via: "deriveJumps",
+    consumer: "src/features/character/hud/LeftHud.tsx",
+  },
+  "jump-multiplier": {
+    via: "deriveJumps",
+    consumer: "src/features/character/hud/LeftHud.tsx",
+  },
   "fly-speed": {
     via: "deriveSensesAndSpeeds",
     consumer: "src/features/character/hud/LeftHud.tsx",

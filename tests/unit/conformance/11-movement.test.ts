@@ -174,7 +174,7 @@ describe("conformance · 11. movement and mounts", () => {
       category: 11,
       case: "Jumping 2024",
       source: "GLOSS; WIKI monk:main",
-      status: "M14",
+      status: "works",
     },
     () => {
       // STR 15: long jump 15 ft, high jump 3 + 2 = 5 ft (with a run-up).
@@ -186,8 +186,21 @@ describe("conformance · 11. movement and mounts", () => {
         long: 15,
         high: 5,
       });
-      // Step of the Wind doubles the jump distance for the turn.
-      expect(featureJson("monk-step-of-the-wind")).toContain("jump");
+      // Step of the Wind (with Focus) doubles the jump distance for the turn.
+      const monk = makeCharacterDoc(
+        {
+          classId: "monk",
+          level: 2,
+          abilityScores: { STR: 15, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 },
+          features: [{ srdId: "monk-step-of-the-wind" }],
+        },
+        { activeFeatures: ["monk-step-of-the-wind"] }
+      );
+      const windy = aggregateCharacterGrants(monk.character, monk.session);
+      expect(deriveJumps(monk.character.abilityScores, windy)).toMatchObject({
+        long: 30,
+        high: 10,
+      });
     }
   );
 

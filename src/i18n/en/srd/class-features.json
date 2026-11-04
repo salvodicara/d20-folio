@@ -726,6 +726,9 @@
     "description": "You can take the Dash action as a Bonus Action. If you spend 1 Focus Point when you do so, you can also take the Disengage action as part of that Bonus Action, and your jump distance is doubled for the turn.",
     "name": "Step of the Wind"
   },
+  "monk-step-of-the-wind.grants.0": {
+    "label": "Step of the Wind"
+  },
   "monk-step-of-the-wind.mechanics.actions.0": {
     "description": "Dash as a Bonus Action without spending Focus.",
     "label": "Step of the Wind",

@@ -233,9 +233,14 @@ function effects(action: SrdActionDef, owner: ActionOwner): ActivityEffect[] {
     out.push({ kind: "maintain", key: action.maintainsActiveKey });
   } else {
     // Using an action of a feature that declares a standing state enters it
-    // (Rage, Bladesong): the first `while-active` grant is the one it lights.
+    // (Rage, Bladesong): the first `while-active` grant is the one it lights;
+    // a state naming its entering rows (Step of the Wind's Focus version) is
+    // entered by those alone.
     const [state] = whileActiveGrants(owner.grants);
-    if (state) out.push(statusEffect(state, state.duration, false));
+    const enters =
+      !state?.activatedByAction ||
+      (action.id !== undefined && state.activatedByAction.includes(action.id));
+    if (state && enters) out.push(statusEffect(state, state.duration, false));
   }
   return out;
 }
