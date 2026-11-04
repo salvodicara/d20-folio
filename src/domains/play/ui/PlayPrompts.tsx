@@ -319,7 +319,7 @@ function TargetStep({ prompt }: { prompt: Prompts["target"] }) {
             {t("common.cancel")}
           </Button>
           <Button kind="quiet" onClick={() => prompt.onConfirm([])}>
-            {t("common.skip")}
+            {request.isSpell ? t("play.ask.castNoTarget") : t("play.ask.confirmNoTarget")}
           </Button>
           <Button
             kind="primary"
