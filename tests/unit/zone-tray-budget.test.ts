@@ -129,7 +129,12 @@ describe("Guardian of Faith", () => {
       {
         ...zoneEffect,
         id: "guardian-1",
-        actor: { ...zoneEffect.actor, characterId: priest.id },
+        actor: {
+          kind: "pc",
+          combatantId: "pc-me",
+          memberUid: "me",
+          characterId: priest.id,
+        },
         source: {
           kind: "spell",
           id: "guardian-of-faith",
