@@ -15,6 +15,7 @@ import {
   numberSchema,
   objectSchema,
   stringSchema,
+  unionSchema,
   type ExactSchema,
 } from "@/lib/exact-schema";
 import { literals } from "@/lib/homebrew-conform";
@@ -57,6 +58,31 @@ const BASE = {
   notVsCreatureTypes: CREATURE_TYPES,
 } as const;
 
+/** A Hit Point Dice spend (`@/lib/play/hit-point-dice`), shared with the trigger
+ *  rule's `do`: how many dice, and the optional fields. */
+export const HIT_POINT_DICE_MAX = unionSchema([
+  numberSchema,
+  literalSchema("slot-level"),
+]);
+export const HIT_POINT_DICE_OPTIONAL = {
+  perUpcast: numberSchema,
+  bonus: unionSchema([
+    literalSchema("slot-level"),
+    literalSchema("spellcasting-mod"),
+    literalSchema("con-mod"),
+    literalSchema("proficiency"),
+  ]),
+  into: unionSchema([
+    literalSchema("healing"),
+    literalSchema("damage"),
+    literalSchema("temp-hp"),
+    literalSchema("save"),
+  ]),
+  evenOnly: literalSchema(true),
+  spender: literalSchema("target"),
+  exactly: literalSchema(true),
+} as const;
+
 /** Dice the catalogue authors: an amount, and what each slot above the base adds. */
 const DICE = objectSchema({ dice: stringSchema }, { perUpcast: stringSchema });
 
@@ -92,12 +118,8 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
     { ...BASE, until: UNTIL, activeKey: stringSchema }
   ),
   "hit-point-dice": objectSchema(
-    { kind: literalSchema("hit-point-dice"), max: numberSchema },
-    {
-      ...BASE,
-      perUpcast: numberSchema,
-      bonus: literals(["slot-level", "spellcasting-mod"]),
-    }
+    { kind: literalSchema("hit-point-dice"), max: HIT_POINT_DICE_MAX },
+    { ...BASE, ...HIT_POINT_DICE_OPTIONAL }
   ),
   dispel: objectSchema(
     { kind: literalSchema("dispel"), autoMaxLevel: numberSchema },

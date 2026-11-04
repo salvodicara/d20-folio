@@ -27,6 +27,13 @@
 import { firedCastTriggers } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
+import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
+import {
+  hitPointDiceAmount,
+  hitPointDiceContext,
+  hitPointDiceSpend,
+  type HitPointDiceOffer,
+} from "@/lib/play/hit-point-dice";
 import { speechBlocksCast } from "@/lib/play/speech";
 import { selfMoveFeet } from "@/lib/play/self-move";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
@@ -535,6 +542,10 @@ export function TurnEconomyProvider({
   const [formPickerSpellId, setFormPickerSpellId] = useState<string | null>(null);
   // Mixing potions (M18): the potions a drink mixes, while the d100 is offered.
   const [mixing, setMixing] = useState<LocText[] | null>(null);
+  // Hit Point Dice a cast lets the player spend (Necromancy Adept), asked in turn.
+  const [hitDiceOffers, setHitDiceOffers] = useState<
+    Array<{ source: LocText; offer: HitPointDiceOffer }>
+  >([]);
 
   const [freeCastFromListRequest, setFreeCastFromListRequest] = useState<{
     characterId: string;
@@ -1553,6 +1564,48 @@ export function TurnEconomyProvider({
   }
 
   /**
+   * Spend the Hit Point Dice the player chose and gain what they give: healing or
+   * temporary HP on the sheet; extra damage or a save bonus told to the player.
+   * Checked against the live pool, so a redo can't overspend; one undo.
+   */
+  function spendOfferedHitDice(
+    { source, offer }: { source: LocText; offer: HitPointDiceOffer },
+    count: number,
+    rolled: number
+  ) {
+    if (count <= 0) return;
+    const amount = hitPointDiceAmount(offer, count, rolled);
+    const name = localizeText(source, locale);
+    registerUndoableToast(
+      {
+        message: t(`combat.hitPointDiceSpent_${offer.into}`, {
+          count,
+          amount,
+          source: name,
+        }),
+      },
+      () => {
+        const cs = useCharacterStore.getState();
+        const doc = cs.character;
+        if (!doc || hitPointDiceContext(doc).available < count) return null;
+        const used = doc.session.hitDice.used;
+        cs.updateSession({ hitDice: { used: used + count } });
+        const undoGain =
+          offer.into === "healing"
+            ? cs.applyHealing(amount)
+            : offer.into === "temp-hp"
+              ? cs.gainTempHp(amount)
+              : null;
+        return () => {
+          undoGain?.();
+          useCharacterStore.getState().updateSession({ hitDice: { used } });
+        };
+      },
+      { turnScoped: false }
+    );
+  }
+
+  /**
    * What the cast gives back (Arcane Ward, Expert Divination): refunded and logged
    * after the cast's own line; the returned undo pays it again and drops the lines.
    */
@@ -1563,14 +1616,26 @@ export function TurnEconomyProvider({
     const cs = useCharacterStore.getState();
     if (!cs.character) return () => {};
     // A cast trigger that lets the caster spend Hit Point Dice (Necromancy Adept):
-    // offered as a notice; the roll and the dice are the player's.
+    // a screen that draws its own questions asks how many and the rolled total;
+    // the old sheet shows a notice.
     if (slotLevel !== null) {
-      const school = spellId ? getSpellById(spellId)?.school : undefined;
-      for (const offer of firedCastTriggers(cs.character, { school, slot: true })
-        .hitPointDice) {
+      const spell = spellId ? getSpellById(spellId) : undefined;
+      const facts = { school: spell?.school, slot: true };
+      const ctx = hitPointDiceContext(cs.character, {
+        slotLevel,
+        spellLevel: spell?.level ?? slotLevel,
+      });
+      for (const fired of firedCastTriggers(cs.character, facts).hitPointDice) {
+        const source = featureNameLoc(fired.sourceId);
+        const offer = hitPointDiceSpend(fired.rule, ctx);
+        if (!offer) continue;
+        if (!renderPrompts) {
+          setHitDiceOffers((now) => [...now, { source, offer }]);
+          continue;
+        }
         showToast({
           message: t("combat.castHitPointDice", {
-            source: localizeText(featureNameLoc(offer.sourceId), locale),
+            source: localizeText(source, locale),
             max: offer.max,
           }),
           duration: 8000,
@@ -2999,6 +3064,23 @@ export function TurnEconomyProvider({
     [mixing, t]
   );
   usePublishPlayPrompt("potion-mixing", mixingPrompt);
+  const [hitDiceOffer] = hitDiceOffers;
+  const hitDicePrompt = ((): PlayPrompts["hit-point-dice"] | null => {
+    if (!hitDiceOffer || !character) return null;
+    const pool = hitDicePool(character.character);
+    const next = () => setHitDiceOffers((now) => now.slice(1));
+    return {
+      ...hitDiceOffer,
+      sizes: hitDiceLabel(pool).sizes,
+      range: (count) => hitDiceTotalRange(pool, count),
+      onCancel: next,
+      onConfirm: (count, rolled) => {
+        next();
+        spendOfferedHitDice(hitDiceOffer, count, rolled);
+      },
+    };
+  })();
+  usePublishPlayPrompt("hit-point-dice", hitDicePrompt);
 
   return (
     <TurnEconomyContext.Provider value={api}>

@@ -18,6 +18,7 @@
  *    `StatusEnd`): a status the activity lights is declared as the Status it
  *    starts as.
  */
+import type { HitPointDiceRule } from "@/lib/play/hit-point-dice";
 import type { Scalar } from "@/lib/scalar";
 import type {
   AbilityCode,
@@ -443,15 +444,9 @@ export type ActivityEffect =
       /** The state it leaves on the target (its spell's `while-active` grant). */
       activeKey?: string;
     })
-  /** The creature may roll up to `max` (+ `perUpcast` per slot level above the
-   *  spell's) of its unexpended Hit Point Dice and regain their total plus `bonus`
-   *  (the slot's level, or the caster's spellcasting modifier); the dice are spent. */
-  | (EffectBase & {
-      kind: "hit-point-dice";
-      max: number;
-      perUpcast?: number;
-      bonus?: "slot-level" | "spellcasting-mod";
-    })
+  /** The creature may spend some of its unexpended Hit Point Dice and gain their
+   *  total plus a bonus (`@/lib/play/hit-point-dice` reads the fields). */
+  | (EffectBase & { kind: "hit-point-dice" } & HitPointDiceRule)
   /** One spell on the target ends: any of level `autoMaxLevel` or lower (+
    *  `perUpcast` per slot level above the spell's); a higher one needs a
    *  spellcasting ability check, DC 10 + its level (Dispel Magic). */

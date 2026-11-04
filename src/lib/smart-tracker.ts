@@ -15,6 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import type { HitPointDiceRule } from "@/lib/play/hit-point-dice";
 import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { weaponAttunementSatisfied } from "@/lib/attunement";
 import { stateEffectsFor } from "@/lib/play/outcome-effects";
@@ -9961,23 +9962,13 @@ export function firedCastTriggers(
 ): {
   used: Map<string, number>;
   limited: string[];
-  hitPointDice: Array<{
-    sourceId: string;
-    max: number;
-    bonus?: "slot-level" | "spellcasting-mod";
-  }>;
+  hitPointDice: Array<{ sourceId: string; rule: HitPointDiceRule }>;
 } {
   const restores = firedTriggerRestores(character, "cast-spell", facts);
   const hitPointDice = aggregateForCharacter(character).triggers.flatMap((rule) => {
     if (rule.on !== "cast-spell" || rule.do.kind !== "hit-point-dice") return [];
     if (!triggerHolds(rule, facts)) return [];
-    return [
-      {
-        sourceId: rule.sourceId,
-        max: rule.do.max,
-        ...(rule.do.bonus ? { bonus: rule.do.bonus } : {}),
-      },
-    ];
+    return [{ sourceId: rule.sourceId, rule: rule.do }];
   });
   return { ...restores, hitPointDice };
 }

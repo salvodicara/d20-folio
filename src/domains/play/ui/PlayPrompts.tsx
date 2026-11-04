@@ -18,6 +18,7 @@ import {
 import { localizeSrd } from "@/i18n/resolver";
 import { selfFormRule } from "@/lib/polymorph";
 import { arcaneRecoveryPicker } from "@/lib/arcane-recovery";
+import { hitPointDiceAmount } from "@/lib/play/hit-point-dice";
 import {
   metamagicChipStates,
   toggleMetamagicSelection,
@@ -61,6 +62,7 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
       <ItemInputDialog />
       <ArcaneDialog />
       <MixingDialog locale={locale} />
+      <HitDiceDialog locale={locale} />
       <SpellListDialog locale={locale} />
       {formPicker && doc && selfFormRule(formPicker.spellId).pool !== "bestiary" ? (
         <PlayFormPicker
@@ -637,6 +639,92 @@ function MixingStep({
         value={typed}
         onChange={(e) => setTyped(e.target.value)}
       />
+    </Dialog>
+  );
+}
+
+/** Hit Point Dice a cast lets the player spend (Necromancy Adept): how many, and the
+ *  total they rolled; what it gives, read as they type. */
+function HitDiceDialog({ locale }: { locale: Locale }) {
+  const prompt = usePlayPrompt("hit-point-dice");
+  return prompt ? <HitDiceStep prompt={prompt} locale={locale} /> : null;
+}
+
+function HitDiceStep({
+  prompt,
+  locale,
+}: {
+  prompt: Prompts["hit-point-dice"];
+  locale: Locale;
+}) {
+  const { t } = useTranslation();
+  const { offer } = prompt;
+  const [count, setCount] = useState(offer.max);
+  const [typed, setTyped] = useState("");
+  const skip = useOnce(prompt.onCancel);
+  const range = prompt.range(count);
+  const rolled = /^\d{1,3}$/.test(typed.trim()) ? Number(typed.trim()) : null;
+  const valid =
+    count === 0 || (rolled !== null && rolled >= range.min && rolled <= range.max);
+  const amount = rolled === null ? null : hitPointDiceAmount(offer, count, rolled);
+  const dice = count > 0 ? `${String(count)}×${prompt.sizes}` : prompt.sizes;
+  return (
+    <Dialog
+      open
+      onClose={skip}
+      color="res"
+      title={localizeText(prompt.source, locale)}
+      closeLabel={t("common.close")}
+      actions={
+        <>
+          {offer.min === 0 && (
+            <Button kind="ghost" onClick={skip}>
+              {t("common.skip")}
+            </Button>
+          )}
+          <Button
+            kind="primary"
+            disabled={!valid}
+            onClick={() => {
+              if (valid) prompt.onConfirm(count, rolled ?? 0);
+            }}
+          >
+            {t("combat.spend")}
+          </Button>
+        </>
+      }
+    >
+      <div className="f-ask">
+        <div className="f-ask-row">
+          <span className="f-lbl">{t("play.hitDice.count")}</span>
+          <Stepper
+            value={count}
+            min={offer.min}
+            max={offer.max}
+            label={t("play.hitDice.count")}
+            less={t("common.decrease")}
+            more={t("common.increase")}
+            onChange={setCount}
+          />
+        </div>
+      </div>
+      {count > 0 && (
+        <Field
+          label={t("play.hitDice.rolled", { dice })}
+          inputMode="numeric"
+          autoComplete="off"
+          className="f-in f-in-big f-in-short"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+        />
+      )}
+      {count > 0 && valid && amount !== null && (
+        <p className="f-help">
+          {amount === 0 && offer.evenOnly
+            ? t("play.hitDice.oddRoll")
+            : t(`play.hitDice.gain_${offer.into}`, { amount })}
+        </p>
+      )}
     </Dialog>
   );
 }
