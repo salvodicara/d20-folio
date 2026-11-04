@@ -43,6 +43,43 @@ export interface DueRepeatSave {
   advantage?: true;
   when?: "out-of-actor-sight";
   actorId?: string;
+  /** Counted toward a save track instead of ending on one success. */
+  track?: SaveTrack;
+}
+
+/** How many successes end a tracked condition, and how many failures settle it. */
+export interface SaveTrack {
+  successes: number;
+  failures: number;
+}
+
+/** A tracked save's count so far. */
+export interface SaveTally {
+  successes: number;
+  failures: number;
+}
+
+/** Whether a tracked save has failed enough to settle: it asks no more. */
+export function trackSettled(tally: SaveTally, track: SaveTrack): boolean {
+  return tally.failures >= track.failures;
+}
+
+/**
+ * One answer to a tracked save: the new count and what it means. `ended`: enough
+ * successes, the condition ends; `settled`: enough failures, it lasts the rest of its
+ * duration and asks no more; `counted`: neither yet.
+ */
+export function answerTrackedSave(
+  tally: SaveTally,
+  track: SaveTrack,
+  passed: boolean
+): { tally: SaveTally; outcome: "counted" | "ended" | "settled" } {
+  const next = passed
+    ? { ...tally, successes: tally.successes + 1 }
+    : { ...tally, failures: tally.failures + 1 };
+  if (next.successes >= track.successes) return { tally: next, outcome: "ended" };
+  if (next.failures >= track.failures) return { tally: next, outcome: "settled" };
+  return { tally: next, outcome: "counted" };
 }
 
 /** Which side of the fight a combatant is on. */
@@ -93,6 +130,7 @@ function dueSave(
     ...(end.advantage ? { advantage: true as const } : {}),
     ...(end.when ? { when: end.when } : {}),
     ...(condition.actorId !== undefined ? { actorId: condition.actorId } : {}),
+    ...(end.track ? { track: end.track } : {}),
   };
 }
 

@@ -599,6 +599,9 @@
     },
     "repeatSaveFailed": "Fallito: resta",
     "repeatSaveEnded": "{{condition}} termina: {{target}}",
+    "repeatSaveTally": "Successi {{successes}}/{{needed}} · fallimenti {{failures}}/{{limit}}",
+    "repeatSaveCounted": "{{target}}: successi {{successes}}/{{needed}}, fallimenti {{failures}}/{{limit}}",
+    "repeatSaveSettled": "{{condition}} resta per tutta la durata: {{target}}",
     "zoneOutside": "Fuori"
   }
 }

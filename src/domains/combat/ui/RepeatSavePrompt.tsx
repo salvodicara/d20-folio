@@ -18,8 +18,16 @@ import { localizeSrd } from "@/i18n/resolver";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import type { Locale } from "@/lib/locale";
 import { repeatSaveDueCopy } from "@/domains/combat/repeat-save-copy";
+import {
+  tallyKey,
+  tallyOf,
+  useSaveTallyStore,
+} from "@/features/campaigns/save-tally-store";
+import { answerTrackedSave, type SaveTally } from "@/lib/condition-ends";
 import { useToastStore } from "@/stores/toastStore";
 import { Button } from "@/ui";
+
+const NO_TALLY: SaveTally = { successes: 0, failures: 0 };
 
 /** The saves waiting for these combatants. */
 export function RepeatSavePrompts({
@@ -45,8 +53,48 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
   const { t } = useTranslation();
   const condition = localizeSrd("condition", save.conditionId, "name", locale);
   const store = () => useRepeatSaveStore.getState();
-  const failed = () => store().remove(save.id);
+  // A tracked save (Contagion) counts each answer; only the last one decides.
+  const track = save.track;
+  const key = tallyKey(save.campaignId, save.id);
+  const tally = useSaveTallyStore((s) => s.tallies[key]) ?? NO_TALLY;
+  const counted = (passed: boolean): boolean => {
+    if (!track) return false;
+    const before = tallyOf(save.campaignId, save.id);
+    const answer = answerTrackedSave(before, track, passed);
+    if (answer.outcome === "ended") {
+      useSaveTallyStore.getState().set(key, null);
+      return false;
+    }
+    useSaveTallyStore.getState().set(key, answer.tally);
+    store().remove(save.id);
+    const values = {
+      condition,
+      target: save.targetName,
+      successes: answer.tally.successes,
+      failures: answer.tally.failures,
+      needed: track.successes,
+      limit: track.failures,
+    };
+    useToastStore.getState().showToast({
+      message: t(
+        answer.outcome === "settled"
+          ? "combat.repeatSaveSettled"
+          : "combat.repeatSaveCounted",
+        values
+      ),
+      duration: 6000,
+      onUndo: () => {
+        useSaveTallyStore.getState().set(key, before);
+        store().add(save);
+      },
+    });
+    return true;
+  };
+  const failed = () => {
+    if (!counted(false)) store().remove(save.id);
+  };
   const saved = () => {
+    if (counted(true)) return;
     store().remove(save.id);
     void revokePersistentCombatEffect(save.campaignId, save.id).catch(() => undefined);
     useToastStore.getState().showToast({
@@ -55,6 +103,7 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
       // The same occurrence back (v0.26 rules); before that deploy, a copy under a
       // fresh id (re-using the id would be ignored as a replay).
       onUndo: () => {
+        if (track) useSaveTallyStore.getState().set(key, tally);
         if (combatEffectsV26On()) {
           void reinstatePersistentCombatEffect(save.campaignId, save.id).catch(
             () => undefined
@@ -71,6 +120,16 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
   return (
     <div className="f-note f-save-due" data-c="cond" role="group" aria-label={condition}>
       <p>{t(...repeatSaveDueCopy(save, t(`abilities.${save.ability}`), condition, t))}</p>
+      {track && (
+        <p>
+          {t("combat.repeatSaveTally", {
+            successes: tally.successes,
+            failures: tally.failures,
+            needed: track.successes,
+            limit: track.failures,
+          })}
+        </p>
+      )}
       <div className="f-acts">
         <Button kind="primary" onClick={saved}>
           {t("combat.repeatSaveSucceeded")}

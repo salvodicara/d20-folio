@@ -884,13 +884,17 @@ export type ConditionEnd =
    *  `onFailedRepeatSave` (Vision of Elapsing Eons: 1 Exhaustion level). `advantage`:
    *  the repeat is rolled with Advantage (Hideous Laughter on damage). `when`: the
    *  repeat is owed only in that situation, so the prompt asks it first (Fear: out of
-   *  line of sight of the caster). */
+   *  line of sight of the caster). `track`: successes and failures are counted. */
   | {
       on: "repeat-save";
       ability: AbilityCode;
       at: RepeatSaveMoment;
       advantage?: true;
       when?: "out-of-actor-sight";
+      /** A save track instead of one roll (Contagion, Flesh to Stone): `successes`
+       *  successes end it, `failures` failures settle it for the rest of its duration
+       *  (no more repeats). */
+      track?: { successes: number; failures: number };
       onFailedRepeatSave?: ReadonlyArray<CatalogueEffect>;
     }
   /** It ends when the one who applied it has the Incapacitated condition (a grapple). */
