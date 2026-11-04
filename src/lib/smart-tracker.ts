@@ -9958,6 +9958,25 @@ export function castTriggerFacts(
   };
 }
 
+/** Whether a rule has used up its limit: its counter is the session tracker keyed by
+ *  its source; the most is `limit.max`, or, without one, that tracker's own total
+ *  (a feat's Proficiency Bonus uses per Long Rest). No limit is never reached. */
+function triggerLimitReached(
+  rule: TriggerRule,
+  character: CharacterDoc,
+  trackers: ReadonlyArray<{ id: string; total: number }> = []
+): boolean {
+  if (!rule.limit) return false;
+  const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
+  const max =
+    rule.limit.max ??
+    (trackers.length > 0 ? trackers : resolveTrackers(character)).find(
+      (t) => t.id === rule.sourceId
+    )?.total ??
+    0;
+  return spent >= max;
+}
+
 /** Whether a rule's `if` holds for these facts: every field it names must match a fact
  *  the caller gave; a field it names with no fact given does not hold. */
 function triggerHolds(rule: TriggerRule, facts: TriggerFacts): boolean {
@@ -9993,8 +10012,7 @@ export function firedCastTriggers(
   const hitPointDice = aggregateForCharacter(character).triggers.flatMap((rule) => {
     if (rule.on !== "cast-spell" || rule.do.kind !== "hit-point-dice") return [];
     if (!triggerHolds(rule, facts)) return [];
-    const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
-    if (rule.limit && spent >= rule.limit.max) return [];
+    if (triggerLimitReached(rule, character)) return [];
     return [
       { sourceId: rule.sourceId, rule: rule.do, limited: rule.limit !== undefined },
     ];
@@ -10014,8 +10032,7 @@ export function firedTriggerOffers(
 ): Array<{ sourceId: string; actionId: string }> {
   return aggregateForCharacter(character).triggers.flatMap((rule) => {
     if (rule.on !== on || rule.do.kind !== "offer") return [];
-    const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
-    if (rule.limit && spent >= rule.limit.max) return [];
+    if (triggerLimitReached(rule, character)) return [];
     if (!triggerHolds(rule, facts)) return [];
     return [{ sourceId: rule.sourceId, actionId: rule.do.actionId }];
   });
@@ -10043,8 +10060,7 @@ export function firedTriggerRestores(
   for (const rule of rules) {
     const action = rule.do;
     if (action.kind !== "restore-tracker") continue;
-    const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
-    if (rule.limit && spent >= rule.limit.max) continue;
+    if (triggerLimitReached(rule, character, trackers)) continue;
     const tracker = trackers.find((t) => t.id === action.trackerId);
     if (!tracker) continue;
     const current = used.get(tracker.id) ?? tracker.used;

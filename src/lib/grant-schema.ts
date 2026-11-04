@@ -726,15 +726,19 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           target: literalSchema("marked"),
         }
       ),
-      limit: objectSchema({
-        max: numberSchema,
-        per: unionSchema([
-          literalSchema("long-rest"),
-          literalSchema("short-rest"),
-          literalSchema("turn"),
-          literalSchema("round"),
-        ]),
-      }),
+      /** At most `max` firings per `per`; without `max`, as many as the source's own
+       *  tracker holds (its total). */
+      limit: objectSchema(
+        {
+          per: unionSchema([
+            literalSchema("long-rest"),
+            literalSchema("short-rest"),
+            literalSchema("turn"),
+            literalSchema("round"),
+          ]),
+        },
+        { max: numberSchema }
+      ),
     }
   ),
   "extra-attack": objectSchema({
