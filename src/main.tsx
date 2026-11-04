@@ -89,6 +89,13 @@ installLazyDataSeed();
 // events. Never throws (private-mode crypto/localStorage denials fall back).
 installDiagnostics();
 
+// DEV ONLY: the fight writers load campaign-io on first use. In dev, that first
+// import can make Vite discover new deps and re-optimise, which fails the in-flight
+// import and reloads the page (above) mid-action, losing the dev store. Loading it
+// at boot moves that discovery to startup. Dead code in production.
+if (import.meta.env.DEV)
+  void import("@/features/campaigns/campaign-io").catch(() => undefined);
+
 const rootEl = document.getElementById("root");
 if (!rootEl) throw new Error("Root element not found");
 
