@@ -18,6 +18,7 @@
  * Pure formula helpers — no auto-restoration; the UI presents the cap and
  * lets the player pick which slots to refill (golden rule 21 — the app never auto-decides).
  */
+import { recoverableSlots } from "@/lib/play/slot-recovery";
 
 /** Maximum combined slot levels the wizard can recover (⌈level / 2⌉). */
 export function arcaneRecoveryCap(wizardLevel: number): number {
@@ -78,21 +79,18 @@ export function arcaneRecoveryPicker(
   expended: ReadonlyArray<{ level: number; expended: number }>,
   counts: Readonly<Record<number, number>>
 ): ArcaneRecoveryPick {
-  const cap = arcaneRecoveryCap(wizardLevel);
-  const eligible = expended
-    .filter((e) => e.expended > 0 && e.level <= ARCANE_RECOVERY_MAX_SLOT_LEVEL)
-    .sort((a, b) => a.level - b.level);
-  const used = eligible.reduce((sum, e) => sum + e.level * (counts[e.level] ?? 0), 0);
-  const remaining = cap - used;
-  const rows = eligible.map((e) => {
-    const count = counts[e.level] ?? 0;
-    const fits = Math.floor(remaining / e.level) + count;
-    return { ...e, count, max: Math.max(count, Math.min(e.expended, fits)) };
-  });
+  const pick = recoverableSlots(
+    {
+      totalLevels: arcaneRecoveryCap(wizardLevel),
+      maxSlotLevel: ARCANE_RECOVERY_MAX_SLOT_LEVEL,
+    },
+    expended,
+    counts
+  );
   return {
-    cap,
-    remaining,
-    rows,
-    slotLevels: rows.flatMap((r) => Array.from({ length: r.count }, () => r.level)),
+    cap: pick.budget.cap,
+    remaining: pick.budget.remaining,
+    rows: pick.rows,
+    slotLevels: pick.slotLevels,
   };
 }

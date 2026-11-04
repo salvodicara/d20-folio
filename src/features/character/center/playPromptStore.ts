@@ -10,6 +10,7 @@
  */
 import type { LocText } from "@/lib/loc-text";
 import type { HitPointDiceOffer } from "@/lib/play/hit-point-dice";
+import type { SlotRecoveryRule } from "@/lib/play/slot-recovery";
 import { useLayoutEffect } from "react";
 import { create } from "zustand";
 
@@ -47,6 +48,15 @@ export interface PlayPrompts {
   "potion-mixing": {
     potions: LocText[];
     onConfirm: (roll: number | null) => void;
+  };
+  /** Expended slots a cast lets the player recover (M12): which ones, within the
+   *  rule's budget and ceiling. `onConfirm` gets the slot levels picked. */
+  "slot-recovery": {
+    source: LocText;
+    rule: SlotRecoveryRule;
+    expended: ReadonlyArray<{ level: number; expended: number }>;
+    onConfirm: (slotLevels: number[]) => void;
+    onCancel: () => void;
   };
   /** Hit Point Dice a rule lets the player spend (Necromancy Adept): how many, and
    *  the total they rolled. `onCancel` spends none. */

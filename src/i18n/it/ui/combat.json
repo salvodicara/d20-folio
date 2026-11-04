@@ -619,6 +619,11 @@
     "hitPointDiceSpent_damage_one": "{{source}}: spendi {{count}} Dado Vita; aggiungi {{amount}} ai danni.",
     "hitPointDiceSpent_damage_other": "{{source}}: spendi {{count}} Dadi Vita; aggiungi {{amount}} ai danni.",
     "hitPointDiceSpent_save_one": "{{source}}: spendi {{count}} Dado Vita; aggiungi {{amount}} al tiro salvezza.",
-    "hitPointDiceSpent_save_other": "{{source}}: spendi {{count}} Dadi Vita; aggiungi {{amount}} al tiro salvezza."
+    "hitPointDiceSpent_save_other": "{{source}}: spendi {{count}} Dadi Vita; aggiungi {{amount}} al tiro salvezza.",
+    "slotsRecovered_one": "{{source}}: recuperi {{count}} slot incantesimo.",
+    "slotsRecovered_other": "{{source}}: recuperi {{count}} slot incantesimo.",
+    "castSlotRecovery_slots": "{{source}}: puoi recuperare fino a {{cap}} slot incantesimo spesi, nessuno oltre il {{max}}º livello.",
+    "castSlotRecovery_levels": "{{source}}: puoi recuperare slot incantesimo spesi per un totale di {{cap}} livelli, nessuno oltre il {{max}}º livello.",
+    "slotRecoveryBudgetSlots": "{{remaining}} di {{cap}} slot rimasti"
   }
 }

@@ -619,6 +619,11 @@
     "hitPointDiceSpent_damage_one": "{{source}}: you spend {{count}} Hit Point Die; add {{amount}} to the damage.",
     "hitPointDiceSpent_damage_other": "{{source}}: you spend {{count}} Hit Point Dice; add {{amount}} to the damage.",
     "hitPointDiceSpent_save_one": "{{source}}: you spend {{count}} Hit Point Die; add {{amount}} to the saving throw.",
-    "hitPointDiceSpent_save_other": "{{source}}: you spend {{count}} Hit Point Dice; add {{amount}} to the saving throw."
+    "hitPointDiceSpent_save_other": "{{source}}: you spend {{count}} Hit Point Dice; add {{amount}} to the saving throw.",
+    "slotsRecovered_one": "{{source}}: you recover {{count}} spell slot.",
+    "slotsRecovered_other": "{{source}}: you recover {{count}} spell slots.",
+    "castSlotRecovery_slots": "{{source}}: you can recover up to {{cap}} expended spell slots, none above level {{max}}.",
+    "castSlotRecovery_levels": "{{source}}: you can recover expended spell slots totalling up to {{cap}} levels, none above level {{max}}.",
+    "slotRecoveryBudgetSlots": "{{remaining}} of {{cap}} slots left"
   }
 }
