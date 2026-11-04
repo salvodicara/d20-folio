@@ -691,7 +691,16 @@ describe("activities — spells", () => {
 
   it("reads back every flat spell field", () => {
     for (const { spell, activity, gaps } of translations) {
-      expect(spellFromActivity(activity), spell.id).toEqual(spellMechanics(spell, gaps));
+      // The spell's authored effects ride after the derived ones (checked below);
+      // the flat fields read back from the derived ones alone.
+      const derived = {
+        ...activity,
+        effects: activity.effects.slice(
+          0,
+          activity.effects.length - (spell.effects?.length ?? 0)
+        ),
+      };
+      expect(spellFromActivity(derived), spell.id).toEqual(spellMechanics(spell, gaps));
     }
   });
 
