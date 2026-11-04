@@ -4,6 +4,7 @@
  * Strike's successful save another; Faerie Fire's lasts.
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
@@ -11,6 +12,8 @@ const io = vi.hoisted(() => ({
   reinstatePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+
+beforeAll(loadCampaignIo);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { applyTray } from "@/features/character/center/apply-tray";
@@ -58,21 +61,6 @@ const faerie = on(
   { kind: "spell", id: "faerie-fire", actionId: "x" },
   "spell-faerie-fire"
 );
-
-/**
- * The tray writes a fight effect through a lazily imported campaign IO module and
- * never awaits the write. The module is loaded once up front (`beforeAll`), so the
- * tray's own `import()` resolves from the module cache; one macrotask then lets the
- * write's `.then` run. No wall-clock budget: a 1-second `vi.waitFor` failed whenever
- * a loaded machine made that first import slow.
- */
-async function writesSettled(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
-
-beforeAll(async () => {
-  await import("@/features/campaigns/campaign-io");
-});
 
 describe("incoming attack modes", () => {
   it("Guiding Bolt's Advantage is spent by the next attack; a lasting one is not", () => {

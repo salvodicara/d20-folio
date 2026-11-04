@@ -4,13 +4,16 @@
  * action carries those states; the damage tray writes them to the fight for each
  * row marked Saved.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+
+beforeAll(loadCampaignIo);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { applyTray } from "@/features/character/center/apply-tray";
@@ -125,9 +128,8 @@ describe("the tray writes them for a Saved row", () => {
       [0],
       ((k: string) => k) as never
     );
-    await vi.waitFor(() =>
-      expect(io.appendPersistentCombatEffect).toHaveBeenCalledTimes(2)
-    );
+    await writesSettled();
+    expect(io.appendPersistentCombatEffect).toHaveBeenCalledTimes(2);
     const written = io.appendPersistentCombatEffect.mock.calls.map(
       (call) =>
         (call as unknown as [string, { payload: { activeKey: string } }])[1].payload

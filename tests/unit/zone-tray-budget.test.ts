@@ -3,13 +3,16 @@
  * spell's tray on the creature; a budgeted zone counts what it dealt and ends at its
  * budget (Guardian of Faith: 60).
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+
+beforeAll(loadCampaignIo);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { applyTray } from "@/features/character/center/apply-tray";
@@ -100,9 +103,8 @@ describe("a zone through the tray", () => {
     expect(useCharacterStore.getState().character?.session.zoneSpent).toEqual({
       "zone-1": 60,
     });
-    await vi.waitFor(() =>
-      expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "zone-1")
-    );
+    await writesSettled();
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "zone-1");
   });
 });
 
