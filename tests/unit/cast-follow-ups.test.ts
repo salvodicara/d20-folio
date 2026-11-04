@@ -7,6 +7,7 @@
  * classified by its own resolution spec (never a hand-written list), plus the base
  * actions the same sheet carries.
  */
+import { getSpellById } from "@/data/spells";
 import { describe, expect, it } from "vitest";
 import { resolveActions, type ResolvedAction } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
@@ -38,8 +39,15 @@ const damages = catalogue.filter((a) => combatResolutionSpec(a).hasDamage);
 const saveConditions = catalogue.filter(
   (a) => combatResolutionSpec(a).conditionApplication?.on === "failed-save"
 );
+// Temporary HP for any creature (not only one type: Negative Energy Flood's go to
+// Undead targets alone, never to the caster by default).
 const tempHps = catalogue.filter(
-  (a) => combatResolutionSpec(a).hasTempHp && !(a.useEffects ?? []).length
+  (a) =>
+    combatResolutionSpec(a).hasTempHp &&
+    !(a.useEffects ?? []).length &&
+    !(a.spellId ? getSpellById(a.spellId)?.effects : undefined)?.some(
+      (e) => e.kind === "temp-hp" && e.vsCreatureTypes
+    )
 );
 
 describe("castFollowUps", () => {

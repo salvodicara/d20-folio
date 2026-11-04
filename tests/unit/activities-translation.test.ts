@@ -138,9 +138,11 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
     (effect): effect is Extract<ActivityEffect, { kind: "heal" }> =>
       effect.kind === "heal" && effect.fromDamage !== undefined
   );
+  // A temp-HP roll scoped to a creature type is an authored effect (Negative
+  // Energy Flood's Undead), read with the authored effects, not as the flat field.
   const tempRoll = activity.effects.find(
     (effect): effect is Extract<ActivityEffect, { kind: "temp-hp" }> =>
-      effect.kind === "temp-hp" && effect.dice !== undefined
+      effect.kind === "temp-hp" && effect.dice !== undefined && !effect.vsCreatureTypes
   );
   const tempPool = activity.effects.find(
     (effect): effect is Extract<ActivityEffect, { kind: "temp-hp" }> =>
@@ -196,6 +198,7 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
     damageChoice: primary?.choose ? types : undefined,
     damageResolution: primary?.gate,
     damageOnSave: primary?.onSave,
+    damageNotVsCreatureTypes: primary?.notVsCreatureTypes,
     damageOnMiss: primary?.onMiss,
     secondaryDamage: secondary
       ? {
