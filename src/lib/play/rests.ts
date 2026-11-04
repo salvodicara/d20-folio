@@ -16,6 +16,7 @@ import { longRestExhaustionFloor } from "@/lib/play/provisions";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import {
   applyShortRestExhaustion,
+  equipmentAfterDawn,
   equipmentAfterLongRest,
   firedTriggerRestores,
   gainsHeroicInspirationOnLongRest,
@@ -76,11 +77,12 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
     evaluateGrants(
       resolveAllGrantSources(character.character, character.session.itemResources)
     ).exhaustionRecoveryBonus;
-  // Magic-item charges with `recovery: "long-rest"` (and "dawn") restore to
-  // max through the ONE shared law (`equipmentAfterLongRest`, smart-tracker),
-  // the same map the canonical rest boundary applies, so the engine path and
-  // this fail-closed degradation can never drift.
-  const newEquipment = equipmentAfterLongRest(character.character.equipment);
+  // Magic-item charges: the Long Rest's, then the dawn's (a rest with no time of
+  // day set passes a dawn), through the ONE shared law in smart-tracker, the same
+  // maps the canonical rest boundary applies, so the two paths never drift.
+  const newEquipment = equipmentAfterDawn(
+    equipmentAfterLongRest(character.character.equipment)
+  );
   // S4 — Human's Resourceful: finishing a Long Rest auto-grants Heroic
   // Inspiration. The consumer (`gainsHeroicInspirationOnLongRest`) decides the
   // default only; override-first — the player can still toggle the chip off

@@ -8396,45 +8396,69 @@ function resolveTemporaryHpActions(
 
 // ─── Rest Recovery ──────────────────────────────────────────────────────────
 
+/** The catalogue item behind a stored charge ref whose charges come from its text. */
+function catalogueChargedItem(
+  ref: CharacterData["equipment"][number]
+): ReturnType<typeof getMagicItem> {
+  const item = "srdId" in ref ? getMagicItem(ref.srdId) : undefined;
+  return item && legacyMagicItemCharges(item) !== undefined ? item : undefined;
+}
+
+function withCharges(
+  ref: CharacterData["equipment"][number],
+  current: number
+): CharacterData["equipment"][number] {
+  if (!ref.charges || ref.charges.current >= current) return ref;
+  return { ...ref, charges: { ...ref.charges, current } };
+}
+
 /**
- * The equipment charge map a Long Rest applies: magic-item `charges` with
- * `recovery: "long-rest"` restore to max, and so do `recovery: "dawn"` charges
- * (functionally identical for the player, dawn happens at the end of a Long
- * Rest). Every other recovery (short-rest recharge wands, daily-cooldown rods)
- * is left alone. ONE law shared by the legacy store rest (the fail-closed
- * degradation) and the canonical rest boundary (rest-world-boundary.ts), so
- * the two paths can never drift.
+ * The equipment charge map a Long Rest applies: `recovery: "long-rest"` charges
+ * restore to max. Dawn charges are a separate boundary (`equipmentAfterDawn`);
+ * a rest that passes a dawn calls both. ONE law shared by the legacy store rest
+ * and the canonical rest boundary (rest-world-boundary.ts), so the two paths can
+ * never drift.
  *
- * An SRD item whose charges come from the catalogue only regains what its text
- * says (stored refs all carry `recovery: "long-rest"` regardless): no dawn
- * recharge (Gem of Brightness, Scarab of Protection) → never refilled; a fixed
- * amount (Rod of Resurrection, 1) → that much. A rolled amount still refills:
- * the legacy field has no way to enter the roll yet, and refilling lets the
- * player spend down to the table's result instead of stranding the item.
+ * An SRD item whose charges come from the catalogue recharges at dawn, whatever
+ * its stored ref says (stored refs all carry `recovery: "long-rest"`).
  */
 export function equipmentAfterLongRest(
   equipment: CharacterData["equipment"]
 ): CharacterData["equipment"] {
   return equipment.map((ref) => {
-    if (!ref.charges) return ref;
-    if (
-      ref.charges.recovery !== undefined &&
-      ref.charges.recovery !== "long-rest" &&
-      ref.charges.recovery !== "dawn"
-    ) {
+    if (!ref.charges || catalogueChargedItem(ref)) return ref;
+    if (ref.charges.recovery !== undefined && ref.charges.recovery !== "long-rest") {
       return ref;
     }
-    let current = ref.charges.max;
-    const item = "srdId" in ref ? getMagicItem(ref.srdId) : undefined;
-    if (item && legacyMagicItemCharges(item) !== undefined) {
-      const recharge = parseMagicItemDawnRecharge(item);
-      if (!recharge) return ref;
-      if (recharge.kind === "fixed") {
-        current = Math.min(ref.charges.max, ref.charges.current + recharge.amount);
-      }
+    return withCharges(ref, ref.charges.max);
+  });
+}
+
+/**
+ * The equipment charge map a dawn applies: `recovery: "dawn"` charges restore to
+ * max, and an SRD item whose charges come from the catalogue regains what its text
+ * says: no dawn recharge (Scarab of Protection) → nothing; a fixed amount (Rod of
+ * Resurrection, 1) → that much. A rolled amount still refills: the legacy field has
+ * no way to enter the roll yet, and refilling lets the player spend down to the
+ * table's result instead of stranding the item.
+ */
+export function equipmentAfterDawn(
+  equipment: CharacterData["equipment"]
+): CharacterData["equipment"] {
+  return equipment.map((ref) => {
+    if (!ref.charges) return ref;
+    const item = catalogueChargedItem(ref);
+    if (!item) {
+      return ref.charges.recovery === "dawn" ? withCharges(ref, ref.charges.max) : ref;
     }
-    if (ref.charges.current >= current) return ref;
-    return { ...ref, charges: { ...ref.charges, current } };
+    const recharge = parseMagicItemDawnRecharge(item);
+    if (!recharge) return ref;
+    return withCharges(
+      ref,
+      recharge.kind === "fixed"
+        ? Math.min(ref.charges.max, ref.charges.current + recharge.amount)
+        : ref.charges.max
+    );
   });
 }
 

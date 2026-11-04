@@ -4,7 +4,7 @@ import { canAttune, unattuneItem } from "@/lib/attunement-guard";
 import { applyCastSourceOverrides } from "@/lib/cast-source-profile";
 import { computeAC } from "@/lib/compute";
 import { consumableActionSlot, resolveItemConsumable } from "@/lib/srd-resolve";
-import { equipmentAfterLongRest } from "@/lib/smart-tracker";
+import { equipmentAfterDawn, equipmentAfterLongRest } from "@/lib/smart-tracker";
 import { getMagicItem } from "@/data/magic-items";
 import { getEquipment } from "@/data/equipment";
 import { getSpellById } from "@/data/spells";
@@ -128,7 +128,7 @@ describe("conformance · 13. items", () => {
       source: "ITEMS",
       status: "M18",
     },
-    () => {
+    async () => {
       // The last charge rolls a d20: on a 1 the wand is destroyed.
       const wand = getMagicItem("wand-of-fireballs")?.resources?.[0];
       expect(wand && "onEmpty" in wand ? wand.onEmpty : undefined).toMatchObject({
@@ -146,6 +146,11 @@ describe("conformance · 13. items", () => {
         charges: { current: 0, max: 7, recovery: "dawn" },
       };
       expect(equipmentAfterLongRest([dawnItem])[0]).toEqual(dawnItem);
+      expect(equipmentAfterDawn([dawnItem])[0]?.charges?.current).toBe(7);
+      // The case works once the clock says when a dawn passes (time of day).
+      const id = "@/lib/play/time";
+      const clock = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof clock.crossedDawn).toBe("function");
     }
   );
 

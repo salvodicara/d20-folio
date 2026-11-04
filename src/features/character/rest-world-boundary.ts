@@ -38,7 +38,8 @@
  * world; the commit's mirror re-asserts the reconciled facts, and
  * `restFinalizedSession` reproduces the legacy-only session bookkeeping the
  * world does not own yet (tracker-entry canonical shape, active-state keys,
- * effect timers, equipment charges via the shared `equipmentAfterLongRest`
+ * effect timers, equipment charges via the shared `equipmentAfterLongRest` +
+ * `equipmentAfterDawn`
  * law, hit dice spent, death saves, the event log, the combat-state persist,
  * the undo fence) with the exact legacy laws, so a legacy read cannot tell
  * which path ran (docs/ARCHITECTURE.md, "The persisted mechanics world + the
@@ -86,6 +87,7 @@ import {
 import { deriveSpellSlots } from "@/lib/multiclass-slots";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import {
+  equipmentAfterDawn,
   equipmentAfterLongRest,
   gainsHeroicInspirationOnLongRest,
   getShortRestExhaustionRecovery,
@@ -610,7 +612,9 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
         ? {
             character: {
               ...doc.character,
-              equipment: equipmentAfterLongRest(doc.character.equipment),
+              equipment: equipmentAfterDawn(
+                equipmentAfterLongRest(doc.character.equipment)
+              ),
             },
           }
         : {}),
