@@ -702,6 +702,13 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           { kind: literalSchema("hit-point-dice"), max: HIT_POINT_DICE_MAX },
           { ...HIT_POINT_DICE_OPTIONAL }
         ),
+        /** Temporary Hit Points of `perSlotLevel` × the slot's level, on a cast with a
+         *  slot (Abjuration Adept: twice the slot's level). Applied at the cast. */
+        objectSchema({ kind: literalSchema("temp-hp"), perSlotLevel: numberSchema }),
+        /** `perSlotLevel` × the slot's level in feet added to this turn's movement, on
+         *  a cast with a slot (Transmutation Adept: 5 ft per slot level until the end
+         *  of the turn). Applied at the cast. */
+        objectSchema({ kind: literalSchema("speed-bonus"), perSlotLevel: numberSchema }),
       ]),
       /** The event. Each one has a runtime reader (`trigger-events.guard.test.ts`):
        *  initiative and short-rest restore trackers, reduced-to-zero offers an action

@@ -19,6 +19,8 @@
     "spellEndFalls": "{{spell}} ended: anyone still aloft falls unless they can fly another way.",
     "proneInFlight": "Prone in flight: if you're aloft, you fall.",
     "markCanMove": "{{source}}: its target dropped to 0 HP. On a later turn, a Bonus Action moves it to a new creature.",
+    "castGainTempHp": "{{source}}: you gain {{amount}} Temporary Hit Points.",
+    "castGainSpeed": "{{source}}: your Speed increases by {{feet}} until the end of the turn.",
     "castHitPointDice": "{{source}}: you can roll up to {{max}} of your Hit Point Dice and regain their total plus the slot's level.",
     "ammoRecoverable": "The fight is over: searching the field for a minute recovers {{count}} pieces of ammunition.",
     "ammoRecovered": "Recovered {{count}} pieces of ammunition",

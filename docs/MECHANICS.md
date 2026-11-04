@@ -102,7 +102,9 @@ Two grammars:
     `reduced-to-zero`, `d20-test-failed`, `cast-spell`, `damage-dealt`.
   - `if`: `school`, `slot`, `target: "marked"`, `within`, `by: "any-creature"`.
   - `do`: `restore-tracker` (`full` or an `amount` formula), `offer { actionId }`,
-    `hit-point-dice`.
+    `hit-point-dice`, and on `cast-spell` with a slot `temp-hp { perSlotLevel }` (Abjuration
+    Adept) and `speed-bonus { perSlotLevel }` (feet added to this turn's movement,
+    Transmutation Adept), applied at the cast inside its undo (`firedCastTriggers().gains`).
   - `limit`: `{ max, per: long-rest | short-rest | turn | round }`, counted on the session
     tracker keyed by the source id.
   - Read today (`src/lib/smart-tracker.ts`): `firedTriggerRestores` for `initiative` and

@@ -41,6 +41,7 @@ import {
 } from "@/lib/play/hit-point-dice";
 import { speechBlocksCast } from "@/lib/play/speech";
 import { selfMoveFeet } from "@/lib/play/self-move";
+import { localeDistance } from "@/lib/utils";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
@@ -1768,7 +1769,30 @@ export function TurnEconomyProvider({
         : undefined
     );
     const facts = castTriggerFacts(spellId, slotLevel, cs.character);
-    for (const fired of firedCastTriggers(cs.character, facts).hitPointDice) {
+    const castFired = firedCastTriggers(cs.character, facts);
+    // What a rule gives scaled by the slot (Abjuration Adept's temporary Hit Points,
+    // Transmutation Adept's Speed this turn): applied now, inside the cast's own undo.
+    for (const gain of castFired.gains) {
+      const source = localizeText(featureNameLoc(gain.sourceId), locale);
+      if (gain.limited) cs.useTracker(gain.sourceId, 1);
+      if (gain.kind === "temp-hp") {
+        cs.gainTempHp(gain.amount);
+        showToast({
+          message: t("combat.castGainTempHp", { source, amount: gain.amount }),
+          duration: 6000,
+        });
+      } else {
+        useCombatStore.getState().grantMovement(gain.amount);
+        showToast({
+          message: t("combat.castGainSpeed", {
+            source,
+            feet: localeDistance(gain.amount, locale),
+          }),
+          duration: 6000,
+        });
+      }
+    }
+    for (const fired of castFired.hitPointDice) {
       const source = featureNameLoc(fired.sourceId);
       const offer = hitPointDiceSpend(
         fired.rule,
