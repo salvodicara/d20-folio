@@ -798,8 +798,12 @@ service cloud.firestore {
           )
           && (bindings == null
             || (bindings is map
-              && bindings.keys().hasOnly(['spellcastingModifier', 'saveDc'])
+              && bindings.keys().hasOnly(['spellcastingModifier', 'saveDc', 'beneficiaryId'])
               && bindings.get('spellcastingModifier', 0) is number
+              // Whose next attack spends the state (Help: the ally).
+              && bindings.get('beneficiaryId', 'x') is string
+              && bindings.get('beneficiaryId', 'x').size() > 0
+              && bindings.get('beneficiaryId', 'x').size() <= 128
               // The DC a repeat save is made against (edge-case M3).
               && bindings.get('saveDc', 10) is int
               && bindings.get('saveDc', 10) >= 1

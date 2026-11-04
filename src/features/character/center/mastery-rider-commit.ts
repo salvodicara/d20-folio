@@ -13,6 +13,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { isCharacterAlive } from "@/lib/character-status";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { MasteryRiderVM } from "@/lib/views/mastery-rider-view";
+import { vexIsTargeted } from "./outcome-offer";
 
 export function applyMasteryRider(
   action: ResolvedAction,
@@ -41,8 +42,10 @@ export function applyMasteryRider(
         restoreTurnUse?.();
         return null;
       }
+      // In a fight on the v0.26.0 rules, Vex is a state on the creature hit (the
+      // tray writes it, `vexWriter`); elsewhere the sheet's next attack gets it.
       const restoreAdvantage =
-        rider.apply === "next-attack-advantage"
+        rider.apply === "next-attack-advantage" && !vexIsTargeted()
           ? useCombatStore.getState().grantNextAttackAdvantage()
           : null;
       return () => {

@@ -266,9 +266,9 @@ export function incomingAttackModes(
     .filter((effect) => effect.target.combatantId === targetId)
     .flatMap((effect) => {
       const consumedBy = resolveCombatEffectGrantGroup(effect)?.consumedBy;
-      if (consumedBy === "next-attack-by" && effect.actor.combatantId !== attackerId) {
-        return [];
-      }
+      // "By" its creator (Vex), or by the ally it names (Help).
+      const by = effect.bindings?.beneficiaryId ?? effect.actor.combatantId;
+      if (consumedBy === "next-attack-by" && by !== attackerId) return [];
       return resolveCombatEffectGrants(effect).flatMap((grant): IncomingAttackMode[] =>
         grant.type === "incoming-attack-advantage" ||
         grant.type === "incoming-attack-disadvantage"

@@ -81,7 +81,9 @@ export function isActiveCombatEffect(value: unknown): value is ActiveCombatEffec
           Number.isFinite(value.bindings.spellcastingModifier))) &&
       (value.bindings.saveDc === undefined ||
         (typeof value.bindings.saveDc === "number" &&
-          Number.isInteger(value.bindings.saveDc))));
+          Number.isInteger(value.bindings.saveDc))) &&
+      (value.bindings.beneficiaryId === undefined ||
+        typeof value.bindings.beneficiaryId === "string"));
   const validApplied =
     value.applied === undefined ||
     (isRecord(value.applied) &&
