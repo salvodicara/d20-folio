@@ -150,6 +150,10 @@ export interface RosterCharacter {
   name: NonEmptyString;
   /** Species id/slug (localized at render). */
   race: string;
+  /** Background id (localized at render), when the character has one. Read from the
+   *  stored build's id, not the cache: the public share sheet's cache is a closed
+   *  schema. */
+  background?: string;
   /** The `classes[]` breakdown (ids + levels) — class/level source of truth. */
   classes: ClassEntry[];
   /** The stamped EFFECTIVE AC (`displayAc` blanks 0 → "—"); the cache writer applied
@@ -218,7 +222,12 @@ export function cacheToRosterDoc(
   // live overlay supplies the authoritative value. The roster card's HP stays gated by
   // `hpReady` until that subdoc lands, so this baseline is never shown as a fact.
   const { session } = applyCombatToSession(sanitizeSession({}), null, cache.hpMax);
-  return { id, ...meta, character: cacheToRosterCharacter(cache), session };
+  return {
+    id,
+    ...meta,
+    character: cacheToRosterCharacter(cache, storedBackground(data.build)),
+    session,
+  };
 }
 
 /**
@@ -247,12 +256,23 @@ export function applyCombatToRosterDoc(
   return hydrated.ok ? { ...doc, session: hydrated.session } : doc;
 }
 
+/** The background id a stored build names (an id string, read without parsing). */
+function storedBackground(build: unknown): string | undefined {
+  if (typeof build !== "object" || build === null) return undefined;
+  const background = (build as { background?: unknown }).background;
+  return typeof background === "string" && background ? background : undefined;
+}
+
 /** The {@link RosterCharacter} half from a normalized {@link CharacterCache}. */
-function cacheToRosterCharacter(cache: CharacterCache): RosterCharacter {
+function cacheToRosterCharacter(
+  cache: CharacterCache,
+  background: string | undefined
+): RosterCharacter {
   return {
     projection: true,
     name: cache.name,
     race: cache.raceId,
+    ...(background ? { background } : {}),
     classes: cache.classes,
     ac: cache.ac,
     speed: cache.speed,
@@ -283,7 +303,7 @@ export function rosterProjectionFromDoc(doc: CharacterDoc): RosterCharacterDoc {
     portraitUrl: doc.portraitUrl,
     portraitCrop: doc.portraitCrop,
     status: doc.status,
-    character: cacheToRosterCharacter(cache),
+    character: cacheToRosterCharacter(cache, doc.character.background || undefined),
     session: doc.session,
   };
 }
