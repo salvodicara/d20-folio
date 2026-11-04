@@ -54,10 +54,58 @@ export function setCompanionHp(
   if (ends.includes("0-hp:dies")) {
     return {
       ...next,
-      summons: { ...(next.summons ?? {}), [featureId]: { fallen: true } },
+      summons: {
+        ...(next.summons ?? {}),
+        [featureId]: { fallen: true, fallenMinutes: 0 },
+      },
     };
   }
   return next;
+}
+
+/** One round of combat on the game clock (6 seconds). */
+export const ROUND_MINUTES = 0.1;
+
+/** Time passes for the fallen companions: each one's clock since it fell runs on.
+ *  The same session when none has fallen. */
+export function ageFallenSummons(session: SessionState, minutes: number): SessionState {
+  if (!(minutes > 0) || !session.summons) return session;
+  const fallen = Object.entries(session.summons).filter(([, s]) => s.fallen);
+  if (fallen.length === 0) return session;
+  const summons = { ...session.summons };
+  for (const [key, entry] of fallen) {
+    summons[key] = { ...entry, fallenMinutes: (entry.fallenMinutes ?? 0) + minutes };
+  }
+  return { ...session, summons };
+}
+
+/**
+ * Whether a fallen companion can still be revived (its catalogue's
+ * `lifecycle.revive.withinMinutes`): the minutes since it fell and the window.
+ * `within` is null when the fall time is unknown. Null when it hasn't fallen or
+ * can't be revived.
+ */
+export function companionReviveWindow(
+  doc: Pick<CharacterDoc, "session">,
+  sourceId: string
+): {
+  fallenMinutes: number | null;
+  withinMinutes: number;
+  within: boolean | null;
+} | null {
+  const entry = doc.session.summons?.[sourceId];
+  if (!entry?.fallen) return null;
+  const block =
+    getSpellById(sourceId)?.companion ?? classFeatureIndex.get(sourceId)?.companion;
+  const spec = block?.lifecycle?.revive;
+  if (!spec) return null;
+  const since = entry.fallenMinutes;
+  return {
+    fallenMinutes: since ?? null,
+    withinMinutes: spec.withinMinutes,
+    // A hair of float drift from summed rounds never closes the window early.
+    within: since === undefined ? null : since <= spec.withinMinutes + 1e-9,
+  };
 }
 
 /** Bring a fallen companion back with all its Hit Points (the catalogue's `revive`:

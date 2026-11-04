@@ -3,6 +3,7 @@
  * The store ends Concentration first where the rest does (sleep), then applies these,
  * logs the rest, persists, and fences the undo stack.
  */
+import { ageFallenSummons } from "./companions";
 import { endSummonsOn, endSummonsOutlastedBy } from "./companions";
 import { advanceTimeOfDay, restCrossesDawn } from "./time";
 import { canCharacterRest } from "@/lib/character-status";
@@ -52,7 +53,24 @@ export function sessionAfterLongRestReduction<
 }
 
 /** A Long Rest (Concentration already ended by the caller). */
+/** A Long Rest: the character rests, and a fallen companion's clock runs eight hours. */
 export function longRestCharacter(character: CharacterDoc): CharacterDoc {
+  const rested = longRestOwn(character);
+  return rested === character ? rested : withFallenAged(rested, LONG_REST_MINUTES);
+}
+
+/** A Short Rest: the character rests, and a fallen companion's clock runs an hour. */
+export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
+  const rested = shortRestOwn(character);
+  return rested === character ? rested : withFallenAged(rested, SHORT_REST_MINUTES);
+}
+
+function withFallenAged(doc: CharacterDoc, minutes: number): CharacterDoc {
+  const session = ageFallenSummons(doc.session, minutes);
+  return session === doc.session ? doc : { ...doc, session };
+}
+
+function longRestOwn(character: CharacterDoc): CharacterDoc {
   // A rest needs at least 1 Hit Point to start (2024): at 0 HP, or dead, nothing.
   if (!canCharacterRest(character.status, character.session)) return character;
   // D1 — a Long Rest restores HP to the EFFECTIVE max (stored base + hp-flat boons
@@ -169,7 +187,7 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
 }
 
 /** A Short Rest. */
-export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
+function shortRestOwn(character: CharacterDoc): CharacterDoc {
   // A rest needs at least 1 Hit Point to start (2024): at 0 HP, or dead, nothing.
   if (!canCharacterRest(character.status, character.session)) return character;
   // Determine which trackers recover on short rest and by how much

@@ -14,7 +14,7 @@ import {
 import { startPotionAftereffects } from "@/lib/potion-states";
 import { selfFormRule } from "@/lib/polymorph";
 import { concentrationTimerKey } from "@/lib/spell-duration";
-import { endExpiredSummons } from "./companions";
+import { ageFallenSummons, endExpiredSummons, ROUND_MINUTES } from "./companions";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 export type BoundaryPhase = "turn-start" | "turn-end";
@@ -93,8 +93,12 @@ export function advanceEffectTimers(
   const settled: SessionState = heldInFull
     ? { ...session, activeForm: { ...form, permanent: true } }
     : session;
-  // A summon whose countdown ran out leaves the field (M6).
-  return { session: endExpiredSummons(settled, expiredKeys), expired };
+  // A summon whose countdown ran out leaves the field (M6); a fallen one's clock runs
+  // on by the round (its revive window).
+  return {
+    session: ageFallenSummons(endExpiredSummons(settled, expiredKeys), ROUND_MINUTES),
+    expired,
+  };
 }
 
 /** The boundary states that have expired at `position`. */
