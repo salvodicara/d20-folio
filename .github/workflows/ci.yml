@@ -128,8 +128,10 @@ jobs:
 
   # The design rules of the new UI (tests/e2e/ui-*.spec.ts) on every pull request,
   # on Linux: text width and wrapping depend on the OS's font rendering, so a Mac-only
-  # pass must not reach main (a 320px header wrapped only here, 2026-11-02). The full
-  # e2e matrix still runs per merge in verify.yml.
+  # pass must not reach main (a 320px header wrapped only here, 2026-11-02). Plus the
+  # fight smoke (a sheet inside an encounter renders, old UI and new): #682 crashed
+  # every sheet in a fight and no completed run saw it. The full e2e matrix still runs
+  # per merge in verify.yml.
   design-rules:
     name: design rules (Linux)
     # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
@@ -159,7 +161,7 @@ jobs:
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
       - name: Design rules
-        run: pnpm exec playwright test tests/e2e/ui- --project=chromium --project=new-ui
+        run: pnpm exec playwright test tests/e2e/ui- tests/e2e/fight-smoke --project=chromium --project=new-ui
 
   # firestore.rules and storage.rules against the real emulators (`pnpm test:rules`,
   # vitest.rules.config.ts): the access matrix, the migration kit's apply path and the
