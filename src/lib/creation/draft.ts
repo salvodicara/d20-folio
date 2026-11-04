@@ -37,6 +37,7 @@ import {
   creationChoiceSlots,
 } from "@/lib/creation-choices";
 import { speciesNeedsSpellAbility } from "@/lib/species-spell-ability";
+import { speciesBundleKeys } from "@/lib/species-choices";
 import {
   isAllChoicesComplete,
   partitionChoiceSlotsBySource,
@@ -300,12 +301,7 @@ function classSkillCount(classId: string): number {
  * changing it later; the pick lands in `session.grantBundleChoices` either way.
  */
 export function creationLineageBundleKeys(raceId: string): string[] {
-  const race = SRD_RACES.find((r) => r.id === raceId);
-  return (race?.traits ?? []).flatMap((trait) =>
-    (trait.grants ?? []).flatMap((g) =>
-      g.type === "choice-grant-bundle" ? [g.bundleKey] : []
-    )
-  );
+  return speciesBundleKeys(raceId);
 }
 
 /** The chosen option label, falling back to the first option when stale. */

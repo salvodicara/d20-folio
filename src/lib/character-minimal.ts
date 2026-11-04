@@ -160,6 +160,8 @@ const OPTIONAL_EMPTY_KEYS: ReadonlyArray<keyof CharacterData> = [
   // Tool-CHOICE picks: an empty `{}` (no choice made) carries no information —
   // drop on minimize, leave absent on rehydrate (the type allows omission).
   "toolChoices",
+  // The species trait picks: an empty `{}` carries no information either.
+  "speciesChoices",
   // MANUAL language / tool picks as id arrays + custom labels — an empty `[]`
   // carries no information; drop on minimize, refilled to `[]` on rehydrate.
   "languageIds",

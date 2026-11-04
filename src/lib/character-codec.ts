@@ -938,6 +938,9 @@ const BUILD_PASSTHROUGH: readonly string[] = [
   // (it's in OPTIONAL_EMPTY_KEYS) so a choice-less doc stays clean. The tool
   // PROFICIENCY + the `fromToolChoice` pack item both derive from these ids.
   "toolChoices",
+  // The species trait picks (slot id → chosen ids): the record that a Keen Senses
+  // or Skillful slot was answered. Same shape and rules as `toolChoices`.
+  "speciesChoices",
   // MANUAL language / tool picks as STABLE IDS (+ verbatim custom labels) — the
   // leak-proof home for hand-added proficiencies (golden rule 7). Id arrays, NEVER
   // a localized display string; the presenter localizes by id. The minimizer drops

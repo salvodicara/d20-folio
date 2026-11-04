@@ -814,6 +814,15 @@ export interface CharacterData {
    * Optional + empty-default: absent / `{}` means "no tool choice" (existing docs).
    */
   toolChoices?: Record<string, string[]>;
+  /**
+   * The SPECIES trait picks (Elf Keen Senses, Human Skillful, …) as stable ids,
+   * keyed by the namespaced choice slot id (`race:<raceId>:<traitId>::skill-slot-N`,
+   * the id `collectChoiceSlots` mints). The pick itself also lands where it acts
+   * (`skills`, `toolChoices`, …); this record says the slot was ANSWERED, which a
+   * merged skill list cannot. Optional: absent on a character saved before it
+   * existed, whose trait picks the sheet then asks once (`pendingSpeciesChoices`).
+   */
+  speciesChoices?: Record<string, string[]>;
   abilityBudget: number;
   proficiencyBonusOverride: number | null;
   levelUpChecklist: LevelUpChecklistItem[] | null;
