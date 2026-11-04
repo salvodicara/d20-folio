@@ -254,6 +254,12 @@
       "exhaustionDeath": "Livello 6: il personaggio muore",
       "withSource": "{{name}} · da {{source}}",
       "fromWhom": "{{name}}: da chi?"
+    },
+    "help": {
+      "title": "Aiuto",
+      "hint": "Il prossimo attacco di un tuo alleato contro quel nemico, prima del tuo prossimo turno, ha Vantaggio.",
+      "confirm": "Aiuta",
+      "given": "Aiuti contro {{name}}"
     }
   }
 }
