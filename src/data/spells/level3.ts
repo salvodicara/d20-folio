@@ -235,6 +235,14 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     saveAbility: "WIS",
     area: true,
     conditionApplication: {
+      ends: [
+        {
+          on: "repeat-save",
+          ability: "WIS",
+          at: "target-turn-end",
+          when: "out-of-actor-sight",
+        },
+      ],
       options: ["frightened"],
       on: "failed-save",
       lifetime: { kind: "source" },

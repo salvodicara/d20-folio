@@ -340,6 +340,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     // duration ... has Disadvantage on Dexterity saving throws and attack rolls, and
     // other creatures have Advantage on attack rolls against it."
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-action" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: { kind: "source" },

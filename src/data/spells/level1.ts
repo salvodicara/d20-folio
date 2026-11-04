@@ -34,6 +34,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     duration: { kind: "hours", amount: 24 },
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "target-damaged", by: "actor-side" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: timedConditionLifetime(24 * 60),
@@ -157,6 +158,7 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "target-damaged", by: "actor-side" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: timedConditionLifetime(60),
@@ -1093,7 +1095,10 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     // level above 1".
     targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
     conditionApplication: {
-      ends: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
+      ends: [
+        { on: "repeat-save", ability: "WIS", at: "target-turn-end" },
+        { on: "repeat-save", ability: "WIS", at: "target-damaged", advantage: true },
+      ],
       options: ["prone", "incapacitated"],
       on: "failed-save",
       lifetime: { kind: "source" },
