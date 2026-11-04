@@ -62,13 +62,13 @@ describe("playCompanions", () => {
             effectId: (i) => `e${String(i)}`,
           })
         : [];
-    expect(effects).toEqual([
-      expect.objectContaining({
-        target: { kind: "monster", combatantId: "m1" },
-        payload: { kind: "grant-group", activeKey: "giant-insect-web-bolt" },
-        duration: expect.objectContaining({ round: 3, phase: "turn-start" }),
-      }),
-    ]);
+    expect(effects).toHaveLength(1);
+    expect(effects[0]?.target).toEqual({ kind: "monster", combatantId: "m1" });
+    expect(effects[0]?.payload).toEqual({
+      kind: "grant-group",
+      activeKey: "giant-insect-web-bolt",
+    });
+    expect(effects[0]?.duration).toMatchObject({ round: 3, phase: "turn-start" });
   });
 
   it("no creature on the field, nothing to show", () => {
