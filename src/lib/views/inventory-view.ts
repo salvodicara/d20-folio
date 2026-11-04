@@ -35,6 +35,7 @@
  * bail on a search keystroke (mirrors the spells slice).
  */
 
+import { weaponDisplayName } from "@/lib/views/weapon-display-name";
 import { attunables, attunedCount } from "@/lib/attunement-guard";
 import type { Locale } from "@/lib/locale";
 import type {
@@ -343,11 +344,13 @@ function buildWeaponVM(
   const isCustom = "custom" in ref;
   const srdWeapon = isCustom ? undefined : WEAPONS_BY_ID.get(ref.srdId);
 
-  const name = isCustom
+  const baseName = isCustom
     ? localizeCustom(ref.name, locale)
     : srdWeapon
       ? localizeSrd("equipment", ref.srdId, "name", locale)
       : titleize(ref.srdId);
+  // A magic weapon is named by its enchant (one formatter for every surface).
+  const name = weaponDisplayName(baseName, isCustom ? null : ref.enchantItemId, locale);
   const searchEn = isCustom
     ? localizeCustom(ref.name, "en")
     : srdWeapon

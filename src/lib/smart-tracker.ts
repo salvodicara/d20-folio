@@ -398,6 +398,8 @@ export interface ActionSummary {
     versatileDie: string | null;
     damageMod: number;
     proficient: boolean;
+    /** The magic item bound to it (a Flame Tongue), whatever its attunement. */
+    enchantItemId?: string;
   };
   /** What a target's successful save still puts on it, as catalogue states
    *  (Stunning Strike): the damage tray applies them to a row marked Saved. */
@@ -8029,6 +8031,10 @@ function resolveWeaponActions(
         versatileDie: versatileDie ?? null,
         damageMod,
         proficient,
+        // The bound magic item names the weapon (`weaponDisplayName`), attuned or not.
+        ...(!isCustom && weaponRef.enchantItemId
+          ? { enchantItemId: weaponRef.enchantItemId }
+          : {}),
       },
       // RA-14 — tracked ammo (id + live count) + the Loading advisory flag.
       ...(ammoItemId != null && ammoRemaining != null
