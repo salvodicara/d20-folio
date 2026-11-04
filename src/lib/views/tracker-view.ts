@@ -35,7 +35,7 @@ import { resolveTrackers } from "@/lib/smart-tracker";
 import { coverStateName, type CoverStateLevel } from "@/lib/cover-states";
 import { coverKey } from "@/data/cover";
 import {
-  SITUATIONAL_STATES,
+  offeredSituations,
   situationalStateName,
   type SituationId,
   type SituationLasts,
@@ -563,14 +563,20 @@ function ruleSummary(key: string, locale: Locale): string {
   return localizeSrd("rule", key, "summary", locale);
 }
 
-/** The situational attack chips in table order (`situational-states.ts`). */
-export function situationChipsView(locale: Locale): SituationChipVM[] {
-  return SITUATIONAL_STATES.map((state) => ({
+/** The situational attack chips in table order (`situational-states.ts`): the
+ *  table's flanking variant only when its rules switch flanking on. */
+export function situationChipsView(
+  locale: Locale,
+  flanking: "off" | "advantage" | "plus-2" = "off"
+): SituationChipVM[] {
+  return offeredSituations(flanking).map((state) => ({
     id: state.id,
     activeKey: state.grant.activeKey,
     lasts: state.lasts,
     name: localizeText(state.label, locale),
-    summary: state.reference.map((line) => ruleSummary(line.key, locale)).join(" "),
+    summary: state.summary
+      ? localizeText(state.summary, locale)
+      : state.reference.map((line) => ruleSummary(line.key, locale)).join(" "),
     notes: state.notes.map((note) => ({
       id: note.id,
       text: ruleSummary(note.key, locale),

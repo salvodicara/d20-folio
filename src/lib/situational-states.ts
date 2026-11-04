@@ -17,7 +17,7 @@ import {
 } from "@/data/combat-variants";
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import { srdText, type LocText } from "@/lib/loc-text";
+import { srdText, uiText, type LocText } from "@/lib/loc-text";
 
 export const SITUATION_IDS = [
   "unseen-target",
@@ -27,6 +27,9 @@ export const SITUATION_IDS = [
   "underwater",
   "mounted",
   "squeezing",
+  // The table's optional flanking rule (M16): offered only when it is on.
+  "flanking",
+  "flanking-plus-2",
 ] as const;
 
 export type SituationId = (typeof SITUATION_IDS)[number];
@@ -72,6 +75,10 @@ export interface SituationalState {
   notes: ReadonlyArray<CombatVariantNote>;
   attack: ReadonlyArray<SituationalAttackRule>;
   grant: Extract<Grant, { type: "while-active" }>;
+  /** Its chip hint when no SRD line stands for it (a table's optional rule). */
+  summary?: LocText;
+  /** Offered only at a table whose flanking rule is this. */
+  flanking?: "advantage" | "plus-2";
 }
 
 /** A reference line's heading, from the `rule` catalogue. */
@@ -116,6 +123,27 @@ function state(
         : {}),
       grants,
     },
+  };
+}
+
+/** A table's flanking rule as a melee attack fact the player taps (no positions on
+ *  the sheet): Advantage, or +2 to the attack roll. */
+function flankingState(variant: "advantage" | "plus-2"): SituationalState {
+  const id = variant === "advantage" ? "flanking" : "flanking-plus-2";
+  return {
+    ...state(
+      id,
+      "turn",
+      uiText("combat.situation.flanking"),
+      [],
+      [],
+      variant === "advantage" ? [{ mode: "advantage", kinds: ["melee"] }] : [],
+      variant === "plus-2"
+        ? [{ type: "weapon-attack-bonus", amount: 2, scope: "melee" }]
+        : []
+    ),
+    summary: uiText(`combat.situation.flankingSummary_${variant}`),
+    flanking: variant,
   };
 }
 
@@ -204,7 +232,17 @@ export const SITUATIONAL_STATES: ReadonlyArray<SituationalState> = [
       { type: "incoming-attack-advantage" },
     ]
   ),
+  flankingState("advantage"),
+  flankingState("plus-2"),
 ];
+
+/** The situations a table offers: the RAW ones, plus its flanking variant when its
+ *  rules switch flanking on. */
+export function offeredSituations(
+  flanking: "off" | "advantage" | "plus-2" = "off"
+): ReadonlyArray<SituationalState> {
+  return SITUATIONAL_STATES.filter((s) => !s.flanking || s.flanking === flanking);
+}
 
 /** The lit situations as grant sources; an unlit one contributes nothing. */
 export function resolveSituationalStateSources(

@@ -167,8 +167,7 @@ import {
 } from "@/lib/mechanics-world-store";
 import {
   canCharacterRest,
-  DEATH_FAIL_LIMIT,
-  DEATH_SUCCESS_LIMIT,
+  deathSaveLimits,
   isCharacterAlive,
   stabilisedInPlay,
 } from "@/lib/character-status";
@@ -2626,7 +2625,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
           temporary: drainedTemporary(state.vitals.hitPoints.temporary, snap.temp),
         },
         zeroHitPoints:
-          snap.current > 0 ? null : zeroTrackFor(snap.deathSucc, snap.deathFail),
+          snap.current > 0
+            ? null
+            : zeroTrackFor(
+                snap.deathSucc,
+                snap.deathFail,
+                deathSaveLimits(character.session)
+              ),
       };
       return state;
     });
@@ -2698,8 +2703,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       get().applyHealing(outcome.hitPointsRegained);
     } else {
       get().setDeathSaves(
-        Math.min(DEATH_SUCCESS_LIMIT, live.session.deathSucc + outcome.successes),
-        Math.min(DEATH_FAIL_LIMIT, live.session.deathFail + outcome.failures)
+        Math.min(
+          deathSaveLimits(live.session).successes,
+          live.session.deathSucc + outcome.successes
+        ),
+        Math.min(
+          deathSaveLimits(live.session).failures,
+          live.session.deathFail + outcome.failures
+        )
       );
     }
     const after = captureD20Command(get());

@@ -14,7 +14,7 @@ import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import { ruleFlag } from "@/lib/rules";
 import { resolveTrackers } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState, ZeroHpConsequence } from "@/types/character";
-import { DEATH_FAIL_LIMIT } from "@/lib/character-status";
+import { deathSaveLimits } from "@/lib/character-status";
 import { endSummonsOn, withSummonsRecorded } from "./companions";
 import { endFormIfDue } from "./forms";
 import { zeroHpDropOf } from "./vitals";
@@ -90,6 +90,7 @@ export function takeDamage(
       conditions: doc.session.conditions,
       deathSaves: { successes: doc.session.deathSucc, failures: doc.session.deathFail },
     },
+    deathSaveLimits: deathSaveLimits(doc.session),
     intake: { stage: "resolved", amount: dealt },
     // Adamantine Armor: a Critical Hit against you is a normal hit.
     ...(opts?.crit && !ruleFlag(aggregate.values, "defense:no-critical-hits")
@@ -134,7 +135,11 @@ export function takeDamage(
       zeroHitPoints:
         transition.state.hp.current > 0
           ? null
-          : zeroTrackFor(deathSaves.successes, deathSaves.failures),
+          : zeroTrackFor(
+              deathSaves.successes,
+              deathSaves.failures,
+              deathSaveLimits(doc.session)
+            ),
     };
     return state;
   });
@@ -181,7 +186,7 @@ export function takeDamage(
   };
   // A caster who dies takes with them the summons that end at their death (M6).
   const afterDeath =
-    deathSaves.failures >= DEATH_FAIL_LIMIT
+    deathSaves.failures >= deathSaveLimits(doc.session).failures
       ? (endSummonsOn(withSummonsRecorded({ ...doc, session }), "owner-death") ?? session)
       : session;
   return {

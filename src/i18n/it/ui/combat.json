@@ -624,6 +624,10 @@
     "slotsRecovered_other": "{{source}}: recuperi {{count}} slot incantesimo.",
     "castSlotRecovery_slots": "{{source}}: puoi recuperare fino a {{cap}} slot incantesimo spesi, nessuno oltre il {{max}}º livello.",
     "castSlotRecovery_levels": "{{source}}: puoi recuperare slot incantesimo spesi per un totale di {{cap}} livelli, nessuno oltre il {{max}}º livello.",
-    "slotRecoveryBudgetSlots": "{{remaining}} di {{cap}} slot rimasti"
+    "slotRecoveryBudgetSlots": "{{remaining}} di {{cap}} slot rimasti",
+    "situation": {
+      "flankingSummary_advantage": "Tu e un alleato siete ai lati opposti del bersaglio, entrambi adiacenti: i tuoi tiri per colpire in mischia contro di esso hanno Vantaggio.",
+      "flankingSummary_plus-2": "Tu e un alleato siete ai lati opposti del bersaglio, entrambi adiacenti: i tuoi tiri per colpire in mischia contro di esso ricevono +2."
+    }
   }
 }

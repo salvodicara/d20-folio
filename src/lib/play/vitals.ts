@@ -15,7 +15,7 @@ import {
 } from "@/lib/aggregate-character";
 import { slotUsageKey } from "@/lib/cast-options";
 import { applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
-import { isCharacterAlive } from "@/lib/character-status";
+import { deathSaveLimits, isCharacterAlive } from "@/lib/character-status";
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import { sessionActiveKeys } from "@/lib/world-standing-grants";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -75,7 +75,10 @@ export function setHp(doc: CharacterDoc, current: number): SessionState {
         current: clamped,
         temporary: state.vitals.hitPoints.temporary,
       },
-      zeroHitPoints: clamped > 0 ? null : zeroTrackFor(nextSucc, nextFail),
+      zeroHitPoints:
+        clamped > 0
+          ? null
+          : zeroTrackFor(nextSucc, nextFail, deathSaveLimits(doc.session)),
     };
     return state;
   });
@@ -300,8 +303,9 @@ export function setDeathSaves(
   successes: number,
   failures: number
 ): { session: SessionState; newMark: "success" | "failure" | null } | null {
-  const succ = Math.max(0, Math.min(3, Math.round(successes)));
-  const fail = Math.max(0, Math.min(3, Math.round(failures)));
+  const limits = deathSaveLimits(doc.session);
+  const succ = Math.max(0, Math.min(limits.successes, Math.round(successes)));
+  const fail = Math.max(0, Math.min(limits.failures, Math.round(failures)));
   const prevSucc = doc.session.deathSucc;
   const prevFail = doc.session.deathFail;
   if (succ === prevSucc && fail === prevFail) return null;
@@ -310,7 +314,7 @@ export function setDeathSaves(
     if (state.vitals.hitPoints.current !== 0 || state.vitals.zeroHitPoints === null) {
       return null;
     }
-    state.vitals = { ...state.vitals, zeroHitPoints: zeroTrackFor(succ, fail) };
+    state.vitals = { ...state.vitals, zeroHitPoints: zeroTrackFor(succ, fail, limits) };
     return state;
   });
   return {
