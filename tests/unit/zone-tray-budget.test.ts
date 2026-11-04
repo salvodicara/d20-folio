@@ -105,3 +105,49 @@ describe("a zone through the tray", () => {
     );
   });
 });
+
+describe("Guardian of Faith", () => {
+  it("plays its 20 Radiant (DEX for half) through the tray, with its 60 budget", () => {
+    const priest = makeCharacterDoc({
+      classId: "cleric",
+      level: 7,
+      spells: [{ srdId: "guardian-of-faith", prepared: true }] as never,
+      spellSlots: [{ level: 4, total: 1 }],
+    });
+    useCharacterStore.setState({ character: priest, readonly: false });
+    useCombatStatusStore.setState({
+      status: {
+        campaignId: "c1",
+        myId: "pc-me",
+        characterId: priest.id,
+        round: 2,
+        encounter: { effectOps: [] },
+        view: { rows: [{ id: "goblin", kind: "monster", name: "Goblin" }] },
+      } as never,
+    });
+    const [zone] = activeZones([
+      {
+        ...zoneEffect,
+        id: "guardian-1",
+        actor: { ...zoneEffect.actor, characterId: priest.id },
+        source: {
+          kind: "spell",
+          id: "guardian-of-faith",
+          actionId: "cast",
+          castLevel: 4,
+        },
+        payload: { kind: "zone", spellId: "guardian-of-faith" },
+      },
+    ]);
+    if (!zone) throw new Error("no Guardian zone");
+    expect(zone.zone.triggers).toEqual(["enter", "start-turn"]);
+    expect(openZoneTray(zone, "goblin", "en")).toBe(true);
+    const offer = useDamageTrayStore.getState().offer;
+    expect(offer?.plan).toMatchObject({
+      effect: "damage",
+      damageType: "radiant",
+      save: { ability: "DEX", onSave: "half" },
+    });
+    expect(offer?.zone).toEqual({ effectId: "guardian-1", budget: { max: 60 } });
+  });
+});
