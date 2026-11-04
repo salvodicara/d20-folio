@@ -12,12 +12,20 @@ import {
   backgroundRows,
   classCards,
   creationSummary,
+  signed,
+  suggestedBonus,
+  suggestedScores,
   type ClassCard,
 } from "@/domains/creation/creation-view";
+import {
+  AbilitiesStep,
+  SpeciesStep,
+  type AbilityMethod,
+} from "@/domains/creation/ui/CreationSteps";
 import { useCreationDraft } from "@/features/creation/use-creation-draft";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
-import { creationFacts } from "@/lib/creation/draft";
+import { creationFacts, speciesStepComplete } from "@/lib/creation/draft";
 import { Button, Choice, Field, Icon, Panel, Room } from "@/ui";
 
 const STEPS = [
@@ -54,22 +62,59 @@ export function CreationScreen() {
         )
       : backgrounds;
   }, [backgrounds, bgQuery]);
+  // A species is the player's pick too (never a silent default), with its own choices.
+  const [speciesPicked, setSpeciesPicked] = useState(false);
+  const speciesReady = speciesPicked && speciesStepComplete(draft, facts);
+  // How the scores are set; «Valori consigliati» seeds the class's ready-made scores
+  // the first time the step opens for that class.
+  const [method, setMethod] = useState<AbilityMethod>("suggested");
+  const [suggestedFor, setSuggestedFor] = useState<string | null>(null);
+  const applySuggested = () => {
+    dispatch({ type: "setUsePointBuy", usePointBuy: false });
+    const scores = suggestedScores(draft.classId);
+    dispatch({ type: "setAbilityScores", abilityScores: scores });
+    // An unplaced bonus goes where the suggested build wants it; one placed stays.
+    if (Object.keys(draft.bgAsiChoices).length === 0 && facts.backgroundData) {
+      dispatch({ type: "switchAbilityBonusMode", mode: "+2/+1" });
+      for (const code of suggestedBonus(scores, facts.backgroundData.abilityOptions))
+        dispatch({ type: "toggleAbilityBonus", code });
+    }
+    setSuggestedFor(draft.classId);
+  };
+  const abilitiesReady =
+    facts.abilityBonusValid && (method !== "pointBuy" || facts.pointsRemaining >= 0);
   const go = (to: number) => {
+    if (to === 3 && method === "suggested" && suggestedFor !== draft.classId)
+      applySuggested();
     setStep(to);
     window.scrollTo({ top: 0 });
   };
+  const blocked =
+    (step === 1 && !bgPicked) ||
+    (step === 2 && !speciesReady) ||
+    (step === 3 && !abilitiesReady);
+  const blockedHint =
+    step === 1
+      ? t("create.screen.pickBackground")
+      : step === 2
+        ? !speciesPicked
+          ? t("create.screen.pickSpecies")
+          : !facts.lineageComplete
+            ? t("create.lineageRequired")
+            : facts.needsSpeciesSpellAbility && !draft.speciesSpellAbility
+              ? t("create.screen.speciesAbilityRequired")
+              : facts.isHuman && !draft.humanFeat
+                ? t("create.needHumanFeat")
+                : t("create.screen.speciesPending")
+        : !facts.abilityBonusValid
+          ? t("create.screen.pickAbilities")
+          : t("create.screen.overBudget");
   const nav = (
     <>
       {step > 0 && <Button onClick={() => go(step - 1)}>{t("common.back")}</Button>}
-      {step === 1 && !bgPicked && (
-        <span className="f-help">{t("create.screen.pickBackground")}</span>
-      )}
+      {blocked && <span className="f-help">{blockedHint}</span>}
       {step < STEPS.length - 1 && (
-        <Button
-          kind="primary"
-          disabled={step === 1 && !bgPicked}
-          onClick={() => go(step + 1)}
-        >
+        <Button kind="primary" disabled={blocked} onClick={() => go(step + 1)}>
           {t("common.next")}
         </Button>
       )}
@@ -156,6 +201,33 @@ export function CreationScreen() {
                   </blockquote>
                 )}
               </div>
+            ) : step === 2 ? (
+              <SpeciesStep
+                draft={draft}
+                facts={facts}
+                picked={speciesPicked}
+                locale={locale}
+                onPick={(raceId) => {
+                  setSpeciesPicked(true);
+                  dispatch({ type: "selectRace", raceId });
+                }}
+                dispatch={dispatch}
+              />
+            ) : step === 3 ? (
+              <AbilitiesStep
+                draft={draft}
+                facts={facts}
+                method={method}
+                className={summary.className}
+                backgroundName={summary.background ?? ""}
+                onMethod={(m) => {
+                  setMethod(m);
+                  if (m === "suggested") applySuggested();
+                  else
+                    dispatch({ type: "setUsePointBuy", usePointBuy: m === "pointBuy" });
+                }}
+                dispatch={dispatch}
+              />
             ) : (
               <p className="f-help">{t("create.screen.soon")}</p>
             )}
@@ -195,6 +267,16 @@ export function CreationScreen() {
                 <dt className="f-lbl">{t("create.backgroundLabel")}</dt>
                 <dd>{background ?? "—"}</dd>
               </div>
+              <div>
+                <dt className="f-lbl">{t("create.speciesLabel")}</dt>
+                <dd>{speciesPicked ? summary.species : "—"}</dd>
+              </div>
+              {step >= 3 && summary.primaryScore && (
+                <div>
+                  <dt className="f-lbl">{t(`abilities.${summary.primaryScore.code}`)}</dt>
+                  <dd>{`${String(summary.primaryScore.score)} (${signed(summary.primaryScore.mod)})`}</dd>
+                </div>
+              )}
             </dl>
           </Panel>
         </div>

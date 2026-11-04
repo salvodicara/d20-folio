@@ -94,9 +94,7 @@ export function rollQuickbuildFlavor(
   const lineage: Record<string, string> = {};
   for (const trait of race.traits) {
     for (const grant of trait.grants ?? []) {
-      if (grant.type !== "choice-grant-bundle" || grant.choiceFrequency !== "creation") {
-        continue;
-      }
+      if (grant.type !== "choice-grant-bundle") continue;
       lineage[grant.bundleKey] = pick(rng, grant.options).id;
     }
   }
@@ -182,6 +180,7 @@ export function rollQuickbuildFlavor(
     backgroundId,
     humanFeat: humanFeat ?? "",
     bgFeat,
+    raceId: race.id,
   });
   const proficientSkills = new Set([...bgSkills, ...classSkills]);
   const ownedSpells = new Set([...cantrips, ...spells]);
@@ -211,7 +210,11 @@ export function rollQuickbuildFlavor(
     skill: drawAcross(
       slots.skill,
       (s) => s.amount,
-      (s) => (s.options.length > 0 ? s.options : openSkillPool)
+      // A listed pool (Keen Senses) still skips a skill the build already has.
+      (s) =>
+        s.options.length > 0
+          ? s.options.filter((id) => !proficientSkills.has(id))
+          : openSkillPool
     ),
     tool: drawAcross(
       slots.tool,

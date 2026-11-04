@@ -187,6 +187,10 @@ export function buildNewCharacter(
     backgroundAsi: Object.fromEntries(Object.entries(draft.bgAsiChoices)),
     humanOriginFeat: draft.humanFeat,
     bgFeat: facts.backgroundFeat,
+    // The INT/WIS/CHA the lineage spells use; absent reads the default (CHA).
+    ...(draft.speciesSpellAbility
+      ? { speciesSpellAbility: draft.speciesSpellAbility }
+      : {}),
     lore: {
       traits: "",
       ideals: "",

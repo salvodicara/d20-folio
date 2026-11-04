@@ -157,7 +157,24 @@
         "heavy-armor": "heavy",
         "shields": "shields"
       },
-      "pickBackground": "Pick a background to go on."
+      "pickBackground": "Pick a background to go on.",
+      "speciesNote": "In 2024 your species doesn't change your ability scores: it gives you traits.",
+      "searchSpecies": "Search species",
+      "pickSpecies": "Pick a species to go on.",
+      "howTitle": "How do you set them?",
+      "methodSuggested": "Suggested",
+      "methodRolled": "Rolled",
+      "rolledHint": "Roll at the table and type your scores here.",
+      "pointsLeft": "Points left: {{count}}",
+      "suggestedTitle": "Suggested: {{values}}",
+      "suggestedHint": "Already where the {{class}} class needs them. To move them, use point buy.",
+      "pointBuyHint": "27 points: each ability goes from 8 to 15.",
+      "pickAbilities": "Place the background bonus to go on.",
+      "overBudget": "You've spent more than 27 points.",
+      "speciesAbility": "Species spellcasting ability",
+      "speciesAbilityHint": "It applies to the spells your species gives you.",
+      "speciesAbilityRequired": "Choose your species spellcasting ability.",
+      "speciesPending": "Finish the species choices to continue."
     }
   }
 }

@@ -59,6 +59,11 @@ export interface QuickbuildPreset {
   lineage?: Readonly<Record<string, string>>;
   /** The Human "Versatile" origin feat (Human only). */
   humanFeat?: string;
+  /**
+   * The INT/WIS/CHA a species' lineage spells use, for a species that asks it
+   * (Elf, Gnome, Tiefling). Absent: the first of the three in `abilityOrder`.
+   */
+  speciesSpellAbility?: AbilityCode;
   /** Picks for the grant-driven choice slots, per kind, in slot order. */
   choices?: Partial<Record<keyof FeatureChoiceSlots, readonly string[]>>;
 }
@@ -74,6 +79,7 @@ const SRD_QUICKBUILD_PRESETS = {
     boost: ["STR", "CON"],
     classSkills: ["perception", "survival"],
     languages: ["giant", "orc"],
+    lineage: { "goliath-giant-ancestry": "stones-endurance" },
     choices: { tool: ["dice-set"] },
   },
   bard: {
@@ -127,7 +133,8 @@ const SRD_QUICKBUILD_PRESETS = {
     // Human Versatile — Alert, the follow-up-free origin feat (the Soldier
     // already grants Savage Attacker; origin feats never repeat).
     humanFeat: "alert",
-    choices: { tool: ["dice-set"] },
+    // Then Skillful's one skill (the Soldier already grants Athletics).
+    choices: { tool: ["dice-set"], skill: ["insight"] },
   },
   monk: {
     raceId: "elf",
@@ -137,7 +144,8 @@ const SRD_QUICKBUILD_PRESETS = {
     classSkills: ["acrobatics", "athletics"],
     languages: ["elvish", "draconic"],
     lineage: { "elf-lineage": "wood-elf" },
-    choices: { tool: ["calligraphers-supplies"] },
+    // Keen Senses: Perception.
+    choices: { tool: ["calligraphers-supplies"], skill: ["perception"] },
   },
   paladin: {
     raceId: "dragonborn",
@@ -146,6 +154,7 @@ const SRD_QUICKBUILD_PRESETS = {
     boost: ["CHA", "WIS"],
     classSkills: ["athletics", "persuasion"],
     languages: ["draconic", "dwarvish"],
+    lineage: { "dragonborn-ancestry": "gold" },
     spells: ["heroism", "searing-smite"],
     // Magic Initiate (Cleric), from the Acolyte — Guidance and Sacred Flame are
     // the two cantrips the Paladin's own Blessed Warrior option recommends.
@@ -160,7 +169,8 @@ const SRD_QUICKBUILD_PRESETS = {
     languages: ["elvish", "goblin"],
     lineage: { "elf-lineage": "wood-elf" },
     spells: ["cure-wounds", "ensnaring-strike"],
-    choices: { tool: ["dice-set"] },
+    // Keen Senses: Insight (Perception and Survival are already class picks).
+    choices: { tool: ["dice-set"], skill: ["insight"] },
   },
   rogue: {
     raceId: "halfling",
@@ -179,6 +189,7 @@ const SRD_QUICKBUILD_PRESETS = {
     boost: ["CHA", "WIS"],
     classSkills: ["arcana", "persuasion"],
     languages: ["draconic", "goblin"],
+    lineage: { "tiefling-legacy": "infernal" },
     cantrips: ["light", "prestidigitation", "shocking-grasp", "sorcerous-burst"],
     spells: ["burning-hands", "detect-magic"],
     // Magic Initiate (Cleric), from the Acolyte.
@@ -191,6 +202,7 @@ const SRD_QUICKBUILD_PRESETS = {
     boost: ["CHA", "WIS"],
     classSkills: ["arcana", "investigation"],
     languages: ["draconic", "elvish"],
+    lineage: { "tiefling-legacy": "infernal" },
     cantrips: ["eldritch-blast", "prestidigitation"],
     spells: ["charm-person", "hex"],
     // Magic Initiate (Cleric), from the Acolyte.
@@ -210,8 +222,11 @@ const SRD_QUICKBUILD_PRESETS = {
     // and Detect Magic + Feather Fall come free through the Sage's Magic
     // Initiate below.
     spells: ["mage-armor", "magic-missile", "sleep", "thunderwave"],
-    // Magic Initiate (Wizard), from the Sage.
-    choices: { spell: ["minor-illusion", "prestidigitation", "detect-magic"] },
+    // Magic Initiate (Wizard), from the Sage; then Keen Senses: Perception.
+    choices: {
+      spell: ["minor-illusion", "prestidigitation", "detect-magic"],
+      skill: ["perception"],
+    },
   },
 } satisfies Record<string, QuickbuildPreset>;
 

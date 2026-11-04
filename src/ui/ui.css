@@ -4044,3 +4044,90 @@
 .fui .f-rule-fields > .f-chips {
   align-self: end;
 }
+
+/* Creation steps 3–4: the species list in two columns, the six ability tiles. */
+@media (min-width: 900px) {
+  .fui .f-create-list.f-create-two {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    column-gap: 12px;
+  }
+}
+.fui .f-abil-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 599px) {
+  .fui .f-abil-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.fui .f-abil-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  text-align: center;
+}
+.fui .f-abil-tile[data-primary] {
+  border-color: var(--line-strong);
+  background: var(--panel-2);
+}
+.fui .f-abil-mod {
+  font: 700 var(--fs-xl) / 1 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-abil-sum {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+/* On phone the step's hint takes its own line above Back and Next. */
+@media (max-width: 640px) {
+  .fui .f-create-step .f-pn-foot > .f-help {
+    order: -1;
+    flex-basis: 100%;
+    text-align: end;
+  }
+}
+.fui .f-create-step .f-lbl,
+.fui .f-create-pitch > b {
+  text-wrap: balance;
+}
+/* Editing on phone: one tile per row, the stepper beside the modifier. */
+@media (max-width: 599px) {
+  .fui .f-abil-grid[data-edit] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-tile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "lbl lbl" "mod step" "sum step";
+    justify-items: start;
+    align-items: center;
+    column-gap: 8px;
+    text-align: start;
+    padding: 12px;
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-tile > .f-lbl {
+    grid-area: lbl;
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-mod {
+    grid-area: mod;
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-sum {
+    grid-area: sum;
+  }
+  .fui .f-abil-grid[data-edit] .f-stepper {
+    grid-area: step;
+    grid-template-columns: 40px 56px 40px;
+  }
+  .fui .f-abil-grid[data-edit] .f-stepper > .f-in {
+    padding-inline: 4px;
+  }
+}

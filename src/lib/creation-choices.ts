@@ -32,6 +32,7 @@ import {
   resolveGrantSourcesForBackground,
   resolveGrantSourcesForClass,
   resolveGrantSourcesForFeatures,
+  resolveGrantSourcesForRace,
 } from "@/lib/resolve-grant-sources";
 
 /** The slot id of the 2024 origin-language pick. */
@@ -58,7 +59,16 @@ export interface CreationChoiceInput {
   humanFeat: string;
   /** The background's granted origin feat slug ("" when none). */
   bgFeat: string;
+  /**
+   * The species ("" when none): its traits' `choice-*` grants (Elf Keen Senses,
+   * Human Skillful) are owed too. Its Versatile `choice-feat` is not a slot here:
+   * the draft's `humanFeat` is that pick.
+   */
+  raceId: string;
 }
+
+/** The slot-id prefix of every species-trait slot (`race:<id>:<trait>::…`). */
+export const SPECIES_SLOT_PREFIX = "race:";
 
 /**
  * Every pending `choice-*` slot a new character owes, grouped by kind.
@@ -85,10 +95,17 @@ export function creationChoiceSlots(input: CreationChoiceInput): FeatureChoiceSl
   // background's own grants ("Choose one kind of <Musical Instrument / Gaming
   // Set / Artisan's Tools>" — Entertainer, Artisan, Guard, …) join the feature
   // sources so every pick surfaces in ONE collected set.
+  // The species' sources come LAST so every earlier slot keeps its position
+  // (presets fill each kind's slots in order).
+  const species = resolveGrantSourcesForRace(input.raceId).map((src) => ({
+    ...src,
+    grants: (src.grants ?? []).filter((g) => g.type !== "choice-feat"),
+  }));
   const sources = [
     ...resolveGrantSourcesForClass(input.classId),
     ...resolveGrantSourcesForBackground(input.backgroundId),
     ...resolveGrantSourcesForFeatures(refs),
+    ...species,
   ];
   return collectChoiceSlots(sources, {
     spellSlotsByClass: { [input.classId]: slotRow },

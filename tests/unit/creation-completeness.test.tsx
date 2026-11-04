@@ -76,12 +76,15 @@ describe("CreationWizard — B01 completeness gate", () => {
       expect(createButton()).not.toBeDisabled();
 
       // Drop a class skill: the gate closes and the explainer names it.
-      fireEvent.click(screen.getByRole("button", { name: /Perception/ }));
+      const perception = screen.getByRole("button", { name: /Perception/ });
+      // The class-skills chapter (the Human's Skillful pick lists skills too).
+      const classSkills = perception.closest("section") as HTMLElement;
+      fireEvent.click(perception);
       expect(createButton()).toBeDisabled();
       expect(screen.getByText(/choose your class skills/i)).toBeInTheDocument();
 
       // Any legal replacement from the class pool opens it again.
-      fireEvent.click(screen.getByRole("button", { name: /Acrobatics/ }));
+      fireEvent.click(within(classSkills).getByRole("button", { name: /Acrobatics/ }));
       expect(screen.queryByText(/choose your class skills/i)).not.toBeInTheDocument();
       expect(createButton()).not.toBeDisabled();
     },

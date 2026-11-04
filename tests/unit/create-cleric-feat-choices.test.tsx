@@ -222,6 +222,12 @@ describe("CreationWizard — Cleric / Magic-Initiate feat-choices", () => {
       pickSpellInFeat("magic-initiate-wizard", "Fire Bolt");
       pickSpellInFeat("magic-initiate-wizard", "Ray of Frost");
       pickSpellInFeat("magic-initiate-wizard", "Shield");
+      // A Human owes Skillful's one skill too (the species' own pick).
+      const skillful = within(pickerCard(/^Pick 1 Skill$/i))
+        .getAllByRole("button")
+        .find((b) => b.classList.contains("wiz-row") && b.textContent.includes("Arcana"));
+      if (!skillful) throw new Error("Skillful's Arcana row not found");
+      fireEvent.click(skillful);
 
       // The feat's choices are complete, so the origin-feat requirement no
       // longer blocks Create.
