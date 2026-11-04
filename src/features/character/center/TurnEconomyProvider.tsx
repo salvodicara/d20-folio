@@ -30,6 +30,8 @@ import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
 import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
 import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
+import { dispelSpell } from "@/features/character/center/dispel-commit";
+import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
 import {
   hitPointDiceAmount,
   hitPointDiceContext,
@@ -544,6 +546,13 @@ export function TurnEconomyProvider({
   const [formPickerSpellId, setFormPickerSpellId] = useState<string | null>(null);
   // Mixing potions (M18): the potions a drink mixes, while the d100 is offered.
   const [mixing, setMixing] = useState<LocText[] | null>(null);
+  // Dispel Magic cast on a creature in the fight (M17): its spells, asked after.
+  const [dispel, setDispel] = useState<{
+    campaignId: string;
+    source: LocText;
+    targetName: string;
+    options: DispelOption[];
+  } | null>(null);
   // Expended slots a cast lets the player recover (M12), asked after the cast.
   const [slotRecovery, setSlotRecovery] = useState<{
     source: LocText;
@@ -1453,6 +1462,7 @@ export function TurnEconomyProvider({
         }
         const undo = seal?.() ?? null;
         if (!readies) offerFollowUps(action, targets, loggedId);
+        if (!readies) offerDispel(action.spellId, opt.level, targets);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
         const undoZone = readies ? null : leaveZone(action, opt.level, execution.spared);
         const picksForm =
@@ -1568,6 +1578,29 @@ export function TurnEconomyProvider({
       return availability ? `${availability.current}/${availability.capacity}` : null;
     }
     return null;
+  }
+
+  /** After a Dispel Magic on a creature in the fight, ask which of its spells to
+   *  end (the new Play screen); nothing to ask when it holds none. */
+  function offerDispel(
+    spellId: string | undefined,
+    castLevel: number,
+    targets: ReadonlyArray<string>
+  ) {
+    const spell = spellId ? getSpellById(spellId) : undefined;
+    const rule = spell?.effects?.find((e) => e.kind === "dispel");
+    const status = useCombatStatusStore.getState().status;
+    const [targetId] = targets;
+    if (rule?.kind !== "dispel" || !spell || !status || !targetId || renderPrompts)
+      return;
+    const options = dispelOptions(status.encounter.effectOps, targetId, rule, castLevel);
+    if (options.length === 0) return;
+    setDispel({
+      campaignId: status.campaignId,
+      source: srdText("spell", spell.id, "name"),
+      targetName: status.view.rows.find((r) => r.id === targetId)?.name ?? "",
+      options,
+    });
   }
 
   function recoverOfferedSlots(
@@ -3150,6 +3183,27 @@ export function TurnEconomyProvider({
     };
   })();
   usePublishPlayPrompt("slot-recovery", slotRecoveryPrompt);
+  const dispelPrompt = ((): PlayPrompts["dispel"] | null => {
+    if (!dispel) return null;
+    return {
+      source: dispel.source,
+      targetName: dispel.targetName,
+      options: dispel.options,
+      onCancel: () => setDispel(null),
+      onConfirm: (option) => {
+        setDispel(null);
+        dispelSpell(
+          dispel.campaignId,
+          option.effectIds,
+          t("combat.dispelEnded", {
+            spell: localizeSrd("spell", option.spellId, "name", locale),
+            target: dispel.targetName,
+          })
+        );
+      },
+    };
+  })();
+  usePublishPlayPrompt("dispel", dispelPrompt);
 
   return (
     <TurnEconomyContext.Provider value={api}>

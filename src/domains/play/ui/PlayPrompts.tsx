@@ -63,6 +63,7 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
       <ItemInputDialog />
       <ArcaneDialog />
       <SlotRecoveryDialog locale={locale} />
+      <DispelDialog locale={locale} />
       <MixingDialog locale={locale} />
       <HitDiceDialog locale={locale} />
       <SpellListDialog locale={locale} />
@@ -749,6 +750,62 @@ function ArcaneStep({ prompt }: { prompt: Prompts["arcane-recovery"] }) {
       onConfirm={prompt.onConfirm}
       onCancel={prompt.onCancel}
     />
+  );
+}
+
+/** Dispel Magic on a creature (M17): which of its spells to end; one above the
+ *  cast's reach asks for the check first. */
+function DispelDialog({ locale }: { locale: Locale }) {
+  const prompt = usePlayPrompt("dispel");
+  return prompt ? <DispelStep prompt={prompt} locale={locale} /> : null;
+}
+
+function DispelStep({ prompt, locale }: { prompt: Prompts["dispel"]; locale: Locale }) {
+  const { t } = useTranslation();
+  const [picked, setPicked] = useState(0);
+  const cancel = useOnce(prompt.onCancel);
+  const option = prompt.options[picked];
+  const check = option?.outcome.kind === "check" ? option.outcome : null;
+  return (
+    <Dialog
+      open
+      onClose={cancel}
+      color="res"
+      title={localizeText(prompt.source, locale)}
+      closeLabel={t("common.close")}
+      actions={
+        <>
+          <Button kind="ghost" onClick={cancel}>
+            {check ? t("combat.dispelCheckFailed") : t("common.cancel")}
+          </Button>
+          <Button kind="primary" onClick={() => option && prompt.onConfirm(option)}>
+            {check ? t("combat.dispelCheckPassed") : t("combat.dispelEnd")}
+          </Button>
+        </>
+      }
+    >
+      <div className="f-ask">
+        <span className="f-lbl">
+          {t("combat.dispelWhich", { target: prompt.targetName })}
+        </span>
+        <div className="f-choices">
+          {prompt.options.map((o, i) => (
+            <Choice key={o.spellId} on={picked === i} onClick={() => setPicked(i)}>
+              <span className="f-choice-main">
+                <span className="f-row-t">
+                  {localizeSrd("spell", o.spellId, "name", locale)}
+                </span>
+                <span className="f-choice-s">
+                  {o.outcome.kind === "ends"
+                    ? t("combat.dispelEnds")
+                    : t("combat.dispelNeedsCheck", { dc: o.outcome.dc })}
+                </span>
+              </span>
+            </Choice>
+          ))}
+        </div>
+      </div>
+    </Dialog>
   );
 }
 
