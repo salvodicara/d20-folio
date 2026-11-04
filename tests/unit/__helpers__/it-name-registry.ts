@@ -1086,13 +1086,25 @@ export function findMissingCrossRefs(
     c.owners.add(`srd/${e.kind}:${e.id.split(".")[0] ?? e.id}`);
   }
   for (const c of byEn.values()) c.it = [...c.itNames].map(itNameMatcher);
-  const names = [...byEn].sort(([a], [b]) => b.length - a.length);
+  // Index the names by their first word, so each string only tests the names that could occur.
+  const firstWord = (n: string): string => /^[\p{L}\d'’]+/u.exec(n)?.[0] ?? n;
+  const byFirst = new Map<string, [string, Checked][]>();
+  for (const entry of [...byEn].sort(([a], [b]) => b.length - a.length)) {
+    const w = firstWord(entry[0]);
+    const list = byFirst.get(w);
+    if (list) list.push(entry);
+    else byFirst.set(w, [entry]);
+  }
   const out: string[] = [];
   for (const p of pairs) {
     const owner = `${p.file}:${p.key.split(".")[0] ?? p.key}`;
     const itText = foldIt(p.it);
+    const words = new Set(p.en.match(/[\p{L}\d'’]+/gu) ?? []);
+    const candidates = [...words]
+      .flatMap((w) => byFirst.get(w) ?? [])
+      .sort(([a], [b]) => b.length - a.length);
     const used: string[] = [];
-    for (const [n, c] of names) {
+    for (const [n, c] of candidates) {
       if (used.some((u) => u.includes(n)) || !c.en.test(p.en)) continue;
       used.push(n);
       if (c.owners.has(owner) || c.it.some((re) => re.test(itText))) continue;
