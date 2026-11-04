@@ -97,6 +97,13 @@ function entry(draft: LibraryDraft): LibraryEntry {
 }
 
 /** The injected write seam — what `LibraryMount` supplies in the app. */
+// This file tests the Custom tab only. The modal opens on its Items tab first, and
+// that tab renders the whole item catalogue (every SRD and pack item) before the
+// test switches away: CPU time that made the slowest test (two opens) cross the 5 s
+// timeout on a loaded machine. The browser is stubbed so each open costs only the
+// tab under test.
+vi.mock("@/components/sheet/ItemAddModal", () => ({ ItemAddBody: () => null }));
+
 const persistMock = vi.fn();
 
 function seedLibrary(entries: LibraryEntry[]): void {

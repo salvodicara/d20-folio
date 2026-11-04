@@ -3,7 +3,7 @@
  * target that the next attack spends. Guiding Bolt's hit puts one there; Stunning
  * Strike's successful save another; Faerie Fire's lasts.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
@@ -58,6 +58,21 @@ const faerie = on(
   { kind: "spell", id: "faerie-fire", actionId: "x" },
   "spell-faerie-fire"
 );
+
+/**
+ * The tray writes a fight effect through a lazily imported campaign IO module and
+ * never awaits the write. The module is loaded once up front (`beforeAll`), so the
+ * tray's own `import()` resolves from the module cache; one macrotask then lets the
+ * write's `.then` run. No wall-clock budget: a 1-second `vi.waitFor` failed whenever
+ * a loaded machine made that first import slow.
+ */
+async function writesSettled(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+beforeAll(async () => {
+  await import("@/features/campaigns/campaign-io");
+});
 
 describe("incoming attack modes", () => {
   it("Guiding Bolt's Advantage is spent by the next attack; a lasting one is not", () => {
@@ -139,22 +154,20 @@ describe("the tray spends it", () => {
   it("an attack, hit or miss, revokes the spent state, and undo brings it back", async () => {
     const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "miss", plan);
     applyTray(offer, [target], [row], [0], t);
-    await vi.waitFor(() =>
-      expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        "guiding-bolt-glimmer-monster-1"
-      )
+    await writesSettled();
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      "guiding-bolt-glimmer-monster-1"
     );
     // Faerie Fire lasts.
     expect(io.revokePersistentCombatEffect).toHaveBeenCalledTimes(1);
     useUndoStore.getState().undo();
-    await vi.waitFor(() =>
-      expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        expect.objectContaining({
-          payload: { kind: "grant-group", activeKey: "guiding-bolt-glimmer" },
-        })
-      )
+    await writesSettled();
+    expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      expect.objectContaining({
+        payload: { kind: "grant-group", activeKey: "guiding-bolt-glimmer" },
+      })
     );
   });
 
@@ -162,13 +175,13 @@ describe("the tray spends it", () => {
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "hit", plan);
     applyTray(offer, [target], [row], [0], t);
-    await vi.waitFor(() => expect(io.revokePersistentCombatEffect).toHaveBeenCalled());
+    await writesSettled();
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalled();
     useUndoStore.getState().undo();
-    await vi.waitFor(() =>
-      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        "guiding-bolt-glimmer-monster-1"
-      )
+    await writesSettled();
+    expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      "guiding-bolt-glimmer-monster-1"
     );
     vi.unstubAllEnvs();
   });
