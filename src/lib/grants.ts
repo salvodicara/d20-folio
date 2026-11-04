@@ -1263,6 +1263,9 @@ export interface IncomingAttackClause {
 /** A trigger rule from a grant (M8), with the source whose counter limits it. */
 export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "if" | "do" | "limit"> & {
   sourceId: string;
+  /** The caster's numbers frozen on the state that carries the rule (a spell cast
+   *  on you): its spellcasting modifier, not yours. */
+  bindings?: { spellcastingModifier?: number };
 };
 
 /**
@@ -2997,6 +3000,11 @@ export function evaluateGrants(
           do: g.do,
           ...(g.if ? { if: g.if } : {}),
           ...(g.limit ? { limit: g.limit } : {}),
+          ...(runtime?.bindings?.spellcastingModifier !== undefined
+            ? {
+                bindings: { spellcastingModifier: runtime.bindings.spellcastingModifier },
+              }
+            : {}),
         });
         break;
       case "initiative-tracker-topup":

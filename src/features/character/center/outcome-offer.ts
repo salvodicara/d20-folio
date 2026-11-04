@@ -120,7 +120,9 @@ function selfRef(status: Status, characterId: string): CombatantRef {
   };
 }
 
-function targetRef(status: Status, targetId: string): CombatantRef {
+/** A combatant of the live fight as an effect reference: a PC with its owner, else a
+ *  monster. */
+export function targetRef(status: Status, targetId: string): CombatantRef {
   const row = status.view.rows.find((r) => r.id === targetId);
   return row?.kind === "pc" && row.memberUid && row.characterId
     ? {

@@ -29,6 +29,7 @@ import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
 import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
+import { standingAtCommit, standingEffectsForTargets } from "@/lib/play/standing-effects";
 import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import { dispelSpell } from "@/features/character/center/dispel-commit";
 import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
@@ -47,6 +48,7 @@ import {
   combineWriters,
   hitStateWriter,
   saveSuccessWriter,
+  targetRef,
   vexWriter,
 } from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
@@ -870,8 +872,10 @@ export function TurnEconomyProvider({
     const seal = beginCausalUndo();
     const loggedId = applyUse(action, trackerAmount, attackOf, targets, occurrenceId);
     const undo = seal?.() ?? null;
+    const undoStandings = leaveStandings(action, action.slotLevel, targets);
     return () => {
       if (useCharacterStore.getState().readonly || !undo?.()) return;
+      undoStandings?.();
       useDamageTrayStore.getState().withdraw(loggedId);
       if (action.assumesForm) setFormPickerSpellId(null);
     };
@@ -1337,8 +1341,14 @@ export function TurnEconomyProvider({
             return rollback();
           }
           const undo = seal?.() ?? null;
+          const undoStandings = leaveStandings(
+            action,
+            action.slotLevel,
+            applyResolution?.targets ?? []
+          );
           return withResolutionUndo(
             () => {
+              undoStandings?.();
               useDamageTrayStore.getState().withdraw(loggedId);
               if (action.assumesForm) setFormPickerSpellId(null);
             },
@@ -1465,6 +1475,7 @@ export function TurnEconomyProvider({
         if (!readies) offerDispel(action.spellId, opt.level, targets);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
         const undoZone = readies ? null : leaveZone(action, opt.level, execution.spared);
+        const undoStandings = readies ? null : leaveStandings(action, opt.level, targets);
         const picksForm =
           !readies &&
           !execution.ritual &&
@@ -1480,6 +1491,7 @@ export function TurnEconomyProvider({
           if (materialToastId) useToastStore.getState().dismissToast(materialToastId);
           if (picksForm) setFormPickerSpellId(null);
           undoZone?.();
+          undoStandings?.();
           useDamageTrayStore.getState().withdraw(loggedId);
           return true;
         };
@@ -1487,6 +1499,73 @@ export function TurnEconomyProvider({
       { turnScoped: false }
     );
     clearPendingResolution(action);
+  }
+
+  /**
+   * What an automatic use (no attack, no save) leaves standing on its targets in the
+   * live fight: a buff on its chosen recipient (Warding Bond) or a mark on its target
+   * (Hunter's Mark), each an
+   * encounter effect with the caster's spellcasting modifier frozen on it. The
+   * caster's own state is lit on the sheet (`withSelfRecipient`), never written here.
+   * Returns the undo that takes them back; null when there is nothing to leave.
+   */
+  function leaveStandings(
+    action: ResolvedAction,
+    castLevel: number | undefined,
+    targets: ReadonlyArray<string>
+  ): (() => void) | null {
+    const status = useCombatStatusStore.getState().status;
+    const uid = useAuthStore.getState().user?.uid;
+    const doc = useCharacterStore.getState().character;
+    if (!status || !uid || !doc || status.characterId !== doc.id || !combatEffectsV26On())
+      return null;
+    const spec = standingAtCommit(action, castLevel);
+    if (!spec) return null;
+    const others = targets.filter((id) => id !== status.myId);
+    if (others.length === 0) return null;
+    const effects = standingEffectsForTargets({
+      spec,
+      caster: {
+        kind: "pc",
+        combatantId: status.myId,
+        memberUid: uid,
+        characterId: status.characterId,
+      },
+      targets: others.map((id) => targetRef(status, id)),
+      position: {
+        round: status.round,
+        currentCombatantId: status.encounter.currentCombatantId,
+        phase: "turn-start",
+        order: status.encounter.order ?? status.view.turnOrderIds,
+      },
+      spellcastingModifier: hitPointDiceContext(doc).spellcastingMod,
+      newId: () => crypto.randomUUID(),
+    });
+    const io = import("@/features/campaigns/campaign-io");
+    const written = io
+      .then(({ appendPersistentCombatEffect }) =>
+        Promise.all(
+          effects.map((effect) => appendPersistentCombatEffect(status.campaignId, effect))
+        )
+      )
+      .then(() => true)
+      .catch(() => {
+        showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+        return false;
+      });
+    return () => {
+      void written.then((ok) =>
+        ok
+          ? io.then(({ revokePersistentCombatEffect }) =>
+              Promise.all(
+                effects.map((effect) =>
+                  revokePersistentCombatEffect(status.campaignId, effect.id)
+                )
+              )
+            )
+          : undefined
+      );
+    };
   }
 
   /**
@@ -1685,7 +1764,12 @@ export function TurnEconomyProvider({
     const facts = castTriggerFacts(spellId, slotLevel, cs.character);
     for (const fired of firedCastTriggers(cs.character, facts).hitPointDice) {
       const source = featureNameLoc(fired.sourceId);
-      const offer = hitPointDiceSpend(fired.rule, ctx);
+      const offer = hitPointDiceSpend(
+        fired.rule,
+        fired.casterSpellcastingMod !== undefined
+          ? { ...ctx, spellcastingMod: fired.casterSpellcastingMod }
+          : ctx
+      );
       if (!offer) continue;
       if (!renderPrompts) {
         const limitedBy = fired.limited ? fired.sourceId : undefined;
@@ -2203,10 +2287,15 @@ export function TurnEconomyProvider({
           });
           applyOnCastRegains(action.spellId, expendedSlotLevel(cast?.option, spends));
           const undo = seal?.() ?? null;
+          const undoStandings = leaveStandings(action, castLevel, targets);
           return withResolutionUndo(
             () => {},
             applyResolution,
-            () => (undo ? undo() : true)
+            () => {
+              const done = undo ? undo() : true;
+              if (done) undoStandings?.();
+              return done;
+            }
           );
         },
         { turnScoped: fight }

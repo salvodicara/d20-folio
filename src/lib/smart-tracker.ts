@@ -10017,15 +10017,32 @@ export function firedCastTriggers(
   used: Map<string, number>;
   limited: string[];
   /** `limited`: the rule counts its uses on its source's tracker (once per turn). */
-  hitPointDice: Array<{ sourceId: string; rule: HitPointDiceRule; limited: boolean }>;
+  hitPointDice: Array<{
+    sourceId: string;
+    rule: HitPointDiceRule;
+    limited: boolean;
+    /** The caster's spellcasting modifier, when the rule rides a state they cast. */
+    casterSpellcastingMod?: number;
+  }>;
 } {
   const restores = firedTriggerRestores(character, "cast-spell", facts);
-  const hitPointDice = aggregateForCharacter(character).triggers.flatMap((rule) => {
+  // The fight's states on you count too (Synostodweomer's imbued target casting).
+  const triggers = aggregateCharacterGrants(
+    character.character,
+    character.session
+  ).triggers;
+  const hitPointDice = triggers.flatMap((rule) => {
     if (rule.on !== "cast-spell" || rule.do.kind !== "hit-point-dice") return [];
     if (!triggerHolds(rule, facts)) return [];
     if (triggerLimitReached(rule, character)) return [];
+    const casterMod = rule.bindings?.spellcastingModifier;
     return [
-      { sourceId: rule.sourceId, rule: rule.do, limited: rule.limit !== undefined },
+      {
+        sourceId: rule.sourceId,
+        rule: rule.do,
+        limited: rule.limit !== undefined,
+        ...(casterMod !== undefined ? { casterSpellcastingMod: casterMod } : {}),
+      },
     ];
   });
   return { ...restores, hitPointDice };
