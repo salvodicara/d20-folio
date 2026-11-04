@@ -1474,6 +1474,12 @@ export interface SrdSpellData {
    * Cast-time effects (damage/heal/saves) stay on the structured fields above.
    */
   grants?: ReadonlyArray<import("@/lib/grants").Grant>;
+  /** States the spell puts on a TARGET (Grave Ground: −1d6 on its damage rolls): an
+   *  effect names one by `activeKey`, and the encounter resolves its grants from
+   *  here. Never the caster's own states, so they light nothing on its sheet. */
+  targetStates?: ReadonlyArray<
+    Extract<import("@/lib/grants").Grant, { type: "while-active" }>
+  >;
   /**
    * The stat block of the creature the spell summons (Find Steed's Otherworldly
    * Steed, Summon Dragon's Draconic Spirit, Giant Insect, Phantom Steed, the

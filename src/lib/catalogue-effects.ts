@@ -89,7 +89,7 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   ),
   "damage-roll-penalty": objectSchema(
     { kind: literalSchema("damage-roll-penalty"), dice: stringSchema },
-    { ...BASE, until: UNTIL }
+    { ...BASE, until: UNTIL, activeKey: stringSchema }
   ),
   "hit-point-dice": objectSchema(
     { kind: literalSchema("hit-point-dice"), max: numberSchema },

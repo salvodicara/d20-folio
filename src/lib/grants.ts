@@ -1219,7 +1219,8 @@ export interface D20RerollClause {
  * source id and consume policy make target-bound one-shot effects reversible. */
 export interface RollDieAdjustmentClause {
   sourceId: string;
-  rollType: "check" | "save" | "attack";
+  /** `damage`: on the damage rolls (Grave Ground: −1d6). */
+  rollType: "check" | "save" | "attack" | "damage";
   operation: "add" | "subtract";
   dice: string;
   consume: "next" | "each";

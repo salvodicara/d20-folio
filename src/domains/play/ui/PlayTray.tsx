@@ -26,6 +26,7 @@ import {
   trayForm,
   trayOutcomeView,
 } from "@/domains/play/tray-form";
+import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import {
   ATTACK_OUTCOMES,
@@ -45,6 +46,7 @@ import {
 } from "@/lib/play/damage-tray";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import { sheetDamageRollPenalty } from "@/lib/play/damage-roll-penalty";
 import type { DamageType } from "@/types/damage";
 import { Button, Chip, Dialog, Field } from "@/ui";
 
@@ -63,6 +65,30 @@ export function PlayTray({ locale }: { locale: Locale }) {
   useEffect(() => () => useDamageTrayStore.getState().close(), []);
   if (!offer || offer.characterId !== characterId) return null;
   return <TrayDialog key={offer.castLogId ?? "tray"} offer={offer} locale={locale} />;
+}
+
+/** A penalty on the attacker's own damage rolls (Grave Ground: −1d6), named by its
+ *  source: the table rolls it and takes it off the total. */
+function DamagePenaltyNote({ locale }: { locale: Locale }) {
+  const { t } = useTranslation();
+  // A narrow value, never the whole character: the penalties as one string.
+  const key = useCharacterStore((s) =>
+    s.character ? JSON.stringify(sheetDamageRollPenalty(s.character)) : "[]"
+  );
+  const penalties = JSON.parse(key) as Array<{ dice: string; sourceId: string }>;
+  if (penalties.length === 0) return null;
+  return (
+    <>
+      {penalties.map((p) => (
+        <p key={p.sourceId} className="f-help" role="note">
+          {t("combat.damagePenaltyNote", {
+            dice: p.dice,
+            source: localizeSrd("spell", p.sourceId, "name", locale),
+          })}
+        </p>
+      ))}
+    </>
+  );
 }
 
 function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale }) {
@@ -197,6 +223,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
           </div>
         ))
       )}
+      {plan.effect === "damage" && <DamagePenaltyNote locale={locale} />}
       <div className="f-tray-rows f-ask">
         {targets.map((target, i) => {
           const row = form.rows[i];

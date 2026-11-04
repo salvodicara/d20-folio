@@ -283,6 +283,22 @@ function spellThroughLibraryCodec(spell: CustomSpell): CustomSpell {
  *  still proves them (Power Word Fortify's pool, a half-on-miss, a primary target). */
 const PACK_ONLY_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
   tempHpPool: 120,
+  targetStates: [
+    {
+      type: "while-active",
+      activeKey: "grave-ground-weakened",
+      duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+      grants: [
+        {
+          type: "roll-die-adjustment",
+          rollType: "damage",
+          operation: "subtract",
+          dice: "1d6",
+          consume: "each",
+        },
+      ],
+    },
+  ],
   damageOnMiss: "half",
   primaryTargetOnly: true,
   damageNotVsCreatureTypes: ["undead"],

@@ -151,7 +151,7 @@ export interface PersistentHitInput {
 export interface ActiveRollDieAdjustment {
   effect: ActiveCombatEffect;
   sourceId: string;
-  rollType: "check" | "save" | "attack";
+  rollType: "check" | "save" | "attack" | "damage";
   operation: "add" | "subtract";
   dice: string;
   consume: "next" | "each";

@@ -344,10 +344,12 @@ export function resolveCombatEffectGrantGroup(
   }
   const spell = getSpellById(effect.source.id);
   return (
+    spell?.targetStates?.find((state) => state.activeKey === activeKey) ??
     spell?.grants?.find(
       (grant): grant is WhileActiveGrant =>
         grant.type === "while-active" && grant.activeKey === activeKey
-    ) ?? null
+    ) ??
+    null
   );
 }
 
