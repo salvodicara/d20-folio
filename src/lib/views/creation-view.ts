@@ -176,7 +176,11 @@ export function languageName(id: string, locale: Locale): string {
  */
 export function raceTraitNameOfSlot(slotId: string, locale: Locale): string {
   const [, raceId, traitId] = /^race:([^:]+):([^:]+)::/.exec(slotId) ?? [];
-  if (!raceId || !traitId) return "";
+  return raceId && traitId ? raceTraitName(raceId, traitId, locale) : "";
+}
+
+/** The localized name of one species trait («Versatile», «Sensi Acuti»); "" when unknown. */
+export function raceTraitName(raceId: string, traitId: string, locale: Locale): string {
   const entry = raceFeatureEntries.find(
     (e) => e.raceId === raceId && e.id === `${raceId}-${traitId}`
   );

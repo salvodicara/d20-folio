@@ -65,4 +65,16 @@ describe("species choices through the store", () => {
     useCharacterStore.getState().setSpeciesSpellAbility("WIS");
     expect(useCharacterStore.getState().character).toBe(before);
   });
+
+  it("a Versatile feat chosen on the sheet lands as the origin feat", () => {
+    const doc = makeCharacterDoc();
+    useCharacterStore.getState().setCharacter({
+      ...doc,
+      character: { ...doc.character, race: asRaceId("human"), humanOriginFeat: "" },
+    });
+    useCharacterStore.getState().setHumanOriginFeat("alert");
+    expect(useCharacterStore.getState().character?.character.humanOriginFeat).toBe(
+      "alert"
+    );
+  });
 });

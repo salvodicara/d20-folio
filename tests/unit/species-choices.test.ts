@@ -106,3 +106,16 @@ describe("pendingSpeciesItems", () => {
     expect(pendingSpeciesItems(as("dwarf"), {}, "en")).toEqual([]);
   });
 });
+
+describe("the Versatile feat a Human never chose", () => {
+  it("is owed when humanOriginFeat is empty, and named after its trait", () => {
+    const human = as("human", { humanOriginFeat: "" });
+    expect(pendingSpeciesChoices(human, {})).toMatchObject({ feat: true, any: true });
+    expect(pendingSpeciesItems(human, {}, "en")).toEqual([
+      { kind: "feat", label: "Versatile" },
+    ]);
+    expect(
+      pendingSpeciesChoices(as("human", { humanOriginFeat: "alert" }), {}).feat
+    ).toBe(false);
+  });
+});
