@@ -3,6 +3,7 @@
  * a time: a later use replaces it, undoing the use it came from closes it, Apply or
  * Skip closes it. Skipping leaves the use logged exactly as it was.
  */
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { create } from "zustand";
 
 import type { LocText } from "@/lib/loc-text";
@@ -21,6 +22,9 @@ export interface DamageTrayOffer {
   actionId: string;
   occurrenceId?: string;
   plan: DamageTrayPlan;
+  /** What a hit puts on its target beyond damage (a companion's Web Bolt: Speed 0),
+   *  as persistent combat effects the apply writes to the encounter, undoable. */
+  onHit?: (targetId: string) => ActiveCombatEffect[];
 }
 
 interface DamageTrayStore {
