@@ -107,8 +107,14 @@ export function CombatHeader() {
   const charData = useCharacterStore((s) => s.character?.character);
   // Exhaustion reads through the ONE vitals projection seam (session truth
   // reconciled against the persisted engine world).
-  const exhaustion = useCharacterStore((s) =>
+  const exhaustionLevel = useCharacterStore((s) =>
     s.character ? vitalExhaustion(s.character.session) : 0
+  );
+  // The campaign's table rules for its penalty (M16), selected narrowly.
+  const tableRules = useCharacterStore((s) => s.character?.session.tableRules);
+  const exhaustion = useMemo(
+    () => (tableRules ? { level: exhaustionLevel, rules: tableRules } : exhaustionLevel),
+    [exhaustionLevel, tableRules]
   );
   // Narrow session slices the aggregate needs — kept separate from the sheet so a
   // mid-combat HP/round change can't re-run the grant aggregation, and so a chosen

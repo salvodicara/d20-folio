@@ -33,6 +33,7 @@ import {
   carryingCapacityBreakdown,
   proficiencyBonusBreakdown,
   resolveCastingModifier,
+  exhaustionOf,
 } from "@/lib/compute";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { effectiveWalkingSpeedBreakdown } from "@/lib/smart-tracker";
@@ -164,7 +165,7 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
                 aggregate.spellAttackBonus,
                 casterClass
               ),
-              exhaustion: session.exhaustion,
+              exhaustion: exhaustionOf(session),
             }),
           },
         }
@@ -178,7 +179,7 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
     ),
     initiative: explained(
       sheet.initiativeBonus,
-      computedInitiativeBreakdown(character, aggregate, session.exhaustion),
+      computedInitiativeBreakdown(character, aggregate, exhaustionOf(session)),
       character.initiativeBonusOverride != null
     ),
     speed: explained(

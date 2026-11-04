@@ -4,6 +4,11 @@
  * always plays RAW. Pure functions that use one of these take an explicit
  * `rules: TableRules = RAW_TABLE_RULES` argument; nothing reads them globally.
  * Which variants players can pick is a product choice made with the screen.
+ *
+ * Exhaustion: a table may change the penalty per level and end the track sooner
+ * (death at its `maxLevel`). Levels above 6 are not supported: the stored world knows
+ * Exhaustion 0–6 (6 is death), so a longer track would need a stored-schema change.
+ * The 2014-style track (six levels, different effects) fits within 0–6.
  */
 
 export interface TableRules {
@@ -79,7 +84,9 @@ const flanking = (v: unknown): v is TableRules["flanking"] =>
 const GROUPS = {
   rest: { shortMinutes: positiveInt, longMinutes: positiveInt },
   exhaustion: {
-    maxLevel: positiveInt,
+    // At most 6: the stored world knows Exhaustion 0–6 (6 is death). A table can make
+    // death come sooner; a longer track needs a stored-schema change first.
+    maxLevel: (v: unknown): v is number => positiveInt(v) && v <= 6,
     d20PerLevel: nonPositiveInt,
     speedFtPerLevel: nonPositiveInt,
   },

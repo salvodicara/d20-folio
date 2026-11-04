@@ -168,8 +168,14 @@ export function ThisTurnTracker({
   const spellSlotCastsThisTurn = useCombatStore((s) => s.spellSlotCastsThisTurn);
   // Exhaustion reads through the ONE vitals projection seam (session truth
   // reconciled against the persisted engine world).
-  const exhaustion = useCharacterStore((s) =>
+  const exhaustionLevel = useCharacterStore((s) =>
     s.character ? vitalExhaustion(s.character.session) : 0
+  );
+  // The campaign's table rules for its penalty (M16), selected narrowly.
+  const tableRules = useCharacterStore((s) => s.character?.session.tableRules);
+  const exhaustion = useMemo(
+    () => (tableRules ? { level: exhaustionLevel, rules: tableRules } : exhaustionLevel),
+    [exhaustionLevel, tableRules]
   );
   // Session inputs to the canonical full-grant aggregate (while-active toggles +
   // grant-bundle/lineage choices) — the SAME pair CombatHeader + LeftHud thread, so

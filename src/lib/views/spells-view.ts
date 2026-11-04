@@ -51,6 +51,7 @@ import {
   resolveSpellDieAugment,
   resolveCastingModifier,
   aggregateAbilityScores,
+  exhaustionOf,
 } from "@/lib/compute";
 import { formFacts } from "@/lib/polymorph";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
@@ -346,7 +347,7 @@ function buildSrdCardVM(args: {
         effectiveScores[recomputeAbility],
         resolveCastingModifier(atkBonusEntries, owningClassId),
         attackBonusOverride,
-        session.exhaustion,
+        exhaustionOf(session),
         character.proficiencyBonusOverride
       )
     : computedAtkBonus;
@@ -543,7 +544,7 @@ export function buildSpellsViewModel(
       effectiveScores[sc.ability],
       atkGrantBonus,
       null,
-      session.exhaustion,
+      exhaustionOf(session),
       character.proficiencyBonusOverride
     );
     const computedSaveDC = effectiveSpellSaveDc(
@@ -558,7 +559,7 @@ export function buildSpellsViewModel(
       effectiveScores[sc.ability],
       atkGrantBonus,
       sc.attackBonusOverride,
-      session.exhaustion,
+      exhaustionOf(session),
       character.proficiencyBonusOverride
     );
     const prepared = preparedCount(effective, isPreparedCaster);
@@ -579,7 +580,7 @@ export function buildSpellsViewModel(
       pbOverride: character.proficiencyBonusOverride,
       override: sc.attackBonusOverride,
       castingModifier: atkGrantBonus,
-      exhaustion: session.exhaustion,
+      exhaustion: exhaustionOf(session),
     });
     castSummary = {
       saveDC: computedSaveDC,

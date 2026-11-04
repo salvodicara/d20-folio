@@ -27,6 +27,7 @@ import {
   resolveCastingModifier,
   type ProficiencyTier,
   aggregateAbilityScores,
+  exhaustionOf,
 } from "@/lib/compute";
 import {
   aggregateCharacterGrants,
@@ -136,7 +137,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
 
   const initiativeBonus =
     character.initiativeBonusOverride ??
-    computedInitiativeBonus(character, aggregate, session.exhaustion);
+    computedInitiativeBonus(character, aggregate, exhaustionOf(session));
 
   const sc = character.spellcasting;
   const casterClass = primaryClassId(character);
@@ -155,7 +156,7 @@ export function deriveCharacter(doc: CharacterDoc): CharacterSheet {
           scores[sc.ability],
           resolveCastingModifier(aggregate.spellAttackBonus, casterClass),
           sc.attackBonusOverride,
-          session.exhaustion,
+          exhaustionOf(session),
           pbOverride
         ),
       }

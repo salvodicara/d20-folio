@@ -60,6 +60,31 @@ import type { AcBonusCondition } from "@/lib/rules";
 export { abilityModifier };
 
 /**
+ * An Exhaustion level, with the table's rules when the campaign varies them (M16):
+ * a bare level plays RAW 2024 (−2 per level on D20 Tests, −5 ft of Speed).
+ */
+export type Exhaustion = number | { readonly level: number; readonly rules: TableRules };
+
+/** The Exhaustion of a sheet's session, with its table's rules when it has them. */
+export function exhaustionOf(session: {
+  exhaustion: number;
+  tableRules?: TableRules;
+}): Exhaustion {
+  return session.tableRules
+    ? { level: session.exhaustion, rules: session.tableRules }
+    : session.exhaustion;
+}
+
+export function exhaustionParts(exhaustion: Exhaustion): {
+  level: number;
+  rules: TableRules;
+} {
+  return typeof exhaustion === "number"
+    ? { level: exhaustion, rules: RAW_TABLE_RULES }
+    : exhaustion;
+}
+
+/**
  * Clamp an exhaustion level to the legal range: 0 to the table's maximum (RAW
  * 2024: 6, which is death).
  */
@@ -77,9 +102,10 @@ export function clampExhaustion(
  * −2 per exhaustion level. Does NOT apply to a spell save DC (the enemy rolls
  * that, not you). Returns a non-positive number to add to the bonus.
  */
-export function exhaustionPenalty(level: number): number {
-  const n = clampExhaustion(level);
-  return n === 0 ? 0 : -2 * n;
+export function exhaustionPenalty(exhaustion: Exhaustion): number {
+  const { level, rules } = exhaustionParts(exhaustion);
+  const n = clampExhaustion(level, rules);
+  return n === 0 ? 0 : rules.exhaustion.d20PerLevel * n;
 }
 
 /**
@@ -90,8 +116,9 @@ export function exhaustionPenalty(level: number): number {
  * turn-limiter banner names it (golden rule 6). Returns the non-negative number
  * of feet to SUBTRACT.
  */
-export function exhaustionSpeedReductionFt(level: number): number {
-  return clampExhaustion(level) * 5;
+export function exhaustionSpeedReductionFt(exhaustion: Exhaustion): number {
+  const { level, rules } = exhaustionParts(exhaustion);
+  return clampExhaustion(level, rules) * -rules.exhaustion.speedFtPerLevel;
 }
 
 /** Resolve an optional alternate ability for a skill check. Optional rules use
@@ -866,7 +893,7 @@ export function spellAttackBonus(
   level: number,
   abilityScore: number,
   override?: number | null,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null
 ): number {
   const base =
@@ -912,7 +939,7 @@ export function effectiveSpellAttackBonus(
   abilityScore: number,
   castingModifier: number,
   override?: number | null,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null
 ): number {
   return (
@@ -985,7 +1012,7 @@ export function buildSpellAttackBreakdown(args: {
   pbOverride?: number | null;
   override?: number | null;
   castingModifier?: number;
-  exhaustion?: number;
+  exhaustion?: Exhaustion;
 }): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [
     termPart(
@@ -1010,7 +1037,7 @@ export function weaponAttackBonus(
   abilityScore: number,
   isProficient: boolean,
   override?: number | null,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null
 ): number {
   const pb = isProficient ? effectiveProficiencyBonus(level, pbOverride) : 0;
@@ -1028,7 +1055,7 @@ export function savingThrowBonus(
   level: number,
   isProficient: boolean,
   override?: number | null,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null,
   /**
    * Flat grant-derived bonus applied to all saves (e.g. Paladin Aura of
@@ -1059,7 +1086,7 @@ export function buildSaveBreakdown(args: {
   level: number;
   isProficient: boolean;
   override?: number | null;
-  exhaustion?: number;
+  exhaustion?: Exhaustion;
   pbOverride?: number | null;
   saveBonus?: number;
 }): RawBreakdownPart[] {
@@ -1227,7 +1254,7 @@ export function skillBonus(
   level: number,
   proficiency: ProficiencyTier,
   override?: number | null,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null,
   /**
    * Flat grant-derived bonus applied to this ability check (e.g. Fey Wanderer
@@ -1754,7 +1781,7 @@ export function passiveScore(
   abilityScore: number,
   level: number,
   proficiency: ProficiencyTier,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null,
   /**
    * Flat grant-derived ability-check bonus for the underlying skill (see
@@ -1797,7 +1824,7 @@ export function buildPassiveBreakdown(
   abilityScore: number,
   level: number,
   proficiency: ProficiencyTier,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   pbOverride?: number | null,
   checkBonus = 0,
   /** RA-16 — the ±5 advantage/disadvantage step (see `passiveScore`). */
@@ -1862,7 +1889,7 @@ export function buildSkillBreakdown(args: {
   level: number;
   proficiency: ProficiencyTier;
   override?: number | null;
-  exhaustion?: number;
+  exhaustion?: Exhaustion;
   pbOverride?: number | null;
   checkBonus?: number;
 }): RawBreakdownPart[] {
@@ -2739,7 +2766,7 @@ export function computeInitiative(
   dexScore: number,
   proficiencyBonusValue: number,
   hasAlertFeat: boolean,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   /**
    * Flat grant-derived bonus to Initiative (e.g. Gloom Stalker's Dread
    * Ambusher = +WIS mod). Already resolved by the caller against the
@@ -2765,7 +2792,7 @@ export function buildInitiativeBreakdown(
   dexScore: number,
   proficiencyBonusValue: number,
   hasAlertFeat: boolean,
-  exhaustion = 0,
+  exhaustion: Exhaustion = 0,
   grantBonus = 0
 ): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [abilityPart("DEX", abilityModifier(dexScore))];

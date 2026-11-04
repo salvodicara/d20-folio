@@ -37,6 +37,7 @@ import {
   resolveCompanion,
   selectCompanionVariant,
   aggregateAbilityScores,
+  exhaustionOf,
 } from "@/lib/compute";
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
@@ -262,7 +263,7 @@ function ownerContext(doc: CharacterDoc): {
         scores[sc.ability],
         resolveCastingModifier(agg.spellAttackBonus, charData.classes[0]?.classId),
         sc.attackBonusOverride,
-        doc.session.exhaustion,
+        exhaustionOf(doc.session),
         charData.proficiencyBonusOverride
       )
     : undefined;

@@ -35,6 +35,8 @@ import {
   clampExhaustion,
   exhaustionPenalty,
   exhaustionSpeedReductionFt,
+  exhaustionParts,
+  type Exhaustion,
 } from "@/lib/compute";
 import {
   buildWeaponFacts,
@@ -790,7 +792,7 @@ export function composeTurnLimiters(args: {
    *  surfaces an attack limiter; "advantage"/"none" do not (an advantage source
    *  cancels a condition's disadvantage, so the player is NOT limited). */
   attackRollState: "advantage" | "disadvantage" | "none";
-  exhaustion: number;
+  exhaustion: Exhaustion;
   /** RA-08 — slot expenditures on the currently projected global turn. */
   spellSlotCasts?: number;
 }): TurnLimiterVM[] {
@@ -883,13 +885,14 @@ export function composeTurnLimiters(args: {
   // 4. Exhaustion — −2 × level to all d20 Tests AND −5 ft × level Speed (2024).
   //    Only when ≥1 level. The numbers are RESOLVED here through the two engine
   //    formulas every other surface reads, never restated as a constant.
-  const level = clampExhaustion(exhaustion);
+  const parts = exhaustionParts(exhaustion);
+  const level = clampExhaustion(parts.level, parts.rules);
   if (level > 0)
     limiters.push({
       kind: "exhaustion",
       level,
-      d20Penalty: Math.abs(exhaustionPenalty(level)),
-      speedPenaltyFt: exhaustionSpeedReductionFt(level),
+      d20Penalty: Math.abs(exhaustionPenalty(exhaustion)),
+      speedPenaltyFt: exhaustionSpeedReductionFt(exhaustion),
     });
 
   // 5. RA-08 — one spell slot per global turn (2024 "Casting Spells"). The
