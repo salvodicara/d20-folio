@@ -62,7 +62,6 @@ export function PlayHelp({
       }
     >
       <div className="f-ask">
-        <span className="f-lbl">{t("campaignHub.encounterActionOnWhom")}</span>
         {group(t("play.help.enemies"), t("play.help.hint"), view.enemies)}
         {group(t("play.help.allies"), t("play.help.hintAlly"), view.allies)}
       </div>

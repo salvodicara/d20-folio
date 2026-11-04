@@ -538,6 +538,19 @@ window.__audit = (opts) => {
       }
     }
   }
+  // crushed: text squeezed into a column narrower than one character (a grid cell
+  // collapsed to 0 by a neighbour), so its letters stack one per line. `vis`
+  // skips a 0-wide box, which is exactly how this hid, so it is checked apart.
+  for (const e of document.querySelectorAll("body *")) {
+    if (e.closest("svg,script,style,[aria-hidden=true],.sr,.f-sr")) continue;
+    if (ownText(e).length < 4) continue;
+    const cs = getComputedStyle(e);
+    if (cs.display === "none" || cs.visibility === "hidden") continue;
+    const r = e.getBoundingClientRect();
+    const fs = parseFloat(cs.fontSize) || 16;
+    if (r.width < fs && r.height > 2.5 * fs)
+      add("crushed", Math.round(r.width) + "×" + Math.round(r.height) + " " + label(e));
+  }
   // c22 per text block (an element's own inline flow): labels ≤ 20 chars stay on one line; no single-word last line
   {
     const inl = (e) => {
