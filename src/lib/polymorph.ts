@@ -255,12 +255,16 @@ export function revertBuildFromPrior(prior: PolymorphPrior): Partial<CharacterDa
 
 type FormGearSession = Pick<SessionState, "activeForm">;
 
-/** An equipment entry's key for {@link formCharacter}'s worn list. */
+/** An equipment entry's key for {@link formCharacter}'s worn list: the same key
+ *  the store's item actions match (`custom-<id>`, instance id, `<srdId>#<spell>`
+ *  for a Spell Scroll, else the catalogue id). */
 export function gearKey(
   ref: CharacterData["equipment"][number] | NonNullable<CharacterData["weapons"]>[number]
 ): string {
-  if ("custom" in ref) return ref.instanceId;
-  return ("instanceId" in ref ? ref.instanceId : undefined) ?? ref.srdId;
+  if ("custom" in ref) return `custom-${ref.instanceId}`;
+  if ("instanceId" in ref && ref.instanceId !== undefined) return ref.instanceId;
+  if ("scrollSpell" in ref && ref.scrollSpell) return `${ref.srdId}#${ref.scrollSpell}`;
+  return ref.srdId;
 }
 
 /**
