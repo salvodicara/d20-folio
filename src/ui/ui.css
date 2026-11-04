@@ -3339,3 +3339,12 @@
   display: grid;
   gap: 4px;
 }
+/* a slot cast this turn, with «Contrastato» to take its slot back (M12) */
+.fui .f-countered {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}

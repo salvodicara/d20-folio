@@ -50,11 +50,8 @@ import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
 import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
-import {
-  counterableCasts,
-  counteredEvent,
-  type CounterableCast,
-} from "@/lib/play/countered";
+import { counterableCasts } from "@/lib/play/countered";
+import { useMarkCountered } from "./use-mark-countered";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { applyFirstRollTopUps } from "./initiative-top-up";
 import { StatusLedge } from "./StatusLedge";
@@ -117,6 +114,7 @@ export function ThisTurnTracker({
 } = {}) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
+  const markCountered = useMarkCountered(locale);
   const {
     handleEndTurn,
     maintenancePrompts,
@@ -480,23 +478,6 @@ export function ThisTurnTracker({
   // A countered spell keeps its slot (Counterspell 2024): each slot cast this turn
   // offers "Countered", which gives the slot back; the action stays spent.
   const counterable = readonly ? [] : counterableCasts(character.session.logEntries);
-  function markCountered(cast: CounterableCast) {
-    const name = localizeText(cast.action, locale);
-    registerUndoableToast(
-      { message: t("combat.counteredToast", { name, level: cast.level }) },
-      () => {
-        const store = useCharacterStore.getState();
-        store.restoreSpellSlot(cast.level, cast.pactMagic);
-        const logId = store.logEvent(counteredEvent(cast));
-        return () => {
-          const live = useCharacterStore.getState();
-          live.useSpellSlot(cast.level, cast.pactMagic);
-          live.removeLogEntry(logId);
-        };
-      },
-      { turnScoped: false }
-    );
-  }
   const askTimeStopTurns =
     soloTurns &&
     timeStopTurns?.round !== round &&

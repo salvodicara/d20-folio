@@ -22,6 +22,9 @@ import {
   type PlaySpellsView,
 } from "@/domains/play/play-spells-view";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
+import { useMarkCountered } from "@/features/character/center/use-mark-countered";
+import { counterableCasts } from "@/lib/play/countered";
+import { localizeText } from "@/lib/views/srd-i18n";
 import { resolveReplaceAttackWithCast } from "@/lib/smart-tracker";
 import {
   blockReasonLine,
@@ -463,6 +466,9 @@ function SpellsPane({
 
 function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const { t } = useTranslation();
+  const readonly = useSheetReadonly();
+  const markCountered = useMarkCountered(locale);
+  const counterable = readonly ? [] : counterableCasts(doc.session.logEntries);
   const fight = useSheetCombat();
   const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
@@ -493,26 +499,44 @@ function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
       ? localeDistance(Math.max(0, s.budget - s.used), locale)
       : t(`combat.${s.kind}`);
   return (
-    <div className="f-turn" data-fight={fight ? "" : undefined}>
-      <b className="f-turn-t">{title}</b>
-      <ul className="f-turn-slots">
-        {slots.map((s) => (
-          <li
-            key={s.kind}
-            data-kind={s.kind}
-            data-spent={s.state === "spent" || undefined}
-          >
-            <i aria-hidden="true" />
-            {slotLabel(s)}
-          </li>
-        ))}
-      </ul>
-      {fight && (phase === "my-turn" || phase === "solo") && (
-        <Button kind="primary" icon="u-next" onClick={handleEndTurn}>
-          {t("play.endTurn")}
-        </Button>
-      )}
-    </div>
+    <>
+      <div className="f-turn" data-fight={fight ? "" : undefined}>
+        <b className="f-turn-t">{title}</b>
+        <ul className="f-turn-slots">
+          {slots.map((s) => (
+            <li
+              key={s.kind}
+              data-kind={s.kind}
+              data-spent={s.state === "spent" || undefined}
+            >
+              <i aria-hidden="true" />
+              {slotLabel(s)}
+            </li>
+          ))}
+        </ul>
+        {fight && (phase === "my-turn" || phase === "solo") && (
+          <Button kind="primary" icon="u-next" onClick={handleEndTurn}>
+            {t("play.endTurn")}
+          </Button>
+        )}
+      </div>
+      {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
+      {counterable.map((cast) => {
+        const name = localizeText(cast.action, locale);
+        return (
+          <div key={cast.entryId} className="f-countered" role="status">
+            <span>{name}</span>
+            <Button
+              kind="quiet"
+              aria-label={t("combat.counteredAria", { name, level: cast.level })}
+              onClick={() => markCountered(cast)}
+            >
+              {t("combat.countered")}
+            </Button>
+          </div>
+        );
+      })}
+    </>
   );
 }
 
