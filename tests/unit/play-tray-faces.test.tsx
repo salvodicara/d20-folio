@@ -53,7 +53,7 @@ describe("Play tray: dice faces under a floor", () => {
       target: { value: "1+5" },
     });
     expect(screen.getByText("3 + 5 + 3 = 11")).toBeTruthy();
-    const total = screen.getByLabelText("Rolled total");
+    const total = screen.getByLabelText<HTMLInputElement>("Rolled total");
     expect(total.value).toBe("11");
     expect(total.disabled).toBe(true);
   });
