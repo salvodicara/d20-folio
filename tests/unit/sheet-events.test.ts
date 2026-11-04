@@ -320,6 +320,10 @@ const CASES: {
     { kind: "recover-per-turn-trackers" },
     () => at(states.recoverPerTurnTrackers(doc)?.session),
   ],
+  "set-zone-spent": [
+    { kind: "set-zone-spent", effectId: "zone-1", spent: 20 },
+    () => ({ ...doc, session: { ...doc.session, zoneSpent: { "zone-1": 20 } } }),
+  ],
   "set-sees-source": [
     { kind: "set-sees-source", key: "condition:frightened", sees: false },
     () => at(conditions.setSeesSource(doc, "condition:frightened", false)),

@@ -1109,6 +1109,9 @@ export interface SessionState {
   /** The table's answer to "can you see its source?", per condition instance
    *  (`effect:<id>` or `condition:<id>`), where the sheet can't derive it (M3). */
   seesSource?: Record<string, boolean>;
+  /** The damage each of the caster's budgeted zones has dealt (Guardian of Faith
+   *  vanishes at 60), by the zone's effect id (M9). */
+  zoneSpent?: Record<string, number>;
   /**
    * RA-12 — the DC to FIND the character while hidden: the successful DC-15
    * Dexterity (Stealth) check TOTAL from the Hide action (SRD 5.2.1 "Hide

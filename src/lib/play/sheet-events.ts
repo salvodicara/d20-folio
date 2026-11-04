@@ -192,6 +192,8 @@ export type SheetEvent =
   /** The table answers whether the character sees a condition's source (null: no
    *  answer, the condition applies in full). */
   | { kind: "set-sees-source"; key: string; sees: boolean | null }
+  /** A budgeted zone has dealt `spent` damage in all (Guardian of Faith, M9). */
+  | { kind: "set-zone-spent"; effectId: string; spent: number }
   /** A lit state's round countdown starts (`tickedRound`: the round it counts from). */
   | { kind: "arm-effect-timer"; key: string; rounds: number; tickedRound: number }
   /** A lit state ends at an encounter boundary (a round and the phase within it). */
@@ -458,6 +460,15 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       return withEquipment(doc, unattuneItem(doc, event.instanceId));
     case "set-sees-source":
       return withSession(setSeesSource(doc, event.key, event.sees));
+    case "set-zone-spent":
+      return withSession(
+        (doc.session.zoneSpent?.[event.effectId] ?? 0) === event.spent
+          ? null
+          : {
+              ...doc.session,
+              zoneSpent: { ...doc.session.zoneSpent, [event.effectId]: event.spent },
+            }
+      );
     case "time-passes":
       return passTime(doc, event.minutes);
     case "set-time-of-day":

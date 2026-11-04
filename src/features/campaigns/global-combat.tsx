@@ -35,6 +35,8 @@ import { spellEndEffects } from "@/lib/activities/read";
 import { proneInFlight } from "@/lib/play/flight";
 import { markDropOffers } from "@/lib/play/mark-offers";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
+import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
+import { openZoneTray } from "@/features/character/center/zone-tray";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -121,6 +123,11 @@ export function GlobalCombatMount(): null {
   const observedProne = useRef<{ characterId: string; prone: boolean } | null>(null);
   const observedRows = useRef<{ scope: string; rows: IncapacitationRow[] } | null>(null);
   const observedFight = useRef<{ scope: string; look: FightLook } | null>(null);
+  const observedZoneTurn = useRef<{
+    scope: string;
+    current: string | null;
+    ledger: ZoneLedger;
+  } | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
   // tick, not ~2 s later when the autosave-debounced write echoes (the pip's "no echo lag").
@@ -421,6 +428,56 @@ export function GlobalCombatMount(): null {
       });
     }
   }, [live, primaryId, primaryIsDm, uid, showToast, t, status, locale]);
+
+  // My zones at a turn change (M9): the creature whose turn ended or starts may be
+  // inside one that triggers then. The table says whether it is inside; a tap plays
+  // the zone's damage on it through the tray. The first look at a fight primes.
+  useEffect(() => {
+    if (!live || !primaryId || !uid || !status) {
+      observedZoneTurn.current = null;
+      return;
+    }
+    const scope = `${primaryId}:${live.encounter.epoch}`;
+    const current = live.encounter.currentCombatantId;
+    const prior =
+      observedZoneTurn.current?.scope === scope ? observedZoneTurn.current : null;
+    observedZoneTurn.current = { scope, current, ledger: prior?.ledger ?? {} };
+    if (!prior || prior.current === current) return;
+    const myId = `pc-${uid}`;
+    const zones = activeZones(foldCombatEffectOps(live.encounter.effectOps)).filter(
+      (zone) => zone.casterId === myId
+    );
+    if (zones.length === 0) return;
+    const { hits, ledger } = zoneTurnHits(
+      zones,
+      { round: live.encounter.round, ended: prior.current, started: current },
+      prior.ledger
+    );
+    observedZoneTurn.current = { scope, current, ledger };
+    for (const hit of hits) {
+      const name = live.view.rows.find((row) => row.id === hit.creatureId)?.name ?? "";
+      showToast({
+        message: t(
+          hit.kind === "end-turn"
+            ? "combat.zoneEndTurnInside"
+            : "combat.zoneStartTurnInside",
+          {
+            target: name,
+            zone: localizeSrd("spell", hit.zone.spellId, "name", locale),
+          }
+        ),
+        duration: 30000,
+        action: {
+          label: t("combat.zoneInside"),
+          run: () => {
+            if (!openZoneTray(hit.zone, hit.creatureId, locale)) {
+              showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+            }
+          },
+        },
+      });
+    }
+  }, [live, primaryId, uid, status, showToast, t, locale]);
 
   // Once-per-turn uses (Sneak Attack) come back on every turn, anyone's: an opportunity
   // attack on the enemy's turn can use it again. When the fight moves to a new turn,
