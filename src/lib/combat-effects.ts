@@ -22,6 +22,7 @@ import { resolveDamageIntake, type DamageDefenses } from "@/lib/damage-intake";
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { conformCombatEffectOp } from "@/lib/combat-effect-io";
+import { conditionBreaksConcentration } from "@/lib/condition-effects";
 
 function combatantStackingKey(ref: CombatantRef): string {
   return ref.kind === "monster"
@@ -702,6 +703,42 @@ export function effectIdsEndingWhenIncapacitated(
     (effect.duration.kind === "concentration" ||
       (effect.payload.kind === "condition" && effect.payload.conditionId === "grappled"))
       ? [effect.id]
+      : []
+  );
+}
+
+/** A combatant's row as the sweep reads it: its HP and its condition ids. */
+export interface IncapacitationRow {
+  id: string;
+  currentHp: number;
+  conditions: ReadonlyArray<string>;
+}
+
+/** Whether a row can't act: at 0 HP, or with a condition of the Incapacitated family
+ *  (Incapacitated, Paralyzed, Petrified, Stunned, Unconscious). */
+export function rowIsIncapacitated(row: IncapacitationRow): boolean {
+  return row.currentHp <= 0 || row.conditions.some(conditionBreaksConcentration);
+}
+
+/**
+ * The incapacitation sweep (live play): the effects to revoke because a combatant
+ * just became unable to act. `before` is the last rows seen (null on the first look:
+ * nothing is "just" incapacitated then), `owns` says which combatants this device
+ * answers for (the DM its monsters, a player their own PC), so each revocation is
+ * written once. Its Concentration and the grapples it holds end
+ * (`effectIdsEndingWhenIncapacitated`).
+ */
+export function incapacitationSweep(
+  before: ReadonlyArray<IncapacitationRow> | null,
+  after: ReadonlyArray<IncapacitationRow>,
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  owns: (combatantId: string) => boolean
+): string[] {
+  if (before === null) return [];
+  const was = new Map(before.map((row) => [row.id, rowIsIncapacitated(row)]));
+  return after.flatMap((row) =>
+    owns(row.id) && rowIsIncapacitated(row) && was.get(row.id) === false
+      ? effectIdsEndingWhenIncapacitated(operations, row.id)
       : []
   );
 }

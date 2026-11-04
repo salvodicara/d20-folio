@@ -16,7 +16,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, act, cleanup, waitFor } from "@testing-library/react";
-import type { CampaignDoc } from "@/types/campaign";
+import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import type { LiveEncounter } from "@/features/campaigns/useLiveEncounter";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 
@@ -29,6 +29,7 @@ const h = vi.hoisted(() => {
   return {
     state,
     revokePersistentCombatEffectsBySource: vi.fn(() => Promise.resolve()),
+    revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
     subscribeToSharedCampaigns: vi.fn((_uid: string, cb: (c: CampaignDoc[]) => void) => {
       state.campaignsCb = cb;
       return () => {};
@@ -39,6 +40,7 @@ const h = vi.hoisted(() => {
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 vi.mock("@/features/campaigns/campaign-io", () => ({
   revokePersistentCombatEffectsBySource: h.revokePersistentCombatEffectsBySource,
+  revokePersistentCombatEffect: h.revokePersistentCombatEffect,
   subscribeToSharedCampaigns: h.subscribeToSharedCampaigns,
 }));
 vi.mock("@/features/campaigns/useLiveEncounter", () => ({
@@ -57,6 +59,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
+import { addMonster, setHp } from "@/features/campaigns/encounter";
 
 const UID = "u1";
 
@@ -123,6 +126,7 @@ beforeEach(() => {
   h.state.live = null;
   h.subscribeToSharedCampaigns.mockClear();
   h.revokePersistentCombatEffectsBySource.mockClear();
+  h.revokePersistentCombatEffect.mockClear();
   useCombatStatusStore.setState({ status: null, pip: null });
   usePinStore.setState({ pin: null });
   useAuthStore.setState({ user: { uid: UID } as never });
@@ -436,5 +440,92 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
     activate(next);
     await waitFor(() => expect(useCombatStatusStore.getState().status?.round).toBe(1));
     expect(h.revokePersistentCombatEffectsBySource).not.toHaveBeenCalled();
+  });
+});
+
+describe("GlobalCombatMount — the incapacitation sweep", () => {
+  const grapple = (actor: string): CombatEffectOp => ({
+    id: `op-${actor}-grab`,
+    kind: "apply",
+    effect: {
+      id: `${actor}-grab`,
+      actor:
+        actor === `pc-${UID}`
+          ? { kind: "pc", combatantId: actor, memberUid: UID, characterId: "char-1" }
+          : { kind: "monster", combatantId: actor },
+      target: { kind: "monster", combatantId: "monster-9" },
+      source: { kind: "feature", id: "grapple", actionId: "base-grapple" },
+      payload: { kind: "condition", conditionId: "grappled" },
+      duration: { kind: "encounter" },
+    },
+  });
+  const pcLive = (currentHp: number) => ({
+    [`pc-${UID}`]: {
+      name: "Hero",
+      ac: 16,
+      maxHp: 20,
+      currentHp,
+      tempHp: 0,
+      conditions: [],
+      initiative: 12,
+      initiativeBonus: 2,
+      initiativeRoll: 10,
+      raceId: undefined,
+      classes: undefined,
+      portraitUrl: null,
+      portraitCrop: null,
+    },
+  });
+  function show(
+    campaign: CampaignDoc,
+    encounter: EncounterState,
+    hp: number,
+    dm: boolean
+  ) {
+    h.state.live = {
+      encounter,
+      view: buildEncounterView(encounter, pcLive(hp), dm),
+      myCombatState: null,
+      myMaxHp: 20,
+    };
+    act(() => h.state.campaignsCb?.([{ ...campaign, encounter }]));
+  }
+
+  it("my PC falling to 0 ends the grapple it holds; the first look only primes", () => {
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    const encounter = {
+      ...(campaign.encounter as EncounterState),
+      effectOps: [grapple(`pc-${UID}`)],
+    };
+    mount();
+    show(campaign, encounter, 20, false);
+    expect(h.revokePersistentCombatEffect).not.toHaveBeenCalled();
+    show(campaign, encounter, 0, false);
+    expect(h.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", `pc-${UID}-grab`);
+  });
+
+  it("the DM's device ends a monster's grapple when the monster drops", () => {
+    const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
+    // The viewer runs the table: no PC of theirs in this fight.
+    const campaign: CampaignDoc = {
+      ...base,
+      dmUid: UID,
+      members: [UID],
+      memberDetails: { [UID]: { displayName: "GM", characterId: null, role: "dm" } },
+    };
+    const empty = { ...(campaign.encounter as EncounterState), combatants: [] };
+    const withGoblin = addMonster(empty, {
+      name: "Goblin",
+      ac: 15,
+      maxHp: 7,
+      count: 1,
+      initiative: 10,
+    });
+    const encounter = { ...withGoblin, effectOps: [grapple("monster-1")] };
+    mount();
+    show(campaign, encounter, 20, true);
+    expect(h.revokePersistentCombatEffect).not.toHaveBeenCalled();
+    show(campaign, setHp(encounter, "monster-1", 0), 20, true);
+    expect(h.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "monster-1-grab");
   });
 });
