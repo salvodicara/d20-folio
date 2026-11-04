@@ -860,19 +860,37 @@ export type CombatConditionLifetime =
     };
 
 /**
+ * When a target repeats its save (the app never rolls; the target's player or the DM
+ * enters the result). `target-action`: the target may spend its action on it (Otto's
+ * Irresistible Dance), offered on demand rather than prompted.
+ */
+export type RepeatSaveMoment =
+  | "target-turn-end"
+  | "target-turn-start"
+  | "target-damaged"
+  | "target-action";
+
+/**
  * An early end of a condition occurrence (edge-case family M3): what ends it before
  * its lifetime runs out. `repeat-save` is a prompt, not an end: the target rolls (the
  * app never rolls) the ability against the source's own DC, and a success ends it.
  */
 export type ConditionEnd =
-  /** It ends when the target takes any damage (Knock Out, Abjure Foes, Sleep). */
-  | { on: "target-damaged" }
-  /** The target repeats the save at the end of each of its turns; each failure
-   *  applies `onFailedRepeatSave` (Vision of Elapsing Eons: 1 Exhaustion level). */
+  /** It ends when the target takes any damage (Knock Out, Abjure Foes, Sleep).
+   *  `by: "actor-side"`: only damage from the one who applied it or that one's allies
+   *  (Charm Person); damage whose attacker is unknown ends nothing. */
+  | { on: "target-damaged"; by?: "actor-side" }
+  /** The target repeats the save `at` that moment; each failure applies
+   *  `onFailedRepeatSave` (Vision of Elapsing Eons: 1 Exhaustion level). `advantage`:
+   *  the repeat is rolled with Advantage (Hideous Laughter on damage). `when`: the
+   *  repeat is owed only in that situation, so the prompt asks it first (Fear: out of
+   *  line of sight of the caster). */
   | {
       on: "repeat-save";
       ability: AbilityCode;
-      at: "target-turn-end";
+      at: RepeatSaveMoment;
+      advantage?: true;
+      when?: "out-of-actor-sight";
       onFailedRepeatSave?: ReadonlyArray<CatalogueEffect>;
     }
   /** It ends when the one who applied it has the Incapacitated condition (a grapple). */

@@ -38,6 +38,7 @@ import { effectiveTableRules } from "@/lib/table-rules";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
 import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
+import { fightSideOf } from "@/features/character/center/outcome-offer";
 import { useZoneHitStore } from "@/features/campaigns/zone-hit-store";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
@@ -373,13 +374,29 @@ export function GlobalCombatMount(): null {
         conditions: row.conditions,
       })),
       currentCombatantId: live.encounter.currentCombatantId,
+      // Who dealt each hit, so "only damage from you or your allies" can tell.
+      hits: (live.encounter.events ?? []).flatMap((event) =>
+        event.kind === "hp-damage"
+          ? [
+              {
+                targetId: event.targetId,
+                ...(event.attackerId ? { attackerId: event.attackerId } : {}),
+              },
+            ]
+          : []
+      ),
     };
     const priorLook =
       observedFight.current?.scope === scope ? observedFight.current.look : null;
     observedFight.current = { scope, look };
     const owns = (id: string) =>
       primaryIsDm ? kinds.get(id) === "monster" : id === myId;
-    const condition = fightConditionEnds(live.encounter.effectOps, priorLook, look);
+    const condition = fightConditionEnds(
+      live.encounter.effectOps,
+      priorLook,
+      look,
+      fightSideOf(live.view.rows)
+    );
     const active = foldCombatEffectOps(live.encounter.effectOps);
     const targetOf = new Map(active.map((e) => [e.id, e.target.combatantId]));
     for (const effectId of condition.ended) {
@@ -405,6 +422,13 @@ export function GlobalCombatMount(): null {
         campaignId: primaryId,
         targetName: live.view.rows.find((row) => row.id === save.targetId)?.name ?? "",
         effect,
+        turnSeen: live.encounter.currentCombatantId,
+        ...(save.actorId !== undefined
+          ? {
+              actorName:
+                live.view.rows.find((row) => row.id === save.actorId)?.name ?? "",
+            }
+          : {}),
       });
     }
     // A creature your Hex or Hunter's Mark is on just dropped to 0: on a later turn,

@@ -17,6 +17,7 @@ import {
 import { localizeSrd } from "@/i18n/resolver";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import type { Locale } from "@/lib/locale";
+import { repeatSaveDueCopy } from "@/domains/combat/repeat-save-copy";
 import { useToastStore } from "@/stores/toastStore";
 import { Button } from "@/ui";
 
@@ -69,14 +70,7 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
   };
   return (
     <div className="f-note f-save-due" data-c="cond" role="group" aria-label={condition}>
-      <p>
-        {t(save.dc !== undefined ? "combat.repeatSaveDueDc" : "combat.repeatSaveDue", {
-          target: save.targetName,
-          ability: t(`abilities.${save.ability}`),
-          condition,
-          ...(save.dc !== undefined ? { dc: save.dc } : {}),
-        })}
-      </p>
+      <p>{t(...repeatSaveDueCopy(save, t(`abilities.${save.ability}`), condition, t))}</p>
       <div className="f-acts">
         <Button kind="primary" onClick={saved}>
           {t("combat.repeatSaveSucceeded")}

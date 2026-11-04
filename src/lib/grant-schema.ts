@@ -117,14 +117,28 @@ const CASTING_ABILITY_SCHEMA = unionSchema([
   literalSchema("CHA"),
 ]);
 
+/** When a target repeats its save (`RepeatSaveMoment`, data/types). */
+const REPEAT_SAVE_MOMENT_SCHEMA = unionSchema([
+  literalSchema("target-turn-end"),
+  literalSchema("target-turn-start"),
+  literalSchema("target-damaged"),
+  literalSchema("target-action"),
+]);
+
 /** An early end of a condition (`ConditionEnd`, data/types). */
 const CONDITION_END_SCHEMA = discriminatedUnionSchema("on", {
-  "target-damaged": objectSchema({ on: literalSchema("target-damaged") }),
-  "repeat-save": objectSchema({
-    ability: CASTING_ABILITY_SCHEMA,
-    at: literalSchema("target-turn-end"),
-    on: literalSchema("repeat-save"),
-  }),
+  "target-damaged": objectSchema(
+    { on: literalSchema("target-damaged") },
+    { by: literalSchema("actor-side") }
+  ),
+  "repeat-save": objectSchema(
+    {
+      ability: CASTING_ABILITY_SCHEMA,
+      at: REPEAT_SAVE_MOMENT_SCHEMA,
+      on: literalSchema("repeat-save"),
+    },
+    { advantage: literalSchema(true), when: literalSchema("out-of-actor-sight") }
+  ),
   "actor-incapacitated": objectSchema({ on: literalSchema("actor-incapacitated") }),
 });
 

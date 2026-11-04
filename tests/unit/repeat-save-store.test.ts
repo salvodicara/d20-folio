@@ -18,6 +18,7 @@ const save = (id: string, targetId: string): PendingRepeatSave => ({
   targetId,
   targetName: "Goblin",
   ability: "WIS",
+  at: "target-turn-end",
   dc: 15,
   effect: { id } as PendingRepeatSave["effect"],
 });
@@ -38,8 +39,8 @@ describe("pending repeat saves", () => {
       prunedRepeatSaves(saves, {
         currentCombatantId: "pc-a",
         active: new Set(["e1", "e2"]),
-      })
-    ).toEqual(saves);
+      }).map((s) => s.id)
+    ).toEqual(["e1", "e2"]);
   });
 
   it("drops a save whose effect ended, and one whose target's next turn began", () => {
@@ -49,6 +50,23 @@ describe("pending repeat saves", () => {
         (s) => s.id
       )
     ).toEqual([]);
+  });
+
+  it("damage on the target's own turn waits for its next turn, not this one", () => {
+    const due = { ...save("e1", "m1"), at: "target-damaged" as const, turnSeen: "m1" };
+    const active = new Set(["e1"]);
+    const onOwnTurn = prunedRepeatSaves([due], { currentCombatantId: "m1", active });
+    expect(onOwnTurn.map((s) => s.id)).toEqual(["e1"]);
+    const later = prunedRepeatSaves(onOwnTurn, { currentCombatantId: "pc-a", active });
+    expect(later.map((s) => s.id)).toEqual(["e1"]);
+    expect(prunedRepeatSaves(later, { currentCombatantId: "m1", active })).toEqual([]);
+  });
+
+  it("a save due at the start of the target's turn waits through that turn only", () => {
+    const due = { ...save("e1", "m1"), at: "target-turn-start" as const, turnSeen: "m1" };
+    const active = new Set(["e1"]);
+    expect(prunedRepeatSaves([due], { currentCombatantId: "m1", active })).toEqual([due]);
+    expect(prunedRepeatSaves([due], { currentCombatantId: "pc-a", active })).toEqual([]);
   });
 
   it("answering removes it", () => {

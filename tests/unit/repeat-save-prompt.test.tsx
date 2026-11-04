@@ -36,6 +36,7 @@ const save: PendingRepeatSave = {
   targetId: "m1",
   targetName: "Goblin",
   ability: "WIS",
+  at: "target-turn-end",
   dc: 15,
   effect: { id: "e1" } as PendingRepeatSave["effect"],
 };
@@ -60,6 +61,39 @@ describe("RepeatSavePrompts", () => {
     expect(
       screen.getByText(
         /End of Goblin's turn: a successful Wisdom save \(DC 15\) ends Frightened\./
+      )
+    ).toBeTruthy();
+  });
+
+  it("says when the save came due: on damage with Advantage, at turn start, out of sight", () => {
+    useRepeatSaveStore.setState({
+      saves: [
+        { ...save, id: "d", at: "target-damaged", advantage: true },
+        { ...save, id: "s", targetId: "m2", targetName: "Ogre", at: "target-turn-start" },
+        {
+          ...save,
+          id: "u",
+          targetId: "m3",
+          targetName: "Orc",
+          when: "out-of-actor-sight",
+          actorName: "Lyra",
+        },
+      ],
+    });
+    render(<RepeatSavePrompts targetIds={["m1", "m2", "m3"]} locale="en" />);
+    expect(
+      screen.getByText(
+        "Goblin took damage: a successful Wisdom with Advantage save (DC 15) ends Frightened."
+      )
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "Start of Ogre's turn: a successful Wisdom save (DC 15) ends Frightened."
+      )
+    ).toBeTruthy();
+    expect(
+      screen.getByText(
+        "End of Orc's turn: if it can't see Lyra, a successful Wisdom save (DC 15) ends Frightened."
       )
     ).toBeTruthy();
   });

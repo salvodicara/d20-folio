@@ -82,14 +82,26 @@ const CONDITION_LIFETIME = unionSchema([
 
 /** An early end of a condition (`ConditionEnd`, data/types). */
 const CONDITION_END = unionSchema([
-  objectSchema({ on: literalSchema("target-damaged") }),
+  objectSchema(
+    { on: literalSchema("target-damaged") },
+    { by: literalSchema("actor-side") }
+  ),
   objectSchema(
     {
       on: literalSchema("repeat-save"),
       ability: ABILITY,
-      at: literalSchema("target-turn-end"),
+      at: literals([
+        "target-turn-end",
+        "target-turn-start",
+        "target-damaged",
+        "target-action",
+      ]),
     },
-    { onFailedRepeatSave: CATALOGUE_EFFECTS_SCHEMA }
+    {
+      advantage: literalSchema(true),
+      when: literalSchema("out-of-actor-sight"),
+      onFailedRepeatSave: CATALOGUE_EFFECTS_SCHEMA,
+    }
   ),
   objectSchema({ on: literalSchema("actor-incapacitated") }),
 ]);
