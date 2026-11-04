@@ -1,12 +1,9 @@
 /**
  * End the spell a Dispel Magic chose on its target (M17): every effect of that
  * spell on the target, revoked on the encounter in one undoable act; the undo
- * reinstates them (v0.26 rules).
+ * reinstates them (v0.26 rules). The campaign writer loads on first use, so the
+ * sheet's provider doesn't pull Firebase in.
  */
-import {
-  reinstatePersistentCombatEffect,
-  revokePersistentCombatEffect,
-} from "@/features/campaigns/campaign-io";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { registerUndoableToast } from "@/stores/undoStore";
 
@@ -16,17 +13,26 @@ export function dispelSpell(
   message: string
 ): boolean {
   if (effectIds.length === 0 || !combatEffectsV26On()) return false;
+  const io = import("@/features/campaigns/campaign-io");
   return (
     registerUndoableToast(
       { message },
       () => {
-        for (const id of effectIds) {
-          void revokePersistentCombatEffect(campaignId, id).catch(() => undefined);
-        }
+        void io
+          .then(({ revokePersistentCombatEffect }) =>
+            Promise.all(
+              effectIds.map((id) => revokePersistentCombatEffect(campaignId, id))
+            )
+          )
+          .catch(() => undefined);
         return () => {
-          for (const id of effectIds) {
-            void reinstatePersistentCombatEffect(campaignId, id).catch(() => undefined);
-          }
+          void io
+            .then(({ reinstatePersistentCombatEffect }) =>
+              Promise.all(
+                effectIds.map((id) => reinstatePersistentCombatEffect(campaignId, id))
+              )
+            )
+            .catch(() => undefined);
         };
       },
       { turnScoped: true }

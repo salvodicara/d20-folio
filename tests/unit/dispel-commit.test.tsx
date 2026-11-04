@@ -35,18 +35,22 @@ afterEach(() => {
 });
 
 describe("dispelSpell", () => {
-  it("revokes every effect of the spell, and the undo reinstates them", () => {
+  it("revokes every effect of the spell, and the undo reinstates them", async () => {
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     expect(dispelSpell("camp", ["b", "c"], "Hold Person ends")).toBe(true);
-    expect(io.revokePersistentCombatEffect.mock.calls).toEqual([
-      ["camp", "b"],
-      ["camp", "c"],
-    ]);
+    await vi.waitFor(() =>
+      expect(io.revokePersistentCombatEffect.mock.calls).toEqual([
+        ["camp", "b"],
+        ["camp", "c"],
+      ])
+    );
     useUndoStore.getState().undo();
-    expect(io.reinstatePersistentCombatEffect.mock.calls).toEqual([
-      ["camp", "b"],
-      ["camp", "c"],
-    ]);
+    await vi.waitFor(() =>
+      expect(io.reinstatePersistentCombatEffect.mock.calls).toEqual([
+        ["camp", "b"],
+        ["camp", "c"],
+      ])
+    );
   });
 });
 
