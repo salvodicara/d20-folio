@@ -33,6 +33,7 @@
  * dying hero off 0 clears the death saves + Unconscious; a dead hero is ineligible.
  */
 
+import { localizeSrd } from "@/i18n/resolver";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
@@ -103,6 +104,7 @@ export function DyingBanner() {
   // each offered once per fall, in the order the player picks. One without a save
   // stands the character up in one tap; one with a save takes the result the player
   // rolled. Every use is undoable from its toast.
+  const pendingConsequence = character?.session.zeroHpDrop?.consequence;
   const savers = useMemo(
     () => (character && current <= 0 ? zeroHpSavers(character) : []),
     [character, current]
@@ -221,6 +223,18 @@ export function DyingBanner() {
         <div className="min-w-0 flex-1">
           <DeathSaves />
         </div>
+      )}
+
+      {/* What the fall brings if no saver keeps the character up (Disintegrate:
+          dust), pending until the savers are decided. */}
+      {atZero && !isDead && pendingConsequence && savers.length > 0 && (
+        <p className="dying-interrupt text-sm" role="status">
+          {t(`combat.zeroHpPending_${pendingConsequence.kind}`, {
+            source: pendingConsequence.sourceId
+              ? localizeSrd("spell", pendingConsequence.sourceId, "name", locale)
+              : "",
+          })}
+        </p>
       )}
 
       {/* The zero-HP savers. RAW they work when you drop to 0 "but aren't killed

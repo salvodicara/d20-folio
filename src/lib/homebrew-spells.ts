@@ -169,8 +169,9 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   stabilizes: TRUE,
   revives: objectSchema(
     { hitPoints: unionSchema([numberSchema, literalSchema("all")]) },
-    { withinMinutes: numberSchema }
+    { withinMinutes: numberSchema, fromDust: TRUE }
   ),
+  onReduceToZero: literals(["dies", "disintegrated"]),
   hitPointThreshold: objectSchema(
     { max: numberSchema, atOrBelow: literals(["dies", "condition"]) },
     { otherwise: literalSchema("speed-zero") }

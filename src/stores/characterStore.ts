@@ -15,6 +15,7 @@ import type {
   SessionDefenseKind,
   SessionState,
   TrackerState,
+  ZeroHpConsequence,
 } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
 import type {
@@ -24,7 +25,11 @@ import type {
 } from "@/types/combat-state";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import { changeConcentration } from "@/lib/play/concentration";
-import { applySheetEvent, type SheetEvent } from "@/lib/play/sheet-events";
+import {
+  applySheetEvent,
+  withEventConsequences,
+  type SheetEvent,
+} from "@/lib/play/sheet-events";
 import {
   createPlayLogShadow,
   type PlayLogShadow,
@@ -374,6 +379,8 @@ interface CharacterState {
       hit?: { attacker: CombatantRef | null; attackMode?: "melee" | "ranged" };
       /** Damage known not to be an attack's hit (a fall): no Uncanny Dodge halving. */
       notAnAttack?: true;
+      /** What dropping to 0 brings (Disintegrate), pending the zero-HP savers. */
+      onZeroHp?: ZeroHpConsequence;
     }
   ) => (() => boolean) | null;
   /**
@@ -1541,7 +1548,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
     const taken = takeDamage(character, amount, opts);
     if (!taken) return null;
-    const damaged = { ...character, session: taken.session };
+    // What the hit brings with it: a pending zero-HP consequence (Disintegrate), and
+    // the end of attunement if it kills (the same law as a sheet event).
+    const damaged = withEventConsequences(character, {
+      ...character,
+      session: taken.session,
+    });
     // The hit as an intention in the play log's shadow (its undo is the command undo).
     shadowRecord(character, { kind: "take-damage", amount, ...opts }, damaged);
     const { transition, consumedEffectIds } = taken;
@@ -3480,6 +3492,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         },
       },
     });
+    // A pending zero-HP consequence settles with the saver: cancelled when it kept the
+    // character up, applied when it failed and none is left (Disintegrate's dust).
+    const settled = get().character;
+    if (settled) set({ character: withEventConsequences(character, settled) });
     // The saver worked "instead": the character never stayed down, so what the fall
     // ended comes back (Rage).
     for (const key of use.restoredStates) get().setActiveFeature(key, true);

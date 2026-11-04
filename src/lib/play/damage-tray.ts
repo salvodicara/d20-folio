@@ -75,6 +75,8 @@ export interface DamageTrayPlan {
   /** The attack is a melee one: a hit that would drop a creature to 0 may knock it
    *  out instead (SRD 5.2.1 "Knocking Out a Creature"). */
   melee?: true;
+  /** What reducing a target to 0 brings (Disintegrate: dust), past its savers. */
+  onZeroHp?: "dies" | "disintegrated";
   /** The target's current Hit Points pick what happens (Power Word Kill / Stun). */
   hitPointThreshold?: SpellHitPointThreshold;
   targets: string[];
@@ -223,6 +225,7 @@ export function damageTrayPlan(
         }
       : {}),
     ...(spec.revives ? { revive: { ...spec.revives } } : {}),
+    ...(spec.onZeroHp ? { onZeroHp: spec.onZeroHp } : {}),
     ...(spec.hitPointThreshold
       ? { hitPointThreshold: { ...spec.hitPointThreshold } }
       : {}),

@@ -142,7 +142,8 @@ export function applyTray(
         reversals.push(() => useCombatStore.getState().withdrawOutcomes(receiptIds));
         for (const { target, amount, conditions, outcome } of local) {
           if (target.kind === "self") {
-            if (effect && amount > 0) applySelf(effect, amount, source, reversals);
+            if (effect && amount > 0)
+              applySelf(effect, amount, source, reversals, plan.onZeroHp);
             for (const conditionId of conditions) {
               if (
                 useCharacterStore
@@ -250,7 +251,9 @@ function applySelf(
   effect: TrayEffect,
   amount: number,
   source: LocText,
-  reversals: Array<() => void>
+  reversals: Array<() => void>,
+  /** What dropping to 0 brings (Disintegrate), past the savers. */
+  onZeroHp?: "dies" | "disintegrated"
 ): void {
   const store = useCharacterStore.getState();
   const character = store.character;
@@ -265,7 +268,10 @@ function applySelf(
     if (undo) reversals.push(undo);
     tagNewLine(ids, "temp-hp-gain", source);
   } else {
-    const undo = store.applyDamage(amount);
+    const undo = store.applyDamage(
+      amount,
+      onZeroHp ? { onZeroHp: { kind: onZeroHp, sourceId: sourceKey(source) } } : undefined
+    );
     if (undo) reversals.push(() => void undo());
     tagNewLine(ids, "hp-damage", source);
   }
@@ -360,4 +366,9 @@ function givePeer(
       failed(error);
       return () => {};
     });
+}
+
+/** The catalogue key of a source, when it is one ("disintegrate"). */
+function sourceKey(source: LocText): string | undefined {
+  return "srd" in source ? source.srd.key : undefined;
 }

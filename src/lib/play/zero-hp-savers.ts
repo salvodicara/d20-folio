@@ -21,7 +21,7 @@ import { sessionActiveKeys } from "@/lib/world-standing-grants";
 import type { AbilityCode } from "@/types/ability";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
-import { UNCONSCIOUS_CONDITION_ID, zeroHpDropOf } from "./vitals";
+import { killCharacter, UNCONSCIOUS_CONDITION_ID, zeroHpDropOf } from "./vitals";
 
 /** A saver the character may try right now. */
 export interface ZeroHpSaver {
@@ -169,4 +169,34 @@ export function spendZeroHpSaver(
     session: next,
     restoredStates,
   };
+}
+
+/**
+ * Settle a pending zero-HP consequence (Disintegrate's dust): it waits while a saver
+ * is still on offer; a saver that keeps the character up cancels it; once the
+ * character is still at 0 with no saver left to try, it applies (the character dies,
+ * disintegrated when that is the kind). The same law serves every "if this reduces
+ * the target to 0" effect.
+ */
+export function settleZeroHpConsequence(doc: CharacterDoc): CharacterDoc {
+  const drop = doc.session.zeroHpDrop;
+  const consequence = drop?.consequence;
+  if (!drop || !consequence) return doc;
+  const settled = (session: SessionState): CharacterDoc => {
+    const rest = { ...drop };
+    delete rest.consequence;
+    return { ...doc, session: { ...session, zeroHpDrop: rest } };
+  };
+  if (doc.session.hp.current > 0 || !isCharacterAlive(doc.status, doc.session))
+    return settled(doc.session);
+  if (zeroHpSavers(doc).length > 0) return doc;
+  const dead = killCharacter(doc) ?? doc.session;
+  return settled({
+    ...dead,
+    ...(consequence.kind === "disintegrated"
+      ? {
+          death: { ...(dead.death ?? { minutesSince: 0 }), disintegrated: true as const },
+        }
+      : {}),
+  });
 }

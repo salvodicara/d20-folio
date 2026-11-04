@@ -56,6 +56,8 @@ export interface CombatResolutionSpec {
   stabilizes: boolean;
   /** The cast returns a dead creature to life with these Hit Points. */
   revives?: SpellRevive;
+  /** What reducing a target to 0 brings (Disintegrate). */
+  onZeroHp?: "dies" | "disintegrated";
   /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
   hitPointThreshold?: NonNullable<ResolvedAction["summary"]["hitPointThreshold"]>;
   conditionRemoval?: { options: string[]; max?: number };
@@ -305,6 +307,7 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
     hasHeroicInspiration,
     stabilizes,
     ...(revives ? { revives: { ...revives } } : {}),
+    ...(s.onZeroHp ? { onZeroHp: s.onZeroHp } : {}),
     ...(s.hitPointThreshold ? { hitPointThreshold: { ...s.hitPointThreshold } } : {}),
     ...(s.healingMode === "full" || s.healingMode === "maximum"
       ? { healingMode: s.healingMode }

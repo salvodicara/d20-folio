@@ -13,7 +13,7 @@ import {
 import { zeroTrackFor } from "@/lib/mechanics-world-store";
 import { ruleFlag } from "@/lib/rules";
 import { resolveTrackers } from "@/lib/smart-tracker";
-import type { CharacterDoc, SessionState } from "@/types/character";
+import type { CharacterDoc, SessionState, ZeroHpConsequence } from "@/types/character";
 import { DEATH_FAIL_LIMIT } from "@/lib/character-status";
 import { endSummonsOn, withSummonsRecorded } from "./companions";
 import { endFormIfDue } from "./forms";
@@ -49,6 +49,9 @@ export type DamageOptions = Pick<PcDamageTransitionInput, "crit" | "hit"> & {
   notAnAttack?: true;
   /** A melee hit the attacker chose to knock out with: 1 HP and Unconscious, not 0. */
   knockOut?: boolean;
+  /** What happens if this damage reduces the character to 0 (Disintegrate). It waits
+   *  for the zero-HP savers (`settleZeroHpConsequence`). */
+  onZeroHp?: ZeroHpConsequence;
 };
 
 /** One entered hit on the character, or null when it changes nothing. */
@@ -151,9 +154,15 @@ export function takeDamage(
       ? { death: { minutesSince: 0 } }
       : {}),
     ...(absorbed.total > 0 ? { trackers: absorbed.trackers } : {}),
-    // The fall records what was on as the character dropped (Relentless Rage).
+    // The fall records what was on as the character dropped (Relentless Rage), and
+    // what the effect that dropped it brings, pending until the savers are decided.
     ...(transition.crossedZero && !transition.instantDeath
-      ? { zeroHpDrop: zeroHpDropOf(doc) }
+      ? {
+          zeroHpDrop: {
+            ...zeroHpDropOf(doc),
+            ...(opts?.onZeroHp ? { consequence: opts.onZeroHp } : {}),
+          },
+        }
       : {}),
     ...(consumedEffectIds.size > 0
       ? {

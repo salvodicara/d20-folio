@@ -366,6 +366,8 @@ export type ActivityEffect =
       hitPoints: number | "all";
       /** How long dead the target may have been, in game minutes (Revivify: 1). */
       withinMinutes?: number;
+      /** It brings back even a creature turned to dust (True Resurrection). */
+      fromDust?: true;
     })
   /** The target's current Hit Points pick the outcome: at or below `max` it dies or
    *  takes the activity's condition; otherwise the rest applies, or `otherwise`. */

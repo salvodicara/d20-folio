@@ -2,7 +2,6 @@
 import { describe, expect } from "vitest";
 import { getBeast } from "@/data/beasts";
 import { getMonster } from "@/data/monsters";
-import { getRace } from "@/data/races";
 import { getSpellById } from "@/data/spells";
 import {
   addMonster,
@@ -21,7 +20,11 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import { setCompanionHp, summonCompanion, summonFamiliar } from "@/lib/play/companions";
 import { takeDamage } from "@/lib/play/damage";
 import { applySheetEvent } from "@/lib/play/sheet-events";
-import { spendZeroHpSaver, zeroHpSavers } from "@/lib/play/zero-hp-savers";
+import {
+  settleZeroHpConsequence,
+  spendZeroHpSaver,
+  zeroHpSavers,
+} from "@/lib/play/zero-hp-savers";
 import {
   FADING_PENALTIES,
   fadingPenaltiesAfterLongRest,
@@ -40,6 +43,7 @@ import { deriveCharacter } from "@/lib/views/derive-character";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { EncounterState } from "@/types/campaign";
 import { makeCharacterDoc } from "../_helpers";
+import { asRaceId } from "@/data/srd-names";
 import { rule } from "./rule";
 
 const withSession = (session: Partial<SessionState>): CharacterDoc => ({
@@ -171,13 +175,39 @@ describe("conformance · 10. death and revival", () => {
       category: 10,
       case: "Disintegrate and Relentless Endurance",
       source: "SAC #117",
-      status: "M7",
+      status: "works",
     },
     () => {
-      // The saver (drop to 1 instead) exists …
-      expect(JSON.stringify(getRace("orc"))).toContain("at-zero-hp-interrupt");
-      // … and Disintegrate dusts only a creature it leaves at 0.
-      expect(JSON.stringify(getSpellById("disintegrate"))).toContain("on-reduce-to-zero");
+      // Disintegrate dusts only a creature it leaves at 0: an orc whose Relentless
+      // Endurance drops it to 1 instead never was reduced to 0.
+      const dust = { kind: "disintegrated", sourceId: "disintegrate" } as const;
+      const orc = makeCharacterDoc(
+        { race: asRaceId("orc"), classId: "fighter", level: 5 },
+        { hp: { current: 10, temp: 0 } }
+      );
+      const down = applySheetEvent(orc, {
+        kind: "take-damage",
+        amount: 40,
+        onZeroHp: dust,
+      });
+      if (!down) throw new Error("no hit");
+      expect(down.session.death).toBeUndefined();
+      const use = spendZeroHpSaver(down, "race:orc:relentless-endurance");
+      if (!use) throw new Error("no Relentless Endurance");
+      const after = settleZeroHpConsequence({ ...down, session: use.session });
+      expect(after.session.hp.current).toBe(1);
+      expect(after.session.death).toBeUndefined();
+      // Without it, the same hit leaves dust.
+      const human = makeCharacterDoc(
+        { race: asRaceId("human"), classId: "fighter", level: 5 },
+        { hp: { current: 10, temp: 0 } }
+      );
+      expect(
+        applySheetEvent(human, { kind: "take-damage", amount: 40, onZeroHp: dust })
+          ?.session.death
+      ).toMatchObject({ disintegrated: true });
+      // The spell carries it.
+      expect(getSpellById("disintegrate")?.onReduceToZero).toBe("disintegrated");
     }
   );
 

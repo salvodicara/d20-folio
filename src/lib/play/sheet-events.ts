@@ -5,6 +5,7 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import { settleZeroHpConsequence } from "./zero-hp-savers";
 import { isCharacterAlive } from "@/lib/character-status";
 import { addEquipmentRef } from "@/lib/equipment-add";
 import type { CoverStateLevel } from "@/lib/cover-states";
@@ -230,7 +231,19 @@ export function applySheetEvent(
   event: SheetEvent
 ): CharacterDoc | null {
   const next = reduceSheetEvent(doc, event);
-  return next ? afterDeath(doc, next) : next;
+  return next ? withEventConsequences(doc, next) : next;
+}
+
+/**
+ * What every change to the sheet brings with it, whichever path made it (an event,
+ * or a store write that bypasses one): a consequence of dropping to 0 (Disintegrate)
+ * settles once the savers are decided, and dying ends attunement.
+ */
+export function withEventConsequences(
+  before: CharacterDoc,
+  after: CharacterDoc
+): CharacterDoc {
+  return afterDeath(before, settleZeroHpConsequence(after));
 }
 
 /**

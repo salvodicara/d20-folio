@@ -154,6 +154,7 @@
       "alive": "Alive: no need.",
       "deadWithin": "Dead for {{minutes}} min: within the limit ✓",
       "deadTooLong": "Dead for {{minutes}} min: past the limit.",
+      "dust": "Turned to dust: only True Resurrection or Wish brings it back",
       "tableDecides": "How long it has been dead: the table decides.",
       "knockOut": "Knock out"
     },
