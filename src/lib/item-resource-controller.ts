@@ -7,6 +7,7 @@
  * No React and no store: the character, the writes, the input prompt and the
  * conflict notice arrive as ports, so any UI (or a test) can drive it.
  */
+import { commandWordBlocked } from "@/lib/play/speech";
 import { MAGIC_ITEMS_BY_ID, SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { canSpendCopy } from "@/lib/item-copies";
 import { homebrewItemCatalogue, itemCopies, itemCopyItemId } from "@/lib/homebrew-items";
@@ -101,6 +102,9 @@ export interface ItemResourceCommandPorts {
   /** The live state no longer matches what was reviewed. */
   notifyConflict: () => void;
   /** The item's display name; `copyNumber` when the character carries several. */
+  /** An item used with a command word can't be used where the user can't speak
+   *  (Silence, Incapacitated): the screen says so; nothing is spent. */
+  notifySpeechBlocked?: () => void;
   itemName: (itemId: string, copyNumber: number | null) => string;
   occurrenceId?: () => string;
 }
@@ -174,6 +178,13 @@ export function createItemResourceCommands(
       }
       if (initialRecipe.kind === "spend" && !hasActiveSpendOwner(character, identity)) {
         notifyConflict();
+        return null;
+      }
+      if (
+        initialRecipe.kind === "spend" &&
+        commandWordBlocked(character, identity.itemId)
+      ) {
+        ports.notifySpeechBlocked?.();
         return null;
       }
 

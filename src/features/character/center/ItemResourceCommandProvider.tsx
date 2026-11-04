@@ -63,6 +63,11 @@ export function ItemResourceCommandProvider({
             message: t("magicItems.resourceConflict"),
             duration: 5000,
           }),
+        notifySpeechBlocked: () =>
+          useToastStore.getState().showToast({
+            message: t("magicItems.commandWordBlocked"),
+            duration: 4000,
+          }),
         itemName: (itemId, copyNumber) => {
           const name = localizeSrd("magic-item", itemId, "name", locale);
           return copyNumber === null

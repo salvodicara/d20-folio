@@ -47,6 +47,7 @@
     "clockApplied_dawn": "Dawn breaks · item resources recovered",
     "clockApplied_dusk": "Dusk falls · item resources recovered",
     "tableClockApplied_dawn": "Dawn declared · item resources recovered",
-    "tableClockApplied_dusk": "Dusk declared · item resources recovered"
+    "tableClockApplied_dusk": "Dusk declared · item resources recovered",
+    "commandWordBlocked": "You can't speak its command word here: nothing was spent"
   }
 }

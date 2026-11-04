@@ -581,7 +581,8 @@
       "uses": "Nessun uso rimasto: niente è stato speso",
       "scroll": "Pergamena non trovata nell'inventario: niente è stato speso",
       "item": "Oggetto non più nell'inventario: niente è stato speso",
-      "cast": "Non puoi più pagare questo lancio: niente è stato speso"
+      "cast": "Non puoi più pagare questo lancio: niente è stato speso",
+      "speech": "Qui non puoi parlare, quindi niente componente verbale: non è stato speso nulla"
     }
   }
 }

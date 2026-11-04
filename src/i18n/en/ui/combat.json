@@ -581,7 +581,8 @@
       "uses": "No uses left: nothing was spent",
       "scroll": "Scroll not found in your inventory: nothing was spent",
       "item": "That item is no longer in your inventory: nothing was spent",
-      "cast": "This cast can no longer be paid: nothing was spent"
+      "cast": "This cast can no longer be paid: nothing was spent",
+      "speech": "You can't speak here, so no Verbal component: nothing was spent"
     }
   }
 }
