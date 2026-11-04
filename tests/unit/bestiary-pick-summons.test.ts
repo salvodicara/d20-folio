@@ -91,7 +91,15 @@ describe("bestiary-pick summons — the catalogue", () => {
         .filter((s) => s.bestiaryPick)
         .map((s) => s.id)
         .sort()
-    ).toEqual(["awaken", "gate", "planar-ally", "planar-binding"]);
+    ).toEqual(["awaken", "gate", "planar-ally", "planar-binding", "true-polymorph"]);
+  });
+
+  it("True Polymorph turns an object into any creature of CR 9 or lower", () => {
+    const rule = textRule("true-polymorph");
+    expect(rule.crMax).toBe(9);
+    expect(rule.types).toEqual([]);
+    expect(pool("true-polymorph")).toContain("ogre");
+    expect(pool("true-polymorph")).not.toContain("adult-red-dragon");
   });
 
   it("Planar Ally offers only the Celestials, Elementals and Fiends the text names", () => {

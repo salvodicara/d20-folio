@@ -287,6 +287,10 @@ export const SRD_SPELLS_LEVEL9: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "hours", amount: 1 },
     saveAbility: "WIS",
+    // "Object into Creature": any creature of CR 9 or lower, no larger than the
+    // object; it takes its turns immediately after yours and obeys you.
+    bestiaryPick: { crMax: 9 },
+    summonTurn: "after-caster",
     source: "SRD",
   },
   {

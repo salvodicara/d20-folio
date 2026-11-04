@@ -268,7 +268,7 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "True Polymorph: object into creature",
       source: "WIKI spell:true-polymorph",
-      status: "M6",
+      status: "works",
     },
     () => {
       const doc = wizard(17);

@@ -5,6 +5,8 @@
  * `endStatuses` patch) and, when the dropped spell sustains a self Beast form, the
  * form too (body restored, Beast Temp HP retracted).
  */
+import { getSpellById } from "@/data/spells";
+import { endSummon } from "@/lib/play/companions";
 import { revertBuildFromPrior, selfFormRule } from "@/lib/polymorph";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import { concentrationStatusKeys, endStatuses } from "@/lib/status";
@@ -62,12 +64,20 @@ export function changeConcentration(
         ]
       : [];
   const ended = endStatuses(session, droppedActiveKeys);
+  // The creatures a Concentration spell summoned vanish with it (M6: Giant Insect),
+  // their HP with them; one held for the full duration stays (True Polymorph's).
+  const dropsSummons =
+    !!prev &&
+    prev !== spell &&
+    concentrationSummons(prev) &&
+    !heldFullDuration(session, prev);
+  const base = dropsSummons ? endSummon(session, prev) : session;
   return {
     doc: {
       ...doc,
       ...(revertBuild ? { character: { ...doc.character, ...revertBuild } } : {}),
       session: {
-        ...session,
+        ...base,
         concentration: spell,
         concentrationCastLevel:
           spell && opts.castLevel && opts.castLevel > 0
@@ -105,6 +115,20 @@ export function changeConcentration(
     droppedActiveKeys,
     ...(revertBuild ? { revertBuild } : {}),
   };
+}
+
+/** Whether a spell held by Concentration brings creatures onto the field. */
+function concentrationSummons(spellId: string): boolean {
+  const spell = getSpellById(spellId);
+  return (
+    !!spell?.concentration &&
+    !!(spell.summonedMonsters || spell.bestiaryPick || spell.companion)
+  );
+}
+
+/** Whether the spell was held for its full duration (its countdown ran out). */
+function heldFullDuration(session: SessionState, spellId: string): boolean {
+  return (session.effectTimers?.[concentrationTimerKey(spellId)]?.roundsLeft ?? 1) <= 0;
 }
 
 /**

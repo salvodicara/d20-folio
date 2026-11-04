@@ -202,7 +202,7 @@ describe("conformance · 4. summons and companions", () => {
       category: 4,
       case: "True Polymorph's controlled creature",
       source: "WIKI spell:true-polymorph",
-      status: "M6",
+      status: "works",
     },
     () => {
       // The creature acts right after you and obeys you for an hour.
