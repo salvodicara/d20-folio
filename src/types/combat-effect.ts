@@ -62,6 +62,8 @@ export interface CombatEffectBindings {
   spellcastingModifier?: number;
   /** The DC a repeat save against this condition is made against (edge-case M3). */
   saveDc?: number;
+  /** Whose next attack spends the state, when not its creator's (Help: the ally). */
+  beneficiaryId?: string;
 }
 
 /** Exact state delta performed together with applying an effect. Persisting the landed

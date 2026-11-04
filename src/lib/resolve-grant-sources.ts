@@ -34,6 +34,7 @@ import { SRD_MANEUVERS } from "@/data/maneuvers";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
 import { findBackground } from "@/data/backgrounds";
 import { classFeatureIndex, getClassTable } from "@/data/classes";
+import { RULE_TARGET_STATES } from "@/data/rule-target-states";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
 import type { ReactionTrigger, SrdSpellData } from "@/data/types";
@@ -336,11 +337,10 @@ export function resolveCombatEffectGrantGroup(
   const activeKey = effect.payload.activeKey;
   // A feature's states for its targets (Stunning Strike), never its own grants.
   if (effect.source.kind === "feature") {
-    return (
-      classFeatureIndex
-        .get(effect.source.id)
-        ?.targetStates?.find((state) => state.activeKey === activeKey) ?? null
-    );
+    const states =
+      classFeatureIndex.get(effect.source.id)?.targetStates ??
+      RULE_TARGET_STATES.get(effect.source.id);
+    return states?.find((state) => state.activeKey === activeKey) ?? null;
   }
   const spell = getSpellById(effect.source.id);
   return (

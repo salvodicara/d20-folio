@@ -25,7 +25,12 @@
  */
 
 import { combatEffectsV26On } from "@/lib/deployed-rules";
-import { hitStateWriter, saveSuccessWriter } from "./outcome-offer";
+import {
+  combineWriters,
+  hitStateWriter,
+  saveSuccessWriter,
+  vexWriter,
+} from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
@@ -952,7 +957,11 @@ export function TurnEconomyProvider({
     const plan = damageTrayPlan(action, targets, selfCombatantId());
     if (!plan) return;
     const onSaved = saveSuccessWriter(action, characterId);
-    const onHit = hitStateWriter(action, characterId);
+    // A hit's states: the action's own (Guiding Bolt) and its weapon's Vex.
+    const onHit = combineWriters(
+      hitStateWriter(action, characterId),
+      vexWriter(action, characterId)
+    );
     useDamageTrayStore.getState().show({
       characterId,
       actionName: action.name,
