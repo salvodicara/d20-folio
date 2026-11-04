@@ -49,6 +49,7 @@ import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
 import { PlayPrepare } from "./PlayPrepare";
+import { PlayCompanions } from "./PlayCompanions";
 import { PlayScrollPick } from "./PlayScrollPick";
 import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
@@ -217,6 +218,9 @@ function ActionsPane({
           </section>
         );
       })}
+      {(filter === "all" || filter === "attacks") && (
+        <PlayCompanions doc={doc} locale={locale} />
+      )}
     </>
   );
 }

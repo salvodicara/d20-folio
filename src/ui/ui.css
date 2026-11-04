@@ -3409,3 +3409,11 @@
   align-items: center;
   padding-left: 16px;
 }
+/* a companion's header: its name, then its vitals as one piece (on their own line when narrow) */
+.fui .f-act-group[data-group="companions"] > .f-act-gh {
+  flex-wrap: wrap;
+  row-gap: 4px;
+}
+.fui .f-act-group[data-group="companions"] .f-gh-slots {
+  white-space: nowrap;
+}

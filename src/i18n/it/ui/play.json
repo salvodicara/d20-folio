@@ -204,6 +204,10 @@
       "noMatch": "Nessun incantesimo con questo nome",
       "none": "incantesimo da scegliere",
       "set": "Pergamena: {{spell}}"
+    },
+    "companions": {
+      "vitals": "{{current}}/{{max}} PF · CA {{ac}}",
+      "fallen": "È caduto: torna quando l'incantesimo o il privilegio lo richiama."
     }
   }
 }

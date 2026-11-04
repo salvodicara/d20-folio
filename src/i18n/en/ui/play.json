@@ -204,6 +204,10 @@
       "noMatch": "No spell by that name",
       "none": "spell to choose",
       "set": "Scroll: {{spell}}"
+    },
+    "companions": {
+      "vitals": "{{current}}/{{max}} HP · AC {{ac}}",
+      "fallen": "It has fallen: it comes back when its spell or feature calls it again."
     }
   }
 }

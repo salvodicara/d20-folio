@@ -9,6 +9,7 @@
  * An attack's shared result goes onto the use's own log line, and the turn keeps one
  * outcome receipt per target.
  */
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import type { TFunction } from "i18next";
 
 import type { TrayTarget } from "@/components/shared/damage-tray-target";
@@ -222,6 +223,28 @@ export function applyTray(
                 t
               )
             );
+          }
+        }
+        // What a hit puts on its target beyond damage (a companion's Web Bolt).
+        if (offer.onHit) {
+          const campaignId = useCombatStatusStore.getState().status?.campaignId;
+          const effects = campaignId
+            ? applied
+                .filter((row) => row.outcome === "hit" || row.outcome === "critical")
+                .flatMap((row) => offer.onHit?.(row.target.id) ?? [])
+            : [];
+          if (campaignId && effects.length > 0) {
+            const io = import("@/features/campaigns/campaign-io");
+            for (const effect of effects)
+              void io.then(({ appendPersistentCombatEffect }) =>
+                appendPersistentCombatEffect(campaignId, effect)
+              );
+            reversals.push(() => {
+              for (const effect of effects)
+                void io.then(({ revokePersistentCombatEffect }) =>
+                  revokePersistentCombatEffect(campaignId, effect.id)
+                );
+            });
           }
         }
         for (const { target, amount, conditions, outcome, knockOut } of peers) {
