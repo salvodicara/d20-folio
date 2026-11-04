@@ -8,6 +8,7 @@
 
 import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
+import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import type { ChoicePicks } from "@/lib/feature-choices";
 import type { AbilityCode } from "@/types/ability";
 import { equipmentKeyMatches } from "@/lib/equipment-key";
@@ -659,6 +660,11 @@ interface CharacterState {
   resolveSpeciesChoices: (picks: ChoicePicks) => void;
   /** The INT/WIS/CHA its species spells use (Elf, Gnome, Tiefling). */
   setSpeciesSpellAbility: (ability: AbilityCode) => void;
+  /**
+   * The species' origin feat (a Human's Versatile) chosen on the sheet: the build
+   * is reconciled in the same write, so the feat's grants derive at once.
+   */
+  setHumanOriginFeat: (featId: string) => void;
   /**
    * S7 — Polymorph SELF-transformation: assume a Beast `form` (`beastId`) cast via
    * `spellId` (`polymorph` / `true-polymorph`). Stamps the Beast's AC / speeds /
@@ -3258,6 +3264,22 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       character: {
         ...character,
         character: { ...character.character, speciesSpellAbility: ability },
+      },
+    });
+  },
+
+  setHumanOriginFeat: (featId) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character || character.character.humanOriginFeat === featId) return;
+    const charData = character.character;
+    set({
+      character: {
+        ...character,
+        character: reconcileBuildChoices(charData, {
+          ...charData,
+          humanOriginFeat: featId,
+        }),
       },
     });
   },

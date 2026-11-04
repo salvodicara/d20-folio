@@ -80,4 +80,29 @@ describe("PlaySpeciesChoices", () => {
     render(<Banner />);
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   });
+
+  it("asks a Human's never-chosen Versatile feat and sets it on Save", () => {
+    const base = makeCharacterDoc();
+    useCharacterStore.getState().setCharacter({
+      ...base,
+      character: {
+        ...base.character,
+        race: asRaceId("human"),
+        humanOriginFeat: "",
+        skills: {},
+        spells: [],
+      },
+    });
+    render(<Banner />);
+    expect(
+      screen.getByRole("group", { name: "Choices to finish" }).textContent
+    ).toContain("Your species asks you to choose: Versatile.");
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Alert/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(useCharacterStore.getState().character?.character.humanOriginFeat).toBe(
+      "alert"
+    );
+    expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+  }, 15_000);
 });

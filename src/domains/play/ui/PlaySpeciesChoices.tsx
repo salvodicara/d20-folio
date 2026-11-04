@@ -13,6 +13,7 @@ import { ChoiceRowChips } from "@/domains/creation/ui/ChoiceRowChips";
 import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import type { Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
+import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
 import {
   pendingSpeciesItems,
@@ -21,7 +22,7 @@ import {
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/types/ability";
-import { Button, Chip, Dialog } from "@/ui";
+import { Button, Chip, Choice, Dialog } from "@/ui";
 
 const ABILITIES = ["INT", "WIS", "CHA"] as const;
 
@@ -76,6 +77,11 @@ function SpeciesChoicesDialog({
   // The answers, held here until «Salva».
   const [bundlePicks, setBundlePicks] = useState<Record<string, string>>({});
   const [ability, setAbility] = useState<AbilityCode | null>(null);
+  const [featId, setFeatId] = useState<string | null>(null);
+  // A Human's Versatile: any origin feat but the one its background already grants.
+  const feats = pending.feat
+    ? originFeatVMs(locale, new Set(doc.character.bgFeat ? [doc.character.bgFeat] : []))
+    : [];
   const [picks, setPicks] = useState<ChoicePicks>(EMPTY_CHOICE_PICKS);
   // Every skill stays offered: a saved character may already hold the one its
   // trait gave (added by hand back then), and picking it only records the choice.
@@ -89,11 +95,13 @@ function SpeciesChoicesDialog({
   const chosen =
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
+    featId !== null ||
     rows.some((row) => row.picked.length > 0);
   const save = () => {
     const store = useCharacterStore.getState();
     for (const [key, optionId] of Object.entries(bundlePicks))
       store.setGrantBundleChoice(key, optionId);
+    if (featId) store.setHumanOriginFeat(featId);
     if (ability) store.setSpeciesSpellAbility(ability);
     store.resolveSpeciesChoices(picks);
     onClose();
@@ -132,6 +140,22 @@ function SpeciesChoicesDialog({
             </div>
           </div>
         ))}
+        {pending.feat && (
+          <div className="f-ask">
+            <span className="f-lbl">{t("create.humanVersatileLabel")}</span>
+            <p className="f-help">{t("create.humanVersatileHint")}</p>
+            <div className="f-choices f-create-list">
+              {feats.map((f) => (
+                <Choice key={f.id} on={featId === f.id} onClick={() => setFeatId(f.id)}>
+                  <span className="f-row-main">
+                    <span className="f-row-t">{f.name}</span>
+                    {f.halfFeat && <span className="f-row-s">{f.halfFeat}</span>}
+                  </span>
+                </Choice>
+              ))}
+            </div>
+          </div>
+        )}
         {pending.spellAbility && (
           <div className="f-ask">
             <span className="f-lbl">{t("create.screen.speciesAbility")}</span>

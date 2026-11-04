@@ -17,6 +17,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import { asLocale, type Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
+import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs, raceName } from "@/lib/views/creation-view";
 import {
   pendingSpeciesItems,
@@ -77,10 +78,16 @@ function SpeciesChoicesModal({
   // The answers, held here until «Salva».
   const [bundlePicks, setBundlePicks] = useState<Record<string, string>>({});
   const [ability, setAbility] = useState<AbilityCode | null>(null);
+  const [featId, setFeatId] = useState<string | null>(null);
+  // A Human's Versatile: any origin feat but the one its background already grants.
+  const feats = pending.feat
+    ? originFeatVMs(locale, new Set(doc.character.bgFeat ? [doc.character.bgFeat] : []))
+    : [];
   const [picks, setPicks] = useState<ChoicePicks>(EMPTY_CHOICE_PICKS);
   const chosen =
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
+    featId !== null ||
     Object.values(picks).some((byId: Record<string, ReadonlyArray<string>>) =>
       Object.values(byId).some((ids) => ids.length > 0)
     );
@@ -88,6 +95,7 @@ function SpeciesChoicesModal({
     const store = useCharacterStore.getState();
     for (const [key, optionId] of Object.entries(bundlePicks))
       store.setGrantBundleChoice(key, optionId);
+    if (featId) store.setHumanOriginFeat(featId);
     if (ability) store.setSpeciesSpellAbility(ability);
     store.resolveSpeciesChoices(picks);
     onClose();
@@ -119,6 +127,24 @@ function SpeciesChoicesModal({
               ))}
             </div>
           ))}
+          {pending.feat && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-text-secondary">
+                {t("create.humanVersatileLabel")}
+              </span>
+              {feats.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  aria-pressed={featId === f.id}
+                  onClick={() => setFeatId(f.id)}
+                  className="fchip fchip-sm"
+                >
+                  {f.name}
+                </button>
+              ))}
+            </div>
+          )}
           {pending.spellAbility && (
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="text-xs font-semibold text-text-secondary">

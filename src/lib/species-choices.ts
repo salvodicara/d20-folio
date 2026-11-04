@@ -12,7 +12,8 @@
  * (the same list the production survey reads): a skill pick from named options
  * counts as made when one of them is proficient, and a pick "from any skill"
  * (Skillful) cannot be told apart from a class's, so it is never asked again.
- * The Human Versatile feat is not one of these slots: `humanOriginFeat` holds it.
+ * The Human Versatile feat is not one of these slots: `humanOriginFeat` holds it,
+ * and a saved Human without one owes it (`feat`).
  *
  * Pure module — no React, no locale reads.
  */
@@ -54,6 +55,8 @@ export interface PendingSpeciesChoices {
   spellAbility: boolean;
   /** The trait slots still owed (only the ones the sheet can tell were never made). */
   slots: FeatureChoiceSlots;
+  /** The species' origin feat (a Human's Versatile) was never chosen. */
+  feat: boolean;
   /** Anything at all is owed. */
   any: boolean;
 }
@@ -87,6 +90,7 @@ export function pendingSpeciesChoices(
   const owed = unresolvedBuildChoices(character, session);
   const bundleKeys = owed.flatMap((c) => (c.kind === "bundle" ? [c.bundleKey] : []));
   const spellAbility = owed.some((c) => c.kind === "species-spell-ability");
+  const feat = owed.some((c) => c.kind === "feat");
   // A trait's slots are namespaced `race:<raceId>:<traitId>::…`.
   const traits = new Set(
     owed.flatMap((c) =>
@@ -101,7 +105,8 @@ export function pendingSpeciesChoices(
     bundleKeys,
     spellAbility,
     slots,
-    any: bundleKeys.length > 0 || spellAbility || traits.size > 0,
+    feat,
+    any: bundleKeys.length > 0 || spellAbility || feat || traits.size > 0,
   };
 }
 

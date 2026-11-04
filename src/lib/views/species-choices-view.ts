@@ -7,11 +7,17 @@
 import type { Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
 import type { CharacterData, SessionState } from "@/types/character";
-import { lineageBundleVMs, raceTraitNameOfSlot } from "@/lib/views/creation-view";
+import {
+  lineageBundleVMs,
+  raceTraitName,
+  raceTraitNameOfSlot,
+} from "@/lib/views/creation-view";
+import { unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
 
 export type PendingSpeciesItem =
   | { kind: "bundle"; bundleKey: string; label: string }
   | { kind: "ability" }
+  | { kind: "feat"; label: string }
   | { kind: "slot"; slotId: string; label: string };
 
 export function pendingSpeciesItems(
@@ -30,6 +36,17 @@ export function pendingSpeciesItems(
     bundleKey,
     label: bundles.find((b) => b.bundleKey === bundleKey)?.label ?? bundleKey,
   }));
+  if (pending.feat) {
+    const trait = unresolvedBuildChoices(character, session).find(
+      (c) => c.kind === "feat"
+    );
+    if (trait?.kind === "feat") {
+      items.push({
+        kind: "feat",
+        label: raceTraitName(character.race, trait.traitId, locale),
+      });
+    }
+  }
   if (pending.spellAbility) items.push({ kind: "ability" });
   for (const list of Object.values(pending.slots) as { slotId: string }[][]) {
     for (const { slotId } of list) {
