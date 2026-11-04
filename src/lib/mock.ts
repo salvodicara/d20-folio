@@ -38,6 +38,9 @@ export const MOCK_CHARACTER: CharacterDoc = {
     name: assertNonEmptyString("Lyra Voss"),
     quote: "Every silence hides a song; I just have to find it.",
     race: asRaceId("elf"),
+    // Her lineage spells' ability, recorded (Charisma, the unset default, so nothing
+    // changes): a fixture never shows «Scelte da completare» unless a test asks.
+    speciesSpellAbility: "CHA",
     // R4 — `classes[]` is the SOLE source of truth for the class breakdown (single-
     // class = one entry). Total level (9), PB, the headline class name and every
     // level-keyed value DERIVE from it via `src/lib/classes.ts` — no legacy
