@@ -213,6 +213,9 @@ function spellEffects(spell: SrdSpellData): ActivityEffect[] {
     const duration = whileActiveDurationAtCastLevel(grant.duration, spell.level);
     effects.push(statusEffect(grant, duration, spell.concentration));
   }
+  // The authored effects (edge-case M12): what the flat fields don't say (an Undead
+  // target's Temporary Hit Points instead of the damage).
+  effects.push(...(spell.effects ?? []));
   return effects;
 }
 
@@ -268,7 +271,7 @@ function spellGaps(spell: SrdSpellData): ActivityGap[] {
         "a total the live effect spends before it ends (damage dealt), an encounter fact, not an activity",
     });
   }
-  for (const field of ["onEnd", "counter", "effects", "perTargetChoice"] as const) {
+  for (const field of ["onEnd", "counter"] as const) {
     if (spell[field]) {
       gaps.push({
         field,
@@ -324,6 +327,10 @@ export function translateSpell(spell: SrdSpellData): ActivityTranslation {
     recurrence: spell.recurrence,
     tag: spell.effectTag,
     followUp: followUp?.activity,
+    perTargetChoice: spell.perTargetChoice?.map((choice) => ({
+      id: choice.id,
+      effects: [...choice.effects],
+    })),
   });
   if (spell.resolveOnCast === false) activity.resolveOnCast = false;
   return {
