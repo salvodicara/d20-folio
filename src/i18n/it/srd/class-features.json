@@ -1253,6 +1253,9 @@
     "description": "Se non hai più usi di Stregoneria Innata, puoi comunque attivarla spendendo 2 Punti Stregoneria quando usi l'Azione Bonus. Inoltre, mentre la tua Stregoneria Innata è attiva, puoi usare fino a due opzioni di Metamagia su ogni incantesimo che lanci invece di una.",
     "name": "Stregoneria Incarnata"
   },
+  "sorcerer-sorcery-incarnate.grants.1": {
+    "label": "Stregoneria Incarnata"
+  },
   "sorcerer-spellcasting": {
     "description": "Puoi lanciare incantesimi da stregone usando Carisma come caratteristica da incantatore. Conosci un numero limitato di incantesimi e puoi lanciarli usando slot incantesimo. Impari incantesimi aggiuntivi salendo di livello.",
     "name": "Incantesimi"
