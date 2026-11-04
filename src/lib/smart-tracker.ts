@@ -383,6 +383,20 @@ export interface ResolvedTracker {
 export interface ActionSummary {
   /** Attack bonus: +9 to hit */
   attackBonus?: number;
+  /**
+   * A carried weapon's own attack row only: which weapon it is (its place in
+   * `weapons[]`) and the raw parts of its numbers — the effective die in each grip
+   * (Martial Arts, Shillelagh), the flat damage modifier (ability, enchant and bound
+   * spell, active grants), and proficiency. The inventory card and the printed sheet
+   * read the weapon from this row, so they show what the Play card shows.
+   */
+  weaponParts?: {
+    index: number;
+    die: string;
+    versatileDie: string | null;
+    damageMod: number;
+    proficient: boolean;
+  };
   /** What a target's successful save still puts on it, as catalogue states
    *  (Stunning Strike): the damage tray applies them to a row marked Saved. */
   saveSuccessEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
@@ -1358,20 +1372,6 @@ export interface RawActionSummary extends Omit<
    * The presenter folds it onto `weaponFacts`; omitted when not applicable.
    */
   heavyDisadvantage?: boolean;
-  /**
-   * A carried weapon's own attack row only: which weapon it is (its place in
-   * `weapons[]`) and the raw parts of its numbers — the effective die in each grip
-   * (Martial Arts, Shillelagh), the flat damage modifier (ability, enchant and bound
-   * spell, active grants), and proficiency. The inventory card and the printed sheet
-   * read the weapon from this row, so they show what the Play card shows.
-   */
-  weaponParts?: {
-    index: number;
-    die: string;
-    versatileDie: string | null;
-    damageMod: number;
-    proficient: boolean;
-  };
   /**
    * STRUCTURED heal amount for a feature/trait action chip, EVALUATED against
    * the owning character (Second Wind on a Fighter 5: `{ dice: "1d10",

@@ -46,7 +46,15 @@ export interface DamageTrayPlan {
   damageTypes?: DamageType[];
   /** A floor on low damage-die faces (Great Weapon Fighting: a 1 or 2 counts as a
    *  3): a screen that takes the faces typed applies it with {@link applyDieFaceFloor}. */
-  dieFloor?: { floorBelow: number; floorTo: number };
+  dieFloor?: {
+    floorBelow: number;
+    floorTo: number;
+    /** The weapon dice the faces belong to, and the flat bonus the total adds, so a
+     *  screen can split a typed total (Great Weapon Fighting wields two-handed: the
+     *  versatile die when the weapon has one). Absent when not a weapon row. */
+    dice?: string;
+    bonus?: number;
+  };
   /** Damage types whose Resistance the source ignores (Elemental Adept). */
   ignoresResistance?: DamageType[];
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
@@ -236,9 +244,17 @@ export function damageTrayPlan(
 /** The weapon's floor on low damage-die faces, when one applies. */
 function dieFloorOf(action: ResolvedAction): Pick<DamageTrayPlan, "dieFloor"> {
   const floor = action.summary.dieModifiers?.find((m) => m.mode === "floor");
-  return floor?.floorBelow !== undefined && floor.floorTo !== undefined
-    ? { dieFloor: { floorBelow: floor.floorBelow, floorTo: floor.floorTo } }
-    : {};
+  if (floor?.floorBelow === undefined || floor.floorTo === undefined) return {};
+  const weapon = action.summary.weaponParts;
+  return {
+    dieFloor: {
+      floorBelow: floor.floorBelow,
+      floorTo: floor.floorTo,
+      ...(weapon
+        ? { dice: weapon.versatileDie ?? weapon.die, bonus: weapon.damageMod }
+        : {}),
+    },
+  };
 }
 
 /**
