@@ -7,12 +7,18 @@
  */
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
-import type { CompanionAttack, CompanionStatBlock } from "@/data/types";
+import type {
+  CompanionAttack,
+  CompanionLifecycle,
+  CompanionStatBlock,
+} from "@/data/types";
 import { selectCompanionVariant } from "@/lib/compute";
 import type { Locale } from "@/lib/locale";
 import { companionAttackEffects } from "@/lib/play/companion-attack";
 import type { DamageTrayPlan } from "@/lib/play/damage-tray";
 import { buildCompanionCardViews } from "@/lib/views/companion-row-view";
+import { keepDistancesTogether } from "@/lib/utils";
+import { resourcesView } from "@/lib/views/resources-view";
 import type { CharacterDoc } from "@/types/character";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import type { DamageType } from "@/types/damage";
@@ -41,7 +47,45 @@ export interface PlayCompanion {
   hp: { current: number; max: number };
   ac: number;
   fallen: boolean;
+  /** A fallen companion that can be brought back, and what can pay for it. */
+  revive?: ReviveOffer;
   attacks: PlayCompanionAttack[];
+}
+
+/** Bringing a dead companion back: a Magic action and a spell slot of at least the
+ *  catalogue's level (Beast Master, Steel Defender); it returns after a while with
+ *  all its Hit Points. */
+export interface ReviveOffer {
+  /** The slots that can pay, lowest first; empty when none is left. */
+  slots: { level: number; pact: boolean }[];
+  returnsAfterMinutes: number;
+}
+
+function reviveOf(
+  fallen: boolean,
+  block: CompanionStatBlock | undefined,
+  doc: CharacterDoc,
+  locale: Locale
+): { revive?: ReviveOffer } {
+  const spec = block?.lifecycle?.revive;
+  const offer = fallen && spec ? reviveOffer(spec, doc, locale) : null;
+  return offer ? { revive: offer } : {};
+}
+
+/** What can pay for a revive, or null when its cost isn't a spell slot. */
+export function reviveOffer(
+  spec: NonNullable<CompanionLifecycle["revive"]>,
+  doc: CharacterDoc,
+  locale: Locale
+): ReviveOffer | null {
+  if (spec.cost.kind !== "spell-slot") return null;
+  const min = spec.cost.minLevel;
+  const slots = resourcesView(doc, locale).flatMap((r) =>
+    r.kind === "spell-slot" && r.level >= min && r.max - r.used > 0
+      ? [{ level: r.level, pact: r.pact }]
+      : []
+  );
+  return { slots, returnsAfterMinutes: spec.returnsAfterMinutes };
 }
 
 /** The stat block a companion comes from (its spell's, or its class feature's). */
@@ -67,9 +111,10 @@ export function playCompanions(
         name: card.label,
         ...(card.kind ? { kind: card.kind } : {}),
         spellId: getSpellById(sourceId) ? sourceId : null,
-        hp: { current: card.current ?? card.hpMax, max: card.hpMax },
+        hp: { current: card.fallen ? 0 : (card.current ?? card.hpMax), max: card.hpMax },
         ac: card.ac,
         fallen: card.fallen === true,
+        ...reviveOf(card.fallen === true, block, doc, locale),
         attacks: card.attacks.map((attack) => {
           const catalogue = active?.attacks?.find((a) => a.id === attack.id) ?? null;
           return {
@@ -80,7 +125,7 @@ export function playCompanions(
             damageType: catalogue?.damageType ?? "bludgeoning",
             reachFt: attack.reachFt,
             ranged: attack.ranged,
-            ...(attack.rider ? { rider: attack.rider } : {}),
+            ...(attack.rider ? { rider: keepDistancesTogether(attack.rider) } : {}),
             catalogue,
           };
         }),

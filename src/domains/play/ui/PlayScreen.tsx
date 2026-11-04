@@ -12,6 +12,7 @@ import { Link, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
+import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
@@ -249,7 +250,11 @@ function PlayHeader({
             )}
           </div>
         )}
-        {(view.form || view.concentration || view.effects > 0 || view.conditions > 0) && (
+        {(!readonly ||
+          view.form ||
+          view.concentration ||
+          view.effects > 0 ||
+          view.conditions > 0) && (
           <div className="f-chips">
             {/* In a form the sheet is the beast's: say so first (the source, then it). */}
             {view.form && (
@@ -263,12 +268,7 @@ function PlayHeader({
                 <span className="f-chip-n">{view.effects}</span>
               </Chip>
             )}
-            {view.conditions > 0 && (
-              <Chip kind="cond">
-                {`⚠ ${t("combat.effectReview.conditions")}`}
-                <span className="f-chip-n">{view.conditions}</span>
-              </Chip>
-            )}
+            <PlayConditions doc={doc} locale={locale} />
           </div>
         )}
       </div>

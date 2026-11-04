@@ -3731,3 +3731,68 @@
     padding: 8px 16px 16px;
   }
 }
+
+/* Play «Condizioni» (prototype x-play-cond): a panel under the chip; on a phone a
+   sheet from the bottom. */
+.fui .f-hero:has(.f-condpop),
+.fui .f-char-id:has(.f-condpop) {
+  z-index: 3; /* the open panel lies over the abilities and the page below */
+}
+.fui .f-condwrap {
+  position: relative;
+  display: inline-flex;
+}
+.fui .f-condpop {
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(640px, calc(100vh - 160px));
+  overflow: auto;
+  box-shadow: 0 20px 60px var(--shade);
+}
+.fui .f-condpop .f-pn {
+  margin: 0;
+}
+.fui .f-cond-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-cond-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.fui .f-cond-add {
+  padding-top: 8px;
+}
+@media (max-width: 640px) {
+  .fui .f-hero:has(.f-condpop),
+  .fui .f-char-id:has(.f-condpop) {
+    z-index: 30; /* the sheet covers the section bar too */
+  }
+  .fui .f-condpop {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: auto;
+    max-height: 80vh;
+    overflow: auto;
+    box-shadow:
+      0 0 0 100vmax var(--scrim),
+      0 -8px 32px var(--shade);
+  }
+}
+
+/* A fallen companion's «Rianima»: the hint, then a chip per slot that can pay. */
+.fui .f-revive {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 8px;
+}

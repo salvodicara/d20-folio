@@ -489,7 +489,13 @@ window.__audit = (opts) => {
     const r = e.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) continue;
     let a = e.parentElement;
-    while (a && a !== document.body && !isBox(a)) {
+    // A floating layer (a popover, a sheet) is the box its content sits in.
+    while (
+      a &&
+      a !== document.body &&
+      !isBox(a) &&
+      !["absolute", "fixed"].includes(getComputedStyle(a).position)
+    ) {
       const cs = getComputedStyle(a);
       if (/(auto|scroll|hidden)/.test(cs.overflowX + cs.overflowY)) {
         a = null;
