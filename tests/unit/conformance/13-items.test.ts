@@ -1,4 +1,5 @@
 /** Conformance, category 13: items, attunement, charges, curses, artifacts (corpus.md § 13). */
+import { passTime } from "@/lib/play/time";
 import { describe, expect } from "vitest";
 import { canAttune, unattuneItem } from "@/lib/attunement-guard";
 import { applyCastSourceOverrides } from "@/lib/cast-source-profile";
@@ -128,7 +129,7 @@ describe("conformance · 13. items", () => {
       source: "ITEMS",
       status: "M18",
     },
-    async () => {
+    () => {
       // The last charge rolls a d20: on a 1 the wand is destroyed.
       const wand = getMagicItem("wand-of-fireballs")?.resources?.[0];
       expect(wand && "onEmpty" in wand ? wand.onEmpty : undefined).toMatchObject({
@@ -147,10 +148,10 @@ describe("conformance · 13. items", () => {
       };
       expect(equipmentAfterLongRest([dawnItem])[0]).toEqual(dawnItem);
       expect(equipmentAfterDawn([dawnItem])[0]?.charges?.current).toBe(7);
-      // The case works once the clock says when a dawn passes (time of day).
-      const id = "@/lib/play/time";
-      const clock = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-      expect(typeof clock.crossedDawn).toBe("function");
+      // Eight hours from 22:00 cross dawn: the clock refills it (M18 clock, step 2).
+      const night = makeCharacterDoc({ equipment: [dawnItem] }, { timeOfDay: 22 * 60 });
+      const morning = passTime(night, 8 * 60);
+      expect(morning?.character.equipment[0]?.charges?.current).toBe(7);
     }
   );
 

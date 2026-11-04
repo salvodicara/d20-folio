@@ -397,6 +397,7 @@ function parseSrdWeaponRef(obj: Record<string, unknown>, path: string): SrdWeapo
 const SRD_EQUIPMENT_KEYS = [
   "srdId",
   "instanceId",
+  "scrollSpell",
   "notes",
   "equipped",
   "tracked",
@@ -423,6 +424,8 @@ function parseSrdEquipmentRef(
   // (it mints and requires ids across the four custom types) and tightening the
   // guard here first would quarantine a doc that migration is about to repair.
   if (isItemInstanceId(obj.instanceId)) ref.instanceId = obj.instanceId;
+  if (obj.scrollSpell !== undefined)
+    ref.scrollSpell = opt(obj.scrollSpell, isString, `${path}.scrollSpell`);
   if (obj.notes !== undefined) ref.notes = opt(obj.notes, isString, `${path}.notes`);
   if (obj.equipped !== undefined)
     ref.equipped = opt(obj.equipped, isBool, `${path}.equipped`);
