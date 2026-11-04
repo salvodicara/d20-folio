@@ -18,8 +18,8 @@
  * class to advance plus every RAW-legal new class (13+ primary-ability rule,
  * both ways — illegal classes are FILTERED, never greyed).
  */
-import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
-import { amountAtCastLevel } from "@/lib/scalar";
+import { commitLevelUp } from "@/lib/level-up-commit";
+
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams, useBlocker } from "react-router";
@@ -52,11 +52,11 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
 import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
 import { levelUp, getAverageHpGain } from "@/lib/level-up";
-import { isUmbrellaTool } from "@/lib/tool-names";
+
 import { localizeSrd } from "@/i18n/resolver";
-import { computeAC, abilityModifier } from "@/lib/compute";
-import { grantSkillProficiency, proficientSkillIds } from "@/lib/skills";
-import { getEquipment } from "@/data/equipment";
+import { abilityModifier } from "@/lib/compute";
+import { proficientSkillIds } from "@/lib/skills";
+
 import { getFeaturesAtLevel, getClassTable } from "@/data/classes";
 import { classEntryLevel, getClasses, primaryClassId, totalLevel } from "@/lib/classes";
 import {
@@ -68,7 +68,7 @@ import {
 import { MulticlassFilteredCause } from "./multiclass-cause";
 import type { CharacterData, ClassEntry } from "@/types/character";
 import { SRD_FEATS } from "@/data/feats";
-import { featAsi, applyFeatAsi } from "@/lib/feat-asi";
+import { featAsi } from "@/lib/feat-asi";
 import { featGateCtx } from "@/lib/feat-prereq";
 import {
   collectChoiceSlots,
@@ -76,7 +76,6 @@ import {
   partitionChoiceSlotsBySource,
   pruneChoicePicks,
   isAllChoicesComplete,
-  applyChoicePicks,
   hasAnyChoiceSlots,
   EMPTY_CHOICE_PICKS,
   type ChoicePicks,
@@ -87,7 +86,6 @@ import {
 } from "@/components/sheet/FeatureChoicesSection";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
 import {
-  applySpellMasteryPicks,
   eligibleSpellMasteryPicks,
   emptySpellMasteryPicks,
   hasEligibleSpellsAtLevel,
@@ -95,26 +93,18 @@ import {
   type SpellMasteryPicks,
 } from "@/lib/spell-mastery-pick";
 import {
-  applySignatureSpellsPicks,
   eligibleSignatureSpells,
   emptySignatureSpellsPicks,
   hasEligibleSignatureSpells,
   isSignatureSpellsComplete,
   type SignatureSpellsPicks,
 } from "@/lib/signature-spells-pick";
-import {
-  getExpandedSpellsAtLevel,
-  getExpandedSpellsThroughLevel,
-  getAlwaysPreparedFromGrants,
-  injectExpandedSpells,
-} from "@/lib/expanded-spells";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
-import { applySubclassSpellcasting } from "@/lib/subclass-spellcasting";
-import { isFightingStylePlaceholder, hasFightingStyleFeat } from "@/lib/fighting-style";
+
+import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import {
   isExpertisePlaceholder,
   listExpertiseEligibleSkills,
-  applyExpertisePicks,
   EXPERTISE_PICKS_PER_GRANT,
 } from "@/lib/expertise-pick";
 import { weaponMasteryCountForClass } from "@/lib/weapon-mastery-pick";
@@ -124,14 +114,12 @@ import { isManeuverPlaceholder, newManeuversAtLevel } from "@/lib/maneuver-pick"
 import {
   emptyAsiChoice,
   isAsiChoiceComplete,
-  applyAsiToScores,
   type AsiChoice,
   type AsiChoiceMode,
 } from "@/lib/level-up-choices";
 import {
   emptySwapChoice,
   isSwapIncomplete,
-  applySpellSwap,
   type SpellSwapChoice,
 } from "@/lib/spell-swap";
 import {
@@ -192,31 +180,6 @@ import type { LevelUpChange } from "@/lib/level-up";
 import type { SrdFeatureRef, SrdSpellRef } from "@/types/character";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Merge a patch onto the ADVANCING class's entry of `classes[]` (after the
- * engine ran, the entry exists — including a freshly-added multiclass entry).
- * Returns a fresh CharacterData; never mutates. A key set to `undefined` is
- * dropped (rebuild by inclusion — no dynamic delete).
- */
-function patchClassEntry(
-  c: CharacterData,
-  classId: string,
-  patch: Partial<ClassEntry>
-): CharacterData {
-  const classes = c.classes.map((e) => ({ ...e }));
-  const idx = classes.findIndex((e) => e.classId === classId);
-  const target = idx >= 0 ? idx : 0;
-  const base = classes[target];
-  if (!base) return c;
-  const merged = { ...base, ...patch } as Record<string, unknown>;
-  const next: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(merged)) {
-    if (v !== undefined) next[k] = v;
-  }
-  classes[target] = next as unknown as ClassEntry;
-  return { ...c, classes };
-}
 
 const HIT_DIE_AVG: Record<number, number> = { 4: 3, 6: 4, 8: 5, 10: 6, 12: 7 };
 
@@ -936,321 +899,38 @@ export function LevelUpWizard() {
         setSnapshotSaved(true);
       }
 
-      const { updatedCharacter: base } = levelUp(charData, newLevel, {
-        hpGain: rawDieGain,
-        advanceClassId: classId,
-      });
-
-      let updated = base;
-      const handledChecklistKeys: string[] = [];
-
-      if (needsAsi && isAsiChoiceComplete(asiChoice)) {
-        handledChecklistKeys.push("levelUp.checklistAsi");
-        if (asiChoice.mode === "plus2" || asiChoice.mode === "plus1_1") {
-          const prevCon = updated.abilityScores.CON;
-          updated = {
-            ...updated,
-            abilityScores: applyAsiToScores(updated.abilityScores, asiChoice),
-          };
-          const newCon = updated.abilityScores.CON;
-          const delta = abilityModifier(newCon) - abilityModifier(prevCon);
-          if (delta > 0) {
-            updated = { ...updated, hp: { max: updated.hp.max + newLevel * delta } };
-          }
-        } else if (asiChoice.featId) {
-          const feat = SRD_FEATS.find((f) => f.id === asiChoice.featId);
-          if (feat) {
-            const featRef: SrdFeatureRef = { srdId: feat.id };
-            updated = { ...updated, features: [...updated.features, featRef] };
-            const flatHp = (feat.grants ?? []).reduce(
-              (sum, g) =>
-                g.type === "hp-flat" ? sum + amountAtCastLevel(g.amount, undefined) : sum,
-              0
-            );
-            if (flatHp > 0) {
-              updated = { ...updated, hp: { max: updated.hp.max + flatHp } };
-            }
-            const asi = featAsi(feat);
-            if (asi && asiChoice.featAbility) {
-              const prevCon = updated.abilityScores.CON;
-              updated = {
-                ...updated,
-                abilityScores: applyFeatAsi(
-                  updated.abilityScores,
-                  asiChoice.featAbility,
-                  asi.amount,
-                  asi.cap
-                ),
-              };
-              const newCon = updated.abilityScores.CON;
-              const delta = abilityModifier(newCon) - abilityModifier(prevCon);
-              if (delta > 0) {
-                updated = {
-                  ...updated,
-                  hp: { max: updated.hp.max + newLevel * delta },
-                };
-              }
-            }
-            let hpBackfill = 0;
-            for (const g of feat.grants ?? []) {
-              if (g.type === "hp-per-level") hpBackfill += g.amount * newLevel;
-            }
-            if (hpBackfill > 0) {
-              updated = { ...updated, hp: { max: updated.hp.max + hpBackfill } };
-            }
-            if (feat.id === "resilient" && asiChoice.featAbility) {
-              const chosen = asiChoice.featAbility;
-              if (!updated.savingThrows.includes(chosen)) {
-                updated = {
-                  ...updated,
-                  savingThrows: [...updated.savingThrows, chosen],
-                };
-              }
-            }
-          }
-        }
-      }
-
-      if (needsSubclass && subclassChoice) {
-        handledChecklistKeys.push("levelUp.checklistSubclass");
-        updated = patchClassEntry(updated, classId, { subclassId: subclassChoice });
-        const subFeatures = getFeaturesAtLevel(classId, newClassLevel).filter(
-          (f) => f.subclass && f.subclass.toLowerCase() === subclassChoice.toLowerCase()
-        );
-        const existingIds = new Set(
-          updated.features
-            .filter((f): f is SrdFeatureRef => !("custom" in f))
-            .map((f) => f.srdId)
-        );
-        const newRefs: SrdFeatureRef[] = subFeatures
-          .filter((f) => !existingIds.has(f.id))
-          .map((f) => ({ srdId: f.id }));
-        if (newRefs.length > 0) {
-          updated = { ...updated, features: [...updated.features, ...newRefs] };
-        }
-        const expanded = getExpandedSpellsThroughLevel(
-          classId,
-          subclassChoice,
-          newClassLevel
-        );
-        if (expanded.length > 0) {
-          updated = {
-            ...updated,
-            spells: injectExpandedSpells(updated.spells, expanded),
-          };
-        }
-      } else {
-        const incremental = getExpandedSpellsAtLevel(
-          classId,
-          advancingEntry?.subclassId ?? "",
-          newClassLevel
-        );
-        if (incremental.length > 0) {
-          updated = {
-            ...updated,
-            spells: injectExpandedSpells(updated.spells, incremental),
-          };
-        }
-      }
-
-      if (newSpells.length > 0) {
-        handledChecklistKeys.push("levelUp.checklistLearnSpells");
-        const spellRefs: SrdSpellRef[] = newSpells.map((id) => ({
-          srdId: id,
-          prepared: true,
-        }));
-        updated = { ...updated, spells: [...updated.spells, ...spellRefs] };
-      }
-
-      if (needsFightingStyle && fightingStyleChoice) {
-        if (!hasFightingStyleFeat(updated.features, fightingStyleChoice)) {
-          updated = {
-            ...updated,
-            features: [...updated.features, { srdId: fightingStyleChoice }],
-          };
-        }
-      }
-
-      if (needsExpertise && expertisePicks.length === EXPERTISE_PICKS_PER_GRANT) {
-        updated = {
-          ...updated,
-          skills: applyExpertisePicks(updated.skills, expertisePicks),
-        };
-      }
-
-      if (needsWeaponMastery && weaponMasteryPicks.length === weaponMasteryCount) {
-        updated = patchClassEntry(updated, classId, {
-          weaponMasteries: [...weaponMasteryPicks],
-        });
-      }
-
-      if (needsMetamagic && metamagicPicks.length === metamagicPicksNeeded) {
-        const current =
-          updated.classes.find((e) => e.classId === classId)?.metamagicChoices ?? [];
-        const next = [...current];
-        for (const id of metamagicPicks) if (!next.includes(id)) next.push(id);
-        updated = patchClassEntry(updated, classId, { metamagicChoices: next });
-      }
-
-      if (needsManeuvers && maneuverPicks.length === maneuversNeeded) {
-        const current =
-          updated.classes.find((e) => e.classId === classId)?.maneuverChoices ?? [];
-        const next = [...current];
-        for (const id of maneuverPicks) if (!next.includes(id)) next.push(id);
-        updated = patchClassEntry(updated, classId, { maneuverChoices: next });
-      }
-
-      if (needsInvocations && invocationPicks.length === invocationPicksNeeded) {
-        const current =
-          updated.classes.find((e) => e.classId === classId)?.invocationChoices ?? [];
-        const next = [...current];
-        for (const id of invocationPicks) if (!next.includes(id)) next.push(id);
-        updated = patchClassEntry(updated, classId, { invocationChoices: next });
-      }
-
-      if (newCantrips.length > 0) {
-        handledChecklistKeys.push("levelUp.checklistLearnCantrip");
-        const cantripRefs: SrdSpellRef[] = newCantrips.map((id) => ({ srdId: id }));
-        updated = { ...updated, spells: [...updated.spells, ...cantripRefs] };
-      }
-
-      updated = applyChoicePicks(updated, choiceSlots, activeChoicePicks);
-
-      // #36 — multiclass entry grants for a NEW class: tools land on the
-      // character's tool list; the skill pick lands as a proficiency. Armor /
-      // weapon training stays DERIVED (featGateCtx reads the same facts).
-      if (mcGrants) {
-        if (mcGrants.toolProficiencies.length > 0) {
-          // The multiclass entry-grant carries tools as STABLE IDS (golden rules
-          // 12 + 22); append each CONCRETE id to the character's tool list — an
-          // umbrella id (`musical-instrument`) is a CHOICE, not a finished
-          // proficiency, so it is skipped and never leaked.
-          const existingToolIds = new Set(updated.toolProficiencyIds);
-          const addedIds = mcGrants.toolProficiencies.filter(
-            (id) => !isUmbrellaTool(id) && !existingToolIds.has(id)
-          );
-          if (addedIds.length > 0) {
-            updated = {
-              ...updated,
-              toolProficiencyIds: [...updated.toolProficiencyIds, ...addedIds],
-            };
-          }
-        }
-        if (mcSkillPicks.length > 0) {
-          // Full proficiency fills/upgrades (JoAT half included), never
-          // downgrades — the ONE shared grant rule (`grantSkillProficiency`).
-          let skills = updated.skills;
-          for (const id of mcSkillPicks) skills = grantSkillProficiency(skills, id);
-          updated = { ...updated, skills };
-        }
-        // Gaining a FIRST casting class sets the casting identity (the model
-        // carries one); an existing caster keeps theirs.
-        const newTable = getClassTable(classId);
-        if (!updated.spellcasting && newTable?.spellcasting) {
-          updated = {
-            ...updated,
-            spellcasting: {
-              ability: newTable.spellcasting.ability,
-              preparedCaster: newTable.spellcasting.preparedCaster,
-              preparedMax: levelData?.spellsKnown ?? 0,
-              saveDCOverride: null,
-              attackBonusOverride: null,
-            },
-          };
-        }
-      }
-
-      if (needsSpellMastery && (spellMasteryPicks.level1 || spellMasteryPicks.level2)) {
-        updated = {
-          ...updated,
-          spells: applySpellMasteryPicks(updated.spells, spellMasteryPicks),
-        };
-      }
-
-      if (
-        needsSignatureSpells &&
-        (signatureSpellsPicks.first || signatureSpellsPicks.second)
-      ) {
-        updated = {
-          ...updated,
-          spells: applySignatureSpellsPicks(updated.spells, signatureSpellsPicks),
-        };
-      }
-
-      if (swapChoice.removeId !== null && swapChoice.replaceId !== null) {
-        updated = {
-          ...updated,
-          spells: applySpellSwap(
-            updated.spells,
-            swapChoice.removeId,
-            swapChoice.replaceId
-          ),
-        };
-      }
-
-      if (updated.levelUpChecklist && handledChecklistKeys.length > 0) {
-        const filtered = updated.levelUpChecklist.filter(
-          (item) => !item.i18nKey || !handledChecklistKeys.includes(item.i18nKey)
-        );
-        updated = {
-          ...updated,
-          levelUpChecklist: filtered.length === 0 ? null : filtered,
-        };
-      }
-
-      updated = {
-        ...updated,
-        ac: computeAC(
-          updated.equipment,
-          updated.abilityScores,
-          getEquipment,
-          updated.features
-        ),
-      };
-
-      const grantedAlwaysPrepared = getAlwaysPreparedFromGrants(
-        resolveGrantSourcesForFeatures(updated.features),
-        {
-          level: newClassLevel,
-          maxSlotLevel: highestSpellSlotLevel(updated.classes),
-          bundleChoices: new Map(
-            Object.entries(character.session.grantBundleChoices ?? {})
-          ),
-        }
-      );
-      if (grantedAlwaysPrepared.length > 0) {
-        updated = {
-          ...updated,
-          spells: injectExpandedSpells(updated.spells, grantedAlwaysPrepared),
-        };
-      }
-
-      updated = applySubclassSpellcasting(
-        updated,
+      const updatedDoc = commitLevelUp(character, {
         classId,
-        subclassChoice ?? advancingEntry?.subclassId ?? "",
-        newClassLevel
-      );
-
-      const updatedDoc = {
-        ...character,
-        character: updated,
-        session: {
-          ...character.session,
-          hp: {
-            ...character.session.hp,
-            current: character.session.hp.current + (updated.hp.max - charData.hp.max),
-          },
-          ...(needsBundles && Object.keys(bundlePicks).length > 0
-            ? {
-                grantBundleChoices: {
-                  ...character.session.grantBundleChoices,
-                  ...bundlePicks,
-                },
-              }
-            : {}),
-        },
-      };
+        hpGain: rawDieGain,
+        asi: needsAsi && isAsiChoiceComplete(asiChoice) ? asiChoice : null,
+        subclassId: needsSubclass ? subclassChoice : null,
+        fightingStyle: needsFightingStyle ? fightingStyleChoice : null,
+        expertise: needsExpertise ? expertisePicks : [],
+        weaponMasteries:
+          needsWeaponMastery && weaponMasteryPicks.length === weaponMasteryCount
+            ? weaponMasteryPicks
+            : null,
+        metamagic:
+          needsMetamagic && metamagicPicks.length === metamagicPicksNeeded
+            ? metamagicPicks
+            : [],
+        maneuvers:
+          needsManeuvers && maneuverPicks.length === maneuversNeeded ? maneuverPicks : [],
+        invocations:
+          needsInvocations && invocationPicks.length === invocationPicksNeeded
+            ? invocationPicks
+            : [],
+        newCantrips,
+        newSpells,
+        choiceSlots,
+        choicePicks: activeChoicePicks,
+        multiclass: mcGrants ? { grants: mcGrants, skillPicks: mcSkillPicks } : null,
+        spellMastery: needsSpellMastery ? spellMasteryPicks : null,
+        signatureSpells: needsSignatureSpells ? signatureSpellsPicks : null,
+        swap: swapChoice,
+        bundlePicks: needsBundles ? bundlePicks : {},
+      });
+      const updated = updatedDoc.character;
       // A3 — capture what was ACHIEVED before the store advances underneath us
       // (post-confirm, `totalLevel(charData)` is already the new level — reading
       // live state off-by-oned the banner to N+1).
