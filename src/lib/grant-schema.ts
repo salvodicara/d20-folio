@@ -22,6 +22,7 @@ import {
   type InferExactSchema,
 } from "@/lib/exact-schema";
 import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
+import { CONDITION_ID_SCHEMA } from "@/types/condition";
 import { ALL_REACTION_TRIGGERS, type LocaleText } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
@@ -140,7 +141,10 @@ const CONDITION_END_SCHEMA = discriminatedUnionSchema("on", {
     {
       advantage: literalSchema(true),
       when: literalSchema("out-of-actor-sight"),
-      track: objectSchema({ successes: numberSchema, failures: numberSchema }),
+      track: objectSchema(
+        { successes: numberSchema, failures: numberSchema },
+        { settlesInto: CONDITION_ID_SCHEMA }
+      ),
     }
   ),
   "actor-incapacitated": objectSchema({ on: literalSchema("actor-incapacitated") }),

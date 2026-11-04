@@ -893,8 +893,9 @@ export type ConditionEnd =
       when?: "out-of-actor-sight";
       /** A save track instead of one roll (Contagion, Flesh to Stone): `successes`
        *  successes end it, `failures` failures settle it for the rest of its duration
-       *  (no more repeats). */
-      track?: { successes: number; failures: number };
+       *  (no more repeats); `settlesInto`: the condition it becomes then (Flesh to Stone:
+       *  Restrained becomes Petrified). */
+      track?: { successes: number; failures: number; settlesInto?: ConditionId };
       onFailedRepeatSave?: ReadonlyArray<CatalogueEffect>;
     }
   /** It ends when the one who applied it has the Incapacitated condition (a grapple). */
