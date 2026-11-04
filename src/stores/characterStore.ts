@@ -418,11 +418,16 @@ interface CharacterState {
    * A rider lands on the character (Life Drain, a swallow, a shove): its sheet events
    * (`riderTakenEvents`), each through the play log, then its log line. Returns the
    * one undo (the log line first, so the campaign session log hears it), or null
-   * when read-only or nothing was open.
+   * when read-only or nothing was open. A timed rider (a Speed loss) ends at
+   * `facts.boundary`, the owner-turn edge the caller reads off the fight.
    */
   takeRider: (
     effect: RiderEffect,
-    facts: { damageTaken: number; rolled?: number },
+    facts: {
+      damageTaken: number;
+      rolled?: number;
+      boundary?: { round: number; phase: "turn-start" | "turn-end" };
+    },
     source?: LocText
   ) => (() => void) | null;
   /**
@@ -1844,7 +1849,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const before = get().character;
     if (!before || get().readonly) return null;
     const undos: Array<() => void> = [];
-    for (const event of riderTakenEvents(before, effect, facts)) {
+    for (const event of riderTakenEvents(before, effect, {
+      ...facts,
+      ...(source ? { source } : {}),
+    })) {
       const undo = get().dispatch(event);
       if (undo) undos.push(undo);
     }

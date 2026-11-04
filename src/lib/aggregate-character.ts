@@ -21,6 +21,7 @@
  * every derived stat here without a legacy activation row, and key-identity
  * dedupe makes double-counting unrepresentable.
  */
+import { resolveRiderSpeedLossSources } from "@/lib/play/rider-speed-loss";
 import type { Exhaustion } from "@/lib/compute";
 import { isMagicalCopy } from "@/lib/item-copies";
 import { itemCopyItemId } from "@/lib/homebrew-items";
@@ -233,6 +234,8 @@ function aggregateWithConditions(
         ...resolveCoverStateSources(activeKeys),
         // A lit situation (Underwater's Fire Resistance) holds until it ends.
         ...resolveSituationalStateSources(activeKeys),
+        // A Speed loss that landed (a monster's rider) holds until its turn edge.
+        ...resolveRiderSpeedLossSources(activeKeys),
         // A lit Surprise puts Disadvantage on the Initiative roll until the fight ends.
         ...resolveSurpriseStateSources(activeKeys),
         // Wish Stress holds until a Long Rest.
