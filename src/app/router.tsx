@@ -118,6 +118,15 @@ const PlayScreen = NEW_UI
     )
   : null;
 
+// The new character list («I tuoi personaggi») replaces the roster in the same build.
+const RosterScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/roster/ui/RosterScreen").then((m) => ({
+        default: m.RosterScreen,
+      }))
+    )
+  : null;
+
 // The new UI's frame, mounted only around the screens already rebuilt (same flag).
 const NewAppShell = NEW_UI
   ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
@@ -212,6 +221,7 @@ const router = createBrowserRouter(
               {PlayScreen && (
                 <Route path="/characters/:characterId" element={<PlayScreen />} />
               )}
+              {RosterScreen && <Route path="/characters" element={<RosterScreen />} />}
             </Route>
           </Route>
         )}

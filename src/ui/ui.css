@@ -3447,3 +3447,281 @@
     grid-area: down;
   }
 }
+
+/* ---------- «I tuoi personaggi» (prototypes chars, chars-menu, chars-delete) ---------- */
+.fui .f-ph {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.fui .f-ph > div:first-child {
+  min-width: 0;
+}
+.fui .f-ph h1 {
+  margin: 0;
+  font: 600 36px/1.1 var(--font-title);
+  color: var(--strong);
+  text-shadow:
+    0 2px 12px var(--shade),
+    0 0 2px var(--shade);
+}
+.fui .f-ph p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  text-shadow: 0 1px 8px var(--shade);
+}
+.fui .f-ph-acts {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .fui .f-ph h1 {
+    font-size: var(--fs-xl);
+  }
+  .fui .f-ph-acts {
+    margin-left: 0;
+    width: 100%;
+  }
+  .fui .f-ph-acts > * {
+    flex: 1 1 auto;
+  }
+}
+.fui .f-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+@media (max-width: 1100px) {
+  .fui .f-roster-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .fui .f-roster-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+}
+.fui .f-ccard {
+  position: relative;
+  /* its ⋮ menu hangs past the card's edge; the card has no band to clip */
+  overflow: visible;
+  transition: border-color 0.12s;
+}
+/* no transform on hover: it would make the phone's fixed menu sheet hang off the card */
+.fui .f-ccard:hover {
+  border-color: var(--line-strong);
+}
+.fui .f-ccard[data-state="fallen"],
+.fui .f-ccard[data-state="retired"] {
+  opacity: 0.7;
+}
+.fui .f-ccard-link {
+  display: grid;
+  color: inherit;
+  text-decoration: none;
+}
+.fui .f-ccard-who {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 56px 16px 24px;
+}
+.fui .f-ccard-id {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.fui .f-ccard-name {
+  font: 600 var(--fs-title-bar-m) / 1.2 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-ccard-class {
+  font-size: var(--fs-sm);
+  color: var(--gold);
+}
+.fui .f-ccard-sub {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fui .f-ccard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  justify-items: center;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line-soft);
+  text-align: center;
+}
+.fui .f-ccard-stats > span {
+  display: grid;
+  gap: 4px;
+}
+.fui .f-ccard-stats .f-abbr {
+  display: none;
+}
+@media (max-width: 640px) {
+  .fui .f-ccard-stats .f-full {
+    display: none;
+  }
+  .fui .f-ccard-stats .f-abbr {
+    display: inline;
+  }
+}
+.fui .f-ccard-stats b {
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-ccard-stats b[data-hp="full"] {
+  color: var(--hp);
+}
+.fui .f-ccard-stats b[data-hp="hurt"] {
+  color: var(--hp-y);
+}
+.fui .f-ccard-stats b[data-hp="low"] {
+  color: var(--hp-r);
+}
+.fui .f-ccard-foot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  column-gap: 16px;
+  padding: 8px 24px 16px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fui .f-ccard-when {
+  white-space: nowrap;
+}
+.fui .f-ccard-menu {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.fui .f-cmenu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 30;
+  min-width: 240px;
+  padding: 8px 0;
+  background: var(--panel);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  box-shadow: 0 20px 60px var(--shade);
+}
+.fui .f-cmenu > a,
+.fui .f-cmenu > button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+.fui .f-cmenu > a:hover,
+.fui .f-cmenu > button:hover {
+  background: var(--hover);
+}
+.fui .f-cmenu > hr {
+  margin: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--line-soft);
+}
+.fui .f-cmenu .f-cmenu-danger {
+  color: var(--error-text);
+}
+.fui .f-cmenu-head {
+  display: none;
+}
+/* phone: the menu is a sheet from the bottom, saying whose it is */
+@media (max-width: 640px) {
+  .fui .f-cmenu {
+    position: fixed;
+    inset: auto 0 0 0;
+    padding-bottom: 16px;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    box-shadow:
+      0 0 0 100vmax var(--scrim),
+      0 -8px 32px var(--shade);
+  }
+  .fui .f-cmenu-head::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 40px;
+    height: 4px;
+    margin-left: -20px;
+    border-radius: var(--r-frame);
+    background: var(--line-strong);
+  }
+  .fui .f-cmenu-head {
+    position: relative;
+    display: block;
+    margin-bottom: 8px;
+    padding: 20px 16px 8px;
+    border-bottom: 1px solid var(--line-soft);
+    font: 600 var(--fs-lg) var(--font-title);
+    color: var(--strong);
+  }
+}
+/* «Crea un personaggio»: the last card in the grid */
+.fui .f-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 224px;
+  padding: 24px;
+  border: 1px solid var(--orn-line);
+  border-radius: var(--r-frame);
+  background: var(--panel);
+  color: var(--muted);
+  font: inherit;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.fui .f-tile:hover {
+  border-color: var(--line-strong);
+}
+.fui .f-tile > .f-ic {
+  width: 48px;
+  height: 48px;
+  color: var(--gold);
+}
+.fui .f-tile > b {
+  font: 600 var(--fs-title-bar-m) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-roster-empty {
+  display: grid;
+}
+.fui .f-ccard-stats .f-lbl {
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+/* phone: the prototype's tighter card */
+@media (max-width: 640px) {
+  .fui .f-ccard-who {
+    padding: 16px 48px 12px 16px;
+  }
+  .fui .f-ccard-name {
+    font-size: var(--fs-lg);
+  }
+  .fui .f-ccard-foot {
+    padding: 8px 16px 16px;
+  }
+}

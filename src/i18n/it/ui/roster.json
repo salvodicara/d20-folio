@@ -77,6 +77,17 @@
     "updated": "Aggiornato {{date}}",
     "searchPlaceholder": "Filtra per nome o classe…",
     "noMatchTitle": "Nessun personaggio corrisponde",
-    "noMatchBlurb": "Nessun personaggio corrisponde a “{{query}}”. Prova con un altro nome o classe."
+    "noMatchBlurb": "Nessun personaggio corrisponde a “{{query}}”. Prova con un altro nome o classe.",
+    "screenTitle": "I tuoi personaggi",
+    "createTileSub": "Sei passi guidati",
+    "hp": "Punti ferita",
+    "ac": "Classe armatura",
+    "updatedWhen": "aggiornata {{when}}",
+    "menuFor": "Altre azioni: {{name}}",
+    "openSheet": "Apri la scheda",
+    "exportFile": "Esporta come file",
+    "deleteCharacter": "Elimina personaggio",
+    "deleteForever": "Elimina per sempre",
+    "typeName": "Scrivi il nome per confermare"
   }
 }

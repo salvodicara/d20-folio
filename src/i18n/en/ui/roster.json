@@ -77,6 +77,17 @@
     "updated": "Updated {{date}}",
     "searchPlaceholder": "Filter by name or class…",
     "noMatchTitle": "No characters match",
-    "noMatchBlurb": "No character matches “{{query}}”. Try a different name or class."
+    "noMatchBlurb": "No character matches “{{query}}”. Try a different name or class.",
+    "screenTitle": "Your characters",
+    "createTileSub": "Six guided steps",
+    "hp": "Hit Points",
+    "ac": "Armor Class",
+    "updatedWhen": "updated {{when}}",
+    "menuFor": "More actions: {{name}}",
+    "openSheet": "Open the sheet",
+    "exportFile": "Export as a file",
+    "deleteCharacter": "Delete character",
+    "deleteForever": "Delete forever",
+    "typeName": "Type the name to confirm"
   }
 }
