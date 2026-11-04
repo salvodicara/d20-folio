@@ -3,6 +3,7 @@
 import { DiaryTab } from "@/domains/chronicle/ui/DiaryTab";
 import { FightTab } from "@/domains/combat/ui/FightTab";
 import { NotesTab } from "@/domains/notes/ui/NotesTab";
+import { RulesTab } from "@/domains/campaign/ui/RulesTab";
 import { Coins } from "@/domains/treasury/ui/Coins";
 import { TreasuryTab } from "@/domains/treasury/ui/TreasuryTab";
 import { useState } from "react";
@@ -24,7 +25,7 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 import { partyRows, type PartyRow } from "../party-rows-view";
 import { useLiveDocs } from "./use-party";
 
-type Tab = "party" | "fight" | "journal" | "treasure" | "notes";
+type Tab = "party" | "fight" | "journal" | "treasure" | "notes" | "rules";
 
 export function CampaignScreen() {
   const { campaignId } = useParams();
@@ -79,6 +80,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
             { id: "journal" as const, label: t("campaignHub.workspaceJournal") },
             { id: "treasure" as const, label: t("campaignHub.treasury") },
             { id: "notes" as const, label: t("notes.combatRubric") },
+            { id: "rules" as const, label: t("campaignScreen.tableRules.tab") },
           ]}
           value={tab}
           onChange={setTab}
@@ -91,6 +93,8 @@ function Campaign({ campaignId }: { campaignId: string }) {
           <TreasuryTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : tab === "notes" ? (
           <NotesTab campaign={campaign} onToast={setToast} />
+        ) : tab === "rules" ? (
+          <RulesTab campaign={campaign} onToast={setToast} />
         ) : (
           <DiaryTab campaign={campaign} locale={locale} onToast={setToast} />
         )}

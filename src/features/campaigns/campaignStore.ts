@@ -12,6 +12,7 @@
  * ARCHITECTURE.md (free-tier NFR) (§4 — derive in the browser, no server recompute).
  */
 
+import type { TableRulesOverrides } from "@/lib/table-rules";
 import { create } from "zustand";
 import { setDiagnosticsContext } from "@/lib/diagnostics";
 import type {
@@ -55,6 +56,8 @@ export interface CampaignState {
   setName: (name: string) => void;
   /** N4 — set/clear the custom banner (url + crop); optimistic store update. */
   setBanner: (bannerUrl: string | null, bannerCrop: PortraitCrop | null) => void;
+  /** The table rules the DM set (only what differs from RAW). */
+  setTableRules: (tableRules: TableRulesOverrides) => void;
   /** Replace the treasury totals. */
   setTreasury: (treasury: CampaignTreasury) => void;
   /** Append a treasury ledger entry (the running record of add/remove). */
@@ -113,6 +116,15 @@ export const useCampaignStore = create<CampaignState>()((set, get) => ({
     const { campaign } = get();
     if (!campaign) return;
     set({ campaign: { ...campaign, bannerUrl, bannerCrop } });
+  },
+
+  setTableRules: (tableRules) => {
+    const { campaign } = get();
+    if (!campaign) return;
+    const next = { ...campaign };
+    if (Object.keys(tableRules).length > 0) next.tableRules = tableRules;
+    else delete next.tableRules;
+    set({ campaign: next });
   },
 
   setTreasury: (treasury) => {

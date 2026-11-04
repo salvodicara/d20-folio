@@ -3831,3 +3831,30 @@
   display: grid;
   gap: 8px;
 }
+
+/* The campaign's «Regole» (table rules): each rule, what RAW does, its choices. */
+.fui .f-rules-group {
+  display: grid;
+  margin-top: 16px;
+}
+.fui .f-rule {
+  display: grid;
+  gap: 8px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-rule-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+.fui .f-rule-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 16px;
+}
+.fui .f-rule-field {
+  display: grid;
+  gap: 8px;
+}

@@ -19,7 +19,7 @@
  */
 
 import type { DamageOptions } from "@/lib/play/damage";
-import { conformTableRules } from "@/lib/table-rules";
+import { conformTableRules, type TableRulesOverrides } from "@/lib/table-rules";
 import {
   arrayRemove,
   arrayUnion,
@@ -611,6 +611,20 @@ export async function setNextSession(
  * writes). Pass `null` for both to clear back to the default art. No-op under dev
  * bypass (the caller updates the store optimistically).
  */
+/** The DM's table rules for the campaign: only what differs from RAW; none at all
+ *  removes the field. */
+export async function setCampaignTableRules(
+  campaignId: string,
+  tableRules: TableRulesOverrides
+): Promise<void> {
+  if (import.meta.env.DEV && DEV_BYPASS) return;
+  const conformed = conformTableRules(tableRules);
+  await updateDoc(campaignDoc(campaignId), {
+    tableRules: Object.keys(conformed).length > 0 ? conformed : deleteField(),
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function setCampaignBanner(
   campaignId: string,
   bannerUrl: string | null,

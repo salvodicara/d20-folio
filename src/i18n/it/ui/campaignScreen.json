@@ -12,6 +12,130 @@
     "fightIdle": "Nessuno scontro in corso. Parte da solo quando qualcuno tira l’iniziativa.",
     "fightRunning": "Scontro in corso · round {{round}}",
     "loading": "Carico la campagna",
-    "notFound": "Campagna non trovata. Forse non ne fai più parte."
+    "notFound": "Campagna non trovata. Forse non ne fai più parte.",
+    "tableRules": {
+      "title": "Regole del tavolo",
+      "tab": "Regole",
+      "introDm": "Solo il Master le cambia; valgono per tutti i personaggi della campagna. Di base valgono le regole del 2024 (RAW): cambia solo quello che al tuo tavolo si gioca diversamente.",
+      "introPlayer": "Le regole del 2024 (RAW) valgono tutte, tranne queste.",
+      "allRaw": "Questo tavolo gioca con le regole del 2024 (RAW).",
+      "raw": "RAW",
+      "table": "Regola del tavolo",
+      "customize": "Personalizza",
+      "reset": "Torna alle regole RAW",
+      "active_one": "{{count}} regola del tavolo attiva",
+      "active_other": "{{count}} regole del tavolo attive",
+      "changed": "Regola del tavolo cambiata",
+      "resetDone": "Regole RAW ripristinate",
+      "failed": "Non è stato possibile salvare le regole del tavolo",
+      "groups": {
+        "combat": "Combattimento",
+        "rest": "Riposi e Indebolimento",
+        "items": "Oggetti e creature",
+        "optional": "Sistemi opzionali"
+      },
+      "rows": {
+        "flanking": {
+          "title": "Fiancheggiamento",
+          "why": "Due alleati ai lati opposti di un nemico. Nel 2024 è una regola opzionale.",
+          "choices": {
+            "off": "Spento",
+            "advantage": "Vantaggio",
+            "plus-2": "+2 al tiro"
+          }
+        },
+        "nat1": {
+          "title": "1 naturale su prove e tiri salvezza",
+          "why": "Nel 2024 un 1 naturale fa mancare solo i tiri per colpire.",
+          "choices": {
+            "none": "Nessun effetto",
+            "fail": "Fallisce sempre"
+          }
+        },
+        "fumbles": {
+          "title": "Nota sul fallimento critico",
+          "why": "Un 1 naturale su un attacco aggiunge una nota sul diario dello scontro.",
+          "choices": {
+            "false": "No",
+            "true": "Sì"
+          }
+        },
+        "deathSaves": {
+          "title": "Tiri contro la morte",
+          "why": "Quanti successi stabilizzano e quanti fallimenti uccidono (RAW: 3 e 3).",
+          "fields": {
+            "successes": "Successi",
+            "failures": "Fallimenti"
+          }
+        },
+        "rest": {
+          "title": "Durata dei riposi",
+          "why": "RAW: riposo breve 1 ora, riposo lungo 8 ore.",
+          "fields": {
+            "shortMinutes": "Riposo breve, minuti",
+            "longMinutes": "Riposo lungo, minuti"
+          }
+        },
+        "exhaustion": {
+          "title": "Indebolimento",
+          "why": "RAW: fino al livello 6; ogni livello toglie 2 ai tiri d20 e 1,5 m alla velocità.",
+          "fields": {
+            "maxLevel": "Livello massimo",
+            "d20PerLevel": "Ai tiri d20, per livello",
+            "speedFtPerLevel": "Alla velocità, per livello (in piedi)"
+          }
+        },
+        "potionsDrink": {
+          "title": "Bere una pozione",
+          "why": "Nel 2024 è un'azione bonus.",
+          "choices": {
+            "bonus": "Azione bonus",
+            "action": "Azione"
+          }
+        },
+        "potionsAdminister": {
+          "title": "Far bere una pozione",
+          "why": "Nel 2024 è un'azione bonus.",
+          "choices": {
+            "bonus": "Azione bonus",
+            "action": "Azione"
+          }
+        },
+        "familiarsAttack": {
+          "title": "I famigli attaccano",
+          "why": "Nel 2024 un famiglio non può attaccare.",
+          "choices": {
+            "false": "No",
+            "true": "Sì"
+          }
+        },
+        "hide": {
+          "title": "Nascondersi",
+          "why": "Nel 2024 nascondersi chiede una prova contro CD 15.",
+          "choices": {
+            "raw": "CD 15 fissa (RAW)",
+            "table": "Il Master decide (niente CD 15)"
+          }
+        },
+        "points": {
+          "title": "Punti eroe e punti trama",
+          "why": "Tolti dal 2024; aggiungili se il tavolo li usa.",
+          "toggles": {
+            "heroPoints": "Punti eroe",
+            "plotPoints": "Punti trama"
+          }
+        },
+        "systems": {
+          "title": "Sistemi facoltativi",
+          "why": "Dalla Guida del Dungeon Master: accendi quelli che usate.",
+          "toggles": {
+            "bastions": "Bastioni",
+            "circleMagic": "Magia di cerchio",
+            "factions": "Fazioni",
+            "evolvingItems": "Oggetti che crescono"
+          }
+        }
+      }
+    }
   }
 }

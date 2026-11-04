@@ -12,6 +12,130 @@
     "fightIdle": "No combat in progress. It starts on its own when someone rolls Initiative.",
     "fightRunning": "Combat in progress · round {{round}}",
     "loading": "Loading the campaign",
-    "notFound": "Campaign not found. You may no longer be part of it."
+    "notFound": "Campaign not found. You may no longer be part of it.",
+    "tableRules": {
+      "title": "Table rules",
+      "tab": "Rules",
+      "introDm": "Only the DM changes them; they apply to every character in the campaign. The 2024 rules (RAW) apply by default: change only what your table plays differently.",
+      "introPlayer": "The 2024 rules (RAW) all apply, except these.",
+      "allRaw": "This table plays by the 2024 rules (RAW).",
+      "raw": "RAW",
+      "table": "Table rule",
+      "customize": "Customize",
+      "reset": "Back to RAW",
+      "active_one": "{{count}} table rule in effect",
+      "active_other": "{{count}} table rules in effect",
+      "changed": "Table rule changed",
+      "resetDone": "RAW rules restored",
+      "failed": "Couldn't save the table rules",
+      "groups": {
+        "combat": "Combat",
+        "rest": "Rests and Exhaustion",
+        "items": "Items and creatures",
+        "optional": "Optional systems"
+      },
+      "rows": {
+        "flanking": {
+          "title": "Flanking",
+          "why": "Two allies on opposite sides of an enemy. Optional in 2024.",
+          "choices": {
+            "off": "Off",
+            "advantage": "Advantage",
+            "plus-2": "+2 to the roll"
+          }
+        },
+        "nat1": {
+          "title": "Natural 1 on checks and saves",
+          "why": "In 2024 a natural 1 only makes an attack roll miss.",
+          "choices": {
+            "none": "No effect",
+            "fail": "Always fails"
+          }
+        },
+        "fumbles": {
+          "title": "Fumble note",
+          "why": "A natural 1 on an attack adds a note to the fight's log.",
+          "choices": {
+            "false": "No",
+            "true": "Yes"
+          }
+        },
+        "deathSaves": {
+          "title": "Death saving throws",
+          "why": "How many successes stabilize and how many failures kill (RAW: 3 and 3).",
+          "fields": {
+            "successes": "Successes",
+            "failures": "Failures"
+          }
+        },
+        "rest": {
+          "title": "Rest lengths",
+          "why": "RAW: a Short Rest is 1 hour, a Long Rest 8 hours.",
+          "fields": {
+            "shortMinutes": "Short Rest, minutes",
+            "longMinutes": "Long Rest, minutes"
+          }
+        },
+        "exhaustion": {
+          "title": "Exhaustion",
+          "why": "RAW: up to level 6; each level takes 2 off D20 Tests and 5 ft off Speed.",
+          "fields": {
+            "maxLevel": "Highest level",
+            "d20PerLevel": "To D20 Tests, per level",
+            "speedFtPerLevel": "To Speed, per level (in feet)"
+          }
+        },
+        "potionsDrink": {
+          "title": "Drinking a potion",
+          "why": "A Bonus Action in 2024.",
+          "choices": {
+            "bonus": "Bonus Action",
+            "action": "Action"
+          }
+        },
+        "potionsAdminister": {
+          "title": "Giving someone a potion",
+          "why": "A Bonus Action in 2024.",
+          "choices": {
+            "bonus": "Bonus Action",
+            "action": "Action"
+          }
+        },
+        "familiarsAttack": {
+          "title": "Familiars attack",
+          "why": "In 2024 a familiar can't attack.",
+          "choices": {
+            "false": "No",
+            "true": "Yes"
+          }
+        },
+        "hide": {
+          "title": "Hiding",
+          "why": "In 2024 hiding takes a check against DC 15.",
+          "choices": {
+            "raw": "Fixed DC 15 (RAW)",
+            "table": "The DM decides (no DC 15)"
+          }
+        },
+        "points": {
+          "title": "Hero points and plot points",
+          "why": "Dropped in 2024; add them if your table uses them.",
+          "toggles": {
+            "heroPoints": "Hero points",
+            "plotPoints": "Plot points"
+          }
+        },
+        "systems": {
+          "title": "Optional systems",
+          "why": "From the Dungeon Master's Guide: switch on the ones you use.",
+          "toggles": {
+            "bastions": "Bastions",
+            "circleMagic": "Circle magic",
+            "factions": "Factions",
+            "evolvingItems": "Items that grow"
+          }
+        }
+      }
+    }
   }
 }
