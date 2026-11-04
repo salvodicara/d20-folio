@@ -498,7 +498,7 @@ describe("conformance · 6. reactions and timing", () => {
       category: 6,
       case: "Legendary actions",
       source: "dndbeyond posts 1890",
-      status: "M5",
+      status: "works",
     },
     () => {
       const lich = getMonster("lich");
