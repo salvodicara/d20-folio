@@ -141,6 +141,7 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "deriveJumps",
     consumer: "src/features/character/hud/LeftHud.tsx",
   },
+  "no-speech": { via: "speech:none", consumer: "src/lib/play/speech.ts" },
   "jump-multiplier": {
     via: "deriveJumps",
     consumer: "src/features/character/hud/LeftHud.tsx",

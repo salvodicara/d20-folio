@@ -1085,6 +1085,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:broom-of-flying (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "broom-of-flying",
+    commandWord: true,
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
@@ -1143,6 +1144,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:decanter-of-endless-water (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "decanter-of-endless-water",
+    commandWord: true,
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,
@@ -1296,6 +1298,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:gem-of-brightness (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "gem-of-brightness",
+    commandWord: true,
     rarity: "uncommon",
     type: "wondrous",
     attunement: false,

@@ -461,6 +461,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     movementCostFt: numberSchema,
     type: literalSchema("jump-leap"),
   }),
+  /** No speech: no Verbal components and no command words (Silence's occupants). */
+  "no-speech": objectSchema({ type: literalSchema("no-speech") }),
   /** Feet added to the Long and High Jump (Peerless Athlete: 10 and 10); with
    *  `runningOnly`, to the running-start jumps alone (Duskling's Enhanced Jump). */
   "jump-bonus": objectSchema(
