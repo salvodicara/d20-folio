@@ -42,6 +42,13 @@ describe("the tray knows a weapon's floor", () => {
     });
     const sword = localizeActions(doc, "en").find((a) => a.id === "weapon-greatsword");
     if (!sword) throw new Error("no greatsword row");
-    expect(damageTrayPlan(sword, ["monster-1"], "pc-me")?.dieFloor).toEqual(GWF);
+    // The weapon's dice and flat bonus ride along, so a screen can split a typed
+    // total: 2d6 + STR (+3 at 16).
+    expect(damageTrayPlan(sword, ["monster-1"], "pc-me")?.dieFloor).toEqual({
+      ...GWF,
+      dice: "2d6",
+      bonus: sword.summary.weaponParts?.damageMod,
+    });
+    expect(sword.summary.weaponParts?.damageMod).toBeTypeOf("number");
   });
 });
