@@ -1,5 +1,5 @@
 /** Spells → Activity: the flat spell fields read as one Activity. */
-import type { SrdSpellData } from "@/data/types";
+import type { ReactionTrigger, SrdSpellData } from "@/data/types";
 import { whileActiveDurationAtCastLevel } from "@/lib/grants";
 import { translateAction } from "./from-action";
 import { compact, dice, statusEffect, terms, whileActiveGrants } from "./shared";
@@ -47,6 +47,17 @@ function castingCost(
   return { economy: "time" };
 }
 
+/** One reaction trigger, or several (any of them lets the spell be cast). */
+function reactionTriggerCost(
+  given: SrdSpellData["reactionTrigger"]
+): Pick<ActivityCost, "trigger" | "triggers"> {
+  const all: ReadonlyArray<ReactionTrigger> =
+    given === undefined ? [] : typeof given === "string" ? [given] : given;
+  const [first] = all;
+  if (!first) return {};
+  return all.length > 1 ? { trigger: first, triggers: all } : { trigger: first };
+}
+
 function spellCost(spell: SrdSpellData, gaps: ActivityGap[]): ActivityCost {
   const { v, s, m, costGp, consumed } = spell.components;
   const components = compact({
@@ -58,7 +69,7 @@ function spellCost(spell: SrdSpellData, gaps: ActivityGap[]): ActivityCost {
   });
   return compact({
     ...castingCost(spell.castingTime, gaps),
-    trigger: spell.reactionTrigger,
+    ...reactionTriggerCost(spell.reactionTrigger),
     ritual: spell.ritual ? (true as const) : undefined,
     components: Object.keys(components).length > 0 ? components : undefined,
     pay:

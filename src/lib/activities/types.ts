@@ -103,8 +103,10 @@ export interface ActivityCost {
   minutes?: number;
   /** A second, longer way to do it (Cure Wounds' "1 action or 8 hours" family). */
   orMinutes?: number;
-  /** The circumstance that lets a reaction be taken. */
+  /** The circumstance that lets a reaction be taken (the first, when several). */
   trigger?: ReactionTrigger;
+  /** Every circumstance, when there are several (any of them lets it be taken). */
+  triggers?: ReadonlyArray<ReactionTrigger>;
   /** It can also be done as a ritual (no slot, ten minutes more). */
   ritual?: true;
   /** Spell components; `gp` is the first priced material, `consumed` if used up. */

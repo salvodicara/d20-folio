@@ -770,12 +770,23 @@ function grantsExtraAction(a: RawResolvedAction): boolean {
   );
 }
 
-/** The reaction trigger token the engine stamped as `combat.reactionTrigger_<token>`. */
+const TRIGGER_PREFIX = "combat.reactionTrigger_";
+
+/** The reaction trigger tokens the engine stamped as `combat.reactionTrigger_<token>`:
+ *  every one when the reaction answers several, else its single one. */
+function reactionTriggersOf(a: RawResolvedAction): string[] {
+  const texts = a.summary.triggers ?? (a.summary.trigger ? [a.summary.trigger] : []);
+  return texts.flatMap((t) =>
+    "ui" in t && t.ui.startsWith(TRIGGER_PREFIX)
+      ? [t.ui.slice(TRIGGER_PREFIX.length)]
+      : []
+  );
+}
+
+/** The defensive trigger a reaction answers, else its first one. */
 function reactionTriggerOf(a: RawResolvedAction): string | undefined {
-  const t = a.summary.trigger;
-  if (!t || !("ui" in t)) return undefined;
-  const prefix = "combat.reactionTrigger_";
-  return t.ui.startsWith(prefix) ? t.ui.slice(prefix.length) : undefined;
+  const all = reactionTriggersOf(a);
+  return all.find((token) => DEFENSIVE_TRIGGERS.has(token)) ?? all[0];
 }
 
 function isRanged(a: RawResolvedAction): boolean {
