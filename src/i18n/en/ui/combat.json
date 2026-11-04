@@ -321,6 +321,7 @@
     "initiativeTopUp": "{{source}}: regained uses on Initiative",
     "zeroHpPending_disintegrated": "{{source}}: if no feature keeps you up, you are turned to dust",
     "zeroHpPending_dies": "{{source}}: if no feature keeps you up, you die",
+    "potionMixingLogged": "Mixing logged: {{roll}} on d100",
     "atZeroHpApply": "Stay at {{hp}} HP ({{source}})",
     "atZeroHpAppliedToast": "{{source}}: standing at {{hp}} HP",
     "atZeroHpSave": "{{source}}: {{ability}} save DC {{dc}}",

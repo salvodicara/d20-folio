@@ -24,6 +24,8 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
+import { customText, srdText, type LocText } from "@/lib/loc-text";
 import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
 import { runEndTurn } from "@/lib/play/end-turn";
 import { actsOfUse } from "@/lib/play/states";
@@ -514,6 +516,8 @@ export function TurnEconomyProvider({
   // A cast of Polymorph, True Polymorph, Shapechange or Animal Shapes opens its form
   // picker (the one the Spells tab's Transform opens). Skippable; spends nothing.
   const [formPickerSpellId, setFormPickerSpellId] = useState<string | null>(null);
+  // Mixing potions (M18): the potions a drink mixes, while the d100 is offered.
+  const [mixing, setMixing] = useState<LocText[] | null>(null);
 
   const [freeCastFromListRequest, setFreeCastFromListRequest] = useState<{
     characterId: string;
@@ -852,6 +856,12 @@ export function TurnEconomyProvider({
     paySpends(bareSpend ? [bareSpend] : []);
     // S9 — a CONSUMED buff potion arms its round countdown when drunk (before the bottle
     // is used: a homebrew potion reads its mechanics from its own row).
+    // A potion drunk while another one still runs: offer the DM's mixing roll.
+    const mix =
+      action.costEquipment && cs.character
+        ? potionMixingOffer(cs.character, action.costEquipment)
+        : null;
+    if (mix && cs.character) setMixing(mixedPotionNames(cs.character, mix));
     if (action.costEquipment) cs.consumePotionBuff(action.costEquipment);
     if (!bareSpend && action.costEquipment) cs.useEquipmentItem(action.costEquipment);
     // RA-14 — a ranged attack with TRACKED ammunition debits one unit, only while stock
@@ -2870,6 +2880,34 @@ export function TurnEconomyProvider({
   usePublishPlayPrompt("arcane-recovery", arcaneRecoveryPrompt);
   usePublishPlayPrompt("divine-intervention", divineInterventionPrompt);
   usePublishPlayPrompt("form-picker", formPickerPrompt);
+  const mixingPrompt = useMemo<PlayPrompts["potion-mixing"] | null>(
+    () =>
+      mixing
+        ? {
+            potions: mixing,
+            onConfirm: (roll) => {
+              setMixing(null);
+              if (roll === null) return;
+              const outcome = mixingOutcome(roll, undefined);
+              registerUndoableToast(
+                { message: t("combat.potionMixingLogged", { roll }) },
+                () => {
+                  const id = useCharacterStore.getState().logEvent({
+                    kind: "potion-mixing",
+                    roll,
+                    potions: mixing,
+                    ...(outcome ? { outcome } : {}),
+                  });
+                  return () => useCharacterStore.getState().removeLogEntry(id);
+                },
+                { turnScoped: false }
+              );
+            },
+          }
+        : null,
+    [mixing, t]
+  );
+  usePublishPlayPrompt("potion-mixing", mixingPrompt);
 
   return (
     <TurnEconomyContext.Provider value={api}>
@@ -2928,4 +2966,21 @@ export function TurnEconomyProvider({
       )}
     </TurnEconomyContext.Provider>
   );
+}
+
+/** The names of the potions a drink mixes: the one drunk first, then those running.
+ *  A homebrew potion is named by its own copy. */
+function mixedPotionNames(
+  doc: NonNullable<ReturnType<typeof useCharacterStore.getState>["character"]>,
+  mix: { drinking: string; running: string[] }
+): LocText[] {
+  const name = (id: string): LocText => {
+    const custom = doc.character.equipment.find(
+      (e) => "custom" in e && e.instanceId === id
+    );
+    return custom && "custom" in custom
+      ? customText(custom.name)
+      : srdText("magic-item", id, "name");
+  };
+  return [mix.drinking, ...mix.running].map(name);
 }

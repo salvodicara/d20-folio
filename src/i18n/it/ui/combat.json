@@ -321,6 +321,7 @@
     "initiativeTopUp": "{{source}}: usi recuperati all'Iniziativa",
     "zeroHpPending_disintegrated": "{{source}}: se nessuna capacità ti tiene in piedi, diventi polvere",
     "zeroHpPending_dies": "{{source}}: se nessuna capacità ti tiene in piedi, muori",
+    "potionMixingLogged": "Mescolanza registrata: {{roll}} su d100",
     "atZeroHpApply": "Resta a {{hp}} PF ({{source}})",
     "atZeroHpAppliedToast": "{{source}}: in piedi a {{hp}} PF",
     "atZeroHpSave": "{{source}}: TS {{ability}} CD {{dc}}",

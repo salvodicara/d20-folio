@@ -137,6 +137,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
     case "slot-restored":
     case "spell-countered":
       return resolveLogStyle("spell-cast");
+    case "potion-mixing":
+      return resolveLogStyle("generic");
     case "exhaustion-change":
       return resolveLogStyle(
         event.to > event.from ? "condition-add" : "condition-remove"
@@ -265,6 +267,13 @@ export function localizeCombatEvent(
       ? t("sessionReport.withSource", { line, source: resolveActionRef(source) })
       : line;
   switch (event.kind) {
+    case "potion-mixing": {
+      const line = t("combatLog.potionMixing", {
+        roll: event.roll,
+        potions: event.potions.map(resolveActionRef).join(", "),
+      });
+      return event.outcome ? `${line} · ${event.outcome}` : line;
+    }
     case "spell-countered":
       return t("combatLog.spellCountered", {
         name: resolveActionRef(event.action),

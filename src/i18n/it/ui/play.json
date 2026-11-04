@@ -96,6 +96,12 @@
       "nothing": "Niente da recuperare",
       "slotsLeft": "{{left}} su {{total}}"
     },
+    "mixing": {
+      "title": "Mescolanza",
+      "note": "{{potions}} si mescolano: tira sulla tabella del master.",
+      "roll": "d100",
+      "record": "Registra"
+    },
     "time": {
       "setTimeOfDay": "Imposta l'ora del giorno",
       "whatTime": "Che ora è? (facoltativo)",

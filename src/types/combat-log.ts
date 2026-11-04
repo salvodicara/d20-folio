@@ -190,6 +190,9 @@ export type CombatEvent =
   | { kind: "rest"; restKind: "short" | "long" }
   /** Minutes passed outside the turn order ("10 minutes pass"). */
   | { kind: "time-passes"; minutes: number }
+  /** Mixing potions (the DM's optional d100 table): the roll entered, the potions it
+   *  mixed, and the table's outcome when the table is known. */
+  | { kind: "potion-mixing"; roll: number; potions: LocText[]; outcome?: string }
   /**
    * A turn ended → a new round started (`round` = the new round number). With
    * `extraTurn`, the turn ended and an EXTRA turn started in the SAME round
