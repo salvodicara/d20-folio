@@ -33,6 +33,7 @@ import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 import { useAuthStore } from "@/stores/authStore";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { effectIdsConsumedByAttack, foldCombatEffectOps } from "@/lib/combat-effects";
+import { budgetSpent } from "@/lib/zones";
 
 import type { DamageTrayOffer } from "./damage-tray-store";
 
@@ -339,6 +340,40 @@ export function applyTray(
                 t
               );
           });
+        }
+        // A budgeted zone (Guardian of Faith) counts the damage it dealt, and its
+        // effect ends once the total reaches the budget.
+        const zone = offer.zone;
+        if (zone?.budget && effect === "damage") {
+          const taken = applied.reduce((sum, row) => sum + row.amount, 0);
+          const before = store.character.session.zoneSpent?.[zone.effectId] ?? 0;
+          const result = budgetSpent(zone.budget, before, taken);
+          const undoSpent = store.dispatch({
+            kind: "set-zone-spent",
+            effectId: zone.effectId,
+            spent: result.spent,
+          });
+          if (undoSpent) reversals.push(undoSpent);
+          const status = useCombatStatusStore.getState().status;
+          const held = status
+            ? foldCombatEffectOps(status.encounter.effectOps).find(
+                (e) => e.id === zone.effectId
+              )
+            : undefined;
+          if (result.ends && status && held) {
+            writeFightEffect(status.campaignId, { revoke: held.id }, t);
+            useToastStore.getState().showToast({
+              message: t("combat.zoneBudgetSpent", { name: offer.actionName }),
+              duration: 6000,
+            });
+            reversals.push(() => {
+              writeFightEffect(
+                status.campaignId,
+                { append: { ...held, id: crypto.randomUUID() } },
+                t
+              );
+            });
+          }
         }
         // A condition that can end early (Abjure Foes) lands in the fight as a
         // sourced effect, so the fight ends it by itself (`fightConditionEnds`).

@@ -193,3 +193,47 @@ export function budgetSpent(
   const total = Math.min(budget.max, spent + Math.max(0, taken));
   return { spent: total, ends: total >= budget.max };
 }
+
+/** A zone that fires on a creature at a turn boundary. */
+export interface ZoneTurnHit {
+  zone: ZoneInstance;
+  creatureId: string;
+  kind: "start-turn" | "end-turn";
+}
+
+/**
+ * What a turn change fires (edge-case M9): the creature whose turn ended may be in a
+ * zone that triggers at the end of a turn, the one whose turn starts in one that
+ * triggers at the start. The table says whether it is inside; the engine says the
+ * zone counts (its triggers, whom it spares, once per turn) and keeps the ledger.
+ */
+export function zoneTurnHits(
+  zones: ReadonlyArray<ZoneInstance>,
+  turn: {
+    round: number;
+    ended: string | null;
+    started: string | null;
+  },
+  ledger: ZoneLedger
+): { hits: ZoneTurnHit[]; ledger: ZoneLedger } {
+  let next = ledger;
+  const hits: ZoneTurnHit[] = [];
+  const moments: Array<{ kind: ZoneTurnHit["kind"]; creatureId: string | null }> = [
+    { kind: "end-turn", creatureId: turn.ended },
+    { kind: "start-turn", creatureId: turn.started },
+  ];
+  for (const { kind, creatureId } of moments) {
+    if (!creatureId) continue;
+    for (const zone of zones) {
+      const result = zoneTriggers(
+        zone,
+        { kind, creatureId, turn: { round: turn.round, combatantId: creatureId } },
+        next
+      );
+      if (!result.fires) continue;
+      next = result.ledger;
+      hits.push({ zone, creatureId, kind });
+    }
+  }
+  return { hits, ledger: next };
+}

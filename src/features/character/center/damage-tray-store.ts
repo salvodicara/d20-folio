@@ -31,6 +31,9 @@ export interface DamageTrayOffer {
   /** The catalogue entry the conditions come from, when they can end early (Abjure
    *  Foes): in a fight they land as sourced effects the fight ends by itself. */
   conditionSource?: { kind: "spell" | "feature"; id: string };
+  /** The zone this tray is for (a creature in Spirit Guardians at its turn's end), and
+   *  the damage it may still deal when its spell has a budget (Guardian of Faith). */
+  zone?: { effectId: string; budget?: { max: number } };
 }
 
 interface DamageTrayStore {
