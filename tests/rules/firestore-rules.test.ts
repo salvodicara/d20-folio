@@ -2426,6 +2426,71 @@ describe("firestore.rules — /campaigns notes (revealed) + dmNotes (hidden) gat
   });
 });
 
+// ── M20: an item's DM-only state and its reveals, gated by COLLECTION PATH ─────────
+// docs/architecture/2026-11-dm-state-and-roster.md. What only the DM knows about one
+// physical item (a curse not yet revealed, a sentient item's aims) lives in
+// `/campaigns/{campId}/dmItems/{instanceId}`, DM/admin only; what the DM has revealed
+// lives in `itemReveals`, which members read and only the DM writes. Like dmNotes,
+// path-based and list-safe, and both excluded from the member wildcard.
+describe("firestore.rules — /campaigns dmItems (hidden) + itemReveals (revealed)", () => {
+  const hidden = (id: string) => ["campaigns", "camp1", "dmItems", id] as const;
+  const revealed = (id: string) => ["campaigns", "camp1", "itemReveals", id] as const;
+  const state = { cursed: true, notes: "Bloodthirsty; wants to be wielded in battle" };
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, ...hidden("axe-1")), state);
+      await setDoc(doc(db, ...revealed("axe-1")), { curse: true });
+    });
+  });
+
+  it("a member can never reach dmItems, doc or LIST (the wildcard can't open it)", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertFails(getDoc(doc(member, ...hidden("axe-1"))));
+    await assertFails(getDocs(collection(member, "campaigns", "camp1", "dmItems")));
+    await assertFails(setDoc(doc(member, ...hidden("axe-2")), state));
+    await assertFails(updateDoc(doc(member, ...hidden("axe-1")), { cursed: false }));
+    await assertFails(deleteDoc(doc(member, ...hidden("axe-1"))));
+  });
+
+  it("a member reads itemReveals but cannot write them", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(getDoc(doc(member, ...revealed("axe-1"))));
+    await assertSucceeds(
+      getDocs(collection(member, "campaigns", "camp1", "itemReveals"))
+    );
+    await assertFails(setDoc(doc(member, ...revealed("axe-2")), { curse: true }));
+    await assertFails(updateDoc(doc(member, ...revealed("axe-1")), { curse: false }));
+    await assertFails(deleteDoc(doc(member, ...revealed("axe-1"))));
+  });
+
+  it("the DM and the admin read and write both; a reveal is the DM's write", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(getDocs(collection(dm, "campaigns", "camp1", "dmItems")));
+    await assertSucceeds(setDoc(doc(dm, ...hidden("axe-2")), state));
+    await assertSucceeds(setDoc(doc(dm, ...revealed("axe-2")), { curse: true }));
+    await assertSucceeds(deleteDoc(doc(dm, ...hidden("axe-2"))));
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(getDoc(doc(admin, ...hidden("axe-1"))));
+    await assertSucceeds(updateDoc(doc(admin, ...revealed("axe-1")), { curse: false }));
+  });
+
+  it("an outsider and a blocked user reach neither", async () => {
+    for (const uid of ["outsider", "blocked"]) {
+      const db = testEnv.authenticatedContext(uid).firestore();
+      await assertFails(getDoc(doc(db, ...hidden("axe-1"))));
+      await assertFails(getDoc(doc(db, ...revealed("axe-1"))));
+    }
+  });
+
+  it("an item id is a plain instance id: no odd document names", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertFails(setDoc(doc(dm, ...hidden("x".repeat(129))), state));
+    await assertFails(setDoc(doc(dm, ...revealed("bad id!")), { curse: true }));
+  });
+});
+
 /** A well-formed bug-report document for the given reporter (OWN-37). */
 function reportDoc(reporterUid: string, overrides: Record<string, unknown> = {}) {
   return {
