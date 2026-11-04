@@ -205,8 +205,10 @@ function spellEffects(spell: SrdSpellData): ActivityEffect[] {
     );
   }
   // Casting a standing-effect spell lights its status (Shield of Faith, Bless,
-  // Hunter's Mark), with the duration declared at the spell's own level.
+  // Hunter's Mark), with the duration declared at the spell's own level. A state
+  // that names the rows entering it (Web Bolt's) is not the cast's.
   for (const grant of whileActiveGrants(spell.grants)) {
+    if (grant.activatedByAction) continue;
     const duration = whileActiveDurationAtCastLevel(grant.duration, spell.level);
     effects.push(statusEffect(grant, duration, spell.concentration));
   }

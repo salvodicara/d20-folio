@@ -679,6 +679,17 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
     companion: GIANT_INSECT,
+    // Web Bolt's hit: the target's Speed is 0 until the start of the insect's next
+    // turn. Entered by the attack only (`activatedByAction`), never by the cast.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "giant-insect-web-bolt",
+        recipient: "selected",
+        activatedByAction: ["web-bolt"],
+        grants: [{ type: "speed-cap", maxFt: 0 }],
+      },
+    ],
     source: "SRD",
   },
   {

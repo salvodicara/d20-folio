@@ -107,7 +107,11 @@ export const GIANT_INSECT: CompanionStatBlock = {
           ranged: true,
           // "The target's Speed is 0 until the start of the insect's next turn."
           effects: [
-            { kind: "speed-zero", until: { phase: "turn-start", anchor: "actor" } },
+            {
+              kind: "speed-zero",
+              activeKey: "giant-insect-web-bolt",
+              until: { phase: "turn-start", anchor: "actor" },
+            },
           ],
         },
       ],

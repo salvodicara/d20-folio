@@ -410,6 +410,9 @@ export type ActivityEffect =
   | (EffectBase & {
       kind: "speed-zero";
       until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+      /** The catalogue state that holds it on the target (Web Bolt: the spell's
+       *  `giant-insect-web-bolt`), so the reader never guesses the key. */
+      activeKey?: string;
     })
   /** The target is pushed away from or pulled toward the user, up to `feet`: a
    *  fact the table plays on the map (a monster's shove, a Telekinetic push). */

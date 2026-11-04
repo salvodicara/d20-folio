@@ -1175,6 +1175,9 @@
     "name": "Insetto Gigante",
     "range": "18 metri"
   },
+  "giant-insect.grants.0": {
+    "label": "Dardo di ragnatela"
+  },
   "giant-insect.companion": {
     "name": "Millepiedi gigante",
     "kind": "Bestia Grande",
