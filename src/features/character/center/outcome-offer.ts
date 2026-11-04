@@ -132,20 +132,27 @@ function targetRef(status: Status, targetId: string): CombatantRef {
     : { kind: "monster", combatantId: targetId };
 }
 
-/** Help (attack form), as the effect it leaves: on the enemy, spent by the next
- *  attack of one of the helper's allies, before the start of the helper's next turn. */
+/** Help, as the effect it leaves, before the start of the helper's next turn: on an
+ *  enemy, spent by the next attack of one of the helper's allies (`helped-against`);
+ *  on an ally, Advantage on its next ability check, spent by that check
+ *  (`helped-check`). */
 export function helpEffect(help: {
   helper: CombatantRef;
+  /** The creature named: an enemy (attack form) or an ally (check form). */
   enemy: CombatantRef;
   round: number;
   effectId: string;
+  form?: "attack" | "check";
 }): ActiveCombatEffect {
   return {
     id: help.effectId,
     actor: help.helper,
     target: help.enemy,
     source: { kind: "feature", id: "action-help", actionId: "base-help" },
-    payload: { kind: "grant-group", activeKey: "helped-against" },
+    payload: {
+      kind: "grant-group",
+      activeKey: help.form === "check" ? "helped-check" : "helped-against",
+    },
     duration: {
       kind: "turn-boundary",
       combatantId: help.helper.combatantId,
@@ -156,18 +163,22 @@ export function helpEffect(help: {
 }
 
 /**
- * Help an ally attack an enemy in the live fight (the Help action's «Su chi?»):
- * writes the effect on that enemy and returns its undo. Null outside a fight or
+ * Help in the live fight (the Help action's «Su chi?»): on an enemy, the effect
+ * that lets an ally attack it with Advantage; on an ally, Advantage on its next
+ * ability check. Writes the effect and returns its undo. Null outside a fight or
  * before the v0.26.0 rules.
  */
-export function giveHelp(enemyId: string, characterId: string): (() => void) | null {
+export function giveHelp(targetId: string, characterId: string): (() => void) | null {
   const status = useCombatStatusStore.getState().status;
   if (!status || !combatEffectsV26On()) return null;
+  const helper = selfRef(status, characterId);
+  const sideOf = fightSideOf(status.view.rows);
   const effect = helpEffect({
-    helper: selfRef(status, characterId),
-    enemy: targetRef(status, enemyId),
+    helper,
+    enemy: targetRef(status, targetId),
     round: status.round,
     effectId: crypto.randomUUID(),
+    form: sideOf(targetId) === sideOf(helper.combatantId) ? "check" : "attack",
   });
   const io = import("@/features/campaigns/campaign-io");
   void io

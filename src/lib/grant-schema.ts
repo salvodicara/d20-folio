@@ -1937,6 +1937,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         vs: stringSchema,
       },
       {
+        /** `next`: the roll it helps spends it (Help on an ability check). */
+        consume: unionSchema([literalSchema("next"), literalSchema("each")]),
         description: LOCALE_TEXT_SCHEMA,
         round1: booleanSchema,
         suppressedByConditions: arraySchema(
