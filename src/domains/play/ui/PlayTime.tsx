@@ -138,7 +138,7 @@ export function PlayTime({
               : {})}
           />
         ) : (
-          <Button kind="ghost" onClick={() => setAskTime(true)}>
+          <Button kind="quiet" onClick={() => setAskTime(true)}>
             {t("play.time.setTimeOfDay")}
           </Button>
         )}
