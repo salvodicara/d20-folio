@@ -173,6 +173,7 @@ import {
 } from "@/lib/character-status";
 import {
   concentrationSaveD20Context,
+  conditionEndsHeldConcentration,
   damageQueuesConcentrationSave,
   resolveCharacterConcentrationSave,
   resolveCharacterDeathSave,
@@ -2476,9 +2477,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // so a mis-tapped condition is recoverable. Runs AFTER the condition is set so
     // `setConcentration` reads the post-add character. A condition with no held
     // concentration, or a non-incapacitating one, drops nothing.
+    const afterAdd = get().character;
     if (
-      conditionBreaksConcentration(condition) &&
-      get().character?.session.concentration
+      afterAdd &&
+      conditionEndsHeldConcentration(
+        afterAdd,
+        conditionBreaksConcentration(condition),
+        condition
+      )
     ) {
       get().setConcentration("", {
         undoable: opts?.registerConcentrationUndo !== false,

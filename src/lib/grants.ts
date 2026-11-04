@@ -1207,7 +1207,11 @@ export interface RollFloorClause {
 export interface ConcentrationDamageProofClause {
   sourceId: string;
   /** The held spell whose Concentration damage can't break. */
-  spellId: string;
+  spellId?: string;
+  /** Or every spell (`"any"`), or every spell of a school. */
+  spells?: "any" | { school: string };
+  /** Nor does Incapacitated, Stunned or Paralyzed end it (Boon of the Iron Mind). */
+  alsoWhileIncapacitated?: true;
 }
 
 export interface D20RerollClause {
@@ -3480,7 +3484,12 @@ export function evaluateGrants(
         d20Rerolls.push({ sourceId, faces: g.faces });
         break;
       case "concentration-damage-proof":
-        concentrationDamageProof.push({ sourceId, spellId: g.spellId });
+        concentrationDamageProof.push({
+          sourceId,
+          ...(g.spellId !== undefined ? { spellId: g.spellId } : {}),
+          ...(g.spells !== undefined ? { spells: g.spells } : {}),
+          ...(g.alsoWhileIncapacitated ? { alsoWhileIncapacitated: true as const } : {}),
+        });
         break;
       case "roll-die-adjustment":
         rollDieAdjustments.push({
