@@ -1,4 +1,5 @@
 /** Conformance, category 11: movement and mounts (corpus.md § 11). */
+import { fallsIfProne } from "@/lib/play/flight";
 import { describe, expect } from "vitest";
 import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
 import { addMonster } from "@/features/campaigns/encounter";
@@ -276,8 +277,8 @@ describe("conformance · 11. movement and mounts", () => {
   });
 
   rule(
-    { category: 11, case: "Flying and prone", source: "GLOSS; SAC #16", status: "M14" },
-    async () => {
+    { category: 11, case: "Flying and prone", source: "GLOSS; SAC #16", status: "works" },
+    () => {
       // A flyer that can't hover falls when knocked Prone while aloft (the table
       // says whether it is aloft): Wings of Flying can't hover, the Fly spell can.
       const wings = makeCharacterDoc(
@@ -286,7 +287,7 @@ describe("conformance · 11. movement and mounts", () => {
             { srdId: "wings-of-flying", quantity: 1, equipped: true, attuned: true },
           ],
         },
-        { activeFeatures: ["magic-item:wings-of-flying:wings-of-flying"] }
+        { activeFeatures: ["wings-of-flying"] }
       );
       const flier = makeCharacterDoc(
         {
@@ -296,12 +297,8 @@ describe("conformance · 11. movement and mounts", () => {
         },
         { activeFeatures: ["spell-fly"] }
       );
-      const id = "@/lib/play/flight";
-      const flight = (await import(/* @vite-ignore */ id)) as {
-        fallsIfProne: (doc: unknown) => boolean;
-      };
-      expect(flight.fallsIfProne(wings)).toBe(true);
-      expect(flight.fallsIfProne(flier)).toBe(false);
+      expect(fallsIfProne(wings)).toBe(true);
+      expect(fallsIfProne(flier)).toBe(false);
     }
   );
 
