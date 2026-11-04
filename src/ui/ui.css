@@ -4087,3 +4087,44 @@
   font-size: var(--fs-sm);
   color: var(--muted);
 }
+/* On phone the step's hint takes its own line above Back and Next. */
+@media (max-width: 640px) {
+  .fui .f-create-step .f-pn-foot > .f-help {
+    order: -1;
+    flex-basis: 100%;
+    text-align: end;
+  }
+}
+.fui .f-create-step .f-lbl,
+.fui .f-create-pitch > b {
+  text-wrap: balance;
+}
+/* Editing on phone: one tile per row, the stepper beside the modifier. */
+@media (max-width: 599px) {
+  .fui .f-abil-grid[data-edit] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-tile {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas: "lbl lbl" "mod step" "sum step";
+    justify-items: start;
+    align-items: center;
+    column-gap: 8px;
+    text-align: start;
+    padding: 12px;
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-tile > .f-lbl {
+    grid-area: lbl;
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-mod {
+    grid-area: mod;
+  }
+  .fui .f-abil-grid[data-edit] .f-abil-sum {
+    grid-area: sum;
+  }
+  .fui .f-abil-grid[data-edit] .f-stepper {
+    grid-area: step;
+    grid-template-columns: 40px 56px 40px;
+  }
+}

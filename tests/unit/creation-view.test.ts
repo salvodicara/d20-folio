@@ -12,6 +12,7 @@ import {
   classCards,
   creationSummary,
   speciesRows,
+  suggestedBonus,
   suggestedScores,
 } from "@/domains/creation/creation-view";
 import {
@@ -110,5 +111,17 @@ describe("suggestedScores", () => {
       "WIS",
     ]);
     expect(Math.max(...Object.values(cleric))).toBe(cleric.WIS);
+  });
+});
+
+describe("suggestedBonus", () => {
+  it("puts the +2 then the +1 on the background's two best abilities for the build", () => {
+    const scores = suggestedScores("cleric");
+    // Acolyte boosts INT, WIS or CHA; a Cleric's build is highest in WIS, then CHA.
+    expect(suggestedBonus(scores, ["INT", "WIS", "CHA"])).toEqual(["WIS", "CHA"]);
+  });
+  it("keeps the background's order on a tie", () => {
+    const flat = { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 } as const;
+    expect(suggestedBonus(flat, ["CON", "STR", "DEX"])).toEqual(["CON", "STR"]);
   });
 });

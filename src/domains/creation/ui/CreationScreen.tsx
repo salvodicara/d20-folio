@@ -13,6 +13,7 @@ import {
   classCards,
   creationSummary,
   signed,
+  suggestedBonus,
   suggestedScores,
   type ClassCard,
 } from "@/domains/creation/creation-view";
@@ -71,7 +72,14 @@ export function CreationScreen() {
   const [suggestedFor, setSuggestedFor] = useState<string | null>(null);
   const applySuggested = () => {
     dispatch({ type: "setUsePointBuy", usePointBuy: false });
-    dispatch({ type: "setAbilityScores", abilityScores: suggestedScores(draft.classId) });
+    const scores = suggestedScores(draft.classId);
+    dispatch({ type: "setAbilityScores", abilityScores: scores });
+    // An unplaced bonus goes where the suggested build wants it; one placed stays.
+    if (Object.keys(draft.bgAsiChoices).length === 0 && facts.backgroundData) {
+      dispatch({ type: "switchAbilityBonusMode", mode: "+2/+1" });
+      for (const code of suggestedBonus(scores, facts.backgroundData.abilityOptions))
+        dispatch({ type: "toggleAbilityBonus", code });
+    }
     setSuggestedFor(draft.classId);
   };
   const abilitiesReady =

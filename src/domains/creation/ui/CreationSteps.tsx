@@ -81,7 +81,7 @@ export function SpeciesStep({
           >
             <span className="f-row-main">
               <span className="f-row-t">{r.name}</span>
-              <span className="f-row-s">{r.traits.join(" · ")}</span>
+              <span className="f-row-s">{r.traits.join("\u00a0· ")}</span>
             </span>
           </Choice>
         ))}
@@ -185,7 +185,7 @@ export function AbilitiesStep({
           </Chip>
         ))}
       </div>
-      <div className="f-abil-grid">
+      <div className="f-abil-grid" data-edit={method !== "suggested" || undefined}>
         {tiles.map((tile) => (
           <div
             key={tile.code}

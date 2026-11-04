@@ -38,6 +38,7 @@ describe("CreationScreen", () => {
       </MemoryRouter>
     );
     const next = () => screen.getByRole("button", { name: "Next" });
+    fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
     fireEvent.click(next());
     fireEvent.click(screen.getByRole("button", { name: /^Acolyte/ }));
     fireEvent.click(next());

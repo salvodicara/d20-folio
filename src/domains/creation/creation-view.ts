@@ -153,6 +153,17 @@ export function suggestedScores(classId: string): Record<AbilityCode, number> {
   return { ...appliedQuickbuildState(classId, preset).abilityScores };
 }
 
+/**
+ * Where the suggested build puts the background's +2/+1: the two eligible abilities
+ * with the highest scores, the +2 first (ties keep the background's own order).
+ */
+export function suggestedBonus(
+  scores: Record<AbilityCode, number>,
+  eligible: ReadonlyArray<AbilityCode>
+): AbilityCode[] {
+  return [...eligible].sort((a, b) => scores[b] - scores[a]).slice(0, 2);
+}
+
 /** The best of the class's main abilities, as built. */
 function primaryScoreOf(
   codes: ReadonlyArray<AbilityCode>,
