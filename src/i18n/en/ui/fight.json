@@ -36,6 +36,17 @@
     },
     "mustRoll": "Must roll",
     "rollMissing": "Roll for the missing",
-    "rollMissingDone": "Rolled for everyone missing: they're all in the order now."
+    "rollMissingDone": "Rolled for everyone missing: they're all in the order now.",
+    "zone": {
+      "saveDc": "{{ability}} save, DC {{dc}}",
+      "save": "{{ability}} save",
+      "halfOnSave": "half on a success",
+      "castOpen": "Cast an area spell",
+      "castTitle": "{{name}}: area spell",
+      "dc": "Save DC",
+      "cast": "{{name}} casts {{spell}}",
+      "inside": "Inside",
+      "applied": "{{amount}} damage to {{name}}"
+    }
   }
 }

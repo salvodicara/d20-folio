@@ -36,6 +36,17 @@
     },
     "mustRoll": "Deve tirare",
     "rollMissing": "Tira per chi manca",
-    "rollMissingDone": "Tirato per chi mancava: ora sono tutti nell’ordine."
+    "rollMissingDone": "Tirato per chi mancava: ora sono tutti nell’ordine.",
+    "zone": {
+      "saveDc": "TS su {{ability}}, CD {{dc}}",
+      "save": "TS su {{ability}}",
+      "halfOnSave": "metà se riesce",
+      "castOpen": "Lancia un incantesimo a zona",
+      "castTitle": "{{name}}: incantesimo a zona",
+      "dc": "CD del tiro salvezza",
+      "cast": "{{name}} lancia {{spell}}",
+      "inside": "Dentro",
+      "applied": "{{amount}} danni a {{name}}"
+    }
   }
 }

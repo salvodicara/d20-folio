@@ -4039,3 +4039,8 @@
     display: inline-flex;
   }
 }
+
+/* a choice chip beside a field keeps its pill shape (no stretching in the grid row) */
+.fui .f-rule-fields > .f-chips {
+  align-self: end;
+}
