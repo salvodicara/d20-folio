@@ -29,7 +29,7 @@ import {
   toggleCondition,
   toggleDefense,
   toggleSaved,
-  canKnockOut,
+  knockOutOffer,
   type DamageTrayPlan,
   type TrayMultiplier,
   type TrayRow,
@@ -202,6 +202,14 @@ function TrayTargetRow({
   const { t } = useTranslation();
   const conditions = rowConditions(row);
   const selfDoc = useCharacterStore((st) => st.character);
+  const knockOut =
+    amount !== null && target.kind !== "self"
+      ? knockOutOffer(
+          plan,
+          { kind: target.kind, ...(target.hp ? { hp: target.hp } : {}) },
+          amount
+        )
+      : null;
   const outcome = trayOutcomeView(
     row,
     plan,
@@ -285,23 +293,22 @@ function TrayTargetRow({
             .join(" ")}
         </p>
       )}
-      {/* SRD «Knocking Out»: a melee hit that would drop a character to 0 may leave it
-          at 1 HP and Unconscious instead; the attacker chooses. */}
-      {amount !== null &&
-        target.kind === "pc" &&
-        canKnockOut(plan, { kind: "pc", hp: target.hp }, amount) && (
-          <div className="f-chips">
-            <Chip
-              pressed={row.knockOut === true}
-              onClick={() => {
-                const { knockOut, ...rest } = row;
-                onChange(knockOut ? rest : { ...row, knockOut: true });
-              }}
-            >
-              {t("play.tray.knockOut")}
-            </Chip>
-          </div>
-        )}
+      {/* SRD «Knocking Out»: on a melee hit the attacker may knock out instead of
+          killing; a character it would drop stays at 1 HP and Unconscious, a monster's
+          hit is marked «Non letale» for the DM, who sees its Hit Points. */}
+      {knockOut && (
+        <div className="f-chips">
+          <Chip
+            pressed={row.knockOut === true}
+            onClick={() => {
+              const { knockOut: on, ...rest } = row;
+              onChange(on ? rest : { ...row, knockOut: true });
+            }}
+          >
+            {t(knockOut === "knock-out" ? "play.tray.knockOut" : "play.tray.nonLethal")}
+          </Chip>
+        </div>
+      )}
       {field && (
         <Field
           label={t("combat.damageTray.rowTotal", { name: target.name })}

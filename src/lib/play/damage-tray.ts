@@ -740,21 +740,20 @@ export function previewHp(
 }
 
 /**
- * Whether the tray offers «Mettilo KO» on a row: a melee hit that would drop a
- * standing character to 0 Hit Points (temporary ones first). Only a character's sheet
- * can be left at 1 Hit Point and Unconscious (`reducePcDamage`'s `knockOut`).
+ * What the tray offers a melee hit (SRD 5.2.1 «Knocking Out a Creature»): on a
+ * character it would drop to 0 (temporary Hit Points first), «Mettilo KO», which the
+ * hit applies at once (1 HP, Unconscious); on a monster, whose Hit Points the player
+ * can't see, «Non letale», an intent the DM's apply resolves (`damageMonster`).
  */
-export function canKnockOut(
+export function knockOutOffer(
   plan: Pick<DamageTrayPlan, "melee">,
   target: { kind: "pc" | "monster"; hp?: { current: number; temp: number } },
   amount: number
-): boolean {
+): "knock-out" | "non-lethal" | null {
+  if (plan.melee !== true || amount <= 0) return null;
+  if (target.kind === "monster") return "non-lethal";
   const hp = target.hp;
-  return (
-    plan.melee === true &&
-    target.kind === "pc" &&
-    hp !== undefined &&
-    hp.current > 0 &&
-    amount >= hp.current + hp.temp
-  );
+  return hp !== undefined && hp.current > 0 && amount >= hp.current + hp.temp
+    ? "knock-out"
+    : null;
 }
