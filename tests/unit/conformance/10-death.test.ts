@@ -20,6 +20,7 @@ import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { setCompanionHp, summonCompanion, summonFamiliar } from "@/lib/play/companions";
 import { takeDamage } from "@/lib/play/damage";
+import { applySheetEvent } from "@/lib/play/sheet-events";
 import { spendZeroHpSaver, zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import {
   FADING_PENALTIES,
@@ -137,7 +138,7 @@ describe("conformance · 10. death and revival", () => {
   );
 
   rule(
-    { category: 10, case: "Stable creatures", source: "GLOSS; RPGBOT", status: "M7" },
+    { category: 10, case: "Stable creatures", source: "GLOSS; RPGBOT", status: "works" },
     () => {
       // Any healing at 0 wakes you.
       const healed = must(healBy(dying(1, 1), 1));
@@ -150,7 +151,7 @@ describe("conformance · 10. death and revival", () => {
   );
 
   rule(
-    { category: 10, case: "Knocking out", source: "GLOSS; SAC #37", status: "M7" },
+    { category: 10, case: "Knocking out", source: "GLOSS; SAC #37", status: "works" },
     () => {
       // The melee attacker chooses to knock out instead of kill.
       const input = {
@@ -276,21 +277,26 @@ describe("conformance · 10. death and revival", () => {
       category: 10,
       case: "Dead creatures and conditions",
       source: "GLOSS",
-      status: "M7",
+      status: "works",
     },
     () => {
-      const doc = withSession({
+      const base = withSession({
         hp: { ...MOCK_CHARACTER.session.hp, current: 0, temp: 0 },
         conditions: ["unconscious", "poisoned"],
         deathFail: 2,
       });
-      const died = must(takeDamage(doc, 1));
-      expect(died.session.deathFail).toBe(3);
+      const doc: CharacterDoc = {
+        ...base,
+        character: {
+          ...base.character,
+          equipment: [{ srdId: "cloak-of-protection", equipped: true, attuned: true }],
+        },
+      };
+      const died = applySheetEvent(doc, { kind: "take-damage", amount: 1 });
+      expect(died?.session.deathFail).toBe(3);
       // Conditions stay; attunement ends at death.
-      expect(died.session.conditions).toContain("poisoned");
-      expect(died.transition.events).toContainEqual(
-        expect.objectContaining({ kind: "attunement-end" })
-      );
+      expect(died?.session.conditions).toContain("poisoned");
+      expect(died?.character.equipment[0]?.attuned).toBeUndefined();
     }
   );
 

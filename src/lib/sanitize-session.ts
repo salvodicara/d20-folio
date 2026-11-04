@@ -197,6 +197,11 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     session.timeOfDay < 1440
       ? { timeOfDay: session.timeOfDay }
       : {}),
+    ...(typeof session.stableSince === "number" &&
+    Number.isFinite(session.stableSince) &&
+    session.stableSince >= 0
+      ? { stableSince: session.stableSince }
+      : {}),
     familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,

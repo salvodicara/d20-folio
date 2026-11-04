@@ -5,6 +5,7 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import { isCharacterAlive } from "@/lib/character-status";
 import { addEquipmentRef } from "@/lib/equipment-add";
 import type { CoverStateLevel } from "@/lib/cover-states";
 import type { LightLevel } from "@/lib/light-states";
@@ -204,6 +205,43 @@ export function applySheetEvent(
   doc: CharacterDoc,
   event: SheetEvent
 ): CharacterDoc | null {
+  const next = reduceSheetEvent(doc, event);
+  return next ? afterDeath(doc, next) : next;
+}
+
+/**
+ * What dying does to the sheet, whichever event brought it (a hit, the third failed
+ * death save, a kill): attunement ends (2024, "Attunement"). Conditions stay.
+ */
+function afterDeath(before: CharacterDoc, next: CharacterDoc): CharacterDoc {
+  if (
+    !isCharacterAlive(before.status, before.session) ||
+    isCharacterAlive(next.status, next.session)
+  )
+    return next;
+  const unattune = <T extends { attuned?: boolean }>(item: T): T => {
+    if (!item.attuned) return item;
+    const copy = { ...item };
+    delete copy.attuned;
+    return copy;
+  };
+  const { equipment, weapons } = next.character;
+  if (
+    !equipment.some((e) => e.attuned) &&
+    !weapons.some((w) => "attuned" in w && w.attuned)
+  )
+    return next;
+  return {
+    ...next,
+    character: {
+      ...next.character,
+      equipment: equipment.map(unattune),
+      weapons: weapons.map((w) => ("attuned" in w ? unattune(w) : w)),
+    },
+  };
+}
+
+function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | null {
   const withSession = (session: SessionState | null | undefined): CharacterDoc | null =>
     session ? { ...doc, session } : null;
   switch (event.kind) {

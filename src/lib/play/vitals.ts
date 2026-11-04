@@ -321,6 +321,9 @@ export function setDeathSaves(
       // The third failure is the death: its game clock starts (Revivify's minute).
       ...(fail >= 3 && prevFail < 3 ? { death: { minutesSince: 0 } } : {}),
       ...(fail < 3 && prevFail >= 3 ? { death: undefined } : {}),
+      // The third success stabilises: its game clock starts (1 HP after 1d4 hours).
+      ...(succ >= 3 && prevSucc < 3 ? { stableSince: 0 } : {}),
+      ...(succ < 3 && prevSucc >= 3 ? { stableSince: undefined } : {}),
     },
     newMark: succ > prevSucc ? "success" : fail > prevFail ? "failure" : null,
   };

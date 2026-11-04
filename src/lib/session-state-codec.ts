@@ -65,6 +65,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   summons?: NonNullable<SessionState["summons"]>;
   death?: NonNullable<SessionState["death"]>;
   timeOfDay?: number;
+  stableSince?: number;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -130,6 +131,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "summons",
   "death",
   "timeOfDay",
+  "stableSince",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -381,6 +383,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.summons) state.summons = session.summons;
   if (session.death) state.death = session.death;
   if (session.timeOfDay !== undefined) state.timeOfDay = session.timeOfDay;
+  if (session.stableSince !== undefined) state.stableSince = session.stableSince;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -945,6 +948,13 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   }
   const timeOfDay = parseTimeOfDay(state.timeOfDay);
   if (timeOfDay !== undefined) session.timeOfDay = timeOfDay;
+  if (
+    typeof state.stableSince === "number" &&
+    Number.isFinite(state.stableSince) &&
+    state.stableSince >= 0
+  ) {
+    session.stableSince = state.stableSince;
+  }
   const summons = parseSummons(state.summons);
   if (summons) session.summons = summons;
   if (

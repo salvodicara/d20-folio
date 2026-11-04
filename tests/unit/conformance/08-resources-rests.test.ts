@@ -65,19 +65,22 @@ describe("conformance · 8. resource economy and rests", () => {
     }
   );
 
-  rule({ category: 8, case: "Interrupted rests", source: "GLOSS", status: "M7" }, () => {
-    // A Short Rest needs at least 1 HP: a character at 0 HP gets nothing from it.
-    const doc = pc(
-      "fighter",
-      5,
-      {},
-      {
-        hp: { current: 0, temp: 0 },
-        trackers: { "fighter-second-wind": { used: 2 } },
-      }
-    );
-    expect(used(shortRestCharacter(doc), "fighter-second-wind")).toBe(2);
-  });
+  rule(
+    { category: 8, case: "Interrupted rests", source: "GLOSS", status: "works" },
+    () => {
+      // A Short Rest needs at least 1 HP: a character at 0 HP gets nothing from it.
+      const doc = pc(
+        "fighter",
+        5,
+        {},
+        {
+          hp: { current: 0, temp: 0 },
+          trackers: { "fighter-second-wind": { used: 2 } },
+        }
+      );
+      expect(used(shortRestCharacter(doc), "fighter-second-wind")).toBe(2);
+    }
+  );
 
   rule(
     {
