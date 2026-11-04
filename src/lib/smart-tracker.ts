@@ -3933,6 +3933,37 @@ export function resolveSlotAltRecovery(
  * formula (`@/lib/scalar`) resolves from the character's bindings (Sneak Attack
  * steps with the Rogue level). `_level` is kept for existing callers only.
  */
+/**
+ * The scalar bindings a rider's dice read: the character's, plus `cast.level` when
+ * the rider comes from a running spell (Conjure Minor Elementals at 5th: 3d8). The
+ * level is the one the spell state was cast with, else the held Concentration's,
+ * else the spell's own.
+ */
+function riderBindings(
+  rider: { sourceId?: string; whileActiveKey?: string },
+  character: CharacterDoc
+): IntegerBindings {
+  const bindings = characterScalarBindings(character.character);
+  const spell = rider.sourceId ? spellIndex.get(rider.sourceId) : undefined;
+  if (!spell) return bindings;
+  const { session } = character;
+  const castLevel =
+    (rider.whileActiveKey && session.activeSpellCastLevels?.[rider.whileActiveKey]) ||
+    (session.concentration === spell.id ? session.concentrationCastLevel : undefined) ||
+    spell.level;
+  return { ...bindings, [SCALAR_BINDINGS.castLevel]: castLevel };
+}
+
+/** Whether a rider rides any attack because a running spell grants it (Conjure Minor
+ *  Elementals), not a species form's once-per-turn rider (Celestial Revelation). */
+function spellStateAttackRider(rider: { appliesTo: string; sourceId?: string }): boolean {
+  return (
+    rider.appliesTo === "attack-or-spell" &&
+    rider.sourceId !== undefined &&
+    spellIndex.has(rider.sourceId)
+  );
+}
+
 export function resolveRiderDice(
   rider: { dice?: DiceScalar },
   _level: number,
@@ -3991,7 +4022,9 @@ export function resolveAttackDamageRiders(
 ): NonNullable<RawActionSummary["extraDamage"]> {
   return damageRiders
     .filter((r) => {
-      if (r.appliesTo === "attack-or-spell") return false;
+      // A running spell's "any attack" rider rides every weapon and Unarmed Strike;
+      // a species form's (Celestial Revelation) has its own card.
+      if (r.appliesTo === "attack-or-spell") return spellStateAttackRider(r);
       if (target.kind === "unarmed")
         return (
           r.appliesTo === "melee-weapon" ||
@@ -4026,7 +4059,7 @@ export function resolveAttackDamageRiders(
           ? resolveRiderDice(
               r,
               featureScalingLevel(r.sourceId, character),
-              characterScalarBindings(character.character)
+              riderBindings(r, character)
             )
           : String(fixedAmount),
         r.addAbilityMod === undefined
@@ -4098,16 +4131,34 @@ export function resolveSpellAttackMarkedRiders(
   character: CharacterDoc
 ): NonNullable<RawActionSummary["extraDamage"]> {
   return damageRiders.flatMap((r) => {
-    // Only the marked-target riders ride a spell attack, and never the
-    // "same-as-weapon" sentinel (a spell attack has no wielded weapon type). The
-    // early return narrows `r.damageType` to a concrete `DamageType` below.
-    if (r.vsMarkedTarget == null || r.damageType === "same-as-weapon") return [];
+    // The marked-target riders and a running spell's "any attack" rider (Conjure
+    // Minor Elementals) ride a spell attack; never the "same-as-weapon" sentinel (a
+    // spell attack has no wielded weapon type). The early return narrows
+    // `r.damageType` to a concrete `DamageType` below.
+    if (r.damageType === "same-as-weapon") return [];
+    if (spellStateAttackRider(r)) {
+      return [
+        {
+          dice: resolveRiderDice(
+            r,
+            featureScalingLevel(r.sourceId, character),
+            riderBindings(r, character)
+          ),
+          damageType: r.damageType,
+          ...(r.damageTypeChoices ? { damageTypeChoices: [...r.damageTypeChoices] } : {}),
+          oncePerTurn: r.oncePerTurn,
+          source: featureNameLoc(r.sourceId),
+          ...(r.whileActiveKey ? { whileActive: true } : {}),
+        },
+      ];
+    }
+    if (r.vsMarkedTarget == null) return [];
     return [
       {
         dice: resolveRiderDice(
           r,
           featureScalingLevel(r.sourceId, character),
-          characterScalarBindings(character.character)
+          riderBindings(r, character)
         ),
         damageType: r.damageType,
         oncePerTurn: r.oncePerTurn,

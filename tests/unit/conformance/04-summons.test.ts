@@ -18,6 +18,8 @@ import {
   buildSummonedMonsterGroups,
 } from "@/lib/views/companion-row-view";
 import type { CharacterDoc, SessionState } from "@/types/character";
+import { resolveActions } from "@/lib/smart-tracker";
+import { makeCharacterDoc } from "../_helpers";
 import { rule } from "./rule";
 
 const t = (key: string): string => key;
@@ -100,17 +102,32 @@ describe("conformance · 4. summons and companions", () => {
       category: 4,
       case: "Conjure Minor Elementals is a per-attack buff",
       source: "ERRATA; KIBBLES #25",
-      status: "M11",
+      status: "works",
     },
     () => {
-      const spell = getSpellById("conjure-minor-elementals");
-      const riders = (spell?.grants ?? []).flatMap((g) =>
-        g.type === "while-active" ? g.grants.filter((i) => i.type === "damage-rider") : []
-      );
       // Any attack, Scorching Ray's rays included; +1d8 per slot level above 4.
-      expect(riders).toEqual([
-        expect.objectContaining({ appliesTo: "attack-or-spell", dice: "2d8" }),
-      ]);
+      const wizard = makeCharacterDoc(
+        {
+          classes: [{ classId: "wizard", level: 9 }],
+          spells: [
+            { srdId: "conjure-minor-elementals", prepared: true },
+            { srdId: "scorching-ray", prepared: true },
+          ],
+          spellSlots: [{ level: 5, total: 1 }],
+        },
+        {
+          concentration: "conjure-minor-elementals" as never,
+          activeFeatures: ["spell-conjure-minor-elementals"],
+          activeSpellCastLevels: { "spell-conjure-minor-elementals": 5 },
+        }
+      );
+      const ray = resolveActions(wizard).find((a) => a.id === "spell-scorching-ray");
+      expect(ray?.summary.extraDamage).toContainEqual(
+        expect.objectContaining({
+          dice: "3d8",
+          damageTypeChoices: ["acid", "cold", "fire", "lightning"],
+        })
+      );
     }
   );
 
