@@ -1261,6 +1261,10 @@ export interface IncomingAttackClause {
  */
 /** Spells castable in a form that blocks casting (see the `form-casting` grant). */
 /** A trigger rule from a grant (M8), with the source whose counter limits it. */
+/** A change to a creature a spell of yours summons (`companion-mod`), with the
+ *  feature it comes from. */
+export type CompanionMod = Omit<GrantOf<"companion-mod">, "type"> & { sourceId: string };
+
 export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "if" | "do" | "limit"> & {
   sourceId: string;
   /** The caster's numbers frozen on the state that carries the rule (a spell cast
@@ -2018,11 +2022,7 @@ export interface AggregatedGrants {
    */
   weaponAttackBonuses: ReadonlyArray<WeaponAttackBonusEntry>;
   /** Changes to the creatures your spells summon (`companion-mod`). */
-  companionMods: ReadonlyArray<{
-    sourceId: string;
-    companion: string;
-    hpPerCharacterLevel: number;
-  }>;
+  companionMods: ReadonlyArray<CompanionMod>;
   /**
    * Manipulations of a weapon's OWN damage dice (Great Weapon Fighting floor,
    * Savage Attacker reroll-keep-higher, Two-Weapon Fighting off-hand modifier,
@@ -2636,11 +2636,7 @@ export function evaluateGrants(
     sourceId: string;
   }[] = [];
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
-  const companionMods: Array<{
-    sourceId: string;
-    companion: string;
-    hpPerCharacterLevel: number;
-  }> = [];
+  const companionMods: CompanionMod[] = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
   const spellResistancePenetration = new Set<DamageType>();
 
@@ -3259,11 +3255,7 @@ export function evaluateGrants(
         });
         break;
       case "companion-mod":
-        companionMods.push({
-          sourceId,
-          companion: g.companion,
-          hpPerCharacterLevel: g.hpBonus.perCharacterLevel,
-        });
+        companionMods.push({ sourceId, ...g });
         break;
       case "weapon-attack-bonus":
         // To-hit bonus on weapon attacks (Archery → +2 ranged; Sacred Weapon →

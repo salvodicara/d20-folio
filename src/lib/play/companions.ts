@@ -12,6 +12,7 @@ import {
   summonTimerKey,
 } from "@/lib/summon-count";
 import { totalLevel } from "@/lib/classes";
+import { proficiencyBonus } from "@/lib/proficiency";
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -372,9 +373,72 @@ export function dismissFamiliar(session: SessionState): SessionState | null {
  * add (`companion-mod`, Familiar Friend: twice your character level).
  */
 export function summonMaxHp(doc: CharacterDoc, spellId: string, baseHp: number): number {
+  return baseHp + summonMods(doc, spellId).hpBonus;
+}
+
+/**
+ * What your feats change on a creature your spell summons (`companion-mod`): its
+ * extra Hit Points, its own Reaction (Warlike Familiar's AC bonus, your Proficiency
+ * Bonus), its emanation (Soothing Familiar's healing-die floor), and the imbuing you
+ * may give it at the cast (Otherworldly Familiar). Resolved to numbers for the card.
+ */
+export function summonMods(
+  doc: CharacterDoc,
+  spellId: string
+): {
+  hpBonus: number;
+  reactions: Array<{ sourceId: string; trigger: string; acBonus: number }>;
+  auras: Array<{
+    sourceId: string;
+    radiusFt: number;
+    ownerWithinFt?: number;
+    healingDieFloor: { below: number; to: number };
+  }>;
+  imbues: Array<{
+    sourceId: string;
+    resistanceChoice: readonly string[];
+    movesThroughCreatures: boolean;
+  }>;
+} {
   const level = totalLevel(doc.character);
-  const bonus = aggregateCharacterGrants(doc.character, doc.session)
-    .companionMods.filter((mod) => mod.companion === spellId)
-    .reduce((sum, mod) => sum + mod.hpPerCharacterLevel * level, 0);
-  return baseHp + bonus;
+  const mods = aggregateCharacterGrants(doc.character, doc.session).companionMods.filter(
+    (mod) => mod.companion === spellId
+  );
+  const pb = proficiencyBonus(level);
+  return {
+    hpBonus: mods.reduce(
+      (sum, mod) => sum + (mod.hpBonus?.perCharacterLevel ?? 0) * level,
+      0
+    ),
+    reactions: mods.flatMap((mod) =>
+      mod.reaction
+        ? [{ sourceId: mod.sourceId, trigger: mod.reaction.trigger, acBonus: pb }]
+        : []
+    ),
+    auras: mods.flatMap((mod) =>
+      mod.aura
+        ? [
+            {
+              sourceId: mod.sourceId,
+              radiusFt: mod.aura.radiusFt,
+              ...(mod.aura.ownerWithinFt !== undefined
+                ? { ownerWithinFt: mod.aura.ownerWithinFt }
+                : {}),
+              healingDieFloor: mod.aura.healingDieFloor,
+            },
+          ]
+        : []
+    ),
+    imbues: mods.flatMap((mod) =>
+      mod.imbue
+        ? [
+            {
+              sourceId: mod.sourceId,
+              resistanceChoice: mod.imbue.resistanceChoice,
+              movesThroughCreatures: mod.imbue.movesThroughCreatures === true,
+            },
+          ]
+        : []
+    ),
+  };
 }
