@@ -34,6 +34,11 @@ on:
         type: boolean
         required: false
         default: false
+      new_ui:
+        description: "Ship the new UI (VITE_NEW_UI) instead of today's sheet. The owner's decision at deploy time."
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -144,6 +149,13 @@ jobs:
       VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
       VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
       VITE_APPCHECK_SITE_KEY: ${{ secrets.VITE_APPCHECK_SITE_KEY }}
+      # The build's feature flags, explicit (never inherited from a default):
+      # - the peer-spends ledger writer (#558) needs the `combat/spends` rules, which
+      #   this same deploy releases BEFORE Hosting (the two steps below), so a client
+      #   that writes the ledger never meets rules that refuse it;
+      # - the new UI is the owner's call at deploy time (the `new_ui` input).
+      VITE_PEER_SPENDS_LEDGER: "true"
+      VITE_NEW_UI: ${{ inputs.new_ui && '1' || '0' }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -275,8 +287,12 @@ jobs:
         if: inputs.runtime_pack
         run: node scripts/pack/upload-pack.ts .pack-out "$VITE_FIREBASE_STORAGE_BUCKET" --apply
 
-      - name: Deploy Hosting and security rules
-        run: firebase deploy --only hosting,firestore:rules,storage --project d20-folio --non-interactive
+      # Rules first, in their own step: a new client (the peer-spends ledger writer)
+      # must never load before the rules that accept its writes.
+      - name: Deploy the security rules
+        run: firebase deploy --only firestore:rules,storage --project d20-folio --non-interactive
+      - name: Deploy Hosting
+        run: firebase deploy --only hosting --project d20-folio --non-interactive
 
       - name: Require SAFE-01 armed after promotion
         run: scripts/safe-01.sh status
