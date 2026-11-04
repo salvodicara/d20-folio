@@ -329,7 +329,7 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "Concentration-linked summons",
       source: "WIKI spell:summon-beast; FVTT#3543",
-      status: "M6",
+      status: "works",
     },
     () => {
       // A Druid holding Giant Insect, its insect hurt to 5 HP. Concentration ends: the
