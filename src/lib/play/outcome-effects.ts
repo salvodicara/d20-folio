@@ -12,7 +12,12 @@ import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 /** Which outcome applies: a hit (no save involved), or the target's successful save. */
 export type UseOutcome = "hit" | "save-success";
 
-const STATE_KINDS = new Set(["speed-zero", "speed-halved", "next-attack-advantage"]);
+const STATE_KINDS = new Set([
+  "speed-zero",
+  "speed-halved",
+  "next-attack-advantage",
+  "damage-roll-penalty",
+]);
 
 /** The effects among `effects` that this outcome applies and that name a state. */
 export function stateEffectsFor(

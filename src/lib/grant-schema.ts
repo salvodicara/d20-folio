@@ -2094,6 +2094,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("attack"),
         literalSchema("save"),
         literalSchema("check"),
+        literalSchema("damage"),
       ]),
       type: literalSchema("roll-die-adjustment"),
     },

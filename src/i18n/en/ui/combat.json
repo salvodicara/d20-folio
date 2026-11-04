@@ -43,6 +43,8 @@
     "resolveNextRollAdjustment": "Next {{roll}} {{sign}}{{dice}}",
     "resolveRoll_attack": "attack",
     "resolveRoll_check": "check",
+    "resolveRoll_damage": "damage",
+    "damagePenaltyNote": "Subtract {{dice}} from your damage ({{source}}).",
     "resolveRoll_save": "save",
     "resolveOneRollBonus": "+{{bonus}} · one damage roll",
     "activeSpellUse": "Active spell · no slot",

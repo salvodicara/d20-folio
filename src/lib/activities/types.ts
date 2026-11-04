@@ -440,6 +440,8 @@ export type ActivityEffect =
       kind: "damage-roll-penalty";
       dice: string;
       until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+      /** The state it leaves on the target (its spell's `while-active` grant). */
+      activeKey?: string;
     })
   /** The creature may roll up to `max` (+ `perUpcast` per slot level above the
    *  spell's) of its unexpended Hit Point Dice and regain their total plus `bonus`

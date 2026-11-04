@@ -43,6 +43,8 @@
     "resolveNextRollAdjustment": "Prossimo {{roll}} {{sign}}{{dice}}",
     "resolveRoll_attack": "attacco",
     "resolveRoll_check": "prova",
+    "resolveRoll_damage": "tiro per i danni",
+    "damagePenaltyNote": "Sottrai {{dice}} ai tuoi danni ({{source}}).",
     "resolveRoll_save": "TS",
     "resolveOneRollBonus": "+{{bonus}} · un tiro per i danni",
     "activeSpellUse": "Incantesimo attivo · nessuno slot",

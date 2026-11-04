@@ -262,6 +262,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     extraDamageType: DAMAGE_TYPE_SCHEMA,
   }),
   grants: arraySchema(GRANT),
+  targetStates: arraySchema(GRANT),
   companion: OBJECT,
   summonedMonsters: OBJECT,
   summonTurn: literals(ALL_SUMMON_TURNS),
@@ -271,11 +272,18 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
 
 // ─── Reading a stored homebrew spell ─────────────────────────────────────────
 
+/** Target states, conformed like grants and kept only when each is a `while-active`. */
+function conformTargetStates(value: unknown): Grant[] | null {
+  const grants = conformGrants(value);
+  return grants ? grants.filter((g) => g.type === "while-active") : null;
+}
+
 const conformSpellMechanics = memoByObject(
   (authored: Readonly<Record<string, unknown>>) =>
     Object.freeze(
       conformFields(HOMEBREW_SPELL_FIELD_SCHEMAS, authored, CONTEXT, {
         grants: conformGrants,
+        targetStates: conformTargetStates,
       })
     ) as HomebrewSpellMechanics
 );
