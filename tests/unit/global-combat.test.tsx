@@ -63,6 +63,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
 import { addMonster, setHp } from "@/features/campaigns/encounter";
+import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
 
 const UID = "u1";
 
@@ -647,6 +648,59 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
       /Goblin ends its turn: inside Spirit Guardians\?/.test(String(x.message))
     );
     expect(asked?.action?.label).toBe("Inside: roll");
+  });
+
+  it("Hold Person's repeat save waits on the DM's card when the Goblin's turn ends", () => {
+    useRepeatSaveStore.setState({ saves: [] });
+    const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
+    const campaign: CampaignDoc = {
+      ...base,
+      dmUid: UID,
+      members: [UID],
+      memberDetails: { [UID]: { displayName: "GM", characterId: null, role: "dm" } },
+    };
+    const empty = { ...(campaign.encounter as EncounterState), combatants: [] };
+    const withGoblin = addMonster(empty, {
+      name: "Goblin",
+      ac: 15,
+      maxHp: 7,
+      count: 1,
+      initiative: 10,
+    });
+    const held: CombatEffectOp = {
+      id: "op-hold",
+      kind: "apply",
+      effect: {
+        id: "hold-1",
+        actor: { kind: "pc", combatantId: "pc-bard", memberUid: "p", characterId: "c9" },
+        target: { kind: "monster", combatantId: "monster-1" },
+        source: { kind: "spell", id: "hold-person", actionId: "spell-hold-person" },
+        payload: { kind: "condition", conditionId: "paralyzed" },
+        duration: { kind: "encounter" },
+      },
+    };
+    const goblinsTurn = {
+      ...withGoblin,
+      effectOps: [held],
+      currentCombatantId: "monster-1",
+    };
+    mount();
+    show(campaign, goblinsTurn, 20, true);
+    expect(useRepeatSaveStore.getState().saves).toEqual([]);
+    show(campaign, { ...goblinsTurn, currentCombatantId: "pc-bard" }, 20, true);
+    expect(useRepeatSaveStore.getState().saves).toMatchObject([
+      {
+        id: "hold-1",
+        campaignId: "c1",
+        conditionId: "paralyzed",
+        targetId: "monster-1",
+        targetName: "Goblin",
+        ability: "WIS",
+      },
+    ]);
+    // The Goblin's next turn starts: the save no longer waits.
+    show(campaign, goblinsTurn, 20, true);
+    expect(useRepeatSaveStore.getState().saves).toEqual([]);
   });
 
   it("the DM's device ends a monster's grapple when the monster drops", () => {
