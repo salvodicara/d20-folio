@@ -8,8 +8,12 @@
  * Weights stay raw (pounds); the screen formats them.
  */
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
-import { attunementSatisfied, requiresAttunement } from "@/lib/attunement";
-import { canAttune, type AttunementRefusal } from "@/lib/attunement-guard";
+import {
+  attunables,
+  canAttune,
+  weaponAttunementKey,
+  type AttunementRefusal,
+} from "@/lib/attunement-guard";
 import { gearKey, selfFormRule } from "@/lib/polymorph";
 import type { Locale } from "@/lib/locale";
 import { localizeActions } from "@/lib/views/combat-action-view";
@@ -18,7 +22,6 @@ import {
   type ItemRowVM,
   type WeaponRowVM,
 } from "@/lib/views/inventory-view";
-import { homebrewText } from "@/lib/views/homebrew-text-view";
 import type { CharacterDoc } from "@/types/character";
 import type { DamageType } from "@/types/damage";
 
@@ -52,7 +55,9 @@ export interface PlayItem {
 }
 
 export interface PlayAttune {
-  instanceId: string;
+  /** The engine's key for it (`attunables`): an instance id, `equipment:<i>` or
+   *  `weapon:<i>`. */
+  key: string;
   attuned: boolean;
   refusal?: AttuneRefusalView;
 }
@@ -98,6 +103,34 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     const item = action.costEquipment ?? action.castPoolItemId;
     if (item && !uses.has(item)) uses.set(item, action.id);
   }
+  // Attunement, keyed the engine's way across equipment and weapons (#724).
+  const attunable = new Map(attunables(doc).map((a) => [a.key, a]));
+  const equipmentKey = (idx: number) =>
+    doc.character.equipment[idx]?.instanceId ?? `equipment:${String(idx)}`;
+  const weaponKey = (idx: number) => {
+    const ref = doc.character.weapons[idx];
+    return ref && "custom" in ref ? ref.instanceId : weaponAttunementKey(idx);
+  };
+  const names = new Map<string, string>([
+    ...[...vm.armor, ...vm.gear].map((i): [string, string] => [
+      equipmentKey(i.idx),
+      i.name,
+    ]),
+    ...vm.weapons.map((w): [string, string] => [weaponKey(w.idx), w.name]),
+  ]);
+  const attuneOf = (key: string): Pick<PlayItem, "needsAttunement" | "attune"> => {
+    const a = attunable.get(key);
+    if (!a) return { needsAttunement: false };
+    const verdict = a.attuned ? null : canAttune(doc, key);
+    const refusal =
+      verdict && !verdict.ok
+        ? refusalView(verdict, (k) => names.get(k) ?? k, locale)
+        : null;
+    return {
+      needsAttunement: !a.attuned,
+      attune: { key, attuned: a.attuned, ...(refusal ? { refusal } : {}) },
+    };
+  };
   const weapon = (w: WeaponRowVM): PlayItem => ({
     key: `w-${w.id}-${String(w.idx)}`,
     name: w.name,
@@ -109,7 +142,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
       type: w.damageType,
     },
     stealthDisadvantage: false,
-    needsAttunement: false,
+    ...attuneOf(weaponKey(w.idx)),
     useActionId: null,
     ...formGear(doc.character.weapons[w.idx]),
   });
@@ -147,9 +180,8 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
           ? { kind: "charges", current: i.charges.current, max: i.charges.max }
           : null,
     stealthDisadvantage: i.stealthDisadvantage,
-    needsAttunement: i.requiresAttunement && !i.attuned,
+    ...attuneOf(equipmentKey(i.idx)),
     useActionId: uses.get(i.isCustom ? `custom-${i.id}` : i.id) ?? null,
-    ...attuneOf(doc, doc.character.equipment[i.idx], locale),
     // Only what is worn or bonded merges; the pack gives nothing in any form.
     ...(i.equipped || i.attuned ? formGear(doc.character.equipment[i.idx]) : {}),
   });
@@ -179,30 +211,11 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
   };
 }
 
-/** An attunable item's state and, when the guard says no, why. */
-function attuneOf(
-  doc: CharacterDoc,
-  ref: CharacterDoc["character"]["equipment"][number] | undefined,
-  locale: Locale
-): { attune?: PlayAttune } {
-  const instanceId = ref?.instanceId;
-  if (!ref || !instanceId || !requiresAttunement(ref)) return {};
-  const attuned = attunementSatisfied(ref);
-  const verdict = attuned ? null : canAttune(doc, instanceId);
-  const refusal = verdict && !verdict.ok ? refusalView(doc, verdict, locale) : null;
-  return { attune: { instanceId, attuned, ...(refusal ? { refusal } : {}) } };
-}
-
 function refusalView(
-  doc: CharacterDoc,
   verdict: AttunementRefusal,
+  nameOf: (key: string) => string,
   locale: Locale
 ): AttuneRefusalView | null {
-  const nameOf = (id: string) => {
-    const ref = doc.character.equipment.find((r) => r.instanceId === id);
-    if (!ref) return id;
-    return "custom" in ref ? homebrewText(ref.name, locale) : itemName(ref.srdId, locale);
-  };
   switch (verdict.reason) {
     case "attunement-limit":
       return {

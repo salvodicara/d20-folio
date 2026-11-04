@@ -260,4 +260,20 @@ describe("the attune sheet events", () => {
       )
     ).toEqual(["cloak", "amulet", "gauntlets"]);
   });
+
+  it("a weapon's enchant attunes through the same event, keyed by its place", () => {
+    const doc = makeCharacterDoc({
+      weapons: [
+        {
+          srdId: "longsword",
+          quantity: 1,
+          enchantItemId: "flame-tongue",
+          attuned: false,
+        },
+      ],
+    });
+    const next = applySheetEvent(doc, { kind: "attune-item", instanceId: "weapon:0" });
+    const sword = next?.character.weapons[0];
+    expect(sword && "attuned" in sword ? sword.attuned : undefined).toBe(true);
+  });
 });

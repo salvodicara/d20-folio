@@ -168,11 +168,11 @@ describe("attunement on the Play inventory", () => {
       ref("ring-of-protection", "ring"),
     ]);
     expect(attuneOf(doc, "Mantello della Protezione")).toEqual({
-      instanceId: "cloak",
+      key: "cloak",
       attuned: true,
     });
     expect(attuneOf(doc, "Anello di Protezione")).toEqual({
-      instanceId: "ring",
+      key: "ring",
       attuned: false,
     });
   });
@@ -211,6 +211,32 @@ describe("attunement on the Play inventory", () => {
       spellcaster: true,
       names: [],
     });
+  });
+
+  it("a weapon whose enchant takes attunement is keyed by its place, and counts", () => {
+    const doc = makeCharacterDoc({
+      classId: "fighter",
+      level: 5,
+      race: "human" as never,
+      equipment: [
+        ref("cloak-of-protection", "cloak", true),
+        ref("amulet-of-health", "amulet", true),
+        ref("ring-of-protection", "ring", true),
+      ],
+      weapons: [
+        {
+          srdId: "longsword",
+          quantity: 1,
+          enchantItemId: "flame-tongue",
+          attuned: false,
+        },
+      ],
+    });
+    const sword = playInventoryView(doc, "it")
+      .groups.flatMap((g) => g.items)
+      .find((i) => i.attune?.key === "weapon:0");
+    expect(sword?.needsAttunement).toBe(true);
+    expect(sword?.attune?.refusal).toMatchObject({ reason: "limit", limit: 3 });
   });
 
   it("items that take no attunement offer nothing", () => {

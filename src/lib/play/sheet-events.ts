@@ -187,7 +187,13 @@ export type SheetEvent =
   | { kind: "set-form-gear-worn"; key: string; worn: boolean }
   /** Attune to an item (the guard refuses with its reason; `force` overrides a
    *  forceable refusal) or end the attunement. */
-  | { kind: "attune-item"; instanceId: string; force?: boolean }
+  | {
+      kind: "attune-item";
+      /** The attunable's key (`attunables`): an instance id or `weapon:<i>`. The name
+       *  stays: logged events replay. */
+      instanceId: string;
+      force?: boolean;
+    }
   | { kind: "unattune-item"; instanceId: string }
   /** The table answers whether the character sees a condition's source (null: no
    *  answer, the condition applies in full). */
@@ -452,12 +458,12 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
     case "set-form-gear-worn":
       return setFormGearWorn(doc, event.key, event.worn);
     case "attune-item":
-      return withEquipment(
+      return withAttunement(
         doc,
         attuneItem(doc, event.instanceId, event.force ? { force: true } : {})
       );
     case "unattune-item":
-      return withEquipment(doc, unattuneItem(doc, event.instanceId));
+      return withAttunement(doc, unattuneItem(doc, event.instanceId));
     case "set-sees-source":
       return withSession(setSeesSource(doc, event.key, event.sees));
     case "set-zone-spent":
@@ -482,10 +488,17 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
   }
 }
 
-/** The doc with the equipment an attunement transition returned, or null when the
- *  guard refused. */
-function withEquipment(doc: CharacterDoc, result: AttuneResult): CharacterDoc | null {
+/** The doc with the equipment and weapons an attunement transition returned, or null
+ *  when the guard refused. */
+function withAttunement(doc: CharacterDoc, result: AttuneResult): CharacterDoc | null {
   return result.ok
-    ? { ...doc, character: { ...doc.character, equipment: result.equipment } }
+    ? {
+        ...doc,
+        character: {
+          ...doc.character,
+          equipment: result.equipment,
+          weapons: result.weapons,
+        },
+      }
     : null;
 }
