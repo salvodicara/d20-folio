@@ -146,6 +146,7 @@ describe("choiceSlotRows", () => {
       "en"
     );
     expect(skillful?.title).toBe("Pick 1 Skill");
+    expect(skillful?.source).toBe("Skillful");
     expect(skillful?.options.map((o) => o.id)).not.toContain("athletics");
     expect(skillful?.options.map((o) => o.label)).toContain("Perception");
   });

@@ -151,6 +151,18 @@ describe("the species step asks every species choice", () => {
     }
   });
 
+  it("picking a species starts its trait picks empty (none carried from the opening build)", () => {
+    // The opening build is a Human Fighter whose preset already took Skillful.
+    const opening = initialCreationDraft();
+    const slotIds = creationFacts(opening).speciesChoiceSlots.skill.map((s) => s.slotId);
+    expect(slotIds.some((id) => (opening.choicePicks.skill[id] ?? []).length > 0)).toBe(
+      true
+    );
+    const picked = apply(opening, { type: "selectRace", raceId: "human" });
+    for (const id of slotIds) expect(picked.choicePicks.skill[id] ?? []).toEqual([]);
+    expect(speciesStepComplete(picked, creationFacts(picked))).toBe(false);
+  });
+
   it("Human: Skillful (any skill) and Versatile, never Versatile twice as a slot", () => {
     const facts = creationFacts(draftFor("human"));
     expect(facts.speciesChoiceSlots.skill).toHaveLength(1);

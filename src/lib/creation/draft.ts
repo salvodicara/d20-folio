@@ -190,12 +190,15 @@ export function creationDraftReducer(
     case "setSubclass":
       return { ...draft, subclassId: action.subclassId };
     case "selectRace":
+      // A species picked (even the same one again) starts every one of its own
+      // decisions fresh: nothing carried from the opening build or an earlier pick.
       return {
         ...draft,
         raceId: action.raceId,
         humanFeat: "",
         lineageChoices: {},
         speciesSpellAbility: "",
+        choicePicks: withoutSpeciesPicks(draft.choicePicks),
       };
     case "selectBackground": {
       // A new background brings its own three eligible abilities and its own
@@ -409,6 +412,23 @@ export interface CreationFacts {
 
   /** The draft differs from the build it was last prefilled with. */
   sculpted: boolean;
+}
+
+/** `picks` without any species-trait pick (ids under {@link SPECIES_SLOT_PREFIX}). */
+function withoutSpeciesPicks(picks: ChoicePicks): ChoicePicks {
+  const drop = (byId: Readonly<Record<string, ReadonlyArray<string>>>) =>
+    Object.fromEntries(
+      Object.entries(byId).filter(([id]) => !id.startsWith(SPECIES_SLOT_PREFIX))
+    );
+  return {
+    skill: drop(picks.skill),
+    tool: drop(picks.tool),
+    skillOrTool: drop(picks.skillOrTool),
+    language: drop(picks.language),
+    spell: drop(picks.spell),
+    expertise: drop(picks.expertise),
+    feat: drop(picks.feat),
+  };
 }
 
 /** The slots of every kind whose namespaced id starts with `prefix`. */

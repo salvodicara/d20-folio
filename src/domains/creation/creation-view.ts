@@ -14,7 +14,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import type { CreationDraft, CreationFacts } from "@/lib/creation/draft";
 import type { Locale } from "@/lib/locale";
 import { appliedQuickbuildState } from "@/lib/quickbuild";
-import { raceTraitNames } from "@/lib/views/creation-view";
+import { raceTraitNameOfSlot, raceTraitNames } from "@/lib/views/creation-view";
 import type { AbilityCode } from "@/types/ability";
 import type { IconName } from "@/ui/icon-names";
 import { ALL_SKILLS, skillNameToId } from "@/lib/skills";
@@ -190,6 +190,8 @@ export const signed = (n: number): string =>
 export interface ChoiceSlotRow {
   kind: "skill" | "tool" | "skillOrTool" | "language" | "spell" | "expertise";
   slotId: string;
+  /** The species trait that asks («Sensi Acuti»); "" when the slot is a feat's. */
+  source: string;
   /** «Scegli 1 abilità», «Scegli 2 trucchetti da Mago». */
   title: string;
   amount: number;
@@ -219,6 +221,7 @@ export function choiceSlotRows(
     rows.push({
       kind: "skill",
       slotId: slot.slotId,
+      source: raceTraitNameOfSlot(slot.slotId, locale),
       title: t("featChoices.pickSkills", { count: slot.amount }),
       amount: slot.amount,
       picked,
@@ -232,6 +235,7 @@ export function choiceSlotRows(
     rows.push({
       kind: "skillOrTool",
       slotId: slot.slotId,
+      source: raceTraitNameOfSlot(slot.slotId, locale),
       title: t("featChoices.pickSkillsOrTools", { count: slot.amount }),
       amount: slot.amount,
       picked,
@@ -249,6 +253,7 @@ export function choiceSlotRows(
     rows.push({
       kind: "expertise",
       slotId: slot.slotId,
+      source: raceTraitNameOfSlot(slot.slotId, locale),
       title: t("featChoices.pickExpertise", { count: slot.amount }),
       amount: slot.amount,
       picked,
@@ -259,6 +264,7 @@ export function choiceSlotRows(
     rows.push({
       kind: "tool",
       slotId: slot.slotId,
+      source: raceTraitNameOfSlot(slot.slotId, locale),
       title: t("featChoices.pickTools", { count: slot.amount }),
       amount: slot.amount,
       picked: picks.tool[slot.slotId] ?? [],
@@ -272,6 +278,7 @@ export function choiceSlotRows(
     rows.push({
       kind: "language",
       slotId: slot.slotId,
+      source: raceTraitNameOfSlot(slot.slotId, locale),
       title: t("featChoices.pickLanguages", { count: slot.amount }),
       amount: slot.amount,
       picked: picks.language[slot.slotId] ?? [],
@@ -295,6 +302,7 @@ export function choiceSlotRows(
     rows.push({
       kind: "spell",
       slotId: slot.slotId,
+      source: raceTraitNameOfSlot(slot.slotId, locale),
       // The shared rubric marks the class with <c>…</c> for the old picker's emphasis.
       title: t(key, { count: slot.count, className }).replace(/<\/?c>/g, ""),
       amount: slot.count,

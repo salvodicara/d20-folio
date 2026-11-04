@@ -169,6 +169,20 @@ export function languageName(id: string, locale: Locale): string {
  * read). Iterates the flat `raceFeatureEntries` (which carry the id + raceId)
  * rather than the raw `SrdRaceTrait[]` (which carry neither).
  */
+/**
+ * The localized name of the species trait a choice slot comes from, read off its
+ * namespaced id (`race:<raceId>:<traitId>::…`) — «Sensi Acuti», «Abile». "" for a
+ * slot that is not a species trait's.
+ */
+export function raceTraitNameOfSlot(slotId: string, locale: Locale): string {
+  const [, raceId, traitId] = /^race:([^:]+):([^:]+)::/.exec(slotId) ?? [];
+  if (!raceId || !traitId) return "";
+  const entry = raceFeatureEntries.find(
+    (e) => e.raceId === raceId && e.id === `${raceId}-${traitId}`
+  );
+  return entry ? localizeSrd("race", raceTraitCatKey(entry), "name", locale) : "";
+}
+
 export function raceTraitNames(raceId: string, limit: number, locale: Locale): string[] {
   return raceFeatureEntries
     .filter((e) => e.raceId === raceId)

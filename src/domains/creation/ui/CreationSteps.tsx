@@ -46,7 +46,9 @@ function SlotChips({
 }) {
   return rows.map((row) => (
     <div key={row.slotId} className="f-ask">
-      <span className="f-lbl">{row.title}</span>
+      {/* The trait names the pick; the rubric reads in text figures («1», not «I»). */}
+      {row.source && <span className="f-lbl">{row.source}</span>}
+      <p className="f-help">{row.title}</p>
       <div className="f-chips">
         {row.options.map((o) => (
           <Chip
