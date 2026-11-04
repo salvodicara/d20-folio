@@ -43,6 +43,7 @@ import { FolioLoader } from "@/components/shared/FolioLoader";
 import { cn } from "@/lib/utils";
 import { DyingBanner } from "./DyingBanner";
 import { ConcentrationSaveBanner } from "./ConcentrationSaveBanner";
+import { SpeciesChoicesBanner } from "./SpeciesChoicesBanner";
 import { BinderFob } from "./BinderFob";
 import { MobileSignet } from "./MobileSignet";
 import { CombatHeader } from "./center/CombatHeader";
@@ -235,6 +236,10 @@ export function CockpitView() {
           It stays above the tab grid so the required physical-roll entry remains
           reachable on every cockpit surface and survives route/hydration churn. */}
         <ConcentrationSaveBanner />
+
+        {/* A species choice the character still owes (a sheet saved before the
+          creation flow asked it): named, and asked on demand. */}
+        <SpeciesChoicesBanner />
 
         {/* #10 — below the rail threshold the two rail toggles are CO-LOCATED at
           the top via `order` (Stats, Resources, then the center), so both HUDs
