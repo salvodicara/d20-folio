@@ -6,7 +6,12 @@
  */
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
+import { combatResolutionSpec } from "@/lib/combat-resolution";
+import { hitPointDiceContext } from "@/lib/play/hit-point-dice";
 import { outcomeEffects } from "@/lib/play/outcome-effects";
+import { standingEffectsForTargets } from "@/lib/play/standing-effects";
+import type { ResolvedAction } from "@/lib/smart-tracker";
+import type { CharacterDoc } from "@/types/character";
 import type { ActionSummary } from "@/lib/smart-tracker";
 import { useAuthStore } from "@/stores/authStore";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
@@ -195,6 +200,49 @@ export function giveHelp(targetId: string, characterId: string): (() => void) | 
       )
       .catch(() => undefined);
   };
+}
+
+/**
+ * The state a use leaves only on a failed save or a hit (Bane, Faerie Fire, Ray of
+ * Frost): one encounter effect on that target, with the caster's spellcasting
+ * modifier frozen on it. Undefined outside a fight, before the v0.26.0 rules, or when
+ * the use's state lands at commit (`standingAtCommit`) or it leaves none.
+ */
+export function standingOutcomeWriter(
+  action: ResolvedAction,
+  doc: CharacterDoc,
+  outcome: "failed-save" | "hit"
+): ((targetId: string) => ActiveCombatEffect[]) | undefined {
+  const resolution = combatResolutionSpec(action);
+  const spec = resolution.standingEffect;
+  const status = useCombatStatusStore.getState().status;
+  if (!spec || !status || !combatEffectsV26On()) return undefined;
+  const gated =
+    outcome === "failed-save"
+      ? resolution.kind === "save"
+      : resolution.kind === "attack" || resolution.kind === "attack-save";
+  if (!gated) return undefined;
+  const caster = selfRef(status, doc.id);
+  const withLevel =
+    action.slotLevel !== undefined && spec.source.kind === "spell"
+      ? { ...spec, source: { ...spec.source, castLevel: action.slotLevel } }
+      : spec;
+  return (targetId) =>
+    targetId === status.myId
+      ? []
+      : standingEffectsForTargets({
+          spec: withLevel,
+          caster,
+          targets: [targetRef(status, targetId)],
+          position: {
+            round: status.round,
+            currentCombatantId: status.encounter.currentCombatantId,
+            phase: "turn-start",
+            order: status.encounter.order ?? status.view.turnOrderIds,
+          },
+          spellcastingModifier: hitPointDiceContext(doc).spellcastingMod,
+          newId: () => crypto.randomUUID(),
+        });
 }
 
 /** A fight's sides by combatant: a row's own side, else a PC's is the party's. */
