@@ -25,7 +25,7 @@
  */
 
 import { combatEffectsV26On } from "@/lib/deployed-rules";
-import { saveSuccessWriter } from "./outcome-offer";
+import { hitStateWriter, saveSuccessWriter } from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
@@ -952,6 +952,7 @@ export function TurnEconomyProvider({
     const plan = damageTrayPlan(action, targets, selfCombatantId());
     if (!plan) return;
     const onSaved = saveSuccessWriter(action, characterId);
+    const onHit = hitStateWriter(action, characterId);
     useDamageTrayStore.getState().show({
       characterId,
       actionName: action.name,
@@ -961,6 +962,7 @@ export function TurnEconomyProvider({
       ...(occurrenceId ? { occurrenceId } : {}),
       plan,
       ...(onSaved ? { onSaved } : {}),
+      ...(onHit ? { onHit } : {}),
       ...(action.summary.conditionSource
         ? { conditionSource: action.summary.conditionSource }
         : {}),

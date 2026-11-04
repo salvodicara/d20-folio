@@ -435,8 +435,7 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       ],
     },
     // The states a successful save still puts on the target, written to the fight
-    // by the damage tray. "The next attack roll" is approximated as every attack
-    // against it until then: no attack consumes an effect yet.
+    // by the damage tray. "The next attack roll against it" spends the Advantage.
     targetStates: [
       {
         type: "while-active",
@@ -446,6 +445,7 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       {
         type: "while-active",
         activeKey: "monk-stunning-strike-exposed",
+        consumedBy: "next-attack-against",
         grants: [{ type: "incoming-attack-advantage" }],
       },
     ],

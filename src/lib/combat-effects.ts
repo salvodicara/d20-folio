@@ -217,8 +217,8 @@ export function activeRollModeAdjustments(
   );
 }
 
-/** Attack-roll mode imposed by effects on the selected target. Kept separate
- * from the actor's own roll clauses so Reckless/Faerie Fire can never invert. */
+/** Attack-roll mode imposed by effects on the selected target, whoever attacks
+ *  (see {@link incomingAttackModes} for one attacker, with what it spends). */
 export function activeIncomingAttackModeAdjustments(
   effects: ReadonlyArray<ActiveCombatEffect>
 ): ActiveIncomingAttackModeAdjustment[] {
@@ -239,6 +239,68 @@ export function activeIncomingAttackModeAdjustments(
         : []
     )
   );
+}
+
+/** One effect on a target that changes the roll of an attack against it. */
+export interface IncomingAttackMode {
+  effect: ActiveCombatEffect;
+  sourceId: string;
+  mode: "advantage" | "disadvantage";
+  /** The attack spends it (`consumedBy`): Guiding Bolt's "next attack roll". */
+  consumed: boolean;
+}
+
+/**
+ * The attack-roll modes the effects on `targetId` impose on an attack by
+ * `attackerId` (Faerie Fire, Guiding Bolt, Stunning Strike's exposed target). Kept
+ * separate from the attacker's own roll clauses so Reckless/Faerie Fire can never
+ * invert. A state consumed by "the next attack by" its creator counts only for that
+ * creator's attack.
+ */
+export function incomingAttackModes(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  attackerId: string
+): IncomingAttackMode[] {
+  return foldCombatEffectOps(operations)
+    .filter((effect) => effect.target.combatantId === targetId)
+    .flatMap((effect) => {
+      const consumedBy = resolveCombatEffectGrantGroup(effect)?.consumedBy;
+      if (consumedBy === "next-attack-by" && effect.actor.combatantId !== attackerId) {
+        return [];
+      }
+      return resolveCombatEffectGrants(effect).flatMap((grant): IncomingAttackMode[] =>
+        grant.type === "incoming-attack-advantage" ||
+        grant.type === "incoming-attack-disadvantage"
+          ? [
+              {
+                effect,
+                sourceId: effect.source.id,
+                mode:
+                  grant.type === "incoming-attack-advantage"
+                    ? "advantage"
+                    : "disadvantage",
+                consumed: consumedBy !== undefined,
+              },
+            ]
+          : []
+      );
+    });
+}
+
+/** The effects an attack against `targetId` by `attackerId` spends. */
+export function effectIdsConsumedByAttack(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  attackerId: string
+): string[] {
+  return [
+    ...new Set(
+      incomingAttackModes(operations, targetId, attackerId)
+        .filter((m) => m.consumed)
+        .map((m) => m.effect.id)
+    ),
+  ];
 }
 
 /** Whether any live target-bound rule prevents Hit Point recovery. */
