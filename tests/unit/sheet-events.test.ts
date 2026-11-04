@@ -352,6 +352,19 @@ describe("applySheetEvent", () => {
     }
   );
 
+  it("a condition added with its source keeps the source («Da chi?»)", () => {
+    const event: SheetEvent = {
+      kind: "add-condition",
+      condition: "grappled",
+      sourceId: "ogre-1",
+    };
+    const next = applySheetEvent(doc, event);
+    expect(next).toEqual(
+      at(conditions.addCondition(doc, "grappled", undefined, "ogre-1"))
+    );
+    expect(next?.session.conditionSources?.grappled).toBe("ogre-1");
+  });
+
   it("never mutates the character it reads", () => {
     const before = structuredClone(doc);
     for (const [event] of Object.values(CASES)) applySheetEvent(doc, event);

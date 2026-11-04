@@ -223,6 +223,13 @@
       "faceHint": "A 20 gets you up at 1 Hit Point; a 1 counts as two failures.",
       "stable": "Stable: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
       "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours)."
+    },
+    "conditions": {
+      "cantSeeSource": "I can't see the source",
+      "exhaustionLevel": "Level {{level}}: −{{d20}} to D20 Tests · Speed −{{speed}}",
+      "exhaustionDeath": "Level 6: the character dies",
+      "withSource": "{{name}} · by {{source}}",
+      "fromWhom": "{{name}}: by whom?"
     }
   }
 }

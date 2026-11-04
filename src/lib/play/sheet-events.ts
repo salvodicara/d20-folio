@@ -122,7 +122,13 @@ export type SheetEvent =
     }
   /** `worldActionId`: the journal id of the world commit, minted once by the caller so
    *  the play log replays it exactly (a fresh one is minted without it). */
-  | { kind: "add-condition"; condition: string; worldActionId?: string }
+  | {
+      kind: "add-condition";
+      condition: string;
+      worldActionId?: string;
+      /** The combatant that caused it, when the player named one («Da chi?»). */
+      sourceId?: string;
+    }
   | { kind: "remove-condition"; condition: string; worldActionId?: string }
   | { kind: "add-session-defense"; defense: SessionDefenseKind; id: string }
   | { kind: "remove-session-defense"; defense: SessionDefenseKind; id: string }
@@ -336,7 +342,9 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
           : {}),
       });
     case "add-condition":
-      return withSession(addCondition(doc, event.condition, event.worldActionId));
+      return withSession(
+        addCondition(doc, event.condition, event.worldActionId, event.sourceId)
+      );
     case "remove-condition":
       return withSession(
         removeCondition(doc, event.condition, event.worldActionId)?.session
