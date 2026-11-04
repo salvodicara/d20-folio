@@ -47,6 +47,8 @@ export type DamageOptions = Pick<PcDamageTransitionInput, "crit" | "hit"> & {
   fromPeer?: boolean;
   /** Damage known not to come from an attack's hit (a fall, a hazard). */
   notAnAttack?: true;
+  /** A melee hit the attacker chose to knock out with: 1 HP and Unconscious, not 0. */
+  knockOut?: boolean;
 };
 
 /** One entered hit on the character, or null when it changes nothing. */
@@ -91,6 +93,7 @@ export function takeDamage(
       ? { crit: true }
       : {}),
     ...(opts?.hit ? { hit: opts.hit } : {}),
+    ...(opts?.knockOut ? { knockOut: true } : {}),
     persistentEffects,
     stateZeroHpFloors: [...stateFloorByKey.values()],
   });

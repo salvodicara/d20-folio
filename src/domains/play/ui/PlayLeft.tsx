@@ -59,7 +59,7 @@ export function PlayLeft({
             const body = (
               <>
                 <span className="f-res-t">{label(r)}</span>
-                {r.max <= MAX_PIPS && (
+                {r.max > 1 && r.max <= MAX_PIPS && (
                   <span className="f-pips" aria-hidden="true">
                     {Array.from({ length: r.max }, (_, i) => (
                       <i key={i} data-on={i < r.left || undefined} />

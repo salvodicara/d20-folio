@@ -102,6 +102,7 @@ export function GlobalCombatMount(): null {
     scope: string;
     sourceId: string;
   } | null>(null);
+  const observedTurn = useRef<string | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
   // tick, not ~2 s later when the autosave-debounced write echoes (the pip's "no echo lag").
@@ -292,6 +293,27 @@ export function GlobalCombatMount(): null {
       useCharacterStore.getState().setConcentration("", { undoable: false });
     }
   }, [status, live, setEncounterEffects]);
+
+  // Once-per-turn uses (Sneak Attack) come back on every turn, anyone's: an opportunity
+  // attack on the enemy's turn can use it again. When the fight moves to a new turn,
+  // the open PC's sheet recovers the uses spent in another turn. The first observation
+  // of a fight is a silent prime (a reload is not a new turn).
+  const currentTurn =
+    live && live.encounter.currentCombatantId
+      ? `${live.encounter.epoch}:${live.encounter.round}:${live.encounter.currentCombatantId}`
+      : null;
+  useEffect(() => {
+    if (!status || !currentTurn || openCharacterId !== status.characterId) {
+      observedTurn.current = null;
+      return;
+    }
+    const previous = observedTurn.current;
+    observedTurn.current = currentTurn;
+    if (previous === null || previous === currentTurn) return;
+    // The turn key without the epoch: "5:monster-1" (round:combatant).
+    const turnKey = currentTurn.slice(currentTurn.indexOf(":") + 1);
+    useCharacterStore.getState().dispatch({ kind: "recover-per-turn-trackers", turnKey });
+  }, [status, currentTurn, openCharacterId]);
 
   // Concentration is character-owned state; standing target effects are campaign-owned.
   // Bridge the two at this existing shell listener only when the OPEN character is the

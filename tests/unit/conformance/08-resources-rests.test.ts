@@ -11,6 +11,7 @@ import {
   resolveTrackers,
 } from "@/lib/smart-tracker";
 import { longRestCharacter, shortRestCharacter } from "@/lib/play/rests";
+import { applySheetEvent } from "@/lib/play/sheet-events";
 import { takeDamage } from "@/lib/play/damage";
 import { zeroHpSavers } from "@/lib/play/zero-hp-savers";
 import { unmaintainedStates } from "@/lib/play/end-turn";
@@ -65,19 +66,22 @@ describe("conformance · 8. resource economy and rests", () => {
     }
   );
 
-  rule({ category: 8, case: "Interrupted rests", source: "GLOSS", status: "M7" }, () => {
-    // A Short Rest needs at least 1 HP: a character at 0 HP gets nothing from it.
-    const doc = pc(
-      "fighter",
-      5,
-      {},
-      {
-        hp: { current: 0, temp: 0 },
-        trackers: { "fighter-second-wind": { used: 2 } },
-      }
-    );
-    expect(used(shortRestCharacter(doc), "fighter-second-wind")).toBe(2);
-  });
+  rule(
+    { category: 8, case: "Interrupted rests", source: "GLOSS", status: "works" },
+    () => {
+      // A Short Rest needs at least 1 HP: a character at 0 HP gets nothing from it.
+      const doc = pc(
+        "fighter",
+        5,
+        {},
+        {
+          hp: { current: 0, temp: 0 },
+          trackers: { "fighter-second-wind": { used: 2 } },
+        }
+      );
+      expect(used(shortRestCharacter(doc), "fighter-second-wind")).toBe(2);
+    }
+  );
 
   rule(
     {
@@ -172,17 +176,23 @@ describe("conformance · 8. resource economy and rests", () => {
       category: 8,
       case: "Once per turn vs once on each of your turns",
       source: "SAC #58; WIKI druid:moon; WIKI barbarian:main",
-      status: "M5",
+      status: "works",
     },
     () => {
       // Sneak Attack is once per TURN: spent on one enemy's turn (an OA), it is fresh
       // on the next enemy's turn, before the rogue's own turn comes round.
-      const spentOnGoblinTurn = { used: 1, windowKey: "r3:monster-1" };
-      const session = {
-        trackers: { "rogue-sneak-attack": spentOnGoblinTurn },
-        currentTurnKey: "r3:monster-2",
-      };
-      expect(tracker(pc("rogue", 5, {}, session), "rogue-sneak-attack")?.used).toBe(0);
+      const spentOnGoblinTurn = { used: 1, turnKey: "3:monster-1" };
+      const doc = pc(
+        "rogue",
+        5,
+        {},
+        { trackers: { "rogue-sneak-attack": spentOnGoblinTurn } }
+      );
+      const next = applySheetEvent(doc, {
+        kind: "recover-per-turn-trackers",
+        turnKey: "3:monster-2",
+      });
+      expect(next && tracker(next, "rogue-sneak-attack")?.used).toBe(0);
     }
   );
 

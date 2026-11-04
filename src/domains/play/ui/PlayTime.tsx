@@ -106,7 +106,7 @@ export function PlayTime({
     >
       <div className="f-ask">
         <span className="f-lbl">{t("play.time.howMuch")}</span>
-        <div className="f-slots">
+        <div className="f-slots f-slots-row">
           {TIME_STEPS.map((m) => (
             <Choice key={m} tile on={step === m} onClick={() => setStep(m)}>
               <b>{span(m)}</b>

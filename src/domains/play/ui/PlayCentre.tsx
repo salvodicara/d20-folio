@@ -642,11 +642,14 @@ function ActionLine({
     else executeAction(row.action);
   };
   const sub = [
-    row.level === 0
-      ? t("spells.cantrip")
-      : row.level !== null
-        ? t("play.spellLevel", { level: row.level })
-        : null,
+    // On the Spells tab the level is the group's header: not said again per row.
+    spell
+      ? null
+      : row.level === 0
+        ? t("spells.cantrip")
+        : row.level !== null
+          ? t("play.spellLevel", { level: row.level })
+          : null,
     row.concentration ? t("play.concentration") : null,
     spell && !spell.prepared ? t("play.unprepared") : null,
     row.uses

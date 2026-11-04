@@ -154,7 +154,8 @@
       "alive": "È vivo: non serve.",
       "deadWithin": "Morto da {{minutes}} min: entro il limite ✓",
       "deadTooLong": "Morto da {{minutes}} min: oltre il limite.",
-      "tableDecides": "Da quanto è morto lo decide il tavolo."
+      "tableDecides": "Da quanto è morto lo decide il tavolo.",
+      "knockOut": "Mettilo KO"
     },
     "weapon": {
       "which": "Su quale arma?",

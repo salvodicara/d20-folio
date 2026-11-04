@@ -154,7 +154,8 @@
       "alive": "Alive: no need.",
       "deadWithin": "Dead for {{minutes}} min: within the limit ✓",
       "deadTooLong": "Dead for {{minutes}} min: past the limit.",
-      "tableDecides": "How long it has been dead: the table decides."
+      "tableDecides": "How long it has been dead: the table decides.",
+      "knockOut": "Knock out"
     },
     "weapon": {
       "which": "Which weapon?",

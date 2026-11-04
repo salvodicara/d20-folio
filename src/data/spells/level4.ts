@@ -138,8 +138,8 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 10 },
     // SRD 5.2.1: "any attack you make deals an extra 2d8 damage when you hit a
     // creature in the Emanation. This damage is Acid, Cold, Fire, or Lightning (your
-    // choice when you make the attack)." The +1d8 per slot level above 4 and the
-    // Difficult Terrain are the table's.
+    // choice when you make the attack)." Any attack: weapon, Unarmed Strike or spell
+    // attack, +1d8 per slot level above 4. The Difficult Terrain is the table's.
     grants: [
       {
         type: "while-active",
@@ -148,8 +148,19 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
         grants: [
           {
             type: "damage-rider",
-            appliesTo: "weapon-or-unarmed",
-            dice: "2d8",
+            appliesTo: "attack-or-spell",
+            dice: {
+              kind: "dice-table",
+              input: { kind: "binding", bindingId: "cast.level" },
+              rows: [
+                { atLeast: 5, dice: "3d8" },
+                { atLeast: 6, dice: "4d8" },
+                { atLeast: 7, dice: "5d8" },
+                { atLeast: 8, dice: "6d8" },
+                { atLeast: 9, dice: "7d8" },
+              ],
+              below: "2d8",
+            },
             damageTypeChoices: ["acid", "cold", "fire", "lightning"],
           },
         ],

@@ -29,6 +29,7 @@ import {
   toggleCondition,
   toggleDefense,
   toggleSaved,
+  canKnockOut,
   type DamageTrayPlan,
   type TrayMultiplier,
   type TrayRow,
@@ -218,7 +219,13 @@ function TrayTargetRow({
               ? bandLabel(target.band, t)
               : ""}
         </span>
-        <Preview plan={plan} amount={amount} hp={target.hp} conditions={conditions} />
+        <Preview
+          plan={plan}
+          amount={amount}
+          hp={target.hp}
+          conditions={conditions}
+          knockOut={row.knockOut === true}
+        />
       </div>
       {outcome?.kind === "threshold" && (
         <div className="f-ask">
@@ -276,6 +283,23 @@ function TrayTargetRow({
             .join(" ")}
         </p>
       )}
+      {/* SRD «Knocking Out»: a melee hit that would drop a character to 0 may leave it
+          at 1 HP and Unconscious instead; the attacker chooses. */}
+      {amount !== null &&
+        target.kind === "pc" &&
+        canKnockOut(plan, { kind: "pc", hp: target.hp }, amount) && (
+          <div className="f-chips">
+            <Chip
+              pressed={row.knockOut === true}
+              onClick={() => {
+                const { knockOut, ...rest } = row;
+                onChange(knockOut ? rest : { ...row, knockOut: true });
+              }}
+            >
+              {t("play.tray.knockOut")}
+            </Chip>
+          </div>
+        )}
       {field && (
         <Field
           label={t("combat.damageTray.rowTotal", { name: target.name })}
@@ -384,11 +408,14 @@ function Preview({
   amount,
   hp,
   conditions,
+  knockOut = false,
 }: {
   plan: DamageTrayPlan;
   amount: number | null;
   hp?: { current: number; max: number; temp: number };
   conditions: string[];
+  /** Knocked out: it stops at 1 Hit Point instead of 0. */
+  knockOut?: boolean;
 }) {
   const { t } = useTranslation();
   const { effect } = plan;
@@ -410,7 +437,9 @@ function Preview({
   if (amount === null) return <span className="f-tray-amt">—</span>;
   if (amount === 0 && conditions.length === 0)
     return <span className="f-tray-amt">{t("combat.damageTray.noEffect")}</span>;
-  const after = hp && effect !== "temp-hp" ? previewHp(effect, amount, hp) : null;
+  const dropped = hp && effect !== "temp-hp" ? previewHp(effect, amount, hp) : null;
+  const after =
+    dropped && knockOut && dropped.current === 0 ? { ...dropped, current: 1 } : dropped;
   return (
     <span className="f-tray-amt" data-effect={effect}>
       <b>{(effect === "damage" ? "−" : "+") + String(amount)}</b>

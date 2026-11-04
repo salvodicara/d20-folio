@@ -18,7 +18,9 @@ import { parseReadiedSpell, sanitizeSession } from "@/lib/sanitize-session";
 import { CodecFailureError, fail, leftover } from "@/lib/codec-failure";
 import { MAX_SUMMONED } from "@/lib/summon-count";
 
-type CompactTrackerState = number | { used?: number; rolls: Array<number | null> };
+type CompactTrackerState =
+  | number
+  | { used?: number; rolls: Array<number | null>; turnKey?: string };
 type Coin = keyof SessionState["currency"];
 
 /** Typed form of the portable envelope's compact `state` map. */
@@ -65,6 +67,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   summons?: NonNullable<SessionState["summons"]>;
   death?: NonNullable<SessionState["death"]>;
   timeOfDay?: number;
+  stableSince?: number;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -130,6 +133,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "summons",
   "death",
   "timeOfDay",
+  "stableSince",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -240,8 +244,18 @@ function flattenUsed(
   for (const [key, value] of Object.entries(map)) {
     const used = isRecord(value) && typeof value.used === "number" ? value.used : 0;
     const rolls = recordedRolls(isRecord(value) ? value.rolls : undefined);
-    if (rolls.some((roll) => typeof roll === "number")) {
-      out[key] = { ...(used > 0 ? { used } : {}), rolls };
+    // A once-per-turn use keeps the turn it was spent in. `rolls` rides along (empty)
+    // so an older reader, which keeps only entries with rolls, still keeps the count.
+    const turnKey =
+      isRecord(value) && typeof value.turnKey === "string" && used > 0
+        ? value.turnKey
+        : undefined;
+    if (rolls.some((roll) => typeof roll === "number") || turnKey !== undefined) {
+      out[key] = {
+        ...(used > 0 ? { used } : {}),
+        rolls,
+        ...(turnKey !== undefined ? { turnKey } : {}),
+      };
     } else if (used > 0 || (belowZero && used < 0)) {
       out[key] = used;
     }
@@ -259,15 +273,20 @@ function parseTimeOfDay(raw: unknown): number | undefined {
 /** Expand compact numeric counters and additive recorded-roll entries. */
 function expandUsed(
   map: unknown
-): Record<string, { used: number; rolls?: Array<number | null> }> {
-  const out: Record<string, { used: number; rolls?: Array<number | null> }> = {};
+): Record<string, { used: number; rolls?: Array<number | null>; turnKey?: string }> {
+  const out: Record<
+    string,
+    { used: number; rolls?: Array<number | null>; turnKey?: string }
+  > = {};
   if (!isRecord(map)) return out;
   for (const [key, value] of Object.entries(map)) {
     if (typeof value === "number") out[key] = { used: value };
     else if (isRecord(value) && Array.isArray(value.rolls)) {
+      const rolls = recordedRolls(value.rolls);
       out[key] = {
         used: numOr(value.used, 0),
-        rolls: recordedRolls(value.rolls),
+        ...(rolls.length > 0 ? { rolls } : {}),
+        ...(typeof value.turnKey === "string" ? { turnKey: value.turnKey } : {}),
       };
     }
   }
@@ -381,6 +400,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.summons) state.summons = session.summons;
   if (session.death) state.death = session.death;
   if (session.timeOfDay !== undefined) state.timeOfDay = session.timeOfDay;
+  if (session.stableSince !== undefined) state.stableSince = session.stableSince;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -945,6 +965,13 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   }
   const timeOfDay = parseTimeOfDay(state.timeOfDay);
   if (timeOfDay !== undefined) session.timeOfDay = timeOfDay;
+  if (
+    typeof state.stableSince === "number" &&
+    Number.isFinite(state.stableSince) &&
+    state.stableSince >= 0
+  ) {
+    session.stableSince = state.stableSince;
+  }
   const summons = parseSummons(state.summons);
   if (summons) session.summons = summons;
   if (
