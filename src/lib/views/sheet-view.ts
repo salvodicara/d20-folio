@@ -25,7 +25,7 @@ import {
 } from "@/lib/rules";
 import type { SrdKind } from "@/i18n/srd-en";
 import { srdText } from "@/lib/loc-text";
-import { exhaustionSpeedReductionFt } from "@/lib/compute";
+import { exhaustionSpeedReductionFt, type Exhaustion } from "@/lib/compute";
 import { locPart, termPart, type RawBreakdownPart } from "@/lib/value-breakdown";
 import type {
   AggregatedGrants,
@@ -701,7 +701,7 @@ export interface SensesSpeedsView {
 export function resolveNonWalkingSpeed(
   value: NonWalkingSpeed | null,
   walkingSpeedFt: number,
-  exhaustionLevel = 0
+  exhaustionLevel: Exhaustion = 0
 ): number | null {
   if (value === null) return null;
   if (value === "equal-to-walking") return walkingSpeedFt;

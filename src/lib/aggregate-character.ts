@@ -21,6 +21,7 @@
  * every derived stat here without a legacy activation row, and key-identity
  * dedupe makes double-counting unrepresentable.
  */
+import type { Exhaustion } from "@/lib/compute";
 import { isMagicalCopy } from "@/lib/item-copies";
 import { itemCopyItemId } from "@/lib/homebrew-items";
 import { resolveBaseActionStateSources } from "@/lib/base-action-states";
@@ -620,7 +621,7 @@ type InitiativeAggregate = Pick<
 function initiativeInputs(
   character: CharacterDoc["character"],
   aggregate: InitiativeAggregate,
-  exhaustion: number
+  exhaustion: Exhaustion
 ): Parameters<typeof computeInitiative> {
   const scores = aggregateAbilityScores(
     character.abilityScores,
@@ -656,7 +657,7 @@ function initiativeInputs(
 export function computedInitiativeBonus(
   character: CharacterDoc["character"],
   aggregate: InitiativeAggregate,
-  exhaustion: number
+  exhaustion: Exhaustion
 ): number {
   return computeInitiative(...initiativeInputs(character, aggregate, exhaustion));
 }
@@ -665,7 +666,7 @@ export function computedInitiativeBonus(
 export function computedInitiativeBreakdown(
   character: CharacterDoc["character"],
   aggregate: InitiativeAggregate,
-  exhaustion: number
+  exhaustion: Exhaustion
 ): RawBreakdownPart[] {
   return buildInitiativeBreakdown(...initiativeInputs(character, aggregate, exhaustion));
 }

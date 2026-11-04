@@ -258,6 +258,7 @@ import {
   type ResolvedWeaponAttackStat,
   type UnarmedStrikeProfile,
   aggregateAbilityScores,
+  exhaustionOf,
 } from "@/lib/compute";
 import {
   fadingD20Penalty,
@@ -5041,7 +5042,8 @@ export function resolveActions(
     level,
     pb: effectiveProficiencyBonus(level, charData.proficiencyBonusOverride),
     exPenalty:
-      exhaustionPenalty(session.exhaustion) + fadingD20Penalty(session.fadingPenalties),
+      exhaustionPenalty(exhaustionOf(session)) +
+      fadingD20Penalty(session.fadingPenalties),
     pinnedSet: new Set(session.pinnedActions),
     unpinnedSet: new Set(session.unpinnedActions ?? []),
     scope,
@@ -6544,7 +6546,7 @@ function resolveSpellActions(
         castScore,
         atkGrantBonus,
         charData.spellcasting.attackBonusOverride,
-        session.exhaustion,
+        exhaustionOf(session),
         charData.proficiencyBonusOverride
       )
     : null;
@@ -6784,7 +6786,7 @@ function resolveSpellActions(
             spellOwningClassId
           ),
           sc?.attackBonusOverride,
-          session.exhaustion,
+          exhaustionOf(session),
           charData.proficiencyBonusOverride
         )
       : atkBonus;
@@ -7727,7 +7729,7 @@ function resolveWeaponActions(
       ...(enchantName ? { enchantName } : {}),
       featureBonuses: weaponAtkBonuses,
       // `exPenalty` is Exhaustion plus any fading penalty; the tip names each.
-      exhaustionPenalty: exhaustionPenalty(session.exhaustion),
+      exhaustionPenalty: exhaustionPenalty(exhaustionOf(session)),
       fadingParts: fadingPenaltyParts(session.fadingPenalties),
       override: weaponRef.attackBonusOverride,
     });
@@ -9561,7 +9563,7 @@ export function effectiveWalkingSpeedFt(
         ).speedPenaltyFt
       : 0;
 
-  const reduction = exhaustionSpeedReductionFt(character.session.exhaustion);
+  const reduction = exhaustionSpeedReductionFt(exhaustionOf(character.session));
   const resolved = multiplied - armorPenaltyFt - reduction;
 
   // Walking-Speed FLOOR (Boots of Striding and Springing → 30): "Speed becomes
@@ -9634,7 +9636,7 @@ export function effectiveWalkingSpeedBreakdown(
       : 0;
   if (armorPenaltyFt !== 0)
     parts.push(termPart("breakdown.speed.heavyArmor", -armorPenaltyFt));
-  const reduction = exhaustionSpeedReductionFt(character.session.exhaustion);
+  const reduction = exhaustionSpeedReductionFt(exhaustionOf(character.session));
   if (reduction !== 0) parts.push(termPart("character.exhaustion", -reduction));
   const resolved = multiplied - armorPenaltyFt - reduction;
 

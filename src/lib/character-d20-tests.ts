@@ -22,6 +22,7 @@ import {
   resolveSaveBonus,
   savingThrowBonus,
   aggregateAbilityScores,
+  exhaustionOf,
 } from "@/lib/compute";
 import type { D20RerollClause } from "@/lib/grants";
 import type { CharacterDoc } from "@/types/character";
@@ -145,7 +146,7 @@ export function deathSaveD20Context(
 ): CharacterDeathSaveD20Context {
   const { aggregate, scores } = effectiveScores(character);
   const allSaveBonus = flatSaveBonus(aggregate, scores);
-  const exhaustion = exhaustionPenalty(character.session.exhaustion);
+  const exhaustion = exhaustionPenalty(exhaustionOf(character.session));
   return {
     testId: `death-save:${character.id}`,
     actorId: character.id,
@@ -211,7 +212,7 @@ export function concentrationSaveD20Context(
   // derived bonuses in that case; Exhaustion remains a universal D20 penalty.
   const concentrationOnly =
     override == null ? resolveConcentrationSaveBonus(aggregate, scores) : 0;
-  const exhaustion = exhaustionPenalty(character.session.exhaustion);
+  const exhaustion = exhaustionPenalty(exhaustionOf(character.session));
   return {
     testId: `concentration-save:${pending.id}`,
     actorId: character.id,

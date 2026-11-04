@@ -2102,6 +2102,8 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
 
 /** Exhaustion 6-pip stepper (amber → crimson). Only shown when > 0. */
 function ExhaustionTrack({ value }: { value: number }) {
+  // The campaign's table rules for the penalty per level (M16), selected narrowly.
+  const tableRules = useCharacterStore((s) => s.character?.session.tableRules);
   const { t } = useTranslation();
   const setExhaustion = useCharacterStore((s) => s.setExhaustion);
 
@@ -2194,7 +2196,11 @@ function ExhaustionTrack({ value }: { value: number }) {
           // local restatement of the multiplier (golden rule 6).
           <div className="co-ex-eff">
             {t("character.exhaustionEffect", {
-              n: Math.abs(exhaustionPenalty(value)),
+              n: Math.abs(
+                exhaustionPenalty(
+                  tableRules ? { level: value, rules: tableRules } : value
+                )
+              ),
             })}
           </div>
         )

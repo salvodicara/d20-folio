@@ -38,6 +38,7 @@ import {
   resolveSaveBonus,
   type ProficiencyTier,
   aggregateAbilityScores,
+  exhaustionOf,
 } from "@/lib/compute";
 import { totalLevel } from "@/lib/classes";
 import { evaluateGrants, type RollDieAdjustmentClause } from "@/lib/grants";
@@ -55,6 +56,8 @@ import { conditionFactsFor } from "@/lib/condition-sources";
  */
 export interface SavesChecksSession {
   exhaustion: number;
+  /** The campaign's table rules (M16), for the Exhaustion penalty. */
+  tableRules?: SessionState["tableRules"];
   activeFeatures?: string[];
   conditions?: string[];
   concentrationConditions?: SessionState["concentrationConditions"];
@@ -192,7 +195,8 @@ export function deriveSavesAndChecks(
   charData: CharacterData,
   session: SavesChecksSession
 ): SavesAndChecks {
-  const { exhaustion } = session;
+  // The Exhaustion penalty by the campaign's table rules when it varies them (M16).
+  const exhaustion = exhaustionOf(session);
   const activeFeatures = session.activeFeatures;
   const pbOverride = charData.proficiencyBonusOverride;
   const level = totalLevel(charData);

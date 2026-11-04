@@ -25,6 +25,7 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
+import {} from "@/lib/compute";
 import { conditionFactsFor } from "@/lib/condition-sources";
 import { useConditionEncounter } from "@/features/character/condition-encounter";
 import { useCallback, useState, useMemo, type ReactNode } from "react";
@@ -466,6 +467,9 @@ export function PlayTab() {
       character
         ? deriveSavesAndChecks(character.character, {
             exhaustion: character.session.exhaustion,
+            ...(character.session.tableRules
+              ? { tableRules: character.session.tableRules }
+              : {}),
             activeFeatures: character.session.activeFeatures,
             conditions: effectiveConditions(character),
             grantBundleChoices: character.session.grantBundleChoices,
