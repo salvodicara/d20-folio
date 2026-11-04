@@ -16434,10 +16434,10 @@ button.econ-tok-filter:active .econ-disc {
    drop its ink below 4.5:1. So it carries its own opaque ground: the same gold
    tint mixed into the card surface, not into transparency. */
 .conc-banner.species-due {
-  background: color-mix(in oklab, var(--accent-primary) 10%, var(--bg-surface-2));
+  background: color-mix(in oklab, var(--accent-glow) 10%, var(--bg-surface-2));
 }
 [data-theme="light"] .conc-banner.species-due {
-  background: color-mix(in oklab, var(--accent-primary) 16%, var(--bg-surface-2));
+  background: color-mix(in oklab, var(--accent-glow) 16%, var(--bg-surface-2));
 }
 .conc-banner-mark {
   flex-shrink: 0;
