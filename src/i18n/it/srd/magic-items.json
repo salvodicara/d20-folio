@@ -34,7 +34,7 @@
     "label": "Guscio Metallico"
   },
   "armor-of-resistance": {
-    "description": "Hai Resistenza a un tipo di danno mentre indossi questa armatura. Il GM sceglie il tipo o lo determina casualmente. Tipi: Acido, Freddo, Fuoco, Forza, Fulmine, Necrotico, Veleno, Psichico, Radiante, Tuono.",
+    "description": "Hai Resistenza a un tipo di danno mentre indossi questa armatura. Il GM sceglie il tipo o lo determina casualmente. Tipi: Acido, Freddo, Fuoco, Forza, Fulmine, Necrotico, Veleno, Psichico, Radioso, Tuono.",
     "name": "Armatura della Resistenza"
   },
   "armor-of-resistance.grants.0": {
@@ -65,7 +65,7 @@
     "label": "Psichico"
   },
   "armor-of-resistance.grants.0.options.radiant": {
-    "label": "Radiante"
+    "label": "Radioso"
   },
   "armor-of-resistance.grants.0.options.thunder": {
     "label": "Tuono"
@@ -239,7 +239,7 @@
     "name": "Diadema Incandescente"
   },
   "cloak-of-arachnida": {
-    "description": "Questo capo pregiato è fatto di seta nera intessuta di tenui fili argentei. Mentre lo indossi, ottieni i seguenti benefici. Resistenza al Veleno. Hai Resistenza ai danni da Veleno. Arrampicata del Ragno. Hai una Velocità di Scalata pari alla tua Velocità e puoi muoverti su, giù e attraverso superfici verticali e lungo i soffitti, tenendo le mani libere. Camminata del Ragno. Non puoi essere catturato da ragnatele di alcun tipo e puoi muoverti attraverso le ragnatele come se fossero Terreno Difficile. Ragnatela. Puoi lanciare Ragnatela (CD 13). La ragnatela creata dall'incantesimo riempie il doppio della sua area normale. Una volta usata, questa proprietà non può essere riutilizzata fino all'alba successiva.",
+    "description": "Questo capo pregiato è fatto di seta nera intessuta di tenui fili argentei. Mentre lo indossi, ottieni i seguenti benefici. Resistenza al Veleno. Hai Resistenza ai danni da Veleno. Movimenti del Ragno. Hai una Velocità di Scalata pari alla tua Velocità e puoi muoverti su, giù e attraverso superfici verticali e lungo i soffitti, tenendo le mani libere. Camminata del Ragno. Non puoi essere catturato da ragnatele di alcun tipo e puoi muoverti attraverso le ragnatele come se fossero Terreno Difficile. Ragnatela. Puoi lanciare Ragnatela (CD 13). La ragnatela creata dall'incantesimo riempie il doppio della sua area normale. Una volta usata, questa proprietà non può essere riutilizzata fino all'alba successiva.",
     "name": "Mantello dell'Aracnide"
   },
   "cloak-of-displacement": {
@@ -276,7 +276,7 @@
     "name": "Sfera di Cristallo"
   },
   "crystal-ball-of-mind-reading": {
-    "description": "Mentre tocchi questa sfera di cristallo, puoi lanciare Scrutare con essa (CD del tiro salvezza 17). Inoltre, puoi lanciare Individuazione del Pensiero (CD del tiro salvezza 17) prendendo di mira creature che puoi vedere entro 9 metri dal sensore dell'incantesimo. Non hai bisogno di concentrarti su questo Individuazione del Pensiero per mantenerlo durante la sua durata, ma termina se l'incantesimo Scrutare termina.",
+    "description": "Mentre tocchi questa sfera di cristallo, puoi lanciare Scrutare con essa (CD del tiro salvezza 17). Inoltre, puoi lanciare Individuazione dei Pensieri (CD del tiro salvezza 17) prendendo di mira creature che puoi vedere entro 9 metri dal sensore dell'incantesimo. Non hai bisogno di concentrarti su questo Individuazione dei Pensieri per mantenerlo durante la sua durata, ma termina se l'incantesimo Scrutare termina.",
     "name": "Sfera di Cristallo della Lettura del Pensiero"
   },
   "crystal-ball-of-telepathy": {
@@ -510,7 +510,7 @@
     "name": "Fascia dell'Intelletto"
   },
   "helm-of-brilliance": {
-    "description": "Questo elmo è incastonato con 1d10 diamanti, 2d10 rubini, 3d10 opali di fuoco e 4d10 opali. Qualsiasi gemma estratta dall'elmo si sgretola in polvere. Quando tutte le gemme sono rimosse o distrutte, l'elmo perde la sua magia. Ottieni i seguenti benefici mentre indossi l'elmo. Luce di Diamante. Finché ha almeno un diamante, l'elmo emette un'Emanazione di 9 metri. Quando almeno un Non Morto si trova entro quell'area, l'Emanazione è colma di Luce Fioca. Qualsiasi Non Morto che inizia il suo turno in quell'area subisce 1d6 danni Radianti. Fiamme di Opale di Fuoco. Finché l'elmo ha almeno un opale di fuoco, puoi compiere un'azione Magia per far divampare in fiamme un'arma che stai impugnando. Le fiamme emettono Luce Intensa entro un raggio di 3 metri e Luce Fioca per altri 3 metri. Le fiamme sono innocue per te e per l'arma. Quando colpisci con un attacco usando l'arma fiammeggiante, il bersaglio subisce 1d6 danni da Fuoco aggiuntivi. Le fiamme durano finché non compi un'Azione Bonus per spegnerle o finché non lasci cadere o riponi l'arma. Resistenza di Rubino. Finché l'elmo ha almeno un rubino, hai Resistenza ai danni da Fuoco. Incantesimi. Puoi lanciare uno dei seguenti incantesimi (CD del tiro salvezza 18), usando una delle gemme dell'elmo del tipo specificato come componente: Luce Diurna (opale), Palla di Fuoco (opale di fuoco), Spruzzo Prismatico (diamante) o Muro di Fuoco (rubino). La gemma viene distrutta quando l'incantesimo viene lanciato e scompare dall'elmo. Subire Danni da Fuoco.",
+    "description": "Questo elmo è incastonato con 1d10 diamanti, 2d10 rubini, 3d10 opali di fuoco e 4d10 opali. Qualsiasi gemma estratta dall'elmo si sgretola in polvere. Quando tutte le gemme sono rimosse o distrutte, l'elmo perde la sua magia. Ottieni i seguenti benefici mentre indossi l'elmo. Luce di Diamante. Finché ha almeno un diamante, l'elmo emette un'Emanazione di 9 metri. Quando almeno un Non Morto si trova entro quell'area, l'Emanazione è colma di Luce Fioca. Qualsiasi Non Morto che inizia il suo turno in quell'area subisce 1d6 danni Radiosi. Fiamme di Opale di Fuoco. Finché l'elmo ha almeno un opale di fuoco, puoi compiere un'azione Magia per far divampare in fiamme un'arma che stai impugnando. Le fiamme emettono Luce Intensa entro un raggio di 3 metri e Luce Fioca per altri 3 metri. Le fiamme sono innocue per te e per l'arma. Quando colpisci con un attacco usando l'arma fiammeggiante, il bersaglio subisce 1d6 danni da Fuoco aggiuntivi. Le fiamme durano finché non compi un'Azione Bonus per spegnerle o finché non lasci cadere o riponi l'arma. Resistenza di Rubino. Finché l'elmo ha almeno un rubino, hai Resistenza ai danni da Fuoco. Incantesimi. Puoi lanciare uno dei seguenti incantesimi (CD del tiro salvezza 18), usando una delle gemme dell'elmo del tipo specificato come componente: Luce Diurna (opale), Palla di Fuoco (opale di fuoco), Spruzzo Prismatico (diamante) o Muro di Fuoco (rubino). La gemma viene distrutta quando l'incantesimo viene lanciato e scompare dall'elmo. Subire Danni da Fuoco.",
     "name": "Elmo della Luminosità"
   },
   "helm-of-comprehending-languages": {
@@ -518,7 +518,7 @@
     "name": "Elmo della Comprensione dei Linguaggi"
   },
   "helm-of-telepathy": {
-    "description": "Mentre indossi questo elmo, hai telepatia con una portata di 9 metri, e puoi lanciare Individuazione del Pensiero o Suggestione (CD del tiro salvezza 13) dall'elmo. Una volta che uno dei due incantesimi è lanciato dall'elmo, quell'incantesimo non può essere lanciato di nuovo da esso fino all'alba successiva.",
+    "description": "Mentre indossi questo elmo, hai telepatia con una portata di 9 metri, e puoi lanciare Individuazione dei Pensieri o Suggestione (CD del tiro salvezza 13) dall'elmo. Una volta che uno dei due incantesimi è lanciato dall'elmo, quell'incantesimo non può essere lanciato di nuovo da esso fino all'alba successiva.",
     "name": "Elmo della Telepatia"
   },
   "helm-of-teleportation": {
@@ -527,7 +527,7 @@
   },
   "holy-avenger": {
     "attunementReq": "da un Paladino",
-    "description": "+3 ai tiri per colpire e danni. Infligge +2d10 danni Radianti a demoni e non morti. Mentre impugnata, alleati entro 3 metri hanno Vantaggio ai tiri salvezza contro incantesimi ed effetti magici.",
+    "description": "+3 ai tiri per colpire e danni. Infligge +2d10 danni Radiosi a demoni e non morti. Mentre impugnata, alleati entro 3 metri hanno Vantaggio ai tiri salvezza contro incantesimi ed effetti magici.",
     "name": "Sacro Vendicatore"
   },
   "holy-avenger.grants.1": {
@@ -538,7 +538,7 @@
     "name": "Corno della Distruzione"
   },
   "horn-of-valhalla": {
-    "description": "(Bronzo) o Leggendario (Ferro) Puoi compiere un'azione Magia per suonare questo corno. In risposta, spiriti guerrieri dal piano di Ysgard appaiono in spazi liberi entro 18 metri da te. Ogni spirito usa il blocco delle statistiche del Berserker e torna a Ysgard dopo 1 ora o quando scende a 0 Punti Ferita. Gli spiriti sembrano guerrieri vivi e vegeti, e hanno Immunità alle condizioni Affascinato e Spaventato. Una volta usato il corno, non può essere usato di nuovo finché non sono trascorsi 7 giorni. Si sa che esistono quattro tipi di Corno di Valhalla, ciascuno fatto di un metallo diverso. Il tipo del corno determina quanti spiriti evoca, nonché il requisito per il suo utilizzo. Il DM sceglie il tipo del corno o lo determina casualmente tirando sulla tabella seguente. Se suoni il corno senza soddisfarne il requisito, gli spiriti evocati ti attaccano. Se soddisfi il requisito, sono Amichevoli verso di te e i tuoi alleati e seguono i tuoi comandi. 1d100 Tipo di Corno Spiriti Requisito 01-40 Argento 2 Nessuno 41-75 Ottone 3 Competenza con tutte le armi Semplici 76-90 Bronzo 4 Addestramento con tutte le armature Medie 91-00 Ferro 5 Competenza con tutte le armi Marziali",
+    "description": "(Bronzo) o Leggendario (Ferro) Puoi compiere un'azione Magia per suonare questo corno. In risposta, spiriti guerrieri dal piano di Ysgard appaiono in spazi liberi entro 18 metri da te. Ogni spirito usa il blocco delle statistiche del Berserker e torna a Ysgard dopo 1 ora o quando scende a 0 Punti Ferita. Gli spiriti sembrano guerrieri vivi e vegeti, e hanno Immunità alle condizioni Affascinato e Spaventato. Una volta usato il corno, non può essere usato di nuovo finché non sono trascorsi 7 giorni. Si sa che esistono quattro tipi di Corno di Valhalla, ciascuno fatto di un metallo diverso. Il tipo del corno determina quanti spiriti evoca, nonché il requisito per il suo utilizzo. Il DM sceglie il tipo del corno o lo determina casualmente tirando sulla tabella seguente. Se suoni il corno senza soddisfarne il requisito, gli spiriti evocati ti attaccano. Se soddisfi il requisito, sono Amichevoli verso di te e i tuoi alleati e seguono i tuoi comandi. 1d100 Tipo di Corno Spiriti Requisito 01-40 Argento 2 Nessuno 41-75 Ottone 3 Competenza con tutte le armi Semplici 76-90 Bronzo 4 Addestramento con tutte le armature Medie 91-00 Ferro 5 Competenza con tutte le armi da Guerra",
     "name": "Corno del Valhalla"
   },
   "horseshoes-of-a-zephyr": {
@@ -569,7 +569,7 @@
     "name": "Lama della Fortuna"
   },
   "mace-of-disruption": {
-    "description": "Quando colpisci un Immondo o un Non Morto con quest'arma magica, quella creatura subisce 2d6 danni Radianti aggiuntivi. Se il bersaglio ha 25 Punti Ferita o meno dopo aver subito questi danni, deve riuscire in un tiro salvezza su Saggezza con CD 15 o essere distrutto. Se riesce, la creatura ottiene la condizione Spaventato fino alla fine del tuo turno successivo. Luce. Mentre impugni quest'arma, emana Luce Intensa entro un raggio di 6 metri e Luce Fioca per altri 6 metri.",
+    "description": "Quando colpisci un Immondo o un Non Morto con quest'arma magica, quella creatura subisce 2d6 danni Radiosi aggiuntivi. Se il bersaglio ha 25 Punti Ferita o meno dopo aver subito questi danni, deve riuscire in un tiro salvezza su Saggezza con CD 15 o essere distrutto. Se riesce, la creatura ottiene la condizione Spaventato fino alla fine del tuo turno successivo. Luce. Mentre impugni quest'arma, emana Luce Intensa entro un raggio di 6 metri e Luce Fioca per altri 6 metri.",
     "name": "Mazza della Distruzione"
   },
   "mace-of-smiting": {
@@ -604,7 +604,7 @@
     "name": "Manuale della Velocità di Azione"
   },
   "medallion-of-thoughts": {
-    "description": "Il medaglione ha 5 cariche. Mentre lo indossi, puoi spendere 1 carica per lanciare Individuazione del Pensiero (CD del tiro salvezza 13) da esso. Il medaglione recupera 1d4 cariche spese ogni giorno all'alba.",
+    "description": "Il medaglione ha 5 cariche. Mentre lo indossi, puoi spendere 1 carica per lanciare Individuazione dei Pensieri (CD del tiro salvezza 13) da esso. Il medaglione recupera 1d4 cariche spese ogni giorno all'alba.",
     "name": "Medaglione dei Pensieri"
   },
   "mirror-of-life-trapping": {
@@ -677,7 +677,7 @@
     "name": "Flauto Incantatore"
   },
   "pipes-of-the-sewers": {
-    "description": "Mentre questa zampogna è sulla tua persona, i ratti comuni e i ratti giganti sono Indifferenti verso di te e non ti attaccheranno a meno che tu non li minacci o li ferisca. La zampogna ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Se suoni la zampogna come un'azione Magia, puoi compiere un'Azione Bonus per spendere da 1 a 3 cariche, richiamando uno Sciame di Ratti per ogni carica spesa se ci sono abbastanza ratti entro circa 800 metri da te da poter essere richiamati in questo modo (come determinato dal DM). Se non ci sono abbastanza ratti per formare uno sciame, la carica è sprecata. Gli sciami richiamati si muovono verso la musica seguendo il tragitto più breve disponibile ma per il resto non sono sotto il tuo controllo. Ogni volta che uno Sciame di Ratti non sotto il controllo di un'altra creatura giunge entro 9 metri da te mentre stai suonando la zampogna, lo sciame effettua un tiro salvezza su Saggezza con CD 15. Se riesce, lo sciame si comporta come farebbe normalmente e non può essere influenzato dalla musica della zampogna per le successive 24 ore. Se fallisce, lo sciame è influenzato dalla musica della zampogna e diventa Amichevole verso di te e i tuoi alleati per tutto il tempo in cui continui a suonare la zampogna a ogni round come un'azione Magia. Uno sciame Amichevole obbedisce ai tuoi comandi. Se non impartisci comandi a uno sciame Amichevole, esso si difende ma per il resto non compie azioni. Se uno sciame Amichevole inizia il suo turno a più di 9 metri da te, il tuo controllo su quello sciame termina, e lo sciame si comporta come farebbe normalmente e non può essere influenzato dalla musica della zampogna per le successive 24 ore.",
+    "description": "Mentre questa zampogna è sulla tua persona, i ratti comuni e i ratti giganti sono Indifferenti verso di te e non ti attaccheranno a meno che tu non li minacci o li ferisca. La zampogna ha 3 cariche e recupera 1d3 cariche spese ogni giorno all'alba. Se suoni la zampogna come un'azione Magia, puoi compiere un'Azione Bonus per spendere da 1 a 3 cariche, richiamando una Colonia di Topi per ogni carica spesa se ci sono abbastanza ratti entro circa 800 metri da te da poter essere richiamati in questo modo (come determinato dal DM). Se non ci sono abbastanza ratti per formare uno sciame, la carica è sprecata. Gli sciami richiamati si muovono verso la musica seguendo il tragitto più breve disponibile ma per il resto non sono sotto il tuo controllo. Ogni volta che una Colonia di Topi non sotto il controllo di un'altra creatura giunge entro 9 metri da te mentre stai suonando la zampogna, lo sciame effettua un tiro salvezza su Saggezza con CD 15. Se riesce, lo sciame si comporta come farebbe normalmente e non può essere influenzato dalla musica della zampogna per le successive 24 ore. Se fallisce, lo sciame è influenzato dalla musica della zampogna e diventa Amichevole verso di te e i tuoi alleati per tutto il tempo in cui continui a suonare la zampogna a ogni round come un'azione Magia. Uno sciame Amichevole obbedisce ai tuoi comandi. Se non impartisci comandi a uno sciame Amichevole, esso si difende ma per il resto non compie azioni. Se uno sciame Amichevole inizia il suo turno a più di 9 metri da te, il tuo controllo su quello sciame termina, e lo sciame si comporta come farebbe normalmente e non può essere influenzato dalla musica della zampogna per le successive 24 ore.",
     "name": "Flauto dei Topi"
   },
   "plate-armor-of-etherealness": {
@@ -811,7 +811,7 @@
     "summary": "Riduce l'età fisica di 1d6 + 6 anni (min 13)"
   },
   "potion-of-mind-reading": {
-    "description": "Quando bevi questa pozione, ottieni l'effetto dell'incantesimo Individuazione del Pensiero (CD del tiro salvezza 13) per 10 minuti (non è richiesta Concentrazione). Il denso liquido viola di questa pozione ha una nube ovoidale di rosa che vi galleggia dentro.",
+    "description": "Quando bevi questa pozione, ottieni l'effetto dell'incantesimo Individuazione dei Pensieri (CD del tiro salvezza 13) per 10 minuti (non è richiesta Concentrazione). Il denso liquido viola di questa pozione ha una nube ovoidale di rosa che vi galleggia dentro.",
     "name": "Pozione di Lettura della Mente",
     "summary": "Individuazione dei Pensieri (CD 13) per 10 min"
   },
@@ -856,7 +856,7 @@
     "label": "Psichico"
   },
   "potion-of-resistance.grants.0.grants.0.options.radiant": {
-    "label": "Radiante"
+    "label": "Radioso"
   },
   "potion-of-resistance.grants.0.grants.0.options.thunder": {
     "label": "Tuono"
@@ -1020,7 +1020,7 @@
     "description": "Tiri salvezza contro incantesimi e altri effetti magici"
   },
   "robe-of-useful-items": {
-    "description": "Questa veste è ricoperta di toppe di stoffa di varie forme e colori. Mentre indossi la veste, puoi compiere un'azione Magia per staccare una delle toppe, facendola diventare l'oggetto o la creatura che rappresenta. Una volta rimossa l'ultima toppa, la veste diventa un indumento comune. La veste ha due di ciascuna delle seguenti toppe: Lanterna Cieca (piena e accesa) Pugnale Specchio Asta Corda (avvolta) Sacco Inoltre, la veste ha 4d4 altre toppe. Il DM sceglie le toppe o le determina casualmente tirando sulla tabella seguente. 1d100 Toppa 01-08 Sacco da 100 MO 09-15 Cofanetto d'argento (30 centimetri di lunghezza, 15 centimetri di larghezza e profondità) del valore di 500 MO 16-22 Porta di ferro (fino a 3 metri di larghezza e 3 metri di altezza, sbarrata su un lato a tua scelta), che puoi collocare in un'apertura che puoi raggiungere; si conforma per adattarsi all'apertura, fissandosi e incernierandosi da sé 23-30 10 gemme del valore di 100 MO ciascuna 31-44 Scala di legno (lunga circa 7 metri) 45-51 Cavallo da galoppo con una Sella da Cavalcatura 52-59 Fossa aperta (un Cubo di 3 metri), che puoi collocare sul terreno entro 3 metri da te 60-68 4 Pozioni di Guarigione 69-75 Barca a Remi (lunga circa 3,5 metri) 76-83 Pergamena d'Incantesimo contenente un incantesimo di livello 1, 2 o 3 (a tua scelta) 84-90 2 Mastini 91-96 Finestra (60 centimetri per 120 centimetri, fino a 60 centimetri di profondità), che puoi collocare su una superficie verticale che puoi raggiungere 97-00 Ariete Portatile",
+    "description": "Questa veste è ricoperta di toppe di stoffa di varie forme e colori. Mentre indossi la veste, puoi compiere un'azione Magia per staccare una delle toppe, facendola diventare l'oggetto o la creatura che rappresenta. Una volta rimossa l'ultima toppa, la veste diventa un indumento comune. La veste ha due di ciascuna delle seguenti toppe: Lanterna Cieca (piena e accesa) Pugnale Specchio Asta Corda (avvolta) Sacco Inoltre, la veste ha 4d4 altre toppe. Il DM sceglie le toppe o le determina casualmente tirando sulla tabella seguente. 1d100 Toppa 01-08 Sacco da 100 MO 09-15 Cofanetto d'argento (30 centimetri di lunghezza, 15 centimetri di larghezza e profondità) del valore di 500 MO 16-22 Porta di ferro (fino a 3 metri di larghezza e 3 metri di altezza, sbarrata su un lato a tua scelta), che puoi collocare in un'apertura che puoi raggiungere; si conforma per adattarsi all'apertura, fissandosi e incernierandosi da sé 23-30 10 gemme del valore di 100 MO ciascuna 31-44 Scala di legno (lunga circa 7 metri) 45-51 Cavallo da galoppo con una Sella da Cavalcatura 52-59 Fossa aperta (un Cubo di 3 metri), che puoi collocare sul terreno entro 3 metri da te 60-68 4 Pozioni di Guarigione 69-75 Barca a Remi (lunga circa 3,5 metri) 76-83 Pergamena Magica contenente un incantesimo di livello 1, 2 o 3 (a tua scelta) 84-90 2 Mastini 91-96 Finestra (60 centimetri per 120 centimetri, fino a 60 centimetri di profondità), che puoi collocare su una superficie verticale che puoi raggiungere 97-00 Ariete Portatile",
     "name": "Tunica degli Oggetti Utili"
   },
   "rod-of-absorption": {
@@ -1186,7 +1186,7 @@
   },
   "staff-of-the-woodlands": {
     "attunementReq": "un Druido",
-    "description": "Questo bastone ha 6 cariche e può essere impugnato come un Bastone Ferrato magico che concede un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con esso. Mentre lo impugni, hai un bonus di +2 ai tiri per colpire con incantesimi. Incantesimi. Mentre impugni il bastone, puoi lanciare da esso uno degli incantesimi nella tabella seguente, usando la tua CD del tiro salvezza degli incantesimi. La tabella indica quante cariche devi spendere per lanciare l'incantesimo. Incantesimo Costo in Cariche Amicizia con gli Animali 1 Risvegliare 5 Pelle Coriacea 2 Localizzare Animali o Vegetali 2 Passo senza Tracce 2 Parlare con gli Animali 1 Parlare con i Vegetali 3 Muro di Spine 6 Forma Arborea. Puoi compiere un'azione Magia per piantare un'estremità del bastone nella terra in uno spazio libero e spendere 1 carica per trasformare il bastone in un albero rigoglioso. L'albero è alto 18 metri e ha un tronco dal diametro di 1,5 metri, e i suoi rami in cima si estendono in un raggio di 6 metri. L'albero appare comune ma irradia una debole aura di magia di Trasmutazione che può essere individuata con l'incantesimo Individuazione del Magico. Mentre tocchi l'albero e compi un'azione Magia, riporti il bastone alla sua forma normale. Qualsiasi creatura sull'albero cade quando l'albero torna a essere un bastone. Recuperare le Cariche. Il bastone recupera 1d6 cariche spese ogni giorno all'alba. Se spendi l'ultima carica, tira 1d20. Con un 1, il bastone perde le sue proprietà e diventa un Bastone Ferrato non magico.",
+    "description": "Questo bastone ha 6 cariche e può essere impugnato come un Bastone Ferrato magico che concede un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con esso. Mentre lo impugni, hai un bonus di +2 ai tiri per colpire con incantesimi. Incantesimi. Mentre impugni il bastone, puoi lanciare da esso uno degli incantesimi nella tabella seguente, usando la tua CD del tiro salvezza degli incantesimi. La tabella indica quante cariche devi spendere per lanciare l'incantesimo. Incantesimo Costo in Cariche Amicizia con gli Animali 1 Risvegliare 5 Pelle Coriacea 2 Localizzare Animali o Vegetali 2 Passare Senza Tracce 2 Parlare con gli Animali 1 Parlare con i Vegetali 3 Muro di Spine 6 Forma Arborea. Puoi compiere un'azione Magia per piantare un'estremità del bastone nella terra in uno spazio libero e spendere 1 carica per trasformare il bastone in un albero rigoglioso. L'albero è alto 18 metri e ha un tronco dal diametro di 1,5 metri, e i suoi rami in cima si estendono in un raggio di 6 metri. L'albero appare comune ma irradia una debole aura di magia di Trasmutazione che può essere individuata con l'incantesimo Individuazione del Magico. Mentre tocchi l'albero e compi un'azione Magia, riporti il bastone alla sua forma normale. Qualsiasi creatura sull'albero cade quando l'albero torna a essere un bastone. Recuperare le Cariche. Il bastone recupera 1d6 cariche spese ogni giorno all'alba. Se spendi l'ultima carica, tira 1d20. Con un 1, il bastone perde le sue proprietà e diventa un Bastone Ferrato non magico.",
     "name": "Bastone dei Boschi"
   },
   "staff-of-thunder-and-lightning": {
@@ -1206,7 +1206,7 @@
     "name": "Pietra della Buona Fortuna (Pietrafortuna)"
   },
   "sun-blade": {
-    "description": "Un'elsa di spada lunga che crea una lama di luce. +2 ai tiri per colpire e danni, infligge danni Radianti invece che taglienti, +1d8 contro non morti. Irradia luce solare in un raggio di 4,5 metri.",
+    "description": "Un'elsa di spada lunga che crea una lama di luce. +2 ai tiri per colpire e danni, infligge danni Radiosi invece che taglienti, +1d8 contro non morti. Irradia luce solare in un raggio di 4,5 metri.",
     "name": "Lama del Sole"
   },
   "sword-of-life-stealing": {
@@ -1223,7 +1223,7 @@
   },
   "talisman-of-pure-good": {
     "attunementReq": "un Chierico o Paladino",
-    "description": "Questo talismano è un possente simbolo di bontà. Un Immondo o un Non Morto che tocca il talismano subisce 8d6 danni Radianti e subisce di nuovo i danni ogni volta che termina il suo turno tenendo o trasportando il talismano. Simbolo Sacro. Puoi usare il talismano come Simbolo Sacro. Ottieni un bonus di +2 ai tiri per colpire con incantesimi mentre lo indossi o lo tieni in mano. Pura Reprimenda. Il talismano ha 7 cariche. Mentre indossi o tieni in mano il talismano, puoi compiere un'azione Magia per spendere 1 carica e prendere di mira una creatura che puoi vedere sul terreno entro 36 metri da te. Una fenditura fiammeggiante si apre sotto il bersaglio, e il bersaglio effettua un tiro salvezza su Destrezza con CD 20. Se il bersaglio è un Immondo o un Non Morto, ha Svantaggio al tiro salvezza. Se fallisce, il bersaglio cade nella fenditura ed è distrutto, senza lasciare resti. Se riesce, il bersaglio non è scagliato nella fenditura ma subisce 4d6 danni Psichici dalla prova. In entrambi i casi, la fenditura si richiude, senza lasciare traccia della sua esistenza. Quando spendi l'ultima carica, il talismano si disperde in scintille di luce dorata ed è distrutto.",
+    "description": "Questo talismano è un possente simbolo di bontà. Un Immondo o un Non Morto che tocca il talismano subisce 8d6 danni Radiosi e subisce di nuovo i danni ogni volta che termina il suo turno tenendo o trasportando il talismano. Simbolo Sacro. Puoi usare il talismano come Simbolo Sacro. Ottieni un bonus di +2 ai tiri per colpire con incantesimi mentre lo indossi o lo tieni in mano. Pura Reprimenda. Il talismano ha 7 cariche. Mentre indossi o tieni in mano il talismano, puoi compiere un'azione Magia per spendere 1 carica e prendere di mira una creatura che puoi vedere sul terreno entro 36 metri da te. Una fenditura fiammeggiante si apre sotto il bersaglio, e il bersaglio effettua un tiro salvezza su Destrezza con CD 20. Se il bersaglio è un Immondo o un Non Morto, ha Svantaggio al tiro salvezza. Se fallisce, il bersaglio cade nella fenditura ed è distrutto, senza lasciare resti. Se riesce, il bersaglio non è scagliato nella fenditura ma subisce 4d6 danni Psichici dalla prova. In entrambi i casi, la fenditura si richiude, senza lasciare traccia della sua esistenza. Quando spendi l'ultima carica, il talismano si disperde in scintille di luce dorata ed è distrutto.",
     "name": "Talismano del Bene Puro"
   },
   "talisman-of-the-sphere": {
@@ -1460,7 +1460,7 @@
     "description": "Tiri salvezza su Costituzione (Forma Gassosa)"
   },
   "ring-of-resistance": {
-    "description": "Hai Resistenza a un tipo di danno mentre indossi questo anello. La gemma incastonata nell'anello ne indica il tipo, che il DM sceglie o determina casualmente tirando sulla tabella seguente. 1d10 Tipo di Danno Gemma 1 Acido Perla 2 Forza Zaffiro 3 Freddo Tormalina 4 Fulmine Citrino 5 Fuoco Granato 6 Necrotico Giaietto 7 Psichico Giada 8 Radiante Topazio 9 Tuono Spinello 10 Veleno Ametista",
+    "description": "Hai Resistenza a un tipo di danno mentre indossi questo anello. La gemma incastonata nell'anello ne indica il tipo, che il DM sceglie o determina casualmente tirando sulla tabella seguente. 1d10 Tipo di Danno Gemma 1 Acido Perla 2 Forza Zaffiro 3 Freddo Tormalina 4 Fulmine Citrino 5 Fuoco Granato 6 Necrotico Giaietto 7 Psichico Giada 8 Radioso Topazio 9 Tuono Spinello 10 Veleno Ametista",
     "name": "Anello di Resistenza"
   },
   "ring-of-resistance.grants.0": {
@@ -1491,7 +1491,7 @@
     "label": "Psichico"
   },
   "ring-of-resistance.grants.0.options.radiant": {
-    "label": "Radiante"
+    "label": "Radioso"
   },
   "ring-of-resistance.grants.0.options.thunder": {
     "label": "Tuono"

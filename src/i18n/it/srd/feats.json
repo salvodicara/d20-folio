@@ -39,7 +39,7 @@
     "prerequisite": "Livello 19+, capacità Incantesimi o Magia del Patto"
   },
   "boon-of-the-night-spirit": {
-    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Fondersi con le Ombre.** Mentre sei in Luce Fioca o Oscurità, puoi darti la condizione Invisibile come azione Magica. La condizione termina su di te immediatamente dopo che effettui un'azione, un'Azione Bonus o una Reazione.\n\n**Forma d'Ombra.** Mentre sei in Luce Fioca o Oscurità, hai Resistenza a tutti i danni eccetto Forza, Psichico e Radiante.",
+    "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Fondersi con le Ombre.** Mentre sei in Luce Fioca o Oscurità, puoi darti la condizione Invisibile come azione Magica. La condizione termina su di te immediatamente dopo che effettui un'azione, un'Azione Bonus o una Reazione.\n\n**Forma d'Ombra.** Mentre sei in Luce Fioca o Oscurità, hai Resistenza a tutti i danni eccetto Forza, Psichico e Radioso.",
     "name": "Dono dello Spirito Notturno",
     "prerequisite": "Livello 19+"
   },

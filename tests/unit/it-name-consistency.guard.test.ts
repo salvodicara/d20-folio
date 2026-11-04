@@ -21,6 +21,10 @@ import {
   loadLocaleStrings,
   findFeetDistances,
   findCoverDrift,
+  loadStringPairs,
+  loadNamedEntities,
+  findMissingCrossRefs,
+  findSameEnDifferentIt,
   COVER_DEGREES_IT,
   PUBLIC_SRD_I18N,
   type AllowedCollision,
@@ -102,6 +106,103 @@ const EXPECTED_CONDITION_IT: Record<string, string> = {
   unconscious: "Privo di Sensi",
 };
 const IT_SRD_DIR = resolve(PUBLIC_SRD_I18N, "it", "srd");
+
+/**
+ * The 13 damage types as the official IT SRD 5.2.1 prints them, pinned in the two chrome shapes:
+ * the bare type (`srd.damage_*`, singular masculine) and the tray label (`combat.damageTray.
+ * damageOf.*`). Radiant is «radioso»/«radiosi» in the IT SRD, never «radiante».
+ */
+const EXPECTED_DAMAGE_IT: Record<string, [type: string, tray: string]> = {
+  acid: ["Acido", "Danni da Acido"],
+  bludgeoning: ["Contundente", "Danni Contundenti"],
+  cold: ["Freddo", "Danni da Freddo"],
+  fire: ["Fuoco", "Danni da Fuoco"],
+  force: ["Forza", "Danni da Forza"],
+  lightning: ["Fulmine", "Danni da Fulmine"],
+  necrotic: ["Necrotico", "Danni Necrotici"],
+  piercing: ["Perforante", "Danni Perforanti"],
+  poison: ["Veleno", "Danni da Veleno"],
+  psychic: ["Psichico", "Danni Psichici"],
+  radiant: ["Radioso", "Danni Radiosi"],
+  slashing: ["Tagliente", "Danni Taglienti"],
+  thunder: ["Tuono", "Danni da Tuono"],
+};
+
+/** The 14 creature types and 6 sizes, as the IT SRD 5.2.1 prints them ("Tipi di creature", "Taglie"). */
+const EXPECTED_CREATURE_TYPE_IT: Record<string, string> = {
+  aberration: "Aberrazione",
+  beast: "Bestia",
+  celestial: "Celestiale",
+  construct: "Costrutto",
+  dragon: "Drago",
+  elemental: "Elementale",
+  fey: "Folletto",
+  fiend: "Immondo",
+  giant: "Gigante",
+  humanoid: "Umanoide",
+  monstrosity: "Mostruosità",
+  ooze: "Melma",
+  plant: "Vegetale",
+  undead: "Non Morto",
+};
+const EXPECTED_SIZE_IT: Record<string, string> = {
+  tiny: "Minuscola",
+  small: "Piccola",
+  medium: "Media",
+  large: "Grande",
+  huge: "Enorme",
+  gargantuan: "Mastodontica",
+};
+
+/** The chrome keys under one prefix of `ui/srd.json` (`damage_`, `creatureType_`, `size_`). */
+function srdChrome(prefix: string): Record<string, string> {
+  const shard = JSON.parse(
+    readFileSync(resolve(PUBLIC_SRD_I18N, "it", "ui", "srd.json"), "utf8")
+  ) as { srd: Record<string, string> };
+  return Object.fromEntries(
+    Object.entries(shard.srd)
+      .filter(([k]) => k.startsWith(prefix))
+      .map(([k, v]) => [k.slice(prefix.length), v])
+  );
+}
+
+/**
+ * Single-word EN names the cross-reference check reads as names. A bare one-word name is usually
+ * an ordinary English word ("Light", "Prone" as "knocks prone"), so only closed-set terms that are
+ * never ordinary prose are listed.
+ */
+const SINGLE_WORD_CROSS_REFS = ["Expertise", "Spellbook"];
+
+/**
+ * Cross-references the matcher cannot see but that are correct: the EN sentence distributes one
+ * noun over a list ("Light, Medium, or Heavy armor"), and Italian distributes it the other way
+ * ("un'armatura Leggera, Media o Pesante"). Exact lines; a new one is a miss until ruled on here.
+ */
+const LIST_FORM_CROSS_REFS = [
+  "srd/feats:defense.description «Heavy armor» → «Armatura pesante»",
+  "srd/class-features:fighter-weapon-mastery.description «Martial weapons» → «Armi da guerra»",
+  "srd/class-features:ranger-weapon-mastery.description «Martial weapons» → «Armi da guerra»",
+  "srd/class-features:rogue-weapon-mastery.description «Martial weapons» → «Armi da guerra»",
+  "srd/class-features:sorcerer-metamagic.description «Twinned Spell» → «Incantesimo Raddoppiato»",
+];
+
+/**
+ * RATCHET: cross-reference misses known and not yet fixed. It may only shrink — a new miss fails,
+ * and a fixed one must be deleted from here. Empty since the 2026-11-04 terminology sweep.
+ */
+const KNOWN_CROSS_REF_MISSES: string[] = [];
+
+/** Pairs that are not prose: the icon credits name each artwork by its English title. */
+const NOT_PROSE = new Set(["ui/legal:legal.licenses.iconsDesc"]);
+
+/**
+ * EN names the IT SRD 5.2.1 itself prints two ways, because they are two different things: the
+ * Light weapon property (Leggera) and the Light cantrip (Luce); the Nightmare creature (Cavallo
+ * degli incubi) and the night hag's Nightmare action (Sogno spaventoso); the Orc species (Orco)
+ * and the Orc language (Orchesco); the Tree Stride spell (Traslazione arborea) and the dryad's
+ * Tree Stride action (Passo arboreo).
+ */
+const SANCTIONED_SPLITS = ["Light", "Nightmare", "Orc", "Tree Stride"];
 
 describe("IT name consistency (public SRD)", () => {
   it("loads the SRD entity set", () => {
@@ -239,5 +340,108 @@ describe("IT name consistency (public SRD)", () => {
   it("titles the cover states with the official IT SRD 5.2.1 terms", () => {
     const names = COVER_REFERENCE.map((c) => srd("rule", coverKey(c.id), "name", "it"));
     expect(names.map((name) => name.toLowerCase())).toEqual([...COVER_DEGREES_IT]);
+  });
+
+  it("pins the damage-type IT names in the chrome to the official IT SRD 5.2.1", () => {
+    const combat = JSON.parse(
+      readFileSync(resolve(PUBLIC_SRD_I18N, "it", "ui", "combat.json"), "utf8")
+    ) as { combat: { damageTray: { damageOf: Record<string, string> } } };
+    const types = srdChrome("damage_");
+    const tray = combat.combat.damageTray.damageOf;
+    const pinned = (i: 0 | 1) =>
+      Object.fromEntries(Object.entries(EXPECTED_DAMAGE_IT).map(([k, v]) => [k, v[i]]));
+    expect(types).toEqual(pinned(0));
+    expect(tray).toEqual(pinned(1));
+  });
+
+  it("never names Radiant damage «Radiante»: the IT SRD 5.2.1 prints «radioso»", () => {
+    expect(
+      itStrings
+        .filter((s) => /(?<!\p{L})radiant[ei](?!\p{L})/iu.test(s.value))
+        .map((s) => s.file + ": " + s.value.slice(0, 80))
+    ).toEqual([]);
+  });
+
+  it("pins the creature types and sizes in the chrome to the official IT SRD 5.2.1", () => {
+    expect(srdChrome("creatureType_")).toEqual(EXPECTED_CREATURE_TYPE_IT);
+    expect(srdChrome("size_")).toEqual(EXPECTED_SIZE_IT);
+  });
+
+  // A retired lexeme is a variant someone already met. A NEW variant («Individuazione del
+  // Pensiero» for Detect Thoughts) is invisible to that list: these two read every name from the
+  // JSON and check each EN cross-reference against the IT string at the same key.
+  const named = loadNamedEntities(PUBLIC_SRD_I18N);
+  const topLevel = named.filter((e) => !e.id.includes("."));
+
+  it("carries every cross-referenced entity's canonical IT name (ratchet)", () => {
+    const pairs = loadStringPairs(PUBLIC_SRD_I18N).filter(
+      (p) => !NOT_PROSE.has(p.file + ":" + p.key)
+    );
+    expect(pairs.length).toBeGreaterThan(5000);
+    const sanctioned = new Set([...LIST_FORM_CROSS_REFS, ...KNOWN_CROSS_REF_MISSES]);
+    const misses = findMissingCrossRefs(pairs, topLevel, SINGLE_WORD_CROSS_REFS);
+    const fresh = misses.filter((m) => !sanctioned.has(m));
+    const stale = [...sanctioned].filter((m) => !misses.includes(m));
+    expect({ fresh, stale }).toEqual({ fresh: [], stale: [] });
+  });
+
+  it("translates one EN name one way across entities and sub-entities", () => {
+    expect(named.length).toBeGreaterThan(topLevel.length);
+    expect(findSameEnDifferentIt(named, SANCTIONED_SPLITS)).toEqual([]);
+  });
+
+  describe("cross-reference helpers (synthetic)", () => {
+    const ent = (id: string, en: string, it: string) => ({ kind: "spells", id, en, it });
+    const ents = [
+      ent("detect-thoughts", "Detect Thoughts", "Individuazione dei Pensieri"),
+    ];
+    const pair = (en: string, it: string) => ({ file: "ui/x", key: "k", en, it });
+
+    it("flags a variant and accepts the canonical name, inflected", () => {
+      expect(
+        findMissingCrossRefs(
+          [pair("Cast Detect Thoughts.", "Lancia Individuazione del Pensiero.")],
+          ents
+        )
+      ).toEqual(["ui/x:k «Detect Thoughts» → «Individuazione dei Pensieri»"]);
+      expect(
+        findMissingCrossRefs(
+          [pair("Cast Detect Thoughts.", "individuazione dei pensieri")],
+          ents
+        )
+      ).toEqual([]);
+    });
+
+    it("treats «di» and the elided «d'» as one", () => {
+      const wm = [ent("wm", "Weapon Mastery", "Padronanza d'Armi")];
+      expect(
+        findMissingCrossRefs([pair("Weapon Mastery", "Padronanza di Armi")], wm)
+      ).toEqual([]);
+      expect(
+        findMissingCrossRefs([pair("Weapon Mastery", "Padronanza Armi")], wm)
+      ).toHaveLength(1);
+    });
+
+    it("reads a one-word name only when allowed", () => {
+      const ex = [ent("ex", "Expertise", "Maestria")];
+      expect(findMissingCrossRefs([pair("Expertise", "Competenza Doppia")], ex)).toEqual(
+        []
+      );
+      expect(
+        findMissingCrossRefs([pair("Expertise", "Competenza Doppia")], ex, ["Expertise"])
+      ).toHaveLength(1);
+    });
+
+    it("flags one EN name with two IT names, case and accents aside", () => {
+      const rows = [
+        ent("a", "Redirect Attack", "Sviare Attacco"),
+        ent("b.actions.x", "Redirect Attack", "sviare attacco"),
+        ent("c.actions.y", "Redirect Attack", "Devia Attacco"),
+      ];
+      expect(findSameEnDifferentIt(rows)).toEqual([
+        "Redirect Attack → Devia Attacco | Sviare Attacco",
+      ]);
+      expect(findSameEnDifferentIt(rows, ["Redirect Attack"])).toEqual([]);
+    });
   });
 });

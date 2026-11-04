@@ -36,7 +36,7 @@
     "prerequisite": "Warlock di livello 5+, Supplica Patto della Lama"
   },
   "eldritch-smite.grants.eldritch-smite": {
-    "name": "Colpo Mistico"
+    "name": "Punizione Occulta"
   },
   "eldritch-spear": {
     "description": "Scegli uno dei tuoi trucchetti da Warlock conosciuti che infligge danni e ha una gittata di 3 metri o più. Quando lanci quell’incantesimo, la sua gittata aumenta di un numero di metri pari a 9 volte il tuo livello da Warlock.\nRipetibile. Puoi ottenere questa invocazione più di una volta. Ogni volta che lo fai, scegli un trucchetto idoneo diverso.",
@@ -44,7 +44,7 @@
     "prerequisite": "Warlock di livello 2+, un Trucchetto da Warlock che infligge danni"
   },
   "fiendish-vigor": {
-    "description": "Puoi lanciare Falsa Vita su te stesso senza spendere uno slot incantesimo. Quando lanci l'incantesimo con questa capacità, non tiri il dado per i Punti Ferita Temporanei: ottieni automaticamente il risultato più alto del dado.",
+    "description": "Puoi lanciare Vita Falsata su te stesso senza spendere uno slot incantesimo. Quando lanci l'incantesimo con questa capacità, non tiri il dado per i Punti Ferita Temporanei: ottieni automaticamente il risultato più alto del dado.",
     "name": "Vigore Immondo",
     "prerequisite": "Warlock di livello 2+"
   },
@@ -77,12 +77,12 @@
     "prerequisite": "Warlock di livello 2+"
   },
   "lifedrinker": {
-    "description": "Una volta per turno, quando colpisci una creatura con la tua arma del patto, puoi infliggere 1d6 danni aggiuntivi da Necrotici, Psichici o Radianti (a tua scelta) alla creatura, e puoi spendere uno dei tuoi Dadi Vita per tirarlo e recuperare un numero di Punti Ferita pari al risultato più il tuo modificatore di Costituzione (minimo 1 Punto Ferita).",
+    "description": "Una volta per turno, quando colpisci una creatura con la tua arma del patto, puoi infliggere 1d6 danni aggiuntivi da Necrotici, Psichici o Radiosi (a tua scelta) alla creatura, e puoi spendere uno dei tuoi Dadi Vita per tirarlo e recuperare un numero di Punti Ferita pari al risultato più il tuo modificatore di Costituzione (minimo 1 Punto Ferita).",
     "name": "Succhiavita",
     "prerequisite": "Warlock di livello 9+, Supplica Patto della Lama"
   },
   "lifedrinker.grants.lifedrinker": {
-    "name": "Bevitrice di Vita"
+    "name": "Succhiavita"
   },
   "mask-of-many-faces": {
     "description": "Puoi lanciare Camuffare se Stesso senza spendere uno slot incantesimo.",
@@ -110,7 +110,7 @@
     "prerequisite": "Warlock di livello 2+"
   },
   "pact-of-the-blade": {
-    "description": "Come Azione Bonus, puoi evocare un'arma del patto nella tua mano—un'arma da Mischia Semplice o da Guerra a tua scelta con cui ti leghi—oppure creare un legame con un'arma magica che tocchi; non puoi legarti a un'arma magica se qualcun altro vi è sintonizzato o un altro Warlock vi è già legato. Finché dura il legame, sei competente con l'arma e puoi usarla come Focus da Incantatore.\nOgni volta che attacchi con l'arma legata, puoi usare il tuo modificatore di Carisma per i tiri per colpire e per i danni invece di Forza o Destrezza; e puoi far sì che l'arma infligga danni Necrotici, Psichici o Radianti, oppure il suo normale tipo di danno.\nIl tuo legame con l'arma termina se usi di nuovo l'Azione Bonus di questa caratteristica, se l'arma rimane a più di 1,5 metri da te per 1 minuto o più, o se muori. Un'arma evocata scompare quando il legame termina.",
+    "description": "Come Azione Bonus, puoi evocare un'arma del patto nella tua mano—un'arma da Mischia Semplice o da Guerra a tua scelta con cui ti leghi—oppure creare un legame con un'arma magica che tocchi; non puoi legarti a un'arma magica se qualcun altro vi è sintonizzato o un altro Warlock vi è già legato. Finché dura il legame, sei competente con l'arma e puoi usarla come Focus da Incantatore.\nOgni volta che attacchi con l'arma legata, puoi usare il tuo modificatore di Carisma per i tiri per colpire e per i danni invece di Forza o Destrezza; e puoi far sì che l'arma infligga danni Necrotici, Psichici o Radiosi, oppure il suo normale tipo di danno.\nIl tuo legame con l'arma termina se usi di nuovo l'Azione Bonus di questa caratteristica, se l'arma rimane a più di 1,5 metri da te per 1 minuto o più, o se muori. Un'arma evocata scompare quando il legame termina.",
     "name": "Patto della Lama"
   },
   "pact-of-the-blade.grants.pact-of-the-blade": {

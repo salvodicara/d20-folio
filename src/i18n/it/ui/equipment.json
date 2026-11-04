@@ -83,7 +83,7 @@
     "potionConsumable": "Pozione/Consumabile",
     "hasUsageTracker": "Ha tracciatore di utilizzo",
     "trackUses": "Traccia utilizzi",
-    "trackUsesHint": "Aggiunge un pulsante Usa che conta gli utilizzi (es. Kit del Guaritore, 10 usi)",
+    "trackUsesHint": "Aggiunge un pulsante Usa che conta gli utilizzi (es. Borsa del Guaritore, 10 usi)",
     "autoRemove": "Rimuovi quando esaurito",
     "autoRemoveHint": "L'oggetto sparisce dalla lista quando gli utilizzi arrivano a 0 (es. Pozione di Guarigione)",
     "partyPotNoCampaign": "La Cassa Comune è condivisa con il gruppo. Unisciti o crea una campagna per sbloccarla.",

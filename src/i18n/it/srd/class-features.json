@@ -223,7 +223,7 @@
     "name": "Parole della Creazione"
   },
   "cleric-blessed-strikes": {
-    "description": "Il potere divino ti infonde in battaglia. Ottieni una delle seguenti opzioni a tua scelta. Colpo Divino: una volta in ciascuno dei tuoi turni quando colpisci una creatura con un attacco con arma, puoi infliggere 1d8 danni Necrotici o Radianti extra (a tua scelta; aumenta a 2d8 con Colpi Benedetti Migliorati). Incantesimo Potente: aggiungi il tuo modificatore di Saggezza ai danni che infliggi con qualsiasi trucchetto da Chierico.",
+    "description": "Il potere divino ti infonde in battaglia. Ottieni una delle seguenti opzioni a tua scelta. Colpo Divino: una volta in ciascuno dei tuoi turni quando colpisci una creatura con un attacco con arma, puoi infliggere 1d8 danni Necrotici o Radiosi extra (a tua scelta; aumenta a 2d8 con Colpi Benedetti Migliorati). Incantesimo Potente: aggiungi il tuo modificatore di Saggezza ai danni che infliggi con qualsiasi trucchetto da Chierico.",
     "name": "Colpi Benedetti"
   },
   "cleric-blessed-strikes.grants.0": {
@@ -265,11 +265,11 @@
     "label": "Taumaturgo"
   },
   "cleric-divine-spark": {
-    "description": "Come azione Magica, punti il tuo Simbolo Sacro verso un'altra creatura che vedi entro 9 metri e concentri energia divina su di essa. Tira 1d8 e aggiungi il tuo modificatore di Saggezza. Puoi ripristinare alla creatura Punti Ferita pari a quel totale, oppure costringerla a effettuare un tiro salvezza su Costituzione — in caso di fallimento subisce danni Necrotici o Radianti (a tua scelta) pari a quel totale, o metà (arrotondati per difetto) in caso di successo. Tiri un d8 aggiuntivo ai livelli da Chierico 7 (2d8), 13 (3d8) e 18 (4d8).",
+    "description": "Come azione Magica, punti il tuo Simbolo Sacro verso un'altra creatura che vedi entro 9 metri e concentri energia divina su di essa. Tira 1d8 e aggiungi il tuo modificatore di Saggezza. Puoi ripristinare alla creatura Punti Ferita pari a quel totale, oppure costringerla a effettuare un tiro salvezza su Costituzione — in caso di fallimento subisce danni Necrotici o Radiosi (a tua scelta) pari a quel totale, o metà (arrotondati per difetto) in caso di successo. Tiri un d8 aggiuntivo ai livelli da Chierico 7 (2d8), 13 (3d8) e 18 (4d8).",
     "name": "Scintilla Divina"
   },
   "cleric-divine-spark.mechanics.actions.0": {
-    "description": "Incanalare Divinità: ripristina PF, oppure infliggi danni Necrotici/Radianti (TS Costituzione per metà) a una creatura entro 9 m. Cura/danno = 1d8 + SAG (2d8 al liv. 7, 3d8 al liv. 13, 4d8 al liv. 18).",
+    "description": "Incanalare Divinità: ripristina PF, oppure infliggi danni Necrotici/Radiosi (TS Costituzione per metà) a una creatura entro 9 m. Cura/danno = 1d8 + SAG (2d8 al liv. 7, 3d8 al liv. 13, 4d8 al liv. 18).",
     "summary": "Cura o danni 1d8 + Sag a una creatura entro 9 m"
   },
   "cleric-epic-boon": {
@@ -306,12 +306,12 @@
     "name": "Guarigione Suprema"
   },
   "cleric-sear-undead": {
-    "description": "Ogni volta che usi Scacciare Non Morti, puoi tirare un numero di d8 pari al tuo modificatore di Saggezza (minimo 1d8) e sommare i risultati. Ogni non morto che fallisce il suo tiro salvezza contro quell'uso di Scacciare Non Morti subisce danni Radianti pari al totale. Questi danni non terminano l'effetto di scacciare.",
+    "description": "Ogni volta che usi Scacciare Non Morti, puoi tirare un numero di d8 pari al tuo modificatore di Saggezza (minimo 1d8) e sommare i risultati. Ogni non morto che fallisce il suo tiro salvezza contro quell'uso di Scacciare Non Morti subisce danni Radiosi pari al totale. Questi danni non terminano l'effetto di scacciare.",
     "name": "Bruciare i Non Morti"
   },
   "cleric-sear-undead.mechanics.actions.0": {
-    "description": "Quando usi Scacciare Non Morti, ogni non morto che fallisce il tiro salvezza subisce anche (modificatore di SAG, min 1) d8 danni Radianti. Non spendi un ulteriore uso di Incanalare Divinità.",
-    "summary": "I non morti scacciati subiscono SAG d8 Radianti"
+    "description": "Quando usi Scacciare Non Morti, ogni non morto che fallisce il tiro salvezza subisce anche (modificatore di SAG, min 1) d8 danni Radiosi. Non spendi un ulteriore uso di Incanalare Divinità.",
+    "summary": "I non morti scacciati subiscono SAG d8 Radiosi"
   },
   "cleric-spellcasting": {
     "description": "Hai imparato ad attingere alla magia divina attraverso meditazione e preghiera. Puoi lanciare incantesimi da chierico usando Saggezza come caratteristica da incantatore. Prepari incantesimi dall'intera lista del chierico dopo un riposo lungo.",
@@ -540,7 +540,7 @@
     "label": "Recuperare Energie"
   },
   "fighter-tactical-mind.mechanics.actions.0": {
-    "description": "Spendi un uso di Secondo Vento: +1d10 a una prova fallita.",
+    "description": "Usa Recuperare Energie: +1d10 a una prova fallita.",
     "label": "Mente Tattica"
   },
   "fighter-studied-attacks": {
@@ -591,8 +591,8 @@
   },
   "monk-deflect-attacks.mechanics.actions.1": {
     "description": "Dopo aver ridotto il danno a 0, spendi 1 Punto Concentrazione. Il bersaglio effettua un TS su Destrezza o subisce 2 dadi Arti Marziali + mod DES danni del tipo innescante.",
-    "name": "Devia Attacco",
-    "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 dadi marziali + DES"
+    "name": "Sviare Attacco",
+    "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 Arti Marziali + DES"
   },
   "monk-deflect-energy": {
     "description": "Ora puoi usare la tua capacità Devia Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",
@@ -813,7 +813,7 @@
     "name": "Aura di Devozione"
   },
   "paladin-devotion-holy-nimbus": {
-    "description": "Come Azione Bonus, infondi la tua Aura di Protezione di potere sacro per 10 minuti o finché non la termini (nessuna azione richiesta). Emani un'Emanazione di Luce Intensa (luce solare) di 9 metri. All'inizio di ciascun tuo turno, ogni nemico nell'emanazione subisce danni Radianti pari al tuo modificatore di Carisma più il tuo Bonus di Competenza. Hai Vantaggio a qualsiasi tiro salvezza che un Immondo o un Non Morto ti costringe a effettuare. Una volta usato questo privilegio, non puoi riutilizzarlo finché non completi un Riposo Lungo, ma puoi ripristinarne l'uso consumando uno slot incantesimo di livello 5 (nessuna azione richiesta).",
+    "description": "Come Azione Bonus, infondi la tua Aura di Protezione di potere sacro per 10 minuti o finché non la termini (nessuna azione richiesta). Emani un'Emanazione di Luce Intensa (luce solare) di 9 metri. All'inizio di ciascun tuo turno, ogni nemico nell'emanazione subisce danni Radiosi pari al tuo modificatore di Carisma più il tuo Bonus di Competenza. Hai Vantaggio a qualsiasi tiro salvezza che un Immondo o un Non Morto ti costringe a effettuare. Una volta usato questo privilegio, non puoi riutilizzarlo finché non completi un Riposo Lungo, ma puoi ripristinarne l'uso consumando uno slot incantesimo di livello 5 (nessuna azione richiesta).",
     "name": "Nube Sacra"
   },
   "paladin-devotion-holy-nimbus.grants.0": {
@@ -823,19 +823,19 @@
     "description": "Tiri salvezza che un Immondo o un Non Morto ti costringe a effettuare"
   },
   "paladin-devotion-holy-nimbus.mechanics.actions.0": {
-    "description": "Infondi la tua Aura di Protezione per 10 minuti: emanazione di Luce Intensa di 9 metri; ogni nemico che inizia il turno al suo interno subisce danni Radianti pari al tuo modificatore di Carisma + Bonus di Competenza.",
+    "description": "Infondi la tua Aura di Protezione per 10 minuti: emanazione di Luce Intensa di 9 metri; ogni nemico che inizia il turno al suo interno subisce danni Radiosi pari al tuo modificatore di Carisma + Bonus di Competenza.",
     "label": "Nube Sacra",
     "summary": "Aura di luce 9 m; i nemici dentro subiscono Car + BC"
   },
   "paladin-devotion-sacred-weapon": {
-    "description": "Quando effettui l'azione di Attacco, puoi consumare un uso di Incanalare Divinità per infondere un'arma da Mischia che impugni con energia positiva. Per 10 minuti o finché non riusi questo privilegio, aggiungi il tuo modificatore di Carisma ai tiri per colpire con quell'arma (bonus minimo di +1), e ogni colpo infligge il suo tipo di danno normale oppure danni Radianti. L'arma emette Luce Intensa in un raggio di 6 metri e Luce Fioca per altri 6 metri oltre. Puoi terminare l'effetto in anticipo (nessuna azione richiesta); termina anche se smetti di impugnare l'arma.",
+    "description": "Quando effettui l'azione di Attacco, puoi consumare un uso di Incanalare Divinità per infondere un'arma da Mischia che impugni con energia positiva. Per 10 minuti o finché non riusi questo privilegio, aggiungi il tuo modificatore di Carisma ai tiri per colpire con quell'arma (bonus minimo di +1), e ogni colpo infligge il suo tipo di danno normale oppure danni Radiosi. L'arma emette Luce Intensa in un raggio di 6 metri e Luce Fioca per altri 6 metri oltre. Puoi terminare l'effetto in anticipo (nessuna azione richiesta); termina anche se smetti di impugnare l'arma.",
     "name": "Arma Consacrata"
   },
   "paladin-devotion-sacred-weapon.grants.0": {
     "label": "Arma Consacrata"
   },
   "paladin-devotion-sacred-weapon.mechanics.actions.0": {
-    "description": "Incanalare Divinità (nell'azione di Attacco): aggiungi CHA (min +1) ai tiri per colpire con un'arma da Mischia per 10 minuti; i colpi possono infliggere danni Radianti.",
+    "description": "Incanalare Divinità (nell'azione di Attacco): aggiungi CHA (min +1) ai tiri per colpire con un'arma da Mischia per 10 minuti; i colpi possono infliggere danni Radiosi.",
     "label": "Arma Consacrata",
     "summary": "Aggiungi Car agli attacchi di un'arma per 10 minuti"
   },
@@ -878,7 +878,7 @@
     "description": "Tocca una creatura per ripristinare PF dalla tua riserva."
   },
   "paladin-radiant-strikes": {
-    "description": "Quando colpisci un bersaglio con un'arma da mischia o un Colpo Senz'armi, il bersaglio subisce 1d8 danni Radianti extra.",
+    "description": "Quando colpisci un bersaglio con un'arma da mischia o un Colpo Senz'armi, il bersaglio subisce 1d8 danni Radiosi extra.",
     "name": "Colpi Radiosi"
   },
   "paladin-restoring-touch": {
@@ -1148,7 +1148,7 @@
     "name": "Attacco Furtivo"
   },
   "rogue-thief-use-magic-device": {
-    "description": "Sintonia: Puoi sintonizzarti con un massimo di quattro oggetti magici contemporaneamente. Cariche: Ogni volta che usi una proprietà di un oggetto magico che consuma cariche, tira 1d6; con un 6 usi la proprietà senza consumare le cariche. Pergamene: Puoi usare qualsiasi Pergamena di Incantesimo, usando Intelligenza come caratteristica da incantatore; lanci in modo affidabile trucchetti e incantesimi di 1° livello, mentre una pergamena di livello superiore richiede una prova di Intelligenza (Arcano) (CD 10 + il livello dell'incantesimo).",
+    "description": "Sintonia: Puoi sintonizzarti con un massimo di quattro oggetti magici contemporaneamente. Cariche: Ogni volta che usi una proprietà di un oggetto magico che consuma cariche, tira 1d6; con un 6 usi la proprietà senza consumare le cariche. Pergamene: Puoi usare qualsiasi Pergamena Magica, usando Intelligenza come caratteristica da incantatore; lanci in modo affidabile trucchetti e incantesimi di 1° livello, mentre una pergamena di livello superiore richiede una prova di Intelligenza (Arcano) (CD 10 + il livello dell'incantesimo).",
     "name": "Usare Oggetto Magico"
   },
   "rogue-thieves-cant": {

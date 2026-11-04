@@ -197,7 +197,7 @@ describe("Compendium row polish (verdict / subtitle differentiators)", () => {
       );
       // Every row has a non-empty summary, none is the old redundant rubric key…
       expect(summaries.every((m) => typeof m === "string" && m.length > 0)).toBe(true);
-      expect(summaries).not.toContain("weaponMastery.eyebrow");
+      expect(summaries).not.toContain("abilities.weaponMastery");
       // …and they are DISTINCT per mastery (a genuine differentiator, not a constant).
       expect(new Set(summaries).size).toBe(weaponMasterySpec.data.length);
     }

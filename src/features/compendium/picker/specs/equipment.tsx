@@ -245,7 +245,7 @@ export const equipmentSpec: CompendiumPickerSpec<SrdEquipmentData> = {
       });
     if (item.mastery)
       meta.push({
-        label: t("weaponMastery.eyebrow"),
+        label: t("abilities.weaponMastery"),
         value: localizeWeaponMastery(item.mastery, locale),
         // The catalogue token is an exhaustive eight-value union, and the
         // glossary owns the matching masteryCleave…masteryVex entries.
