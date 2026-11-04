@@ -180,7 +180,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     durationRounds: 600,
     grants: [
       POTION_STATE("potion-of-flying", 60, [
-        { type: "fly-speed", amount: "equal-to-walking" },
+        { type: "fly-speed", amount: "equal-to-walking", hover: true },
       ]),
     ],
     source: "SRD",
@@ -1095,7 +1095,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
       {
         type: "while-active",
         activeKey: "broom-of-flying",
-        grants: [{ type: "fly-speed", amount: 50 }],
+        // The broom hovers beneath its rider.
+        grants: [{ type: "fly-speed", amount: 50, hover: true }],
       },
     ],
     source: "SRD",

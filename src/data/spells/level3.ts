@@ -291,7 +291,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
         activeKey: "spell-fly",
         duration: timedSpellDuration(10),
         recipient: "selected",
-        grants: [{ type: "fly-speed", amount: 60 }],
+        grants: [{ type: "fly-speed", amount: 60, hover: true }],
       },
     ],
     // "If the spell ends while the target is still aloft, it falls" (unless it can stay up otherwise).
@@ -746,7 +746,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
         duration: timedSpellDuration(60),
         recipient: "selected",
         grants: [
-          { type: "fly-speed", amount: 10 },
+          { type: "fly-speed", amount: 10, hover: true },
           { type: "speed-cap", maxFt: 0 },
           { type: "damage-resistance", damageType: "bludgeoning" },
           { type: "damage-resistance", damageType: "piercing" },

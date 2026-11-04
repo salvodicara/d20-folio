@@ -1248,7 +1248,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // STR/DEX/CON saves. Ending it early is the state's own toggle.
     grants: [
       POTION_STATE("potion-of-gaseous-form", 60, [
-        { type: "fly-speed", amount: 10 },
+        { type: "fly-speed", amount: 10, hover: true },
         { type: "speed-cap", maxFt: 0 },
         { type: "damage-resistance", damageType: "bludgeoning" },
         { type: "damage-resistance", damageType: "piercing" },
@@ -1353,7 +1353,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
             grants: [
               { type: "language", language: "Auran" },
               { type: "damage-resistance", damageType: "lightning" },
-              { type: "fly-speed", amount: "equal-to-walking" },
+              { type: "fly-speed", amount: "equal-to-walking", hover: true },
               { type: "at-will-cast-spell", spellId: "feather-fall" },
               { type: "always-prepared-spell", spellId: "chain-lightning" },
               { type: "always-prepared-spell", spellId: "gust-of-wind" },

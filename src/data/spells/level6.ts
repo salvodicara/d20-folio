@@ -656,7 +656,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
         duration: timedSpellDuration(480),
         recipient: "selected",
         grants: [
-          { type: "fly-speed", amount: 300 },
+          { type: "fly-speed", amount: 300, hover: true },
           { type: "condition-immunity", condition: "prone" },
           { type: "damage-resistance", damageType: "bludgeoning" },
           { type: "damage-resistance", damageType: "piercing" },
