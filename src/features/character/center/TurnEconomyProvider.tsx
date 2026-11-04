@@ -24,6 +24,9 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { firedCastTriggers } from "@/lib/smart-tracker";
+import { localizeText } from "@/lib/views/srd-i18n";
+import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { speechBlocksCast } from "@/lib/play/speech";
 import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
@@ -1545,6 +1548,21 @@ export function TurnEconomyProvider({
   ): () => void {
     const cs = useCharacterStore.getState();
     if (!cs.character) return () => {};
+    // A cast trigger that lets the caster spend Hit Point Dice (Necromancy Adept):
+    // offered as a notice; the roll and the dice are the player's.
+    if (slotLevel !== null) {
+      const school = spellId ? getSpellById(spellId)?.school : undefined;
+      for (const offer of firedCastTriggers(cs.character, { school, slot: true })
+        .hitPointDice) {
+        showToast({
+          message: t("combat.castHitPointDice", {
+            source: localizeText(featureNameLoc(offer.sourceId), locale),
+            max: offer.max,
+          }),
+          duration: 8000,
+        });
+      }
+    }
     const regains = onCastRegains(cs.character, spellId, slotLevel);
     const refunds = regains.map((regain) => regain.refund);
     refundSpends(refunds);

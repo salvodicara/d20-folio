@@ -9914,8 +9914,6 @@ export interface TriggerFacts {
   /** cast-spell: the spell's school, and whether it was cast with a slot. */
   school?: string;
   slot?: boolean;
-  /** d20-test-failed: how far away the creature is, in feet. */
-  distanceFt?: number;
 }
 
 /** Whether a rule's `if` holds for these facts: every field it names must match a fact
@@ -9926,12 +9924,40 @@ function triggerHolds(rule: TriggerRule, facts: TriggerFacts): boolean {
   if (when.target === "marked" && facts.targetMarked !== true) return false;
   if (when.school !== undefined && facts.school !== when.school) return false;
   if (when.slot === true && facts.slot !== true) return false;
-  if (
-    when.within !== undefined &&
-    (facts.distanceFt === undefined || facts.distanceFt > when.within)
-  )
-    return false;
   return true;
+}
+
+/**
+ * What casting a spell fires (edge-case family M8): the trigger rules on `cast-spell`
+ * whose school and slot hold (Divination Adept regains its use on a Divination spell
+ * cast with a slot), as tracker restores, and the Hit Point Dice a rule lets the
+ * caster spend (Necromancy Adept), offered to the player.
+ */
+export function firedCastTriggers(
+  character: CharacterDoc,
+  facts: { school?: string; slot: boolean }
+): {
+  used: Map<string, number>;
+  limited: string[];
+  hitPointDice: Array<{
+    sourceId: string;
+    max: number;
+    bonus?: "slot-level" | "spellcasting-mod";
+  }>;
+} {
+  const restores = firedTriggerRestores(character, "cast-spell", facts);
+  const hitPointDice = aggregateForCharacter(character).triggers.flatMap((rule) => {
+    if (rule.on !== "cast-spell" || rule.do.kind !== "hit-point-dice") return [];
+    if (!triggerHolds(rule, facts)) return [];
+    return [
+      {
+        sourceId: rule.sourceId,
+        max: rule.do.max,
+        ...(rule.do.bonus ? { bonus: rule.do.bonus } : {}),
+      },
+    ];
+  });
+  return { ...restores, hitPointDice };
 }
 
 /**
@@ -9962,11 +9988,14 @@ export function firedTriggerOffers(
  */
 export function firedTriggerRestores(
   character: CharacterDoc,
-  on: "initiative" | "short-rest"
+  on: "initiative" | "short-rest" | "cast-spell",
+  facts: TriggerFacts = {}
 ): { used: Map<string, number>; limited: string[] } {
   const used = new Map<string, number>();
   const limited: string[] = [];
-  const rules = aggregateForCharacter(character).triggers.filter((r) => r.on === on);
+  const rules = aggregateForCharacter(character).triggers.filter(
+    (r) => r.on === on && triggerHolds(r, facts)
+  );
   if (rules.length === 0) return { used, limited };
   const trackers = resolveTrackers(character);
   for (const rule of rules) {
