@@ -9,6 +9,7 @@ import {
   companionAttackPlan,
   companionHitEffects,
   playCompanions,
+  reviveOffer,
 } from "@/domains/play/play-companions-view";
 import { concentrationValue } from "@/lib/concentration";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -73,5 +74,52 @@ describe("playCompanions", () => {
 
   it("no creature on the field, nothing to show", () => {
     expect(playCompanions(MOCK_CHARACTER, "it", t)).toEqual([]);
+  });
+});
+
+describe("a fallen companion", () => {
+  it("reads 0 Hit Points", () => {
+    const fallen: CharacterDoc = {
+      ...spider,
+      session: { ...spider.session, summons: { "giant-insect": { fallen: true } } },
+    };
+    const [c] = playCompanions(fallen, "it", t);
+    expect(c?.hp.current).toBe(0);
+  });
+});
+
+describe("reviveOffer", () => {
+  const spec = {
+    withinMinutes: 60,
+    action: "magic" as const,
+    cost: { kind: "spell-slot" as const, minLevel: 2 },
+    returnsAfterMinutes: 1,
+  };
+
+  it("offers each slot level from the minimum up that has a slot left", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      session: { ...MOCK_CHARACTER.session, spellSlots: { "2": { used: 3 } } },
+    };
+    expect(reviveOffer(spec, doc, "it")).toEqual({
+      slots: [
+        { level: 3, pact: false },
+        { level: 4, pact: false },
+        { level: 5, pact: false },
+      ],
+      returnsAfterMinutes: 1,
+    });
+  });
+
+  it("offers nothing to pay with when every slot is spent", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      character: { ...MOCK_CHARACTER.character, spellSlots: [{ level: 1, total: 2 }] },
+      session: { ...MOCK_CHARACTER.session, spellSlots: { "1": { used: 2 } } },
+    };
+    expect(
+      reviveOffer({ ...spec, cost: { kind: "spell-slot", minLevel: 1 } }, doc, "it")
+        ?.slots
+    ).toEqual([]);
   });
 });

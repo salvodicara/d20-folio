@@ -188,6 +188,11 @@ export function scaleUpcastDice(
  * For range pairs (e.g. "20/60"), use localeRangePair() instead so the unit
  * appears only once: "6/18 m" rather than "6 m/18 m".
  */
+/** Keep a distance's number and unit on one line in authored prose («6 m», "30 ft"). */
+export function keepDistancesTogether(text: string): string {
+  return text.replace(/(\d) (m|km|ft|mi)\b/g, "$1\u00a0$2");
+}
+
 export function localeDistance(ft: number, locale: string): string {
   if (usesMetric(locale)) {
     const m = Math.round(ft * 0.3 * 10) / 10;

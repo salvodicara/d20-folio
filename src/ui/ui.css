@@ -3787,4 +3787,10 @@
       0 0 0 100vmax var(--scrim),
       0 -8px 32px var(--shade);
   }
+/* A fallen companion's «Rianima»: the hint, then a chip per slot that can pay. */
+.fui .f-revive {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 8px;
 }
