@@ -52,6 +52,26 @@ describe("playZonesView", () => {
     expect(view.light).toBe("bright");
   });
 
+  it("my zone that bites on entering offers who can walk in: not me, not the spared", () => {
+    const view = playZonesView(
+      [cast("spirit-guardians", 3, "pc-me", ["pc-bren"])],
+      [...ROWS, { id: "m-ogre", name: "Ogre", down: true }],
+      "it",
+      "pc-me"
+    );
+    expect(view.zones[0]?.enter).toEqual([{ id: "m-gob", name: "Goblin" }]);
+  });
+
+  it("someone else's zone, or one that doesn't bite on entering, offers nothing", () => {
+    expect(
+      playZonesView([cast("spirit-guardians", 3, "pc-me")], ROWS, "it", "pc-bren")
+        .zones[0]?.enter
+    ).toBeUndefined();
+    expect(
+      playZonesView([cast("darkness", 2, "pc-me")], ROWS, "it", "pc-me").zones[0]?.enter
+    ).toBeUndefined();
+  });
+
   it("no zones, nothing to show", () => {
     expect(playZonesView([], ROWS, "it")).toEqual({ zones: [], light: null });
   });

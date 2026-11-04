@@ -64,6 +64,7 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
 import { addMonster, setHp } from "@/features/campaigns/encounter";
 import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
+import { useZoneHitStore } from "@/features/campaigns/zone-hit-store";
 
 const UID = "u1";
 
@@ -599,7 +600,7 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
   });
 
   it("my Spirit Guardians asks whether the creature that ended its turn is inside", () => {
-    const toasts = () => useToastStore.getState().toasts;
+    useZoneHitStore.setState({ hits: [] });
     useCharacterStore.getState().setCharacter({ ...MOCK_CHARACTER, id: "char-1" });
     const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, "monster-1");
     const withGoblin = addMonster(campaign.encounter as EncounterState, {
@@ -638,16 +639,17 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
     };
     mount();
     show(campaign, encounter, 20, false);
-    expect(
-      toasts().some((x) =>
-        /Goblin ends its turn: inside Spirit Guardians\?/.test(String(x.message))
-      )
-    ).toBe(false);
+    expect(useZoneHitStore.getState().hits).toEqual([]);
     show(campaign, { ...encounter, currentCombatantId: `pc-${UID}` }, 20, false);
-    const asked = toasts().find((x) =>
-      /Goblin ends its turn: inside Spirit Guardians\?/.test(String(x.message))
-    );
-    expect(asked?.action?.label).toBe("Inside: roll");
+    // The question waits under the zone on Play (PlayZoneHits).
+    expect(useZoneHitStore.getState().hits).toMatchObject([
+      {
+        key: "zone-1:monster-1:end-turn",
+        creatureId: "monster-1",
+        creatureName: "Goblin",
+        kind: "end-turn",
+      },
+    ]);
   });
 
   it("Hold Person's repeat save waits on the DM's card when the Goblin's turn ends", () => {

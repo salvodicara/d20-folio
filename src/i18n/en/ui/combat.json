@@ -590,6 +590,7 @@
       "speech": "You can't speak here, so no Verbal component: nothing was spent"
     },
     "repeatSaveFailed": "Failed: it stays",
-    "repeatSaveEnded": "{{condition}} ends: {{target}}"
+    "repeatSaveEnded": "{{condition}} ends: {{target}}",
+    "zoneOutside": "Outside"
   }
 }

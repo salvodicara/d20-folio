@@ -16,16 +16,19 @@ import { fightControls } from "@/domains/combat/fight-controls";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import { playInitiativeRows } from "@/domains/play/play-initiative-view";
 import { playZonesView } from "@/domains/play/play-zones-view";
+import { PlayZoneHits } from "@/domains/play/ui/PlayZoneHits";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import { useSheetCombat } from "@/features/character/center/turn-state";
+import { openZoneTray } from "@/features/character/center/zone-tray";
 import { foldCombatEffectOps } from "@/lib/combat-effects";
+import { activeZones } from "@/lib/zones";
 import type { Locale } from "@/lib/locale";
 import { buildReport, foldSession } from "@/lib/session-log";
 import { renderSessionReport } from "@/lib/views/session-report-view";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";
-import { Button, Icon, initialOf, Panel } from "@/ui";
+import { Button, Chip, Icon, initialOf, Panel } from "@/ui";
 import type { HpBandValue } from "@/lib/hp-band";
 
 export function PlayRight({
@@ -88,16 +91,18 @@ function Initiative({
     return uid ? campaign?.memberDetails[uid]?.character?.portraitUrl : undefined;
   };
   // Every area on the field, whoever cast it (not only those on this character).
-  const zones = playZonesView(
-    foldCombatEffectOps(fight.encounter.effectOps, {
-      round: fight.encounter.round,
-      currentCombatantId: fight.encounter.currentCombatantId,
-      phase: "turn-start",
-      order: fight.encounter.order ?? fight.view.turnOrderIds,
-    }),
-    fight.view.rows,
-    locale
-  );
+  const liveEffects = foldCombatEffectOps(fight.encounter.effectOps, {
+    round: fight.encounter.round,
+    currentCombatantId: fight.encounter.currentCombatantId,
+    phase: "turn-start",
+    order: fight.encounter.order ?? fight.view.turnOrderIds,
+  });
+  const zones = playZonesView(liveEffects, fight.view.rows, locale, fight.myId);
+  // «Entra nella zona»: the creature that walked in, then the tray on it.
+  const enterZone = (zoneId: string, targetId: string) => {
+    const zone = activeZones(liveEffects).find((z) => z.id === zoneId);
+    if (zone) openZoneTray(zone, targetId, locale);
+  };
   const bandLabel = (band: HpBandValue) =>
     band === "down"
       ? t("fight.down")
@@ -172,6 +177,13 @@ function Initiative({
                   .filter(Boolean)
                   .join("\u00a0· ")}
               </span>
+              <PlayZoneHits zoneId={zone.id} locale={locale} />
+              {zone.enter && zone.enter.length > 0 && (
+                <ZoneEntry
+                  creatures={zone.enter}
+                  onEnter={(targetId) => enterZone(zone.id, targetId)}
+                />
+              )}
             </div>
           ))}
         </section>
@@ -253,5 +265,42 @@ function Report({
     >
       <ReportBlocks blocks={blocks} names={names} players={players} locale={locale} />
     </Panel>
+  );
+}
+
+/** «Entra nella zona» on my own zone: who walked in, then the tray on them. */
+function ZoneEntry({
+  creatures,
+  onEnter,
+}: {
+  creatures: ReadonlyArray<{ id: string; name: string }>;
+  onEnter: (targetId: string) => void;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  if (!open) {
+    return (
+      <div className="f-chips">
+        <Chip onClick={() => setOpen(true)}>{t("play.zones.enter")}</Chip>
+      </div>
+    );
+  }
+  return (
+    <div className="f-zone-enter" role="group" aria-label={t("play.zones.enterWho")}>
+      <span className="f-lbl">{t("play.zones.enterWho")}</span>
+      <div className="f-chips">
+        {creatures.map((c) => (
+          <Chip
+            key={c.id}
+            onClick={() => {
+              setOpen(false);
+              onEnter(c.id);
+            }}
+          >
+            {c.name}
+          </Chip>
+        ))}
+      </div>
+    </div>
   );
 }

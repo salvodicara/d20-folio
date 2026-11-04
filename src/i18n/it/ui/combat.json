@@ -590,6 +590,7 @@
       "speech": "Qui non puoi parlare, quindi niente componente verbale: non è stato speso nulla"
     },
     "repeatSaveFailed": "Fallito: resta",
-    "repeatSaveEnded": "{{condition}} termina: {{target}}"
+    "repeatSaveEnded": "{{condition}} termina: {{target}}",
+    "zoneOutside": "Fuori"
   }
 }
