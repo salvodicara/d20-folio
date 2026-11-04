@@ -7,6 +7,7 @@
  * `PlayTray`. The shape-change form picker is still the sheet's own until its new
  * version lands.
  */
+import { localizeText } from "@/lib/views/srd-i18n";
 import { lazy, Suspense, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -59,6 +60,7 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
       <PoolDialog />
       <ItemInputDialog />
       <ArcaneDialog />
+      <MixingDialog locale={locale} />
       <SpellListDialog locale={locale} />
       {formPicker && doc && selfFormRule(formPicker.spellId).pool !== "bestiary" ? (
         <PlayFormPicker
@@ -576,6 +578,65 @@ function ItemInputStep({ prompt }: { prompt: Prompts["item-resource-input"] }) {
           </div>
         );
       })}
+    </Dialog>
+  );
+}
+
+/** Mixing potions (M18): the d100 on the DM's table, an offer the player may skip. */
+function MixingDialog({ locale }: { locale: Locale }) {
+  const prompt = usePlayPrompt("potion-mixing");
+  return prompt ? <MixingStep prompt={prompt} locale={locale} /> : null;
+}
+
+function MixingStep({
+  prompt,
+  locale,
+}: {
+  prompt: Prompts["potion-mixing"];
+  locale: Locale;
+}) {
+  const { t } = useTranslation();
+  const [typed, setTyped] = useState("");
+  const skip = useOnce(() => prompt.onConfirm(null));
+  const roll = /^\d{1,3}$/.test(typed.trim()) ? Number(typed.trim()) : null;
+  const valid = roll !== null && roll >= 1 && roll <= 100;
+  return (
+    <Dialog
+      open
+      onClose={skip}
+      color="res"
+      title={t("play.mixing.title")}
+      closeLabel={t("common.close")}
+      actions={
+        <>
+          <Button kind="ghost" onClick={skip}>
+            {t("play.mixing.skip")}
+          </Button>
+          <Button
+            kind="primary"
+            disabled={!valid}
+            onClick={() => {
+              if (valid) prompt.onConfirm(roll);
+            }}
+          >
+            {t("play.mixing.record")}
+          </Button>
+        </>
+      }
+    >
+      <p className="f-note" data-c="res">
+        {t("play.mixing.note", {
+          potions: prompt.potions.map((p) => localizeText(p, locale)).join(", "),
+        })}
+      </p>
+      <Field
+        label={t("play.mixing.roll")}
+        inputMode="numeric"
+        autoComplete="off"
+        className="f-in f-in-big f-in-short"
+        value={typed}
+        onChange={(e) => setTyped(e.target.value)}
+      />
     </Dialog>
   );
 }

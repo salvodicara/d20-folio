@@ -96,6 +96,13 @@
       "nothing": "Nothing to recover",
       "slotsLeft": "{{left}} of {{total}}"
     },
+    "mixing": {
+      "title": "Mixing potions",
+      "note": "{{potions}} mix: roll on the DM's table.",
+      "roll": "d100",
+      "record": "Record",
+      "skip": "Skip"
+    },
     "time": {
       "setTimeOfDay": "Set the time of day",
       "whatTime": "What time is it? (optional)",

@@ -63,6 +63,11 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
     effect: "damage",
     slot: "action",
   },
+  "potion-mixing": {
+    kind: "potion-mixing",
+    roll: 42,
+    potions: [{ srd: { kind: "magic-item", key: "potion-of-speed", field: "name" } }],
+  },
   "spell-countered": {
     kind: "spell-countered",
     action: { srd: { kind: "spell", key: "fireball", field: "name" } },

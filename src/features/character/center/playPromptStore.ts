@@ -8,6 +8,7 @@
  *
  * A kind is present while its question is open, absent once answered or cancelled.
  */
+import type { LocText } from "@/lib/loc-text";
 import { useLayoutEffect } from "react";
 import { create } from "zustand";
 
@@ -40,6 +41,12 @@ export interface PlayPrompts {
   "item-resource-input": NonNullableRequest<
     ComponentProps<typeof ItemResourceInputModal>
   >;
+  /** A potion drunk while another still runs: the d100 on the DM's mixing table (an
+   *  offer, never a block). `onConfirm(null)` skips it. */
+  "potion-mixing": {
+    potions: LocText[];
+    onConfirm: (roll: number | null) => void;
+  };
 }
 
 export type PlayPromptKind = keyof PlayPrompts;

@@ -173,6 +173,8 @@ export function combatEventToPlayEvent(
         target: me,
         ...(event.source ? { source: event.source } : {}),
       };
+    // A mixing roll is the sheet's own note for the DM; the session reads it there.
+    case "potion-mixing":
     case "tracker-regain":
     case "slot-regain":
     case "item-trade":
