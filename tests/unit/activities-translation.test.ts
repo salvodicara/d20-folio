@@ -474,6 +474,12 @@ function actionFromActivity(
           e.kind === "speed-halved" ||
           e.kind === "fall-if-aloft" ||
           e.kind === "recover-slots" ||
+          // Kinds only the catalogue writes (edge-case #697): never derived.
+          e.kind === "exhaustion" ||
+          e.kind === "damage-roll-penalty" ||
+          e.kind === "hit-point-dice" ||
+          e.kind === "dispel" ||
+          e.kind === "self-move" ||
           (e.kind === "next-attack-advantage" && Object.keys(e).length > 1)
       );
       return authored.length > 0 ? authored : undefined;
