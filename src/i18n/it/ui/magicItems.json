@@ -47,6 +47,7 @@
     "clockApplied_dawn": "Sorge l'alba · risorse degli oggetti recuperate",
     "clockApplied_dusk": "Cala il tramonto · risorse degli oggetti recuperate",
     "tableClockApplied_dawn": "Alba dichiarata · risorse degli oggetti recuperate",
-    "tableClockApplied_dusk": "Tramonto dichiarato · risorse degli oggetti recuperate"
+    "tableClockApplied_dusk": "Tramonto dichiarato · risorse degli oggetti recuperate",
+    "commandWordBlocked": "Qui non puoi pronunciare la parola di comando: non è stato speso nulla"
   }
 }
