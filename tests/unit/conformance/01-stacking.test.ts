@@ -324,7 +324,7 @@ describe("conformance · 1. stacking and ordering", () => {
       category: 1,
       case: "Same-name speed reductions",
       source: "KIBBLES #30; WIKI fighter:main",
-      status: "M10",
+      status: "works",
     },
     () => {
       // Two Slow-mastery hits (each −10 ft) on a 30 ft creature: 20 ft, not 10.

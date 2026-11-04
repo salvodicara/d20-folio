@@ -9,8 +9,10 @@
  *  - a swallow gives Blinded and Restrained through `add-condition`; its Total
  *    Cover from outside and its damage at the start of each of the swallower's
  *    turns are facts (`swallowedFacts`) the table and the log read;
- *  - a push or a Speed loss changes nothing on the sheet: the app never moves a
- *    token, so the log line is its whole record.
+ *  - a Speed loss lights a state that lowers the Speed until the turn edge the
+ *    caller gives (`rider-speed-loss`); the same source twice doesn't stack;
+ *  - a push changes nothing on the sheet: the app never moves a token, so the log
+ *    line is its whole record.
  */
 import {
   hpMaxReductionAmount,
@@ -21,14 +23,21 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import type { LocText } from "@/lib/loc-text";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
+import { riderSpeedLossKey } from "./rider-speed-loss";
 import type { SheetEvent } from "./sheet-events";
 
 /** The sheet events a rider makes on the character, in order; [] when none. */
 export function riderTakenEvents(
   doc: CharacterDoc,
   effect: RiderEffect,
-  /** The damage the character took from the same use, and a drain's rolled dice. */
-  facts: { damageTaken: number; rolled?: number }
+  /** The damage the character took from the same use, a drain's rolled dice, the
+   *  rider's source, and the owner-turn edge a timed rider ends at. */
+  facts: {
+    damageTaken: number;
+    rolled?: number;
+    source?: LocText;
+    boundary?: { round: number; phase: "turn-start" | "turn-end" };
+  }
 ): SheetEvent[] {
   switch (effect.kind) {
     case "hp-max-reduction": {
@@ -47,8 +56,21 @@ export function riderTakenEvents(
         (condition) => ({ kind: "add-condition" as const, condition })
       );
     }
+    case "speed-reduction": {
+      const key = riderSpeedLossKey(effect.feet, facts.source);
+      if ((doc.session.activeFeatures ?? []).includes(key)) {
+        return facts.boundary
+          ? [{ kind: "arm-effect-boundary", key, ...facts.boundary }]
+          : [];
+      }
+      return [
+        { kind: "set-active-state", key, isActive: true, litRound: 0 },
+        ...(facts.boundary
+          ? [{ kind: "arm-effect-boundary" as const, key, ...facts.boundary }]
+          : []),
+      ];
+    }
     case "forced-movement":
-    case "speed-reduction":
       return [];
   }
 }
