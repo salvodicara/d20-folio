@@ -394,14 +394,18 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       round1: booleanSchema,
     }
   ),
-  "fly-speed": objectSchema({
-    amount: unionSchema([
-      numberSchema,
-      literalSchema("equal-to-walking"),
-      literalSchema("twice-walking"),
-    ]),
-    type: literalSchema("fly-speed"),
-  }),
+  /** `hover`: the source says so («… and can hover»): Prone doesn't make it fall. */
+  "fly-speed": objectSchema(
+    {
+      amount: unionSchema([
+        numberSchema,
+        literalSchema("equal-to-walking"),
+        literalSchema("twice-walking"),
+      ]),
+      type: literalSchema("fly-speed"),
+    },
+    { hover: literalSchema(true) }
+  ),
   "swim-speed": objectSchema({
     amount: unionSchema([
       numberSchema,

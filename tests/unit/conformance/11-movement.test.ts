@@ -277,9 +277,31 @@ describe("conformance · 11. movement and mounts", () => {
 
   rule(
     { category: 11, case: "Flying and prone", source: "GLOSS; SAC #16", status: "M14" },
-    () => {
-      // A flyer without Hover falls when knocked Prone.
-      expect(JSON.stringify(CONDITION_RULES.prone)).toContain("hover");
+    async () => {
+      // A flyer that can't hover falls when knocked Prone while aloft (the table
+      // says whether it is aloft): Wings of Flying can't hover, the Fly spell can.
+      const wings = makeCharacterDoc(
+        {
+          equipment: [
+            { srdId: "wings-of-flying", quantity: 1, equipped: true, attuned: true },
+          ],
+        },
+        { activeFeatures: ["magic-item:wings-of-flying:wings-of-flying"] }
+      );
+      const flier = makeCharacterDoc(
+        {
+          classId: "wizard",
+          level: 5,
+          spells: [{ srdId: "fly", prepared: true }] as never,
+        },
+        { activeFeatures: ["spell-fly"] }
+      );
+      const id = "@/lib/play/flight";
+      const flight = (await import(/* @vite-ignore */ id)) as {
+        fallsIfProne: (doc: unknown) => boolean;
+      };
+      expect(flight.fallsIfProne(wings)).toBe(true);
+      expect(flight.fallsIfProne(flier)).toBe(false);
     }
   );
 
