@@ -26,10 +26,17 @@ import { ALL_REACTION_TRIGGERS, type LocaleText } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
 import type { DiceScalar, Scalar } from "@/lib/scalar";
+import type { CatalogueEffect } from "@/lib/catalogue-effects";
 import { LOCALES, type Locale } from "@/lib/locale";
 import { DETECTION_TARGETS } from "@/lib/rules/detection-targets";
 
 const RESOURCE_SPEC_SCHEMA = customSchema<"resource-spec", ResourceSpec>("resource-spec");
+/** Structured effects the catalogue authors (`@/lib/catalogue-effects`), conformed by
+ *  the context's `catalogue-effects` custom. */
+const CATALOGUE_EFFECTS = customSchema<
+  "catalogue-effects",
+  ReadonlyArray<CatalogueEffect>
+>("catalogue-effects");
 
 /**
  * Inline text (`LocaleText`). The conformer decides how much is required: the
@@ -2282,6 +2289,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         }
       ),
       description: LOCALE_TEXT_SCHEMA,
+      /** What using it does, beyond the catalogue text (Tactical Shift: a move of
+       *  half Speed with no Opportunity Attacks). */
+      effects: CATALOGUE_EFFECTS,
       id: stringSchema,
       /** A hard cap on uses per turn (Horde Breaker: "Once on each of your turns"). */
       maxUsesPerTurn: numberSchema,
@@ -2796,6 +2806,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
 });
 
 export type GrantSchemaCustomTypes = {
+  readonly "catalogue-effects": ReadonlyArray<CatalogueEffect>;
   readonly "dice-scalar": DiceScalar;
   readonly "locale-text": LocaleText;
   readonly "proficiency-token": ProficiencyToken;

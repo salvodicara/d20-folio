@@ -82,6 +82,7 @@ import {
 } from "@/lib/resources";
 import type { ResourceSpec } from "@/types/resource";
 import { conformScalar, type Scalar } from "@/lib/scalar";
+import { CATALOGUE_EFFECTS_SCHEMA, type CatalogueEffect } from "@/lib/catalogue-effects";
 
 /**
  * PS-J — the closed vocabulary of scopes an attack-side effect can target.
@@ -125,9 +126,16 @@ function conformProficiencyToken(value: unknown): ProficiencyToken | null {
     : null;
 }
 
+/** The catalogue effects a grant carries, through their one exact schema. */
+const conformCatalogueEffects = exactConformer(CATALOGUE_EFFECTS_SCHEMA, {
+  customs: { scalar: conformScalar },
+  refs: {},
+}) as (value: unknown) => ReadonlyArray<CatalogueEffect> | null;
+
 const GRANT_SCHEMA_CONTEXT: ExactSchemaContext<GrantSchemaCustomTypes, GrantSchemaRefs> =
   {
     customs: {
+      "catalogue-effects": conformCatalogueEffects,
       "dice-scalar": conformDiceScalar,
       "locale-text": conformLocaleText,
       "proficiency-token": conformProficiencyToken,
@@ -957,6 +965,8 @@ export interface GrantedAction {
   reactionTrigger?: ReactionTrigger;
   /** A hard cap on uses per turn. */
   maxUsesPerTurn?: number;
+  /** What using it does, as structured effects. */
+  effects?: ReadonlyArray<CatalogueEffect>;
 }
 
 /**
@@ -3785,6 +3795,7 @@ export function evaluateGrants(
           ...(g.saveDcAbility ? { saveDcAbility: g.saveDcAbility } : {}),
           ...(g.reactionTrigger ? { reactionTrigger: g.reactionTrigger } : {}),
           ...(g.maxUsesPerTurn !== undefined ? { maxUsesPerTurn: g.maxUsesPerTurn } : {}),
+          ...(g.effects ? { effects: g.effects } : {}),
         });
         break;
 
