@@ -1060,6 +1060,9 @@ export interface SelfFormRule {
   pool: "beasts" | "bestiary";
   /** The caster keeps their own Intelligence, Wisdom and Charisma scores. */
   keepsMind: boolean;
+  /** The caster's own scores the form keeps, when they are not just the mind (a
+   *  shape-changer that keeps its Constitution too). Wins over `keepsMind`. */
+  keeps?: { abilities: ReadonlyArray<AbilityCode> };
   /** The caster may shift into another form while the spell lasts; only the first
    *  form grants Temporary Hit Points. */
   reshift: boolean;

@@ -199,7 +199,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Custom monsters and partial shape-change",
       source: "FVTT#7153",
-      status: "M2",
+      status: "works",
     },
     () => {
       // A form rule names which of the caster's own scores it keeps.

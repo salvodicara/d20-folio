@@ -5,11 +5,7 @@ import { getMonster } from "@/data/monsters";
 import type { BeastStatBlock } from "@/data/types";
 import { aggregateCharacterGrants, effectiveAC } from "@/lib/aggregate-character";
 import { beastProjectionFromMonster } from "@/lib/beast-projection";
-import {
-  polymorphBuildPatch,
-  resolvePolymorphForms,
-  selfFormRule,
-} from "@/lib/polymorph";
+import { formScores, resolvePolymorphForms, selfFormRule } from "@/lib/polymorph";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import { changeConcentration } from "@/lib/play/concentration";
@@ -426,21 +422,19 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "Monster shape-changers keep some stats",
       source: "FVTT#7153",
-      status: "M2",
+      status: "works",
     },
     () => {
       // A Deva takes a new form's STR and DEX but keeps its CON and mental scores.
       const deva = getMonster("deva");
       if (!deva) throw new Error("no deva");
-      const prior = {
-        acOverride: null,
-        speedOverride: null,
-        speedOverrides: {},
-        abilityScores: { ...deva.abilityScores },
-        tempHp: 0,
-      };
       const bear = beast("brown-bear");
-      const scores = polymorphBuildPatch(bear, prior, true).abilityScores;
+      const scores = formScores(bear.abilityScores, deva.abilityScores, [
+        "CON",
+        "INT",
+        "WIS",
+        "CHA",
+      ]);
       expect(scores).toEqual({
         ...deva.abilityScores,
         STR: bear.abilityScores.STR,

@@ -22,7 +22,7 @@ import {
   type BeastStatBlock,
   type SelfFormRule,
 } from "@/data/types";
-import type { AbilityCode } from "@/types/ability";
+import { ABILITY_CODES, type AbilityCode } from "@/types/ability";
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { beastsByMaxCR, getBeast } from "@/data/beasts";
 import { classFeatureIndex } from "@/data/classes";
@@ -45,14 +45,33 @@ export function isSelfFormSpell(spellId: string): boolean {
   return getSpellById(spellId)?.formRule !== undefined;
 }
 
+const MIND: readonly AbilityCode[] = ["INT", "WIS", "CHA"];
+
+/** A form rule with the scores it keeps resolved: `keeps`, else the mind when
+ *  `keepsMind`, else none. */
+export type ResolvedFormRule = SelfFormRule & {
+  keeps: { abilities: ReadonlyArray<AbilityCode> };
+};
+
 /** The form rule of the spell or class feature that makes the form (Polymorph's
  *  for an id that carries none). */
-export function selfFormRule(sourceId: string): SelfFormRule {
-  return (
+export function selfFormRule(sourceId: string): ResolvedFormRule {
+  const rule =
     getSpellById(sourceId)?.formRule ??
     classFeatureIndex.get(sourceId)?.formRule ??
-    POLYMORPH_RULE
-  );
+    POLYMORPH_RULE;
+  return { ...rule, keeps: rule.keeps ?? { abilities: rule.keepsMind ? MIND : [] } };
+}
+
+/** A form's ability scores: the form's own, except the ones the rule keeps. */
+export function formScores(
+  form: Record<AbilityCode, number>,
+  own: Record<AbilityCode, number>,
+  kept: ReadonlyArray<AbilityCode>
+): Record<AbilityCode, number> {
+  const scores = { ...form };
+  for (const code of kept) scores[code] = own[code];
+  return scores;
 }
 
 /** Which catalogue names what made the form: a spell, or a class feature (Wild Shape). */
@@ -89,7 +108,7 @@ export function currentForm(
 
 /**
  * What a computed form replaces on the derived sheet (edge-case family M2): the
- * scores it takes (all six, or STR/DEX/CON when its rule keeps the mind), its natural
+ * scores it takes (all but the ones its rule keeps), its natural
  * AC, its speeds. Null when there is no computed form (a stamped one is already in
  * the build).
  */
@@ -102,7 +121,7 @@ export function formFacts(
   /** Which catalogue names the form (a Beast, or a bestiary creature). */
   nameKind: "beasts" | "monster";
   abilityScores: Record<AbilityCode, number>;
-  /** The scores the form replaces (all six, or STR/DEX/CON when the mind stays). */
+  /** The scores the form replaces (all but the ones its rule keeps). */
   replaces: readonly AbilityCode[];
   ac: number;
   walkFt: number | null;
@@ -122,12 +141,8 @@ export function formFacts(
     sourceId: form.sourceId,
     beastId: form.beastId,
     nameKind: formNameKind(form),
-    replaces: rule.keepsMind
-      ? ["STR", "DEX", "CON"]
-      : ["STR", "DEX", "CON", "INT", "WIS", "CHA"],
-    abilityScores: rule.keepsMind
-      ? { ...beast.abilityScores, INT: own.INT, WIS: own.WIS, CHA: own.CHA }
-      : { ...beast.abilityScores },
+    replaces: ABILITY_CODES.filter((code) => !rule.keeps.abilities.includes(code)),
+    abilityScores: formScores(beast.abilityScores, own, rule.keeps.abilities),
     ac: beast.ac,
     walkFt: typeof beast.speeds.walk === "number" ? beast.speeds.walk : null,
     speeds,
