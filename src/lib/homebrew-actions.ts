@@ -100,7 +100,10 @@ const CONDITION_END = unionSchema([
     {
       advantage: literalSchema(true),
       when: literalSchema("out-of-actor-sight"),
-      track: objectSchema({ successes: numberSchema, failures: numberSchema }),
+      track: objectSchema(
+        { successes: numberSchema, failures: numberSchema },
+        { settlesInto: CONDITION_ID_SCHEMA }
+      ),
       onFailedRepeatSave: CATALOGUE_EFFECTS_SCHEMA,
     }
   ),

@@ -228,3 +228,60 @@ describe("what a failed repeat save does", () => {
     );
   });
 });
+
+/** Flesh to Stone: "If it fails three of these saves, it is petrified". */
+describe("a track settled into another condition", () => {
+  const stone = {
+    ...save,
+    conditionId: "restrained",
+    actorId: "monster-medusa",
+    track: { successes: 3, failures: 3, settlesInto: "petrified" },
+  };
+  const settle = (s: PendingRepeatSave) => {
+    useSaveTallyStore.setState({ tallies: { "c1:e1": { successes: 0, failures: 2 } } });
+    useRepeatSaveStore.setState({ saves: [s] });
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Failed: it stays" }));
+  };
+  beforeEach(() => {
+    io.revokePersistentCombatEffect.mockClear();
+    io.appendPersistentCombatEffect.mockClear();
+    useToastStore.setState({ toasts: [] });
+    useCharacterStore.getState().setCharacter({
+      ...MOCK_CHARACTER,
+      id: "char-1",
+      session: { ...MOCK_CHARACTER.session, conditions: [] },
+    });
+  });
+
+  it("a monster's Restrained ends and Petrified lands from the DM's device", async () => {
+    settle(stone);
+    await waitFor(() =>
+      expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
+        "c1",
+        expect.objectContaining({
+          id: "e1:petrified",
+          payload: { kind: "condition", conditionId: "petrified" },
+        })
+      )
+    );
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "e1");
+    expect(useToastStore.getState().toasts.at(-1)?.message).toBe(
+      "Restrained becomes Petrified: Goblin"
+    );
+  });
+
+  it("on my own character, Petrified goes on my sheet; undo takes it off", () => {
+    settle({ ...stone, targetName: "Lyra", characterId: "char-1" });
+    const conditions = () =>
+      useCharacterStore.getState().character?.session.conditions ?? [];
+    expect(conditions()).toContain("petrified");
+    expect(io.appendPersistentCombatEffect).not.toHaveBeenCalled();
+    useToastStore.getState().toasts.at(-1)?.onUndo?.();
+    expect(conditions()).not.toContain("petrified");
+    expect(useSaveTallyStore.getState().tallies["c1:e1"]).toEqual({
+      successes: 0,
+      failures: 2,
+    });
+  });
+});

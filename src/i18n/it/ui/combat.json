@@ -602,6 +602,7 @@
     "repeatSaveTally": "Successi {{successes}}/{{needed}} · fallimenti {{failures}}/{{limit}}",
     "repeatSaveCounted": "{{target}}: successi {{successes}}/{{needed}}, fallimenti {{failures}}/{{limit}}",
     "repeatSaveSettled": "{{condition}} resta per tutta la durata: {{target}}",
+    "repeatSaveSettledInto": "{{condition}} diventa {{next}}: {{target}}",
     "repeatSaveExhaustion": "{{target}} non supera il TS: +{{count}} Indebolimento.",
     "repeatSaveExhaustionMonster": "{{target}} non supera il TS: +{{count}} Indebolimento, da segnare sul mostro.",
     "zoneOutside": "Fuori"

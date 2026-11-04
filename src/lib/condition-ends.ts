@@ -62,6 +62,8 @@ export function failedSaveExhaustion(save: Pick<DueRepeatSave, "onFail">): numbe
 export interface SaveTrack {
   successes: number;
   failures: number;
+  /** The condition it becomes when the failures settle it (Flesh to Stone). */
+  settlesInto?: string;
 }
 
 /** A tracked save's count so far. */
