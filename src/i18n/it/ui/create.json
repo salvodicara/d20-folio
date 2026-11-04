@@ -157,7 +157,20 @@
         "heavy-armor": "pesanti",
         "shields": "scudi"
       },
-      "pickBackground": "Scegli un background per andare avanti."
+      "pickBackground": "Scegli un background per andare avanti.",
+      "speciesNote": "Nel 2024 la specie non cambia le caratteristiche: dà capacità.",
+      "searchSpecies": "Cerca una specie",
+      "pickSpecies": "Scegli una specie per andare avanti.",
+      "howTitle": "Come le decidi?",
+      "methodSuggested": "Valori consigliati",
+      "methodRolled": "Tiro ai dadi",
+      "rolledHint": "Tira al tavolo e scrivi qui i tuoi punteggi.",
+      "pointsLeft": "Punti rimasti: {{count}}",
+      "suggestedTitle": "Valori consigliati: {{values}}",
+      "suggestedHint": "Sono già al posto giusto per la classe {{class}}. Per spostarli usa l'acquisto a punti.",
+      "pointBuyHint": "27 punti: ogni caratteristica va da 8 a 15.",
+      "pickAbilities": "Assegna il bonus del background per andare avanti.",
+      "overBudget": "Hai speso più di 27 punti."
     }
   }
 }

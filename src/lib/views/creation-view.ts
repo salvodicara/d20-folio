@@ -169,7 +169,7 @@ export function languageName(id: string, locale: Locale): string {
  * read). Iterates the flat `raceFeatureEntries` (which carry the id + raceId)
  * rather than the raw `SrdRaceTrait[]` (which carry neither).
  */
-function raceTraitNames(raceId: string, limit: number, locale: Locale): string[] {
+export function raceTraitNames(raceId: string, limit: number, locale: Locale): string[] {
   return raceFeatureEntries
     .filter((e) => e.raceId === raceId)
     .slice(0, limit)

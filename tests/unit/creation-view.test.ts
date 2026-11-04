@@ -7,9 +7,12 @@ import { describe, expect, it } from "vitest";
 import { ICON_NAMES } from "@/ui/icon-names";
 
 import {
+  abilityTiles,
   backgroundRows,
   classCards,
   creationSummary,
+  speciesRows,
+  suggestedScores,
 } from "@/domains/creation/creation-view";
 import {
   creationFacts,
@@ -63,5 +66,49 @@ describe("backgroundRows", () => {
     expect(acolyte?.name).toBe("Accolito");
     expect(acolyte?.skills).toEqual(["Intuizione", "Religione"]);
     expect(acolyte?.feat).toBeTruthy();
+  });
+});
+
+describe("speciesRows", () => {
+  it("each species with up to three of its traits", () => {
+    const elf = speciesRows("it").find((s) => s.id === "elf");
+    expect(elf?.name).toBe("Elfo");
+    expect(elf?.traits.length).toBeGreaterThan(0);
+    expect(elf?.traits.length).toBeLessThanOrEqual(3);
+    expect(elf?.traits).toContain("Scurovisione");
+  });
+});
+
+describe("abilityTiles", () => {
+  it("each ability with its base, the background bonus and the effective score", () => {
+    let draft = creationDraftReducer(initialCreationDraft(), {
+      type: "selectClass",
+      classId: "cleric",
+    });
+    draft = creationDraftReducer(draft, {
+      type: "selectBackground",
+      backgroundId: "acolyte",
+    });
+    const tiles = abilityTiles(draft, creationFacts(draft));
+    expect(tiles.map((t) => t.code)).toEqual(["STR", "DEX", "CON", "INT", "WIS", "CHA"]);
+    for (const tile of tiles) {
+      expect(tile.score).toBe(tile.base + tile.bonus);
+      expect(tile.mod).toBe(Math.floor((tile.score - 10) / 2));
+    }
+  });
+});
+
+describe("suggestedScores", () => {
+  it("the class's ready-made scores", () => {
+    const cleric = suggestedScores("cleric");
+    expect(Object.keys(cleric).sort()).toEqual([
+      "CHA",
+      "CON",
+      "DEX",
+      "INT",
+      "STR",
+      "WIS",
+    ]);
+    expect(Math.max(...Object.values(cleric))).toBe(cleric.WIS);
   });
 });
