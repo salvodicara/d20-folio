@@ -53,6 +53,9 @@ describe("SpeciesChoicesBanner", () => {
         "Elven Lineage and Keen Senses. Species spellcasting ability: it uses Charisma today"
       );
       fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+      // The modal names the species, never the add-modals' «Add» eyebrow.
+      expect(screen.queryByText("Add")).toBeNull();
+      expect(screen.getAllByText("Elf").length).toBeGreaterThan(0);
       fireEvent.click(screen.getByRole("button", { name: "High Elf" }));
       fireEvent.click(screen.getByRole("button", { name: "Intelligence" }));
       const perception = screen

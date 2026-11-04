@@ -17,7 +17,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import { asLocale, type Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
-import { lineageBundleVMs } from "@/lib/views/creation-view";
+import { lineageBundleVMs, raceName } from "@/lib/views/creation-view";
 import {
   pendingSpeciesItems,
   speciesChoicesLine,
@@ -93,7 +93,14 @@ function SpeciesChoicesModal({
     onClose();
   };
   return (
-    <ModalShell open onClose={onClose} title={t("play.speciesChoices.title")} compact>
+    <ModalShell
+      open
+      onClose={onClose}
+      // The species these choices belong to, never the add-modals' «Aggiungi».
+      rubric={raceName(doc.character.race, locale)}
+      title={t("play.speciesChoices.title")}
+      compact
+    >
       <ModalBody>
         <div className="flex flex-col gap-4">
           {bundles.map((b) => (
