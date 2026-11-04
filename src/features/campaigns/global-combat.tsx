@@ -34,6 +34,8 @@ import { localizeSrd } from "@/i18n/resolver";
 import { spellEndEffects } from "@/lib/activities/read";
 import { proneInFlight } from "@/lib/play/flight";
 import { markDropOffers } from "@/lib/play/mark-offers";
+import { ammunitionRecovery } from "@/lib/play/ammunition";
+import { registerUndoableToast } from "@/stores/undoStore";
 import { effectiveTableRules } from "@/lib/table-rules";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
@@ -122,6 +124,7 @@ export function GlobalCombatMount(): null {
     sourceId: string;
   } | null>(null);
   const observedTurn = useRef<string | null>(null);
+  const observedFightOf = useRef<string | null>(null);
   const observedProne = useRef<{ characterId: string; prone: boolean } | null>(null);
   const observedRows = useRef<{ scope: string; rows: IncapacitationRow[] } | null>(null);
   const observedFight = useRef<{ scope: string; look: FightLook } | null>(null);
@@ -302,6 +305,35 @@ export function GlobalCombatMount(): null {
     const varies = campaign?.tableRules && Object.keys(campaign.tableRules).length > 0;
     setTableRules(openCharacterId, varies ? effectiveTableRules(campaign) : null);
   }, [campaigns, openCharacterId, uid, setTableRules]);
+
+  // A fight of mine just ended: half the ammunition it spent can be recovered (SRD,
+  // a minute searching the battlefield). Offered once, with its undo.
+  useEffect(() => {
+    const inFight =
+      status && status.characterId === openCharacterId ? status.characterId : null;
+    const was = observedFightOf.current;
+    observedFightOf.current = inFight;
+    if (!was || inFight === was) return;
+    const doc = useCharacterStore.getState().character;
+    if (!doc || doc.id !== was) return;
+    const back = ammunitionRecovery(doc);
+    if (back.length === 0) return;
+    const pieces = back.reduce((sum, r) => sum + r.recovered, 0);
+    showToast({
+      message: t("combat.ammoRecoverable", { count: pieces }),
+      duration: 30000,
+      action: {
+        label: t("combat.ammoRecover"),
+        run: () => {
+          registerUndoableToast(
+            { message: t("combat.ammoRecovered", { count: pieces }) },
+            () => useCharacterStore.getState().dispatch({ kind: "recover-ammunition" }),
+            { turnScoped: false }
+          );
+        },
+      },
+    });
+  }, [status, openCharacterId, showToast, t]);
 
   // Project campaign-owned standing effects onto the viewer's own open character.
   // This reuses the primary encounter listener above; the character store scopes the

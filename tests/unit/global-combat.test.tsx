@@ -828,3 +828,63 @@ describe("GlobalCombatMount — a sheet opened by URL (deep link)", () => {
     expect(useCombatStatusStore.getState().pip).not.toBeNull();
   });
 });
+
+describe("GlobalCombatMount — ammunition after the fight", () => {
+  const withArrows = (spent: number) => ({
+    ...MOCK_CHARACTER,
+    id: "char-1",
+    character: {
+      ...MOCK_CHARACTER.character,
+      equipment: [{ srdId: "arrows", quantity: 4 }],
+    },
+    session: { ...MOCK_CHARACTER.session, ammoSpent: { arrows: spent } },
+  });
+  /** A fight my PC is in, live on this device. */
+  const inFight = () => {
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    const encounter = campaign.encounter;
+    if (!encounter) throw new Error("expected encounter fixture");
+    h.state.live = {
+      encounter,
+      view: buildEncounterView(encounter, {}, false),
+      myCombatState: null,
+      myMaxHp: 20,
+    };
+    return campaign;
+  };
+  const ammoOffer = () =>
+    useToastStore.getState().toasts.find((toast) => toast.action?.label === "Recover");
+  const arrows = () =>
+    useCharacterStore
+      .getState()
+      .character?.character.equipment.find(
+        (ref) => !("custom" in ref) && ref.srdId === "arrows"
+      );
+
+  it("the end of my fight offers half the spent ammunition back, once", () => {
+    useToastStore.setState({ toasts: [] });
+    useCharacterStore.getState().setCharacter(withArrows(7));
+    mount();
+    act(() => h.state.campaignsCb?.([inFight()]));
+    expect(ammoOffer()).toBeUndefined();
+    act(() => h.state.campaignsCb?.([]));
+    const offer = ammoOffer();
+    expect(offer?.message).toBe(
+      "The fight is over: searching the field for a minute recovers 3 pieces of ammunition."
+    );
+    act(() => offer?.action?.run());
+    expect(arrows()?.quantity).toBe(7);
+    expect(useCharacterStore.getState().character?.session).not.toHaveProperty(
+      "ammoSpent"
+    );
+  });
+
+  it("says nothing when no piece would come back", () => {
+    useToastStore.setState({ toasts: [] });
+    useCharacterStore.getState().setCharacter(withArrows(1));
+    mount();
+    act(() => h.state.campaignsCb?.([inFight()]));
+    act(() => h.state.campaignsCb?.([]));
+    expect(ammoOffer()).toBeUndefined();
+  });
+});
