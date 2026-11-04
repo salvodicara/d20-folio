@@ -5,6 +5,7 @@
  * schema, so a catalogue entry and a homebrew one conform the same way.
  */
 import { ALL_CREATURE_TYPES } from "@/data/types";
+import { DAMAGE_TYPE_SCHEMA } from "@/types/damage";
 import {
   arraySchema,
   customSchema,
@@ -24,6 +25,9 @@ export type CatalogueEffect = Extract<
   ActivityEffect,
   {
     kind:
+      | "damage"
+      | "temp-hp"
+      | "speed-bonus"
       | "fall-if-aloft"
       | "speed-halved"
       | "speed-zero"
@@ -47,7 +51,19 @@ const BASE = {
   notVsCreatureTypes: CREATURE_TYPES,
 } as const;
 
+/** Dice the catalogue authors: an amount, and what each slot above the base adds. */
+const DICE = objectSchema({ dice: stringSchema }, { perUpcast: stringSchema });
+
 export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("kind", {
+  damage: objectSchema(
+    { kind: literalSchema("damage"), dice: DICE, types: arraySchema(DAMAGE_TYPE_SCHEMA) },
+    { ...BASE, onSave: literalSchema("half") }
+  ),
+  "temp-hp": objectSchema({ kind: literalSchema("temp-hp"), dice: DICE }, BASE),
+  "speed-bonus": objectSchema(
+    { kind: literalSchema("speed-bonus"), feet: numberSchema },
+    { ...BASE, until: UNTIL }
+  ),
   "fall-if-aloft": objectSchema({ kind: literalSchema("fall-if-aloft") }, BASE),
   "speed-halved": objectSchema(
     { kind: literalSchema("speed-halved") },

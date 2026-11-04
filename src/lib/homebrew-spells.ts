@@ -203,6 +203,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   cantripInstances: TRUE,
   area: booleanSchema,
   damageOnSave: HALF,
+  damageNotVsCreatureTypes: CREATURE_TYPES,
   damageOnMiss: HALF,
   damageResolution: GATE,
   primaryTargetOnly: booleanSchema,

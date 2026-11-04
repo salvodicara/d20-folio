@@ -118,6 +118,7 @@ function spellEffects(spell: SrdSpellData): ActivityEffect[] {
         gate: spell.damageResolution,
         onSave: spell.damageOnSave,
         onMiss: spell.damageOnMiss,
+        notVsCreatureTypes: spell.damageNotVsCreatureTypes,
       })
     );
   }

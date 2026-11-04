@@ -424,6 +424,13 @@ export type ActivityEffect =
       feet: number;
       until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
     })
+  /** The target's Speed increases by `feet`, until a turn boundary (Distorted
+   *  Distance's Shortened Space: +20 ft. until the end of its next turn). */
+  | (EffectBase & {
+      kind: "speed-bonus";
+      feet: number;
+      until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+    })
   /** The target's Hit Point maximum decreases by `dice`, or, absent, by the
    *  damage it took from this use (Life Drain). A Long Rest restores it. */
   | (EffectBase & {

@@ -1268,6 +1268,9 @@ export interface SrdSpellData {
    * independent from `area`: single-target spells can deal half damage, while an
    * area can have a different success outcome. */
   damageOnSave?: "half";
+  /** Creatures the damage doesn't reach (Negative Energy Flood: an Undead gains
+   *  Temporary Hit Points instead, an authored effect). */
+  damageNotVsCreatureTypes?: ReadonlyArray<CreatureType>;
   /** Damage suffered after a missed attack. Omitted means none. */
   damageOnMiss?: "half";
   /** Gate for the primary damage component when it differs from the spell's
