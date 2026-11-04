@@ -65,6 +65,7 @@
       "concentration": "Tiri per la concentrazione su {{spell}} (CD {{dc}})."
     },
     "form": {
+      "tempHp": "Ottieni {{amount}} punti ferita temporanei, che restano quando torni alla tua forma.",
       "worn": "Indossato nella forma",
       "gearHint": "Equipaggiamento fuso nella forma: non dà bonus. Segna ciò che il tavolo considera indossato.",
       "gearWorn": "Indossato nella forma: {{name}}",
