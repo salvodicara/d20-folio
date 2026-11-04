@@ -100,7 +100,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
       actions={
         <>
           <Button kind="ghost" onClick={close}>
-            {t("common.skip")}
+            {t("play.tray.dontApply")}
           </Button>
           <Button kind="primary" disabled={!form.canApply} onClick={apply}>
             {t("combat.apply")}

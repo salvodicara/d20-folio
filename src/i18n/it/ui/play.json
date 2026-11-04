@@ -185,7 +185,8 @@
       "facesHint": "Le facce uscite, per esempio 1+5",
       "floorOne": "Sui dadi del danno, 1 conta come {{to}}",
       "floorTwo": "Sui dadi del danno, 1 e 2 contano come {{to}}",
-      "floorUpTo": "Sui dadi del danno, da 1 a {{below}} contano come {{to}}"
+      "floorUpTo": "Sui dadi del danno, da 1 a {{below}} contano come {{to}}",
+      "dontApply": "Non applicare"
     },
     "weapon": {
       "which": "Su quale arma?",

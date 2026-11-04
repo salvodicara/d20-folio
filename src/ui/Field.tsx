@@ -23,6 +23,8 @@ export function Field({
         className="f-in"
         aria-invalid={error ? true : undefined}
         aria-describedby={note}
+        // A modal opens after React's autofocus: the Dialog focuses this mark.
+        data-autofocus={input.autoFocus ? "" : undefined}
         {...input}
       />
       {error ? (

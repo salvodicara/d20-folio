@@ -35,8 +35,10 @@ function open(p: DamageTrayPlan) {
 describe("Play tray: dice faces under a floor", () => {
   // jsdom has no modal <dialog>: open it in place.
   beforeEach(() => {
+    // Like a browser, opening the modal focuses its first control (the close button).
     HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
       this.open = true;
+      this.querySelector("button")?.focus();
     };
     HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
       this.open = false;
@@ -60,5 +62,16 @@ describe("Play tray: dice faces under a floor", () => {
     open(plan({ floorBelow: 2, floorTo: 3 }));
     expect(screen.queryByLabelText(/Dice faces/)).toBeNull();
     expect(screen.getByText(/a 1 or 2 counts as 3/)).toBeTruthy();
+  });
+
+  it("opens with the faces field focused", () => {
+    open(plan({ floorBelow: 2, floorTo: 3, dice: "2d6", bonus: 3 }));
+    expect(document.activeElement).toBe(screen.getByLabelText("Dice faces (2d6)"));
+  });
+
+  it("names its close by what it does", () => {
+    open(plan({ floorBelow: 2, floorTo: 3, dice: "2d6", bonus: 3 }));
+    expect(screen.getByRole("button", { name: "Don't apply" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Skip" })).toBeNull();
   });
 });

@@ -245,3 +245,24 @@ describe("facesSum", () => {
     expect(facesSum({ terms: [4, 6], bonus: 0, total: 10 })).toBe("4 + 6");
   });
 });
+
+describe("a melee hit's knock out", () => {
+  it("starts off: the player turns it on", () => {
+    const melee: DamageTrayPlan = {
+      effect: "damage",
+      damageType: "slashing",
+      melee: true,
+      attack: { onMiss: "none" },
+      targets: ["m1"],
+    };
+    const f = trayForm({
+      plan: melee,
+      targets: [{ id: "m1", name: "One", kind: "monster", defenses: NO_DEFENSES }],
+      edited: none,
+      total: "7",
+      rowTotals: none,
+    });
+    expect(f.rows).toHaveLength(1);
+    expect(f.rows[0]?.knockOut).toBeUndefined();
+  });
+});
