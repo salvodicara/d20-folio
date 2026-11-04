@@ -17,6 +17,7 @@
     "scrollCheck": "From a Spell Scroll, above the levels you can cast: make a spellcasting ability check, DC {{dc}}. The scroll is used up either way.",
     "scrollCast": "From a Spell Scroll: no slot, no Material components; the scroll is used up.",
     "spellEndFalls": "{{spell}} ended: anyone still aloft falls unless they can fly another way.",
+    "proneInFlight": "Prone while flying: if you're aloft, you fall.",
     "counteredToast": "Countered: {{name}} · level {{level}} slot back",
     "counteredAria": "Countered: {{name}}. Get its level {{level}} slot back",
     "countered": "Countered",

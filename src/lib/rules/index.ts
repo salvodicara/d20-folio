@@ -68,6 +68,8 @@ export type RuleTarget =
   | `speed:${MoveMode}`
   /** A speed equal to (1) or twice (2) the walking speed; outranks a fixed number. */
   | `speed:${MoveMode}:walking`
+  /** A fly speed that can hover: Prone doesn't make the flyer fall. */
+  | "speed:fly:hover"
   | "speed:multiplier"
   /** The strongest slowing factor below 1 (Slow: half Speed). */
   | "speed:reduction"
@@ -272,15 +274,16 @@ export function compileGrant(grant: Grant): Rule[] | null {
     case "climb-speed":
     case "burrow-speed": {
       const mode = grant.type.slice(0, -"-speed".length) as MoveMode;
-      return typeof grant.amount === "number"
-        ? [{ op: "max", target: `speed:${mode}`, value: grant.amount }]
-        : [
-            {
+      const speed: Rule =
+        typeof grant.amount === "number"
+          ? { op: "max", target: `speed:${mode}`, value: grant.amount }
+          : {
               op: "max",
               target: `speed:${mode}:walking`,
               value: WALKING_MULTIPLE[grant.amount],
-            },
-          ];
+            };
+      const hovers = grant.type === "fly-speed" && grant.hover === true;
+      return hovers ? [speed, { op: "flag", target: "speed:fly:hover" }] : [speed];
     }
     case "speed-multiplier":
       // A factor below 1 slows (Slow halves): the strongest slow and the strongest

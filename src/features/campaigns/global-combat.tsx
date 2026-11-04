@@ -32,6 +32,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { useLocale } from "@/hooks/useLocale";
 import { localizeSrd } from "@/i18n/resolver";
 import { spellEndEffects } from "@/lib/activities/read";
+import { proneInFlight } from "@/lib/play/flight";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -94,6 +95,11 @@ export function GlobalCombatMount(): null {
   const concentration = useCharacterStore(
     (s) => s.character?.session.concentration ?? ""
   );
+  const openCharacter = useCharacterStore((s) => s.character);
+  const proneAloft = useMemo(
+    () => (openCharacter ? proneInFlight(openCharacter) : false),
+    [openCharacter]
+  );
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
   // The membership listener has delivered at least one snapshot (possibly empty).
   // The party-world lease reconcile waits for it: an unsettled empty list must
@@ -105,6 +111,7 @@ export function GlobalCombatMount(): null {
     sourceId: string;
   } | null>(null);
   const observedTurn = useRef<string | null>(null);
+  const observedProne = useRef<{ characterId: string; prone: boolean } | null>(null);
   const observedRows = useRef<{ scope: string; rows: IncapacitationRow[] } | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
@@ -348,6 +355,20 @@ export function GlobalCombatMount(): null {
     const turnKey = currentTurn.slice(currentTurn.indexOf(":") + 1);
     useCharacterStore.getState().dispatch({ kind: "recover-per-turn-trackers", turnKey });
   }, [status, currentTurn, openCharacterId]);
+
+  // A flyer that can't hover falls when knocked Prone while aloft. The sheet has no
+  // altitude, so the table plays the fall: a notice when Prone lands, never on load.
+  useEffect(() => {
+    if (!openCharacterId) {
+      observedProne.current = null;
+      return;
+    }
+    const previous = observedProne.current;
+    observedProne.current = { characterId: openCharacterId, prone: proneAloft };
+    if (previous?.characterId !== openCharacterId || previous.prone || !proneAloft)
+      return;
+    showToast({ message: t("combat.proneInFlight"), duration: 8000 });
+  }, [openCharacterId, proneAloft, showToast, t]);
 
   // Concentration is character-owned state; standing target effects are campaign-owned.
   // Bridge the two at this existing shell listener only when the OPEN character is the
