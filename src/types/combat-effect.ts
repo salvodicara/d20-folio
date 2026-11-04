@@ -126,6 +126,15 @@ export type CombatEffectOp =
       effectId: string;
       actorId: string;
       targetId: string;
+    }
+  /** The causal inverse of a revoke (an undo): the same occurrence, same id, active
+   *  again, so its identity (stacking, what consumes it, its source) holds. */
+  | {
+      id: string;
+      kind: "reinstate";
+      effectId: string;
+      actorId: string;
+      targetId: string;
     };
 
 export interface EncounterPosition {

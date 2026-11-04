@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
+  reinstatePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
 
@@ -155,5 +156,20 @@ describe("the tray spends it", () => {
         })
       )
     );
+  });
+
+  it("on the v0.26.0 rules, undo reinstates the same occurrence", async () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+    const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "hit", plan);
+    applyTray(offer, [target], [row], [0], t);
+    await vi.waitFor(() => expect(io.revokePersistentCombatEffect).toHaveBeenCalled());
+    useUndoStore.getState().undo();
+    await vi.waitFor(() =>
+      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith(
+        "c1",
+        "guiding-bolt-glimmer-monster-1"
+      )
+    );
+    vi.unstubAllEnvs();
   });
 });

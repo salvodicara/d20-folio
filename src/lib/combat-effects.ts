@@ -607,7 +607,7 @@ interface CombatEffectOccurrenceState {
 }
 
 function operationOwnsOccurrence(
-  operation: Extract<CombatEffectOp, { kind: "revoke" }>,
+  operation: Extract<CombatEffectOp, { kind: "revoke" | "reinstate" }>,
   occurrence: CombatEffectOccurrenceState
 ): boolean {
   return (
@@ -638,14 +638,29 @@ function foldCombatEffectOccurrences(
     }
 
     const current = occurrences.get(operation.effectId);
-    if (!current || !current.active || !operationOwnsOccurrence(operation, current)) {
+    // A revoke ends an active occurrence; a reinstate (its undo) restarts an ended one.
+    const wantsActive = operation.kind === "revoke";
+    if (
+      !current ||
+      current.active !== wantsActive ||
+      !operationOwnsOccurrence(operation, current)
+    ) {
       continue;
     }
     seenOps.add(operation.id);
-    occurrences.set(operation.effectId, { ...current, active: false });
+    occurrences.set(operation.effectId, { ...current, active: !wantsActive });
   }
 
   return [...occurrences.values()];
+}
+
+/** Whether one exact occurrence is active (null: never applied). Independent of
+ *  stacking and expiry: it answers whether a revoke or a reinstate applies. */
+export function effectOccurrenceActive(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  effectId: string
+): boolean | null {
+  return combatEffectOccurrenceState(operations, effectId)?.active ?? null;
 }
 
 /** Current causal state for one exact occurrence, independent of stacking/expiry. */
