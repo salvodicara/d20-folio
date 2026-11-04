@@ -2130,12 +2130,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       activatedByAction: arraySchema(stringSchema),
       /**
        * A state on a target that the next attack spends (edge-case family M17):
-       * any creature's next attack against it (Guiding Bolt, Stunning Strike), or
-       * only the next attack by the creature that put it there (Vex).
+       * any creature's next attack against it (Guiding Bolt, Stunning Strike), only
+       * the next attack by the creature that put it there (Vex), or the next attack
+       * by one of that creature's allies (Help).
        */
       consumedBy: unionSchema([
         literalSchema("next-attack-against"),
         literalSchema("next-attack-by"),
+        literalSchema("next-attack-by-ally"),
       ]),
       /**
        * An equipped magic item's explicit activation contract. Magic items do

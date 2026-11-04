@@ -28,15 +28,15 @@ export const RULE_TARGET_STATES: ReadonlyMap<
     ],
   ],
   [
-    // Help (attack): "the next attack roll by one of your allies against that enemy
-    // has Advantage before the start of your next turn." The ally rides the effect's
-    // `bindings.beneficiaryId`.
+    // Help (attack): "Advantage to the next attack roll by one of your allies against
+    // that enemy. This benefit expires at the start of your next turn." Whichever ally
+    // attacks it first spends it.
     "action-help",
     [
       {
         type: "while-active",
         activeKey: "helped-against",
-        consumedBy: "next-attack-by",
+        consumedBy: "next-attack-by-ally",
         duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
         grants: [{ type: "incoming-attack-advantage" }],
       },

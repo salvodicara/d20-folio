@@ -9,6 +9,7 @@
  * An attack's shared result goes onto the use's own log line, and the turn keeps one
  * outcome receipt per target.
  */
+import { fightSideOf } from "./outcome-offer";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import type { TFunction } from "i18next";
 
@@ -126,7 +127,12 @@ function consumedByAttacks(
   const ids = new Set(
     targets.flatMap((target, index) =>
       rows[index]?.attack
-        ? effectIdsConsumedByAttack(status.encounter.effectOps, target.id, status.myId)
+        ? effectIdsConsumedByAttack(
+            status.encounter.effectOps,
+            target.id,
+            status.myId,
+            fightSideOf(status.view.rows)
+          )
         : []
     )
   );

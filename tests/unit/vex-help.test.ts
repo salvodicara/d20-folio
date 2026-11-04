@@ -12,6 +12,7 @@ vi.mock("@/features/campaigns/campaign-io", () => io);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import {
+  fightSideOf,
   giveHelp,
   helpEffect,
   vexWriter,
@@ -76,15 +77,17 @@ describe("Help", () => {
   const help = helpEffect({
     helper: { kind: "pc", combatantId: "pc-me", memberUid: "me", characterId: "c1" },
     enemy: { kind: "monster", combatantId: "goblin" },
-    allyId: "pc-ally",
     round: 3,
     effectId: "help-1",
   });
   const ops = [op({ id: "op-h", kind: "apply", effect: help })];
 
-  it("is spent by the named ally's next attack, not the helper's", () => {
+  it("is spent by the next attack of any of the helper's allies, not the helper's own", () => {
     expect(effectIdsConsumedByAttack(ops, "goblin", "pc-ally")).toEqual(["help-1"]);
+    expect(effectIdsConsumedByAttack(ops, "goblin", "pc-other")).toEqual(["help-1"]);
     expect(incomingAttackModes(ops, "goblin", "pc-me")).toEqual([]);
+    // Another enemy attacking the goblin gets nothing.
+    expect(incomingAttackModes(ops, "goblin", "orc")).toEqual([]);
     expect(help.duration).toMatchObject({
       combatantId: "pc-me",
       round: 4,
@@ -92,19 +95,31 @@ describe("Help", () => {
     });
   });
 
-  it("giveHelp writes it in a fight on the v0.26.0 rules", async () => {
+  it("an allied summon counts as one of the helper's allies", () => {
+    const sideOf = fightSideOf([
+      { id: "pc-me", kind: "pc" },
+      { id: "wolf", kind: "monster", side: "ally" },
+      { id: "goblin", kind: "monster" },
+    ]);
+    expect(effectIdsConsumedByAttack(ops, "goblin", "wolf", sideOf)).toEqual(["help-1"]);
+  });
+
+  it("giveHelp writes it in a fight on the v0.26.0 rules, and its undo takes it back", async () => {
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
-    expect(giveHelp("goblin", "pc-ally", "c1")).toBe(true);
+    const undo = giveHelp("goblin", "c1");
+    expect(undo).not.toBeNull();
     await vi.waitFor(() =>
       expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
         "c1",
         expect.objectContaining({
           target: { kind: "monster", combatantId: "goblin" },
-          bindings: { beneficiaryId: "pc-ally" },
+          payload: { kind: "grant-group", activeKey: "helped-against" },
         })
       )
     );
+    undo?.();
+    await vi.waitFor(() => expect(io.revokePersistentCombatEffect).toHaveBeenCalled());
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
-    expect(giveHelp("goblin", "pc-ally", "c1")).toBe(false);
+    expect(giveHelp("goblin", "c1")).toBeNull();
   });
 });

@@ -3,6 +3,7 @@
  * from the live encounter by its row, anyone else as a monster by id. Fixed for the
  * tray's life (the targets were picked already).
  */
+import { fightSideOf } from "./outcome-offer";
 import { useMemo } from "react";
 
 import {
@@ -41,14 +42,17 @@ export function useTrayTargets(plan: DamageTrayPlan): TrayTarget[] {
         // An attack's Advantage or Disadvantage from the fight's effects on it.
         const incoming =
           plan.attack && status
-            ? incomingAttackModes(status.encounter.effectOps, id, status.myId).map(
-                (m) => ({
-                  sourceKind: m.effect.source.kind,
-                  sourceId: m.sourceId,
-                  mode: m.mode,
-                  consumed: m.consumed,
-                })
-              )
+            ? incomingAttackModes(
+                status.encounter.effectOps,
+                id,
+                status.myId,
+                fightSideOf(status.view.rows)
+              ).map((m) => ({
+                sourceKind: m.effect.source.kind,
+                sourceId: m.sourceId,
+                mode: m.mode,
+                consumed: m.consumed,
+              }))
             : [];
         return incoming.length > 0 ? { ...target, incoming } : target;
       }),

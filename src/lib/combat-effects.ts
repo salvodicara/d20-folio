@@ -255,20 +255,28 @@ export interface IncomingAttackMode {
  * `attackerId` (Faerie Fire, Guiding Bolt, Stunning Strike's exposed target). Kept
  * separate from the attacker's own roll clauses so Reckless/Faerie Fire can never
  * invert. A state consumed by "the next attack by" its creator counts only for that
- * creator's attack.
+ * creator's attack (Vex); one consumed by "an ally's" next attack, only for another
+ * creature on the creator's side (Help). `sideOf` says a combatant's side (a PC's is
+ * the party's unless the fight says otherwise).
  */
 export function incomingAttackModes(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   targetId: string,
-  attackerId: string
+  attackerId: string,
+  sideOf: (combatantId: string) => "party" | "enemy" = defaultSide
 ): IncomingAttackMode[] {
   return foldCombatEffectOps(operations)
     .filter((effect) => effect.target.combatantId === targetId)
     .flatMap((effect) => {
       const consumedBy = resolveCombatEffectGrantGroup(effect)?.consumedBy;
-      // "By" its creator (Vex), or by the ally it names (Help).
-      const by = effect.bindings?.beneficiaryId ?? effect.actor.combatantId;
-      if (consumedBy === "next-attack-by" && by !== attackerId) return [];
+      const creator = effect.actor.combatantId;
+      if (consumedBy === "next-attack-by" && creator !== attackerId) return [];
+      if (
+        consumedBy === "next-attack-by-ally" &&
+        (attackerId === creator || sideOf(attackerId) !== sideOf(creator))
+      ) {
+        return [];
+      }
       return resolveCombatEffectGrants(effect).flatMap((grant): IncomingAttackMode[] =>
         grant.type === "incoming-attack-advantage" ||
         grant.type === "incoming-attack-disadvantage"
@@ -288,15 +296,21 @@ export function incomingAttackModes(
     });
 }
 
+/** A combatant's side by its id: a PC is the party's, anything else the enemy's. */
+function defaultSide(combatantId: string): "party" | "enemy" {
+  return combatantId.startsWith("pc-") ? "party" : "enemy";
+}
+
 /** The effects an attack against `targetId` by `attackerId` spends. */
 export function effectIdsConsumedByAttack(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   targetId: string,
-  attackerId: string
+  attackerId: string,
+  sideOf?: (combatantId: string) => "party" | "enemy"
 ): string[] {
   return [
     ...new Set(
-      incomingAttackModes(operations, targetId, attackerId)
+      incomingAttackModes(operations, targetId, attackerId, sideOf)
         .filter((m) => m.consumed)
         .map((m) => m.effect.id)
     ),
