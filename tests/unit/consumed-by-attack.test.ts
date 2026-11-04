@@ -3,7 +3,8 @@
  * target that the next attack spends. Guiding Bolt's hit puts one there; Stunning
  * Strike's successful save another; Faerie Fire's lasts.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
@@ -11,6 +12,8 @@ const io = vi.hoisted(() => ({
   reinstatePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+
+beforeAll(loadCampaignIo);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { applyTray } from "@/features/character/center/apply-tray";
@@ -139,22 +142,20 @@ describe("the tray spends it", () => {
   it("an attack, hit or miss, revokes the spent state, and undo brings it back", async () => {
     const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "miss", plan);
     applyTray(offer, [target], [row], [0], t);
-    await vi.waitFor(() =>
-      expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        "guiding-bolt-glimmer-monster-1"
-      )
+    await writesSettled();
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      "guiding-bolt-glimmer-monster-1"
     );
     // Faerie Fire lasts.
     expect(io.revokePersistentCombatEffect).toHaveBeenCalledTimes(1);
     useUndoStore.getState().undo();
-    await vi.waitFor(() =>
-      expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        expect.objectContaining({
-          payload: { kind: "grant-group", activeKey: "guiding-bolt-glimmer" },
-        })
-      )
+    await writesSettled();
+    expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      expect.objectContaining({
+        payload: { kind: "grant-group", activeKey: "guiding-bolt-glimmer" },
+      })
     );
   });
 
@@ -162,13 +163,13 @@ describe("the tray spends it", () => {
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "hit", plan);
     applyTray(offer, [target], [row], [0], t);
-    await vi.waitFor(() => expect(io.revokePersistentCombatEffect).toHaveBeenCalled());
+    await writesSettled();
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalled();
     useUndoStore.getState().undo();
-    await vi.waitFor(() =>
-      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        "guiding-bolt-glimmer-monster-1"
-      )
+    await writesSettled();
+    expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      "guiding-bolt-glimmer-monster-1"
     );
     vi.unstubAllEnvs();
   });

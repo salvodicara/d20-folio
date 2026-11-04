@@ -2,13 +2,16 @@
  * Vex and Help (edge-case M17): a state on the enemy that one creature's next attack
  * spends. Vex: the attacker that hit. Help: the ally the helper named.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+
+beforeAll(loadCampaignIo);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import {
@@ -108,17 +111,17 @@ describe("Help", () => {
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const undo = giveHelp("goblin", "c1");
     expect(undo).not.toBeNull();
-    await vi.waitFor(() =>
-      expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
-        "c1",
-        expect.objectContaining({
-          target: { kind: "monster", combatantId: "goblin" },
-          payload: { kind: "grant-group", activeKey: "helped-against" },
-        })
-      )
+    await writesSettled();
+    expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
+      "c1",
+      expect.objectContaining({
+        target: { kind: "monster", combatantId: "goblin" },
+        payload: { kind: "grant-group", activeKey: "helped-against" },
+      })
     );
     undo?.();
-    await vi.waitFor(() => expect(io.revokePersistentCombatEffect).toHaveBeenCalled());
+    await writesSettled();
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalled();
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
     expect(giveHelp("goblin", "c1")).toBeNull();
   });

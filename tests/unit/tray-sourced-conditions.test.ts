@@ -2,13 +2,16 @@
  * A condition that can end early lands in the fight as a sourced effect, so the
  * fight can end it (edge-case M3): Abjure Foes' Frightened.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+
+beforeAll(loadCampaignIo);
 
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { applyTray } from "@/features/character/center/apply-tray";
@@ -71,9 +74,8 @@ describe("sourced conditions from the tray", () => {
       [0],
       ((k: string) => k) as never
     );
-    await vi.waitFor(() =>
-      expect(io.appendPersistentCombatEffect).toHaveBeenCalledTimes(1)
-    );
+    await writesSettled();
+    expect(io.appendPersistentCombatEffect).toHaveBeenCalledTimes(1);
     expect(io.appendPersistentCombatEffect.mock.calls[0]).toEqual([
       "c1",
       expect.objectContaining({
