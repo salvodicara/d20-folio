@@ -20,6 +20,7 @@ type GrantedActionFacts = Pick<
   | "saveDcAbility"
   | "reactionTrigger"
   | "maxUsesPerTurn"
+  | "effects"
 >;
 
 function activityOf(
@@ -46,7 +47,7 @@ function activityOf(
             : undefined,
         })
       : undefined,
-    effects: [],
+    effects: [...(facts.effects ?? [])],
   });
 }
 
