@@ -522,7 +522,7 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
           on: "repeat-save",
           ability: "CON",
           at: "target-turn-end",
-          track: { successes: 3, failures: 3 },
+          track: { successes: 3, failures: 3, settlesInto: "petrified" },
         },
       ],
       options: ["restrained"],
