@@ -78,7 +78,7 @@ export function RosterScreen() {
         </header>
         {!loading && cards.length === 0 ? (
           <section className="f-roster-empty">
-            <NewTile />
+            <EmptyTiles onCreate={create} onImport={triggerCharacterImport} />
           </section>
         ) : (
           <div className="f-roster-grid">
@@ -104,6 +104,46 @@ export function RosterScreen() {
           onClose={() => setDeleting(null)}
         />
       )}
+    </>
+  );
+}
+
+/** No character yet (prototype chars-empty): guided creation, the quick one, an import. */
+function EmptyTiles({
+  onCreate,
+  onImport,
+}: {
+  onCreate: () => void;
+  onImport: () => void;
+}) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  return (
+    <>
+      <div className="f-tile">
+        <Icon name="g-create" size={48} />
+        <b>{t("palette.actionNewCharacter")}</b>
+        <span>{t("create.screen.subtitle")}</span>
+        <Button kind="primary" onClick={onCreate}>
+          {t("roster.create")}
+        </Button>
+      </div>
+      <div className="f-tile">
+        <Icon name="g-roll" size={48} />
+        <b>{t("create.screen.rapid")}</b>
+        <span>{t("create.screen.rapidSub")}</span>
+        <Button onClick={() => void navigate("/characters/new?rapid=1")}>
+          {t("create.screen.rapidGo")}
+        </Button>
+      </div>
+      <div className="f-tile">
+        <Icon name="g-import" size={48} />
+        <b>{t("roster.emptyImportTitle")}</b>
+        <span>{t("roster.emptyImportSub")}</span>
+        <Button icon="u-download" onClick={onImport}>
+          {t("roster.importJson")}
+        </Button>
+      </div>
     </>
   );
 }

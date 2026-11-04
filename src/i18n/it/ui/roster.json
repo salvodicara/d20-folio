@@ -88,6 +88,8 @@
     "exportFile": "Esporta come file",
     "deleteCharacter": "Elimina personaggio",
     "deleteForever": "Elimina per sempre",
-    "typeName": "Scrivi il nome per confermare"
+    "typeName": "Scrivi il nome per confermare",
+    "emptyImportTitle": "Hai già una scheda?",
+    "emptyImportSub": "Importa un personaggio da un file di Folio."
   }
 }

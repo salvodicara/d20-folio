@@ -9,13 +9,15 @@
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 import {
   backgroundRows,
   classCards,
   creationSummary,
   previewArmorClass,
+  rapidPicksLine,
+  speciesRows,
   signed,
   suggestedBonus,
   suggestedScores,
@@ -32,10 +34,13 @@ import { useCreationDraft } from "@/features/creation/use-creation-draft";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { buildNewCharacter } from "@/lib/creation/build";
+import { rapidDraft } from "@/lib/creation/rapid";
+import type { Locale } from "@/lib/locale";
 import {
   creationFacts,
   missingCreationRequirements,
   speciesStepComplete,
+  type CreationDraft,
 } from "@/lib/creation/draft";
 import { createCharacter } from "@/lib/firestore";
 import { BUILD_ERROR_KEYS } from "@/lib/views/creation-view";
@@ -59,6 +64,9 @@ export function CreationScreen() {
   const facts = creationFacts(draft);
   const summary = creationSummary(draft, facts, locale);
   const [step, setStep] = useState(0);
+  // «Creazione rapida»: class, species and name; Folio picks the rest (`rapidDraft`).
+  const [params, setParams] = useSearchParams();
+  const rapid = params.get("rapid") === "1";
   const user = useAuthStore((s) => s.user);
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
@@ -133,9 +141,9 @@ export function CreationScreen() {
             : t("create.screen.overBudget");
   const last = step === STEPS.length - 1;
   const ready = missingCreationRequirements(draft, facts).length === 0;
-  const create = async () => {
+  const create = async (from = draft) => {
     if (!user || saving) return;
-    const built = buildNewCharacter(draft, { displayName: user.displayName });
+    const built = buildNewCharacter(from, { displayName: user.displayName });
     if (!built.ok) {
       setCreateError(t(BUILD_ERROR_KEYS[built.error]));
       return;
@@ -161,7 +169,11 @@ export function CreationScreen() {
         </span>
       )}
       {last ? (
-        <Button kind="primary" disabled={!ready || saving} onClick={() => void create()}>
+        <Button
+          kind="primary"
+          disabled={!ready || saving}
+          onClick={() => void create(draft)}
+        >
           {saving
             ? t("create.screen.creating")
             : draft.name.trim()
@@ -181,186 +193,315 @@ export function CreationScreen() {
       <main id="main" className="f-page f-create">
         <header className="f-ph">
           <div>
-            <h1>{t("create.screen.title")}</h1>
-            <p>{t("create.screen.subtitle")}</p>
+            <h1>{t(rapid ? "create.screen.rapid" : "create.screen.title")}</h1>
+            <p>{t(rapid ? "create.screen.rapidSub" : "create.screen.subtitle")}</p>
+          </div>
+          <div className="f-ph-acts">
+            <Button
+              kind="ghost"
+              icon={rapid ? "g-create" : "g-roll"}
+              onClick={() => setParams(rapid ? {} : { rapid: "1" })}
+            >
+              {t(rapid ? "create.screen.guided" : "create.screen.rapid")}
+            </Button>
           </div>
         </header>
-        <ol className="f-steps stp" aria-label={t("create.screen.steps")}>
-          {STEPS.map((key, i) => (
-            <li key={key} aria-current={i === step ? "step" : undefined}>
-              <button
-                type="button"
-                disabled={i > step}
-                onClick={() => go(i)}
-                aria-label={`${String(i + 1)}. ${t(key)}`}
+        {rapid ? (
+          <RapidPanel
+            draft={draft}
+            cards={cards}
+            current={card}
+            locale={locale}
+            speciesPicked={speciesPicked}
+            saving={saving}
+            error={createError}
+            onClass={(classId) => dispatch({ type: "selectClass", classId })}
+            onSpecies={(raceId) => {
+              setSpeciesPicked(true);
+              dispatch({ type: "selectRace", raceId });
+            }}
+            onName={(name) => dispatch({ type: "setName", name })}
+            onCreate={() => void create(rapidDraft(draft, draft.classId, draft.raceId))}
+          />
+        ) : (
+          <>
+            <ol className="f-steps stp" aria-label={t("create.screen.steps")}>
+              {STEPS.map((key, i) => (
+                <li key={key} aria-current={i === step ? "step" : undefined}>
+                  <button
+                    type="button"
+                    disabled={i > step}
+                    onClick={() => go(i)}
+                    aria-label={`${String(i + 1)}. ${t(key)}`}
+                  >
+                    <span className="f-step-n">{i + 1}</span>
+                    <span className="f-step-l">{t(key)}</span>
+                  </button>
+                </li>
+              ))}
+              <li className="f-step-of" aria-hidden="true">
+                {t("create.screen.of", { total: STEPS.length })}
+              </li>
+            </ol>
+            <div className="f-create-grid">
+              <Panel
+                color="res"
+                title={t(STEPS[step] ?? STEPS[0])}
+                foot={nav}
+                className="f-create-step"
               >
-                <span className="f-step-n">{i + 1}</span>
-                <span className="f-step-l">{t(key)}</span>
-              </button>
-            </li>
-          ))}
-          <li className="f-step-of" aria-hidden="true">
-            {t("create.screen.of", { total: STEPS.length })}
-          </li>
-        </ol>
-        <div className="f-create-grid">
-          <Panel
-            color="res"
-            title={t(STEPS[step] ?? STEPS[0])}
-            foot={nav}
-            className="f-create-step"
-          >
-            {step === 0 ? (
-              <ClassStep
-                cards={cards}
-                current={card}
-                onPick={(classId) => dispatch({ type: "selectClass", classId })}
-              />
-            ) : step === 1 ? (
-              <div className="f-ask">
-                <Field
-                  label={t("create.screen.searchBackground")}
-                  type="search"
-                  autoComplete="off"
-                  value={bgQuery}
-                  onChange={(e) => setBgQuery(e.target.value)}
-                />
-                <div className="f-choices f-create-list">
-                  {shownBackgrounds.map((bg) => (
-                    <Choice
-                      key={bg.id}
-                      on={bgPicked && draft.backgroundId === bg.id}
-                      onClick={() => {
-                        setBgPicked(true);
-                        dispatch({ type: "selectBackground", backgroundId: bg.id });
-                      }}
-                    >
-                      <span className="f-row-main">
-                        <span className="f-row-t">{bg.name}</span>
-                        <span className="f-row-s">
-                          {[
-                            new Intl.ListFormat(locale, { type: "conjunction" }).format(
-                              bg.skills
-                            ),
-                            t("create.screen.featLine", { feat: bg.feat }),
-                          ].join(" · ")}
-                        </span>
-                      </span>
-                    </Choice>
-                  ))}
-                </div>
-                {background && (
-                  <blockquote className="f-create-pitch">
-                    <b>{background}</b>
-                    <p>{t("create.screen.backgroundHint")}</p>
-                  </blockquote>
+                {step === 0 ? (
+                  <ClassStep
+                    cards={cards}
+                    current={card}
+                    onPick={(classId) => dispatch({ type: "selectClass", classId })}
+                  />
+                ) : step === 1 ? (
+                  <div className="f-ask">
+                    <Field
+                      label={t("create.screen.searchBackground")}
+                      type="search"
+                      autoComplete="off"
+                      value={bgQuery}
+                      onChange={(e) => setBgQuery(e.target.value)}
+                    />
+                    <div className="f-choices f-create-list">
+                      {shownBackgrounds.map((bg) => (
+                        <Choice
+                          key={bg.id}
+                          on={bgPicked && draft.backgroundId === bg.id}
+                          onClick={() => {
+                            setBgPicked(true);
+                            dispatch({ type: "selectBackground", backgroundId: bg.id });
+                          }}
+                        >
+                          <span className="f-row-main">
+                            <span className="f-row-t">{bg.name}</span>
+                            <span className="f-row-s">
+                              {[
+                                new Intl.ListFormat(locale, {
+                                  type: "conjunction",
+                                }).format(bg.skills),
+                                t("create.screen.featLine", { feat: bg.feat }),
+                              ].join(" · ")}
+                            </span>
+                          </span>
+                        </Choice>
+                      ))}
+                    </div>
+                    {background && (
+                      <blockquote className="f-create-pitch">
+                        <b>{background}</b>
+                        <p>{t("create.screen.backgroundHint")}</p>
+                      </blockquote>
+                    )}
+                  </div>
+                ) : step === 2 ? (
+                  <SpeciesStep
+                    draft={draft}
+                    facts={facts}
+                    picked={speciesPicked}
+                    locale={locale}
+                    onPick={(raceId) => {
+                      setSpeciesPicked(true);
+                      dispatch({ type: "selectRace", raceId });
+                    }}
+                    dispatch={dispatch}
+                  />
+                ) : step === 3 ? (
+                  <AbilitiesStep
+                    draft={draft}
+                    facts={facts}
+                    method={method}
+                    className={summary.className}
+                    backgroundName={summary.background ?? ""}
+                    onMethod={(m) => {
+                      setMethod(m);
+                      if (m === "suggested") applySuggested();
+                      else
+                        dispatch({
+                          type: "setUsePointBuy",
+                          usePointBuy: m === "pointBuy",
+                        });
+                    }}
+                    dispatch={dispatch}
+                  />
+                ) : step === 4 ? (
+                  <EquipmentStep
+                    draft={draft}
+                    facts={facts}
+                    locale={locale}
+                    backgroundName={summary.background ?? ""}
+                    dispatch={dispatch}
+                  />
+                ) : (
+                  <ReviewStep
+                    draft={draft}
+                    facts={facts}
+                    locale={locale}
+                    identity={[
+                      `${summary.className} ${String(summary.level)}`,
+                      summary.species,
+                      summary.background ?? "",
+                    ].join(" · ")}
+                    dispatch={dispatch}
+                  />
                 )}
-              </div>
-            ) : step === 2 ? (
-              <SpeciesStep
-                draft={draft}
-                facts={facts}
-                picked={speciesPicked}
-                locale={locale}
-                onPick={(raceId) => {
-                  setSpeciesPicked(true);
-                  dispatch({ type: "selectRace", raceId });
-                }}
-                dispatch={dispatch}
-              />
-            ) : step === 3 ? (
-              <AbilitiesStep
-                draft={draft}
-                facts={facts}
-                method={method}
-                className={summary.className}
-                backgroundName={summary.background ?? ""}
-                onMethod={(m) => {
-                  setMethod(m);
-                  if (m === "suggested") applySuggested();
-                  else
-                    dispatch({ type: "setUsePointBuy", usePointBuy: m === "pointBuy" });
-                }}
-                dispatch={dispatch}
-              />
-            ) : step === 4 ? (
-              <EquipmentStep
-                draft={draft}
-                facts={facts}
-                locale={locale}
-                backgroundName={summary.background ?? ""}
-                dispatch={dispatch}
-              />
-            ) : (
-              <ReviewStep
-                draft={draft}
-                facts={facts}
-                locale={locale}
-                identity={[
-                  `${summary.className} ${String(summary.level)}`,
-                  summary.species,
-                  summary.background ?? "",
-                ].join(" · ")}
-                dispatch={dispatch}
-              />
-            )}
-          </Panel>
-          <Panel
-            color="grp"
-            title={t("create.screen.character")}
-            className="f-create-sum"
-          >
-            <div className="f-create-who">
-              <span className="f-medal medal" aria-hidden="true">
-                {card && <Icon name={card.art.icon} size={56} />}
-              </span>
-              <b>
-                {t("create.screen.classLevel", {
-                  name: summary.className,
-                  level: summary.level,
-                })}
-              </b>
+              </Panel>
+              <Panel
+                color="grp"
+                title={t("create.screen.character")}
+                className="f-create-sum"
+              >
+                <div className="f-create-who">
+                  <span className="f-medal medal" aria-hidden="true">
+                    {card && <Icon name={card.art.icon} size={56} />}
+                  </span>
+                  <b>
+                    {t("create.screen.classLevel", {
+                      name: summary.className,
+                      level: summary.level,
+                    })}
+                  </b>
+                </div>
+                <dl className="f-create-facts">
+                  <div>
+                    <dt className="f-lbl">{t("stats.hitDie")}</dt>
+                    <dd>{summary.hitDie}</dd>
+                  </div>
+                  <div>
+                    <dt className="f-lbl">{t("create.screen.primaryAbility")}</dt>
+                    <dd>{summary.primaryAbility}</dd>
+                  </div>
+                  {summary.armor && (
+                    <div>
+                      <dt className="f-lbl">{t("equipment.armor")}</dt>
+                      <dd>{summary.armor}</dd>
+                    </div>
+                  )}
+                  <div>
+                    <dt className="f-lbl">{t("create.backgroundLabel")}</dt>
+                    <dd>{background ?? "—"}</dd>
+                  </div>
+                  <div>
+                    <dt className="f-lbl">{t("create.speciesLabel")}</dt>
+                    <dd>{speciesPicked ? summary.species : "—"}</dd>
+                  </div>
+                  {step >= 4 && (
+                    <div>
+                      <dt className="f-lbl">{t("character.armorClass")}</dt>
+                      <dd>{previewArmorClass(draft, facts)}</dd>
+                    </div>
+                  )}
+                  {step >= 3 && summary.primaryScore && (
+                    <div>
+                      <dt className="f-lbl">
+                        {t(`abilities.${summary.primaryScore.code}`)}
+                      </dt>
+                      <dd>{`${String(summary.primaryScore.score)} (${signed(summary.primaryScore.mod)})`}</dd>
+                    </div>
+                  )}
+                </dl>
+              </Panel>
             </div>
-            <dl className="f-create-facts">
-              <div>
-                <dt className="f-lbl">{t("stats.hitDie")}</dt>
-                <dd>{summary.hitDie}</dd>
-              </div>
-              <div>
-                <dt className="f-lbl">{t("create.screen.primaryAbility")}</dt>
-                <dd>{summary.primaryAbility}</dd>
-              </div>
-              {summary.armor && (
-                <div>
-                  <dt className="f-lbl">{t("equipment.armor")}</dt>
-                  <dd>{summary.armor}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="f-lbl">{t("create.backgroundLabel")}</dt>
-                <dd>{background ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="f-lbl">{t("create.speciesLabel")}</dt>
-                <dd>{speciesPicked ? summary.species : "—"}</dd>
-              </div>
-              {step >= 4 && (
-                <div>
-                  <dt className="f-lbl">{t("character.armorClass")}</dt>
-                  <dd>{previewArmorClass(draft, facts)}</dd>
-                </div>
-              )}
-              {step >= 3 && summary.primaryScore && (
-                <div>
-                  <dt className="f-lbl">{t(`abilities.${summary.primaryScore.code}`)}</dt>
-                  <dd>{`${String(summary.primaryScore.score)} (${signed(summary.primaryScore.mod)})`}</dd>
-                </div>
-              )}
-            </dl>
-          </Panel>
-        </div>
+          </>
+        )}
       </main>
     </>
+  );
+}
+
+/** «Creazione rapida»: a class card, a species, a name, then «Crea». */
+function RapidPanel({
+  draft,
+  cards,
+  current,
+  locale,
+  speciesPicked,
+  saving,
+  error,
+  onClass,
+  onSpecies,
+  onName,
+  onCreate,
+}: {
+  draft: CreationDraft;
+  cards: ClassCard[];
+  current: ClassCard | undefined;
+  locale: string;
+  speciesPicked: boolean;
+  saving: boolean;
+  error: string | null;
+  onClass: (classId: string) => void;
+  onSpecies: (raceId: string) => void;
+  onName: (name: string) => void;
+  onCreate: () => void;
+}) {
+  const { t } = useTranslation();
+  const species = useMemo(() => speciesRows(locale as Locale), [locale]);
+  const name = draft.name.trim();
+  const ready = speciesPicked && name !== "";
+  return (
+    <Panel
+      color="res"
+      title={t("create.screen.rapid")}
+      className="f-create-rapid"
+      foot={
+        <>
+          {!ready && (
+            <span className="f-help">
+              {t(speciesPicked ? "create.needName" : "create.screen.pickSpecies")}
+            </span>
+          )}
+          {error && (
+            <span className="f-err" role="alert">
+              {error}
+            </span>
+          )}
+          <Button kind="primary" disabled={!ready || saving} onClick={onCreate}>
+            {saving
+              ? t("create.screen.creating")
+              : name
+                ? t("create.screen.createNamed", { name })
+                : t("roster.create")}
+          </Button>
+        </>
+      }
+    >
+      <div className="f-ask">
+        <ClassStep cards={cards} current={current} onPick={onClass} />
+        <div className="f-ask">
+          <span className="f-lbl">{t("create.speciesLabel")}</span>
+          <div className="f-choices f-create-list f-create-two">
+            {species.map((r) => (
+              <Choice
+                key={r.id}
+                on={speciesPicked && draft.raceId === r.id}
+                onClick={() => onSpecies(r.id)}
+              >
+                <span className="f-row-main">
+                  <span className="f-row-t">{r.name}</span>
+                  <span className="f-row-s">{r.traits.join("\u00a0· ")}</span>
+                </span>
+              </Choice>
+            ))}
+          </div>
+        </div>
+        <Field
+          label={t("create.nameLabel")}
+          placeholder={t("create.namePlaceholder")}
+          autoComplete="off"
+          value={draft.name}
+          onChange={(e) => onName(e.target.value)}
+        />
+        {speciesPicked && (
+          <p className="f-help f-rapid-picks">
+            {rapidPicksLine(draft, locale as Locale)}
+          </p>
+        )}
+        <p className="f-help">{t("create.screen.rapidNote")}</p>
+      </div>
+    </Panel>
   );
 }
 

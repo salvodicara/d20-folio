@@ -88,6 +88,8 @@
     "exportFile": "Export as a file",
     "deleteCharacter": "Delete character",
     "deleteForever": "Delete forever",
-    "typeName": "Type the name to confirm"
+    "typeName": "Type the name to confirm",
+    "emptyImportTitle": "Already have a sheet?",
+    "emptyImportSub": "Import a character from a Folio file."
   }
 }

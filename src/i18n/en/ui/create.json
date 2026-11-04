@@ -182,7 +182,12 @@
       "rulesNote": "Everything is checked against the 2024 rules. You can change any of it later, from the sheet.",
       "createNamed": "Create {{name}}",
       "creating": "Creating…",
-      "classChoicesPending": "Finish the class choices to continue."
+      "classChoicesPending": "Finish the class choices to continue.",
+      "rapid": "Quick build",
+      "rapidSub": "Pick a class and a species; Folio does the rest.",
+      "rapidGo": "A character in a minute",
+      "rapidNote": "Folio picks the background, scores, skills, spells and gear the way the class recommends. You can change all of it from the sheet.",
+      "guided": "Guided creation"
     }
   }
 }

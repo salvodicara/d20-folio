@@ -3714,6 +3714,29 @@
 }
 .fui .f-roster-empty {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+/* Quick build on a phone: the species list flows at full height (no scroll box
+   inside the scrolling page), so the name and «Crea» simply follow it. */
+@media (max-width: 640px) {
+  .fui .f-create-rapid .f-create-list {
+    max-height: none;
+    overflow: visible;
+  }
+}
+.fui .f-rapid-picks {
+  color: var(--text);
+}
+.fui .f-roster-empty .f-tile > span {
+  text-align: center;
+  text-wrap: balance;
+  color: var(--muted);
+}
+@media (max-width: 900px) {
+  .fui .f-roster-empty {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .fui .f-ccard-stats .f-lbl {
   letter-spacing: 0.03em;
