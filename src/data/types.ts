@@ -2030,6 +2030,12 @@ export interface SrdClassFeatureData {
   level: number;
   /** The feature transforms the character (Wild Shape): how the form works. */
   formRule?: SelfFormRule;
+  /** States the feature's actions put on a TARGET (Stunning Strike's Speed halved):
+   *  an effect names one by `activeKey`, and the encounter resolves its grants from
+   *  here. Never the owner's own states, so they light nothing on the sheet. */
+  targetStates?: ReadonlyArray<
+    Extract<import("@/lib/grants").Grant, { type: "while-active" }>
+  >;
   /** Mechanical effects (for features with trackers/actions) */
   mechanics?: {
     tracker?: TrackerSpec;

@@ -15,6 +15,8 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { stateEffectsFor } from "@/lib/play/outcome-effects";
+import type { CatalogueEffect } from "@/lib/catalogue-effects";
 import { SUMMON_TIMER_PREFIX } from "@/lib/summon-count";
 import { resolveDice, SCALAR_BINDINGS, type DiceScalar } from "@/lib/scalar";
 import { evaluateIntegerExpression } from "@/lib/integer-expression";
@@ -43,6 +45,7 @@ import {
   grantedActionActivities,
   type Activity,
   type ActivityDice,
+  type ActivityEffect,
   type FeatureOwnerKind,
   isRiderEffect,
   type RiderEffect,
@@ -380,6 +383,11 @@ export interface ResolvedTracker {
 export interface ActionSummary {
   /** Attack bonus: +9 to hit */
   attackBonus?: number;
+  /** What a target's successful save still puts on it, as catalogue states
+   *  (Stunning Strike): the damage tray applies them to a row marked Saved. */
+  saveSuccessEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
+  /** The feature whose `targetStates` hold them. */
+  saveSuccessSourceId?: string;
   /**
    * The generic riders the action's effects carry (push or pull, Speed loss, Hit
    * Point maximum drain, swallow) as display lines, distances in the reader's units;
@@ -5405,6 +5413,15 @@ function featureActivation(grants: ReadonlyArray<Grant> | undefined): FeatureAct
   };
 }
 
+/** An Activity effect the catalogue can author as a target state. */
+function isCatalogueStateEffect(effect: ActivityEffect): effect is CatalogueEffect {
+  return (
+    effect.kind === "speed-zero" ||
+    effect.kind === "speed-halved" ||
+    effect.kind === "next-attack-advantage"
+  );
+}
+
 /** Apply every target-facing capability a feature/homebrew action declares,
  * read from its Activity. All source kinds use this one projection. */
 function applyActionEffectSummary(
@@ -5462,6 +5479,14 @@ function applyActionEffectSummary(
   if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
   const riders = activity.effects.filter(isRiderEffect);
   if (riders.length > 0) summary.effectRiders = riders;
+  const onSave = stateEffectsFor(
+    activity.effects.filter(isCatalogueStateEffect),
+    "save-success"
+  );
+  if (onSave.length > 0) {
+    summary.saveSuccessEffects = onSave;
+    summary.saveSuccessSourceId = sourceId;
+  }
   if (heals.some((effect) => effect.fromPool)) summary.poolSpendEffect = "healing";
   if (activity.skill) summary.skillCheck = activity.skill;
   const removals = effectsOfKind(activity, "end-condition");

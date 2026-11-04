@@ -25,6 +25,9 @@ export interface DamageTrayOffer {
   /** What a hit puts on its target beyond damage (a companion's Web Bolt: Speed 0),
    *  as persistent combat effects the apply writes to the encounter, undoable. */
   onHit?: (targetId: string) => ActiveCombatEffect[];
+  /** What a target's successful save still puts on it (Stunning Strike: Speed
+   *  halved, attacks against it with Advantage), written the same way. */
+  onSaved?: (targetId: string) => ActiveCombatEffect[];
 }
 
 interface DamageTrayStore {

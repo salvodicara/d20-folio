@@ -421,17 +421,34 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
               kind: "speed-halved",
               saveOutcome: "success",
               until: { phase: "turn-start", anchor: "actor" },
+              activeKey: "monk-stunning-strike-slowed",
             },
             {
               kind: "next-attack-advantage",
               against: "target",
               saveOutcome: "success",
               until: { phase: "turn-start", anchor: "actor" },
+              activeKey: "monk-stunning-strike-exposed",
             },
           ],
         },
       ],
     },
+    // The states a successful save still puts on the target, written to the fight
+    // by the damage tray. "The next attack roll" is approximated as every attack
+    // against it until then: no attack consumes an effect yet.
+    targetStates: [
+      {
+        type: "while-active",
+        activeKey: "monk-stunning-strike-slowed",
+        grants: [{ type: "speed-multiplier", factor: 0.5 }],
+      },
+      {
+        type: "while-active",
+        activeKey: "monk-stunning-strike-exposed",
+        grants: [{ type: "incoming-attack-advantage" }],
+      },
+    ],
     source: "SRD",
   },
   {
