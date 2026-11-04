@@ -17,11 +17,13 @@ import spellsEn from "@/i18n/en/srd/spells.json";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { aggregateAbilityScores } from "@/lib/compute";
 import { deriveJumps } from "@/lib/jump";
+import { resolveActions } from "@/lib/smart-tracker";
 import { srdText } from "@/lib/loc-text";
 import { breakdownTotal, type RawBreakdownPart } from "@/lib/value-breakdown";
 import type { CharacterDoc } from "@/types/character";
 
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function jumpsOf(doc: CharacterDoc) {
   const agg = aggregateCharacterGrants(doc.character, doc.session);
@@ -178,5 +180,92 @@ describe("a 30-ft leap for 10 ft of movement, once per turn", () => {
 
   it("nothing else grants one", () => {
     expect(jumpsOf(makeCharacterDoc()).leap).toBeNull();
+  });
+});
+
+describe("jump bonuses and multipliers (Duskling, Peerless Athlete, Step of the Wind)", () => {
+  const withGrants = (grants: unknown[], session = {}) =>
+    makeCharacterDoc(
+      {
+        abilityScores: scores(15),
+        features: [
+          {
+            custom: true,
+            title: "Leaper",
+            emoji: "🦘",
+            source: "Homebrew",
+            tags: [],
+            contentBlocks: [],
+            grants: grants as never,
+            instanceId: customInstanceId("Leaper"),
+          },
+        ],
+      },
+      session
+    );
+
+  it("Enhanced Jump: +10 ft to a running Long Jump, +2 ft to a running High Jump", () => {
+    const jumps = jumpsOf(
+      withGrants([{ type: "jump-bonus", longFt: 10, highFt: 2, runningOnly: true }])
+    );
+    expect([jumps.long, jumps.high]).toEqual([25, 7]);
+    // From a standstill: half the plain distances, the running bonus left out.
+    expect([jumps.standingLong, jumps.standingHigh]).toEqual([7.5, 2.5]);
+    expect(breakdownTotal(jumps.longParts)).toBe(25);
+    expect(breakdownTotal(jumps.highParts)).toBe(7);
+  });
+
+  it("Peerless Athlete: Long and High Jump distances increase by 10 feet", () => {
+    const jumps = jumpsOf(withGrants([{ type: "jump-bonus", longFt: 10, highFt: 10 }]));
+    expect([jumps.long, jumps.high]).toEqual([25, 15]);
+    expect([jumps.standingLong, jumps.standingHigh]).toEqual([17.5, 12.5]);
+  });
+
+  it("a doubled jump doubles every distance, bonuses included", () => {
+    const jumps = jumpsOf(
+      withGrants([
+        { type: "jump-multiplier", factor: 2 },
+        { type: "jump-bonus", longFt: 10, highFt: 2, runningOnly: true },
+      ])
+    );
+    expect([jumps.long, jumps.high]).toEqual([50, 14]);
+    expect([jumps.standingLong, jumps.standingHigh]).toEqual([15, 5]);
+    expect(breakdownTotal(jumps.longParts)).toBe(50);
+    expect(breakdownTotal(jumps.highParts)).toBe(14);
+  });
+
+  it("Step of the Wind with Focus doubles the jump for the turn", () => {
+    expect(classFeaturesEn["monk-step-of-the-wind"].description).toContain(
+      "your jump distance is doubled for the turn"
+    );
+    const monk = (active: string[]) =>
+      makeCharacterDoc(
+        {
+          classId: "monk",
+          level: 2,
+          abilityScores: scores(15),
+          features: [{ srdId: "monk-step-of-the-wind" }],
+        },
+        { activeFeatures: active }
+      );
+    expect(jumpsOf(monk([])).long).toBe(15);
+    const doubled = jumpsOf(monk(["monk-step-of-the-wind"]));
+    expect([doubled.long, doubled.high]).toEqual([30, 10]);
+  });
+
+  it("only the Focus version of Step of the Wind enters the doubled state", () => {
+    const doc = makeCharacterDoc({
+      classId: "monk",
+      level: 2,
+      abilityScores: scores(15),
+      features: [{ srdId: "monk-step-of-the-wind" }],
+    });
+    const rows = resolveActions(doc).filter((a) =>
+      a.id.startsWith("monk-step-of-the-wind")
+    );
+    expect(rows.map((a) => [a.id, a.activatesKey])).toEqual([
+      ["monk-step-of-the-wind-bonus", undefined],
+      ["monk-step-of-the-wind-focused", "monk-step-of-the-wind"],
+    ]);
   });
 });

@@ -450,6 +450,21 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     movementCostFt: numberSchema,
     type: literalSchema("jump-leap"),
   }),
+  /** Feet added to the Long and High Jump (Peerless Athlete: 10 and 10); with
+   *  `runningOnly`, to the running-start jumps alone (Duskling's Enhanced Jump). */
+  "jump-bonus": objectSchema(
+    {
+      highFt: numberSchema,
+      longFt: numberSchema,
+      type: literalSchema("jump-bonus"),
+    },
+    { runningOnly: literalSchema(true) }
+  ),
+  /** Every jump distance multiplied (Step of the Wind: doubled for the turn). */
+  "jump-multiplier": objectSchema({
+    factor: numberSchema,
+    type: literalSchema("jump-multiplier"),
+  }),
   "ac-bonus": objectSchema(
     {
       type: literalSchema("ac-bonus"),
@@ -2090,6 +2105,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
        * Smite" (Smite of Protection). Read by `statesActivatedByCast`.
        */
       activatedByCast: arraySchema(stringSchema),
+      /**
+       * The ids of the feature's own action rows that enter this state; absent,
+       * every action of the feature does (Rage). Step of the Wind: only the Focus
+       * version doubles the jump.
+       */
+      activatedByAction: arraySchema(stringSchema),
       /**
        * An equipped magic item's explicit activation contract. Magic items do
        * not own `mechanics.actions`, so this is the one declarative bridge that

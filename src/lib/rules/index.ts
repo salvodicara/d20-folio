@@ -78,6 +78,13 @@ export type RuleTarget =
   /** A once-per-turn leap's distance, and the movement it costs. */
   | "jump:leap"
   | "jump:leap-cost"
+  /** Feet added to every Long / High Jump, and to the running-start ones only. */
+  | "jump:long"
+  | "jump:high"
+  | "jump:run-long"
+  | "jump:run-high"
+  /** The largest jump-distance multiplier (Step of the Wind: 2). */
+  | "jump:multiplier"
   | `prof:save:${string}`
   | `prof:skill:${string}`
   | `prof:expertise:${string}`
@@ -292,6 +299,18 @@ export function compileGrant(grant: Grant): Rule[] | null {
         { op: "max", target: "jump:leap", value: grant.distanceFt },
         { op: "min", target: "jump:leap-cost", value: grant.movementCostFt },
       ];
+    case "jump-bonus":
+      return grant.runningOnly
+        ? [
+            { op: "add", target: "jump:run-long", value: grant.longFt },
+            { op: "add", target: "jump:run-high", value: grant.highFt },
+          ]
+        : [
+            { op: "add", target: "jump:long", value: grant.longFt },
+            { op: "add", target: "jump:high", value: grant.highFt },
+          ];
+    case "jump-multiplier":
+      return [{ op: "max", target: "jump:multiplier", value: grant.factor }];
     case "save-proficiency":
       return [{ op: "flag", target: `prof:save:${grant.ability}` }];
     case "skill-proficiency":

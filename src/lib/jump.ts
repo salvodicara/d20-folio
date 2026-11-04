@@ -5,7 +5,9 @@
  * standstill, half. A `jump-ability` grant lets another ability stand in (Second-Story
  * Work: Dexterity, when it is the better one); a `jump-leap` grant is the separate
  * once-per-turn leap (Jump, Boots of Striding and Springing: 30 ft for 10 ft of
- * movement). Every number is the sum of its breakdown parts.
+ * movement). `jump-bonus` adds feet (to the running start only, or to every jump),
+ * and `jump-multiplier` multiplies the whole (Step of the Wind). Every number is the
+ * sum of its breakdown parts.
  */
 import type { AbilityCode } from "@/data/types";
 import type { AggregatedGrants } from "@/lib/grants";
@@ -81,8 +83,45 @@ export function deriveJumps(
   const highParts =
     pins?.high !== undefined ? withOverride(computedHigh, pins.high) : computedHigh;
 
-  const long = breakdownTotal(longParts);
-  const high = breakdownTotal(highParts);
+  // Bonuses (every jump, or the running start's only) and a multiplier on the whole.
+  const bonusParts = (target: Parameters<typeof ruleParts>[1]): RawBreakdownPart[] =>
+    ruleParts(agg.ruleOrigins, target).map(({ source, value }) =>
+      source
+        ? locPart(srdText(source.kind as SrdKind, source.key, "name"), value)
+        : termPart("breakdown.featureBonus", value)
+    );
+  const factor = Math.max(1, ruleValue(agg.values, "jump:multiplier") ?? 1);
+  const factorSource = ruleParts(agg.ruleOrigins, "jump:multiplier")[0]?.source;
+  const multiplied = (parts: RawBreakdownPart[]): RawBreakdownPart[] => {
+    const extra = breakdownTotal(parts) * (factor - 1);
+    if (extra === 0) return parts;
+    return [
+      ...parts,
+      factorSource
+        ? locPart(srdText(factorSource.kind as SrdKind, factorSource.key, "name"), extra)
+        : termPart("breakdown.featureBonus", extra),
+    ];
+  };
+  const longAll = bonusParts("jump:long");
+  const highAll = bonusParts("jump:high");
+  const runningLong =
+    pins?.long !== undefined
+      ? longParts
+      : multiplied([...longParts, ...longAll, ...bonusParts("jump:run-long")]);
+  const runningHigh =
+    pins?.high !== undefined
+      ? highParts
+      : multiplied([...highParts, ...highAll, ...bonusParts("jump:run-high")]);
+  const long = breakdownTotal(runningLong);
+  const high = breakdownTotal(runningHigh);
+  // From a standstill: half the plain distance, plus the bonuses that are not the
+  // running start's, all multiplied.
+  const standing = (
+    pinned: boolean,
+    plain: RawBreakdownPart[],
+    all: RawBreakdownPart[],
+    run: number
+  ) => (pinned ? run / 2 : (breakdownTotal(plain) / 2 + breakdownTotal(all)) * factor);
 
   const distanceFt = ruleValue(agg.values, "jump:leap");
   const leapSource = ruleParts(agg.ruleOrigins, "jump:leap")[0]?.source;
@@ -105,10 +144,10 @@ export function deriveJumps(
   return {
     long,
     high,
-    longParts,
-    highParts,
-    standingLong: long / 2,
-    standingHigh: high / 2,
+    longParts: runningLong,
+    highParts: runningHigh,
+    standingLong: standing(pins?.long !== undefined, longParts, longAll, long),
+    standingHigh: standing(pins?.high !== undefined, highParts, highAll, high),
     leap,
   };
 }
