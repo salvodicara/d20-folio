@@ -15,6 +15,7 @@ import {
   backgroundRows,
   classCards,
   creationSummary,
+  previewArmorClass,
   signed,
   suggestedBonus,
   suggestedScores,
@@ -343,7 +344,7 @@ export function CreationScreen() {
               {step >= 4 && (
                 <div>
                   <dt className="f-lbl">{t("character.armorClass")}</dt>
-                  <dd>{facts.armorClass}</dd>
+                  <dd>{previewArmorClass(draft, facts)}</dd>
                 </div>
               )}
               {step >= 3 && summary.primaryScore && (

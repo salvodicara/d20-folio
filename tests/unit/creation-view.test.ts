@@ -198,7 +198,10 @@ describe("creationReview", () => {
     const facts = creationFacts(draft);
     const review = creationReview(draft, facts, "en");
     expect(review.hp).toBe(facts.maxHp);
-    expect(review.ac).toBe(facts.armorClass);
+    // Option A's Chain Shirt (13 + DEX, max 2) and Shield (+2), worn from the start.
+    expect(review.ac).toBe(
+      13 + Math.min(2, Math.floor((draft.abilityScores.DEX - 10) / 2)) + 2
+    );
     expect(review.subclassLevel).toBe(3);
     expect(review.cantrips).toHaveLength(facts.cantripsNeeded);
     expect(review.cantrips).toContain("Guidance");

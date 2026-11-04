@@ -14,6 +14,7 @@ import {
   abilityTiles,
   choiceSlotRows,
   creationReview,
+  previewArmorClass,
   signed,
   speciesRows,
   toggleChoicePick,
@@ -447,7 +448,7 @@ export function EquipmentStep({
         (label) => dispatch({ type: "setBackgroundEquipment", label })
       )}
       <blockquote className="f-create-pitch">
-        <b>{t("create.screen.acTitle", { ac: facts.armorClass })}</b>
+        <b>{t("create.screen.acTitle", { ac: previewArmorClass(draft, facts) })}</b>
         <p>{t("create.screen.acHint")}</p>
       </blockquote>
     </div>

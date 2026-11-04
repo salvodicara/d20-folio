@@ -26,6 +26,7 @@ import { spellPickVM } from "@/lib/views/spell-pick-view";
 import { spellName } from "@/lib/views/level-up-view";
 import { ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
 import { formatSpeed } from "@/lib/utils";
+import { buildNewCharacter } from "@/lib/creation/build";
 
 /** A class card's art: one kind for every class at a time. */
 export type ClassArt = { kind: "glyph"; icon: IconName };
@@ -333,6 +334,18 @@ export function toggleChoicePick(
   return { ...picks, [row.kind]: { ...picks[row.kind], [row.slotId]: next } };
 }
 
+/**
+ * The Armor Class the new character will have: the build's own (its starting
+ * armor worn, a shield, grants), read before it has a name.
+ */
+export function previewArmorClass(draft: CreationDraft, facts: CreationFacts): number {
+  const built = buildNewCharacter(
+    { ...draft, name: draft.name.trim() || "—" },
+    { displayName: null }
+  );
+  return built.ok ? built.payload.character.ac : facts.armorClass;
+}
+
 /** The Riepilogo's rows: what the character is made of, every name localized. */
 export interface CreationReview {
   hp: number;
@@ -365,7 +378,7 @@ export function creationReview(
   const hasSubclasses = (facts.classTable?.subclasses.length ?? 0) > 0;
   return {
     hp: facts.maxHp,
-    ac: facts.armorClass,
+    ac: previewArmorClass(draft, facts),
     speed: formatSpeed(String(facts.raceData?.speed ?? 30), locale),
     subclassLevel: hasSubclasses && !facts.subclassDue ? facts.subclassLevel : null,
     cantrips: draft.cantrips.map((id) => spellName(id, locale)),
