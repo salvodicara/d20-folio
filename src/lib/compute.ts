@@ -2010,6 +2010,8 @@ export interface ResolvedCompanionAttack {
   reachFt: number;
   /** `true` for a ranged attack → the view labels the distance "range". */
   ranged: boolean;
+  /** Extra damage an unlocked upgrade adds (Bestial Fury), beside the main type. */
+  extraDamage?: ReadonlyArray<{ dice: string; damageType: DamageType }>;
 }
 
 /** A fully resolved companion stat block (AC/HP from level/ability, defenses,
@@ -2126,7 +2128,9 @@ export function resolveCompanion(
   abilityScores: Record<AbilityCode, number>,
   pbOverride?: number | null,
   spellAttackMod?: number,
-  spell?: { castLevel?: number; ownerMaxHp?: number; spellMod?: number }
+  spell?: { castLevel?: number; ownerMaxHp?: number; spellMod?: number },
+  /** The owner's held Concentration, for an upgrade that reads it (Bestial Fury). */
+  owner?: { concentration?: string }
 ): ResolvedCompanion {
   const baseLevel = block.spellLevel?.base;
   const castLevel =
@@ -2202,6 +2206,14 @@ export function resolveCompanion(
       const mod = abilityModifier(abilityScores[atk.addAbility]);
       damageDice += mod >= 0 ? ` + ${mod}` : ` - ${Math.abs(mod)}`;
     }
+    const extraDamage = (block.upgrades ?? []).flatMap((u) => {
+      const rider = u.attackRider;
+      if (!rider || level < u.minLevel || rider.attackId !== atk.id) return [];
+      if (rider.whileConcentrating && owner?.concentration !== rider.whileConcentrating) {
+        return [];
+      }
+      return [{ dice: rider.dice, damageType: rider.damageType }];
+    });
     return {
       id: atk.id,
       attackBonus,
@@ -2209,6 +2221,7 @@ export function resolveCompanion(
       damageType: atk.damageType,
       reachFt: atk.reachFt ?? 5,
       ranged: atk.ranged ?? false,
+      ...(extraDamage.length > 0 ? { extraDamage } : {}),
     };
   });
 
