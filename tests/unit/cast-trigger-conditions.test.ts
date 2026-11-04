@@ -13,7 +13,8 @@ import type { CharacterDoc, CustomFeature } from "@/types/character";
 
 import { customInstanceId } from "./__helpers__/custom-items";
 
-const withRule = (grant: Grant, used = 0): CharacterDoc => {
+const withRule = (grant: Grant, used = 0, total?: string): CharacterDoc => {
+  const id = customInstanceId("rule");
   const feature: CustomFeature = {
     custom: true,
     title: "Rule",
@@ -22,7 +23,10 @@ const withRule = (grant: Grant, used = 0): CharacterDoc => {
     tags: [],
     contentBlocks: [],
     grants: [grant],
-    instanceId: customInstanceId("rule"),
+    instanceId: id,
+    ...(total
+      ? { trackers: [{ id, label: "Rule", total, recovery: "long-rest" as const }] }
+      : {}),
   };
   return {
     ...MOCK_CHARACTER,
@@ -72,6 +76,12 @@ describe("cast-spell trigger conditions", () => {
     const rule = spend({ slot: true }, { max: 1, per: "turn" });
     expect(fires(withRule(rule), "magic-missile", 1)).toBe(1);
     expect(fires(withRule(rule, 1), "magic-missile", 1)).toBe(0);
+  });
+
+  it("a limit with no max allows as many as the source's tracker holds (PB 4)", () => {
+    const rule = spend({ cantrip: true }, { per: "long-rest" });
+    expect(fires(withRule(rule, 3, "PB"), "fire-bolt", null)).toBe(1);
+    expect(fires(withRule(rule, 4, "PB"), "fire-bolt", null)).toBe(0);
   });
 
   it("the homebrew schema keeps the new conditions and rejects a bad damage type", () => {
