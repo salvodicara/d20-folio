@@ -9937,6 +9937,25 @@ export interface TriggerFacts {
   /** cast-spell: the spell's school, and whether it was cast with a slot. */
   school?: string;
   slot?: boolean;
+  /** cast-spell: the spell cast, whether it is a cantrip, and its damage type. */
+  spellId?: string;
+  cantrip?: boolean;
+  damageType?: string;
+}
+
+/** The facts a spell's cast gives its `cast-spell` trigger rules. */
+export function castTriggerFacts(
+  spellId: string | undefined,
+  slotLevel: number | null
+): TriggerFacts {
+  const spell = spellId ? spellIndex.get(spellId) : undefined;
+  return {
+    school: spell?.school,
+    slot: slotLevel !== null,
+    ...(spellId ? { spellId } : {}),
+    cantrip: spell?.level === 0,
+    ...(spell?.damageType ? { damageType: spell.damageType } : {}),
+  };
 }
 
 /** Whether a rule's `if` holds for these facts: every field it names must match a fact
@@ -9947,6 +9966,11 @@ function triggerHolds(rule: TriggerRule, facts: TriggerFacts): boolean {
   if (when.target === "marked" && facts.targetMarked !== true) return false;
   if (when.school !== undefined && facts.school !== when.school) return false;
   if (when.slot === true && facts.slot !== true) return false;
+  if (when.cantrip === true && facts.cantrip !== true) return false;
+  if (when.spellId !== undefined && facts.spellId !== when.spellId) return false;
+  if (when.damageType !== undefined && facts.damageType !== when.damageType) {
+    return false;
+  }
   return true;
 }
 
@@ -9958,17 +9982,22 @@ function triggerHolds(rule: TriggerRule, facts: TriggerFacts): boolean {
  */
 export function firedCastTriggers(
   character: CharacterDoc,
-  facts: { school?: string; slot: boolean }
+  facts: TriggerFacts
 ): {
   used: Map<string, number>;
   limited: string[];
-  hitPointDice: Array<{ sourceId: string; rule: HitPointDiceRule }>;
+  /** `limited`: the rule counts its uses on its source's tracker (once per turn). */
+  hitPointDice: Array<{ sourceId: string; rule: HitPointDiceRule; limited: boolean }>;
 } {
   const restores = firedTriggerRestores(character, "cast-spell", facts);
   const hitPointDice = aggregateForCharacter(character).triggers.flatMap((rule) => {
     if (rule.on !== "cast-spell" || rule.do.kind !== "hit-point-dice") return [];
     if (!triggerHolds(rule, facts)) return [];
-    return [{ sourceId: rule.sourceId, rule: rule.do }];
+    const spent = character.session.trackers[rule.sourceId]?.used ?? 0;
+    if (rule.limit && spent >= rule.limit.max) return [];
+    return [
+      { sourceId: rule.sourceId, rule: rule.do, limited: rule.limit !== undefined },
+    ];
   });
   return { ...restores, hitPointDice };
 }

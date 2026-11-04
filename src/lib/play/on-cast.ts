@@ -10,8 +10,11 @@ import {
 } from "@/lib/on-cast-effects";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { resolveGrantActiveKey, type WhileActiveDuration } from "@/lib/grants";
-import { firedCastTriggers, resolveLifecycleGrantSources } from "@/lib/smart-tracker";
-import { getSpellById } from "@/data/spells";
+import {
+  castTriggerFacts,
+  firedCastTriggers,
+  resolveLifecycleGrantSources,
+} from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatEvent } from "@/types/combat-log";
 import {
@@ -53,9 +56,10 @@ export function onCastRegains(
   }
   // The cast's trigger rules (M8): Divination Adept, the Enchanter's Instinctive
   // Charm regain their uses when a spell of their school is cast with a slot.
-  const school = spellId ? getSpellById(spellId)?.school : undefined;
-  for (const [trackerId, nextUsed] of firedCastTriggers(doc, { school, slot: true })
-    .used) {
+  for (const [trackerId, nextUsed] of firedCastTriggers(
+    doc,
+    castTriggerFacts(spellId, slotLevel)
+  ).used) {
     const amount = (doc.session.trackers[trackerId]?.used ?? 0) - nextUsed;
     if (amount <= 0 || regains.some((r) => isTrackerRefund(r, trackerId))) continue;
     regains.push({

@@ -716,6 +716,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           school: stringSchema,
           /** cast-spell: a spell cast with a slot (not a cantrip). */
           slot: literalSchema(true),
+          /** cast-spell: a cantrip. */
+          cantrip: literalSchema(true),
+          /** cast-spell: this spell (one a feat grants). */
+          spellId: stringSchema,
+          /** cast-spell: a spell that deals this damage type. */
+          damageType: DAMAGE_TYPE_SCHEMA,
           /** reduced-to-zero: the creature is the one your effect marks. */
           target: literalSchema("marked"),
         }

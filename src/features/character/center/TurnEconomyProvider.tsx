@@ -24,7 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
-import { firedCastTriggers } from "@/lib/smart-tracker";
+import { castTriggerFacts, firedCastTriggers } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
@@ -544,7 +544,7 @@ export function TurnEconomyProvider({
   const [mixing, setMixing] = useState<LocText[] | null>(null);
   // Hit Point Dice a cast lets the player spend (Necromancy Adept), asked in turn.
   const [hitDiceOffers, setHitDiceOffers] = useState<
-    Array<{ source: LocText; offer: HitPointDiceOffer }>
+    Array<{ source: LocText; offer: HitPointDiceOffer; limitedBy?: string }>
   >([]);
 
   const [freeCastFromListRequest, setFreeCastFromListRequest] = useState<{
@@ -1569,7 +1569,11 @@ export function TurnEconomyProvider({
    * Checked against the live pool, so a redo can't overspend; one undo.
    */
   function spendOfferedHitDice(
-    { source, offer }: { source: LocText; offer: HitPointDiceOffer },
+    {
+      source,
+      offer,
+      limitedBy,
+    }: { source: LocText; offer: HitPointDiceOffer; limitedBy?: string },
     count: number,
     rolled: number
   ) {
@@ -1590,6 +1594,8 @@ export function TurnEconomyProvider({
         if (!doc || hitPointDiceContext(doc).available < count) return null;
         const used = doc.session.hitDice.used;
         cs.updateSession({ hitDice: { used: used + count } });
+        // A rule with a limit (once per turn) counts this use on its source.
+        if (limitedBy) cs.useTracker(limitedBy, 1);
         const undoGain =
           offer.into === "healing"
             ? cs.applyHealing(amount)
@@ -1598,7 +1604,9 @@ export function TurnEconomyProvider({
               : null;
         return () => {
           undoGain?.();
-          useCharacterStore.getState().updateSession({ hitDice: { used } });
+          const live = useCharacterStore.getState();
+          if (limitedBy) live.restoreTracker(limitedBy, 1);
+          live.updateSession({ hitDice: { used } });
         };
       },
       { turnScoped: false }
@@ -1618,29 +1626,30 @@ export function TurnEconomyProvider({
     // A cast trigger that lets the caster spend Hit Point Dice (Necromancy Adept):
     // a screen that draws its own questions asks how many and the rolled total;
     // the old sheet shows a notice.
-    if (slotLevel !== null) {
-      const spell = spellId ? getSpellById(spellId) : undefined;
-      const facts = { school: spell?.school, slot: true };
-      const ctx = hitPointDiceContext(cs.character, {
-        slotLevel,
-        spellLevel: spell?.level ?? slotLevel,
-      });
-      for (const fired of firedCastTriggers(cs.character, facts).hitPointDice) {
-        const source = featureNameLoc(fired.sourceId);
-        const offer = hitPointDiceSpend(fired.rule, ctx);
-        if (!offer) continue;
-        if (!renderPrompts) {
-          setHitDiceOffers((now) => [...now, { source, offer }]);
-          continue;
-        }
-        showToast({
-          message: t("combat.castHitPointDice", {
-            source: localizeText(source, locale),
-            max: offer.max,
-          }),
-          duration: 8000,
-        });
+    const spell = spellId ? getSpellById(spellId) : undefined;
+    const ctx = hitPointDiceContext(
+      cs.character,
+      slotLevel !== null
+        ? { slotLevel, spellLevel: spell?.level ?? slotLevel }
+        : undefined
+    );
+    const facts = castTriggerFacts(spellId, slotLevel);
+    for (const fired of firedCastTriggers(cs.character, facts).hitPointDice) {
+      const source = featureNameLoc(fired.sourceId);
+      const offer = hitPointDiceSpend(fired.rule, ctx);
+      if (!offer) continue;
+      if (!renderPrompts) {
+        const limitedBy = fired.limited ? fired.sourceId : undefined;
+        setHitDiceOffers((now) => [...now, { source, offer, limitedBy }]);
+        continue;
       }
+      showToast({
+        message: t("combat.castHitPointDice", {
+          source: localizeText(source, locale),
+          max: offer.max,
+        }),
+        duration: 8000,
+      });
     }
     const regains = onCastRegains(cs.character, spellId, slotLevel);
     const refunds = regains.map((regain) => regain.refund);
