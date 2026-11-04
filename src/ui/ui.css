@@ -3321,3 +3321,21 @@
     letter-spacing: 0.04em;
   }
 }
+/* the zones on the field (M9), under the initiative: a rule, then one line each */
+.fui .f-zones {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line-soft);
+}
+.fui .f-zones > h3 {
+  margin: 0;
+}
+.fui .f-zones > .f-help {
+  margin: 0;
+}
+.fui .f-zone {
+  display: grid;
+  gap: 4px;
+}
