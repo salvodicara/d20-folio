@@ -1283,6 +1283,19 @@ function endUnheldItemStates(get: () => CharacterState): void {
   persistCombat(get);
 }
 
+/** Whether an equipment row is the one a consumable cost names: a custom item by
+ *  `custom-<instanceId>`, one physical copy by its `instanceId`, a Spell Scroll by
+ *  `spell-scroll#<spell>`, any other item by its SRD id. */
+function equipmentKeyMatches(
+  ref: CharacterDoc["character"]["equipment"][number],
+  key: string
+): boolean {
+  if ("custom" in ref) return `custom-${ref.instanceId}` === key;
+  if (ref.instanceId !== undefined && ref.instanceId === key) return true;
+  if (ref.scrollSpell) return `${ref.srdId}#${ref.scrollSpell}` === key;
+  return ref.srdId === key;
+}
+
 export const useCharacterStore = create<CharacterState>()((set, get) => ({
   character: null,
   loading: false,
@@ -2101,9 +2114,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!character) return null;
     const equipment = [...character.character.equipment];
     const index = equipment.findIndex(
-      (ref) =>
-        ("custom" in ref ? `custom-${ref.instanceId}` : ref.srdId) === equipmentKey &&
-        (ref.quantity ?? 1) > 0
+      (ref) => equipmentKeyMatches(ref, equipmentKey) && (ref.quantity ?? 1) > 0
     );
     const original = equipment[index];
     if (!original) return null;
