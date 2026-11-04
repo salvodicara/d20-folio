@@ -60,6 +60,7 @@ import {
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
+import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
 import { addMonster, setHp } from "@/features/campaigns/encounter";
@@ -806,5 +807,24 @@ describe("GlobalCombatMount — the campaign's table rules", () => {
     expect(useCharacterStore.getState().character?.session).not.toHaveProperty(
       "tableRules"
     );
+  });
+});
+
+describe("GlobalCombatMount — a sheet opened by URL (deep link)", () => {
+  it("reads the attached campaign by subscription, never from the hub's store", () => {
+    useCampaignStore.setState({ campaign: null });
+    useCharacterStore.getState().setCharacter({ ...MOCK_CHARACTER, id: "char-1" });
+    mount();
+    const campaign = campWithEnc("c1", "char-1", 500);
+    act(() =>
+      h.state.campaignsCb?.([
+        { ...campaign, tableRules: { potions: { drink: "action" } } },
+      ])
+    );
+    expect(useCampaignStore.getState().campaign).toBeNull();
+    expect(
+      useCharacterStore.getState().character?.session.tableRules?.potions.drink
+    ).toBe("action");
+    expect(useCombatStatusStore.getState().pip).not.toBeNull();
   });
 });
