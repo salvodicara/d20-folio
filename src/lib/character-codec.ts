@@ -361,6 +361,7 @@ const SRD_WEAPON_KEYS = [
   "attackBonusOverride",
   "damageOverride",
   "enchantItemId",
+  "attuned",
   "overrides",
 ] as const;
 
@@ -387,6 +388,8 @@ function parseSrdWeaponRef(obj: Record<string, unknown>, path: string): SrdWeapo
     );
   if (obj.enchantItemId !== undefined)
     ref.enchantItemId = opt(obj.enchantItemId, isString, `${path}.enchantItemId`);
+  if (obj.attuned !== undefined)
+    ref.attuned = opt(obj.attuned, isBool, `${path}.attuned`);
   if (obj.overrides !== undefined)
     ref.overrides = opt(obj.overrides, isRecord, `${path}.overrides`);
   const unknown = leftover(obj, SRD_WEAPON_KEYS);

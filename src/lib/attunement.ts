@@ -9,7 +9,12 @@
  * true`), never from the ref's shape, is golden rule 6: a Brooch of Shielding
  * gates identically however it was stored, and the sheet/engine can't disagree.
  */
-import type { SrdEquipmentRef, CustomEquipment, CustomWeapon } from "@/types/character";
+import type {
+  SrdEquipmentRef,
+  CustomEquipment,
+  CustomWeapon,
+  SrdWeaponRef,
+} from "@/types/character";
 import { getMagicItem } from "@/data/magic-items";
 import { homebrewItemMechanics } from "@/lib/homebrew-items";
 
@@ -37,4 +42,19 @@ export function requiresAttunement(ref: EquipRef): boolean {
  */
 export function attunementSatisfied(ref: EquipRef): boolean {
   return !requiresAttunement(ref) || ref.attuned === true;
+}
+
+/** Whether a catalogue weapon's bound enchant requires attunement (a Flame Tongue). */
+export function weaponRequiresAttunement(ref: SrdWeaponRef): boolean {
+  return (
+    ref.enchantItemId !== undefined &&
+    getMagicItem(ref.enchantItemId)?.attunement === true
+  );
+}
+
+/** Whether a catalogue weapon's enchant applies: no attunement needed, or attuned. An
+ *  enchant bound before the sheet tracked attunement (`attuned` absent) still applies,
+ *  as it always played. */
+export function weaponAttunementSatisfied(ref: SrdWeaponRef): boolean {
+  return !weaponRequiresAttunement(ref) || ref.attuned !== false;
 }
