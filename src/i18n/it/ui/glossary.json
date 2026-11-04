@@ -43,7 +43,7 @@
       "feat": "Un talento speciale che dà al tuo personaggio una marcia in più oltre i privilegi di classe. I talenti d'origine vengono dal background; ai livelli successivi puoi prenderne uno al posto di un aumento di caratteristica.",
       "multiclass": "Prendere il prossimo livello in una classe diversa da quella attuale. Mantieni tutto ciò che hai già; i livelli di tutte le tue classi si sommano nel tuo totale.",
       "weaponSimple": "Un'arma facile da usare senza un addestramento particolare: randelli, pugnali, lance. Quasi tutte le classi hanno competenza in tutte le armi semplici.",
-      "weaponMartial": "Un'arma che richiede un vero addestramento al combattimento: spade, asce, archi. Hanno competenza nelle armi marziali soprattutto le classi guerriere.",
+      "weaponMartial": "Un'arma che richiede un vero addestramento al combattimento: spade, asce, archi. Hanno competenza nelle armi da guerra soprattutto le classi guerriere.",
       "weaponFinesse": "Attacca con Forza o Destrezza, a tua scelta: la stessa caratteristica vale sia per il tiro per colpire sia per i danni.",
       "weaponLight": "Abbastanza piccola per combattere con due armi: dopo aver attaccato con un'arma Leggera, puoi fare un attacco extra come Azione Bonus con un'altra arma Leggera, senza sommare il modificatore di caratteristica ai danni.",
       "weaponHeavy": "Fatta per mani robuste: hai Svantaggio ai tiri per colpire se la tua Forza è inferiore a 13 (mischia) o la tua Destrezza è inferiore a 13 (distanza).",

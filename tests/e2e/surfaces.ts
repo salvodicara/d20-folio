@@ -796,7 +796,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     prepare: async (page) => {
       // The maneuver-Fighter has SEVERAL re-pick groups (maneuvers + weapon
       // mastery), each with its own re-pick trigger — so scope to the Weapon
-      // Mastery section by its heading ("Padronanza Armi" / "Weapon Mastery")
+      // Mastery section by its heading ("Padronanza d'Armi" / "Weapon Mastery")
       // and click the trigger inside THAT section's card, not just any. The
       // trigger reads "Choose"/"Scegli" while the group is EMPTY (the scenario
       // starts unchosen) and "Change"/"Modifica" once picks exist — match both,
@@ -804,7 +804,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       const rePickCta = /modifica|change|scegli|choose/i;
       const section = page
         .locator("div", {
-          has: page.getByRole("heading", { name: /padronanza armi|weapon mastery/i }),
+          has: page.getByRole("heading", { name: /padronanza d'armi|weapon mastery/i }),
         })
         .filter({ has: page.getByRole("button", { name: rePickCta }) })
         .last();

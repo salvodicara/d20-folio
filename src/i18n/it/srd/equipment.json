@@ -290,7 +290,7 @@
     "name": "Simbolo Sacro"
   },
   "holy-water": {
-    "description": "Quando compi l'azione di Attacco, puoi sostituire uno dei tuoi attacchi lanciando un fiasco di Acqua Santa a una creatura entro 6 metri. Il bersaglio deve superare un tiro salvezza su Destrezza (CD 8 + mod DES + BC) o subire 2d8 danni Radianti se è un Immondo o un Non Morto.",
+    "description": "Quando compi l'azione di Attacco, puoi sostituire uno dei tuoi attacchi lanciando un fiasco di Acqua Santa a una creatura entro 6 metri. Il bersaglio deve superare un tiro salvezza su Destrezza (CD 8 + mod DES + BC) o subire 2d8 danni Radiosi se è un Immondo o un Non Morto.",
     "name": "Acqua Santa"
   },
   "horn": {
@@ -534,7 +534,7 @@
     "description": "Scaglie metalliche sovrapposte coprono una veste di cuoio, bilanciando una solida protezione con peso e rumore."
   },
   "scholars-pack": {
-    "description": "Contiene: Zaino, Libro, Inchiostro, Penna, Lampada, 10 fiasche di Olio, 10 fogli di Pergamena e Acciarino.",
+    "description": "Contiene: Zaino, Libro, Inchiostro, Pennino, Lampada, 10 fiasche di Olio, 10 fogli di Pergamena e Acciarino.",
     "name": "Dotazione da Studioso"
   },
   "scimitar": {

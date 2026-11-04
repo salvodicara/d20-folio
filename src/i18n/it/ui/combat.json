@@ -14,8 +14,8 @@
       "swallowDamage": "{{dice}} all'inizio di ogni turno di chi lo ha inghiottito"
     },
     "title": "Combattimento",
-    "scrollCheck": "Da una Pergamena, oltre i livelli che sai lanciare: fai una prova con la caratteristica da incantatore, CD {{dc}}. La pergamena si consuma comunque.",
-    "scrollCast": "Da una Pergamena: niente slot né componenti materiali; la pergamena si consuma.",
+    "scrollCheck": "Da una Pergamena Magica, oltre i livelli che sai lanciare: fai una prova con la caratteristica da incantatore, CD {{dc}}. La pergamena si consuma comunque.",
+    "scrollCast": "Da una Pergamena Magica: niente slot né componenti materiali; la pergamena si consuma.",
     "spellEndFalls": "Fine di {{spell}}: chi è ancora in aria cade, se non vola in altro modo.",
     "proneInFlight": "Prono in volo: se sei in aria, cadi.",
     "markCanMove": "{{source}}: il bersaglio è sceso a 0 PF. In un turno successivo, un'Azione Bonus lo sposta su un'altra creatura.",
@@ -554,7 +554,7 @@
         "piercing": "Danni Perforanti",
         "poison": "Danni da Veleno",
         "psychic": "Danni Psichici",
-        "radiant": "Danni Radianti",
+        "radiant": "Danni Radiosi",
         "slashing": "Danni Taglienti",
         "thunder": "Danni da Tuono"
       },
