@@ -237,6 +237,11 @@ export function resolveConditionEffects(
   const autoFailSenseChecks = new Set<ConditionSense>();
   const advantages: AdvantageClause[] = [];
   const disadvantages: AdvantageClause[] = [];
+  // What the conditions already say about the facts: a Blinded creature sees no
+  // source (a caller who knows its Blindsight passes `seesSource` from `canSee`).
+  const known: ConditionFacts = {
+    seesSource: facts.seesSource ?? (active.includes("blinded") ? false : undefined),
+  };
   let speedZero = false;
   let breaksConcentration = false;
   let cantHarmSource = false;
@@ -254,7 +259,7 @@ export function resolveConditionEffects(
     if (gate.sourceSocialAdvantage) sourceSocialAdvantage = true;
     // A condition whose roll effects need a fact that doesn't hold (Frightened with
     // its source out of sight) imposes none of them.
-    const holds = (gate.suppressedUnless ?? []).every((fact) => FACT_HOLDS[fact](facts));
+    const holds = (gate.suppressedUnless ?? []).every((fact) => FACT_HOLDS[fact](known));
     for (const a of holds ? (gate.advantages ?? []) : []) {
       advantages.push({
         sourceId: id,
