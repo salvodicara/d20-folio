@@ -416,6 +416,38 @@ export type ActivityEffect =
        *  `giant-insect-web-bolt`), so the reader never guesses the key. */
       activeKey?: string;
     })
+  /** The target gains `levels` Exhaustion, never past `upTo` from this source
+   *  (Waves of Exhaustion: 4); `endsWithSpell`: the levels it gave go when the spell
+   *  ends. */
+  | (EffectBase & {
+      kind: "exhaustion";
+      levels: number;
+      upTo?: number;
+      endsWithSpell?: true;
+    })
+  /** The target subtracts `dice` from its damage rolls, until a turn boundary
+   *  (Grave Ground: until the end of the target's next turn). */
+  | (EffectBase & {
+      kind: "damage-roll-penalty";
+      dice: string;
+      until?: { phase: "turn-start" | "turn-end"; anchor: "actor" | "target" };
+    })
+  /** The creature may roll up to `max` (+ `perUpcast` per slot level above the
+   *  spell's) of its unexpended Hit Point Dice and regain their total plus `bonus`
+   *  (the slot's level, or the caster's spellcasting modifier); the dice are spent. */
+  | (EffectBase & {
+      kind: "hit-point-dice";
+      max: number;
+      perUpcast?: number;
+      bonus?: "slot-level" | "spellcasting-mod";
+    })
+  /** One spell on the target ends: any of level `autoMaxLevel` or lower (+
+   *  `perUpcast` per slot level above the spell's); a higher one needs a
+   *  spellcasting ability check, DC 10 + its level (Dispel Magic). */
+  | (EffectBase & { kind: "dispel"; autoMaxLevel: number; perUpcast?: number })
+  /** The user moves up to `fraction` of its Speed (Instinctive Pounce: half), with
+   *  no Opportunity Attacks when `noOpportunityAttacks` (Tactical Shift). */
+  | (EffectBase & { kind: "self-move"; fraction: number; noOpportunityAttacks?: true })
   /** The target is pushed away from or pulled toward the user, up to `feet`: a
    *  fact the table plays on the map (a monster's shove, a Telekinetic push). */
   | (EffectBase & { kind: "forced-movement"; direction: "push" | "pull"; feet: number })

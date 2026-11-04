@@ -563,6 +563,39 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
     },
   },
   "speed-zero": { action: { ...base, locksMovement: true } },
+  exhaustion: {
+    action: {
+      ...base,
+      effects: [{ kind: "exhaustion", levels: 1, upTo: 4, endsWithSpell: true }],
+    },
+  },
+  "damage-roll-penalty": {
+    action: {
+      ...base,
+      effects: [
+        {
+          kind: "damage-roll-penalty",
+          dice: "1d6",
+          until: { anchor: "target", phase: "turn-end" },
+        },
+      ],
+    },
+  },
+  "hit-point-dice": {
+    action: {
+      ...base,
+      effects: [{ kind: "hit-point-dice", max: 1, bonus: "spellcasting-mod" }],
+    },
+  },
+  dispel: {
+    action: { ...base, effects: [{ kind: "dispel", autoMaxLevel: 3, perUpcast: 1 }] },
+  },
+  "self-move": {
+    action: {
+      ...base,
+      effects: [{ kind: "self-move", fraction: 0.5, noOpportunityAttacks: true }],
+    },
+  },
   revive: { action: { ...base, revives: { hitPoints: 1 } } },
   "hp-threshold": {
     action: { ...base, hitPointThreshold: { max: 100, atOrBelow: "dies" } },

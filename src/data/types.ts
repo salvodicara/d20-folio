@@ -863,8 +863,14 @@ export type CombatConditionLifetime =
 export type ConditionEnd =
   /** It ends when the target takes any damage (Knock Out, Abjure Foes, Sleep). */
   | { on: "target-damaged" }
-  /** The target repeats the save at the end of each of its turns. */
-  | { on: "repeat-save"; ability: AbilityCode; at: "target-turn-end" }
+  /** The target repeats the save at the end of each of its turns; each failure
+   *  applies `onFailedRepeatSave` (Vision of Elapsing Eons: 1 Exhaustion level). */
+  | {
+      on: "repeat-save";
+      ability: AbilityCode;
+      at: "target-turn-end";
+      onFailedRepeatSave?: ReadonlyArray<CatalogueEffect>;
+    }
   /** It ends when the one who applied it has the Incapacitated condition (a grapple). */
   | { on: "actor-incapacitated" };
 

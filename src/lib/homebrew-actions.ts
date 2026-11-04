@@ -83,11 +83,14 @@ const CONDITION_LIFETIME = unionSchema([
 /** An early end of a condition (`ConditionEnd`, data/types). */
 const CONDITION_END = unionSchema([
   objectSchema({ on: literalSchema("target-damaged") }),
-  objectSchema({
-    on: literalSchema("repeat-save"),
-    ability: ABILITY,
-    at: literalSchema("target-turn-end"),
-  }),
+  objectSchema(
+    {
+      on: literalSchema("repeat-save"),
+      ability: ABILITY,
+      at: literalSchema("target-turn-end"),
+    },
+    { onFailedRepeatSave: CATALOGUE_EFFECTS_SCHEMA }
+  ),
   objectSchema({ on: literalSchema("actor-incapacitated") }),
 ]);
 

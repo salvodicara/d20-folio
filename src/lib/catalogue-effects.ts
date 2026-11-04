@@ -1,6 +1,7 @@
 /**
  * The effects the catalogue authors itself (edge-case M12): an end hook (Fly's fall),
- * a save-success rider (Stunning Strike), a slot recovery. Every other effect is
+ * a save-success rider (Stunning Strike), a slot recovery, capped Exhaustion, a
+ * damage-roll penalty, spending Hit Point Dice, a dispel, a move of the user's own. Every other effect is
  * still derived from the flat fields; these are the kinds that have none. One exact
  * schema, so a catalogue entry and a homebrew one conform the same way.
  */
@@ -32,7 +33,12 @@ export type CatalogueEffect = Extract<
       | "speed-halved"
       | "speed-zero"
       | "next-attack-advantage"
-      | "recover-slots";
+      | "recover-slots"
+      | "exhaustion"
+      | "damage-roll-penalty"
+      | "hit-point-dice"
+      | "dispel"
+      | "self-move";
   }
 >;
 
@@ -76,6 +82,30 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   "next-attack-advantage": objectSchema(
     { kind: literalSchema("next-attack-advantage") },
     { ...BASE, against: literalSchema("target"), until: UNTIL }
+  ),
+  exhaustion: objectSchema(
+    { kind: literalSchema("exhaustion"), levels: numberSchema },
+    { ...BASE, upTo: numberSchema, endsWithSpell: literalSchema(true) }
+  ),
+  "damage-roll-penalty": objectSchema(
+    { kind: literalSchema("damage-roll-penalty"), dice: stringSchema },
+    { ...BASE, until: UNTIL }
+  ),
+  "hit-point-dice": objectSchema(
+    { kind: literalSchema("hit-point-dice"), max: numberSchema },
+    {
+      ...BASE,
+      perUpcast: numberSchema,
+      bonus: literals(["slot-level", "spellcasting-mod"]),
+    }
+  ),
+  dispel: objectSchema(
+    { kind: literalSchema("dispel"), autoMaxLevel: numberSchema },
+    { ...BASE, perUpcast: numberSchema }
+  ),
+  "self-move": objectSchema(
+    { kind: literalSchema("self-move"), fraction: numberSchema },
+    { ...BASE, noOpportunityAttacks: literalSchema(true) }
   ),
   "recover-slots": objectSchema(
     { kind: literalSchema("recover-slots") },
