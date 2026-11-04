@@ -323,7 +323,7 @@ export function GlobalCombatMount(): null {
       message: t("combat.ammoRecoverable", { count: pieces }),
       duration: 30000,
       action: {
-        label: t("combat.ammoRecover"),
+        label: t("common.recover"),
         run: () => {
           registerUndoableToast(
             { message: t("combat.ammoRecovered", { count: pieces }) },

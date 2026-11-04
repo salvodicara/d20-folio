@@ -107,7 +107,7 @@ export function ArcaneRecoveryModal({
           disabled={!chosenAny}
           onClick={() => onConfirm(pick.slotLevels)}
         >
-          {t("combat.arcaneRecoveryConfirm")}
+          {t("common.recover")}
         </Button>
       </ModalFoot>
     </ModalShell>

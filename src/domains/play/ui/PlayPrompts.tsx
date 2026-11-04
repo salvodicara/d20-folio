@@ -672,7 +672,7 @@ function ArcaneStep({ prompt }: { prompt: Prompts["arcane-recovery"] }) {
             disabled={pick.slotLevels.length === 0}
             onClick={() => prompt.onConfirm(pick.slotLevels)}
           >
-            {t("combat.arcaneRecoveryConfirm")}
+            {t("common.recover")}
           </Button>
         </>
       }
