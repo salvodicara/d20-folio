@@ -19,7 +19,7 @@
     "spellEndFalls": "Fine di {{spell}}: chi è ancora in aria cade, se non vola in altro modo.",
     "proneInFlight": "Prono in volo: se sei in aria, cadi.",
     "markCanMove": "{{source}}: il bersaglio è sceso a 0 PF. In un turno successivo, un'Azione Bonus lo sposta su un'altra creatura.",
-    "repeatSaveDue": "Fine del turno di {{target}}: un TS su {{ability}} riuscito pone fine a {{condition}}.",
+    "repeatSaveDue": "Fine del turno di {{target}}: se il TS su {{ability}} riesce, {{condition}} termina.",
     "repeatSaveSucceeded": "Riuscito: termina",
     "counteredToast": "Contrastato: {{name}} · slot di {{level}}° livello ripreso",
     "counteredAria": "Contrastato: {{name}}. Riprendi lo slot di {{level}}° livello",
