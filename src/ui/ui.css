@@ -3858,3 +3858,184 @@
   display: grid;
   gap: 8px;
 }
+
+/* «Nuovo personaggio» (approved prototypes create-1…6): the step rail, the step
+   beside the «Personaggio» summary, the class cards with their medallions. */
+.fui .f-steps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin: 24px 0;
+  padding: 0;
+  list-style: none;
+}
+.fui .f-steps button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.fui .f-steps button:disabled {
+  cursor: default;
+}
+.fui .f-steps [aria-current="step"] button {
+  color: var(--strong);
+}
+.fui .f-step-n {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+}
+.fui .f-steps [aria-current="step"] .f-step-n {
+  border-color: var(--gold);
+  background: var(--gold);
+  color: var(--bg);
+}
+/* the connector rule between two steps */
+.fui .f-steps li + li:not(.f-step-of)::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  margin-right: 16px;
+  vertical-align: middle;
+  background: var(--line-strong);
+}
+.fui .f-steps li {
+  display: inline-flex;
+  align-items: center;
+}
+.fui .f-steps .f-step-of {
+  display: none;
+  color: var(--muted);
+}
+.fui .f-create-grid {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.fui .f-create-sum {
+  order: -1;
+}
+.fui .f-class-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
+  gap: 12px;
+}
+.fui .f-class-card {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 16px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel-2);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.fui .f-class-card:hover {
+  background: var(--hover);
+}
+.fui .f-class-card[aria-pressed="true"] {
+  border-color: var(--gold);
+  color: var(--strong);
+}
+.fui .f-class-name {
+  font-weight: 700;
+}
+.fui .f-medal {
+  display: inline-grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border: 1px solid var(--gold-line);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--raised), var(--sunk));
+  color: var(--gold-hi);
+}
+.fui .f-medal .f-ic {
+  width: 55%;
+  height: 55%;
+}
+.fui .f-create-who .f-medal {
+  width: 112px;
+  height: 112px;
+}
+/* a long list (the pack's backgrounds) scrolls in place: the step's buttons stay near */
+.fui .f-create-list {
+  display: flex;
+  flex-direction: column;
+  max-height: min(480px, 60vh);
+  overflow: auto;
+}
+.fui .f-create-list > * {
+  flex: none;
+}
+.fui .f-create-list .f-row-main {
+  flex: 1;
+  min-width: 0;
+}
+/* the choice explained, as a quote with a gold rule (no box inside the panel) */
+.fui .f-create-pitch {
+  display: grid;
+  gap: 4px;
+  margin: 16px 0 0;
+  padding: 8px 0 8px 16px;
+  border-left: 2px solid var(--text);
+}
+.fui .f-create-pitch > b {
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-create-pitch > p {
+  margin: 0;
+}
+.fui .f-create-who {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-soft);
+  text-align: center;
+}
+.fui .f-create-facts {
+  display: grid;
+  margin: 0;
+}
+.fui .f-create-facts > div {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-create-facts dd {
+  margin: 0;
+  text-wrap: balance;
+}
+@media (max-width: 800px) {
+  .fui .f-create-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-create-sum {
+    order: 0;
+  }
+  .fui .f-steps li:not([aria-current="step"]):not(.f-step-of) {
+    display: none;
+  }
+  .fui .f-steps .f-step-of {
+    display: inline-flex;
+  }
+}

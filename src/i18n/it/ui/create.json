@@ -37,7 +37,7 @@
     "tip_barbarian": "Semplice e potente. Basta Ira e attaccare. Difesa Senza Armatura = buona CA senza armatura.",
     "tip_rogue": "Attacco Furtivo fa male a ogni colpo. Azione Scaltra dona Scatto/Disimpegno come azione bonus ogni turno.",
     "tip_wizard": "Enorme lista di incantesimi ma slot limitati. Richiede Intelligenza. Prepara incantesimi diversi ogni giorno.",
-    "tip_cleric": "Cura gli alleati e combatte. Scegli un Dominio al livello 1: cambia completamente il tuo stile di gioco.",
+    "tip_cleric": "Cura gli alleati e combatte. Al livello 3 sceglie un Dominio, che cambia il suo stile di gioco.",
     "tip_bard": "Tuttofare. Ispirazione Bardica aiuta gli alleati. Eccellente nelle abilità e negli incontri sociali.",
     "tip_druid": "Forma Selvatica al livello 2. Potente ma complesso: una forma animale diversa per ogni situazione.",
     "tip_paladin": "Usa gli slot per Punizione Divina e picchi di danno enormi. Imposizione delle Mani è una riserva di cura affidabile.",
@@ -123,6 +123,41 @@
     "rebuildConfirm": "Ricostruisci",
     "rerollTitle": "Sorteggiare di nuovo?",
     "rerollMessage": "Le tue modifiche saranno sostituite da un nuovo sorteggio. Il nome resta.",
-    "rerollConfirm": "Sorteggia"
+    "rerollConfirm": "Sorteggia",
+    "screen": {
+      "title": "Nuovo personaggio",
+      "subtitle": "Sei passi guidati, ogni scelta spiegata.",
+      "steps": "Passi della creazione",
+      "of": "di {{total}}",
+      "featLine": "talento {{feat}}",
+      "backgroundHint": "Il background decide due abilità, un talento d'origine e +2/+1 a tre caratteristiche.",
+      "soon": "Questo passo arriva nella prossima versione della nuova creazione.",
+      "character": "Personaggio",
+      "classLevel": "{{name}}, livello {{level}}",
+      "primaryAbility": "Caratteristica principale",
+      "searchBackground": "Cerca un background",
+      "goodIf": {
+        "artificer": "Buono se ti piace inventare e sostenere il gruppo.",
+        "barbarian": "Buono se vuoi stare in prima linea e incassare.",
+        "bard": "Buono se vuoi fare un po' di tutto, parlando e ispirando.",
+        "cleric": "Buono se vuoi aiutare gli altri.",
+        "druid": "Buono se ami la natura e le trasformazioni.",
+        "fighter": "Buono se è la tua prima partita.",
+        "monk": "Buono se vuoi muoverti veloce e colpire a mani nude.",
+        "paladin": "Buono se vuoi proteggere gli altri e colpire forte.",
+        "ranger": "Buono se preferisci combattere a distanza ed esplorare.",
+        "rogue": "Buono se ti piace agire nell'ombra e colpire al momento giusto.",
+        "sorcerer": "Buono se vuoi una magia potente e istintiva.",
+        "warlock": "Buono se vuoi un patto misterioso e un trucchetto affidabile.",
+        "wizard": "Buono se ti piace studiare e avere sempre l'incantesimo giusto."
+      },
+      "armorShort": {
+        "light-armor": "leggere",
+        "medium-armor": "medie",
+        "heavy-armor": "pesanti",
+        "shields": "scudi"
+      },
+      "pickBackground": "Scegli un background per andare avanti."
+    }
   }
 }
