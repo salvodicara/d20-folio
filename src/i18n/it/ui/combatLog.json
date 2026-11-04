@@ -37,6 +37,8 @@
     "checkFailure": "fallimento",
     "withOutcome": "{{line}}: {{outcome}}",
     "givenTempHp": "Dati {{amount}} PF temporanei a {{target}}",
+    "givenNonLethal": "Non letale: {{target}}, {{amount}} danni",
+    "knockedOut": "Messo KO: {{target}}",
     "givenKilled": "{{target}} muore",
     "givenCondition": "{{target}} ha fallito il TS: {{condition}}",
     "unknownEvent": "Voce registrata da una versione più nuova dell'app",

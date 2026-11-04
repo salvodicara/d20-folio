@@ -423,6 +423,11 @@ export function localizeCombatEvent(
       });
     case "effect-given":
       if (event.killed) return t("combatLog.givenKilled", { target: event.targetName });
+      if (event.knockOut && event.effect === "damage")
+        return t("combatLog.givenNonLethal", {
+          target: event.targetName,
+          amount: event.amount ?? 0,
+        });
       return event.effect === "condition"
         ? t("combatLog.givenCondition", {
             target: event.targetName,
