@@ -127,6 +127,15 @@ const RosterScreen = NEW_UI
     )
   : null;
 
+// The new creation («Nuovo personaggio») replaces the wizard in the same build.
+const CreationScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/creation/ui/CreationScreen").then((m) => ({
+        default: m.CreationScreen,
+      }))
+    )
+  : null;
+
 // The new UI's frame, mounted only around the screens already rebuilt (same flag).
 const NewAppShell = NEW_UI
   ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
@@ -222,6 +231,9 @@ const router = createBrowserRouter(
                 <Route path="/characters/:characterId" element={<PlayScreen />} />
               )}
               {RosterScreen && <Route path="/characters" element={<RosterScreen />} />}
+              {CreationScreen && (
+                <Route path="/characters/new" element={<CreationScreen />} />
+              )}
             </Route>
           </Route>
         )}

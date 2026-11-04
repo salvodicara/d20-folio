@@ -37,7 +37,7 @@
     "tip_barbarian": "Simple and powerful. Just Rage and attack. Unarmored Defense = good AC without armor.",
     "tip_rogue": "Sneak Attack makes every hit hurt. Cunning Action gives bonus Dash/Disengage every turn.",
     "tip_wizard": "Huge spell list but limited slots. Needs Intelligence. Prepare different spells each day.",
-    "tip_cleric": "Heals allies and fights. Choose a Domain at level 1; it completely changes your playstyle.",
+    "tip_cleric": "Heals allies and fights. At level 3 they choose a Domain, which shapes their playstyle.",
     "tip_bard": "Jack of all trades. Bardic Inspiration helps allies. Great at skills and social encounters.",
     "tip_druid": "Wild Shape at level 2. Powerful but complex: a different animal form for every situation.",
     "tip_paladin": "Smite with spell slots for huge burst damage. Lay on Hands is a reliable heal pool.",
@@ -123,6 +123,19 @@
     "rebuildConfirm": "Rebuild",
     "rerollTitle": "Reroll this build?",
     "rerollMessage": "Your tweaks will be replaced by a fresh draw. Your name stays.",
-    "rerollConfirm": "Reroll"
+    "rerollConfirm": "Reroll",
+    "screen": {
+      "title": "New character",
+      "subtitle": "Six guided steps, every choice explained.",
+      "steps": "Creation steps",
+      "of": "of {{total}}",
+      "featLine": "{{feat}} feat",
+      "backgroundHint": "The background sets two skills, an origin feat and +2/+1 to three abilities.",
+      "soon": "This step comes in the next version of the new creation.",
+      "character": "Character",
+      "classLevel": "{{name}}, level {{level}}",
+      "primaryAbility": "Primary ability",
+      "searchBackground": "Search backgrounds"
+    }
   }
 }

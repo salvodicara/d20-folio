@@ -37,7 +37,7 @@
     "tip_barbarian": "Semplice e potente. Basta Ira e attaccare. Difesa Senza Armatura = buona CA senza armatura.",
     "tip_rogue": "Attacco Furtivo fa male a ogni colpo. Azione Scaltra dona Scatto/Disimpegno come azione bonus ogni turno.",
     "tip_wizard": "Enorme lista di incantesimi ma slot limitati. Richiede Intelligenza. Prepara incantesimi diversi ogni giorno.",
-    "tip_cleric": "Cura gli alleati e combatte. Scegli un Dominio al livello 1: cambia completamente il tuo stile di gioco.",
+    "tip_cleric": "Cura gli alleati e combatte. Al livello 3 sceglie un Dominio, che cambia il suo stile di gioco.",
     "tip_bard": "Tuttofare. Ispirazione Bardica aiuta gli alleati. Eccellente nelle abilità e negli incontri sociali.",
     "tip_druid": "Forma Selvatica al livello 2. Potente ma complesso: una forma animale diversa per ogni situazione.",
     "tip_paladin": "Usa gli slot per Punizione Divina e picchi di danno enormi. Imposizione delle Mani è una riserva di cura affidabile.",
@@ -123,6 +123,19 @@
     "rebuildConfirm": "Ricostruisci",
     "rerollTitle": "Sorteggiare di nuovo?",
     "rerollMessage": "Le tue modifiche saranno sostituite da un nuovo sorteggio. Il nome resta.",
-    "rerollConfirm": "Sorteggia"
+    "rerollConfirm": "Sorteggia",
+    "screen": {
+      "title": "Nuovo personaggio",
+      "subtitle": "Sei passi guidati, ogni scelta spiegata.",
+      "steps": "Passi della creazione",
+      "of": "di {{total}}",
+      "featLine": "talento {{feat}}",
+      "backgroundHint": "Il background decide due abilità, un talento d'origine e +2/+1 a tre caratteristiche.",
+      "soon": "Questo passo arriva nella prossima versione della nuova creazione.",
+      "character": "Personaggio",
+      "classLevel": "{{name}}, livello {{level}}",
+      "primaryAbility": "Caratteristica principale",
+      "searchBackground": "Cerca un background"
+    }
   }
 }
