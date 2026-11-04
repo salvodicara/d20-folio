@@ -20,8 +20,7 @@ import {
   injectExpandedSpells,
 } from "@/lib/expanded-spells";
 import { effectiveAC } from "@/lib/aggregate-character";
-import { applyExpertisePicks } from "@/lib/expertise-pick";
-import { hasFightingStyleFeat } from "@/lib/fighting-style";
+import { applyClassPicks } from "@/lib/level-up-commit";
 import { applyChoicePicks } from "@/lib/feature-choices";
 import { applyLanguagePicks } from "@/lib/feat-language-choices";
 import { asAlignmentId } from "@/lib/lore-utils";
@@ -121,16 +120,10 @@ export function buildNewCharacter(
 
   const { level, subclassId } = draft;
   const raceId = facts.raceData?.id ?? draft.raceId;
-  // The class's own creation picks land where level-up puts them: masteries and
-  // invocations on the class entry, a Fighting Style as a feature, Expertise on
-  // the skills (below, once the skills are in).
-  const { weaponMasteries, invocations, fightingStyles, expertise } = draft.classPicks;
   const classEntry: ClassEntry = {
     classId: draft.classId,
     ...(subclassId ? { subclassId } : {}),
     level,
-    ...(weaponMasteries.length > 0 ? { weaponMasteries: [...weaponMasteries] } : {}),
-    ...(invocations.length > 0 ? { invocationChoices: [...invocations] } : {}),
   };
 
   const startingKit = mergeStartingEquipment(
@@ -278,16 +271,15 @@ export function buildNewCharacter(
     applyChoicePicks(character, facts.choiceSlots, facts.choicePicks),
     draft.languagePicks
   );
-  const picked = {
-    ...withChoices,
-    features: [
-      ...withChoices.features,
-      ...fightingStyles
-        .filter((id) => !hasFightingStyleFeat(withChoices.features, id))
-        .map((id) => ({ srdId: id })),
-    ],
-    skills: applyExpertisePicks(withChoices.skills, expertise),
-  };
+  // The class's own creation picks (style, Expertise, masteries, invocations)
+  // land through the one writer level-up uses too.
+  const { weaponMasteries, invocations, fightingStyles, expertise } = draft.classPicks;
+  const picked = applyClassPicks(withChoices, draft.classId, {
+    fightingStyle: fightingStyles[0] ?? null,
+    expertise,
+    weaponMasteries: weaponMasteries.length > 0 ? weaponMasteries : null,
+    invocations,
+  });
   // The AC the sheet will show (the starting armor worn, shield, grants): the same
   // single source the auto-save stamps, never the unarmored placeholder.
   const finalCharacter = { ...picked, ac: effectiveAC(picked, session) };
