@@ -88,6 +88,8 @@ export interface CastLevelModalProps {
      * Only meaningful with `metamagic`.
      */
     sorceryRemaining?: number;
+    /** Metamagic options this spell may carry (Sorcery Incarnate: 2). Default 1. */
+    metamagicPerSpell?: number;
     /**
      * S12c — the spell's structured damage FACTS so each slot row can preview the
      * dice (or instance count) it deals AT THAT slot — Fireball's L5 row shows
@@ -137,16 +139,20 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
   // The chips' state (one primary per cast, stackers on top, never overspend) is
   // the engine's rule, shared with the Play screen's cast dialog.
   const metamagicRows = request?.metamagic ?? [];
+  const perSpell = request?.metamagicPerSpell ?? 1;
   const chipStates = metamagicChipStates(
     metamagicRows,
     selectedMetamagic,
-    request?.sorceryRemaining ?? 0
+    request?.sorceryRemaining ?? 0,
+    perSpell
   );
   const stackerIds = new Set(
     metamagicRows.filter((m) => m.stacksWithPrimary).map((m) => m.id)
   );
   const toggleMetamagic = (id: string) =>
-    setSelectedMetamagic((prev) => toggleMetamagicSelection(prev, id, stackerIds));
+    setSelectedMetamagic((prev) =>
+      toggleMetamagicSelection(prev, id, stackerIds, perSpell)
+    );
 
   // S12c — the damage a given slot level deals, resolved from the spell's
   // structured facts via the SAME shared helpers the spell card reads (golden
@@ -267,7 +273,11 @@ export function CastLevelModal({ request, onConfirm, onCancel }: CastLevelModalP
                   </span>
                 </div>
                 {/* BUG-6 — one primary per cast; Empowered/Seeking stack on top. */}
-                <p className="cl-mm-rule">{t("metamagic.onePrimaryRule")}</p>
+                <p className="cl-mm-rule">
+                  {t(
+                    perSpell > 1 ? "metamagic.twoPrimaryRule" : "metamagic.onePrimaryRule"
+                  )}
+                </p>
                 <div className="cl-mm-chips">
                   {metamagicRows.map((m, i) => {
                     const chip = chipStates.chips[i];

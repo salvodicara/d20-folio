@@ -15,6 +15,7 @@
  * SAME path as a catalogue feature action: `translateAction` → Activity, and the
  * resolver's card facts.
  */
+import { conformScalar, type Scalar } from "@/lib/scalar";
 import { CATALOGUE_EFFECTS_SCHEMA } from "@/lib/catalogue-effects";
 import type { EffectRiders, SrdActionDef } from "@/data/types";
 import {
@@ -303,8 +304,8 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
   ...EFFECT_RIDER_SCHEMAS,
 };
 
-const CONTEXT: ExactSchemaContext<Record<never, never>, Record<never, never>> = {
-  customs: {},
+const CONTEXT: ExactSchemaContext<{ scalar: Scalar }, Record<never, never>> = {
+  customs: { scalar: conformScalar },
   refs: {},
 };
 

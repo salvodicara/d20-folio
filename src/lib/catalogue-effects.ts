@@ -7,6 +7,7 @@
 import { ALL_CREATURE_TYPES } from "@/data/types";
 import {
   arraySchema,
+  customSchema,
   discriminatedUnionSchema,
   literalSchema,
   numberSchema,
@@ -14,6 +15,7 @@ import {
   type ExactSchema,
 } from "@/lib/exact-schema";
 import { literals } from "@/lib/homebrew-conform";
+import type { Scalar } from "@/lib/scalar";
 import type { ActivityEffect } from "@/lib/activities/types";
 
 /** The ActivityEffect kinds the catalogue writes directly. */
@@ -22,6 +24,8 @@ export type CatalogueEffect = Extract<
   { kind: "fall-if-aloft" | "speed-halved" | "next-attack-advantage" | "recover-slots" }
 >;
 
+/** A catalogue number (`@/lib/scalar`), conformed by the context's `scalar` custom. */
+const SCALAR_SCHEMA = customSchema<"scalar", Scalar>("scalar");
 const UNTIL = objectSchema({
   anchor: literals(["actor", "target"]),
   phase: literals(["turn-start", "turn-end"]),
@@ -46,8 +50,14 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
     { ...BASE, against: literalSchema("target"), until: UNTIL }
   ),
   "recover-slots": objectSchema(
-    { kind: literalSchema("recover-slots"), totalLevels: numberSchema },
-    { ...BASE, perUpcast: numberSchema, maxSlotLevel: numberSchema }
+    { kind: literalSchema("recover-slots") },
+    {
+      ...BASE,
+      totalLevels: numberSchema,
+      count: numberSchema,
+      perUpcast: numberSchema,
+      maxSlotLevel: SCALAR_SCHEMA,
+    }
   ),
 });
 

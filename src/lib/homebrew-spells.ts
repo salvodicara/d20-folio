@@ -17,6 +17,7 @@
  * resolver, the cast-level scaling, the grant sources its while-active states light,
  * and the Concentration it holds (its duration on the clock and the states it ends).
  */
+import { conformScalar, type Scalar } from "@/lib/scalar";
 import { CATALOGUE_EFFECTS_SCHEMA } from "@/lib/catalogue-effects";
 import { getSpellById } from "@/data/spells";
 import type { HomebrewSpellMechanics, SrdSpellData, SpellDuration } from "@/data/types";
@@ -95,10 +96,12 @@ const CONTEXT: ExactSchemaContext<
     object: Readonly<Record<string, unknown>>;
     grant: Grant;
     "action-def": Readonly<Record<string, unknown>>;
+    scalar: Scalar;
   },
   Record<never, never>
 > = {
   customs: {
+    scalar: conformScalar,
     object: (value) => (plainObject(value) ? value : null),
     grant: (value) => conformHomebrewGrant(value),
     "action-def": (value) =>

@@ -15,8 +15,10 @@ import { fightRows } from "@/domains/combat/fight-rows-view";
 import { fightControls } from "@/domains/combat/fight-controls";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import { playInitiativeRows } from "@/domains/play/play-initiative-view";
+import { playZonesView } from "@/domains/play/play-zones-view";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import { useSheetCombat } from "@/features/character/center/turn-state";
+import { foldCombatEffectOps } from "@/lib/combat-effects";
 import type { Locale } from "@/lib/locale";
 import { buildReport, foldSession } from "@/lib/session-log";
 import { renderSessionReport } from "@/lib/views/session-report-view";
@@ -85,6 +87,17 @@ function Initiative({
     const uid = fight.view.rows.find((r) => r.id === id)?.memberUid;
     return uid ? campaign?.memberDetails[uid]?.character?.portraitUrl : undefined;
   };
+  // Every area on the field, whoever cast it (not only those on this character).
+  const zones = playZonesView(
+    foldCombatEffectOps(fight.encounter.effectOps, {
+      round: fight.encounter.round,
+      currentCombatantId: fight.encounter.currentCombatantId,
+      phase: "turn-start",
+      order: fight.encounter.order ?? fight.view.turnOrderIds,
+    }),
+    fight.view.rows,
+    locale
+  );
   const bandLabel = (band: HpBandValue) =>
     band === "down"
       ? t("fight.down")
@@ -131,6 +144,38 @@ function Initiative({
           </div>
         );
       })}
+      {zones.zones.length > 0 && (
+        <section className="f-zones" aria-label={t("play.zones.title")}>
+          <h3 className="f-lbl">{t("play.zones.title")}</h3>
+          {zones.light && (
+            <p className="f-help">
+              {t("play.zones.lightIs", { light: t(`play.zones.light.${zones.light}`) })}
+            </p>
+          )}
+          {zones.zones.map((zone) => (
+            <div key={zone.id} className="f-zone">
+              <span className="f-row-t">{zone.name}</span>
+              <span className="f-row-s">
+                {[
+                  zone.caster ? t("play.zones.by", { name: zone.caster }) : null,
+                  zone.triggers.length > 0
+                    ? t("play.zones.bites", {
+                        when: zone.triggers
+                          .map((when) => t(`play.zones.when.${when}`))
+                          .join(t("play.zones.or")),
+                      })
+                    : null,
+                  zone.spared.length > 0
+                    ? t("play.zones.spares", { names: zone.spared.join(", ") })
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </span>
+            </div>
+          ))}
+        </section>
+      )}
       {(controls.back || controls.end) && (
         <div className="f-ir-acts">
           {controls.back && (

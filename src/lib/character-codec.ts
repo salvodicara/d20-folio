@@ -297,6 +297,7 @@ const SRD_SPELL_KEYS = [
   "tags",
   "overrides",
   "spellAbilityOverride",
+  "viaClass",
   "wizardSpellMastery",
   "wizardSignatureSpell",
   "speciesSpellAbility",
@@ -322,6 +323,8 @@ function parseSrdSpellRef(obj: Record<string, unknown>, path: string): SrdSpellR
       isAbilityCode,
       `${path}.spellAbilityOverride`
     );
+  if (obj.viaClass !== undefined)
+    ref.viaClass = opt(obj.viaClass, isString, `${path}.viaClass`);
   if (obj.wizardSpellMastery !== undefined)
     ref.wizardSpellMastery = opt(
       obj.wizardSpellMastery,

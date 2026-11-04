@@ -89,6 +89,9 @@ export interface SrdMetamagicOption {
     requiresDamage?: boolean;
     requiresAttack?: boolean;
     excludesCantrip?: boolean;
+    /** Only a spell that targets one more creature per slot level above its own
+     *  (Twinned Spell 2024: Hold Person yes, Fireball no). */
+    requiresUpcastTargets?: boolean;
   };
 }
 
@@ -169,7 +172,7 @@ export const SRD_METAMAGIC: SrdMetamagicOption[] = [
     cost: 1,
     // "a spell ... that can be cast with a higher-level spell slot to target an
     // additional creature" — a cantrip can't be upcast to add a target.
-    appliesWhen: { excludesCantrip: true },
+    appliesWhen: { excludesCantrip: true, requiresUpcastTargets: true },
   },
 ];
 

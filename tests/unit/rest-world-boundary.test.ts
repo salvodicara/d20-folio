@@ -389,6 +389,7 @@ describe("restThroughWorld: long rest", () => {
         level: 5,
         equipment: [
           { srdId: "wand", charges: { current: 1, max: 7, recovery: "long-rest" } },
+          { srdId: "rod", charges: { current: 0, max: 3, recovery: "dawn" } },
         ],
       },
       {
@@ -410,9 +411,10 @@ describe("restThroughWorld: long rest", () => {
     expect(session.spellSlots["2"]?.used ?? 0).toBe(0);
     expect(session.deathSucc).toBe(0);
     expect(session.deathFail).toBe(0);
-    // The legacy-only equipment charge law applied on the engine path too
-    // (the shared `equipmentAfterLongRest` single source).
+    // The legacy-only equipment charge laws applied on the engine path too (the
+    // shared `equipmentAfterLongRest` and, with no time of day set, the dawn's).
     expect(liveDoc().character.equipment[0]?.charges).toMatchObject({ current: 7 });
+    expect(liveDoc().character.equipment[1]?.charges).toMatchObject({ current: 3 });
 
     const world = worldFor(liveDoc());
     expect(world.vitals.hitPoints.current).toBe(doc.character.hp.max);
