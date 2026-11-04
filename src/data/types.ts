@@ -1182,8 +1182,9 @@ export interface SrdSpellData {
    * A reaction spell with no concise structured trigger simply omits the field (its
    * card shows name + effect, exactly as the parser's `undefined` did). Omit on every
    * non-reaction spell.
+   * Several tokens: the spell answers any of them (Moment of Prescience).
    */
-  reactionTrigger?: ReactionTrigger;
+  reactionTrigger?: ReactionTrigger | ReadonlyArray<ReactionTrigger>;
   /** Whether this spell can be cast as a ritual */
   ritual: boolean;
   /**

@@ -178,7 +178,10 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { max: numberSchema, atOrBelow: literals(["dies", "condition"]) },
     { otherwise: literalSchema("speed-zero") }
   ),
-  reactionTrigger: literals(ALL_REACTION_TRIGGERS),
+  reactionTrigger: unionSchema([
+    literals(ALL_REACTION_TRIGGERS),
+    arraySchema(literals(ALL_REACTION_TRIGGERS)),
+  ]),
   ritual: booleanSchema,
   duration: SPELL_DURATION,
   instantaneous: booleanSchema,

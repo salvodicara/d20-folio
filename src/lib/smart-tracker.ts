@@ -1327,6 +1327,9 @@ export interface RawActionSummary extends Omit<
   pactProneRiders?: ReadonlyArray<LocText>;
   /** Reaction trigger as a {@link LocText} ref (engine-parsed phrase / custom). */
   trigger?: LocText;
+  /** Every reaction trigger when there are several (any of them): the presenter
+   *  joins them with "or". */
+  triggers?: ReadonlyArray<LocText>;
   /** RAW (untranslated) weapon-property tokens, AS PRINTED on the weapon
    *  (incl. "Thrown (Range 20/60)" / "Ammunition (…)") — the presenter turns
    *  them into the unified facts block's chips (`buildWeaponFacts`). */
@@ -7051,6 +7054,11 @@ function resolveSpellActions(
     // reaction spell without a token simply shows no trigger line.
     if (actionType === "reaction" && cost.trigger) {
       summary.trigger = uiText(`combat.reactionTrigger_${cost.trigger}`);
+      if (cost.triggers) {
+        summary.triggers = cost.triggers.map((token) =>
+          uiText(`combat.reactionTrigger_${token}`)
+        );
+      }
     }
 
     // Healing is an independent capability, not the inverse of damage. Most spells

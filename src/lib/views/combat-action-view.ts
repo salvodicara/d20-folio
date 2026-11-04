@@ -244,6 +244,7 @@ function localizeSummary(
     effect,
     pactProneRiders,
     trigger,
+    triggers,
     heal,
     effectRiders,
     ...rest
@@ -365,7 +366,15 @@ function localizeSummary(
         : {}),
     ...(duration ? { duration: localizeText(duration, locale) } : {}),
     ...(resolvedEffect ? { effect: resolvedEffect } : {}),
-    ...(trigger ? { trigger: localizeText(trigger, locale) } : {}),
+    ...(trigger
+      ? {
+          trigger: triggers
+            ? triggers
+                .map((t) => localizeText(t, locale))
+                .join(` ${localizeText(uiText("common.or"), locale)} `)
+            : localizeText(trigger, locale),
+        }
+      : {}),
   };
 }
 

@@ -242,7 +242,9 @@ const SPELL_ROWS: SpellReactionRow[] = spells
   .map((s) => ({
     spellId: s.id,
     expectedEn: CORRECTED_SPELL_TRIGGERS[s.id] ?? oracleSpellTrigger(s.castingTime),
-    token: s.reactionTrigger,
+    // Several tokens (any of them): the first is the line this oracle compares.
+    token:
+      typeof s.reactionTrigger === "string" ? s.reactionTrigger : s.reactionTrigger?.[0],
   }));
 
 describe("structured SPELL reaction trigger — equivalence with the retired parser", () => {
