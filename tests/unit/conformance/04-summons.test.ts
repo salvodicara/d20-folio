@@ -20,6 +20,8 @@ import {
 import type { CharacterDoc, SessionState } from "@/types/character";
 import { resolveActions } from "@/lib/smart-tracker";
 import { makeCharacterDoc } from "../_helpers";
+import { companionAttackEffects } from "@/lib/play/companion-attack";
+import { resolveCombatEffectGrantSources } from "@/lib/resolve-grant-sources";
 import { rule } from "./rule";
 
 const t = (key: string): string => key;
@@ -249,21 +251,36 @@ describe("conformance · 4. summons and companions", () => {
       category: 4,
       case: "Summon spell attacks without saves",
       source: "KIBBLES #20",
-      status: "M6",
+      status: "works",
     },
-    async () => {
+    () => {
       const spider = GIANT_INSECT.variants?.find((v) => v.variantId === "spider");
       const web = spider?.attacks?.find((a) => a.id === "web-bolt");
-      expect(web).toBeDefined();
-      // A hit sets the target's Speed to 0, with no save and no size limit.
-      expect(web).toHaveProperty(
-        "effects",
-        expect.arrayContaining([expect.objectContaining({ kind: "speed-zero" })])
-      );
-      // The case works once the damage tray applies a companion attack's effects.
-      const id = "@/lib/play/companion-attack";
-      const tray = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-      expect(typeof tray.companionAttackEffects).toBe("function");
+      if (!web) throw new Error("no Web Bolt");
+      // A hit sets the target's Speed to 0, with no save and no size limit, until the
+      // start of the insect's next turn.
+      const [effect] = companionAttackEffects({
+        spellId: "giant-insect",
+        attack: web,
+        actor: { kind: "monster", combatantId: "insect-1" },
+        target: { kind: "monster", combatantId: "monster-1" },
+        round: 3,
+        effectId: (i) => `web-${i}`,
+      });
+      expect(effect).toMatchObject({
+        target: { combatantId: "monster-1" },
+        payload: { kind: "grant-group", activeKey: "giant-insect-web-bolt" },
+        duration: {
+          kind: "turn-boundary",
+          combatantId: "insect-1",
+          round: 4,
+          phase: "turn-start",
+        },
+      });
+      // The state it puts on the target is the spell's own: Speed capped at 0.
+      if (!effect) throw new Error("no effect");
+      const [source] = resolveCombatEffectGrantSources([effect]);
+      expect(source?.grants).toContainEqual({ type: "speed-cap", maxFt: 0 });
     }
   );
 
