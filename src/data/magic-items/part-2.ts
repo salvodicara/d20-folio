@@ -441,6 +441,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:armor-of-vulnerability (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "armor-of-vulnerability",
+    curse: { bindsAttunement: true, revealedByIdentify: true },
     rarity: "rare",
     type: "armor",
     attunement: true,
@@ -544,6 +545,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:berserker-axe (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "berserker-axe",
+    curse: { bindsAttunement: true },
     rarity: "rare",
     type: "weapon",
     attunement: true,
@@ -1042,6 +1044,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:shield-of-missile-attraction (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "shield-of-missile-attraction",
+    curse: { bindsAttunement: true },
     rarity: "rare",
     type: "armor",
     attunement: true,
@@ -1739,6 +1742,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:demon-armor (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "demon-armor",
+    curse: { bindsWearing: true },
     rarity: "very-rare",
     type: "armor",
     attunement: true,

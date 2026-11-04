@@ -39,7 +39,8 @@ export type AttunementRefusal =
   | { ok: false; reason: "duplicate-copy"; attuned: string[] }
   | { ok: false; reason: "no-attunement" }
   | { ok: false; reason: "prerequisite"; requires: AttunementPrerequisite }
-  | { ok: false; reason: "unknown-item" };
+  | { ok: false; reason: "unknown-item" }
+  | { ok: false; reason: "cursed" };
 
 export type CanAttune = { ok: true } | AttunementRefusal;
 
@@ -238,9 +239,22 @@ export function attuneItem(
   return { ok: true, forced: !verdict.ok, ...setAttuned(doc, key, true) };
 }
 
-/** End the attunement to the item (always allowed); its other fields stay. */
-export function unattuneItem(doc: CharacterDoc, key: string): AttuneResult {
-  if (!attunables(doc).some((a) => a.key === key))
-    return knownWithoutAttunement(doc, key);
-  return { ok: true, forced: false, ...setAttuned(doc, key, false) };
+/**
+ * End the attunement to the item; its other fields stay. A cursed item that binds its
+ * attunement refuses ("Attuning to the armor curses you until you are targeted by a
+ * Remove Curse spell"): attuning already revealed the curse, so this tells nothing new.
+ * `force` (the table's override, Remove Curse) ends it anyway.
+ */
+export function unattuneItem(
+  doc: CharacterDoc,
+  key: string,
+  options: { force?: boolean } = {}
+): AttuneResult {
+  const target = attunables(doc).find((a) => a.key === key);
+  if (!target) return knownWithoutAttunement(doc, key);
+  const binds = target.itemId
+    ? getMagicItem(target.itemId)?.curse?.bindsAttunement === true
+    : false;
+  if (target.attuned && binds && !options.force) return { ok: false, reason: "cursed" };
+  return { ok: true, forced: target.attuned && binds, ...setAttuned(doc, key, false) };
 }

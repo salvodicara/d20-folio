@@ -3632,6 +3632,21 @@ export const ALL_MAGIC_ITEM_TYPES = [
   ["armor", "weapon", "wondrous", "potion", "ring", "rod", "scroll", "staff", "wand"]
 >;
 
+/**
+ * A cursed item's catalogue facts (M20, docs/architecture/2026-11-dm-state-and-roster.md).
+ * Whether THIS copy is cursed and whether its owner knows is the DM's state (to come);
+ * this says what the curse binds once it holds. Remove Curse (or similar) ends it.
+ */
+export interface ItemCurse {
+  /** Attuning curses you: the attunement can't be ended until the curse is. */
+  bindsAttunement?: true;
+  /** Once worn, it can't be taken off until the curse ends (Demon Armor). */
+  bindsWearing?: true;
+  /** Identify reveals it (Armor of Vulnerability: "revealed only when the Identify
+   *  spell is cast on the armor or you attune to it"). */
+  revealedByIdentify?: true;
+}
+
 /** An item's attunement prerequisite: met when any listed condition holds. */
 export interface AttunementPrerequisite {
   /** A creature that can cast at least one spell through its own traits or features. */
@@ -3657,6 +3672,8 @@ export interface SrdMagicItemData {
    *  «… by a Dwarf or a creature attuned to a Belt of Dwarvenkind»): any one
    *  listed condition suffices. */
   attunementBy?: AttunementPrerequisite;
+  /** Its curse, when the item is cursed (Berserker Axe). */
+  curse?: ItemCurse;
   /** Suggested price: "400 GP", "B+4000 GP" */
   price?: string;
   /** Healing potion roll (e.g. "2d4+2") — derived display, see SrdEquipmentData. */
