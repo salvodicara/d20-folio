@@ -37,6 +37,8 @@
     "checkFailure": "failure",
     "withOutcome": "{{line}}: {{outcome}}",
     "givenTempHp": "Gave {{target}} {{amount}} temporary HP",
+    "givenNonLethal": "Nonlethal: {{target}}, {{amount}} damage",
+    "knockedOut": "Knocked out: {{target}}",
     "givenKilled": "{{target}} dies",
     "givenCondition": "{{target}} failed the save: {{condition}}",
     "unknownEvent": "An entry from a newer version of the app",

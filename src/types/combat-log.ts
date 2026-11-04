@@ -165,6 +165,9 @@ export type CombatEvent =
       outcome?: AttackOutcome;
       /** The target was killed outright (Power Word Kill): the line says it dies. */
       killed?: true;
+      /** A melee hit dealt to knock out, not kill (2024): if it would drop the target
+       *  to 0, whoever applies it leaves it at 1 HP and Unconscious (`damageMonster`). */
+      knockOut?: true;
     }
   /** A condition was lost / removed. */
   | { kind: "condition-loss"; conditionId: string }

@@ -822,6 +822,41 @@ export function applyHp(
   });
 }
 
+/**
+ * Damage one MONSTER: Temporary HP first, then HP (floored at 0). A knock-out hit
+ * (a melee attacker's choice, 2024 "Knocking a Creature Out") that would drop it to 0
+ * leaves it at 1 HP and Unconscious instead; it then starts a Short Rest. `knockedOut`
+ * says whether that happened, for the «Messo KO» line. A PC is a no-op.
+ */
+export function damageMonster(
+  state: EncounterState,
+  id: string,
+  amount: number,
+  opts: { knockOut?: boolean } = {}
+): { state: EncounterState; knockedOut: boolean } {
+  if (!Number.isFinite(amount) || amount <= 0) return { state, knockedOut: false };
+  let knockedOut = false;
+  const next = mapCombatant(state, id, (c) => {
+    if (c.kind === "pc") return c;
+    const dealt = Math.round(amount);
+    const temp = Math.max(0, c.hp.temp - dealt);
+    const rest = dealt - (c.hp.temp - temp);
+    const dropped = clampHp(c.hp.current - rest, c.hp.max);
+    if (opts.knockOut && c.hp.current > 0 && dropped === 0) {
+      knockedOut = true;
+      return {
+        ...c,
+        hp: { ...c.hp, temp, current: 1 },
+        conditions: c.conditions.includes("unconscious")
+          ? c.conditions
+          : [...c.conditions, "unconscious"],
+      };
+    }
+    return { ...c, hp: { ...c.hp, temp, current: dropped } };
+  });
+  return { state: next, knockedOut };
+}
+
 /** Set one MONSTER's HP to an absolute value, clamped to `[0, hp.max]`. A PC is a
  *  no-op (live HP lives in the subdoc). */
 export function setHp(state: EncounterState, id: string, value: number): EncounterState {
