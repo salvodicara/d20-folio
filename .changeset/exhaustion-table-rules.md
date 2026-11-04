@@ -2,4 +2,4 @@
 "d20-folio": patch
 ---
 
-A campaign that varies Exhaustion (the penalty per level on d20 Tests and on Speed) plays by its numbers everywhere on the sheet.
+Play conditions: Exhaustion follows the table's rules — the stepper stops at the table's highest level, and the penalties shown are the table's.

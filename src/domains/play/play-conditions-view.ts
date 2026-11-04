@@ -8,6 +8,7 @@
 import { SRD_CONDITIONS } from "@/data/conditions";
 import { hasSrd, localizeSrd, localizeSrdList } from "@/i18n/resolver";
 import { conditionSourceInstances, needsSeesAnswer } from "@/lib/condition-sources";
+import { exhaustionOf, exhaustionParts } from "@/lib/compute";
 import type { Locale } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
 
@@ -35,7 +36,9 @@ export interface ConditionPanelRow {
 export interface ConditionsPanelView {
   rows: ConditionPanelRow[];
   /** Exhaustion level, 0 when none. */
-  exhaustion: number;
+  /** Exhaustion as the table plays it (`exhaustionOf`): the level, the highest level
+   *  (death), and this level's penalties: off D20 Tests, and feet off Speed. */
+  exhaustion: { level: number; max: number; d20: number; speedFt: number };
   /** What the chip counts: the conditions, Exhaustion once. */
   count: number;
   addable: string[];
@@ -69,13 +72,19 @@ export function conditionsPanelView(
       ...(ask ? { ask: { key: ask.key, pressed: ask.seesSource === false } } : {}),
     };
   });
-  const exhaustion = doc.session.exhaustion;
+  const { level, rules } = exhaustionParts(exhaustionOf(doc.session));
+  const exhaustion = {
+    level,
+    max: rules.exhaustion.maxLevel,
+    d20: -rules.exhaustion.d20PerLevel * level,
+    speedFt: -rules.exhaustion.speedFtPerLevel * level,
+  };
   return {
     rows,
     exhaustion,
-    count: held.length + (exhaustion > 0 ? 1 : 0),
+    count: held.length + (level > 0 ? 1 : 0),
     addable: SRD_CONDITIONS.map((c) => c.id).filter(
-      (id) => !held.includes(id) && !(id === "exhaustion" && exhaustion > 0)
+      (id) => !held.includes(id) && !(id === "exhaustion" && level > 0)
     ),
     sources: (encounter?.rows ?? [])
       .filter((r) => r.characterId !== doc.id && r.name)

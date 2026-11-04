@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 
 import { conditionsPanelView, asksSource } from "@/domains/play/play-conditions-view";
+import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { makeCharacterDoc } from "./_helpers";
 
 const doc = (session: Record<string, unknown>) =>
@@ -45,13 +46,25 @@ describe("conditionsPanelView", () => {
 
   it("shows Exhaustion as its level, counted once, and never as a plain chip to add", () => {
     const tired = conditionsPanelView(doc({ conditions: [], exhaustion: 2 }), "it");
-    expect(tired.exhaustion).toBe(2);
+    expect(tired.exhaustion).toEqual({ level: 2, max: 6, d20: 4, speedFt: 10 });
     expect(tired.count).toBe(1);
     expect(tired.addable).not.toContain("exhaustion");
     const fresh = conditionsPanelView(doc({ conditions: [], exhaustion: 0 }), "it");
-    expect(fresh.exhaustion).toBe(0);
+    expect(fresh.exhaustion.level).toBe(0);
     expect(fresh.count).toBe(0);
     expect(fresh.addable).toContain("exhaustion");
+  });
+
+  it("Exhaustion follows the table's rules: its maximum and its penalties", () => {
+    const rules = {
+      ...RAW_TABLE_RULES,
+      exhaustion: { maxLevel: 4, d20PerLevel: -1, speedFtPerLevel: -10 },
+    };
+    const v = conditionsPanelView(
+      doc({ conditions: [], exhaustion: 3, tableRules: rules }),
+      "it"
+    );
+    expect(v.exhaustion).toEqual({ level: 3, max: 4, d20: 3, speedFt: 30 });
   });
 
   it("offers every SRD condition not already held", () => {
