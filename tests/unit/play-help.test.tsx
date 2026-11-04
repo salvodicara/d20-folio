@@ -26,6 +26,7 @@ describe("PlayHelp", () => {
             { id: "m-gob", name: "Goblin" },
             { id: "m-ogre", name: "Ogre" },
           ],
+          allies: [],
         }}
         onHelp={onHelp}
         onClose={() => undefined}
@@ -47,12 +48,32 @@ describe("PlayHelp", () => {
     const onHelp = vi.fn();
     render(
       <PlayHelp
-        view={{ enemies: [{ id: "m-gob", name: "Goblin" }] }}
+        view={{ enemies: [{ id: "m-gob", name: "Goblin" }], allies: [] }}
         onHelp={onHelp}
         onClose={() => undefined}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
     expect(onHelp).toHaveBeenCalledWith("m-gob");
+  });
+
+  it("helps an ally: its own rule line, and the ally's id goes out", () => {
+    const onHelp = vi.fn();
+    render(
+      <PlayHelp
+        view={{
+          enemies: [{ id: "m-gob", name: "Goblin" }],
+          allies: [{ id: "pc-bren", name: "Bren" }],
+        }}
+        onHelp={onHelp}
+        onClose={() => undefined}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Bren" }));
+    expect(
+      screen.getByText("Its next ability check, before your next turn, has Advantage.")
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Help" }));
+    expect(onHelp).toHaveBeenCalledWith("pc-bren");
   });
 });

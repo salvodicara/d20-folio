@@ -19,6 +19,7 @@ import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
+import { HelpedCheck } from "@/domains/combat/ui/HelpedCheck";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
 import { PlayTime } from "@/domains/play/ui/PlayTime";
@@ -343,16 +344,27 @@ function PlayHeader({
             </Button>
           </div>
           <PlayDown doc={doc} />
-          {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
-          {fight?.isMyTurn && (
-            <ActionRepeatSaves
-              campaignId={fight.campaignId}
-              effectOps={fight.encounter.effectOps}
-              targetId={fight.myId}
-              locale={locale}
-              spendAction
-            />
-          )}
+          {/* What waits on this character (a save due, Help's Advantage): one
+              container with its own row on a phone, never a stray grid cell. */}
+          <div className="f-char-notes">
+            {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
+            {fight && (
+              <HelpedCheck
+                campaignId={fight.campaignId}
+                effectOps={fight.encounter.effectOps}
+                targetId={fight.myId}
+              />
+            )}
+            {fight?.isMyTurn && (
+              <ActionRepeatSaves
+                campaignId={fight.campaignId}
+                effectOps={fight.encounter.effectOps}
+                targetId={fight.myId}
+                locale={locale}
+                spendAction
+              />
+            )}
+          </div>
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}

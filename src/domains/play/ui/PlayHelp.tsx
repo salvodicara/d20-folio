@@ -1,7 +1,8 @@
 /**
- * The Help action in a fight on the Play screen: «Su chi?» (the enemy) and the rule
- * in one line; «Aiuta» uses the action and writes the effect (`giveHelp`), with an
- * undo toast.
+ * The Help action in a fight on the Play screen: «Su chi?», an enemy (the next
+ * attack against it has Advantage) or an ally (its next ability check does), the
+ * rule in one line for the side picked; «Aiuta» uses the action and writes the
+ * effect (`giveHelp`, which picks the form by side), with an undo toast.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,13 +16,29 @@ export function PlayHelp({
   onClose,
 }: {
   view: HelpView;
-  onHelp: (enemyId: string) => void;
+  onHelp: (targetId: string) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [enemy, setEnemy] = useState<string | null>(
-    view.enemies.length === 1 ? (view.enemies[0]?.id ?? null) : null
+  const only = [...view.enemies, ...view.allies];
+  const [target, setTarget] = useState<string | null>(
+    only.length === 1 ? (only[0]?.id ?? null) : null
   );
+  // Each side says what Help does to it: the attack form, or the ability-check form.
+  const group = (label: string, rule: string, list: HelpView["enemies"]) =>
+    list.length > 0 && (
+      <div className="f-ask">
+        <span className="f-lbl">{label}</span>
+        <p className="f-help">{rule}</p>
+        <div className="f-chips">
+          {list.map((c) => (
+            <Chip key={c.id} pressed={target === c.id} onClick={() => setTarget(c.id)}>
+              {c.name}
+            </Chip>
+          ))}
+        </div>
+      </div>
+    );
   return (
     <Dialog
       open
@@ -34,22 +51,19 @@ export function PlayHelp({
           <Button kind="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button kind="primary" disabled={!enemy} onClick={() => enemy && onHelp(enemy)}>
+          <Button
+            kind="primary"
+            disabled={!target}
+            onClick={() => target && onHelp(target)}
+          >
             {t("play.help.confirm")}
           </Button>
         </>
       }
     >
       <div className="f-ask">
-        <span className="f-lbl">{t("campaignHub.encounterActionOnWhom")}</span>
-        <p className="f-help">{t("play.help.hint")}</p>
-        <div className="f-chips">
-          {view.enemies.map((c) => (
-            <Chip key={c.id} pressed={enemy === c.id} onClick={() => setEnemy(c.id)}>
-              {c.name}
-            </Chip>
-          ))}
-        </div>
+        {group(t("play.help.enemies"), t("play.help.hint"), view.enemies)}
+        {group(t("play.help.allies"), t("play.help.hintAlly"), view.allies)}
       </div>
     </Dialog>
   );

@@ -2711,6 +2711,7 @@
       "stats stats"
       "acts acts"
       "down down"
+      "notes notes"
       "chips chips"
       "abil abil";
     gap: 0 16px;
@@ -3451,6 +3452,20 @@
 @media (max-width: 800px) {
   .fui .f-sheet .f-down {
     grid-area: down;
+  }
+}
+/* what waits on the character (a save due, Help's Advantage), stacked; nothing when empty */
+.fui .f-char-notes {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-char-notes:empty {
+  display: none;
+}
+@media (max-width: 800px) {
+  .fui .f-sheet .f-char-notes {
+    grid-area: notes;
+    margin-top: 12px;
   }
 }
 

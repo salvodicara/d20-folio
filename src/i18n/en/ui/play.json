@@ -261,7 +261,14 @@
       "title": "Help",
       "hint": "The next attack by one of your allies against that enemy, before your next turn, has Advantage.",
       "confirm": "Help",
-      "given": "Helping against {{name}}"
+      "given": "Helping against {{name}}",
+      "enemies": "Against an enemy",
+      "allies": "An ally",
+      "hintAlly": "Its next ability check, before your next turn, has Advantage.",
+      "givenAlly": "You help {{name}}: Advantage on its next ability check",
+      "helpedCheck": "An ally is helping you: Advantage on your next ability check.",
+      "used": "Used",
+      "usedToast": "Help’s Advantage used"
     },
     "hitDice": {
       "count": "Hit Point Dice to spend",
