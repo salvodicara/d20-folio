@@ -12,7 +12,11 @@
  * engine-held Concentration (`timePassEndsConcentration`), it ends it through the
  * store's Concentration teardown first, so the world's occurrence ends with it.
  */
-import { advanceEffectTimers, resolveActiveMaintainedEffects } from "@/lib/smart-tracker";
+import {
+  advanceEffectTimers,
+  equipmentAfterDawn,
+  resolveActiveMaintainedEffects,
+} from "@/lib/smart-tracker";
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import { endStatuses, endsConcentration } from "@/lib/status";
 import type { CharacterDoc, SessionState } from "@/types/character";
@@ -75,6 +79,17 @@ export function crossedDusk(timeOfDay: number | undefined, minutes: number): boo
   return crosses(timeOfDay, minutes, DUSK);
 }
 
+/** The clock boundaries `minutes` crosses from `timeOfDay` (none when no time is set). */
+export function crossedBoundaries(
+  timeOfDay: number | undefined,
+  minutes: number
+): Array<"dawn" | "dusk"> {
+  return [
+    ...(crossedDawn(timeOfDay, minutes) ? (["dawn"] as const) : []),
+    ...(crossedDusk(timeOfDay, minutes) ? (["dusk"] as const) : []),
+  ];
+}
+
 /** Whether a rest of `minutes` brings a dawn: when it crosses 06:00, or always when
  *  the table has set no time of day (a Long Rest stands in for the night). */
 export function restCrossesDawn(doc: CharacterDoc, minutes: number): boolean {
@@ -115,8 +130,18 @@ export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | nul
   const clockMoved = timeOfDay !== doc.session.timeOfDay;
   if ((!dead || !(minutes > 0)) && !clockMoved) return passed;
   const base = passed ?? doc;
+  // Charges that come back at dawn come back when the clock crosses it.
+  const dawn = crossedDawn(doc.session.timeOfDay, minutes);
   return {
     ...base,
+    ...(dawn
+      ? {
+          character: {
+            ...base.character,
+            equipment: equipmentAfterDawn(base.character.equipment),
+          },
+        }
+      : {}),
     session: {
       ...base.session,
       // A dead character's clock runs on (Revivify reaches only the last minute).

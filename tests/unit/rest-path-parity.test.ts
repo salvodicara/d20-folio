@@ -37,6 +37,8 @@ function wornDown(id: string): CharacterDoc | null {
       ...doc.session,
       hp: { current: Math.max(1, Math.floor(doc.character.hp.max / 2)), temp: 0 },
       exhaustion: 2,
+      // A set time of day: both paths move the clock the same way.
+      timeOfDay: 22 * 60,
       ...(slot
         ? { spellSlots: { ...doc.session.spellSlots, [String(slot.level)]: { used: 1 } } }
         : {}),

@@ -30,7 +30,12 @@ describe("timePassView", () => {
   });
 
   it("a minute ends nothing", () => {
-    expect(timePassView(caster(), 1, "en")).toEqual({ ends: [], concentration: null });
+    expect(timePassView(caster(), 1, "en")).toEqual({
+      ends: [],
+      concentration: null,
+      span: null,
+      recoveries: [],
+    });
   });
 
   it("ten minutes end the Concentration on Detect Magic, named", () => {
@@ -39,5 +44,28 @@ describe("timePassView", () => {
 
   it("eight hours end Mage Armor, by name", () => {
     expect(timePassView(caster(), 480, "en").ends).toContain("Mage Armor");
+  });
+
+  it("with a time of day: the span, and what dawn brings back when it crosses 06:00", () => {
+    const base = caster();
+    const piper: CharacterDoc = {
+      ...base,
+      character: {
+        ...base.character,
+        equipment: [{ srdId: "pipes-of-haunting", quantity: 1, equipped: true }],
+      },
+    };
+    const night = timePassView(piper, 480, "it", 22 * 60);
+    expect(night.span).toEqual({ from: "22:00", to: "06:00" });
+    expect(night.recoveries).toHaveLength(1);
+    expect(night.recoveries[0]).toMatchObject({
+      kind: "dawn",
+      unit: "charges",
+      amount: "1d3",
+    });
+    // An hour in the afternoon crosses no dawn.
+    expect(timePassView(piper, 60, "it", 14 * 60).recoveries).toEqual([]);
+    // No time of day set: no span, and nothing is promised.
+    expect(timePassView(piper, 480, "it")).toMatchObject({ span: null, recoveries: [] });
   });
 });

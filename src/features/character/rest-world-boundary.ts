@@ -52,6 +52,8 @@
  * boundaries and are never conflated with a rest.
  */
 
+import { advanceTimeOfDay, restCrossesDawn } from "@/lib/play/time";
+import { LONG_REST_MINUTES, SHORT_REST_MINUTES } from "@/lib/play/rests";
 import i18next from "i18next";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
@@ -482,6 +484,15 @@ function restFinalizedSession(
     activeSpellCastLevels: omitKeys(mirrored.activeSpellCastLevels, endedActiveKeys),
     effectTimers: omitKeys(mirrored.effectTimers, endedActiveKeys),
     effectBoundaries: omitKeys(mirrored.effectBoundaries, endedActiveKeys),
+    // The rest passes on the clock (a set time of day moves 1 or 8 hours).
+    ...(doc.session.timeOfDay !== undefined
+      ? {
+          timeOfDay: advanceTimeOfDay(
+            doc.session.timeOfDay,
+            kind === "long" ? LONG_REST_MINUTES : SHORT_REST_MINUTES
+          ),
+        }
+      : {}),
     // Either rest outlasts a held Bardic Inspiration die's 1-hour maximum.
     bardicInspirationDie: "",
     // Either rest resets the escalating zero-HP saves (Relentless Rage's DC).
@@ -612,9 +623,9 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
         ? {
             character: {
               ...doc.character,
-              equipment: equipmentAfterDawn(
-                equipmentAfterLongRest(doc.character.equipment)
-              ),
+              equipment: restCrossesDawn(doc, LONG_REST_MINUTES)
+                ? equipmentAfterDawn(equipmentAfterLongRest(doc.character.equipment))
+                : equipmentAfterLongRest(doc.character.equipment),
             },
           }
         : {}),

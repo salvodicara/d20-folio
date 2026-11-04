@@ -44,6 +44,8 @@
     "tableClockHint": "Declare dawn or dusk when the story reaches it. This never reads your device clock or takes a rest.",
     "tableClockDeclare_dawn": "Declare dawn",
     "tableClockDeclare_dusk": "Declare dusk",
+    "clockApplied_dawn": "Dawn breaks · item resources recovered",
+    "clockApplied_dusk": "Dusk falls · item resources recovered",
     "tableClockApplied_dawn": "Dawn declared · item resources recovered",
     "tableClockApplied_dusk": "Dusk declared · item resources recovered"
   }

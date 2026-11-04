@@ -8,7 +8,12 @@ import { timePassEndsConcentration } from "@/lib/play/time";
 import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 
-export function passTimeWithUndo(minutes: number, message: string): void {
+export function passTimeWithUndo(
+  minutes: number,
+  message: string,
+  /** The time of day the table says it is before the stretch (M18). */
+  timeOfDay?: number
+): void {
   registerUndoableToast(
     { message },
     () => {
@@ -16,6 +21,9 @@ export function passTimeWithUndo(minutes: number, message: string): void {
       const doc = store.character;
       if (!doc || store.readonly) return null;
       const seal = beginWholeStateUndo();
+      if (timeOfDay !== undefined && timeOfDay !== doc.session.timeOfDay) {
+        store.dispatch({ kind: "set-time-of-day", minutes: timeOfDay });
+      }
       if (timePassEndsConcentration(doc, minutes)) {
         store.setConcentration("", { undoable: false, silent: true });
       }

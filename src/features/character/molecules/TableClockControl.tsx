@@ -6,16 +6,13 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import {
-  createItemResourceBoundaryCycle,
-  useOptionalItemResourceCommands,
-} from "@/features/character/center/useItemResourceCommands";
+import { useOptionalItemResourceCommands } from "@/features/character/center/useItemResourceCommands";
+import { declareClockBoundary } from "@/features/character/clock-boundaries";
 import {
   availableTableClockBoundaries,
   type TableClockBoundary,
 } from "@/lib/views/item-resource-boundary-view";
 import { useCharacterStore } from "@/stores/characterStore";
-import { registerUndoableToast } from "@/stores/undoStore";
 
 /**
  * Dawn and dusk are story declarations, never device-time events or rests.
@@ -35,7 +32,15 @@ export function TableClockControl() {
     [character]
   );
 
-  if (!character || readonly || !commands || available.length === 0) return null;
+  // With a time of day set, the clock fires dawn and dusk itself (M18): no button.
+  if (
+    !character ||
+    readonly ||
+    !commands ||
+    available.length === 0 ||
+    character.session.timeOfDay !== undefined
+  )
+    return null;
 
   async function declareBoundary(kind: TableClockBoundary): Promise<void> {
     if (inFlightRef.current || !commands) return;
@@ -43,16 +48,10 @@ export function TableClockControl() {
     setInFlight(kind);
     setOpen(false);
     try {
-      const prepared = await commands.prepareBoundary({ kind });
-      if (!prepared || prepared.entries.length === 0) return;
-      const cycle = createItemResourceBoundaryCycle(commands, prepared);
-      registerUndoableToast(
-        { message: t(`magicItems.tableClockApplied_${kind}`) },
-        () => {
-          const committed = cycle.apply();
-          return committed ? () => commands.revertBoundary(committed) : null;
-        },
-        { turnScoped: false }
+      await declareClockBoundary(
+        commands,
+        kind,
+        t(`magicItems.tableClockApplied_${kind}`)
       );
     } finally {
       inFlightRef.current = false;

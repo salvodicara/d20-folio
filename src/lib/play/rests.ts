@@ -4,12 +4,13 @@
  * logs the rest, persists, and fences the undo stack.
  */
 import { endSummonsOn, endSummonsOutlastedBy } from "./companions";
-import { advanceTimeOfDay } from "./time";
+import { advanceTimeOfDay, restCrossesDawn } from "./time";
 
 /** A rest's length on the game clock, in minutes (SRD 5.2.1: a Short Rest is 1
  *  hour, a Long Rest 8). */
-const SHORT_REST_MINUTES = 60;
-const LONG_REST_MINUTES = 480;
+/** How long each rest lasts on the game clock. */
+export const SHORT_REST_MINUTES = 60;
+export const LONG_REST_MINUTES = 480;
 import { evaluateGrants } from "@/lib/grants";
 import { fadingPenaltiesAfterLongRest } from "@/lib/play/fading-penalties";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
@@ -78,12 +79,13 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
     evaluateGrants(
       resolveAllGrantSources(character.character, character.session.itemResources)
     ).exhaustionRecoveryBonus;
-  // Magic-item charges: the Long Rest's, then the dawn's (a rest with no time of
-  // day set passes a dawn), through the ONE shared law in smart-tracker, the same
-  // maps the canonical rest boundary applies, so the two paths never drift.
-  const newEquipment = equipmentAfterDawn(
-    equipmentAfterLongRest(character.character.equipment)
-  );
+  // Magic-item charges: the Long Rest's, then the dawn's when the night crosses one
+  // (always, with no time of day set), through the ONE shared law in smart-tracker,
+  // the same maps the canonical rest boundary applies, so the two paths never drift.
+  const afterRest = equipmentAfterLongRest(character.character.equipment);
+  const newEquipment = restCrossesDawn(character, LONG_REST_MINUTES)
+    ? equipmentAfterDawn(afterRest)
+    : afterRest;
   // S4 — Human's Resourceful: finishing a Long Rest auto-grants Heroic
   // Inspiration. The consumer (`gainsHeroicInspirationOnLongRest`) decides the
   // default only; override-first — the player can still toggle the chip off

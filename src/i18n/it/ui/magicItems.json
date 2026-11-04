@@ -44,6 +44,8 @@
     "tableClockHint": "Dichiara l'alba o il tramonto quando la storia ci arriva. Non legge l'orologio del dispositivo e non effettua un riposo.",
     "tableClockDeclare_dawn": "Dichiara l'alba",
     "tableClockDeclare_dusk": "Dichiara il tramonto",
+    "clockApplied_dawn": "Sorge l'alba · risorse degli oggetti recuperate",
+    "clockApplied_dusk": "Cala il tramonto · risorse degli oggetti recuperate",
     "tableClockApplied_dawn": "Alba dichiarata · risorse degli oggetti recuperate",
     "tableClockApplied_dusk": "Tramonto dichiarato · risorse degli oggetti recuperate"
   }

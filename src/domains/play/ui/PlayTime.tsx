@@ -6,8 +6,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { TIME_STEPS, timePassView } from "@/domains/play/time-pass-view";
+import {
+  clockText,
+  parseClockText,
+  TIME_STEPS,
+  timePassView,
+} from "@/domains/play/time-pass-view";
+import { useOptionalItemResourceCommands } from "@/features/character/center/useItemResourceCommands";
+import { declareClockBoundary } from "@/features/character/clock-boundaries";
 import { passTimeWithUndo } from "@/features/character/pass-time";
+import { crossedBoundaries } from "@/lib/play/time";
 import type { Locale } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Choice, Dialog, Field } from "@/ui";
@@ -22,11 +30,18 @@ export function PlayTime({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const commands = useOptionalItemResourceCommands();
   const [step, setStep] = useState<number | "other">(60);
   const [typed, setTyped] = useState("");
+  // The time of day (M18): optional. Once set, it is shown here every time, moved by
+  // the time that passed; never asked twice.
+  const known = doc.session.timeOfDay;
+  const [askTime, setAskTime] = useState(known !== undefined);
+  const [clock, setClock] = useState(known !== undefined ? clockText(known) : "");
+  const timeOfDay = askTime ? (parseClockText(clock) ?? undefined) : known;
   const minutes =
     step === "other" ? (/^\d+$/.test(typed.trim()) ? Number(typed.trim()) : 0) : step;
-  const view = minutes > 0 ? timePassView(doc, minutes, locale) : null;
+  const view = minutes > 0 ? timePassView(doc, minutes, locale, timeOfDay) : null;
   const span = (m: number) =>
     m % 60 === 0
       ? t("play.time.hours", { count: m / 60 })
@@ -37,6 +52,15 @@ export function PlayTime({
         ...(view.concentration
           ? [t("play.time.concentrationEnds", { spell: view.concentration })]
           : []),
+        ...view.recoveries.map((r) =>
+          r.amount === null
+            ? t(`play.time.recoversAll_${r.kind}`, { item: r.item })
+            : t(`play.time.recovers_${r.kind}`, {
+                item: r.item,
+                amount: r.amount,
+                unit: t(`units.${r.unit}`),
+              })
+        ),
       ]
     : [];
   return (
@@ -59,8 +83,19 @@ export function PlayTime({
               const one = minutes === 1 || minutes === 60;
               passTimeWithUndo(
                 minutes,
-                t("play.time.done", { count: one ? 1 : 2, time: span(minutes) })
+                t("play.time.done", { count: one ? 1 : 2, time: span(minutes) }),
+                timeOfDay
               );
+              // Dawn and dusk come with the clock: what recovers then, recovers now.
+              if (commands) {
+                for (const kind of crossedBoundaries(timeOfDay, minutes)) {
+                  void declareClockBoundary(
+                    commands,
+                    kind,
+                    t(`magicItems.clockApplied_${kind}`)
+                  );
+                }
+              }
               onClose();
             }}
           >
@@ -90,6 +125,22 @@ export function PlayTime({
             value={typed}
             onChange={(e) => setTyped(e.target.value)}
           />
+        )}
+        {askTime ? (
+          <Field
+            label={t(known !== undefined ? "play.time.now" : "play.time.whatTime")}
+            type="time"
+            className="f-in f-in-short"
+            value={clock}
+            onChange={(e) => setClock(e.target.value)}
+            {...(view?.span
+              ? { help: t("play.time.span", { from: view.span.from, to: view.span.to }) }
+              : {})}
+          />
+        ) : (
+          <Button kind="ghost" onClick={() => setAskTime(true)}>
+            {t("play.time.setTimeOfDay")}
+          </Button>
         )}
       </div>
       {view && (

@@ -10,7 +10,8 @@ import { longRestCharacter } from "@/lib/play/rests";
 import { crossedDawn, crossedDusk, passTime, restCrossesDawn } from "@/lib/play/time";
 import { sessionToState, stateToSession } from "@/lib/session-state-codec";
 import { applySheetEvent } from "@/lib/play/sheet-events";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, CustomEquipment } from "@/types/character";
+import { customInstanceId } from "./__helpers__/custom-items";
 import { makeCharacterDoc } from "./_helpers";
 
 const at = (hh: number, mm = 0) => hh * 60 + mm;
@@ -61,5 +62,35 @@ describe("the clock moves with time", () => {
     expect(saved.timeOfDay).toBe(at(22));
     const cleared = applySheetEvent(set, { kind: "set-time-of-day", minutes: null });
     expect(cleared?.session.timeOfDay).toBeUndefined();
+  });
+});
+
+describe("dawn charges follow the clock", () => {
+  const rod: CustomEquipment = {
+    custom: true,
+    name: "Dawn Rod",
+    quantity: 1,
+    equipped: true,
+    instanceId: customInstanceId("Dawn Rod"),
+    charges: { current: 0, max: 7, recovery: "dawn" },
+  };
+  const withRod = (timeOfDay?: number): CharacterDoc => {
+    const base = doc(timeOfDay);
+    return { ...base, character: { ...base.character, equipment: [rod] } };
+  };
+  const charges = (d: CharacterDoc | null | undefined) => {
+    const item = d?.character.equipment[0];
+    return item && "custom" in item ? item.charges?.current : undefined;
+  };
+
+  it("passing time across 06:00 brings them back; before it, not", () => {
+    expect(charges(passTime(withRod(at(22)), 480))).toBe(7);
+    expect(charges(passTime(withRod(at(8)), 60))).toBe(0);
+  });
+
+  it("a Long Rest that doesn't span dawn leaves them; with no time set it brings them", () => {
+    expect(charges(longRestCharacter(withRod(at(8))))).toBe(0);
+    expect(charges(longRestCharacter(withRod()))).toBe(7);
+    expect(charges(longRestCharacter(withRod(at(23))))).toBe(7);
   });
 });

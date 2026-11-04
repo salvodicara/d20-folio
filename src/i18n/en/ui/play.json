@@ -90,6 +90,14 @@
       "slotsLeft": "{{left}} of {{total}}"
     },
     "time": {
+      "setTimeOfDay": "Set the time of day",
+      "whatTime": "What time is it? (optional)",
+      "now": "Time",
+      "span": "From {{from}} to {{to}}",
+      "recovers_dawn": "Dawn breaks: {{item}} regains {{amount}} {{unit}}",
+      "recoversAll_dawn": "Dawn breaks: {{item}} recharges",
+      "recovers_dusk": "Dusk falls: {{item}} regains {{amount}} {{unit}}",
+      "recoversAll_dusk": "Dusk falls: {{item}} recharges",
       "title": "Let time pass",
       "howMuch": "How much time passes?",
       "hours_one": "{{count}} hour",
