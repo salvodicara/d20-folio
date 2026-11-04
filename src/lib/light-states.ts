@@ -141,3 +141,49 @@ export function lightStateName(key: string): LocText | undefined {
 export function lightLevelName(level: LightLevel): LocText {
   return LABELS[level];
 }
+
+/** Who is looking: their conditions and their senses. */
+export interface Viewer {
+  conditions: ReadonlyArray<string>;
+  sight: SightProfile;
+  /** Sees Invisible creatures and objects (See Invisibility, Truesight's own). */
+  seeInvisibleFt?: number;
+}
+
+/** What is looked at: its conditions (Invisible). */
+export interface Seen {
+  conditions?: ReadonlyArray<string>;
+}
+
+/** What the table knows about the scene: the light where the source is, when known
+ *  ("bright", a light level, or magical Darkness). */
+export interface SightContext {
+  light?: SightLevel | "bright";
+}
+
+/**
+ * Whether `viewer` can see `source` (2024 rules glossary: Blinded, Invisible,
+ * Heavily Obscured; Blindsight and Truesight perceive through them, See Invisibility
+ * sees the Invisible, Darkvision and Devil's Sight lift Darkness by `sightUnder`).
+ * `false` and `true` are what the facts say; `undefined` means they don't say enough
+ * (the light is unknown and nothing else decides): the table answers, by hand.
+ */
+export function canSee(
+  viewer: Viewer,
+  source: Seen,
+  ctx: SightContext = {}
+): boolean | undefined {
+  const has = (feet: number | undefined) => (feet ?? 0) > 0;
+  const perceives = has(viewer.sight.blindsightFt) || has(viewer.sight.truesightFt);
+  if (viewer.conditions.includes("blinded")) return perceives;
+  if (
+    source.conditions?.includes("invisible") &&
+    !perceives &&
+    !has(viewer.seeInvisibleFt)
+  ) {
+    return false;
+  }
+  if (ctx.light === undefined) return undefined;
+  if (ctx.light === "bright") return true;
+  return sightUnder(ctx.light, viewer.sight) !== "heavily-obscured";
+}
