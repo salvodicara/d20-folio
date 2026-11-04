@@ -223,6 +223,9 @@
       "faceHint": "Con 20 ti rialzi a 1 punto ferita; con 1 contano due fallimenti.",
       "stable": "Stabile: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
       "stableFor": "Stabile da {{minutes}} min: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo)."
+    },
+    "conditions": {
+      "cantSeeSource": "Non vedo la fonte"
     }
   }
 }
