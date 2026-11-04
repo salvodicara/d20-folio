@@ -611,6 +611,14 @@
     "actionRepeatSave": "Usa l'azione: ripeti il TS su {{ability}} contro {{condition}}.",
     "actionRepeatSaveDc": "Usa l'azione: ripeti il TS su {{ability}} (CD {{dc}}) contro {{condition}}.",
     "actionRepeatSaveSpent": "Azione usata per ripetere il TS",
-    "actionRepeatSaveEnded": "{{condition}} termina"
+    "actionRepeatSaveEnded": "{{condition}} termina",
+    "hitPointDiceSpent_healing_one": "{{source}}: spendi {{count}} Dado Vita e recuperi {{amount}} PF.",
+    "hitPointDiceSpent_healing_other": "{{source}}: spendi {{count}} Dadi Vita e recuperi {{amount}} PF.",
+    "hitPointDiceSpent_temp-hp_one": "{{source}}: spendi {{count}} Dado Vita e ottieni {{amount}} PF temporanei.",
+    "hitPointDiceSpent_temp-hp_other": "{{source}}: spendi {{count}} Dadi Vita e ottieni {{amount}} PF temporanei.",
+    "hitPointDiceSpent_damage_one": "{{source}}: spendi {{count}} Dado Vita; aggiungi {{amount}} ai danni.",
+    "hitPointDiceSpent_damage_other": "{{source}}: spendi {{count}} Dadi Vita; aggiungi {{amount}} ai danni.",
+    "hitPointDiceSpent_save_one": "{{source}}: spendi {{count}} Dado Vita; aggiungi {{amount}} al tiro salvezza.",
+    "hitPointDiceSpent_save_other": "{{source}}: spendi {{count}} Dadi Vita; aggiungi {{amount}} al tiro salvezza."
   }
 }

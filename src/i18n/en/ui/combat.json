@@ -611,6 +611,14 @@
     "actionRepeatSave": "Use your action: repeat the {{ability}} save against {{condition}}.",
     "actionRepeatSaveDc": "Use your action: repeat the {{ability}} save (DC {{dc}}) against {{condition}}.",
     "actionRepeatSaveSpent": "Action used to repeat the save",
-    "actionRepeatSaveEnded": "{{condition}} ends"
+    "actionRepeatSaveEnded": "{{condition}} ends",
+    "hitPointDiceSpent_healing_one": "{{source}}: you spend {{count}} Hit Point Die and regain {{amount}} HP.",
+    "hitPointDiceSpent_healing_other": "{{source}}: you spend {{count}} Hit Point Dice and regain {{amount}} HP.",
+    "hitPointDiceSpent_temp-hp_one": "{{source}}: you spend {{count}} Hit Point Die and gain {{amount}} temporary HP.",
+    "hitPointDiceSpent_temp-hp_other": "{{source}}: you spend {{count}} Hit Point Dice and gain {{amount}} temporary HP.",
+    "hitPointDiceSpent_damage_one": "{{source}}: you spend {{count}} Hit Point Die; add {{amount}} to the damage.",
+    "hitPointDiceSpent_damage_other": "{{source}}: you spend {{count}} Hit Point Dice; add {{amount}} to the damage.",
+    "hitPointDiceSpent_save_one": "{{source}}: you spend {{count}} Hit Point Die; add {{amount}} to the saving throw.",
+    "hitPointDiceSpent_save_other": "{{source}}: you spend {{count}} Hit Point Dice; add {{amount}} to the saving throw."
   }
 }

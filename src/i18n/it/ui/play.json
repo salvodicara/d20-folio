@@ -262,6 +262,15 @@
       "hint": "Il prossimo attacco di un tuo alleato contro quel nemico, prima del tuo prossimo turno, ha Vantaggio.",
       "confirm": "Aiuta",
       "given": "Aiuti contro {{name}}"
+    },
+    "hitDice": {
+      "count": "Dadi Vita da spendere",
+      "rolled": "Totale tirato ({{dice}})",
+      "gain_healing": "Recuperi {{amount}} PF.",
+      "gain_temp-hp": "Ottieni {{amount}} PF temporanei.",
+      "gain_damage": "Aggiungi {{amount}} ai danni.",
+      "gain_save": "Aggiungi {{amount}} al tiro salvezza.",
+      "oddRoll": "Un tiro dispari non dà nulla."
     }
   }
 }

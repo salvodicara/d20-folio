@@ -27,7 +27,11 @@ import { ALL_REACTION_TRIGGERS, type LocaleText } from "@/data/types";
 import type { ProficiencyToken } from "@/types/ids";
 import type { ResourceSpec } from "@/types/resource";
 import type { DiceScalar, Scalar } from "@/lib/scalar";
-import type { CatalogueEffect } from "@/lib/catalogue-effects";
+import {
+  HIT_POINT_DICE_MAX,
+  HIT_POINT_DICE_OPTIONAL,
+  type CatalogueEffect,
+} from "@/lib/catalogue-effects";
 import { LOCALES, type Locale } from "@/lib/locale";
 import { DETECTION_TARGETS } from "@/lib/rules/detection-targets";
 
@@ -683,16 +687,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         ),
         /** The rule offers an action the player may take (Hunter's Mark moving). */
         objectSchema({ actionId: stringSchema, kind: literalSchema("offer") }),
-        /** The player may roll up to `max` unexpended Hit Point Dice and regain
-         *  their total plus `bonus` (Necromancy Adept: the slot's level). */
+        /** The player may spend up to `max` unexpended Hit Point Dice and gain
+         *  their total plus `bonus` (Necromancy Adept: healing plus the slot's
+         *  level); `@/lib/play/hit-point-dice` reads it. */
         objectSchema(
-          { kind: literalSchema("hit-point-dice"), max: numberSchema },
-          {
-            bonus: unionSchema([
-              literalSchema("slot-level"),
-              literalSchema("spellcasting-mod"),
-            ]),
-          }
+          { kind: literalSchema("hit-point-dice"), max: HIT_POINT_DICE_MAX },
+          { ...HIT_POINT_DICE_OPTIONAL }
         ),
       ]),
       /** The event. Each one has a runtime reader (`trigger-events.guard.test.ts`):

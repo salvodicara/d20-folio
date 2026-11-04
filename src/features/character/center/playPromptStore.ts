@@ -9,6 +9,7 @@
  * A kind is present while its question is open, absent once answered or cancelled.
  */
 import type { LocText } from "@/lib/loc-text";
+import type { HitPointDiceOffer } from "@/lib/play/hit-point-dice";
 import { useLayoutEffect } from "react";
 import { create } from "zustand";
 
@@ -46,6 +47,18 @@ export interface PlayPrompts {
   "potion-mixing": {
     potions: LocText[];
     onConfirm: (roll: number | null) => void;
+  };
+  /** Hit Point Dice a rule lets the player spend (Necromancy Adept): how many, and
+   *  the total they rolled. `onCancel` spends none. */
+  "hit-point-dice": {
+    source: LocText;
+    offer: HitPointDiceOffer;
+    /** The die sizes the pool holds ("d8", "d10/d6"). */
+    sizes: string;
+    /** The lowest and highest total `count` of them can roll. */
+    range: (count: number) => { min: number; max: number };
+    onConfirm: (count: number, rolled: number) => void;
+    onCancel: () => void;
   };
 }
 

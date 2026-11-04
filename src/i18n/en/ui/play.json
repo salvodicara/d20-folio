@@ -262,6 +262,15 @@
       "hint": "The next attack by one of your allies against that enemy, before your next turn, has Advantage.",
       "confirm": "Help",
       "given": "Helping against {{name}}"
+    },
+    "hitDice": {
+      "count": "Hit Point Dice to spend",
+      "rolled": "Total rolled ({{dice}})",
+      "gain_healing": "You regain {{amount}} HP.",
+      "gain_temp-hp": "You gain {{amount}} temporary HP.",
+      "gain_damage": "Add {{amount}} to the damage.",
+      "gain_save": "Add {{amount}} to the saving throw.",
+      "oddRoll": "An odd roll gives nothing."
     }
   }
 }
