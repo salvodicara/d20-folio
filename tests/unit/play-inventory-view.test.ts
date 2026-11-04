@@ -7,6 +7,8 @@
 import { describe, expect, it } from "vitest";
 import { playInventoryView } from "@/domains/play/play-inventory-view";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import type { CharacterDoc } from "@/types/character";
+import { makeCharacterDoc } from "./_helpers";
 
 const view = playInventoryView(MOCK_CHARACTER, "it");
 
@@ -142,5 +144,77 @@ describe("gear in a form that merges it (Wild Shape)", () => {
         ?.items.every((i) => !i.formGear)
     ).toBe(true);
     expect(playInventoryView(MOCK_CHARACTER, "it").formMerges).toBe(false);
+  });
+});
+
+describe("attunement on the Play inventory", () => {
+  const ref = (srdId: string, instanceId: string, attuned = false) => ({
+    srdId,
+    instanceId,
+    quantity: 1,
+    equipped: true,
+    attuned,
+  });
+  const fighter = (equipment: ReturnType<typeof ref>[]) =>
+    makeCharacterDoc({ classId: "fighter", level: 5, race: "human" as never, equipment });
+  const attuneOf = (doc: CharacterDoc, name: string) =>
+    playInventoryView(doc, "it")
+      .groups.flatMap((g) => g.items)
+      .find((i) => i.name === name)?.attune;
+
+  it("an item that takes attunement can be attuned; an attuned one can end it", () => {
+    const doc = fighter([
+      ref("cloak-of-protection", "cloak", true),
+      ref("ring-of-protection", "ring"),
+    ]);
+    expect(attuneOf(doc, "Mantello della Protezione")).toEqual({
+      instanceId: "cloak",
+      attuned: true,
+    });
+    expect(attuneOf(doc, "Anello di Protezione")).toEqual({
+      instanceId: "ring",
+      attuned: false,
+    });
+  });
+
+  it("a fourth item names the three standing in the way", () => {
+    const doc = fighter([
+      ref("cloak-of-protection", "cloak", true),
+      ref("amulet-of-health", "amulet", true),
+      ref("ring-of-protection", "ring", true),
+      ref("gauntlets-of-ogre-power", "gauntlets"),
+    ]);
+    expect(attuneOf(doc, "Guanti del Potere Orchesco")?.refusal).toEqual({
+      reason: "limit",
+      limit: 3,
+      names: [
+        "Mantello della Protezione",
+        "Amuleto della Salute",
+        "Anello di Protezione",
+      ],
+    });
+  });
+
+  it("an item for some classes names them", () => {
+    const doc = fighter([ref("staff-of-power", "staff")]);
+    expect(attuneOf(doc, "Bastone del Potere")?.refusal).toEqual({
+      reason: "prerequisite",
+      spellcaster: false,
+      names: ["Stregone", "Warlock", "Mago"],
+    });
+  });
+
+  it("an item for spellcasters says so", () => {
+    const doc = fighter([ref("pearl-of-power", "pearl")]);
+    expect(attuneOf(doc, "Perla del Potere")?.refusal).toEqual({
+      reason: "prerequisite",
+      spellcaster: true,
+      names: [],
+    });
+  });
+
+  it("items that take no attunement offer nothing", () => {
+    const pack = view.groups.flatMap((g) => g.items);
+    expect(pack.find((i) => i.name === "Pozione di Guarigione")?.attune).toBeUndefined();
   });
 });
