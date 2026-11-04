@@ -9,6 +9,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 
@@ -122,5 +123,20 @@ describe("Play conditions panel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Add condition" }));
     fireEvent.click(screen.getByRole("button", { name: "Grappled" }));
     expect(addCondition).toHaveBeenCalledWith("grappled", undefined);
+  });
+
+  it("a table whose Exhaustion ends at 4: the stepper stops there, and 4 is death", () => {
+    const rules = {
+      ...RAW_TABLE_RULES,
+      exhaustion: { maxLevel: 4, d20PerLevel: -2, speedFtPerLevel: -5 },
+    };
+    open({
+      ...frightened(),
+      session: { ...frightened().session, exhaustion: 4, tableRules: rules },
+    });
+    expect(screen.getByText("Level 4: the character dies")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Increase" }).getAttribute("aria-disabled")
+    ).toBe("true");
   });
 });

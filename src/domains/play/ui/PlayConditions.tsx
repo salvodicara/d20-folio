@@ -71,24 +71,26 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
         >
           <Panel color="cond" title={t("combat.effectReview.conditions")}>
             {view.count === 0 && <p className="f-quiet">{t("character.noConditions")}</p>}
-            {view.exhaustion > 0 && (
+            {view.exhaustion.level > 0 && (
               <div className="f-cond-row">
                 <div className="f-cond-main">
                   <span className="f-row-t">{name("exhaustion")}</span>
                   <span className="f-row-s">
-                    {view.exhaustion >= 6
-                      ? t("play.conditions.exhaustionDeath")
+                    {view.exhaustion.level >= view.exhaustion.max
+                      ? t("play.conditions.exhaustionDeath", {
+                          level: view.exhaustion.max,
+                        })
                       : t("play.conditions.exhaustionLevel", {
-                          level: view.exhaustion,
-                          d20: 2 * view.exhaustion,
-                          speed: localeDistance(5 * view.exhaustion, locale),
+                          level: view.exhaustion.level,
+                          d20: view.exhaustion.d20,
+                          speed: localeDistance(view.exhaustion.speedFt, locale),
                         })}
                   </span>
                   {!readonly && (
                     <Stepper
-                      value={view.exhaustion}
+                      value={view.exhaustion.level}
                       min={1}
-                      max={6}
+                      max={view.exhaustion.max}
                       label={`${name("exhaustion")} · ${t("common.level")}`}
                       less={t("common.decrease")}
                       more={t("common.increase")}
