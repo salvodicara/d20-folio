@@ -132,9 +132,14 @@ export function damageTrayPlan(
   const items = castFollowUps(action, targets, selfId);
   const spec = combatResolutionSpec(action);
   const attacks = rollsToHit(action);
+  // A state a failed save leaves (Bane, Faerie Fire) asks who failed, even with no
+  // damage or condition to apply.
+  const standsOnSave =
+    spec.standingEffect !== undefined && spec.kind === "save" && targets.length > 0;
   // An attack at a picked target always has its result to say, even with nothing
   // else to apply (Ray of Enfeeblement).
-  if (items.length === 0 && !(attacks && targets.length > 0)) return null;
+  if (items.length === 0 && !(attacks && targets.length > 0) && !standsOnSave)
+    return null;
   // A pool spend (Lay on Hands) already chose its amount in its own picker: there is
   // no roll to type, so the tray would only ask the same number twice.
   if (spec.poolSpend) return null;
@@ -185,7 +190,10 @@ export function damageTrayPlan(
       : []
   );
   const planTargets = [
-    ...new Set([...items.map((item) => item.targetId), ...(attacks ? targets : [])]),
+    ...new Set([
+      ...items.map((item) => item.targetId),
+      ...(attacks || standsOnSave ? targets : []),
+    ]),
   ];
   const split =
     effect !== null && !spec.area && (s.instances ?? 1) > 1 && planTargets.length > 1;
@@ -198,7 +206,7 @@ export function damageTrayPlan(
     ...(s.ignoresResistance?.length
       ? { ignoresResistance: [...s.ignoresResistance] }
       : {}),
-    ...(hasSave && (saveGovernsDamage || condition)
+    ...(hasSave && (saveGovernsDamage || condition || standsOnSave)
       ? {
           save: {
             ...(s.saveAbility ? { ability: s.saveAbility } : {}),

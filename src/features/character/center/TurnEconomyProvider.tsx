@@ -48,6 +48,7 @@ import {
   combineWriters,
   hitStateWriter,
   saveSuccessWriter,
+  standingOutcomeWriter,
   targetRef,
   vexWriter,
 } from "./outcome-offer";
@@ -1011,10 +1012,14 @@ export function TurnEconomyProvider({
     const plan = damageTrayPlan(action, targets, selfCombatantId());
     if (!plan) return;
     const onSaved = saveSuccessWriter(action, characterId);
-    // A hit's states: the action's own (Guiding Bolt) and its weapon's Vex.
+    const doc = useCharacterStore.getState().character;
+    // A failed save's state (Bane) and a hit's: the action's own (Guiding Bolt, Ray
+    // of Frost's), and its weapon's Vex.
+    const onFailed = doc ? standingOutcomeWriter(action, doc, "failed-save") : undefined;
     const onHit = combineWriters(
       hitStateWriter(action, characterId),
-      vexWriter(action, characterId)
+      vexWriter(action, characterId),
+      doc ? standingOutcomeWriter(action, doc, "hit") : undefined
     );
     useDamageTrayStore.getState().show({
       characterId,
@@ -1025,6 +1030,7 @@ export function TurnEconomyProvider({
       ...(occurrenceId ? { occurrenceId } : {}),
       plan,
       ...(onSaved ? { onSaved } : {}),
+      ...(onFailed ? { onFailed } : {}),
       ...(onHit ? { onHit } : {}),
       ...(action.summary.conditionSource
         ? { conditionSource: action.summary.conditionSource }

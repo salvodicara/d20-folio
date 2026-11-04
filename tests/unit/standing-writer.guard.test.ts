@@ -3,12 +3,14 @@
  * with `recipient: "selected"`, or a mark) reaches that creature (the writer deleted
  * in 9cbb720bc went unnoticed). Walks the composed catalogue, not a hand list: an
  * automatic one is written when the cast commits (`standingAtCommit`); one that lands
- * on a failed save or a hit carries the state the outcome writes.
+ * on a failed save or a hit opens the tray that asks it, whose outcome writes it
+ * (`standingOutcomeWriter`).
  */
 import { describe, expect, it } from "vitest";
 
 import { spells } from "@/data/spells";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
+import { damageTrayPlan } from "@/lib/play/damage-tray";
 import { standingAtCommit } from "@/lib/play/standing-effects";
 import { localizeActions } from "@/lib/views/combat-action-view";
 
@@ -64,6 +66,14 @@ describe("a state a spell leaves on the creature it names", () => {
       expect(spec.standingEffect, "the cast carries the state").toBeDefined();
       if (spec.kind === "automatic") {
         expect(standingAtCommit(action), "written when the cast commits").not.toBeNull();
+      } else {
+        // A failed save or a hit decides it: the tray asks, and its outcome writes it.
+        const plan = damageTrayPlan(action, ["m-target"], "pc-me");
+        expect(plan, "the tray asks the outcome").not.toBeNull();
+        expect(
+          spec.kind === "save" ? plan?.save : plan?.attack,
+          "the tray asks the save or the hit"
+        ).toBeDefined();
       }
     });
   }

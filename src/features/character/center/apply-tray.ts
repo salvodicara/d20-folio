@@ -400,7 +400,7 @@ export function applyTray(
         }
         // What a hit (a companion's Web Bolt) or a successful save (Stunning Strike)
         // puts on its target beyond damage.
-        if (offer.onHit || offer.onSaved) {
+        if (offer.onHit || offer.onSaved || offer.onFailed) {
           const campaignId = useCombatStatusStore.getState().status?.campaignId;
           const effects = campaignId
             ? [
@@ -410,6 +410,9 @@ export function applyTray(
                 ...applied
                   .filter((row) => row.saved)
                   .flatMap((row) => offer.onSaved?.(row.target.id) ?? []),
+                ...applied
+                  .filter((row) => !row.saved)
+                  .flatMap((row) => offer.onFailed?.(row.target.id) ?? []),
               ]
             : [];
           if (campaignId && effects.length > 0) {
