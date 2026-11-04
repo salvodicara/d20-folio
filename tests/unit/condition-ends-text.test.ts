@@ -100,10 +100,7 @@ describe("repeat saves outside the end of the target's turn", () => {
 });
 
 describe("three-of-a-kind save tracks", () => {
-  it.each([
-    ["contagion", /until it gets three successes or failures/i],
-    ["flesh-to-stone", /keep track of both until the target collects three of a kind/i],
-  ] as const)(
+  it.each([["contagion", /until it gets three successes or failures/i]] as const)(
     "%s: CON at the end of its turns, three successes or three failures",
     (id, raw) => {
       expect(text(id)).toMatch(raw);
@@ -117,4 +114,23 @@ describe("three-of-a-kind save tracks", () => {
       ]);
     }
   );
+});
+
+describe("a save track that settles into a condition", () => {
+  it("flesh-to-stone: three failures turn the target to stone (Petrified)", () => {
+    expect(text("flesh-to-stone")).toMatch(
+      /keep track of both until the target collects three of a kind/i
+    );
+    expect(text("flesh-to-stone")).toMatch(
+      /fails its saves three times, it is turned to stone and has the petrified condition/i
+    );
+    expect(endsOf("flesh-to-stone")).toEqual([
+      {
+        on: "repeat-save",
+        ability: "CON",
+        at: "target-turn-end",
+        track: { successes: 3, failures: 3, settlesInto: "petrified" },
+      },
+    ]);
+  });
 });
