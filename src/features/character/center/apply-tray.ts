@@ -140,7 +140,7 @@ export function applyTray(
         if (shared) reversals.push(stampOutcome(offer.castLogId, shared));
         const receiptIds = useCombatStore.getState().recordOutcomes(receipts);
         reversals.push(() => useCombatStore.getState().withdrawOutcomes(receiptIds));
-        for (const { target, amount, conditions, outcome } of local) {
+        for (const { target, amount, conditions, outcome, knockOut } of local) {
           if (target.kind === "self") {
             if (effect && amount > 0)
               applySelf(effect, amount, source, reversals, plan.onZeroHp);
@@ -169,6 +169,8 @@ export function applyTray(
               amount,
               ...given,
               ...(outcome && effect === "damage" ? { outcome } : {}),
+              // «Non letale»: the DM's apply leaves it at 1 HP if it would drop to 0.
+              ...(knockOut && effect === "damage" ? { knockOut } : {}),
             });
           for (const conditionId of conditions)
             store.logEvent({
