@@ -12,6 +12,7 @@ import {
   literalSchema,
   numberSchema,
   objectSchema,
+  stringSchema,
   type ExactSchema,
 } from "@/lib/exact-schema";
 import { literals } from "@/lib/homebrew-conform";
@@ -54,7 +55,7 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   ),
   "speed-zero": objectSchema(
     { kind: literalSchema("speed-zero") },
-    { ...BASE, until: UNTIL }
+    { ...BASE, until: UNTIL, activeKey: stringSchema }
   ),
   "next-attack-advantage": objectSchema(
     { kind: literalSchema("next-attack-advantage") },

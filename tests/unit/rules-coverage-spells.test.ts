@@ -45,7 +45,10 @@ function leafKinds(grants: ReadonlyArray<Grant>): string[] {
 }
 
 function classOf(spell: SrdSpellData): "auto" | "tap" | "reference" {
-  const lit = (spell.grants ?? []).filter((grant) => grant.type === "while-active");
+  // Casting lights a state, unless its own action row enters it (Web Bolt's).
+  const lit = (spell.grants ?? []).filter(
+    (grant) => grant.type === "while-active" && !grant.activatedByAction
+  );
   if (leafKinds(lit).some((kind) => kind !== "defense-note")) return "auto";
   const { activity, gaps } = translateSpell(spell);
   const structured =

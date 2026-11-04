@@ -1175,6 +1175,9 @@
     "name": "Giant Insect",
     "range": "60 feet"
   },
+  "giant-insect.grants.0": {
+    "label": "Web Bolt"
+  },
   "giant-insect.companion": {
     "name": "Giant Centipede",
     "kind": "Large Beast",
