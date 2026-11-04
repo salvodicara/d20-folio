@@ -18,6 +18,7 @@
  *    `StatusEnd`): a status the activity lights is declared as the Status it
  *    starts as.
  */
+import type { Scalar } from "@/lib/scalar";
 import type {
   AbilityCode,
   ActionEconomyCategory,
@@ -393,13 +394,15 @@ export type ActivityEffect =
   /** A flying target with no other way to stay aloft falls (Fly ending). The engine
    *  decides whether it is aloft. */
   | (EffectBase & { kind: "fall-if-aloft" })
-  /** Expended spell slots of combined level up to `totalLevels` (+ `perUpcast` per
-   *  slot level above the spell's), none above `maxSlotLevel`, come back. */
+  /** Expended spell slots come back: of combined level up to `totalLevels` (+
+   *  `perUpcast` per slot level above the spell's), or up to `count` slots; none
+   *  above `maxSlotLevel` (a Scalar, so it can grow with the slot cast). */
   | (EffectBase & {
       kind: "recover-slots";
-      totalLevels: number;
+      totalLevels?: number;
+      count?: number;
       perUpcast?: number;
-      maxSlotLevel?: number;
+      maxSlotLevel?: Scalar;
     })
   /** The target's Speed is 0, until a turn boundary of the user (`actor`) or the
    *  target (Web Bolt: until the start of the insect's next turn). Absent `until`:
