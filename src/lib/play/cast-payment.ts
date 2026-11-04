@@ -3,6 +3,7 @@
  * character, shared by the cast picker (a proposal) and the commit (which revalidates
  * against the live character so no path overdraws a resource).
  */
+import { equipmentKeyMatches } from "@/lib/equipment-key";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
 import { bareSlotIsPact, slotUsageKey, type CastLevelOption } from "@/lib/cast-options";
 import {
@@ -153,25 +154,43 @@ export function actionPaymentAffordable(
   doc: CharacterDoc,
   action: ResolvedAction
 ): boolean {
+  return paymentShortfall(doc, action) === null;
+}
+
+/** Why a bare action can't be paid now, so a refused use says so instead of
+ *  vanishing: no open slot, no use left, the scroll or the item gone. Null: payable. */
+export type PaymentShortfall = "slot" | "uses" | "scroll" | "item";
+
+export function paymentShortfall(
+  doc: CharacterDoc,
+  action: ResolvedAction
+): PaymentShortfall | null {
   if (action.costsSlot) {
-    if (action.slotLevel == null) return false;
-    return slotOpen(
-      doc,
-      action.slotLevel,
-      bareSlotIsPact(doc.character.spellSlots, action.slotLevel)
-    );
+    return action.slotLevel != null &&
+      slotOpen(
+        doc,
+        action.slotLevel,
+        bareSlotIsPact(doc.character.spellSlots, action.slotLevel)
+      )
+      ? null
+      : "slot";
   }
   if (!action.resourcePayment && action.costTracker) {
-    return trackerAffordable(doc, action.costTracker, action.trackerCost ?? 1);
+    return trackerAffordable(doc, action.costTracker, action.trackerCost ?? 1)
+      ? null
+      : "uses";
   }
   if (action.costEquipment) {
-    return doc.character.equipment.some(
-      (ref) =>
-        ("custom" in ref ? `custom-${ref.instanceId}` : ref.srdId) ===
-          action.costEquipment && (ref.quantity ?? 1) > 0
+    const key = action.costEquipment;
+    const held = doc.character.equipment.some(
+      (ref) => equipmentKeyMatches(ref, key) && (ref.quantity ?? 1) > 0
     );
+    if (held) return null;
+    return key.startsWith("spell-scroll") || action.id.startsWith("item-scroll-")
+      ? "scroll"
+      : "item";
   }
-  return true;
+  return null;
 }
 
 /** Revalidate a configured cast: the picker is only a proposal, and a sync, another

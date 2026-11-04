@@ -194,6 +194,14 @@
         "magical-darkness": "magical darkness",
         "bright": "bright light"
       }
+    },
+    "scroll": {
+      "which": "Which spell is on this scroll?",
+      "search": "Find a spell",
+      "onList": "on your list",
+      "noMatch": "No spell by that name",
+      "none": "spell to choose",
+      "set": "Scroll: {{spell}}"
     }
   }
 }

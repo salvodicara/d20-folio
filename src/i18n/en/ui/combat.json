@@ -568,6 +568,13 @@
     "nextAttack": "Next attack",
     "extraDamage": "Extra damage",
     "offhandName": "{{name}} (off-hand)",
-    "pactProneNote": "{{rider}}: spend a Pact Magic slot; target Prone (Huge or smaller)"
+    "pactProneNote": "{{rider}}: spend a Pact Magic slot; target Prone (Huge or smaller)",
+    "shortfall": {
+      "slot": "No open slot of that level: nothing was spent",
+      "uses": "No uses left: nothing was spent",
+      "scroll": "Scroll not found in your inventory: nothing was spent",
+      "item": "That item is no longer in your inventory: nothing was spent",
+      "cast": "This cast can no longer be paid: nothing was spent"
+    }
   }
 }
