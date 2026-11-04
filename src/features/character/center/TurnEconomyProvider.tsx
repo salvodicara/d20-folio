@@ -24,6 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { saveSuccessWriter } from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
@@ -949,6 +950,7 @@ export function TurnEconomyProvider({
     if (!characterId) return;
     const plan = damageTrayPlan(action, targets, selfCombatantId());
     if (!plan) return;
+    const onSaved = saveSuccessWriter(action, characterId);
     useDamageTrayStore.getState().show({
       characterId,
       actionName: action.name,
@@ -957,6 +959,7 @@ export function TurnEconomyProvider({
       actionId: action.id,
       ...(occurrenceId ? { occurrenceId } : {}),
       plan,
+      ...(onSaved ? { onSaved } : {}),
     });
   }
 

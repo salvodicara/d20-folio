@@ -33,7 +33,7 @@ import { SRD_INVOCATIONS } from "@/data/invocations";
 import { SRD_MANEUVERS } from "@/data/maneuvers";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
 import { findBackground } from "@/data/backgrounds";
-import { getClassTable } from "@/data/classes";
+import { classFeatureIndex, getClassTable } from "@/data/classes";
 import type { ToolChoiceContext } from "@/data/background-equipment";
 import { toolEnNameById, umbrellaToolChoiceOptions } from "@/lib/tool-names";
 import type { ReactionTrigger, SrdSpellData } from "@/data/types";
@@ -332,10 +332,17 @@ export type WhileActiveGrant = Extract<Grant, { type: "while-active" }>;
 export function resolveCombatEffectGrantGroup(
   effect: ActiveCombatEffect
 ): WhileActiveGrant | null {
-  if (effect.source.kind !== "spell" || effect.payload.kind !== "grant-group")
-    return null;
-  const spell = getSpellById(effect.source.id);
+  if (effect.payload.kind !== "grant-group") return null;
   const activeKey = effect.payload.activeKey;
+  // A feature's states for its targets (Stunning Strike), never its own grants.
+  if (effect.source.kind === "feature") {
+    return (
+      classFeatureIndex
+        .get(effect.source.id)
+        ?.targetStates?.find((state) => state.activeKey === activeKey) ?? null
+    );
+  }
+  const spell = getSpellById(effect.source.id);
   return (
     spell?.grants?.find(
       (grant): grant is WhileActiveGrant =>

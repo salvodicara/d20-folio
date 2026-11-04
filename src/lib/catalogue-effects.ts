@@ -73,7 +73,7 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   "fall-if-aloft": objectSchema({ kind: literalSchema("fall-if-aloft") }, BASE),
   "speed-halved": objectSchema(
     { kind: literalSchema("speed-halved") },
-    { ...BASE, until: UNTIL }
+    { ...BASE, until: UNTIL, activeKey: stringSchema }
   ),
   "speed-zero": objectSchema(
     { kind: literalSchema("speed-zero") },
@@ -81,7 +81,7 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   ),
   "next-attack-advantage": objectSchema(
     { kind: literalSchema("next-attack-advantage") },
-    { ...BASE, against: literalSchema("target"), until: UNTIL }
+    { ...BASE, against: literalSchema("target"), until: UNTIL, activeKey: stringSchema }
   ),
   exhaustion: objectSchema(
     { kind: literalSchema("exhaustion"), levels: numberSchema },

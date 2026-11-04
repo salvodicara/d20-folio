@@ -392,9 +392,16 @@ export type ActivityEffect =
       kind: "next-attack-advantage";
       against?: "target";
       until?: EffectUntil;
+      /** The catalogue state that holds it on the target (`targetStates`). */
+      activeKey?: string;
     })
   /** The target's Speed is halved until `until` (Stunning Strike on a success). */
-  | (EffectBase & { kind: "speed-halved"; until?: EffectUntil })
+  | (EffectBase & {
+      kind: "speed-halved";
+      until?: EffectUntil;
+      /** The catalogue state that holds it on the target (`targetStates`). */
+      activeKey?: string;
+    })
   /** A flying target with no other way to stay aloft falls (Fly ending). The engine
    *  decides whether it is aloft. */
   | (EffectBase & { kind: "fall-if-aloft" })

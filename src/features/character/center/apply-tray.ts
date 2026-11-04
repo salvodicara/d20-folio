@@ -60,6 +60,8 @@ interface AppliedRow {
   conditions: string[];
   outcome?: AttackOutcome;
   knockOut?: true;
+  /** The target made its save. */
+  saved?: true;
 }
 
 /** Write the attack's one shared result onto the use's own log line; the returned
@@ -94,9 +96,10 @@ export function applyTray(
         conditions: row ? rowConditions(row) : [],
         ...(row?.attack ? { outcome: row.attack } : {}),
         ...(row?.knockOut ? { knockOut: true as const } : {}),
+        ...(row?.saved && offer.onSaved ? { saved: true as const } : {}),
       };
     })
-    .filter((row) => row.amount > 0 || row.conditions.length > 0);
+    .filter((row) => row.amount > 0 || row.conditions.length > 0 || row.saved);
   // Killed outright (Power Word Kill, its answer "100 HP or fewer"): each such target.
   const killed = targets.filter((_, index) => {
     const outcome = rows[index]?.outcome;
@@ -225,13 +228,19 @@ export function applyTray(
             );
           }
         }
-        // What a hit puts on its target beyond damage (a companion's Web Bolt).
-        if (offer.onHit) {
+        // What a hit (a companion's Web Bolt) or a successful save (Stunning Strike)
+        // puts on its target beyond damage.
+        if (offer.onHit || offer.onSaved) {
           const campaignId = useCombatStatusStore.getState().status?.campaignId;
           const effects = campaignId
-            ? applied
-                .filter((row) => row.outcome === "hit" || row.outcome === "critical")
-                .flatMap((row) => offer.onHit?.(row.target.id) ?? [])
+            ? [
+                ...applied
+                  .filter((row) => row.outcome === "hit" || row.outcome === "critical")
+                  .flatMap((row) => offer.onHit?.(row.target.id) ?? []),
+                ...applied
+                  .filter((row) => row.saved)
+                  .flatMap((row) => offer.onSaved?.(row.target.id) ?? []),
+              ]
             : [];
           if (campaignId && effects.length > 0) {
             const io = import("@/features/campaigns/campaign-io");
