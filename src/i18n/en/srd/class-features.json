@@ -1253,6 +1253,9 @@
     "description": "If you have no uses of Innate Sorcery left, you can still activate it by spending 2 Sorcery Points when you take the Bonus Action. In addition, while your Innate Sorcery is active, you can use up to two Metamagic options on each spell you cast rather than one.",
     "name": "Sorcery Incarnate"
   },
+  "sorcerer-sorcery-incarnate.grants.1": {
+    "label": "Sorcery Incarnate"
+  },
   "sorcerer-spellcasting": {
     "description": "You can cast sorcerer spells using Charisma as your spellcasting ability. You know a limited number of spells and can cast them using spell slots. You learn additional spells as you gain levels.",
     "name": "Spellcasting"

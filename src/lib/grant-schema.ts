@@ -604,6 +604,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
   }),
   /** A maintained state that needs no upkeep at End Turn (Persistent Rage: Rage
    *  lasts its full duration without attacking or extending it). */
+  /** How many Metamagic options may ride one spell (Sorcery Incarnate: two, while
+   *  Innate Sorcery is active). The highest wins; absent, one. */
+  "metamagic-per-spell": objectSchema({
+    max: numberSchema,
+    type: literalSchema("metamagic-per-spell"),
+  }),
   "upkeep-waiver": objectSchema({
     activeKey: stringSchema,
     type: literalSchema("upkeep-waiver"),

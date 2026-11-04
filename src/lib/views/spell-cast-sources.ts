@@ -440,6 +440,7 @@ export function resolveMetamagicForCast(
       forcesSave: spell.saveAbility != null,
       dealsDamage: spell.damageDice != null,
       makesAttack: spell.attackType != null,
+      gainsTargetsWhenUpcast: (spell.targeting?.maxTargetsPerUpcast ?? 0) > 0,
     },
     remainingSorceryPoints(character)
   );

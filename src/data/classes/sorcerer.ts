@@ -293,6 +293,13 @@ export const SORCERER_FEATURES: SrdClassFeatureData[] = [
         amount: 2,
         fromTracker: "sorcerer-font-of-magic",
       },
+      // "While your Innate Sorcery feature is active, you can use up to two of your
+      // Metamagic options on each spell you cast."
+      {
+        type: "while-active",
+        activeKey: "sorcerer-innate-sorcery",
+        grants: [{ type: "metamagic-per-spell", max: 2 }],
+      },
     ],
     source: "SRD",
   },
