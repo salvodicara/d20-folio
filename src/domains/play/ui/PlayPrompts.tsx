@@ -610,7 +610,7 @@ function MixingStep({
       actions={
         <>
           <Button kind="ghost" onClick={skip}>
-            {t("play.mixing.skip")}
+            {t("common.skip")}
           </Button>
           <Button
             kind="primary"

@@ -100,8 +100,7 @@
       "title": "Mixing potions",
       "note": "{{potions}} mix: roll on the DM's table.",
       "roll": "d100",
-      "record": "Record",
-      "skip": "Skip"
+      "record": "Record"
     },
     "time": {
       "setTimeOfDay": "Set the time of day",

@@ -100,8 +100,7 @@
       "title": "Mescolanza",
       "note": "{{potions}} si mescolano: tira sulla tabella del master.",
       "roll": "d100",
-      "record": "Registra",
-      "skip": "Salta"
+      "record": "Registra"
     },
     "time": {
       "setTimeOfDay": "Imposta l'ora del giorno",
