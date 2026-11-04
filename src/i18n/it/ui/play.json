@@ -36,6 +36,13 @@
       "whichSpell": "Quale incantesimo?",
       "castTitle": "Lancia {{name}}"
     },
+    "hands": {
+      "title": "Nessuna mano libera",
+      "held": "In mano: {{weapon}}. Le componenti di questo incantesimo richiedono una mano libera.",
+      "heldWithShield": "In mano: {{weapon}} e Scudo. Le componenti di questo incantesimo richiedono una mano libera.",
+      "stow": "Riponi l'arma (interazione gratuita)",
+      "stowed": "Arma riposta · interazione con un oggetto usata"
+    },
     "react": "Reagisci",
     "trayTotalHint": "Quanto hai tirato al tavolo, per esempio 8+6+3",
     "hp": {

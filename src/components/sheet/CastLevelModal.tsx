@@ -70,6 +70,8 @@ export interface CastLevelModalProps {
   request: {
     /** Localised spell name for the header. */
     spellName: string;
+    /** The spell's catalogue id (the free-hands warning reads it). */
+    spellId?: string;
     /** Spell base level (the slot row equal to it is the "normal" cast). */
     baseLevel: number;
     /** Available slot levels with remaining counts, all ≥ baseLevel. */

@@ -2734,6 +2734,7 @@ export function TurnEconomyProvider({
   const castLevelRequest = castRequest
     ? {
         spellName: castRequest.action.name,
+        ...(castRequest.action.spellId ? { spellId: castRequest.action.spellId } : {}),
         baseLevel: castRequest.baseLevel,
         options: castRequest.options,
         metamagic: castRequest.metamagic,
@@ -2772,6 +2773,9 @@ export function TurnEconomyProvider({
         actionName: targetRequest.action.name,
         isSpell: targetRequest.action.source === "spell",
         step: targetRequest.step,
+        ...(targetRequest.action.spellId
+          ? { spellId: targetRequest.action.spellId }
+          : {}),
       }
     : null;
   const confirmTarget: PlayPrompts["target"]["onConfirm"] = (targets) => {

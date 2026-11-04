@@ -542,6 +542,29 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Priced material components: casting Revivify offers '−300 gp' from the purse (a diamond the spell consumes; undoable, logged as 'Spent 300 gp on Revivify'); casting Augury only reminds of its 25 gp tokens (kept).",
   },
+  // Free hands (M18): a Longsword swing plus an equipped Shield leave no hand for a
+  // spell's components; casting Bless warns and offers to stow the sword (the turn's
+  // free object interaction). Visit `/characters/scn-hands-paladin`, attack with the
+  // Longsword, then cast Bless.
+  "hands-paladin": {
+    name: "Ser Odo, Sword and Board",
+    raceId: "human",
+    classId: "paladin",
+    level: 3,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 8, WIS: 10, CHA: 16 },
+    weapons: [{ srdId: "longsword", quantity: 1 }],
+    equipment: [
+      { srdId: "chain-mail", equipped: true },
+      { srdId: "shield", equipped: true },
+    ],
+    spells: [
+      { srdId: "bless", prepared: true },
+      { srdId: "cure-wounds", prepared: true },
+    ],
+    exercises:
+      "Free hands: after a Longsword attack, casting Bless (V, S, M) says 'No free hand' with 'Stow the weapon (free interaction)'; stowing spends the object interaction and the warning clears.",
+  },
   purchase: {
     name: "Bram, Market Day",
     raceId: "human",
