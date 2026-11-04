@@ -138,3 +138,20 @@ export function endFormIfDue(doc: CharacterDoc, next: SessionState): SessionStat
   const after = { ...doc, session: next };
   return (dropBeastForm(after, outOfTempHp ? 0 : undefined) ?? after).session;
 }
+
+/** The table rules a piece of gear still worn (or merged again) in a form whose gear
+ *  merges. Null when there is no form or nothing changes. */
+export function setFormGearWorn(
+  doc: CharacterDoc,
+  key: string,
+  worn: boolean
+): CharacterDoc | null {
+  const form = doc.session.activeForm;
+  if (!form) return null;
+  const current = form.wornGear ?? [];
+  if (current.includes(key) === worn) return null;
+  const wornGear = worn ? [...current, key] : current.filter((k) => k !== key);
+  const activeForm: NonNullable<SessionState["activeForm"]> = { ...form, wornGear };
+  if (wornGear.length === 0) delete activeForm.wornGear;
+  return { ...doc, session: { ...doc.session, activeForm } };
+}

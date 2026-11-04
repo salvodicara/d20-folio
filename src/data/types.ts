@@ -1060,6 +1060,9 @@ export interface SelfFormRule {
   pool: "beasts" | "bestiary";
   /** The caster keeps their own Intelligence, Wisdom and Charisma scores. */
   keepsMind: boolean;
+  /** Equipped gear merges into the form and has no effect, unless the table rules
+   *  an item stays worn (Wild Shape). */
+  gearMerges?: true;
   /** The caster's own scores the form keeps, when they are not just the mind (a
    *  shape-changer that keeps its Constitution too). Wins over `keepsMind`. */
   keeps?: { abilities: ReadonlyArray<AbilityCode> };

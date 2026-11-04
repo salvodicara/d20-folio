@@ -320,6 +320,10 @@ const CASES: {
     { kind: "recover-per-turn-trackers" },
     () => at(states.recoverPerTurnTrackers(doc)?.session),
   ],
+  "set-form-gear-worn": [
+    { kind: "set-form-gear-worn", key: "ring-of-protection", worn: true },
+    () => forms.setFormGearWorn(doc, "ring-of-protection", true),
+  ],
   "hold-breath": [
     { kind: "hold-breath", choking: true },
     () => at(suffocation.holdBreath(doc, { choking: true })),

@@ -48,7 +48,7 @@ import { setLight } from "./light";
 import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { takeDamage, type DamageOptions } from "./damage";
-import { dropBeastForm } from "./forms";
+import { dropBeastForm, setFormGearWorn } from "./forms";
 import { reviveCharacter } from "./revive";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
@@ -175,6 +175,8 @@ export type SheetEvent =
   /** A new turn: the once-per-turn uses come back. With `turnKey`, only those spent
    *  in another turn (an opportunity attack's Sneak Attack on the enemy's turn). */
   | { kind: "recover-per-turn-trackers"; turnKey?: string }
+  /** The table rules an item still worn (or merged) in a form whose gear merges. */
+  | { kind: "set-form-gear-worn"; key: string; worn: boolean }
   /** A lit state's round countdown starts (`tickedRound`: the round it counts from). */
   | { kind: "arm-effect-timer"; key: string; rounds: number; tickedRound: number }
   /** A lit state ends at an encounter boundary (a round and the phase within it). */
@@ -428,6 +430,8 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       );
     case "recover-per-turn-trackers":
       return withSession(recoverPerTurnTrackers(doc, event.turnKey)?.session);
+    case "set-form-gear-worn":
+      return setFormGearWorn(doc, event.key, event.worn);
     case "time-passes":
       return passTime(doc, event.minutes);
     case "set-time-of-day":

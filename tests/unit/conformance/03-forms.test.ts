@@ -178,7 +178,7 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "Equipment in Wild Shape",
       source: "WIKI druid:main; FVTT#5738",
-      status: "M2",
+      status: "works",
     },
     () => {
       const ring = {
