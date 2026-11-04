@@ -467,32 +467,34 @@ function RapidPanel({
         </>
       }
     >
-      <ClassStep cards={cards} current={current} onPick={onClass} />
       <div className="f-ask">
-        <span className="f-lbl">{t("create.speciesLabel")}</span>
-        <div className="f-choices f-create-list f-create-two">
-          {species.map((r) => (
-            <Choice
-              key={r.id}
-              on={speciesPicked && draft.raceId === r.id}
-              onClick={() => onSpecies(r.id)}
-            >
-              <span className="f-row-main">
-                <span className="f-row-t">{r.name}</span>
-                <span className="f-row-s">{r.traits.join("\u00a0· ")}</span>
-              </span>
-            </Choice>
-          ))}
+        <ClassStep cards={cards} current={current} onPick={onClass} />
+        <div className="f-ask">
+          <span className="f-lbl">{t("create.speciesLabel")}</span>
+          <div className="f-choices f-create-list f-create-two">
+            {species.map((r) => (
+              <Choice
+                key={r.id}
+                on={speciesPicked && draft.raceId === r.id}
+                onClick={() => onSpecies(r.id)}
+              >
+                <span className="f-row-main">
+                  <span className="f-row-t">{r.name}</span>
+                  <span className="f-row-s">{r.traits.join("\u00a0· ")}</span>
+                </span>
+              </Choice>
+            ))}
+          </div>
         </div>
+        <Field
+          label={t("create.nameLabel")}
+          placeholder={t("create.namePlaceholder")}
+          autoComplete="off"
+          value={draft.name}
+          onChange={(e) => onName(e.target.value)}
+        />
+        <p className="f-help">{t("create.screen.rapidNote")}</p>
       </div>
-      <Field
-        label={t("create.nameLabel")}
-        placeholder={t("create.namePlaceholder")}
-        autoComplete="off"
-        value={draft.name}
-        onChange={(e) => onName(e.target.value)}
-      />
-      <p className="f-help">{t("create.screen.rapidNote")}</p>
     </Panel>
   );
 }
