@@ -1,4 +1,9 @@
 /** Conformance, category 13: items, attunement, charges, curses, artifacts (corpus.md § 13). */
+import {
+  mixingOutcome,
+  potionMixingOffer,
+  type MixingTable,
+} from "@/lib/play/potion-mixing";
 import { passTime } from "@/lib/play/time";
 import { describe, expect } from "vitest";
 import { canAttune, unattuneItem } from "@/lib/attunement-guard";
@@ -200,10 +205,29 @@ describe("conformance · 13. items", () => {
     }
   );
 
-  rule({ category: 13, case: "Mixing potions", source: "ITEMS", status: "M18" }, () => {
-    // Drinking a second potion while one is active calls for an entered d100 roll.
-    expect(getMagicItem("potion-of-healing")).toHaveProperty("miscibility.die", "d100");
-  });
+  rule(
+    { category: 13, case: "Mixing potions", source: "ITEMS", status: "M18" },
+    async () => {
+      // Drinking a second potion while one is running calls for a d100 roll on the
+      // DM's table: the sheet offers it, naming both potions.
+      const doc = makeCharacterDoc(
+        {
+          equipment: [
+            { srdId: "potion-of-flying", quantity: 1 },
+            { srdId: "potion-of-hill-giant-strength", quantity: 1 },
+          ],
+        },
+        { activeFeatures: ["potion:potion-of-flying"] }
+      );
+      expect(potionMixingOffer(doc, "potion-of-hill-giant-strength")?.running).toEqual([
+        "potion-of-flying",
+      ]);
+      // The case works once the table is data (the DMG's, source still missing).
+      const id = "@/data/potion-mixing";
+      const data = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(mixingOutcome(1, data.POTION_MIXING_TABLE as MixingTable)).not.toBeNull();
+    }
+  );
 
   rule(
     { category: 13, case: "Sentient item conflict", source: "ITEMS", status: "M20" },
