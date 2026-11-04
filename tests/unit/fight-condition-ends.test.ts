@@ -60,12 +60,35 @@ describe("fight condition ends", () => {
     expect(fightConditionEnds([frightened], null, look(5)).ended).toEqual([]);
   });
 
-  it("events: damage, falling Incapacitated, a turn ending", () => {
+  it("events: damage, falling Incapacitated, a turn ending and the next beginning", () => {
     expect(
       fightConditionEvents(look(20, 0, "monster-1"), look(20, 0, "pc-me", ["stunned"]))
     ).toEqual([
       { kind: "incapacitated", combatantId: "monster-1" },
       { kind: "turn-end", combatantId: "monster-1" },
+      { kind: "turn-start", combatantId: "pc-me" },
+    ]);
+  });
+
+  it("damage says who dealt it when every new hit on that creature does", () => {
+    const hits = (...attackers: Array<string | undefined>) =>
+      attackers.map((attackerId) => ({
+        targetId: "monster-1",
+        ...(attackerId ? { attackerId } : {}),
+      }));
+    const before = { ...look(20), hits: hits(undefined) };
+    expect(
+      fightConditionEvents(before, { ...look(12), hits: hits(undefined, "pc-me") })
+    ).toEqual([{ kind: "damaged", targetId: "monster-1", by: ["pc-me"] }]);
+    // An older hit without an attacker doesn't count; a new one without does.
+    expect(
+      fightConditionEvents(before, {
+        ...look(12),
+        hits: hits(undefined, "pc-me", undefined),
+      })
+    ).toEqual([{ kind: "damaged", targetId: "monster-1" }]);
+    expect(fightConditionEvents(look(20), look(12))).toEqual([
+      { kind: "damaged", targetId: "monster-1" },
     ]);
   });
 

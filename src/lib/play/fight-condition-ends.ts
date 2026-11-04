@@ -11,9 +11,11 @@ import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import type { ConditionEnd } from "@/data/types";
 import {
+  actionRepeatSaves,
   conditionsEndingOn,
   type ConditionEvent,
   type DueRepeatSave,
+  type SideOf,
   type SourcedCondition,
 } from "@/lib/condition-ends";
 import { foldCombatEffectOps, rowIsIncapacitated } from "@/lib/combat-effects";
@@ -68,10 +70,13 @@ export interface FightLook {
     conditions: ReadonlyArray<string>;
   }>;
   currentCombatantId: string | null;
+  /** The fight's hits so far, in order (the chronicle's damage beats): who took each
+   *  and, when the action said so, who dealt it. */
+  hits?: ReadonlyArray<{ targetId: string; attackerId?: string }>;
 }
 
-/** What happened between two looks: who took damage, who became Incapacitated,
- *  whose turn ended. */
+/** What happened between two looks: who took damage (and from whom, when every new
+ *  hit on them says), who became Incapacitated, whose turn ended and whose began. */
 export function fightConditionEvents(
   before: FightLook,
   after: FightLook
@@ -82,7 +87,8 @@ export function fightConditionEvents(
     const was = prior.get(row.id);
     if (!was) continue;
     if (row.currentHp + row.tempHp < was.currentHp + was.tempHp) {
-      events.push({ kind: "damaged", targetId: row.id });
+      const by = attackersOf(row.id, before, after);
+      events.push({ kind: "damaged", targetId: row.id, ...(by ? { by } : {}) });
     }
     if (rowIsIncapacitated(row) && !rowIsIncapacitated(was)) {
       events.push({ kind: "incapacitated", combatantId: row.id });
@@ -94,7 +100,30 @@ export function fightConditionEvents(
   ) {
     events.push({ kind: "turn-end", combatantId: before.currentCombatantId });
   }
+  if (
+    after.currentCombatantId !== null &&
+    before.currentCombatantId !== after.currentCombatantId
+  ) {
+    events.push({ kind: "turn-start", combatantId: after.currentCombatantId });
+  }
   return events;
+}
+
+/** Who dealt the hits on `targetId` since the last look; null when any of them doesn't
+ *  say (or there is no chronicle). */
+function attackersOf(
+  targetId: string,
+  before: FightLook,
+  after: FightLook
+): string[] | null {
+  if (!after.hits) return null;
+  const fresh = after.hits
+    .slice(before.hits?.length ?? 0)
+    .filter((hit) => hit.targetId === targetId);
+  if (fresh.length === 0 || fresh.some((hit) => hit.attackerId === undefined)) {
+    return null;
+  }
+  return fresh.map((hit) => hit.attackerId ?? "");
 }
 
 /** The condition effects that end, and the repeat saves due, between two looks at
@@ -102,7 +131,8 @@ export function fightConditionEvents(
 export function fightConditionEnds(
   effectOps: ReadonlyArray<CombatEffectOp> | undefined,
   before: FightLook | null,
-  after: FightLook
+  after: FightLook,
+  sideOf?: SideOf
 ): { ended: string[]; saves: DueRepeatSave[] } {
   if (!before) return { ended: [], saves: [] };
   const conditions = sourcedFightConditions(effectOps);
@@ -112,10 +142,29 @@ export function fightConditionEnds(
   for (const event of fightConditionEvents(before, after)) {
     const result = conditionsEndingOn(
       conditions.filter((c) => !ended.has(c.id)),
-      event
+      event,
+      sideOf
     );
     for (const id of result.ended) ended.add(id);
     saves.push(...result.saves);
   }
-  return { ended: [...ended], saves: saves.filter((s) => !ended.has(s.id)) };
+  // One prompt per occurrence: a later moment in the same look doesn't repeat it.
+  const once = new Set<string>();
+  return {
+    ended: [...ended],
+    saves: saves.filter((s) => {
+      if (ended.has(s.id) || once.has(s.id)) return false;
+      once.add(s.id);
+      return true;
+    }),
+  };
+}
+
+/** The repeat saves `combatantId` may spend its action on in this fight (Otto's
+ *  Irresistible Dance): what an "Use your action to repeat the save" row offers. */
+export function fightActionRepeatSaves(
+  effectOps: ReadonlyArray<CombatEffectOp> | undefined,
+  combatantId: string
+): DueRepeatSave[] {
+  return actionRepeatSaves(sourcedFightConditions(effectOps), combatantId);
 }
