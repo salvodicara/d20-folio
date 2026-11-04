@@ -97,6 +97,11 @@ describe("CreationScreen", () => {
     fireEvent.click(next());
     // Equipaggiamento: the class package is chosen, and the Armor Class shows.
     expect(screen.getByText(/^Armor Class \d+$/)).toBeTruthy();
+    // The Cleric's Divine Order is asked first, and Next waits for it.
+    expect(next().getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByText("Finish the class choices to continue.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Protector" }));
+    expect(next().getAttribute("aria-disabled")).toBeNull();
     fireEvent.click(next());
     // Riepilogo: the class's ready-made spells, and only the name is owed.
     expect(screen.getByText(/Guidance/)).toBeTruthy();

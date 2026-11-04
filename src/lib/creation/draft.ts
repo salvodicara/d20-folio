@@ -40,6 +40,14 @@ import { speciesNeedsSpellAbility } from "@/lib/species-spell-ability";
 import { speciesBundleKeys } from "@/lib/species-choices";
 import { fillReadyMadePicks } from "./ready-made";
 import {
+  classChoiceNeeds,
+  classChoiceOptions,
+  classChoicesComplete,
+  NO_CLASS_PICKS,
+  type ClassChoiceNeeds,
+  type ClassChoicePicks,
+} from "./class-choices";
+import {
   isAllChoicesComplete,
   partitionChoiceSlotsBySource,
   pruneChoicePicks,
@@ -93,6 +101,12 @@ export interface CreationDraft extends AppliedQuickbuild {
   alignment: string;
   hpMethod: HpMethod;
   rolledHp: number | null;
+  /**
+   * The class's own creation picks (Fighting Style, Weapon Mastery, invocations,
+   * Expertise). Its bundles (Divine Order) sit in `lineageChoices` with the
+   * species' ones, the session's `grantBundleChoices` seed.
+   */
+  classPicks: ClassChoicePicks;
   /** The build the draft was last prefilled with. */
   applied: AppliedQuickbuild;
 }
@@ -103,6 +117,7 @@ function draftFromBuild(
   rest: Pick<CreationDraft, "name" | "alignment" | "hpMethod" | "rolledHp">
 ): CreationDraft {
   return {
+    classPicks: NO_CLASS_PICKS,
     ...build,
     classSkills: [...build.classSkills],
     cantrips: [...build.cantrips],
@@ -148,6 +163,7 @@ export type CreationDraftAction =
   | { type: "setSpeciesSpellAbility"; ability: AbilityCode }
   /** Fill whatever class-side pick is still missing, the class preset's way. */
   | { type: "fillReadyMade" }
+  | { type: "setClassPick"; kind: keyof ClassChoicePicks; ids: readonly string[] }
   | { type: "setChoicePicks"; picks: ChoicePicks }
   | { type: "toggleClassSkill"; skillId: string }
   | {
@@ -182,6 +198,8 @@ export function creationDraftReducer(
         classSkills: [],
         cantrips: [],
         spells: [],
+        classPicks: NO_CLASS_PICKS,
+        lineageChoices: speciesBundlesOnly(draft.raceId, draft.lineageChoices),
       };
     case "setLevel":
       return {
@@ -190,6 +208,8 @@ export function creationDraftReducer(
         subclassId: "",
         cantrips: [],
         spells: [],
+        classPicks: NO_CLASS_PICKS,
+        lineageChoices: speciesBundlesOnly(draft.raceId, draft.lineageChoices),
       };
     case "setSubclass":
       return { ...draft, subclassId: action.subclassId };
@@ -249,6 +269,11 @@ export function creationDraftReducer(
       return {
         ...draft,
         lineageChoices: { ...draft.lineageChoices, [action.bundleKey]: action.optionId },
+      };
+    case "setClassPick":
+      return {
+        ...draft,
+        classPicks: { ...draft.classPicks, [action.kind]: [...action.ids] },
       };
     case "fillReadyMade":
       return fillReadyMadePicks(draft, creationFacts);
@@ -385,6 +410,12 @@ export interface CreationFacts {
   speciesChoicesComplete: boolean;
   /** The species' lineage spells use an INT/WIS/CHA the player picks. */
   needsSpeciesSpellAbility: boolean;
+  /** What the class asks at creation (Divine Order, Fighting Style, Weapon Mastery…). */
+  classNeeds: ClassChoiceNeeds;
+  /** The legal ids for each class pick. */
+  classOptions: Record<keyof ClassChoicePicks, string[]>;
+  /** Every class pick and class bundle is made. */
+  classChoicesComplete: boolean;
   humanFeatChoicesComplete: boolean;
   otherChoicesComplete: boolean;
   otherSpellChoicesComplete: boolean;
@@ -413,6 +444,15 @@ export interface CreationFacts {
 
   /** The draft differs from the build it was last prefilled with. */
   sculpted: boolean;
+}
+
+/** The bundle choices kept when the class changes: the species' own, not the class's. */
+function speciesBundlesOnly(
+  raceId: string,
+  choices: Readonly<Record<string, string>>
+): Record<string, string> {
+  const species = new Set(speciesBundleKeys(raceId));
+  return Object.fromEntries(Object.entries(choices).filter(([key]) => species.has(key)));
 }
 
 /** `picks` without any species-trait pick (ids under {@link SPECIES_SLOT_PREFIX}). */
@@ -503,6 +543,19 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
   );
 
   const speciesChoiceSlots = slotsWithPrefix(choiceSlots, SPECIES_SLOT_PREFIX);
+  const classNeeds = classChoiceNeeds(draft.classId, draft.level, draft.subclassId);
+  // Expertise promotes a skill the character is already proficient in.
+  const proficient = [
+    ...new Set([
+      ...(backgroundData?.skillProficiencies ?? [])
+        .map(skillNameToId)
+        .filter((id): id is string => id !== null),
+      ...draft.classSkills,
+      ...Object.values(draft.choicePicks.skill).flat(),
+      ...Object.values(draft.choicePicks.skillOrTool).flat(),
+    ]),
+  ];
+  const classOptions = classChoiceOptions(draft.classId, draft.level, proficient);
   const lineageBundleKeys = creationLineageBundleKeys(draft.raceId);
 
   const classEquipmentOptions = classTable?.startingEquipment ?? [];
@@ -568,6 +621,14 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     speciesChoiceSlots,
     speciesChoicesComplete: isAllChoicesComplete(speciesChoiceSlots, choicePicks),
     needsSpeciesSpellAbility: speciesNeedsSpellAbility(draft.raceId),
+    classNeeds,
+    classOptions,
+    classChoicesComplete: classChoicesComplete(
+      classNeeds,
+      draft.classPicks,
+      draft.lineageChoices,
+      classOptions
+    ),
     humanFeatChoicesComplete: isAllChoicesComplete(humanFeatSlots, choicePicks),
     otherChoicesComplete: isAllChoicesComplete(otherChoiceSlots, choicePicks),
     otherSpellChoicesComplete: isSpellChoicesComplete(

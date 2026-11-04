@@ -181,7 +181,8 @@
       "preparedSpells": "Incantesimi preparati",
       "rulesNote": "Tutto è controllato con le regole 2024. Puoi cambiare ogni cosa anche dopo, dalla scheda.",
       "createNamed": "Crea {{name}}",
-      "creating": "Creazione…"
+      "creating": "Creazione…",
+      "classChoicesPending": "Completa le scelte della classe per continuare."
     }
   }
 }
