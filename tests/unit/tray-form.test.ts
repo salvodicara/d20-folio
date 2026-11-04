@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { spells } from "@/data/spells";
-import { trayForm } from "@/domains/play/tray-form";
+import { facesSum, trayForm } from "@/domains/play/tray-form";
 import { buildDevScenario } from "@/lib/dev-scenarios";
 import type { TrayTarget } from "@/components/shared/damage-tray-target";
 import { NO_DEFENSES } from "@/lib/damage-intake";
@@ -179,5 +179,90 @@ describe("trayForm — one total per damage type", () => {
     const form = typed("10", "x");
     expect(form.typeInvalid).toEqual({ radiant: true });
     expect(form.canApply).toBe(false);
+  });
+});
+
+describe("Great Weapon Fighting's dice faces", () => {
+  const greatsword: DamageTrayPlan = {
+    effect: "damage",
+    damageType: "slashing",
+    targets: ["m1"],
+    dieFloor: { floorBelow: 2, floorTo: 3, dice: "2d6", bonus: 3 },
+  };
+  const one = [{ id: "m1", name: "One", kind: "monster" as const }];
+  const form = (faces: string, total = "") =>
+    trayForm({
+      plan: greatsword,
+      targets: one,
+      edited: none,
+      total,
+      rowTotals: none,
+      faces,
+    });
+
+  it("counts a 1 or 2 as a 3 and adds the weapon's bonus", () => {
+    const f = form("1+5");
+    expect(f.faces).toEqual({ terms: [3, 5], bonus: 3, total: 11 });
+    expect(f.amounts).toEqual([11]);
+    expect(f.canApply).toBe(true);
+  });
+
+  it("takes the faces spaced or with commas", () => {
+    expect(form("2 6").faces?.total).toBe(12);
+    expect(form("1, 1").faces?.total).toBe(9);
+  });
+
+  it("without faces, the typed total stands", () => {
+    const f = form("", "9");
+    expect(f.faces).toBeNull();
+    expect(f.amounts).toEqual([9]);
+  });
+
+  it("faces that aren't numbers block Apply", () => {
+    const f = form("1+x");
+    expect(f.facesInvalid).toBe(true);
+    expect(f.canApply).toBe(false);
+  });
+
+  it("a plan without the weapon's dice never reads faces", () => {
+    const f = trayForm({
+      plan: { ...greatsword, dieFloor: { floorBelow: 2, floorTo: 3 } },
+      targets: one,
+      edited: none,
+      total: "7",
+      rowTotals: none,
+      faces: "1+1",
+    });
+    expect(f.faces).toBeNull();
+    expect(f.amounts).toEqual([7]);
+  });
+});
+
+describe("facesSum", () => {
+  it("adds a bonus, subtracts a penalty, and leaves out a zero", () => {
+    expect(facesSum({ terms: [3, 5], bonus: 3, total: 11 })).toBe("3 + 5 + 3");
+    expect(facesSum({ terms: [3, 5], bonus: -1, total: 7 })).toBe("3 + 5 − 1");
+    expect(facesSum({ terms: [4, 6], bonus: 0, total: 10 })).toBe("4 + 6");
+  });
+});
+
+describe("a melee hit's knock out", () => {
+  it("starts off: the player turns it on", () => {
+    const melee: DamageTrayPlan = {
+      effect: "damage",
+      damageType: "slashing",
+      melee: true,
+      attack: { onMiss: "none" },
+      targets: ["m1"],
+    };
+    const f = trayForm({
+      plan: melee,
+      targets: [{ id: "m1", name: "One", kind: "monster", defenses: NO_DEFENSES }],
+      edited: none,
+      total: "7",
+      rowTotals: none,
+    });
+    expect(f.rows).toHaveLength(1);
+    expect(f.rows[0]?.knockOut).toBeUndefined();
   });
 });

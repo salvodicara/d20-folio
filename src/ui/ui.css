@@ -3809,3 +3809,9 @@
   margin: 0;
   text-wrap: balance;
 }
+
+/* Great Weapon Fighting: the faces added up, on its own line. */
+.fui .f-faces-sum {
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}

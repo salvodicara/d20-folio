@@ -16,7 +16,12 @@ import {
   type DamageTrayOffer,
 } from "@/features/character/center/damage-tray-store";
 import { useTrayTargets } from "@/features/character/center/use-tray-targets";
-import { totalsByType, trayForm, trayOutcomeView } from "@/domains/play/tray-form";
+import {
+  facesSum,
+  totalsByType,
+  trayForm,
+  trayOutcomeView,
+} from "@/domains/play/tray-form";
 import type { Locale } from "@/lib/locale";
 import {
   ATTACK_OUTCOMES,
@@ -68,7 +73,8 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
   const [typeTotals, setTypeTotals] = useState<ReadonlyMap<DamageType, string>>(
     () => new Map()
   );
-  const form = trayForm({ plan, targets, edited, total, rowTotals, typeTotals });
+  const [faces, setFaces] = useState("");
+  const form = trayForm({ plan, targets, edited, total, rowTotals, typeTotals, faces });
   const types = totalsByType(plan);
   const close = () => useDamageTrayStore.getState().close();
   const apply = () => {
@@ -94,7 +100,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
       actions={
         <>
           <Button kind="ghost" onClick={close}>
-            {t("common.skip")}
+            {t("play.tray.dontApply")}
           </Button>
           <Button kind="primary" disabled={!form.canApply} onClick={apply}>
             {t("combat.apply")}
@@ -125,7 +131,45 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
         </div>
       ) : (
         plan.effect !== null &&
-        !plan.perTarget && (
+        !plan.perTarget &&
+        (plan.dieFloor?.dice ? (
+          // Great Weapon Fighting: the dice faces, floored, plus the weapon's bonus;
+          // the total stays for a table that adds it up itself.
+          <div className="f-ask f-tray-types">
+            <Field
+              label={t("play.tray.faces", { dice: plan.dieFloor.dice })}
+              inputMode="tel"
+              autoComplete="off"
+              enterKeyHint="done"
+              autoFocus
+              value={faces}
+              {...(form.facesInvalid ? { error: t("play.tray.facesHint") } : {})}
+              onChange={(e) => setFaces(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") apply();
+              }}
+            />
+            <Field
+              label={t("combat.damageTray.total")}
+              inputMode="tel"
+              autoComplete="off"
+              enterKeyHint="done"
+              disabled={form.faces !== null}
+              value={form.faces ? String(form.faces.total) : total}
+              {...(form.totalInvalid ? { error: t("play.trayTotalHint") } : {})}
+              onChange={(e) => setTotal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") apply();
+              }}
+            />
+            <p className="f-help">{floorRule(plan.dieFloor, t)}</p>
+            {form.faces && (
+              <p className="f-help f-faces-sum" role="status">
+                {`${facesSum(form.faces)} = ${String(form.faces.total)}`}
+              </p>
+            )}
+          </div>
+        ) : (
           <div className="f-ask">
             <Field
               label={t("combat.damageTray.total")}
@@ -136,14 +180,18 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
               value={total}
               {...(form.totalInvalid
                 ? { error: t("play.trayTotalHint") }
-                : { help: t("play.trayTotalHint") })}
+                : {
+                    help: plan.dieFloor
+                      ? `${t("play.trayTotalHint")} · ${floorRule(plan.dieFloor, t)}`
+                      : t("play.trayTotalHint"),
+                  })}
               onChange={(e) => setTotal(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") apply();
               }}
             />
           </div>
-        )
+        ))
       )}
       <div className="f-tray-rows f-ask">
         {targets.map((target, i) => {
@@ -469,4 +517,17 @@ function bandLabel(band: NonNullable<TrayTarget["band"]>, t: T): string {
     default:
       return t("campaignHub.encounterDefeated");
   }
+}
+
+/** The floor in words: «1 e 2 contano come 3» (Great Weapon Fighting). */
+function floorRule(
+  floor: NonNullable<DamageTrayPlan["dieFloor"]>,
+  t: (key: string, opts?: Record<string, unknown>) => string
+): string {
+  const to = floor.floorTo;
+  return floor.floorBelow <= 1
+    ? t("play.tray.floorOne", { to })
+    : floor.floorBelow === 2
+      ? t("play.tray.floorTwo", { to })
+      : t("play.tray.floorUpTo", { below: floor.floorBelow, to });
 }

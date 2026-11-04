@@ -14,6 +14,7 @@ import {
 import {
   parseRolledTotal,
   rowAmount,
+  applyDieFaceFloor,
   rowAmountByType,
   rowNeedsTotal,
   type DamageTrayPlan,
@@ -34,6 +35,16 @@ export interface TrayFormInput {
   rowTotals: ReadonlyMap<string, string>;
   /** Each damage type's total as typed, for a hit of several types. */
   typeTotals?: ReadonlyMap<DamageType, string>;
+  /** The weapon's dice faces as typed ("1+5"), when the plan floors low faces
+   *  (Great Weapon Fighting): they replace the total. */
+  faces?: string;
+}
+
+/** The faces read under the floor: each counted face, the bonus, the total. */
+export interface TrayFaces {
+  terms: number[];
+  bonus: number;
+  total: number;
 }
 
 /** The hit deals several damage types and the tray takes a total for each. */
@@ -60,12 +71,44 @@ export interface TrayForm {
   /** What each row applies, or null while it still needs a number. */
   amounts: (number | null)[];
   canApply: boolean;
+  /** The dice faces typed, floored and summed with the bonus; null when none. */
+  faces: TrayFaces | null;
+  /** The faces field holds something that is not a list of faces. */
+  facesInvalid: boolean;
+}
+
+/** The sum in words: «3 + 5 + 3», a negative bonus subtracted («3 + 5 − 1»). */
+export function facesSum(faces: TrayFaces): string {
+  const terms = faces.terms.join(" + ");
+  if (faces.bonus === 0) return terms;
+  return `${terms} ${faces.bonus > 0 ? "+" : "−"} ${String(Math.abs(faces.bonus))}`;
+}
+
+/** The faces as the floor counts them, or "invalid", or null when nothing typed or
+ *  the plan names no weapon dice. */
+function readFaces(
+  plan: DamageTrayPlan,
+  text: string | undefined
+): TrayFaces | "invalid" | null {
+  const floor = plan.dieFloor;
+  if (!floor?.dice || !text?.trim()) return null;
+  const parts = text
+    .trim()
+    .split(/[\s+,]+/)
+    .filter(Boolean);
+  if (parts.length === 0 || parts.some((p) => !/^\d+$/.test(p))) return "invalid";
+  const terms = parts.map((p) => applyDieFaceFloor([Number(p)], floor));
+  const bonus = floor.bonus ?? 0;
+  return { terms, bonus, total: applyDieFaceFloor(parts.map(Number), floor) + bonus };
 }
 
 export function trayForm(input: TrayFormInput): TrayForm {
   const { plan, targets, edited } = input;
   const rows = targets.map((t) => edited.get(t.id) ?? initialTrayRowFor(plan, t));
-  const total = parseRolledTotal(input.total);
+  const read = readFaces(plan, input.faces);
+  const faces = read === "invalid" ? null : read;
+  const facesInvalid = read === "invalid";
+  const total = faces ? faces.total : parseRolledTotal(input.total);
   const typed = (id: string) => input.rowTotals.get(id) ?? "";
   const totals = plan.perTarget
     ? targets.map((t) => parseRolledTotal(typed(t.id)))
@@ -103,6 +146,8 @@ export function trayForm(input: TrayFormInput): TrayForm {
         rows.length > 0 &&
         Object.keys(typeInvalid).length === 0 &&
         (anyType || rows.every((row) => !rowNeedsTotal(row, plan))),
+      faces: null,
+      facesInvalid: false,
     };
   }
   const amounts = rows.map((row, i) => {
@@ -115,6 +160,7 @@ export function trayForm(input: TrayFormInput): TrayForm {
   // applies without one). Split, a row left empty gets nothing, but a typo blocks.
   const canApply =
     rows.length > 0 &&
+    !facesInvalid &&
     (plan.perTarget
       ? !rowInvalid.some(Boolean) &&
         rows.some((row, i) => !rowNeedsTotal(row, plan) || totals[i] !== null)
@@ -128,6 +174,8 @@ export function trayForm(input: TrayFormInput): TrayForm {
     typeInvalid,
     amounts,
     canApply,
+    faces,
+    facesInvalid,
   };
 }
 
