@@ -14,6 +14,7 @@ import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
+import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
@@ -34,6 +35,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
+import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 import {
@@ -218,6 +220,8 @@ function PlayHeader({
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
+  // The player's own combatant: a repeat save due on it waits here.
+  const uid = useAuthStore((st) => st.user?.uid);
   const [hpOpen, setHpOpen] = useState(false);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
@@ -334,6 +338,7 @@ function PlayHeader({
             </Button>
           </div>
           <PlayDown doc={doc} />
+          {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}

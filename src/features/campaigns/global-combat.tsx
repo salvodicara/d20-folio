@@ -38,6 +38,7 @@ import { effectiveTableRules } from "@/lib/table-rules";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
 import { openZoneTray } from "@/features/character/center/zone-tray";
+import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -379,12 +380,8 @@ export function GlobalCombatMount(): null {
     const owns = (id: string) =>
       primaryIsDm ? kinds.get(id) === "monster" : id === myId;
     const condition = fightConditionEnds(live.encounter.effectOps, priorLook, look);
-    const targetOf = new Map(
-      foldCombatEffectOps(live.encounter.effectOps).map((e) => [
-        e.id,
-        e.target.combatantId,
-      ])
-    );
+    const active = foldCombatEffectOps(live.encounter.effectOps);
+    const targetOf = new Map(active.map((e) => [e.id, e.target.combatantId]));
     for (const effectId of condition.ended) {
       const target = targetOf.get(effectId);
       if (!target || !owns(target)) continue;
@@ -392,28 +389,22 @@ export function GlobalCombatMount(): null {
         showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
       });
     }
+    // A due repeat save waits on its target's card (RepeatSavePrompt) until answered,
+    // its effect ends, or the target's next turn starts.
+    const saves = useRepeatSaveStore.getState();
+    saves.prune({
+      currentCombatantId: live.encounter.currentCombatantId,
+      active: new Set(active.map((e) => e.id)),
+    });
     for (const save of condition.saves) {
       if (!owns(save.targetId)) continue;
-      const name = live.view.rows.find((row) => row.id === save.targetId)?.name ?? "";
-      showToast({
-        message: t(
-          save.dc !== undefined ? "combat.repeatSaveDueDc" : "combat.repeatSaveDue",
-          {
-            target: name,
-            ability: t(`abilities.${save.ability}_short`),
-            condition: localizeSrd("condition", save.conditionId, "name", locale),
-            ...(save.dc !== undefined ? { dc: save.dc } : {}),
-          }
-        ),
-        duration: 30000,
-        action: {
-          label: t("combat.repeatSaveSucceeded"),
-          run: () => {
-            void revokePersistentCombatEffect(primaryId, save.id).catch(() => {
-              showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-            });
-          },
-        },
+      const effect = active.find((e) => e.id === save.id);
+      if (!effect) continue;
+      saves.add({
+        ...save,
+        campaignId: primaryId,
+        targetName: live.view.rows.find((row) => row.id === save.targetId)?.name ?? "",
+        effect,
       });
     }
     // A creature your Hex or Hunter's Mark is on just dropped to 0: on a later turn,

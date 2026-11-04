@@ -6,13 +6,14 @@
  * once turns begin), and what has happened so far. Otherwise: how a fight starts, the
  * last fight to reopen, and the past fights from the play logs.
  */
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { PartyChip } from "@/domains/campaign/party-rows-view";
 import { fightControls, type FightControls } from "@/domains/combat/fight-controls";
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { pastFights } from "@/domains/combat/past-fights-view";
+import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine } from "@/domains/combat/ui/FightLine";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
@@ -229,7 +230,10 @@ function LiveFight({
           }
         >
           {rows.map((row) => (
-            <FightLine key={row.ids.join("+")} row={row} />
+            <Fragment key={row.ids.join("+")}>
+              <FightLine row={row} />
+              <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+            </Fragment>
           ))}
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>

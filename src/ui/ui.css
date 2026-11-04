@@ -3815,3 +3815,13 @@
   font-variant-numeric: tabular-nums;
   color: var(--text);
 }
+
+/* A repeat save due on a creature (#710): its sentence, then «Riuscito» / «Fallito». */
+.fui .f-save-due {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0;
+}
+.fui .f-save-due > p {
+  margin: 0;
+}
