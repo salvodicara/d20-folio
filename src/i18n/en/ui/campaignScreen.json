@@ -29,7 +29,6 @@
       "resetDone": "RAW rules restored",
       "failed": "Couldn't save the table rules",
       "groups": {
-        "combat": "Combat",
         "rest": "Rests and Exhaustion",
         "items": "Items and creatures",
         "optional": "Optional systems"
@@ -40,7 +39,6 @@
           "why": "Two allies on opposite sides of an enemy. Optional in 2024.",
           "choices": {
             "off": "Off",
-            "advantage": "Advantage",
             "plus-2": "+2 to the roll"
           }
         },
@@ -48,25 +46,16 @@
           "title": "Natural 1 on checks and saves",
           "why": "In 2024 a natural 1 only makes an attack roll miss.",
           "choices": {
-            "none": "No effect",
             "fail": "Always fails"
           }
         },
         "fumbles": {
           "title": "Fumble note",
-          "why": "A natural 1 on an attack adds a note to the fight's log.",
-          "choices": {
-            "false": "No",
-            "true": "Yes"
-          }
+          "why": "A natural 1 on an attack adds a note to the fight's log."
         },
         "deathSaves": {
           "title": "Death saving throws",
-          "why": "How many successes stabilize and how many failures kill (RAW: 3 and 3).",
-          "fields": {
-            "successes": "Successes",
-            "failures": "Failures"
-          }
+          "why": "How many successes stabilize and how many failures kill (RAW: 3 and 3)."
         },
         "rest": {
           "title": "Rest lengths",
@@ -77,7 +66,6 @@
           }
         },
         "exhaustion": {
-          "title": "Exhaustion",
           "why": "RAW: up to level 6; each level takes 2 off D20 Tests and 5 ft off Speed.",
           "fields": {
             "maxLevel": "Highest level",
@@ -87,27 +75,14 @@
         },
         "potionsDrink": {
           "title": "Drinking a potion",
-          "why": "A Bonus Action in 2024.",
-          "choices": {
-            "bonus": "Bonus Action",
-            "action": "Action"
-          }
+          "why": "A Bonus Action in 2024."
         },
         "potionsAdminister": {
-          "title": "Giving someone a potion",
-          "why": "A Bonus Action in 2024.",
-          "choices": {
-            "bonus": "Bonus Action",
-            "action": "Action"
-          }
+          "title": "Giving someone a potion"
         },
         "familiarsAttack": {
           "title": "Familiars attack",
-          "why": "In 2024 a familiar can't attack.",
-          "choices": {
-            "false": "No",
-            "true": "Yes"
-          }
+          "why": "In 2024 a familiar can't attack."
         },
         "hide": {
           "title": "Hiding",
@@ -127,7 +102,7 @@
         },
         "systems": {
           "title": "Optional systems",
-          "why": "From the Dungeon Master's Guide: switch on the ones you use.",
+          "why": "The 2024 optional systems: switch on the ones you use.",
           "toggles": {
             "bastions": "Bastions",
             "circleMagic": "Circle magic",

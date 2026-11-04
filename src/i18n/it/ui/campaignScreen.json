@@ -29,7 +29,6 @@
       "resetDone": "Regole RAW ripristinate",
       "failed": "Non è stato possibile salvare le regole del tavolo",
       "groups": {
-        "combat": "Combattimento",
         "rest": "Riposi e Indebolimento",
         "items": "Oggetti e creature",
         "optional": "Sistemi opzionali"
@@ -40,7 +39,6 @@
           "why": "Due alleati ai lati opposti di un nemico. Nel 2024 è una regola opzionale.",
           "choices": {
             "off": "Spento",
-            "advantage": "Vantaggio",
             "plus-2": "+2 al tiro"
           }
         },
@@ -48,25 +46,16 @@
           "title": "1 naturale su prove e tiri salvezza",
           "why": "Nel 2024 un 1 naturale fa mancare solo i tiri per colpire.",
           "choices": {
-            "none": "Nessun effetto",
             "fail": "Fallisce sempre"
           }
         },
         "fumbles": {
           "title": "Nota sul fallimento critico",
-          "why": "Un 1 naturale su un attacco aggiunge una nota sul diario dello scontro.",
-          "choices": {
-            "false": "No",
-            "true": "Sì"
-          }
+          "why": "Un 1 naturale su un attacco aggiunge una nota sul diario dello scontro."
         },
         "deathSaves": {
           "title": "Tiri contro la morte",
-          "why": "Quanti successi stabilizzano e quanti fallimenti uccidono (RAW: 3 e 3).",
-          "fields": {
-            "successes": "Successi",
-            "failures": "Fallimenti"
-          }
+          "why": "Quanti successi stabilizzano e quanti fallimenti uccidono (RAW: 3 e 3)."
         },
         "rest": {
           "title": "Durata dei riposi",
@@ -77,7 +66,6 @@
           }
         },
         "exhaustion": {
-          "title": "Indebolimento",
           "why": "RAW: fino al livello 6; ogni livello toglie 2 ai tiri d20 e 1,5 m alla velocità.",
           "fields": {
             "maxLevel": "Livello massimo",
@@ -87,27 +75,14 @@
         },
         "potionsDrink": {
           "title": "Bere una pozione",
-          "why": "Nel 2024 è un'azione bonus.",
-          "choices": {
-            "bonus": "Azione bonus",
-            "action": "Azione"
-          }
+          "why": "Nel 2024 è un'azione bonus."
         },
         "potionsAdminister": {
-          "title": "Far bere una pozione",
-          "why": "Nel 2024 è un'azione bonus.",
-          "choices": {
-            "bonus": "Azione bonus",
-            "action": "Azione"
-          }
+          "title": "Far bere una pozione"
         },
         "familiarsAttack": {
           "title": "I famigli attaccano",
-          "why": "Nel 2024 un famiglio non può attaccare.",
-          "choices": {
-            "false": "No",
-            "true": "Sì"
-          }
+          "why": "Nel 2024 un famiglio non può attaccare."
         },
         "hide": {
           "title": "Nascondersi",
@@ -127,7 +102,7 @@
         },
         "systems": {
           "title": "Sistemi facoltativi",
-          "why": "Dalla Guida del Dungeon Master: accendi quelli che usate.",
+          "why": "I sistemi facoltativi del 2024: accendi quelli che usate.",
           "toggles": {
             "bastions": "Bastioni",
             "circleMagic": "Magia di cerchio",

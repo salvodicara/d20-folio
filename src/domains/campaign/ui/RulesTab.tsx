@@ -23,6 +23,28 @@ import { Button, Chip, Panel, Stepper } from "@/ui";
 type Toaster = (message: string, undo?: () => void) => void;
 const K = "campaignScreen.tableRules";
 
+/** Labels the app already has (one key per (EN, IT) pair). */
+const SHARED: Readonly<Record<string, string>> = {
+  "groups.combat": "combat.title",
+  "rows.deathSaves.fields.successes": "deathSaves.successes",
+  "rows.deathSaves.fields.failures": "deathSaves.failures",
+  "rows.exhaustion.title": "character.exhaustion",
+  "rows.flanking.choices.advantage": "common.advantage",
+  "rows.nat1.choices.none": "combat.damageTray.noEffect",
+  "rows.potionsAdminister.why": `${K}.rows.potionsDrink.why`,
+};
+
+/** The key for a table-rules label: a shared one where the app has it. */
+function ruleKey(sub: string): string {
+  const shared = SHARED[sub];
+  if (shared) return shared;
+  if (sub.endsWith(".choices.true")) return "common.yes";
+  if (sub.endsWith(".choices.false")) return "common.no";
+  if (sub.endsWith(".choices.action")) return "combat.action";
+  if (sub.endsWith(".choices.bonus")) return "features.slotBonus";
+  return `${K}.${sub}`;
+}
+
 export function RulesTab({
   campaign,
   onToast,
@@ -88,9 +110,9 @@ export function RulesTab({
         <section
           key={group.id}
           className="f-rules-group"
-          aria-label={t(`${K}.groups.${group.id}`)}
+          aria-label={t(ruleKey(`groups.${group.id}`))}
         >
-          <h3 className="f-lbl">{t(`${K}.groups.${group.id}`)}</h3>
+          <h3 className="f-lbl">{t(ruleKey(`groups.${group.id}`))}</h3>
           {group.rows.map((row) => (
             <RuleRow key={row.id} row={row} editable={isDm} onSet={set} />
           ))}
@@ -111,18 +133,18 @@ function RuleRow({
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const R = `${K}.rows.${row.id}`;
+  const R = `rows.${row.id}`;
   return (
     <div className="f-rule">
       <div className="f-rule-head">
-        <span className="f-row-t">{t(`${R}.title`)}</span>
+        <span className="f-row-t">{t(ruleKey(`${R}.title`))}</span>
         {row.raw ? (
           <span className="f-quiet">{t(`${K}.raw`)}</span>
         ) : (
           <Chip kind="cond">{t(`${K}.table`)}</Chip>
         )}
       </div>
-      <span className="f-row-s">{t(`${R}.why`)}</span>
+      <span className="f-row-s">{t(ruleKey(`${R}.why`))}</span>
       {row.kind === "choice" && (
         <div className="f-chips">
           {(editable ? row.choices : [row.current]).map((value) => (
@@ -135,7 +157,7 @@ function RuleRow({
                   }
                 : {})}
             >
-              {t(`${R}.choices.${String(value)}`)}
+              {t(ruleKey(`${R}.choices.${String(value)}`))}
             </Chip>
           ))}
         </div>
@@ -151,7 +173,7 @@ function RuleRow({
                   ? { pressed: tg.on, onClick: () => onSet(tg.path, !tg.on) }
                   : {})}
               >
-                {t(`${R}.toggles.${tg.path[tg.path.length - 1] ?? ""}`)}
+                {t(ruleKey(`${R}.toggles.${tg.path[tg.path.length - 1] ?? ""}`))}
               </Chip>
             ))}
         </div>
@@ -165,7 +187,7 @@ function RuleRow({
         ) : (
           <div className="f-rule-fields">
             {row.fields.map((f) => {
-              const label = t(`${R}.fields.${f.path[f.path.length - 1] ?? ""}`);
+              const label = t(ruleKey(`${R}.fields.${f.path[f.path.length - 1] ?? ""}`));
               return editable ? (
                 <label key={f.path.join(".")} className="f-rule-field">
                   <span className="f-lbl">{label}</span>
