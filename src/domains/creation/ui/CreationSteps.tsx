@@ -23,6 +23,7 @@ import type {
   CreationDraftAction,
   CreationFacts,
 } from "@/lib/creation/draft";
+import { ChoiceRowChips } from "@/domains/creation/ui/ChoiceRowChips";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
 import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import type { Locale } from "@/lib/locale";
@@ -34,7 +35,7 @@ export type AbilityMethod = "suggested" | "pointBuy" | "rolled";
 /** The three abilities a species' spells may use. */
 const SPECIES_SPELL_ABILITIES = ["INT", "WIS", "CHA"] as const;
 
-/** Each slot as a titled row of chips; a tap adds, removes or replaces the oldest. */
+/** The draft's slots as chip rows; a tap toggles the pick in the draft. */
 function SlotChips({
   rows,
   draft,
@@ -44,29 +45,17 @@ function SlotChips({
   draft: CreationDraft;
   dispatch: (action: CreationDraftAction) => void;
 }) {
-  return rows.map((row) => (
-    <div key={row.slotId} className="f-ask">
-      {/* The trait names the pick; the rubric reads in text figures («1», not «I»). */}
-      {row.source && <span className="f-lbl">{row.source}</span>}
-      <p className="f-help">{row.title}</p>
-      <div className="f-chips">
-        {row.options.map((o) => (
-          <Chip
-            key={o.id}
-            pressed={row.picked.includes(o.id)}
-            onClick={() =>
-              dispatch({
-                type: "setChoicePicks",
-                picks: toggleChoicePick(draft.choicePicks, row, o.id),
-              })
-            }
-          >
-            {o.label}
-          </Chip>
-        ))}
-      </div>
-    </div>
-  ));
+  return (
+    <ChoiceRowChips
+      rows={rows}
+      onToggle={(row, id) =>
+        dispatch({
+          type: "setChoicePicks",
+          picks: toggleChoicePick(draft.choicePicks, row, id),
+        })
+      }
+    />
+  );
 }
 
 /** Lower case without accents, for a forgiving search. */

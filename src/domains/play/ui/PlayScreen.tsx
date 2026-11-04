@@ -19,6 +19,7 @@ import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
+import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
 import { PlayTime } from "@/domains/play/ui/PlayTime";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
@@ -143,6 +144,7 @@ export function PlayScreen() {
         campaign={campaign}
         rests={rests}
       />
+      <PlaySpeciesChoices doc={doc} locale={locale} readonly={readonly} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
       <ItemResourceCommandProvider renderPrompts={false}>

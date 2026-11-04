@@ -14,6 +14,7 @@ import {
 import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterData } from "@/types/character";
+import { pendingSpeciesItems } from "@/lib/views/species-choices-view";
 
 const as = (race: string, extra: Partial<CharacterData> = {}): CharacterData => ({
   ...MOCK_CHARACTER.character,
@@ -91,5 +92,20 @@ describe("applySpeciesChoices", () => {
       skill: { "class:fighter::skill-slot-0": ["athletics"] },
     });
     expect(next).toBe(elf);
+  });
+});
+
+describe("pendingSpeciesItems", () => {
+  it("names each owed choice for the sheet, in order: bundles, ability, traits", () => {
+    expect(pendingSpeciesItems(as("elf"), {}, "en")).toEqual([
+      { kind: "bundle", bundleKey: "elf-lineage", label: "Elven Lineage" },
+      { kind: "ability" },
+      {
+        kind: "slot",
+        slotId: "race:elf:keen-senses::skill-slot-0",
+        label: "Keen Senses",
+      },
+    ]);
+    expect(pendingSpeciesItems(as("dwarf"), {}, "en")).toEqual([]);
   });
 });

@@ -271,6 +271,12 @@
       "gain_damage": "Add {{amount}} to the damage.",
       "gain_save": "Add {{amount}} to the saving throw.",
       "oddRoll": "An odd roll gives nothing."
+    },
+    "speciesChoices": {
+      "title": "Choices to finish",
+      "body": "Your species asks you to choose: {{items}}.",
+      "open": "Finish",
+      "ability": "Spellcasting ability"
     }
   }
 }
