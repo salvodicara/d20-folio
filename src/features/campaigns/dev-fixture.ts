@@ -289,6 +289,14 @@ The party took the Fennicks' bargain and set out for the ravine.`,
 /** The dev encounter modes the Party section can seed (dev-bypass only). */
 type EncounterDemoMode = "begun" | "gathering" | "reflexes" | "table" | null;
 
+/** `d20-dev-encounter = "player"`: the begun fight seen by a PLAYER (see {@link asPlayerView}). */
+function playerViewDemo(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.localStorage.getItem("d20-dev-encounter") === "player"
+  );
+}
+
 /**
  * Which encounter the dev campaign should seed in the Party section. The DEFAULT is the
  * calm party OVERVIEW (no encounter, `null`); the screenshot / a11y harness sets
@@ -301,7 +309,7 @@ type EncounterDemoMode = "begun" | "gathering" | "reflexes" | "table" | null;
 function encounterDemo(): EncounterDemoMode {
   if (typeof window === "undefined") return null;
   const flag = window.localStorage.getItem("d20-dev-encounter");
-  if (flag === "1") return "begun";
+  if (flag === "1" || flag === "player") return "begun";
   if (flag === "gathering") return "gathering";
   // Thief's Reflexes: gathering with every roll in and Mara's hero a level-17 Thief
   // (`scn-thief-reflexes`), so Begin turns slots her second turn at Initiative − 10.
@@ -416,6 +424,36 @@ function devEncounterInitSeed(): Record<string, number> {
 }
 
 export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
+  const campaign = makeDevCampaignAsDm(id);
+  return playerViewDemo() ? asPlayerView(campaign) : campaign;
+}
+
+/**
+ * The begun fight with the bypass user as a PLAYER: Mara's seat (her PC combatant, roll,
+ * hero and log lines) becomes `mock-uid`'s, and the DM is another member. This is the
+ * path a player's sheet runs at the table (its own PC status: `pc-${uid}` in a live
+ * encounter), which the DM fixture never exercises (fight-smoke.spec.ts runs both).
+ */
+function asPlayerView(campaign: CampaignDoc): CampaignDoc {
+  const swap = (value: unknown): unknown => {
+    if (typeof value === "string")
+      return value === "mock-uid"
+        ? "member-dm"
+        : value.replace(
+            /^(pc-)?member-mara$/,
+            (_, pc: string | undefined) => `${pc ?? ""}mock-uid`
+          );
+    if (Array.isArray(value)) return value.map(swap);
+    if (value !== null && typeof value === "object" && !(value instanceof Date))
+      return Object.fromEntries(
+        Object.entries(value).map(([k, v]) => [swap(k) as string, swap(v)])
+      );
+    return value;
+  };
+  return swap(campaign) as CampaignDoc;
+}
+
+function makeDevCampaignAsDm(id: string): CampaignDoc {
   if (devEmpty()) {
     // A FRESH, just-created campaign — the create-flow shape: the creator is the DM
     // and only member, nothing attached, nothing logged, no encounter. Every hub
