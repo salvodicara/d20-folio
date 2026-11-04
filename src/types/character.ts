@@ -196,6 +196,8 @@ export interface SrdEquipmentRef {
   srdId: string;
   /** Stable identity for one physical magic-item copy or independently mutable stack. */
   instanceId?: string;
+  /** The spell written on a Spell Scroll (an SRD spell id). */
+  scrollSpell?: string;
   /** Player's personal notes */
   notes?: string;
   /** Whether this armor/shield is currently worn/equipped */

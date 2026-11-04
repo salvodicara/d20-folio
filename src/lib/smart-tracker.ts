@@ -279,7 +279,10 @@ import {
 } from "@/lib/value-breakdown";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
-import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
+import {
+  casterClassAbilities,
+  resolveSpellOwningClassId,
+} from "@/lib/spell-owning-class";
 import { isSpellCombatCastable } from "@/lib/spell-combat-castable";
 import {
   conditionBreaksConcentration,
@@ -4984,6 +4987,7 @@ export function resolveActions(
     ...grantedActionRows(character),
     ...resolveEquipmentActions(character, ctx),
     ...resolveSpellActions(character, ctx),
+    ...resolveScrollActions(character, ctx),
     ...resolveWeaponActions(character, ctx),
     ...resolveTemporaryHpActions(character, ctx),
     // S9 — charged multi-spell items (Wand of Binding/Fear, Ring of Animal
@@ -6294,6 +6298,72 @@ export function grantedActionRows(
  * attack/DC and the spell-damage / heal / damage-type-override / component-waiver
  * riders (aggregated once), and surfaces custom (homebrew) spells too.
  */
+/** The Spell Scroll magic item (its spell is on the copy, `scrollSpell`). */
+const SPELL_SCROLL_ID = "spell-scroll";
+
+/**
+ * Spell Scrolls (edge-case M13): a scroll of a spell on one of the character's class
+ * lists casts it without a slot or Material components, and is used up (the item's
+ * quantity, the `equipment` cost, as a potion). The cast is the spell's own action,
+ * resolved as if the spell were prepared, so its targets, save, damage and
+ * Concentration are the same. A spell above the levels the character can cast needs
+ * a spellcasting ability check, DC 10 + its level, which the card says.
+ */
+function resolveScrollActions(
+  character: CharacterDoc,
+  ctx: ActionResolveCtx
+): RawResolvedAction[] {
+  const lists = new Set(
+    casterClassAbilities(character.character).map((c) => c.spellListId)
+  );
+  if (lists.size === 0) return [];
+  const highestSlot = Math.max(
+    0,
+    ...character.character.spellSlots.map((slot) => slot.level)
+  );
+  const out: RawResolvedAction[] = [];
+  for (const itemRef of character.character.equipment) {
+    if ("custom" in itemRef || itemRef.srdId !== SPELL_SCROLL_ID) continue;
+    if ((itemRef.quantity ?? 1) <= 0 || !itemRef.scrollSpell) continue;
+    const spell = spellIndex.get(itemRef.scrollSpell);
+    if (!spell?.classes.some((classId) => lists.has(classId))) continue;
+    const reading: CharacterDoc = {
+      ...character,
+      character: {
+        ...character.character,
+        spells: [{ srdId: spell.id, prepared: true }],
+      },
+    };
+    const cast = resolveSpellActions(reading, {
+      ...ctx,
+      charData: reading.character,
+    }).find((action) => action.spellId === spell.id && !action.summary.recurringUse);
+    if (!cast) continue;
+    const fromScroll = { ...cast };
+    // No slot to pay or keep: the scroll is the cost.
+    delete fromScroll.refund;
+    delete fromScroll.slotLevel;
+    out.push({
+      ...fromScroll,
+      id: `item-scroll-${spell.id}`,
+      source: "feature",
+      costsSlot: false,
+      costEquipment: itemRef.instanceId ?? `${SPELL_SCROLL_ID}#${spell.id}`,
+      summary: {
+        ...cast.summary,
+        uses: { current: itemRef.quantity ?? 1, total: itemRef.quantity ?? 1 },
+      },
+      description:
+        spell.level > highestSlot
+          ? uiText("combat.scrollCheck", { dc: 10 + spell.level })
+          : uiText("combat.scrollCast"),
+      pinned: ctx.pinnedSet.has(`item-scroll-${spell.id}`),
+      defaultPinned: false,
+    });
+  }
+  return out;
+}
+
 function resolveSpellActions(
   character: CharacterDoc,
   ctx: ActionResolveCtx
