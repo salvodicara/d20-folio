@@ -3714,6 +3714,17 @@
 }
 .fui .f-roster-empty {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.fui .f-roster-empty .f-tile > span {
+  text-align: center;
+  color: var(--muted);
+}
+@media (max-width: 900px) {
+  .fui .f-roster-empty {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .fui .f-ccard-stats .f-lbl {
   letter-spacing: 0.03em;

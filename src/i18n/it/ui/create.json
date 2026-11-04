@@ -182,7 +182,12 @@
       "rulesNote": "Tutto è controllato con le regole 2024. Puoi cambiare ogni cosa anche dopo, dalla scheda.",
       "createNamed": "Crea {{name}}",
       "creating": "Creazione…",
-      "classChoicesPending": "Completa le scelte della classe per continuare."
+      "classChoicesPending": "Completa le scelte della classe per continuare.",
+      "rapid": "Creazione rapida",
+      "rapidSub": "Scegli classe e specie, al resto pensa Folio.",
+      "rapidGo": "Personaggio in 1 minuto",
+      "rapidNote": "Background, caratteristiche, competenze, incantesimi ed equipaggiamento li sceglie Folio, come consiglia la classe. Puoi cambiare tutto dalla scheda.",
+      "guided": "Creazione guidata"
     }
   }
 }

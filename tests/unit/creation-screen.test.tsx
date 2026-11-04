@@ -115,4 +115,36 @@ describe("CreationScreen", () => {
     expect(createCharacterMock).toHaveBeenCalledWith("u1", expect.anything());
     useAuthStore.setState({ user: null });
   }, 15_000);
+
+  it("«Quick build»: a class, a species and a name make a complete character", async () => {
+    useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
+    createCharacterMock.mockClear();
+    render(
+      <MemoryRouter initialEntries={["/characters/new?rapid=1"]}>
+        <CreationScreen />
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Wizard" }));
+    fireEvent.click(screen.getByRole("button", { name: /^Elf/ }));
+    fireEvent.change(screen.getByLabelText("Character Name"), {
+      target: { value: "Lia" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Lia" }));
+    await waitFor(() => expect(createCharacterMock).toHaveBeenCalled());
+    const [, payload] = createCharacterMock.mock.calls[0] as unknown as [
+      string,
+      {
+        character: {
+          classes: { classId: string }[];
+          race: string;
+          speciesSpellAbility?: string;
+        };
+      },
+    ];
+    expect(payload.character.classes[0]?.classId).toBe("wizard");
+    expect(payload.character.race).toBe("elf");
+    // The Elf's lineage spells' ability, picked the class's way (a Wizard: INT).
+    expect(payload.character.speciesSpellAbility).toBe("INT");
+    useAuthStore.setState({ user: null });
+  }, 15_000);
 });
