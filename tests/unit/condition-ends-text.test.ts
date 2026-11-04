@@ -98,3 +98,23 @@ describe("repeat saves outside the end of the target's turn", () => {
     ]);
   });
 });
+
+describe("three-of-a-kind save tracks", () => {
+  it.each([
+    ["contagion", /until it gets three successes or failures/i],
+    ["flesh-to-stone", /keep track of both until the target collects three of a kind/i],
+  ] as const)(
+    "%s: CON at the end of its turns, three successes or three failures",
+    (id, raw) => {
+      expect(text(id)).toMatch(raw);
+      expect(endsOf(id)).toEqual([
+        {
+          on: "repeat-save",
+          ability: "CON",
+          at: "target-turn-end",
+          track: { successes: 3, failures: 3 },
+        },
+      ]);
+    }
+  );
+});

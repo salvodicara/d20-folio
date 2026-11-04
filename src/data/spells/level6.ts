@@ -517,6 +517,14 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     conditionApplication: {
+      ends: [
+        {
+          on: "repeat-save",
+          ability: "CON",
+          at: "target-turn-end",
+          track: { successes: 3, failures: 3 },
+        },
+      ],
       options: ["restrained"],
       on: "failed-save",
       lifetime: { kind: "source" },
