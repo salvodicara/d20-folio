@@ -79,6 +79,26 @@ function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => v
   return store.amendLogEntry(entry.id, { ...entry.event, outcome }) ?? (() => {});
 }
 
+/** A fight-effect write in the background: a refusal says so, and never escapes as
+ *  an unhandled rejection. */
+function writeFightEffect(
+  campaignId: string,
+  op: { append: ActiveCombatEffect } | { revoke: string },
+  t: T
+): void {
+  void import("@/features/campaigns/campaign-io")
+    .then((io) =>
+      "append" in op
+        ? io.appendPersistentCombatEffect(campaignId, op.append)
+        : io.revokePersistentCombatEffect(campaignId, op.revoke)
+    )
+    .catch(() =>
+      useToastStore
+        .getState()
+        .showToast({ message: t("combat.declareApplyFailed"), duration: 6000 })
+    );
+}
+
 /** The sourced condition effects a tray apply writes in a fight: each condition on
  *  another creature, from a source whose conditions can end early. */
 function sourcedConditionEffects(
@@ -273,20 +293,13 @@ export function applyTray(
         // A condition that can end early (Abjure Foes) lands in the fight as a
         // sourced effect, so the fight ends it by itself (`fightConditionEnds`).
         const sourced = sourcedConditionEffects(offer, applied);
-        if (sourced.length > 0) {
-          const campaignId = useCombatStatusStore.getState().status?.campaignId;
-          const io = import("@/features/campaigns/campaign-io");
+        const fightId = useCombatStatusStore.getState().status?.campaignId;
+        if (sourced.length > 0 && fightId) {
           for (const condition of sourced)
-            void io.then(({ appendPersistentCombatEffect }) =>
-              campaignId ? appendPersistentCombatEffect(campaignId, condition) : undefined
-            );
+            writeFightEffect(fightId, { append: condition }, t);
           reversals.push(() => {
             for (const condition of sourced)
-              void io.then(({ revokePersistentCombatEffect }) =>
-                campaignId
-                  ? revokePersistentCombatEffect(campaignId, condition.id)
-                  : undefined
-              );
+              writeFightEffect(fightId, { revoke: condition.id }, t);
           });
         }
         // What a hit (a companion's Web Bolt) or a successful save (Stunning Strike)
@@ -304,16 +317,11 @@ export function applyTray(
               ]
             : [];
           if (campaignId && effects.length > 0) {
-            const io = import("@/features/campaigns/campaign-io");
-            for (const effect of effects)
-              void io.then(({ appendPersistentCombatEffect }) =>
-                appendPersistentCombatEffect(campaignId, effect)
-              );
+            for (const added of effects)
+              writeFightEffect(campaignId, { append: added }, t);
             reversals.push(() => {
-              for (const effect of effects)
-                void io.then(({ revokePersistentCombatEffect }) =>
-                  revokePersistentCombatEffect(campaignId, effect.id)
-                );
+              for (const added of effects)
+                writeFightEffect(campaignId, { revoke: added.id }, t);
             });
           }
         }
