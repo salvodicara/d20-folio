@@ -1060,6 +1060,29 @@ service cloud.firestore {
       allow read, write: if isAdmin() || dmNotesDm();
     }
 
+    // M20 (docs/architecture/2026-11-dm-state-and-roster.md): an item's DM-only state
+    // and what the DM has revealed of it, keyed by the physical copy's instanceId.
+    // Path-gated like dmNotes (rules are not filters): a member can neither get nor
+    // list `dmItems`; `itemReveals` is the members' read, the DM's write. Both are
+    // excluded from the member wildcard below, or its grant would open them.
+    function itemDocId(itemId) {
+      return itemId.matches('^[A-Za-z0-9_-]{1,128}$');
+    }
+    function itemDm(campId) {
+      return isNotBlocked()
+        && request.auth.uid == get(/databases/$(database)/documents/campaigns/$(campId)).data.dmUid;
+    }
+    match /campaigns/{campId}/dmItems/{itemId} {
+      allow read: if isAdmin() || itemDm(campId);
+      allow write: if itemDocId(itemId) && (isAdmin() || itemDm(campId));
+    }
+    match /campaigns/{campId}/itemReveals/{itemId} {
+      allow read: if isAdmin() || itemDm(campId)
+        || (isNotBlocked()
+            && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members);
+      allow write: if itemDocId(itemId) && (isAdmin() || itemDm(campId));
+    }
+
     // Campaign subcollections (chronicle, sessions, the REVEALED `notes`) — members
     // of the parent only. (The DM "View Sheet" feature reads the member's real
     // character doc via the `dmReaders` ACL above — there is no longer a denormalized
@@ -1194,7 +1217,8 @@ service cloud.firestore {
 
     match /campaigns/{campId}/{subcol}/{docId} {
       allow read, write: if subcol != 'dmNotes' && subcol != 'sessionLogs' && subcol != 'combat'
-        && subcol != 'chest' && subcol != 'pickups' && subcol != 'chestLog' && isNotBlocked()
+        && subcol != 'chest' && subcol != 'pickups' && subcol != 'chestLog'
+        && subcol != 'dmItems' && subcol != 'itemReveals' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
     }
 
