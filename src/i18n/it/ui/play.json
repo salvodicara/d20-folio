@@ -226,7 +226,7 @@
     },
     "conditions": {
       "cantSeeSource": "Non vedo la fonte",
-      "exhaustionLevel": "Livello {{level}}: −{{d20}} ai Test con d20 · Velocità −{{speed}}",
+      "exhaustionLevel": "Livello {{level}}: −{{d20}} ai Test con d20 · Velocità −{{speed}}",
       "exhaustionDeath": "Livello 6: il personaggio muore",
       "withSource": "{{name}} · da {{source}}",
       "fromWhom": "{{name}}: da chi?"

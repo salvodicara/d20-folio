@@ -226,7 +226,7 @@
     },
     "conditions": {
       "cantSeeSource": "I can't see the source",
-      "exhaustionLevel": "Level {{level}}: −{{d20}} to D20 Tests · Speed −{{speed}}",
+      "exhaustionLevel": "Level {{level}}: −{{d20}} to D20 Tests · Speed −{{speed}}",
       "exhaustionDeath": "Level 6: the character dies",
       "withSource": "{{name}} · by {{source}}",
       "fromWhom": "{{name}}: by whom?"

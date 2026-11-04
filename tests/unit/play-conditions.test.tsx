@@ -76,7 +76,7 @@ describe("Play conditions panel", () => {
     const setExhaustion = vi.fn();
     useCharacterStore.setState({ setExhaustion });
     open({ ...frightened(), session: { ...frightened().session, exhaustion: 2 } });
-    expect(screen.getByText(/Level 2: −4 to D20 Tests · Speed −10 ft/)).toBeTruthy();
+    expect(screen.getByText(/Level 2: −4 to D20.Tests · Speed −10 ft/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Increase" }));
     expect(setExhaustion).toHaveBeenLastCalledWith(3);
     fireEvent.click(screen.getAllByRole("button", { name: "Remove" })[0] as HTMLElement);

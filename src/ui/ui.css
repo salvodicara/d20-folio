@@ -3748,6 +3748,8 @@
   top: calc(100% + 8px);
   z-index: 30;
   width: min(360px, calc(100vw - 32px));
+  max-height: min(640px, calc(100vh - 160px));
+  overflow: auto;
   box-shadow: 0 20px 60px var(--shade);
 }
 .fui .f-condpop .f-pn {
