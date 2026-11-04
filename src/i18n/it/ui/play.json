@@ -271,6 +271,12 @@
       "gain_damage": "Aggiungi {{amount}} ai danni.",
       "gain_save": "Aggiungi {{amount}} al tiro salvezza.",
       "oddRoll": "Un tiro dispari non dà nulla."
+    },
+    "speciesChoices": {
+      "title": "Scelte da completare",
+      "body": "La tua specie ti fa scegliere: {{items}}.",
+      "open": "Completa",
+      "abilityNote": "Caratteristica per gli incantesimi della specie: oggi usa Carisma. Scegli quella giusta."
     }
   }
 }

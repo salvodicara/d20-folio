@@ -7,6 +7,9 @@
  */
 
 import type { TableRules } from "@/lib/table-rules";
+import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
+import type { ChoicePicks } from "@/lib/feature-choices";
+import type { AbilityCode } from "@/types/ability";
 import { equipmentKeyMatches } from "@/lib/equipment-key";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { causalPatch, undoPatch } from "@/lib/play/causal-patch";
@@ -648,6 +651,14 @@ interface CharacterState {
    * up to the character's level.
    */
   setGrantBundleChoice: (bundleKey: string, optionId: string) => void;
+  /**
+   * The species' own picks a saved character still owes (Keen Senses, Skillful):
+   * applied like any choice and recorded in `speciesChoices`. Writes nothing for
+   * a pick that is not one of the species' pending slots.
+   */
+  resolveSpeciesChoices: (picks: ChoicePicks) => void;
+  /** The INT/WIS/CHA its species spells use (Elf, Gnome, Tiefling). */
+  setSpeciesSpellAbility: (ability: AbilityCode) => void;
   /**
    * S7 — Polymorph SELF-transformation: assume a Beast `form` (`beastId`) cast via
    * `spellId` (`polymorph` / `true-polymorph`). Stamps the Beast's AC / speeds /
@@ -3226,6 +3237,29 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       });
     };
     return { expired, restore };
+  },
+
+  resolveSpeciesChoices: (picks) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character) return;
+    const charData = character.character;
+    const { slots } = pendingSpeciesChoices(charData, character.session);
+    const next = applySpeciesChoices(charData, slots, picks);
+    if (next === charData) return;
+    set({ character: { ...character, character: next } });
+  },
+
+  setSpeciesSpellAbility: (ability) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character || character.character.speciesSpellAbility === ability) return;
+    set({
+      character: {
+        ...character,
+        character: { ...character.character, speciesSpellAbility: ability },
+      },
+    });
   },
 
   setGrantBundleChoice: (bundleKey, optionId) => {

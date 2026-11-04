@@ -32,8 +32,8 @@ import {
   resolveGrantSourcesForBackground,
   resolveGrantSourcesForClass,
   resolveGrantSourcesForFeatures,
-  resolveGrantSourcesForRace,
 } from "@/lib/resolve-grant-sources";
+import { speciesChoiceSources } from "@/lib/species-choices";
 
 /** The slot id of the 2024 origin-language pick. */
 export const ORIGIN_LANGUAGE_SLOT_ID = "origin";
@@ -97,10 +97,7 @@ export function creationChoiceSlots(input: CreationChoiceInput): FeatureChoiceSl
   // sources so every pick surfaces in ONE collected set.
   // The species' sources come LAST so every earlier slot keeps its position
   // (presets fill each kind's slots in order).
-  const species = resolveGrantSourcesForRace(input.raceId).map((src) => ({
-    ...src,
-    grants: (src.grants ?? []).filter((g) => g.type !== "choice-feat"),
-  }));
+  const species = speciesChoiceSources(input.raceId);
   const sources = [
     ...resolveGrantSourcesForClass(input.classId),
     ...resolveGrantSourcesForBackground(input.backgroundId),
