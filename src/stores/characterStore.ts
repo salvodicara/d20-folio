@@ -6,6 +6,7 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
+import { equipmentKeyMatches } from "@/lib/equipment-key";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { causalPatch, undoPatch } from "@/lib/play/causal-patch";
 import { create } from "zustand";
@@ -1288,19 +1289,6 @@ function endUnheldItemStates(get: () => CharacterState): void {
   if (!after) return;
   for (const line of unheldItemStateLogEvents(before, after)) get().logEvent(line);
   persistCombat(get);
-}
-
-/** Whether an equipment row is the one a consumable cost names: a custom item by
- *  `custom-<instanceId>`, one physical copy by its `instanceId`, a Spell Scroll by
- *  `spell-scroll#<spell>`, any other item by its SRD id. */
-function equipmentKeyMatches(
-  ref: CharacterDoc["character"]["equipment"][number],
-  key: string
-): boolean {
-  if ("custom" in ref) return `custom-${ref.instanceId}` === key;
-  if (ref.instanceId !== undefined && ref.instanceId === key) return true;
-  if (ref.scrollSpell) return `${ref.srdId}#${ref.scrollSpell}` === key;
-  return ref.srdId === key;
 }
 
 export const useCharacterStore = create<CharacterState>()((set, get) => ({

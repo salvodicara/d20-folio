@@ -49,6 +49,7 @@ import { Button, Chip, Icon, Tabs } from "@/ui";
 
 import { ActionIcon } from "./ActionIcon";
 import { PlayPrepare } from "./PlayPrepare";
+import { PlayScrollPick } from "./PlayScrollPick";
 import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
 
@@ -235,6 +236,7 @@ function InventoryPane({
   const { executeAction } = useTurnEconomy();
   const readonly = useSheetReadonly();
   const view = playInventoryView(doc, locale);
+  const [scroll, setScroll] = useState<PlayItem["scroll"] | null>(null);
   const actions = new Map(
     playActionsView(doc, locale, turn)
       .groups.flatMap((g) => g.rows)
@@ -302,6 +304,7 @@ function InventoryPane({
             const use = i.useActionId ? actions.get(i.useActionId) : undefined;
             const sub = [
               line(i),
+              i.scroll ? (i.scroll.spellName ?? t("play.scroll.none")) : null,
               i.stealthDisadvantage ? t("play.inv.stealth") : null,
               i.needsAttunement ? t("magicItems.attunementRequired") : null,
             ].filter(Boolean);
@@ -327,6 +330,15 @@ function InventoryPane({
                   >
                     {t("common.use")}
                   </Button>
+                ) : i.scroll && !readonly ? (
+                  <Button
+                    kind="ghost"
+                    aria-haspopup="dialog"
+                    aria-label={`${t(i.scroll.spellId ? "common.edit" : "common.pick")}: ${i.name}`}
+                    onClick={() => setScroll(i.scroll ?? null)}
+                  >
+                    {t(i.scroll.spellId ? "common.edit" : "common.pick")}
+                  </Button>
                 ) : (
                   <span />
                 )}
@@ -335,6 +347,15 @@ function InventoryPane({
           })}
         </section>
       ))}
+      {scroll && (
+        <PlayScrollPick
+          doc={doc}
+          index={scroll.index}
+          current={scroll.spellId}
+          locale={locale}
+          onClose={() => setScroll(null)}
+        />
+      )}
     </>
   );
 }

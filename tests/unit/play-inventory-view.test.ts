@@ -53,3 +53,49 @@ describe("playInventoryView", () => {
     expect(view.groups.map((g) => g.kind)).not.toContain("attuned");
   });
 });
+
+describe("a Spell Scroll in the pack", () => {
+  const withScroll = (scrollSpell?: string) =>
+    playInventoryView(
+      {
+        ...MOCK_CHARACTER,
+        character: {
+          ...MOCK_CHARACTER.character,
+          equipment: [
+            ...MOCK_CHARACTER.character.equipment,
+            {
+              srdId: "spell-scroll",
+              quantity: 1,
+              ...(scrollSpell ? { scrollSpell } : {}),
+            },
+          ],
+        },
+      },
+      "it"
+    )
+      .groups.flatMap((g) => g.items)
+      .find((i) => i.scroll);
+
+  it("asks which spell is on it until it is set", () => {
+    expect(withScroll()?.scroll).toEqual({
+      index: MOCK_CHARACTER.character.equipment.length,
+      spellId: null,
+      spellName: null,
+    });
+    expect(withScroll()?.useActionId).toBeNull();
+  });
+
+  it("names its spell, and reads it from the actions list when the spell is on a class list", () => {
+    expect(withScroll("healing-word")).toMatchObject({
+      scroll: { spellId: "healing-word", spellName: "Parola Guaritrice" },
+      useActionId: "item-scroll-healing-word",
+    });
+  });
+
+  it("a spell off every class list is named, but has no reading", () => {
+    expect(withScroll("fireball")).toMatchObject({
+      scroll: { spellId: "fireball" },
+      useActionId: null,
+    });
+  });
+});

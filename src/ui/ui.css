@@ -3394,3 +3394,9 @@
 .fui .f-sheet .f-res {
   gap: 8px;
 }
+/* the scroll's spell list: scrolls inside the dialog, under the search */
+.fui .f-scroll-list {
+  max-height: 360px;
+  margin-top: 16px;
+  overflow-y: auto;
+}

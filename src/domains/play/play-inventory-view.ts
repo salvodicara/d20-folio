@@ -7,6 +7,7 @@
  * list has its use (a potion, a charged item's spells), that action's id for «Usa».
  * Weights stay raw (pounds); the screen formats them.
  */
+import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import {
@@ -36,6 +37,8 @@ export interface PlayItem {
   needsAttunement: boolean;
   /** The actions list's use of this item, for «Usa». */
   useActionId: string | null;
+  /** A Spell Scroll: its row in the equipment and the spell on it, once set. */
+  scroll?: { index: number; spellId: string | null; spellName: string | null };
 }
 
 export interface PlayInventoryView {
@@ -47,6 +50,8 @@ export interface PlayInventoryView {
 
 const signedDice = (die: string, mod: number) =>
   mod === 0 ? die : `${die}${mod > 0 ? "+" : "−"}${String(Math.abs(mod))}`;
+
+const SPELL_SCROLL = "spell-scroll";
 
 export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInventoryView {
   const vm = buildInventoryViewModel(doc, locale);
@@ -69,7 +74,26 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     needsAttunement: false,
     useActionId: null,
   });
-  const item = (i: ItemRowVM): PlayItem => ({
+  const item = (i: ItemRowVM): PlayItem => {
+    const ref = i.isCustom ? undefined : doc.character.equipment[i.idx];
+    if (i.id === SPELL_SCROLL && ref && !("custom" in ref)) {
+      // A scroll is read through its own action, keyed by the spell it holds.
+      const spellId = ref.scrollSpell ?? null;
+      return {
+        ...plainItem(i),
+        scroll: {
+          index: i.idx,
+          spellId,
+          spellName: spellId ? localizeSrd("spell", spellId, "name", locale) : null,
+        },
+        useActionId: spellId
+          ? (uses.get(ref.instanceId ?? `${SPELL_SCROLL}#${spellId}`) ?? null)
+          : null,
+      };
+    }
+    return plainItem(i);
+  };
+  const plainItem = (i: ItemRowVM): PlayItem => ({
     key: i.rowId,
     name: i.name,
     quantity: i.quantity,

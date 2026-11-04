@@ -136,6 +136,7 @@ import {
   bareActionSpend,
   castItemPayment,
   castOptionAffordable as castOptionAffordableFor,
+  paymentShortfall,
   castOptionSpends,
   castOptionExpendsSpellSlot,
   metamagicAffordable as metamagicAffordableFor,
@@ -1225,7 +1226,10 @@ export function TurnEconomyProvider({
         () => {
           if (!guardActionState(action)) return null;
           if (expendsSpellSlot && !spellSlotExpenditureAvailable()) return null;
-          if (!actionPaymentAffordable(action)) return null;
+          if (!actionPaymentAffordable(action)) {
+            refusedPayment(action);
+            return null;
+          }
           if (action.costTracker && action.costTrackerIsPool) {
             const cost = trackerAmount ?? action.trackerCost ?? 1;
             const live = useCharacterStore.getState().character;
@@ -1340,12 +1344,12 @@ export function TurnEconomyProvider({
     registerUndoableToast(
       { message: castMessage },
       () => {
-        if (
-          !canCommit() ||
-          !castOptionAffordable(opt) ||
-          !metamagicAffordable(metamagicIds)
-        )
+        if (!canCommit()) return null;
+        if (!castOptionAffordable(opt) || !metamagicAffordable(metamagicIds)) {
+          // Never vanish: say the cast couldn't be paid, and that nothing was spent.
+          showToast({ message: t("combat.shortfall.cast"), duration: 4000 });
           return null;
+        }
         // One causal undo for the cast (item 4): it takes back what the steps below change
         // on the sheet and the turn, the item's charge included.
         const seal = beginCausalUndo();
@@ -1559,6 +1563,13 @@ export function TurnEconomyProvider({
   function actionPaymentAffordable(action: ResolvedAction): boolean {
     const doc = useCharacterStore.getState().character;
     return doc ? actionPaymentAffordableFor(doc, action) : false;
+  }
+
+  /** A use refused at payment says why (a cast never vanishes silently). */
+  function refusedPayment(action: ResolvedAction): void {
+    const doc = useCharacterStore.getState().character;
+    const why = doc ? paymentShortfall(doc, action) : null;
+    showToast({ message: t(`combat.shortfall.${why ?? "cast"}`), duration: 4000 });
   }
 
   function castOptionAffordable(opt: CastCommitOption): boolean {

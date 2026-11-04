@@ -194,6 +194,14 @@
         "magical-darkness": "oscurità magica",
         "bright": "luce intensa"
       }
+    },
+    "scroll": {
+      "which": "Quale incantesimo è su questa pergamena?",
+      "search": "Cerca un incantesimo",
+      "onList": "sulla tua lista",
+      "noMatch": "Nessun incantesimo con questo nome",
+      "none": "incantesimo da scegliere",
+      "set": "Pergamena: {{spell}}"
     }
   }
 }
