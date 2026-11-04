@@ -853,3 +853,24 @@ describe("codec — companionVariant + familiar session round-trip (additive-onl
     });
   });
 });
+
+describe("a spell prepared through one class", () => {
+  it("keeps the class it was prepared through across a save and a load", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      character: {
+        ...MOCK_CHARACTER.character,
+        spells: [
+          { srdId: "cure-wounds", prepared: true, viaClass: "cleric" },
+          { srdId: "cure-wounds", prepared: true, viaClass: "bard" },
+        ],
+      },
+    };
+    const res = parseCharacter(serializeCharacter(doc));
+    if (!res.success) throw new Error(res.error);
+    expect(res.doc.character.spells).toEqual([
+      { srdId: "cure-wounds", prepared: true, viaClass: "cleric" },
+      { srdId: "cure-wounds", prepared: true, viaClass: "bard" },
+    ]);
+  });
+});
