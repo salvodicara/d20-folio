@@ -165,12 +165,35 @@ describe("conformance · 13. items", () => {
       category: 13,
       case: "Command words and Silence",
       source: "ITEMS",
-      status: "M18",
+      status: "works",
     },
-    () => {
+    async () => {
       // Inside Silence nothing can be spoken, so no command word can be heard.
       const silence = getSpellById("silence");
-      expect(JSON.stringify(silence?.grants)).toContain("speech");
+      expect(JSON.stringify(silence?.grants)).toContain('"no-speech"');
+      expect(getMagicItem("carpet-of-flying")?.commandWord).toBe(true);
+      const speech = await import("@/lib/play/speech");
+      const inside = makeCharacterDoc(
+        {},
+        {
+          encounterEffects: [
+            {
+              id: "silence-1",
+              actor: { kind: "monster", combatantId: "caster" },
+              target: {
+                kind: "pc",
+                combatantId: "pc-me",
+                memberUid: "me",
+                characterId: "test-char",
+              },
+              source: { kind: "spell", id: "silence", actionId: "spell-silence" },
+              payload: { kind: "grant-group", activeKey: "spell-silence" },
+              duration: { kind: "concentration", actorId: "caster", sourceId: "silence" },
+            },
+          ],
+        }
+      );
+      expect(speech.commandWordBlocked(inside, "carpet-of-flying")).toBe(true);
     }
   );
 

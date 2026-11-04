@@ -3657,6 +3657,9 @@ export interface SrdMagicItemData {
    *  «… by a Dwarf or a creature attuned to a Belt of Dwarvenkind»): any one
    *  listed condition suffices. */
   attunementBy?: AttunementPrerequisite;
+  /** Its use is a spoken command word («use a command word»): blocked where the
+   *  user can't speak (Silence, Incapacitated). */
+  commandWord?: true;
   /** Suggested price: "400 GP", "B+4000 GP" */
   price?: string;
   /** Healing potion roll (e.g. "2d4+2") — derived display, see SrdEquipmentData. */

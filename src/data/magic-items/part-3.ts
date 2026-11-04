@@ -153,6 +153,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:mirror-of-life-trapping (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "mirror-of-life-trapping",
+    commandWord: true,
     rarity: "very-rare",
     type: "wondrous",
     attunement: false,
@@ -810,6 +811,7 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     // Phase E ingestion — magic-item:plate-armor-of-etherealness (wiki provenance).
     // IT translation: pattern-based, mark for owner review if a more authoritative term exists.
     id: "plate-armor-of-etherealness",
+    commandWord: true,
     rarity: "legendary",
     type: "armor",
     attunement: true,
