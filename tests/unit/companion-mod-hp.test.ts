@@ -6,7 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import { conformHomebrewGrant, type Grant } from "@/lib/grants";
-import { summonMaxHp } from "@/lib/play/companions";
+import { summonMaxHp, summonMods } from "@/lib/play/companions";
 import type { CustomFeature } from "@/types/character";
 
 import { customInstanceId } from "./__helpers__/custom-items";
@@ -44,5 +44,38 @@ describe("companion-mod", () => {
 
   it("is a homebrew grant the schema keeps", () => {
     expect(conformHomebrewGrant(friend)).toEqual(friend);
+  });
+});
+
+describe("summonMods", () => {
+  it("resolves a feat's reaction, emanation and imbuing on the familiar", () => {
+    const doc = withFeat([
+      {
+        type: "companion-mod",
+        companion: "find-familiar",
+        reaction: { trigger: "creatureHitsOther", acBonus: "owner-proficiency" },
+        aura: { radiusFt: 5, ownerWithinFt: 120, healingDieFloor: { below: 2, to: 3 } },
+        imbue: { resistanceChoice: ["necrotic", "radiant"], movesThroughCreatures: true },
+      },
+    ]);
+    const mods = summonMods(doc, "find-familiar");
+    // Wizard 5: Proficiency Bonus 3.
+    expect(mods.reactions).toEqual([
+      expect.objectContaining({ trigger: "creatureHitsOther", acBonus: 3 }),
+    ]);
+    expect(mods.auras).toEqual([
+      expect.objectContaining({
+        radiusFt: 5,
+        ownerWithinFt: 120,
+        healingDieFloor: { below: 2, to: 3 },
+      }),
+    ]);
+    expect(mods.imbues).toEqual([
+      expect.objectContaining({
+        resistanceChoice: ["necrotic", "radiant"],
+        movesThroughCreatures: true,
+      }),
+    ]);
+    expect(mods.hpBonus).toBe(0);
   });
 });

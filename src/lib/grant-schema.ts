@@ -265,11 +265,36 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
   /** A change to a creature a spell of yours summons (Familiar Friend: the
    *  familiar's Hit Point maximum gains twice your character level). `companion` is
    *  the summoning spell's id. */
-  "companion-mod": objectSchema({
-    companion: stringSchema,
-    hpBonus: objectSchema({ perCharacterLevel: numberSchema }),
-    type: literalSchema("companion-mod"),
-  }),
+  "companion-mod": objectSchema(
+    {
+      companion: stringSchema,
+      type: literalSchema("companion-mod"),
+    },
+    {
+      hpBonus: objectSchema({ perCharacterLevel: numberSchema }),
+      /** The creature's own Reaction (Warlike Familiar: when a creature within 5 ft
+       *  of it is hit, that creature gains your Proficiency Bonus to its AC). */
+      reaction: objectSchema({
+        trigger: unionSchema(ALL_REACTION_TRIGGERS.map((token) => literalSchema(token))),
+        acBonus: literalSchema("owner-proficiency"),
+      }),
+      /** An emanation from the creature (Soothing Familiar: an ally's healing dice
+       *  of `below` or lower count as `to`, while it is within `ownerWithinFt`). */
+      aura: objectSchema(
+        {
+          radiusFt: numberSchema,
+          healingDieFloor: objectSchema({ below: numberSchema, to: numberSchema }),
+        },
+        { ownerWithinFt: numberSchema }
+      ),
+      /** An optional imbuing at the cast (Otherworldly Familiar): a Resistance of
+       *  your choice, and moving through creatures and objects. */
+      imbue: objectSchema(
+        { resistanceChoice: arraySchema(DAMAGE_TYPE_SCHEMA) },
+        { movesThroughCreatures: literalSchema(true) }
+      ),
+    }
+  ),
   "damage-immunity": objectSchema({
     damageType: DAMAGE_TYPE_SCHEMA,
     type: literalSchema("damage-immunity"),
