@@ -874,6 +874,7 @@ export function TurnEconomyProvider({
     const loggedId = applyUse(action, trackerAmount, attackOf, targets, occurrenceId);
     const undo = seal?.() ?? null;
     const undoStandings = leaveStandings(action, action.slotLevel, targets);
+    offerUseHitPointDice(action, action.slotLevel);
     return () => {
       if (useCharacterStore.getState().readonly || !undo?.()) return;
       undoStandings?.();
@@ -1352,6 +1353,7 @@ export function TurnEconomyProvider({
             action.slotLevel,
             applyResolution?.targets ?? []
           );
+          offerUseHitPointDice(action, action.slotLevel);
           return withResolutionUndo(
             () => {
               undoStandings?.();
@@ -1482,6 +1484,7 @@ export function TurnEconomyProvider({
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
         const undoZone = readies ? null : leaveZone(action, opt.level, execution.spared);
         const undoStandings = readies ? null : leaveStandings(action, opt.level, targets);
+        if (!readies) offerUseHitPointDice(action, opt.level);
         const picksForm =
           !readies &&
           !execution.ritual &&
@@ -1505,6 +1508,34 @@ export function TurnEconomyProvider({
       { turnScoped: false }
     );
     clearPendingResolution(action);
+  }
+
+  /**
+   * The Hit Point Dice a use lets its user spend (Arcane Vigor, Durable's Speedy
+   * Recovery): asked on a screen that draws its questions, a notice on the old
+   * sheet. One the target spends (Battle Medic) is that creature's own to roll.
+   */
+  function offerUseHitPointDice(action: ResolvedAction, castLevel?: number) {
+    const rule = action.summary.hitPointDice;
+    const doc = useCharacterStore.getState().character;
+    if (!rule || rule.spender === "target" || !doc) return;
+    const spellLevel = action.spellLevel ?? undefined;
+    const ctx = hitPointDiceContext(
+      doc,
+      castLevel !== undefined
+        ? { slotLevel: castLevel, spellLevel: spellLevel ?? castLevel }
+        : undefined
+    );
+    const offer = hitPointDiceSpend(rule, ctx);
+    if (!offer) return;
+    if (!renderPrompts) {
+      setHitDiceOffers((now) => [...now, { source: action.nameLoc, offer }]);
+      return;
+    }
+    showToast({
+      message: t("combat.useHitPointDice", { source: action.name, max: offer.max }),
+      duration: 8000,
+    });
   }
 
   /**

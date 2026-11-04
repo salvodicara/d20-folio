@@ -412,6 +412,9 @@ export interface ActionSummary {
   /** The spell or feature whose catalogue holds those states (a spell's
    *  `while-active`, a feature's `targetStates`). */
   targetStateSource?: { kind: "spell" | "feature"; id: string };
+  /** The Hit Point Dice the use lets someone spend (Arcane Vigor, Durable's
+   *  Speedy Recovery): offered after the use. */
+  hitPointDice?: HitPointDiceRule;
   /** The catalogue entry a condition that can end early comes from, so the fight
    *  keeps it as a sourced effect (Abjure Foes' Frightened ends on damage). */
   conditionSource?: { kind: "spell" | "feature"; id: string };
@@ -5448,6 +5451,8 @@ function featureActivation(grants: ReadonlyArray<Grant> | undefined): FeatureAct
 /** What a hit, or a target's successful save, puts on the target as catalogue
  *  states, with the catalogue entry that holds them. */
 function stampTargetStates(summary: RawActionSummary, activity: Activity): void {
+  const dice = activity.effects.find((effect) => effect.kind === "hit-point-dice");
+  if (dice?.kind === "hit-point-dice") summary.hitPointDice = hitPointDiceRuleOf(dice);
   const states = activity.effects.filter(isCatalogueStateEffect);
   if (states.length === 0) return;
   const source = activity.source;
@@ -5463,6 +5468,20 @@ function stampTargetStates(summary: RawActionSummary, activity: Activity): void 
   if (onSave.length > 0) summary.saveSuccessEffects = onSave;
   if (onHit.length > 0) summary.hitEffects = onHit;
   if (onSave.length > 0 || onHit.length > 0) summary.targetStateSource = kind;
+}
+
+/** A `hit-point-dice` effect's spend, without the effect's own gating fields. */
+function hitPointDiceRuleOf(effect: HitPointDiceRule): HitPointDiceRule {
+  return {
+    max: effect.max,
+    ...(effect.perUpcast !== undefined ? { perUpcast: effect.perUpcast } : {}),
+    ...(effect.bonus ? { bonus: effect.bonus } : {}),
+    ...(effect.into ? { into: effect.into } : {}),
+    ...(effect.evenOnly ? { evenOnly: effect.evenOnly } : {}),
+    ...(effect.oddInto ? { oddInto: effect.oddInto } : {}),
+    ...(effect.spender ? { spender: effect.spender } : {}),
+    ...(effect.exactly ? { exactly: effect.exactly } : {}),
+  };
 }
 
 /** An Activity effect the catalogue can author as a target state. */

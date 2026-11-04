@@ -637,6 +637,7 @@
     "dispelCheckFailed": "Prova fallita",
     "dispelEnded": "{{spell}} su {{target}} termina",
     "reactionTrigger_selfFailsSave": "fallisci un tiro salvezza",
-    "reactionTrigger_selfFailsConSave": "fallisci un tiro salvezza su Costituzione"
+    "reactionTrigger_selfFailsConSave": "fallisci un tiro salvezza su Costituzione",
+    "useHitPointDice": "{{source}}: puoi spendere fino a {{max}} dei tuoi Dadi Vita."
   }
 }
