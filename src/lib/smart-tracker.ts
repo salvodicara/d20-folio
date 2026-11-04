@@ -3940,11 +3940,11 @@ export function resolveSlotAltRecovery(
  * else the spell's own.
  */
 function riderBindings(
-  rider: { sourceId: string; whileActiveKey?: string },
+  rider: { sourceId?: string; whileActiveKey?: string },
   character: CharacterDoc
 ): IntegerBindings {
   const bindings = characterScalarBindings(character.character);
-  const spell = spellIndex.get(rider.sourceId);
+  const spell = rider.sourceId ? spellIndex.get(rider.sourceId) : undefined;
   if (!spell) return bindings;
   const { session } = character;
   const castLevel =
@@ -3956,8 +3956,12 @@ function riderBindings(
 
 /** Whether a rider rides any attack because a running spell grants it (Conjure Minor
  *  Elementals), not a species form's once-per-turn rider (Celestial Revelation). */
-function spellStateAttackRider(rider: { appliesTo: string; sourceId: string }): boolean {
-  return rider.appliesTo === "attack-or-spell" && spellIndex.has(rider.sourceId);
+function spellStateAttackRider(rider: { appliesTo: string; sourceId?: string }): boolean {
+  return (
+    rider.appliesTo === "attack-or-spell" &&
+    rider.sourceId !== undefined &&
+    spellIndex.has(rider.sourceId)
+  );
 }
 
 export function resolveRiderDice(
