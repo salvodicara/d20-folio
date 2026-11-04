@@ -628,6 +628,13 @@
     "situation": {
       "flankingSummary_advantage": "Tu e un alleato siete ai lati opposti del bersaglio, entrambi adiacenti: i tuoi tiri per colpire in mischia contro di esso hanno Vantaggio.",
       "flankingSummary_plus-2": "Tu e un alleato siete ai lati opposti del bersaglio, entrambi adiacenti: i tuoi tiri per colpire in mischia contro di esso ricevono +2."
-    }
+    },
+    "dispelWhich": "Quale incantesimo su {{target}}?",
+    "dispelEnds": "Termina",
+    "dispelNeedsCheck": "Prova di caratteristica da incantatore, CD {{dc}}",
+    "dispelEnd": "Termina",
+    "dispelCheckPassed": "Prova riuscita: termina",
+    "dispelCheckFailed": "Prova fallita",
+    "dispelEnded": "{{spell}} su {{target}} termina"
   }
 }

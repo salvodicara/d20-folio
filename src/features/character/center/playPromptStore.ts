@@ -11,6 +11,7 @@
 import type { LocText } from "@/lib/loc-text";
 import type { HitPointDiceOffer } from "@/lib/play/hit-point-dice";
 import type { SlotRecoveryRule } from "@/lib/play/slot-recovery";
+import type { DispelOption } from "@/lib/play/dispel";
 import { useLayoutEffect } from "react";
 import { create } from "zustand";
 
@@ -48,6 +49,16 @@ export interface PlayPrompts {
   "potion-mixing": {
     potions: LocText[];
     onConfirm: (roll: number | null) => void;
+  };
+  /** Dispel Magic cast on a creature (M17): which of its spells to end. A spell
+   *  above the cast's reach asks for the caster's check first: `passed` says it
+   *  succeeded (a failure ends nothing). */
+  dispel: {
+    source: LocText;
+    targetName: string;
+    options: ReadonlyArray<DispelOption>;
+    onConfirm: (option: DispelOption) => void;
+    onCancel: () => void;
   };
   /** Expended slots a cast lets the player recover (M12): which ones, within the
    *  rule's budget and ceiling. `onConfirm` gets the slot levels picked. */

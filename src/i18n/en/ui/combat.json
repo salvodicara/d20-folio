@@ -628,6 +628,13 @@
     "situation": {
       "flankingSummary_advantage": "You and an ally are on opposite sides of the target, both next to it: your melee attack rolls against it have Advantage.",
       "flankingSummary_plus-2": "You and an ally are on opposite sides of the target, both next to it: your melee attack rolls against it get +2."
-    }
+    },
+    "dispelWhich": "Which spell on {{target}}?",
+    "dispelEnds": "Ends",
+    "dispelNeedsCheck": "Spellcasting ability check, DC {{dc}}",
+    "dispelEnd": "End it",
+    "dispelCheckPassed": "Check succeeded: end it",
+    "dispelCheckFailed": "Check failed",
+    "dispelEnded": "{{spell}} on {{target}} ends"
   }
 }

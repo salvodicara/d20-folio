@@ -111,7 +111,7 @@ describe("conformance · 16. DM adjudication", () => {
       category: 16,
       case: "Dispelling and what counts as magic",
       source: "SAC #9; SAC #118; SAC #150",
-      status: "M17",
+      status: "works",
     },
     async () => {
       // Dispel Magic ends one target's share of a spell: a level 3 or lower spell
