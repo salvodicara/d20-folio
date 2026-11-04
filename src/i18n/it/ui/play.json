@@ -149,6 +149,26 @@
     "spare": {
       "which": "Chi risparmi?",
       "hint": "Chi scegli non subisce i suoi effetti. Gli alleati sono già scelti."
+    },
+    "zones": {
+      "title": "Zone in campo",
+      "lightIs": "Luce: {{light}}",
+      "by": "di {{name}}",
+      "bites": "colpisce chi {{when}}",
+      "or": " o ",
+      "spares": "risparmia {{names}}",
+      "when": {
+        "enter": "entra",
+        "start-turn": "inizia il turno dentro",
+        "end-turn": "finisce il turno dentro",
+        "move-within": "si muove dentro"
+      },
+      "light": {
+        "dim": "penombra",
+        "darkness": "oscurità",
+        "magical-darkness": "oscurità magica",
+        "bright": "luce intensa"
+      }
     }
   }
 }

@@ -149,6 +149,26 @@
     "spare": {
       "which": "Whom does it spare?",
       "hint": "Whoever you pick is unaffected by it. Your allies are already picked."
+    },
+    "zones": {
+      "title": "Areas on the field",
+      "lightIs": "Light: {{light}}",
+      "by": "by {{name}}",
+      "bites": "hits whoever {{when}}",
+      "or": " or ",
+      "spares": "spares {{names}}",
+      "when": {
+        "enter": "enters",
+        "start-turn": "starts a turn inside",
+        "end-turn": "ends a turn inside",
+        "move-within": "moves inside"
+      },
+      "light": {
+        "dim": "dim light",
+        "darkness": "darkness",
+        "magical-darkness": "magical darkness",
+        "bright": "bright light"
+      }
     }
   }
 }
