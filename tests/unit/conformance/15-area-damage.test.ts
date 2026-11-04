@@ -148,7 +148,12 @@ describe("conformance · 15. multi-target and area damage", () => {
   );
 
   rule(
-    { category: 15, case: "Evasion", source: "WIKI rogue:main; SAC #60", status: "M1" },
+    {
+      category: 15,
+      case: "Evasion",
+      source: "WIKI rogue:main; SAC #60",
+      status: "works",
+    },
     () => {
       // The rogue's own Evasion: a saved DEX half-damage area deals 0, a failed one half.
       const evasive: DamageDefenses = {
