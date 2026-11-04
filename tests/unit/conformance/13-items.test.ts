@@ -126,7 +126,7 @@ describe("conformance · 13. items", () => {
       category: 13,
       case: "Dawn recharge and destruction",
       source: "ITEMS",
-      status: "M18",
+      status: "works",
     },
     async () => {
       // The last charge rolls a d20: on a 1 the wand is destroyed.
@@ -147,10 +147,14 @@ describe("conformance · 13. items", () => {
       };
       expect(equipmentAfterLongRest([dawnItem])[0]).toEqual(dawnItem);
       expect(equipmentAfterDawn([dawnItem])[0]?.charges?.current).toBe(7);
-      // The case works once the clock says when a dawn passes (time of day).
+      // The clock says when a dawn passes: a night from 22:00 crosses 06:00, an
+      // afternoon hour doesn't.
       const id = "@/lib/play/time";
-      const clock = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-      expect(typeof clock.crossedDawn).toBe("function");
+      const clock = (await import(/* @vite-ignore */ id)) as {
+        crossedDawn: (timeOfDay: number | undefined, minutes: number) => boolean;
+      };
+      expect(clock.crossedDawn(22 * 60, 480)).toBe(true);
+      expect(clock.crossedDawn(14 * 60, 60)).toBe(false);
     }
   );
 
