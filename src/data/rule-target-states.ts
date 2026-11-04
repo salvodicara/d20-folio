@@ -33,6 +33,22 @@ export const RULE_TARGET_STATES: ReadonlyMap<
     // attacks it first spends it.
     "action-help",
     [
+      // Help (ability check): "Advantage on the next ability check it makes with the
+      // skill or tool you chose, … before the start of your next turn." The check it
+      // helps spends it.
+      {
+        type: "while-active",
+        activeKey: "helped-check",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [
+          {
+            type: "advantage-on",
+            rollType: "check",
+            vs: "ability-checks",
+            consume: "next",
+          },
+        ],
+      },
       {
         type: "while-active",
         activeKey: "helped-against",

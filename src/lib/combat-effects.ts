@@ -210,11 +210,30 @@ export function activeRollModeAdjustments(
             grant.type === "advantage-on"
               ? ("advantage" as const)
               : ("disadvantage" as const),
-          consume: grant.type === "disadvantage-on" ? (grant.consume ?? "each") : "each",
+          consume: "consume" in grant ? (grant.consume ?? "each") : "each",
         },
       ];
     })
   );
+}
+
+/** The effects on `combatantId` that its next roll of `rollType` spends (Help's
+ *  Advantage on the next ability check): the ids to revoke with that roll. */
+export function effectIdsConsumedByRoll(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  combatantId: string,
+  rollType: ActiveRollModeAdjustment["rollType"]
+): string[] {
+  const mine = foldCombatEffectOps(operations).filter(
+    (effect) => effect.target.combatantId === combatantId
+  );
+  return [
+    ...new Set(
+      activeRollModeAdjustments(mine, rollType)
+        .filter((adjustment) => adjustment.consume === "next")
+        .map((adjustment) => adjustment.effect.id)
+    ),
+  ];
 }
 
 /** Attack-roll mode imposed by effects on the selected target, whoever attacks
