@@ -58,6 +58,43 @@ _Richiama X_ — the verb keeps the two families distinct.)
 | ----- | ----------- | ------ | ----- | ----- | --------- | --------- | ---------- | ------ | -------- | ------- | --------- | ------- |
 | Acido | Contundenti | Freddo | Fuoco | Forza | Fulmine   | Necrotici | Perforanti | Veleno | Psichici | Radiosi | Taglienti | Tuono   |
 
+Inflection and case: the adjective types agree with _danni_ (`danni Radiosi`, `1d8 danni
+Necrotici`); the bare type label is singular masculine (`Radioso`, `Contundente`); the noun types
+take _da_ (`danni da Fuoco`, the tray label `Danni da Fuoco`). App prose capitalises the type as a
+defined term where the SRD prints it lowercase: same lexeme. **Radiant is never _Radiante_.**
+
+### Creature types and sizes
+
+| Aberration  | Beast  | Celestial  | Construct | Dragon | Elemental  | Fey      | Fiend   | Giant   | Humanoid | Monstrosity | Ooze  | Plant    | Undead    |
+| ----------- | ------ | ---------- | --------- | ------ | ---------- | -------- | ------- | ------- | -------- | ----------- | ----- | -------- | --------- |
+| Aberrazione | Bestia | Celestiale | Costrutto | Drago  | Elementale | Folletto | Immondo | Gigante | Umanoide | Mostruosità | Melma | Vegetale | Non Morto |
+
+| Tiny      | Small   | Medium | Large  | Huge   | Gargantuan   |
+| --------- | ------- | ------ | ------ | ------ | ------------ |
+| Minuscola | Piccola | Media  | Grande | Enorme | Mastodontica |
+
+As chrome labels sizes agree with _taglia_ (feminine); in a stat block they agree with the type
+(`Folletto Medio`, `Bestia Grande`).
+
+### Base actions
+
+| Attack  | Dash   | Disengage  | Dodge    | Help  | Hide        | Influence | Magic | Ready      | Search  | Study  | Utilize  |
+| ------- | ------ | ---------- | -------- | ----- | ----------- | --------- | ----- | ---------- | ------- | ------ | -------- |
+| Attacco | Scatto | Disimpegno | Schivata | Aiuto | Nascondersi | Influenza | Magia | Prepararsi | Ricerca | Studio | Utilizzo |
+
+Nouns, never the old verbs (_Aiutare_, _Cercare_, _Utilizzare_). Opportunity Attack is _Attacco di
+Opportunità_.
+
+### Recurring rules and item terms
+
+| English                   | Italian                                | English        | Italian                 |
+| ------------------------- | -------------------------------------- | -------------- | ----------------------- |
+| Weapon Mastery            | Padronanza d'Armi                      | Thieves' Tools | Arnesi da Scasso        |
+| Ability Score Improvement | Aumento dei Punteggi di Caratteristica | Spellbook      | Libro degli Incantesimi |
+| Spell Scroll              | Pergamena Magica                       | Healer's Kit   | Borsa del Guaritore     |
+| Artisan's Tools           | Strumenti da Artigiano                 | Expertise      | Maestria                |
+| Martial weapons           | Armi da guerra                         | Second Wind    | Recuperare Energie      |
+
 ### Conditions
 
 | Blinded  | Charmed     | Deafened  | Exhaustion    | Frightened | Grappled  | Incapacitated | Invisible  | Paralyzed   | Petrified    | Poisoned   | Prone | Restrained | Stunned  | Unconscious    |
@@ -108,15 +145,20 @@ build on:
   `<entityId>.mechanics.actions.<n>`, `<entityId>.traits.<id>` (`loadSubEntityProse`): those blurbs
   are what the action card and the rail actually render, and nothing was reading them until the PS-J
   sweep found two Channel Divinity action summaries printing _Canalizzare Divinità_ while the
-  feature's own name is the canonical _Incanalare Divinità_ (fixed 2026-07-25). **What that scan still
-  cannot see:** `proseStrings` skips any field literally called `name`, so a sub-entity's OWN name is
-  unscanned — and three of them currently carry retired lexemes
-  (`lifedrinker.grants.lifedrinker.name`, `eldritch-smite.grants.eldritch-smite.name`,
-  `dhampir.traits.spider-climb.name`). Scanning those needs a per-entity ruling on the canonical
-  lexeme first (a sub-entity may legitimately share a retired top-level name), so it is a separate
-  unit of work, not an oversight in the scan.
+  feature's own name is the canonical _Incanalare Divinità_ (fixed 2026-07-25). Two sub-entity
+  grant names that carried retired lexemes (Eldritch Smite, Lifedrinker) now use the canonical
+  name; sub-entity `name` fields are covered by the same-EN check below.
 - **Closed-set condition drift** — the 15 condition `name.it` values are PINNED to the glossary table
   above (the most cross-referenced closed set in the app); a new condition must be pinned too.
+  The damage types (`srd.damage_*`, `combat.damageTray.damageOf.*`), creature types and sizes
+  (`srd.creatureType_*`, `srd.size_*`) are pinned the same way.
+- **Missing cross-references** (`findMissingCrossRefs`) — when an EN string names an entity (every
+  name of 2+ words, plus a short list of one-word closed-set terms), the IT string at the same key
+  must carry that entity's canonical IT name, inflection aside. This catches a NEW variant nobody
+  has retired yet (_Individuazione del Pensiero_ for _Individuazione dei Pensieri_). It runs as a
+  ratchet: known misses may only shrink.
+- **One EN name, two IT names** (`findSameEnDifferentIt`) — across entities and sub-entity rows,
+  minus EN homonyms the IT SRD itself prints two ways (Light: _Leggera_ / _Luce_).
 
 The guard reads the `name` fields directly, so the JSON stays the single source of truth — this doc
 never duplicates the full per-entity list (that would just be a second thing to drift).
