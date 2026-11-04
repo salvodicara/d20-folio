@@ -96,14 +96,16 @@ function campaignIo(): Promise<typeof import("@/features/campaigns/campaign-io")
  *  an unhandled rejection. */
 function writeFightEffect(
   campaignId: string,
-  op: { append: ActiveCombatEffect } | { revoke: string },
+  op: { append: ActiveCombatEffect } | { revoke: string } | { reinstate: string },
   t: T
 ): void {
   void campaignIo()
     .then((io) =>
       "append" in op
         ? io.appendPersistentCombatEffect(campaignId, op.append)
-        : io.revokePersistentCombatEffect(campaignId, op.revoke)
+        : "revoke" in op
+          ? io.revokePersistentCombatEffect(campaignId, op.revoke)
+          : io.reinstatePersistentCombatEffect(campaignId, op.reinstate)
     )
     .catch(() =>
       useToastStore
@@ -129,6 +131,18 @@ function consumedByAttacks(
     )
   );
   return live.filter((effect) => ids.has(effect.id));
+}
+
+/** Undo a revoke: the same occurrence back (`reinstate`, same id) once the v0.26.0
+ *  rules accept it; before them, a fresh copy as before. */
+function undoRevoke(campaignId: string, effect: ActiveCombatEffect, t: T): void {
+  writeFightEffect(
+    campaignId,
+    combatEffectsV26On()
+      ? { reinstate: effect.id }
+      : { append: { ...effect, id: crypto.randomUUID() } },
+    t
+  );
 }
 
 /** The sourced condition effects a tray apply writes in a fight: each condition on
@@ -333,12 +347,7 @@ export function applyTray(
           for (const spent of consumed)
             writeFightEffect(spentIn, { revoke: spent.id }, t);
           reversals.push(() => {
-            for (const spent of consumed)
-              writeFightEffect(
-                spentIn,
-                { append: { ...spent, id: crypto.randomUUID() } },
-                t
-              );
+            for (const spent of consumed) undoRevoke(spentIn, spent, t);
           });
         }
         // A budgeted zone (Guardian of Faith) counts the damage it dealt, and its
@@ -367,11 +376,7 @@ export function applyTray(
               duration: 6000,
             });
             reversals.push(() => {
-              writeFightEffect(
-                status.campaignId,
-                { append: { ...held, id: crypto.randomUUID() } },
-                t
-              );
+              undoRevoke(status.campaignId, held, t);
             });
           }
         }

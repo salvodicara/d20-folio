@@ -827,8 +827,21 @@ service cloud.firestore {
           && nonEmptyEffectString(operation.get('targetId', ''));
       }
 
+      // The causal inverse of a revoke (an undo): the same occurrence active again.
+      function validMemberReinstateOperation(operation) {
+        return operation is map
+          && operation.keys().hasOnly(['id', 'kind', 'effectId', 'actorId', 'targetId'])
+          && nonEmptyEffectString(operation.get('id', ''))
+          && operation.get('kind', '') == 'reinstate'
+          && nonEmptyEffectString(operation.get('effectId', ''))
+          && nonEmptyEffectString(operation.get('actorId', ''))
+          && nonEmptyEffectString(operation.get('targetId', ''));
+      }
+
       function validMemberEffectOperation(operation) {
-        return validMemberApplyOperation(operation) || validMemberRevokeOperation(operation);
+        return validMemberApplyOperation(operation)
+          || validMemberRevokeOperation(operation)
+          || validMemberReinstateOperation(operation);
       }
 
       // Read directly, not through get(): a missing field errors, which refuses the write

@@ -132,10 +132,10 @@ export function conformCombatEffectOp(value: unknown): CombatEffectOp | null {
   }
   // The former `set-active` compare-and-swap kind is gone: no producer ever
   // shipped, so a stored entry is dropped at this tolerant read boundary.
-  if (value.kind !== "revoke") return null;
+  if (value.kind !== "revoke" && value.kind !== "reinstate") return null;
   return {
     id: value.id,
-    kind: "revoke",
+    kind: value.kind,
     effectId: value.effectId,
     actorId: value.actorId,
     targetId: value.targetId,

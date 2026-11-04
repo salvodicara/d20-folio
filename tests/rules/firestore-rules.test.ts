@@ -838,6 +838,38 @@ describe("firestore.rules — /campaigns access", () => {
       }
     });
 
+    it("a member MAY reinstate a revoked occurrence (an undo), not malform one (v0.26.0)", async () => {
+      const db = testEnv.authenticatedContext("member").firestore();
+      const revoke = {
+        id: "revoke:heroism:1",
+        kind: "revoke",
+        effectId: "heroism:1",
+        actorId: "pc-member",
+        targetId: "monster-1",
+      };
+      const reinstate = { ...revoke, id: "reinstate:heroism:1", kind: "reinstate" };
+      // One operation per write, as the client appends them.
+      for (const ops of [
+        [persistentApply],
+        [persistentApply, revoke],
+        [persistentApply, revoke, reinstate],
+      ]) {
+        await assertSucceeds(
+          updateDoc(doc(db, "campaigns", "camp1"), { "encounter.effectOps": ops })
+        );
+      }
+      await assertFails(
+        updateDoc(doc(db, "campaigns", "camp1"), {
+          "encounter.effectOps": [
+            persistentApply,
+            revoke,
+            reinstate,
+            { ...reinstate, id: "reinstate:heroism:1:1", extra: 1 },
+          ],
+        })
+      );
+    });
+
     it("the effect-op ledger is append-only: apply, revoke and a bounded batch land", async () => {
       const db = testEnv.authenticatedContext("member").firestore();
       await assertSucceeds(

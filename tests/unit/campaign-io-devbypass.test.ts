@@ -45,11 +45,14 @@ import {
   joinCampaign,
   listSessions,
   listSharedCampaigns,
+  reinstatePersistentCombatEffect,
+  revokePersistentCombatEffect,
   revokePersistentCombatEffectsBySource,
   commitChronicleEdit,
   setCampaignBanner,
 } from "@/features/campaigns/campaign-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { foldCombatEffectOps } from "@/lib/combat-effects";
 import {
   DEV_CAMPAIGN_ID,
   makeDevCampaign,
@@ -263,6 +266,29 @@ describe("campaign-io under dev bypass", () => {
         target: { kind: "monster", combatantId: "monster-3" },
       })
     ).rejects.toThrow("Combat effect participant mismatch");
+    // Undo of a revoke reinstates the same occurrence (same id), and it can be
+    // revoked again: each cycle is its own operation.
+    const active = () =>
+      foldCombatEffectOps(
+        useCampaignStore.getState().campaign?.encounter?.effectOps
+      ).some((e) => e.id === "ward:1");
+    await revokePersistentCombatEffect(campaign.id, "ward:1");
+    expect(active()).toBe(false);
+    await reinstatePersistentCombatEffect(campaign.id, "ward:1");
+    expect(active()).toBe(true);
+    await reinstatePersistentCombatEffect(campaign.id, "ward:1");
+    await revokePersistentCombatEffect(campaign.id, "ward:1");
+    expect(active()).toBe(false);
+    expect(
+      useCampaignStore
+        .getState()
+        .campaign?.encounter?.effectOps?.map((op) => `${op.kind}:${op.id}`)
+        .filter((id) => !id.startsWith("apply"))
+    ).toEqual([
+      "revoke:revoke:ward:1",
+      "reinstate:reinstate:ward:1",
+      "revoke:revoke:ward:1:1",
+    ]);
   });
 });
 
