@@ -126,7 +126,7 @@ describe("conformance · 13. items", () => {
       category: 13,
       case: "Dawn recharge and destruction",
       source: "ITEMS",
-      status: "M18",
+      status: "works",
     },
     async () => {
       // The last charge rolls a d20: on a 1 the wand is destroyed.
