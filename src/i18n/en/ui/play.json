@@ -257,9 +257,9 @@
     },
     "help": {
       "title": "Help",
-      "forWhom": "For whom?",
-      "hint": "Their next attack against that enemy before the start of your next turn has Advantage.",
-      "confirm": "Help"
+      "hint": "The next attack by one of your allies against that enemy, before your next turn, has Advantage.",
+      "confirm": "Help",
+      "given": "Helping against {{name}}"
     }
   }
 }

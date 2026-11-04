@@ -46,6 +46,7 @@ import { useCombatStatusStore } from "@/features/campaigns/global-combat-context
 import { giveHelp } from "@/features/character/center/outcome-offer";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
@@ -809,10 +810,18 @@ function ActionLine({
         <PlayHelp
           view={helping}
           onClose={() => setHelping(null)}
-          onHelp={(enemyId, allyId) => {
+          onHelp={(enemyId) => {
             setHelping(null);
             executeAction(row.action);
-            giveHelp(enemyId, allyId, doc.id);
+            const undo = giveHelp(enemyId, doc.id);
+            const name = helping.enemies.find((e) => e.id === enemyId)?.name ?? "";
+            if (undo) {
+              useToastStore.getState().showToast({
+                message: t("play.help.given", { name }),
+                duration: 6000,
+                onUndo: undo,
+              });
+            }
           }}
         />
       )}

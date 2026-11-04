@@ -1,7 +1,7 @@
 /**
- * The Help action in a fight on the Play screen: «Su chi?» (the enemy), then «Per
- * chi?» (the ally whose next attack against it has Advantage); «Aiuta» uses the action
- * and writes the effect (`giveHelp`).
+ * The Help action in a fight on the Play screen: «Su chi?» (the enemy) and the rule
+ * in one line; «Aiuta» uses the action and writes the effect (`giveHelp`), with an
+ * undo toast.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,15 +15,12 @@ export function PlayHelp({
   onClose,
 }: {
   view: HelpView;
-  onHelp: (enemyId: string, allyId: string) => void;
+  onHelp: (enemyId: string) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [enemy, setEnemy] = useState<string | null>(
     view.enemies.length === 1 ? (view.enemies[0]?.id ?? null) : null
-  );
-  const [ally, setAlly] = useState<string | null>(
-    view.allies.length === 1 ? (view.allies[0]?.id ?? null) : null
   );
   return (
     <Dialog
@@ -37,11 +34,7 @@ export function PlayHelp({
           <Button kind="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button
-            kind="primary"
-            disabled={!enemy || !ally}
-            onClick={() => enemy && ally && onHelp(enemy, ally)}
-          >
+          <Button kind="primary" disabled={!enemy} onClick={() => enemy && onHelp(enemy)}>
             {t("play.help.confirm")}
           </Button>
         </>
@@ -49,20 +42,10 @@ export function PlayHelp({
     >
       <div className="f-ask">
         <span className="f-lbl">{t("campaignHub.encounterActionOnWhom")}</span>
+        <p className="f-help">{t("play.help.hint")}</p>
         <div className="f-chips">
           {view.enemies.map((c) => (
             <Chip key={c.id} pressed={enemy === c.id} onClick={() => setEnemy(c.id)}>
-              {c.name}
-            </Chip>
-          ))}
-        </div>
-      </div>
-      <div className="f-ask">
-        <span className="f-lbl">{t("play.help.forWhom")}</span>
-        <p className="f-help">{t("play.help.hint")}</p>
-        <div className="f-chips">
-          {view.allies.map((c) => (
-            <Chip key={c.id} pressed={ally === c.id} onClick={() => setAlly(c.id)}>
               {c.name}
             </Chip>
           ))}

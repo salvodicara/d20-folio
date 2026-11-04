@@ -1,6 +1,6 @@
 /**
- * Help's dialog: «On whom?» (the enemy) and «For whom?» (the ally); «Help» stays off
- * until both are picked, and a lone choice is picked already.
+ * Help's dialog: «On whom?» (the enemy) and the rule in one line; «Help» stays off
+ * until an enemy is picked, and a lone enemy is picked already.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -17,7 +17,7 @@ describe("PlayHelp", () => {
     };
   });
 
-  it("helps the picked ally against the picked enemy", () => {
+  it("helps against the picked enemy, and says what it does", () => {
     const onHelp = vi.fn();
     render(
       <PlayHelp
@@ -26,36 +26,33 @@ describe("PlayHelp", () => {
             { id: "m-gob", name: "Goblin" },
             { id: "m-ogre", name: "Ogre" },
           ],
-          allies: [
-            { id: "pc-bren", name: "Bren" },
-            { id: "m-wolf", name: "Wolf" },
-          ],
         }}
         onHelp={onHelp}
         onClose={() => undefined}
       />
     );
+    expect(
+      screen.getByText(
+        "The next attack by one of your allies against that enemy, before your next turn, has Advantage."
+      )
+    ).toBeTruthy();
     const help = screen.getByRole("button", { name: "Help" });
     expect(help.getAttribute("aria-disabled")).toBe("true");
     fireEvent.click(screen.getByRole("button", { name: "Ogre" }));
-    fireEvent.click(screen.getByRole("button", { name: "Wolf" }));
     fireEvent.click(help);
-    expect(onHelp).toHaveBeenCalledWith("m-ogre", "m-wolf");
+    expect(onHelp).toHaveBeenCalledWith("m-ogre");
   });
 
-  it("a lone enemy and a lone ally are picked already", () => {
+  it("a lone enemy is picked already", () => {
     const onHelp = vi.fn();
     render(
       <PlayHelp
-        view={{
-          enemies: [{ id: "m-gob", name: "Goblin" }],
-          allies: [{ id: "pc-bren", name: "Bren" }],
-        }}
+        view={{ enemies: [{ id: "m-gob", name: "Goblin" }] }}
         onHelp={onHelp}
         onClose={() => undefined}
       />
     );
     fireEvent.click(screen.getByRole("button", { name: "Help" }));
-    expect(onHelp).toHaveBeenCalledWith("m-gob", "pc-bren");
+    expect(onHelp).toHaveBeenCalledWith("m-gob");
   });
 });

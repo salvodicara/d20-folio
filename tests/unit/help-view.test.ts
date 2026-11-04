@@ -1,8 +1,8 @@
 /**
- * The Help action in a fight («Su chi?» then «Per chi?», SRD 5.2.1 Help: the next
- * attack by one of your allies against that enemy has Advantage): the enemies first,
- * then the allies it can help, neither listing the helper nor the dead. Outside a
- * fight, or with nobody to help or help against, it asks nothing.
+ * The Help action in a fight (SRD 5.2.1 Help, attack: "the next attack roll by one of
+ * your allies against that enemy has Advantage"): «Su chi?» lists the living enemies;
+ * whichever ally attacks first gets it. Outside a fight, or with no enemy, it asks
+ * nothing.
  */
 import { describe, expect, it } from "vitest";
 
@@ -20,32 +20,14 @@ const fight = {
 };
 
 describe("helpView", () => {
-  it("offers the living enemies, then the allies but the helper", () => {
-    expect(helpView(fight)).toEqual({
-      enemies: [{ id: "m-gob", name: "Goblin" }],
-      allies: [
-        { id: "pc-bren", name: "Bren" },
-        { id: "m-wolf", name: "Lupo" },
-      ],
-    });
+  it("offers the living enemies", () => {
+    expect(helpView(fight)).toEqual({ enemies: [{ id: "m-gob", name: "Goblin" }] });
   });
 
-  it("asks nothing outside a fight, or with no ally or no enemy", () => {
+  it("asks nothing outside a fight, or with no enemy standing", () => {
     expect(helpView(null)).toBeNull();
     expect(
-      helpView({ ...fight, rows: fight.rows.filter((r) => r.kind === "monster") })
-    ).toEqual({
-      enemies: [{ id: "m-gob", name: "Goblin" }],
-      allies: [{ id: "m-wolf", name: "Lupo" }],
-    });
-    expect(
       helpView({ ...fight, rows: fight.rows.filter((r) => r.id !== "m-gob") })
-    ).toBeNull();
-    expect(
-      helpView({
-        ...fight,
-        rows: fight.rows.filter((r) => r.id === "m-gob" || r.id === "pc-me"),
-      })
     ).toBeNull();
   });
 });
