@@ -1365,6 +1365,7 @@ export function TurnEconomyProvider({
           ...(targets.length > 0 ? { targets: [...targets] } : {}),
           ...(readies ? { readied: true as const } : {}),
           ...paidSlotOf(spends),
+          ...(metamagicIds.length > 0 ? { metamagic: [...metamagicIds] } : {}),
         });
         applyOnCastRegains(action.spellId, expendedSlotLevel(opt, spends));
         if (readies) {
