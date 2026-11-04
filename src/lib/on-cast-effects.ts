@@ -30,7 +30,7 @@
 import { getSpellById } from "@/data/spells";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import { slotUsageKey } from "@/lib/cast-options";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterDoc, SrdSpellRef } from "@/types/character";
 import type { OnCastTriggerSpec } from "@/data/types";
 
 /**
@@ -174,6 +174,13 @@ export function resolveOnCastSurgeReminder(
   // RAW gates on a SORCERER spell; a custom/unknown spell has no class list → no
   // reminder (the engine can't know a homebrew spell's class).
   if (!spell || !spell.classes.includes("sorcerer")) return false;
+  // A multiclass caster's spell is the class's it was prepared through (M13): one
+  // prepared as a Wizard spell is not a Sorcerer spell, even on both lists.
+  const ref = character.character.spells.find(
+    (s): s is SrdSpellRef => "srdId" in s && s.srdId === spell.id
+  );
+  const via = ref?.viaClass;
+  if (via !== undefined && via !== "sorcerer") return false;
   return matchingOnCastSpecs(character, spellId, slotLevel).some(
     ({ spec }) => spec.effect === "wild-magic-surge"
   );
