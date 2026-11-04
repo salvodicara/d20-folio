@@ -25,6 +25,7 @@ import {
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { useMarkCountered } from "@/features/character/center/use-mark-countered";
 import { counterableCasts } from "@/lib/play/countered";
+import { compactRange } from "@/lib/views/compact-range";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { resolveReplaceAttackWithCast } from "@/lib/smart-tracker";
 import {
@@ -771,7 +772,8 @@ function ActionLine({
         )}
         {reason && !cta.state.spent && <div className="f-row-s f-act-why">{reason}</div>}
       </div>
-      <span className="f-act-c">{row.range ?? ""}</span>
+      {/* compact in the column («Sé · 4,5 m»), the catalogue's full text on hover */}
+      <RangeCell range={row.range} />
       <span className="f-act-c">{hit}</span>
       <span className="f-act-c f-act-e">{effect}</span>
       {!readonly && spell && !spell.prepared ? (
@@ -851,5 +853,16 @@ function ActionLine({
         />
       )}
     </div>
+  );
+}
+
+/** The range column: compact («Sé · 4,5 m»), with the full text as the tooltip when it
+ *  says more. */
+function RangeCell({ range }: { range: string | undefined }) {
+  const compact = range ? compactRange(range) : "";
+  return (
+    <span className="f-act-c" title={range && compact !== range ? range : undefined}>
+      {compact}
+    </span>
   );
 }
