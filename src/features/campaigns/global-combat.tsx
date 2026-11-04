@@ -34,6 +34,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { spellEndEffects } from "@/lib/activities/read";
 import { proneInFlight } from "@/lib/play/flight";
 import { markDropOffers } from "@/lib/play/mark-offers";
+import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -42,7 +43,11 @@ import {
   revokePersistentCombatEffectsBySource,
   subscribeToSharedCampaigns,
 } from "@/features/campaigns/campaign-io";
-import { incapacitationSweep, type IncapacitationRow } from "@/lib/combat-effects";
+import {
+  foldCombatEffectOps,
+  incapacitationSweep,
+  type IncapacitationRow,
+} from "@/lib/combat-effects";
 import { encounterRollFor, viewerActiveEncounters } from "@/features/campaigns/encounter";
 import {
   observePartyWorldFights,
@@ -115,6 +120,7 @@ export function GlobalCombatMount(): null {
   const observedTurn = useRef<string | null>(null);
   const observedProne = useRef<{ characterId: string; prone: boolean } | null>(null);
   const observedRows = useRef<{ scope: string; rows: IncapacitationRow[] } | null>(null);
+  const observedFight = useRef<{ scope: string; look: FightLook } | null>(null);
   // The OPTIMISTIC open campaign (the hub the viewer is on, if any) — `null` off the hub.
   // Overlaid below so the pip reflects the viewer's OWN start/end/begin-turns in the same
   // tick, not ~2 s later when the autosave-debounced write echoes (the pip's "no echo lag").
@@ -333,6 +339,57 @@ export function GlobalCombatMount(): null {
     for (const effectId of ended) {
       void revokePersistentCombatEffect(primaryId, effectId).catch(() => {
         showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+      });
+    }
+    // Conditions given in this fight end early (Abjure Foes on damage) or ask their
+    // target for a repeat save at its turn's end. Each device answers for its own
+    // combatants' conditions, as the sweep does.
+    const look: FightLook = {
+      rows: live.view.rows.map((row) => ({
+        id: row.id,
+        currentHp: row.currentHp,
+        tempHp: row.tempHp,
+        conditions: row.conditions,
+      })),
+      currentCombatantId: live.encounter.currentCombatantId,
+    };
+    const priorLook =
+      observedFight.current?.scope === scope ? observedFight.current.look : null;
+    observedFight.current = { scope, look };
+    const owns = (id: string) =>
+      primaryIsDm ? kinds.get(id) === "monster" : id === myId;
+    const condition = fightConditionEnds(live.encounter.effectOps, priorLook, look);
+    const targetOf = new Map(
+      foldCombatEffectOps(live.encounter.effectOps).map((e) => [
+        e.id,
+        e.target.combatantId,
+      ])
+    );
+    for (const effectId of condition.ended) {
+      const target = targetOf.get(effectId);
+      if (!target || !owns(target)) continue;
+      void revokePersistentCombatEffect(primaryId, effectId).catch(() => {
+        showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+      });
+    }
+    for (const save of condition.saves) {
+      if (!owns(save.targetId)) continue;
+      const name = live.view.rows.find((row) => row.id === save.targetId)?.name ?? "";
+      showToast({
+        message: t("combat.repeatSaveDue", {
+          target: name,
+          ability: t(`abilities.${save.ability}_short`),
+          condition: localizeSrd("condition", save.conditionId, "name", locale),
+        }),
+        duration: 30000,
+        action: {
+          label: t("combat.repeatSaveSucceeded"),
+          run: () => {
+            void revokePersistentCombatEffect(primaryId, save.id).catch(() => {
+              showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+            });
+          },
+        },
       });
     }
     // A creature your Hex or Hunter's Mark is on just dropped to 0: on a later turn,

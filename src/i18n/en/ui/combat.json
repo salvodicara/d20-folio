@@ -19,6 +19,8 @@
     "spellEndFalls": "{{spell}} ended: anyone still aloft falls unless they can fly another way.",
     "proneInFlight": "Prone in flight: if you're aloft, you fall.",
     "markCanMove": "{{source}}: its target dropped to 0 HP. On a later turn, a Bonus Action moves it to a new creature.",
+    "repeatSaveDue": "End of {{target}}'s turn: a successful {{ability}} save ends {{condition}}.",
+    "repeatSaveSucceeded": "Saved: end it",
     "counteredToast": "Countered: {{name}} · level {{level}} slot back",
     "counteredAria": "Countered: {{name}}. Get its level {{level}} slot back",
     "countered": "Countered",

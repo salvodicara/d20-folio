@@ -556,6 +556,47 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
     expect(toasts().some((m) => /Hex: its target dropped/.test(m))).toBe(true);
   });
 
+  it("the DM's device ends Abjure Foes' Frightened when the monster takes damage", () => {
+    const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
+    const campaign: CampaignDoc = {
+      ...base,
+      dmUid: UID,
+      members: [UID],
+      memberDetails: { [UID]: { displayName: "GM", characterId: null, role: "dm" } },
+    };
+    const empty = { ...(campaign.encounter as EncounterState), combatants: [] };
+    const withGoblin = addMonster(empty, {
+      name: "Goblin",
+      ac: 15,
+      maxHp: 7,
+      count: 1,
+      initiative: 10,
+    });
+    const fear: CombatEffectOp = {
+      id: "op-fear",
+      kind: "apply",
+      effect: {
+        id: "fear-1",
+        actor: {
+          kind: "pc",
+          combatantId: "pc-paladin",
+          memberUid: "p",
+          characterId: "c9",
+        },
+        target: { kind: "monster", combatantId: "monster-1" },
+        source: { kind: "feature", id: "paladin-abjure-foes", actionId: "abjure" },
+        payload: { kind: "condition", conditionId: "frightened" },
+        duration: { kind: "encounter" },
+      },
+    };
+    const encounter = { ...withGoblin, effectOps: [fear] };
+    mount();
+    show(campaign, encounter, 20, true);
+    expect(h.revokePersistentCombatEffect).not.toHaveBeenCalled();
+    show(campaign, setHp(encounter, "monster-1", 4), 20, true);
+    expect(h.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "fear-1");
+  });
+
   it("the DM's device ends a monster's grapple when the monster drops", () => {
     const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
     // The viewer runs the table: no PC of theirs in this fight.

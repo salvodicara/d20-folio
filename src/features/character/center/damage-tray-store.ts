@@ -28,6 +28,9 @@ export interface DamageTrayOffer {
   /** What a target's successful save still puts on it (Stunning Strike: Speed
    *  halved, attacks against it with Advantage), written the same way. */
   onSaved?: (targetId: string) => ActiveCombatEffect[];
+  /** The catalogue entry the conditions come from, when they can end early (Abjure
+   *  Foes): in a fight they land as sourced effects the fight ends by itself. */
+  conditionSource?: { kind: "spell" | "feature"; id: string };
 }
 
 interface DamageTrayStore {

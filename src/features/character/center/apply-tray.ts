@@ -29,6 +29,8 @@ import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import type { CombatEvent } from "@/types/combat-log";
+import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
+import { useAuthStore } from "@/stores/authStore";
 
 import type { DamageTrayOffer } from "./damage-tray-store";
 
@@ -75,6 +77,76 @@ function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => v
   )
     return () => {};
   return store.amendLogEntry(entry.id, { ...entry.event, outcome }) ?? (() => {});
+}
+
+let campaignIoModule: Promise<typeof import("@/features/campaigns/campaign-io")> | null =
+  null;
+
+/** The campaign IO module, loaded once on first use (it stays out of the tray's
+ *  chunk until a fight write needs it). */
+function campaignIo(): Promise<typeof import("@/features/campaigns/campaign-io")> {
+  campaignIoModule ??= import("@/features/campaigns/campaign-io");
+  return campaignIoModule;
+}
+
+/** A fight-effect write in the background: a refusal says so, and never escapes as
+ *  an unhandled rejection. */
+function writeFightEffect(
+  campaignId: string,
+  op: { append: ActiveCombatEffect } | { revoke: string },
+  t: T
+): void {
+  void campaignIo()
+    .then((io) =>
+      "append" in op
+        ? io.appendPersistentCombatEffect(campaignId, op.append)
+        : io.revokePersistentCombatEffect(campaignId, op.revoke)
+    )
+    .catch(() =>
+      useToastStore
+        .getState()
+        .showToast({ message: t("combat.declareApplyFailed"), duration: 6000 })
+    );
+}
+
+/** The sourced condition effects a tray apply writes in a fight: each condition on
+ *  another creature, from a source whose conditions can end early. */
+function sourcedConditionEffects(
+  offer: DamageTrayOffer,
+  applied: ReadonlyArray<AppliedRow>
+): ActiveCombatEffect[] {
+  const status = useCombatStatusStore.getState().status;
+  const source = offer.conditionSource;
+  if (!status || !source) return [];
+  const actor: CombatantRef = {
+    kind: "pc",
+    combatantId: status.myId,
+    memberUid: useAuthStore.getState().user?.uid ?? "",
+    characterId: status.characterId,
+  };
+  return applied.flatMap(({ target, conditions }) => {
+    if (target.kind === "self") return [];
+    const row = status.view.rows.find((r) => r.id === target.id);
+    const ref: CombatantRef =
+      row?.kind === "pc" && row.memberUid && row.characterId
+        ? {
+            kind: "pc",
+            combatantId: row.id,
+            memberUid: row.memberUid,
+            characterId: row.characterId,
+          }
+        : { kind: "monster", combatantId: target.id };
+    return conditions.map(
+      (conditionId): ActiveCombatEffect => ({
+        id: crypto.randomUUID(),
+        actor,
+        target: ref,
+        source: { kind: source.kind, id: source.id, actionId: offer.actionId },
+        payload: { kind: "condition", conditionId },
+        duration: { kind: "encounter" },
+      })
+    );
+  });
 }
 
 export function applyTray(
@@ -228,6 +300,18 @@ export function applyTray(
             );
           }
         }
+        // A condition that can end early (Abjure Foes) lands in the fight as a
+        // sourced effect, so the fight ends it by itself (`fightConditionEnds`).
+        const sourced = sourcedConditionEffects(offer, applied);
+        const fightId = useCombatStatusStore.getState().status?.campaignId;
+        if (sourced.length > 0 && fightId) {
+          for (const condition of sourced)
+            writeFightEffect(fightId, { append: condition }, t);
+          reversals.push(() => {
+            for (const condition of sourced)
+              writeFightEffect(fightId, { revoke: condition.id }, t);
+          });
+        }
         // What a hit (a companion's Web Bolt) or a successful save (Stunning Strike)
         // puts on its target beyond damage.
         if (offer.onHit || offer.onSaved) {
@@ -243,16 +327,11 @@ export function applyTray(
               ]
             : [];
           if (campaignId && effects.length > 0) {
-            const io = import("@/features/campaigns/campaign-io");
-            for (const effect of effects)
-              void io.then(({ appendPersistentCombatEffect }) =>
-                appendPersistentCombatEffect(campaignId, effect)
-              );
+            for (const added of effects)
+              writeFightEffect(campaignId, { append: added }, t);
             reversals.push(() => {
-              for (const effect of effects)
-                void io.then(({ revokePersistentCombatEffect }) =>
-                  revokePersistentCombatEffect(campaignId, effect.id)
-                );
+              for (const added of effects)
+                writeFightEffect(campaignId, { revoke: added.id }, t);
             });
           }
         }
@@ -261,8 +340,10 @@ export function applyTray(
             peerUndos.push(
               givePeer(target, effect, amount, undefined, source, t, outcome, knockOut)
             );
-          for (const conditionId of conditions)
-            peerUndos.push(givePeer(target, "condition", 0, conditionId, source, t));
+          // A sourced condition reaches them as a fight effect instead (above).
+          if (sourced.length === 0)
+            for (const conditionId of conditions)
+              peerUndos.push(givePeer(target, "condition", 0, conditionId, source, t));
         }
         return () => {
           for (const reverse of reversals.reverse()) reverse();

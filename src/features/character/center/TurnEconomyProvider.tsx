@@ -960,6 +960,9 @@ export function TurnEconomyProvider({
       ...(occurrenceId ? { occurrenceId } : {}),
       plan,
       ...(onSaved ? { onSaved } : {}),
+      ...(action.summary.conditionSource
+        ? { conditionSource: action.summary.conditionSource }
+        : {}),
     });
   }
 
