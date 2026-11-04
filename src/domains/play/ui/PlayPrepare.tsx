@@ -8,10 +8,10 @@ import { useTranslation } from "react-i18next";
 
 import { prepareList } from "@/domains/play/play-spells-view";
 import type { Locale } from "@/lib/locale";
-import { togglePrepared } from "@/lib/play/spell-prep";
+import { setViaClass, togglePrepared } from "@/lib/play/spell-prep";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Choice, Dialog } from "@/ui";
+import { Button, Chip, Choice, Dialog } from "@/ui";
 
 export function PlayPrepare({
   doc,
@@ -28,6 +28,12 @@ export function PlayPrepare({
     const store = useCharacterStore.getState();
     const live = store.character;
     const next = live ? togglePrepared(live, idx) : null;
+    if (next) store.setCharacter(next);
+  };
+  const via = (idx: number, classId: string) => {
+    const store = useCharacterStore.getState();
+    const live = store.character;
+    const next = live ? setViaClass(live, idx, classId) : null;
     if (next) store.setCharacter(next);
   };
   return (
@@ -54,19 +60,36 @@ export function PlayPrepare({
           <span className="f-lbl">{t("spells.level", { level })}</span>
           <div className="f-choices">
             {spells.map((s) => (
-              <Choice
-                key={s.idx}
-                on={s.prepared}
-                disabled={s.always}
-                onClick={() => flip(s.idx)}
-              >
-                <span className="f-choice-main">
-                  <span className="f-row-t">{s.name}</span>
-                  {s.always && (
-                    <span className="f-choice-s">{t("play.spells.always")}</span>
-                  )}
-                </span>
-              </Choice>
+              <div key={s.idx} className="f-prep">
+                <Choice on={s.prepared} disabled={s.always} onClick={() => flip(s.idx)}>
+                  <span className="f-choice-main">
+                    <span className="f-row-t">{s.name}</span>
+                    {s.always && (
+                      <span className="f-choice-s">{t("play.spells.always")}</span>
+                    )}
+                  </span>
+                </Choice>
+                {/* A spell two of the classes share: which one it comes through (its
+                    casting ability). None picked: the sheet decides. */}
+                {s.via && (
+                  <div
+                    className="f-chips"
+                    role="group"
+                    aria-label={`${t("play.spells.via")}: ${s.name}`}
+                  >
+                    <span className="f-lbl">{t("play.spells.via")}</span>
+                    {s.via.options.map((o) => (
+                      <Chip
+                        key={o.classId}
+                        pressed={s.via?.current === o.classId}
+                        onClick={() => via(s.idx, o.classId)}
+                      >
+                        {o.label}
+                      </Chip>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         </div>
