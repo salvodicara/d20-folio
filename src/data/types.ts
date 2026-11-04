@@ -917,6 +917,9 @@ export interface SpellRevive {
   /** How long dead the creature may have been, in game minutes (Revivify: 1).
    *  Absent (a homebrew spell that doesn't say): the table decides. */
   withinMinutes?: number;
+  /** It brings back even a creature turned to dust (True Resurrection: "even if the
+   *  body no longer exists"). Absent: a disintegrated creature stays dead. */
+  fromDust?: true;
 }
 
 /**
@@ -1290,6 +1293,9 @@ export interface SrdSpellData {
   recurrence?: SpellRecurrence;
   /** The persistent area the spell leaves, when it leaves one (see {@link SpellZone}). */
   zone?: SpellZone;
+  /** What happens to a target the spell reduces to 0 Hit Points (Disintegrate: it is
+   *  disintegrated). It waits for the target's zero-HP savers (Relentless Endurance). */
+  onReduceToZero?: "dies" | "disintegrated";
   /**
    * A total the spell's effect may spend before it ends (Guardian of Faith vanishes
    * once it has dealt 60 damage: the damage targets actually take).

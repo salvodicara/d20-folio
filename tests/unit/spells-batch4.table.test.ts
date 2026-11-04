@@ -382,19 +382,21 @@ describe("spells batch 4: the cast's own consequence", () => {
   });
 
   it.each([
-    ["revivify", 1, 1],
-    ["raise-dead", 1, 14400],
-    ["resurrection", "all", 52560000],
-    ["true-resurrection", "all", 105120000],
-  ] as const)("%s revives with %s Hit Point(s)", (id, hitPoints, withinMinutes) => {
+    ["revivify", 1, 1, false],
+    ["raise-dead", 1, 14400, false],
+    ["resurrection", "all", 52560000, false],
+    // "…even if the body no longer exists": dust too (Disintegrate).
+    ["true-resurrection", "all", 105120000, true],
+  ] as const)("%s revives with %s Hit Point(s)", (id, hitPoints, withinMinutes, dust) => {
     const spell = getSpellById(id);
     if (!spell) throw new Error("no spell");
+    const revive = { hitPoints, withinMinutes, ...(dust ? { fromDust: true } : {}) };
     // Within a minute, ten days, a century, two centuries of game time.
     expect(translateSpell(spell).activity.effects).toEqual([
-      { kind: "revive", hitPoints, withinMinutes },
+      { kind: "revive", ...revive },
     ]);
     const spec = combatResolutionSpec(castOf(id));
-    expect(spec.revives).toEqual({ hitPoints, withinMinutes });
+    expect(spec.revives).toEqual(revive);
     expect(spec.targetAffinity).toBe("ally");
     expect(spec.targetCap).toBe(1);
     // A 40-HP creature comes back with 1 HP, or with all 40.

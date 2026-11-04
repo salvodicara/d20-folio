@@ -32,13 +32,17 @@ export function reviveCharacter(
 export type ReviveEligibility =
   | { kind: "alive" }
   | { kind: "dead"; minutesSince: number; within: boolean }
-  | { kind: "dead"; within: null };
+  | { kind: "dead"; within: null }
+  /** Turned to dust (Disintegrate): only a spell that brings back dust can. */
+  | { kind: "dust" };
 
 export function reviveEligibility(
   doc: CharacterDoc,
-  withinMinutes: number | undefined
+  withinMinutes: number | undefined,
+  fromDust = false
 ): ReviveEligibility {
   if (isCharacterAlive(doc.status, doc.session)) return { kind: "alive" };
+  if (doc.session.death?.disintegrated && !fromDust) return { kind: "dust" };
   const since = doc.session.death?.minutesSince;
   if (since === undefined || withinMinutes === undefined)
     return { kind: "dead", within: null };

@@ -936,6 +936,15 @@ export type SessionDefenseKind =
   | "vulnerability"
   | "conditionImmunity";
 
+/** A consequence of being reduced to 0 Hit Points by one effect (Disintegrate: the
+ *  creature is disintegrated). It waits for the zero-HP savers (Relentless
+ *  Endurance): it applies only if the character stays at 0. */
+export interface ZeroHpConsequence {
+  kind: "dies" | "disintegrated";
+  /** The spell or feature that brought it ("disintegrate"). */
+  sourceId?: string;
+}
+
 export interface TrackerState {
   used: number;
   /** Physical results waiting to be spent; `null` is an unfilled available slot. */
@@ -1146,7 +1155,13 @@ export interface SessionState {
    * enable is still offered after the fall ends them) and the savers already tried
    * on this drop. Read only while at 0 HP; regaining Hit Points clears it.
    */
-  zeroHpDrop?: { activeKeys: string[]; tried?: string[] };
+  zeroHpDrop?: {
+    activeKeys: string[];
+    tried?: string[];
+    /** What dropping to 0 brings, pending until the savers are decided (Disintegrate:
+     *  dust). A saver that keeps the character up cancels it (edge-case M7). */
+    consequence?: ZeroHpConsequence;
+  };
   /**
    * Ids of the spends-ledger entries this sheet has already applied (a hit from
    * another device; docs/architecture/2026-11-cross-device-hits.md), so a repeat fold
@@ -1246,7 +1261,11 @@ export interface SessionState {
    * passing adds to it). Revivify reaches a creature dead within a minute, Raise
    * Dead ten days. Absent: alive, or dead before the sheet recorded it. ADDITIVE.
    */
-  death?: { minutesSince: number };
+  death?: {
+    minutesSince: number;
+    /** Turned to dust (Disintegrate): only True Resurrection or Wish bring it back. */
+    disintegrated?: true;
+  };
   /**
    * The time of day on the game clock, in minutes since midnight (0–1439), when the
    * table has set one. Passing time and rests move it; crossing 06:00 is a dawn and

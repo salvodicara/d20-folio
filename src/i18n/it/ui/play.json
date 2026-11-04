@@ -154,6 +154,7 @@
       "alive": "È vivo: non serve.",
       "deadWithin": "Morto da {{minutes}} min: entro il limite ✓",
       "deadTooLong": "Morto da {{minutes}} min: oltre il limite.",
+      "dust": "Ridotto in polvere: solo Resurrezione Pura o Desiderio lo riportano indietro",
       "tableDecides": "Da quanto è morto lo decide il tavolo.",
       "knockOut": "Mettilo KO"
     },

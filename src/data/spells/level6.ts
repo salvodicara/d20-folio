@@ -149,6 +149,9 @@ export const SRD_SPELLS_LEVEL6: SrdSpellData[] = [
     damageDice: "10d6+40",
     damageDicePerUpcast: "3d6",
     saveAbility: "DEX",
+    // "If the target is reduced to 0 Hit Points, it's disintegrated" (a saver that
+    // keeps it at 1 Hit Point, Relentless Endurance, means it never was).
+    onReduceToZero: "disintegrated",
     source: "SRD",
   },
   {

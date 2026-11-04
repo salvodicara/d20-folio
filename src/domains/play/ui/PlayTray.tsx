@@ -263,16 +263,18 @@ function TrayTargetRow({
           {[
             outcome.eligibility.kind === "alive"
               ? t("play.tray.alive")
-              : outcome.eligibility.within === null
-                ? t("play.tray.tableDecides")
-                : t(
-                    outcome.eligibility.within
-                      ? "play.tray.deadWithin"
-                      : "play.tray.deadTooLong",
-                    {
-                      minutes: Math.ceil(outcome.eligibility.minutesSince),
-                    }
-                  ),
+              : outcome.eligibility.kind === "dust"
+                ? t("play.tray.dust")
+                : outcome.eligibility.within === null
+                  ? t("play.tray.tableDecides")
+                  : t(
+                      outcome.eligibility.within
+                        ? "play.tray.deadWithin"
+                        : "play.tray.deadTooLong",
+                      {
+                        minutes: Math.ceil(outcome.eligibility.minutesSince),
+                      }
+                    ),
             outcome.eligibility.kind === "alive"
               ? null
               : outcome.hitPoints !== null

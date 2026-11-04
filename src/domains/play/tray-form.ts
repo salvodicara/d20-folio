@@ -166,7 +166,11 @@ export function trayOutcomeView(
         outcome.hitPoints ??
         (typeof plan.revive?.hitPoints === "number" ? plan.revive.hitPoints : null),
       eligibility: targetDoc
-        ? reviveEligibility(targetDoc, plan.revive?.withinMinutes)
+        ? reviveEligibility(
+            targetDoc,
+            plan.revive?.withinMinutes,
+            plan.revive?.fromDust === true
+          )
         : { kind: "dead", within: null },
     };
   const threshold = plan.hitPointThreshold;

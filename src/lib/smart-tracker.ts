@@ -182,7 +182,7 @@ import {
 import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { CreatureSize, SrdMagicItemData, SrdRaceTrait } from "@/data/types";
-import type { CustomWeapon } from "@/types/character";
+import type { CustomWeapon, ZeroHpConsequence } from "@/types/character";
 import { SRD_INVOCATIONS, invocationTrackerId } from "@/data/invocations";
 import { SRD_MANEUVERS, type ManeuverDieTarget } from "@/data/maneuvers";
 import {
@@ -394,6 +394,8 @@ export interface ActionSummary {
   stabilize?: true;
   /** Return the selected dead creature to life with these Hit Points. */
   revive?: SpellRevive;
+  /** What reducing a target to 0 brings (Disintegrate: "disintegrated"). */
+  onZeroHp?: ZeroHpConsequence["kind"];
   /** The target's current Hit Points pick the outcome (Power Word Kill / Stun). */
   hitPointThreshold?: {
     max: number;
@@ -7105,8 +7107,11 @@ function resolveSpellActions(
         ...(revive.withinMinutes !== undefined
           ? { withinMinutes: revive.withinMinutes }
           : {}),
+        ...(revive.fromDust ? { fromDust: true as const } : {}),
       };
     }
+    // What dropping a target to 0 brings (Disintegrate: dust), past its savers.
+    if (spell.onReduceToZero) summary.onZeroHp = spell.onReduceToZero;
     const [threshold] = effectsOfKind(activity, "hp-threshold");
     if (threshold) {
       summary.hitPointThreshold = {
