@@ -34,7 +34,9 @@
       "noSlot": "Non spendi slot.",
       "charges": "{{remaining}} cariche su {{total}}",
       "whichSpell": "Quale incantesimo?",
-      "castTitle": "Lancia {{name}}"
+      "castTitle": "Lancia {{name}}",
+      "castNoTarget": "Lancia senza scegliere",
+      "confirmNoTarget": "Conferma senza scegliere"
     },
     "react": "Reagisci",
     "trayTotalHint": "Quanto hai tirato al tavolo, per esempio 8+6+3",
