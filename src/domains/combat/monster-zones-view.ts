@@ -6,6 +6,7 @@
 import i18n from "i18next";
 
 import { spells } from "@/data/spells";
+import type { MonsterStatBlock } from "@/data/types";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import type { ZoneHitDamage } from "@/lib/zones";
@@ -58,4 +59,18 @@ export function zoneHitAmount(
 ): number {
   if (!saved) return total;
   return hit.onSave === "half" ? Math.floor(total / 2) : 0;
+}
+
+/** The spell save DC a stat block prints on its Spellcasting, or null when it has none. */
+export function monsterSpellDc(block: MonsterStatBlock | undefined): number | null {
+  if (!block) return null;
+  for (const entry of [
+    ...(block.traits ?? []),
+    ...block.actions,
+    ...(block.bonusActions ?? []),
+    ...(block.reactions ?? []),
+  ]) {
+    if (entry.kind === "spellcasting" && entry.dc !== undefined) return entry.dc;
+  }
+  return null;
 }

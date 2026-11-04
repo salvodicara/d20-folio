@@ -38,12 +38,15 @@ export function MonsterZoneCast({
   campaignId,
   monsterId,
   monsterName,
+  defaultDc,
   locale,
   onToast,
 }: {
   campaignId: string;
   monsterId: string;
   monsterName: string;
+  /** The stat block's spell save DC, when it prints one (`monsterSpellDc`). */
+  defaultDc: number | null;
   locale: Locale;
   onToast: Toaster;
 }) {
@@ -52,7 +55,7 @@ export function MonsterZoneCast({
   const spells = monsterZoneSpells(locale);
   const [spellId, setSpellId] = useState<string | null>(null);
   const [level, setLevel] = useState(1);
-  const [dc, setDc] = useState(13);
+  const [dc, setDc] = useState(defaultDc ?? 13);
   const spell = spells.find((s) => s.id === spellId);
   const cast = () => {
     if (!spell) return;

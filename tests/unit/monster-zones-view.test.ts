@@ -6,6 +6,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  monsterSpellDc,
   monsterZoneSpells,
   zoneHitAmount,
   zoneHitLine,
@@ -20,6 +21,19 @@ describe("monsterZoneSpells", () => {
       level: 3,
     });
     expect(spells.map((s) => s.name)).toEqual([...spells.map((s) => s.name)].sort());
+  });
+});
+
+describe("monsterSpellDc", () => {
+  it("reads the printed DC from a stat block's Spellcasting, else none", () => {
+    expect(
+      monsterSpellDc({
+        traits: [],
+        actions: [{ kind: "spellcasting", name: "Spellcasting", ability: "WIS", dc: 15 }],
+      } as never)
+    ).toBe(15);
+    expect(monsterSpellDc({ actions: [] } as never)).toBeNull();
+    expect(monsterSpellDc(undefined)).toBeNull();
   });
 });
 

@@ -87,13 +87,14 @@ describe("monster zones", () => {
     });
   });
 
-  it("casting writes the monster's zone with its level and DC", () => {
+  it("casting writes the monster's zone with the stat block's DC", () => {
     const onToast = vi.fn();
     render(
       <MonsterZoneCast
         campaignId="c1"
         monsterId="m-cultist"
         monsterName="Cultist"
+        defaultDc={15}
         locale="en"
         onToast={onToast}
       />
@@ -103,7 +104,7 @@ describe("monster zones", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cast" }));
     expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
       "c1",
-      expect.objectContaining({ bindings: { saveDc: 13 } })
+      expect.objectContaining({ bindings: { saveDc: 15 } })
     );
     expect(onToast.mock.calls[0]?.[0]).toBe("Cultist casts Spirit Guardians");
   });

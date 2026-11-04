@@ -14,7 +14,9 @@ import { fightControls, type FightControls } from "@/domains/combat/fight-contro
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { pastFights } from "@/domains/combat/past-fights-view";
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
+import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
+import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine } from "@/domains/combat/ui/FightLine";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -261,7 +263,9 @@ function LiveFight({
                       view.rows.find((r) => r.id === encounter.currentCombatantId)
                         ?.name ?? ""
                     }
-                    defaultDc={null}
+                    defaultDc={monsterSpellDc(
+                      monsterStatBlockOf(encounter, encounter.currentCombatantId)
+                    )}
                     locale={locale}
                     onToast={onToast}
                   />
@@ -477,4 +481,10 @@ function IdleFight({
       </Panel>
     </div>
   );
+}
+
+/** A catalogue monster's stat block in the fight (none for homebrew or not found). */
+function monsterStatBlockOf(encounter: EncounterState, id: string) {
+  const c = encounter.combatants.find((x) => x.id === id);
+  return c?.kind === "monster" && c.srdId ? getMonster(c.srdId) : undefined;
 }
