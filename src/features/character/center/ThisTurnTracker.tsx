@@ -31,6 +31,7 @@ import { Icon } from "@/components/ui/icon";
 import { combatTermName } from "@/components/shared/combat-glossary";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { useCharacterStore } from "@/stores/characterStore";
+import { offerAmmunitionRecovery } from "@/features/character/ammo-recovery-offer";
 import { useCombatStore } from "@/stores/combatStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -357,6 +358,8 @@ export function ThisTurnTracker({
     // Close the character-world SOLO encounter through the kernel's own
     // end-encounter boundary (fail-closed no-op when none is running).
     endSoloWorldEncounter();
+    // A solo fight has no shared end event: its end offers the ammunition back here.
+    offerAmmunitionRecovery(t);
   }
 
   // Engine-derived initiative bonus (DEX + Alert(PB) + exhaustion + grant bonus
