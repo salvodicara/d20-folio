@@ -272,7 +272,7 @@ describe("conformance · 13. items", () => {
       category: 13,
       case: "Ammunition and Loading",
       source: "KIBBLES #9; rpgbot",
-      status: "M18",
+      status: "works",
     },
     async () => {
       // After the fight, half the spent ammunition (rounded down) is recovered.
