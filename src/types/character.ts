@@ -1252,6 +1252,12 @@ export interface SessionState {
    */
   timeOfDay?: number;
   /**
+   * Game minutes since the character became Stable at 0 HP (three successes): after
+   * 1d4 hours it regains 1 HP. Meaningful only while it is still Stable at 0 HP
+   * (`stableMinutes`). ADDITIVE.
+   */
+  stableSince?: number;
+  /**
    * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
    * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0
    * Beast or an unlocked Pact-of-the-Chain special form); `creatureType` is the

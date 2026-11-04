@@ -90,6 +90,20 @@ export function crossedBoundaries(
   ];
 }
 
+/** Game minutes since the character became Stable at 0 HP, while it still is (three
+ *  successes, still at 0 HP, alive); undefined otherwise. After 1d4 hours (the table
+ *  rolls) it regains 1 HP. */
+export function stableMinutes(
+  session: Pick<SessionState, "stableSince" | "hp" | "deathSucc" | "deathFail">
+): number | undefined {
+  return session.stableSince !== undefined &&
+    session.hp.current === 0 &&
+    session.deathSucc >= 3 &&
+    session.deathFail < 3
+    ? session.stableSince
+    : undefined;
+}
+
 /** Whether a rest of `minutes` brings a dawn: when it crosses 06:00, or always when
  *  the table has set no time of day (a Long Rest stands in for the night). */
 export function restCrossesDawn(doc: CharacterDoc, minutes: number): boolean {
@@ -128,7 +142,13 @@ export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | nul
   const dead = doc.session.death;
   const timeOfDay = advanceTimeOfDay(doc.session.timeOfDay, minutes);
   const clockMoved = timeOfDay !== doc.session.timeOfDay;
-  if ((!dead || !(minutes > 0)) && !clockMoved) return passed;
+  const stable = stableMinutes(doc.session);
+  if (
+    (!dead || !(minutes > 0)) &&
+    !clockMoved &&
+    (stable === undefined || !(minutes > 0))
+  )
+    return passed;
   const base = passed ?? doc;
   // Charges that come back at dawn come back when the clock crosses it.
   const dawn = crossedDawn(doc.session.timeOfDay, minutes);
@@ -149,6 +169,8 @@ export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | nul
         ? { death: { minutesSince: dead.minutesSince + minutes } }
         : {}),
       ...(clockMoved ? { timeOfDay } : {}),
+      // A Stable character's clock to 1 HP runs on.
+      ...(stable !== undefined && minutes > 0 ? { stableSince: stable + minutes } : {}),
     },
   };
 }

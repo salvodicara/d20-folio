@@ -65,6 +65,9 @@ export interface PcDamageTransitionInput {
     attacker: CombatantRef | null;
     attackMode?: "melee" | "ranged";
   };
+  /** Knocking out (2024): the attacker chose to leave the creature at 1 HP and
+   *  Unconscious instead of dropping it to 0. Only a melee attack can. */
+  knockOut?: boolean;
 }
 
 export interface PcDamageTransitionResult {
@@ -158,7 +161,15 @@ export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransiti
     });
   }
 
-  const afterHp = applyDamage(current, temp, persistent.targetDamage);
+  const dropped = applyDamage(current, temp, persistent.targetDamage);
+  // Knocking out: a melee attack that would drop a standing creature to 0 leaves it
+  // at 1 HP and Unconscious instead (it then starts a Short Rest).
+  const knockedOut =
+    input.knockOut === true &&
+    input.hit?.attackMode === "melee" &&
+    current > 0 &&
+    dropped.current === 0;
+  const afterHp = knockedOut ? { ...dropped, current: 1 } : dropped;
   const tempAbsorbed = temp - afterHp.temp;
   const applied = tempAbsorbed + current - afterHp.current;
   let nextConditions = [...input.state.conditions];
@@ -214,6 +225,9 @@ export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransiti
       events.push({ kind: "condition-gain", conditionId: UNCONSCIOUS });
     }
     events.push({ kind: "down" });
+  } else if (knockedOut && !nextConditions.includes(UNCONSCIOUS)) {
+    nextConditions.push(UNCONSCIOUS);
+    events.push({ kind: "condition-gain", conditionId: UNCONSCIOUS });
   }
 
   const state: PcDamageState = {

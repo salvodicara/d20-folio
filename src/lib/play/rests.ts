@@ -5,10 +5,10 @@
  */
 import { endSummonsOn, endSummonsOutlastedBy } from "./companions";
 import { advanceTimeOfDay, restCrossesDawn } from "./time";
+import { canCharacterRest } from "@/lib/character-status";
 
 /** A rest's length on the game clock, in minutes (SRD 5.2.1: a Short Rest is 1
  *  hour, a Long Rest 8). */
-/** How long each rest lasts on the game clock. */
 export const SHORT_REST_MINUTES = 60;
 export const LONG_REST_MINUTES = 480;
 import { evaluateGrants } from "@/lib/grants";
@@ -53,6 +53,8 @@ export function sessionAfterLongRestReduction<
 
 /** A Long Rest (Concentration already ended by the caller). */
 export function longRestCharacter(character: CharacterDoc): CharacterDoc {
+  // A rest needs at least 1 Hit Point to start (2024): at 0 HP, or dead, nothing.
+  if (!canCharacterRest(character.status, character.session)) return character;
   // D1 — a Long Rest restores HP to the EFFECTIVE max (stored base + hp-flat boons
   // + any standing Aid), so an Aided / Draconic / Boon character wakes at full. The
   // rest ends a Hit Point maximum reduction first (Harm, a life drain).
@@ -168,6 +170,8 @@ export function longRestCharacter(character: CharacterDoc): CharacterDoc {
 
 /** A Short Rest. */
 export function shortRestCharacter(character: CharacterDoc): CharacterDoc {
+  // A rest needs at least 1 Hit Point to start (2024): at 0 HP, or dead, nothing.
+  if (!canCharacterRest(character.status, character.session)) return character;
   // Determine which trackers recover on short rest and by how much
   const recoveries = getShortRestRecoveries(character);
   const oldTrackers = character.session.trackers;
