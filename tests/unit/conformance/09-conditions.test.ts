@@ -4,7 +4,7 @@ import { getSpellById } from "@/data/spells";
 import { deathSaveD20Context } from "@/lib/character-d20-tests";
 import { diedOfExhaustion } from "@/lib/character-status";
 import {
-  concentrationEffectIdsOwnedBy,
+  effectIdsEndingWhenIncapacitated,
   effectIdsEndingOnAct,
   foldCombatEffectOps,
 } from "@/lib/combat-effects";
@@ -207,17 +207,19 @@ describe("conformance · 9. conditions and exhaustion", () => {
   );
 
   rule(
-    { category: 9, case: "Grappled 2024", source: "GLOSS; SAC #31", status: "M3" },
+    { category: 9, case: "Grappled 2024", source: "GLOSS; SAC #31", status: "works" },
     () => {
       const gate = resolveConditionEffects(["grappled"]);
       expect(gate.speedZero).toBe(true);
       expect(gate.disadvantages).toContainEqual(
         expect.objectContaining({ rollType: "attack", vs: "grappled" })
       );
-      // The grapple ends when the grappler is Incapacitated (the only
-      // actor-incapacitated sweep today covers concentration effects).
-      const ops = [conditionEffect("grapple", "ogre", "grappled")];
-      expect(concentrationEffectIdsOwnedBy(ops, "ogre")).toContain("grapple");
+      // The grapple ends when the grappler is Incapacitated, with its Concentration.
+      const ops = [
+        conditionEffect("grapple", "ogre", "grappled"),
+        conditionEffect("fear", "ogre", "frightened"),
+      ];
+      expect(effectIdsEndingWhenIncapacitated(ops, "ogre")).toEqual(["grapple"]);
     }
   );
 
