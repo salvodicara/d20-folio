@@ -11,7 +11,11 @@ import { DEFAULT_QUICKBUILD_PRESET, QUICKBUILD_PRESETS } from "@/data/quickbuild
 import { SRD_RACES } from "@/data/races";
 import { classTables } from "@/data/classes";
 import { localizeSrd } from "@/i18n/resolver";
-import type { CreationDraft, CreationFacts } from "@/lib/creation/draft";
+import {
+  creationFacts,
+  type CreationDraft,
+  type CreationFacts,
+} from "@/lib/creation/draft";
 import type { Locale } from "@/lib/locale";
 import { appliedQuickbuildState } from "@/lib/quickbuild";
 import { raceTraitNameOfSlot, raceTraitNames } from "@/lib/views/creation-view";
@@ -36,6 +40,8 @@ import { localizeText } from "@/lib/views/srd-i18n";
 import type { ClassChoicePicks } from "@/lib/creation/class-choices";
 import { ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
 import { formatSpeed } from "@/lib/utils";
+import { rapidDraft } from "@/lib/creation/rapid";
+import { lineageBundleVMs } from "@/lib/views/creation-view";
 import { buildNewCharacter } from "@/lib/creation/build";
 
 /** A class card's art: one kind for every class at a time. */
@@ -478,4 +484,62 @@ export function toggleCount(
 ): string[] {
   if (picked.includes(id)) return picked.filter((p) => p !== id);
   return picked.length < count ? [...picked, id] : [...picked.slice(1), id];
+}
+
+/**
+ * The identity-shaping picks «Creazione rapida» makes for a class and a species,
+ * in one line («Lignaggio elfico: Alto Elfo · Ordine Divino: Protettore · Stile di
+ * Combattimento: Difesa»): read from the very draft it will save, so the player
+ * sees what Folio chose and can change it later from the sheet.
+ */
+export function rapidPicksLine(draft: CreationDraft, locale: Locale): string {
+  const t = i18n.getFixedT(locale);
+  const made = rapidDraft(draft, draft.classId, draft.raceId);
+  const facts = creationFacts(made);
+  const named = (label: string, value: string) => `${label}: ${value}`;
+  const parts: string[] = [];
+  for (const b of lineageBundleVMs(made.raceId, locale)) {
+    const option = b.options.find((o) => o.id === made.lineageChoices[b.bundleKey]);
+    if (option) parts.push(named(b.label, option.label));
+  }
+  if (made.speciesSpellAbility) {
+    parts.push(
+      named(t("create.screen.speciesAbility"), t(`abilities.${made.speciesSpellAbility}`))
+    );
+  }
+  if (made.humanFeat)
+    parts.push(named(t("create.humanVersatileLabel"), featName(made.humanFeat, locale)));
+  for (const section of classChoiceSections(made, facts, locale)) {
+    if (section.kind === "bundle") {
+      const option = section.options.find((o) => o.id === section.picked);
+      if (option) parts.push(named(section.title, option.label));
+    }
+  }
+  const list = (ids: readonly string[], name: (id: string) => string) =>
+    ids.map(name).join(", ");
+  if (made.classPicks.fightingStyles.length > 0) {
+    parts.push(
+      named(
+        t("feats.category_fighting-style"),
+        list(made.classPicks.fightingStyles, (id) => featName(id, locale))
+      )
+    );
+  }
+  if (made.classPicks.invocations.length > 0) {
+    parts.push(
+      named(
+        t("invocations.section"),
+        list(made.classPicks.invocations, (id) => invocationName(id, locale))
+      )
+    );
+  }
+  if (made.classPicks.weaponMasteries.length > 0) {
+    parts.push(
+      named(
+        t("character.weaponMastery"),
+        list(made.classPicks.weaponMasteries, (id) => equipmentName(id, locale))
+      )
+    );
+  }
+  return parts.join(" · ");
 }

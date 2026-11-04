@@ -14,6 +14,7 @@ import {
   choiceSlotRows,
   classChoiceSections,
   creationReview,
+  rapidPicksLine,
   toggleCount,
   speciesRows,
   suggestedBonus,
@@ -251,5 +252,28 @@ describe("classChoiceSections", () => {
     expect(toggleCount(["a", "b"], "c", 2)).toEqual(["b", "c"]);
     expect(toggleCount(["a"], "a", 2)).toEqual([]);
     expect(toggleCount([], "a", 1)).toEqual(["a"]);
+  });
+});
+
+describe("rapidPicksLine", () => {
+  it("names what the quick build picks: a Cleric High-Elf's lineage, ability and Order", () => {
+    const draft = [
+      { type: "selectClass", classId: "cleric" } as const,
+      { type: "selectRace", raceId: "elf" } as const,
+    ].reduce(creationDraftReducer, initialCreationDraft());
+    const line = rapidPicksLine(draft, "en");
+    expect(line).toMatch(/^Elven Lineage: \w/);
+    expect(line).toContain("Species spellcasting ability: Wisdom");
+    expect(line).toContain("Divine Order: Protector");
+  });
+
+  it("a Fighter's style and masteries", () => {
+    const draft = [
+      { type: "selectClass", classId: "fighter" } as const,
+      { type: "selectRace", raceId: "dwarf" } as const,
+    ].reduce(creationDraftReducer, initialCreationDraft());
+    expect(rapidPicksLine(draft, "en")).toMatch(
+      /Fighting Style: .+ · Weapon Mastery: .+/
+    );
   });
 });

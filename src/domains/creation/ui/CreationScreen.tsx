@@ -16,6 +16,7 @@ import {
   classCards,
   creationSummary,
   previewArmorClass,
+  rapidPicksLine,
   speciesRows,
   signed,
   suggestedBonus,
@@ -493,6 +494,11 @@ function RapidPanel({
           value={draft.name}
           onChange={(e) => onName(e.target.value)}
         />
+        {speciesPicked && (
+          <p className="f-help f-rapid-picks">
+            {rapidPicksLine(draft, locale as Locale)}
+          </p>
+        )}
         <p className="f-help">{t("create.screen.rapidNote")}</p>
       </div>
     </Panel>
