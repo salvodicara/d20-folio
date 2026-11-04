@@ -605,6 +605,10 @@
     "repeatSaveSettledInto": "{{condition}} becomes {{next}}: {{target}}",
     "repeatSaveExhaustion": "{{target}} fails the save: +{{count}} Exhaustion.",
     "repeatSaveExhaustionMonster": "{{target}} fails the save: +{{count}} Exhaustion; keep track of it on the monster.",
-    "zoneOutside": "Outside"
+    "zoneOutside": "Outside",
+    "actionRepeatSave": "Use your action: repeat the {{ability}} save against {{condition}}.",
+    "actionRepeatSaveDc": "Use your action: repeat the {{ability}} save (DC {{dc}}) against {{condition}}.",
+    "actionRepeatSaveSpent": "Action used to repeat the save",
+    "actionRepeatSaveEnded": "{{condition}} ends"
   }
 }

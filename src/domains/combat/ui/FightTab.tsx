@@ -13,6 +13,7 @@ import type { PartyChip } from "@/domains/campaign/party-rows-view";
 import { fightControls, type FightControls } from "@/domains/combat/fight-controls";
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { pastFights } from "@/domains/combat/past-fights-view";
+import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine } from "@/domains/combat/ui/FightLine";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -233,6 +234,20 @@ function LiveFight({
             <Fragment key={row.ids.join("+")}>
               <FightLine row={row} />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* the monster whose turn it is may spend its action to repeat a save */}
+              {isDm &&
+                encounter.currentCombatantId &&
+                row.ids.includes(encounter.currentCombatantId) &&
+                encounter.combatants.some(
+                  (c) => c.id === encounter.currentCombatantId && c.kind === "monster"
+                ) && (
+                  <ActionRepeatSaves
+                    campaignId={campaign.id}
+                    effectOps={encounter.effectOps}
+                    targetId={encounter.currentCombatantId}
+                    locale={locale}
+                  />
+                )}
             </Fragment>
           ))}
         </Panel>
