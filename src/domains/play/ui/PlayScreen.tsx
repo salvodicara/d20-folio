@@ -19,6 +19,7 @@ import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
+import { HelpedCheck } from "@/domains/combat/ui/HelpedCheck";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
 import { PlayTime } from "@/domains/play/ui/PlayTime";
@@ -344,6 +345,13 @@ function PlayHeader({
           </div>
           <PlayDown doc={doc} />
           {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
+          {fight && (
+            <HelpedCheck
+              campaignId={fight.campaignId}
+              effectOps={fight.encounter.effectOps}
+              targetId={fight.myId}
+            />
+          )}
           {fight?.isMyTurn && (
             <ActionRepeatSaves
               campaignId={fight.campaignId}

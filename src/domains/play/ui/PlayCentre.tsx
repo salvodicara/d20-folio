@@ -819,14 +819,16 @@ function ActionLine({
         <PlayHelp
           view={helping}
           onClose={() => setHelping(null)}
-          onHelp={(enemyId) => {
+          onHelp={(targetId) => {
             setHelping(null);
             executeAction(row.action);
-            const undo = giveHelp(enemyId, doc.id);
-            const name = helping.enemies.find((e) => e.id === enemyId)?.name ?? "";
+            const undo = giveHelp(targetId, doc.id);
+            const ally = helping.allies.find((a) => a.id === targetId);
+            const name =
+              ally?.name ?? helping.enemies.find((e) => e.id === targetId)?.name ?? "";
             if (undo) {
               useToastStore.getState().showToast({
-                message: t("play.help.given", { name }),
+                message: t(ally ? "play.help.givenAlly" : "play.help.given", { name }),
                 duration: 6000,
                 onUndo: undo,
               });

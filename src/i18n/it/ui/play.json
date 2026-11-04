@@ -261,7 +261,14 @@
       "title": "Aiuto",
       "hint": "Il prossimo attacco di un tuo alleato contro quel nemico, prima del tuo prossimo turno, ha Vantaggio.",
       "confirm": "Aiuta",
-      "given": "Aiuti contro {{name}}"
+      "given": "Aiuti contro {{name}}",
+      "enemies": "Contro un nemico",
+      "allies": "Un alleato",
+      "hintAlly": "La sua prossima prova di caratteristica, prima del tuo prossimo turno, ha Vantaggio.",
+      "givenAlly": "Aiuti {{name}}: Vantaggio alla sua prossima prova",
+      "helpedCheck": "Un alleato ti aiuta: Vantaggio alla tua prossima prova di caratteristica.",
+      "used": "Usato",
+      "usedToast": "Vantaggio dell’aiuto usato"
     },
     "hitDice": {
       "count": "Dadi Vita da spendere",
