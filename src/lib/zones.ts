@@ -10,8 +10,10 @@
  * that counts.
  */
 import { getSpellById } from "@/data/spells";
-import type { SpellZone, SrdSpellData } from "@/data/types";
+import type { AbilityCode, SpellZone, SrdSpellData } from "@/data/types";
+import { scaleUpcastDice } from "@/lib/utils";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { DamageType } from "@/types/damage";
 
 /** One area on the field. */
 export interface ZoneInstance {
@@ -25,6 +27,8 @@ export interface ZoneInstance {
   castLevel: number;
   /** The creatures it leaves alone (Spirit Guardians: the caster's choice). */
   spared: ReadonlyArray<string>;
+  /** The caster's save DC, when the effect was written with it (a monster's). */
+  saveDc?: number;
 }
 
 /** The zones among the encounter's live effects. */
@@ -41,6 +45,9 @@ export function activeZones(effects: ReadonlyArray<ActiveCombatEffect>): ZoneIns
         casterId: effect.actor.combatantId,
         castLevel: effect.source.castLevel ?? zone.spellLevel,
         spared: effect.payload.spared ?? [],
+        ...(effect.bindings?.saveDc !== undefined
+          ? { saveDc: effect.bindings.saveDc }
+          : {}),
       },
     ];
   });
@@ -236,4 +243,55 @@ export function zoneTurnHits(
     }
   }
   return { hits, ledger: next };
+}
+
+/**
+ * A zone cast by a monster (the DM's Spirit Guardians, Cloudkill): the same effect as
+ * a PC's cast, with the monster as caster and the DC from its stat block. It lasts
+ * the encounter; the DM ends it (a monster's Concentration isn't tracked).
+ */
+export function monsterZoneEffect(cast: {
+  effectId: string;
+  monsterId: string;
+  spellId: string;
+  castLevel: number;
+  saveDc: number;
+  spared?: ReadonlyArray<string>;
+}): ActiveCombatEffect {
+  return {
+    ...zoneEffectForCast({
+      effectId: cast.effectId,
+      spellId: cast.spellId,
+      actionId: "cast",
+      castLevel: cast.castLevel,
+      caster: { kind: "monster", combatantId: cast.monsterId },
+      concentration: false,
+      ...(cast.spared ? { spared: cast.spared } : {}),
+    }),
+    bindings: { saveDc: cast.saveDc },
+  };
+}
+
+/** What a zone's hit asks of the creature: the save and DC, the dice at the level it
+ *  was cast, the damage type, and what a success does. */
+export interface ZoneHitDamage {
+  saveAbility?: AbilityCode;
+  dc?: number;
+  dice?: string;
+  damageType?: DamageType;
+  onSave?: "half";
+}
+
+/** The spell's numbers for one hit of `zone`, scaled to its cast level. */
+export function zoneHitDamage(zone: ZoneInstance): ZoneHitDamage {
+  const spell = getSpellById(zone.spellId);
+  if (!spell) return {};
+  const dice = scaleUpcastDice(spell, zone.castLevel);
+  return {
+    ...(spell.saveAbility ? { saveAbility: spell.saveAbility } : {}),
+    ...(zone.saveDc !== undefined ? { dc: zone.saveDc } : {}),
+    ...(dice ? { dice } : {}),
+    ...(spell.damageType ? { damageType: spell.damageType } : {}),
+    ...(spell.damageOnSave ? { onSave: spell.damageOnSave } : {}),
+  };
 }

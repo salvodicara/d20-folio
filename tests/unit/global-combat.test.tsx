@@ -64,6 +64,7 @@ import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
 import { addMonster, setHp } from "@/features/campaigns/encounter";
+import { monsterZoneEffect } from "@/lib/zones";
 import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
 import { useZoneHitStore } from "@/features/campaigns/zone-hit-store";
 
@@ -649,6 +650,73 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
         creatureId: "monster-1",
         creatureName: "Goblin",
         kind: "end-turn",
+      },
+    ]);
+  });
+
+  it("a monster's Spirit Guardians asks on the DM's device, sparing its allies", () => {
+    useZoneHitStore.setState({ hits: [] });
+    const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
+    const campaign: CampaignDoc = {
+      ...base,
+      dmUid: UID,
+      members: [UID],
+      memberDetails: { [UID]: { displayName: "GM", characterId: null, role: "dm" } },
+    };
+    let encounter = { ...(campaign.encounter as EncounterState), combatants: [] };
+    for (const name of ["Cultist", "Goblin"]) {
+      encounter = addMonster(encounter, {
+        name,
+        ac: 12,
+        maxHp: 9,
+        count: 1,
+        initiative: 10,
+      });
+    }
+    const zone: CombatEffectOp = {
+      id: "op-zone",
+      kind: "apply",
+      effect: monsterZoneEffect({
+        effectId: "zone-m",
+        monsterId: "monster-1",
+        spellId: "spirit-guardians",
+        castLevel: 3,
+        saveDc: 13,
+        spared: ["monster-1", "monster-2"],
+      }),
+    };
+    const fight = { ...encounter, currentCombatantId: "monster-1", effectOps: [zone] };
+    mount();
+    show(campaign, fight, 20, true);
+    show(campaign, { ...fight, currentCombatantId: "monster-2" }, 20, true);
+    // Its allies are spared: no question for the Cultist's turn ending.
+    expect(useZoneHitStore.getState().hits).toEqual([]);
+    const withPc = {
+      ...fight,
+      effectOps: [
+        {
+          ...zone,
+          effect: {
+            ...zone.effect,
+            payload: {
+              kind: "zone" as const,
+              spellId: "spirit-guardians",
+              spared: ["monster-1"],
+            },
+          },
+        },
+      ],
+    };
+    useZoneHitStore.setState({ hits: [] });
+    cleanup();
+    mount();
+    show(campaign, { ...withPc, currentCombatantId: "monster-2" }, 20, true);
+    show(campaign, { ...withPc, currentCombatantId: "monster-1" }, 20, true);
+    expect(useZoneHitStore.getState().hits).toMatchObject([
+      {
+        creatureId: "monster-2",
+        kind: "end-turn",
+        zone: { casterId: "monster-1", saveDc: 13 },
       },
     ]);
   });
