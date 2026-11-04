@@ -132,6 +132,7 @@ describe("attuneItem — the transition the store applies", () => {
         item("cloak-of-protection", "cloak", true),
         item("amulet-of-health", "amulet", true),
       ],
+      weapons: doc.character.weapons,
     });
     // Pure: the stored doc is unchanged.
     expect(doc.character.equipment[1]).toEqual(item("amulet-of-health", "amulet"));

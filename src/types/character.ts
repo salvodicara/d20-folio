@@ -324,6 +324,12 @@ export interface SrdWeaponRef {
    * wins (the player pinned a value by hand).
    */
   enchantItemId?: string;
+  /**
+   * Attuned to the bound enchant, when that item requires attunement (a Flame Tongue).
+   * Absent on a weapon enchanted before the sheet tracked it: it counts as attuned, as
+   * it always played. ADDITIVE.
+   */
+  attuned?: boolean;
   /** User overrides to SRD data fields */
   overrides?: Record<string, unknown>;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */

@@ -35,6 +35,7 @@
  * bail on a search keystroke (mirrors the spells slice).
  */
 
+import { attunables, attunedCount } from "@/lib/attunement-guard";
 import type { Locale } from "@/lib/locale";
 import type {
   CharacterData,
@@ -660,8 +661,9 @@ export function buildInventoryViewModel(
   const gear = items.filter((i) => i.category === "gear");
 
   // Attunement summary — the SAME data-derived rule the row VMs use.
-  const requiring = character.equipment.filter(requiresAttunement);
-  const bonded = requiring.filter((i) => i.attuned === true).length;
+  // One count across equipment and weapons (a Flame Tongue counts toward the three).
+  const requiring = attunables(doc);
+  const bonded = attunedCount(doc);
   const cap = grants.attunementSlots;
   const attunement: AttunementVM = {
     bonded,

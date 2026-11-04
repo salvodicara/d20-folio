@@ -15,6 +15,7 @@
  * - Combat page action cards (weapons + spells + feature actions)
  */
 
+import { weaponAttunementSatisfied } from "@/lib/attunement";
 import { stateEffectsFor } from "@/lib/play/outcome-effects";
 import type { CatalogueEffect } from "@/lib/catalogue-effects";
 import { SUMMON_TIMER_PREFIX } from "@/lib/summon-count";
@@ -7667,7 +7668,11 @@ function resolveWeaponActions(
     // Auto-flows into BOTH the to-hit and the damage, superseding the manual
     // `attackBonusOverride`/`damageOverride` seam (which still wins when the
     // player pins a value by hand — override-first). 0 for a mundane weapon.
-    const enchantItemId = isCustom ? undefined : weaponRef.enchantItemId;
+    // An enchant that requires attunement applies only while attuned (Flame Tongue).
+    const enchantItemId =
+      isCustom || !weaponAttunementSatisfied(weaponRef)
+        ? undefined
+        : weaponRef.enchantItemId;
     // A structured homebrew weapon IS its own magic item: its `item-bound-bonus`
     // rides this row, exactly as a bound catalogue enchant's does.
     const homebrewWeapon = isCustom ? homebrewItemData(weaponRef) : undefined;

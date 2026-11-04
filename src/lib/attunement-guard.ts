@@ -16,7 +16,12 @@
  */
 import type { AttunementPrerequisite } from "@/data/types";
 import { getMagicItem } from "@/data/magic-items";
-import { attunementSatisfied, requiresAttunement } from "@/lib/attunement";
+import {
+  attunementSatisfied,
+  requiresAttunement,
+  weaponAttunementSatisfied,
+  weaponRequiresAttunement,
+} from "@/lib/attunement";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { evaluateGrants } from "@/lib/grants";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
@@ -26,9 +31,9 @@ import type { CharacterData, CharacterDoc } from "@/types/character";
 export const ATTUNEMENT_LIMIT = 3;
 
 type Equipment = CharacterData["equipment"];
-type EquipmentRef = Equipment[number];
+type Weapons = CharacterData["weapons"];
 
-/** Why the guard says no. `attuned` lists the instance ids standing in the way. */
+/** Why the guard says no. `attuned` lists the item keys standing in the way. */
 export type AttunementRefusal =
   | { ok: false; reason: "attunement-limit"; limit: number; attuned: string[] }
   | { ok: false; reason: "duplicate-copy"; attuned: string[] }
@@ -38,9 +43,10 @@ export type AttunementRefusal =
 
 export type CanAttune = { ok: true } | AttunementRefusal;
 
-/** The new equipment list, or the refusal (nothing changed). `forced`: over a limit. */
+/** The new equipment and weapons lists, or the refusal (nothing changed). `forced`:
+ *  over a limit. */
 export type AttuneResult =
-  | { ok: true; forced: boolean; equipment: Equipment }
+  | { ok: true; forced: boolean; equipment: Equipment; weapons: Weapons }
   | AttunementRefusal;
 
 /** How many magic items this character can be attuned to at once. */
@@ -52,32 +58,87 @@ export function attunementLimit(doc: CharacterDoc): number {
   return Math.max(ATTUNEMENT_LIMIT, aggregate.attunementSlots);
 }
 
-const isAttuned = (ref: EquipmentRef): boolean =>
-  requiresAttunement(ref) && attunementSatisfied(ref);
+/**
+ * One magic item that takes attunement, wherever it is kept: an item of equipment,
+ * a homebrew weapon, or a catalogue weapon's bound enchant (a Flame Tongue). Its
+ * `key` addresses it in {@link attuneItem}: the instance id, or `weapon:<index>` for
+ * a catalogue weapon (which has none).
+ */
+export interface Attunable {
+  key: string;
+  /** The catalogue item it is a copy of (one attuned copy at a time); absent for
+   *  homebrew, which is its own thing. */
+  itemId?: string;
+  attuned: boolean;
+  requires?: AttunementPrerequisite;
+}
 
-const idOf = (ref: EquipmentRef): string | undefined => ref.instanceId;
+/** Every item the character has that takes attunement, equipment and weapons. */
+export function attunables(doc: Pick<CharacterDoc, "character">): Attunable[] {
+  const { equipment, weapons } = doc.character;
+  const fromEquipment = equipment.flatMap((ref, index): Attunable[] => {
+    if (!requiresAttunement(ref)) return [];
+    const itemId = "custom" in ref ? undefined : ref.srdId;
+    const requires = itemId ? getMagicItem(itemId)?.attunementBy : undefined;
+    return [
+      {
+        key: ref.instanceId ?? equipmentAttunementKey(index),
+        ...(itemId ? { itemId } : {}),
+        attuned: attunementSatisfied(ref),
+        ...(requires ? { requires } : {}),
+      },
+    ];
+  });
+  const fromWeapons = weapons.flatMap((ref, index): Attunable[] => {
+    if ("custom" in ref) {
+      return requiresAttunement(ref)
+        ? [{ key: ref.instanceId, attuned: attunementSatisfied(ref) }]
+        : [];
+    }
+    if (!weaponRequiresAttunement(ref) || !ref.enchantItemId) return [];
+    const requires = getMagicItem(ref.enchantItemId)?.attunementBy;
+    return [
+      {
+        key: weaponAttunementKey(index),
+        itemId: ref.enchantItemId,
+        attuned: weaponAttunementSatisfied(ref),
+        ...(requires ? { requires } : {}),
+      },
+    ];
+  });
+  return [...fromEquipment, ...fromWeapons];
+}
 
-/** Whether the item `itemInstanceId` names can be attuned now, and if not, why. */
-export function canAttune(doc: CharacterDoc, itemInstanceId: string): CanAttune {
-  const equipment = doc.character.equipment;
-  const target = equipment.find((ref) => idOf(ref) === itemInstanceId);
-  if (!target) return { ok: false, reason: "unknown-item" };
-  if (!requiresAttunement(target)) return { ok: false, reason: "no-attunement" };
-  if (isAttuned(target)) return { ok: true };
-  const requires =
-    "custom" in target ? undefined : getMagicItem(target.srdId)?.attunementBy;
-  if (requires && !meetsPrerequisite(doc, requires)) {
-    return { ok: false, reason: "prerequisite", requires };
+/** The key an item of equipment without an instance id is addressed by. */
+function equipmentAttunementKey(index: number): string {
+  return `equipment:${String(index)}`;
+}
+
+/** The key a catalogue weapon's attunement is addressed by. */
+export function weaponAttunementKey(index: number): string {
+  return `weapon:${String(index)}`;
+}
+
+/** How many items the character is attuned to, equipment and weapons together. */
+export function attunedCount(doc: Pick<CharacterDoc, "character">): number {
+  return attunables(doc).filter((a) => a.attuned).length;
+}
+
+/** Whether the item `key` names can be attuned now, and if not, why. */
+export function canAttune(doc: CharacterDoc, key: string): CanAttune {
+  const all = attunables(doc);
+  const target = all.find((a) => a.key === key);
+  if (!target) return knownWithoutAttunement(doc, key);
+  if (target.attuned) return { ok: true };
+  if (target.requires && !meetsPrerequisite(doc, target.requires)) {
+    return { ok: false, reason: "prerequisite", requires: target.requires };
   }
-
-  const attuned = equipment.filter(isAttuned);
+  const attuned = all.filter((a) => a.attuned);
   // One copy of an item: a homebrew item is its own thing, never a copy.
-  if (!("custom" in target)) {
-    const copies = attuned.filter(
-      (ref) => !("custom" in ref) && ref.srdId === target.srdId
-    );
+  if (target.itemId) {
+    const copies = attuned.filter((a) => a.itemId === target.itemId);
     if (copies.length > 0) {
-      return { ok: false, reason: "duplicate-copy", attuned: copies.flatMap(ids) };
+      return { ok: false, reason: "duplicate-copy", attuned: copies.map((a) => a.key) };
     }
   }
   const limit = attunementLimit(doc);
@@ -86,10 +147,26 @@ export function canAttune(doc: CharacterDoc, itemInstanceId: string): CanAttune 
       ok: false,
       reason: "attunement-limit",
       limit,
-      attuned: attuned.flatMap(ids),
+      attuned: attuned.map((a) => a.key),
     };
   }
   return { ok: true };
+}
+
+/** An item that exists but takes no attunement, or none at all. */
+function knownWithoutAttunement(doc: CharacterDoc, key: string): AttunementRefusal {
+  const { equipment, weapons } = doc.character;
+  const exists =
+    equipment.some(
+      (ref, index) => (ref.instanceId ?? equipmentAttunementKey(index)) === key
+    ) ||
+    weapons.some(
+      (ref, index) =>
+        ("custom" in ref && ref.instanceId === key) || weaponAttunementKey(index) === key
+    );
+  return exists
+    ? { ok: false, reason: "no-attunement" }
+    : { ok: false, reason: "unknown-item" };
 }
 
 /**
@@ -113,22 +190,33 @@ export function meetsPrerequisite(
   if (requires.species?.includes(character.race)) return true;
   if (
     requires.attunedItem &&
-    character.equipment.some(
-      (ref) => !("custom" in ref) && ref.srdId === requires.attunedItem && isAttuned(ref)
-    )
+    attunables(doc).some((a) => a.itemId === requires.attunedItem && a.attuned)
   ) {
     return true;
   }
   return false;
 }
 
-const ids = (ref: EquipmentRef): string[] => {
-  const id = idOf(ref);
-  return id === undefined ? [] : [id];
-};
-
-const setAttuned = (equipment: Equipment, itemInstanceId: string, attuned: boolean) =>
-  equipment.map((ref) => (idOf(ref) === itemInstanceId ? { ...ref, attuned } : ref));
+/** The lists with the item `key` names set attuned or not; its other fields stay. */
+function setAttuned(
+  doc: CharacterDoc,
+  key: string,
+  attuned: boolean
+): { equipment: Equipment; weapons: Weapons } {
+  const { equipment, weapons } = doc.character;
+  return {
+    equipment: equipment.map((ref, index) =>
+      (ref.instanceId ?? equipmentAttunementKey(index)) === key
+        ? { ...ref, attuned }
+        : ref
+    ),
+    weapons: weapons.map((ref, index) =>
+      ("custom" in ref ? ref.instanceId === key : weaponAttunementKey(index) === key)
+        ? { ...ref, attuned }
+        : ref
+    ),
+  };
+}
 
 /**
  * Attune to the item. Refused with the guard's reason unless `force` (the player's
@@ -136,10 +224,10 @@ const setAttuned = (equipment: Equipment, itemInstanceId: string, attuned: boole
  */
 export function attuneItem(
   doc: CharacterDoc,
-  itemInstanceId: string,
+  key: string,
   options: { force?: boolean } = {}
 ): AttuneResult {
-  const verdict = canAttune(doc, itemInstanceId);
+  const verdict = canAttune(doc, key);
   if (!verdict.ok) {
     const forceable =
       verdict.reason === "attunement-limit" ||
@@ -147,21 +235,12 @@ export function attuneItem(
       verdict.reason === "prerequisite";
     if (!(forceable && options.force)) return verdict;
   }
-  return {
-    ok: true,
-    forced: !verdict.ok,
-    equipment: setAttuned(doc.character.equipment, itemInstanceId, true),
-  };
+  return { ok: true, forced: !verdict.ok, ...setAttuned(doc, key, true) };
 }
 
 /** End the attunement to the item (always allowed); its other fields stay. */
-export function unattuneItem(doc: CharacterDoc, itemInstanceId: string): AttuneResult {
-  const target = doc.character.equipment.find((ref) => idOf(ref) === itemInstanceId);
-  if (!target) return { ok: false, reason: "unknown-item" };
-  if (!requiresAttunement(target)) return { ok: false, reason: "no-attunement" };
-  return {
-    ok: true,
-    forced: false,
-    equipment: setAttuned(doc.character.equipment, itemInstanceId, false),
-  };
+export function unattuneItem(doc: CharacterDoc, key: string): AttuneResult {
+  if (!attunables(doc).some((a) => a.key === key))
+    return knownWithoutAttunement(doc, key);
+  return { ok: true, forced: false, ...setAttuned(doc, key, false) };
 }
