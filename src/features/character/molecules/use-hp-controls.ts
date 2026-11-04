@@ -51,7 +51,7 @@ import { getEquipment } from "@/data/equipment";
 import {
   isCharacterAlive,
   stabilisedInPlay,
-  DEATH_FAIL_LIMIT,
+  deathSaveLimits,
 } from "@/lib/character-status";
 import { FALL_DAMAGE_TYPE, fallLandsProne } from "@/lib/play/fall";
 import { uiText, type LocText } from "@/lib/loc-text";
@@ -324,7 +324,8 @@ export function useHpControls(): HpControls {
       : wasAtZero
         ? isInstantDeathAtZero(intake.netTotal, max)
           ? t("combat.instantDeathToast")
-          : failNow >= DEATH_FAIL_LIMIT
+          : failNow >=
+              deathSaveLimits(useCharacterStore.getState().character?.session).failures
             ? t("deathSaves.dead")
             : t(crit ? "combat.zeroHpCritFailToast" : "combat.zeroHpFailToast", {
                 n: failNow,
@@ -431,13 +432,15 @@ export function useHpControls(): HpControls {
     } else if (outcome.failures === 2) {
       const failures = after?.session.deathFail ?? deathFail;
       message =
-        failures >= DEATH_FAIL_LIMIT
+        failures >=
+        deathSaveLimits(useCharacterStore.getState().character?.session).failures
           ? t("deathSaves.dead")
           : t("combat.deathSaveNat1Toast", { n: entered, f: failures });
     } else if (commit.result.reviewedOutcome.status === "failure") {
       const failures = after?.session.deathFail ?? deathFail;
       message =
-        failures >= DEATH_FAIL_LIMIT
+        failures >=
+        deathSaveLimits(useCharacterStore.getState().character?.session).failures
           ? t("deathSaves.dead")
           : t("combat.deathSaveFailToast", { n: entered, f: failures });
     } else {

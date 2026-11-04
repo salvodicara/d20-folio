@@ -10,7 +10,7 @@ import {
   isMassiveDamageDeath,
   type DamageDefenses,
 } from "@/lib/damage-intake";
-import { DEATH_FAIL_LIMIT } from "@/lib/character-status";
+import { DEATH_FAIL_LIMIT, DEATH_SUCCESS_LIMIT } from "@/lib/character-status";
 import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 
 const UNCONSCIOUS = "unconscious";
@@ -68,6 +68,8 @@ export interface PcDamageTransitionInput {
   /** Knocking out (2024): the attacker chose to leave the creature at 1 HP and
    *  Unconscious instead of dropping it to 0. Only a melee attack can. */
   knockOut?: boolean;
+  /** The table's death-save counts (M16); three each by RAW. */
+  deathSaveLimits?: { successes: number; failures: number };
 }
 
 export interface PcDamageTransitionResult {
@@ -89,14 +91,18 @@ export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransiti
   const max = Math.max(0, Math.round(input.state.hp.max));
   const current = Math.max(0, Math.min(max, Math.round(input.state.hp.current)));
   const temp = Math.max(0, Math.round(input.state.hp.temp));
+  const limits = input.deathSaveLimits ?? {
+    successes: DEATH_SUCCESS_LIMIT,
+    failures: DEATH_FAIL_LIMIT,
+  };
   const deathSaves = {
     successes: Math.max(
       0,
-      Math.min(DEATH_FAIL_LIMIT, Math.round(input.state.deathSaves.successes))
+      Math.min(limits.successes, Math.round(input.state.deathSaves.successes))
     ),
     failures: Math.max(
       0,
-      Math.min(DEATH_FAIL_LIMIT, Math.round(input.state.deathSaves.failures))
+      Math.min(limits.failures, Math.round(input.state.deathSaves.failures))
     ),
   };
   const baseState: PcDamageState = {
@@ -121,7 +127,7 @@ export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransiti
     ...overrides,
   });
 
-  if (deathSaves.failures >= DEATH_FAIL_LIMIT) return empty();
+  if (deathSaves.failures >= limits.failures) return empty();
 
   const persistentEffects = input.persistentEffects ?? [];
   const retaliations = input.hit
@@ -192,14 +198,14 @@ export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransiti
     nextDeathSaves = {
       successes: 0,
       failures: instantDeath
-        ? DEATH_FAIL_LIMIT
+        ? limits.failures
         : Math.min(
-            DEATH_FAIL_LIMIT,
+            limits.failures,
             deathSaves.failures + deathSaveFailuresFromDamage(input.crit === true)
           ),
     };
     if (
-      nextDeathSaves.failures >= DEATH_FAIL_LIMIT &&
+      nextDeathSaves.failures >= limits.failures &&
       nextConditions.includes(UNCONSCIOUS)
     ) {
       nextConditions = nextConditions.filter((condition) => condition !== UNCONSCIOUS);
@@ -211,7 +217,7 @@ export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransiti
     instantDeath = isMassiveDamageDeath(persistent.targetDamage, current, temp, max);
     nextDeathSaves = {
       successes: 0,
-      failures: instantDeath ? DEATH_FAIL_LIMIT : 0,
+      failures: instantDeath ? limits.failures : 0,
     };
     const hadUnconscious = nextConditions.includes(UNCONSCIOUS);
     if (instantDeath) {

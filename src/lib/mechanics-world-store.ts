@@ -8,7 +8,11 @@
  * commit mirrors that exact field write-through so the two can never diverge.
  */
 
-import { DEATH_FAIL_LIMIT, DEATH_SUCCESS_LIMIT } from "@/lib/character-status";
+import {
+  DEATH_FAIL_LIMIT,
+  DEATH_SUCCESS_LIMIT,
+  deathSaveLimits,
+} from "@/lib/character-status";
 import type { ZeroHitPointsState } from "@/types/vitals";
 import { concentrationValue } from "@/lib/concentration";
 import { reduceActionJournal } from "@/lib/action-journal";
@@ -166,10 +170,16 @@ export function characterTrackerSeeds(
  * the state transition). */
 export function zeroTrackFor(
   successes: number,
-  failures: number
+  failures: number,
+  /** The table's counts (M16); the world's dying counts still cap at 2, so a
+   *  longer track reads as dying until its last mark. */
+  limits: { successes: number; failures: number } = {
+    successes: DEATH_SUCCESS_LIMIT,
+    failures: DEATH_FAIL_LIMIT,
+  }
 ): Exclude<ZeroHitPointsState, null> {
-  if (failures >= DEATH_FAIL_LIMIT) return { kind: "dead" };
-  if (successes >= DEATH_SUCCESS_LIMIT) return { kind: "stable" };
+  if (failures >= limits.failures) return { kind: "dead" };
+  if (successes >= limits.successes) return { kind: "stable" };
   return {
     failures: Math.min(2, Math.max(0, failures)),
     kind: "dying",
@@ -194,7 +204,10 @@ function rebasedOnStoredVitals(
   const { hitPoints, zeroHitPoints } = world.vitals;
   const current = Math.max(0, Math.floor(session.hp.current));
   const temp = Math.max(0, Math.floor(session.hp.temp));
-  const zero = current > 0 ? null : zeroTrackFor(session.deathSucc, session.deathFail);
+  const zero =
+    current > 0
+      ? null
+      : zeroTrackFor(session.deathSucc, session.deathFail, deathSaveLimits(session));
   const sameZero = JSON.stringify(zero) === JSON.stringify(zeroHitPoints);
   if (hitPoints.current === current && hitPoints.temporary.current === temp && sameZero) {
     return world;

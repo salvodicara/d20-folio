@@ -27,14 +27,6 @@ async function defaultTableRules(): Promise<Record<string, unknown>> {
   return mod.RAW_TABLE_RULES as Record<string, unknown>;
 }
 
-/** Call a pure function with the table rules it should take as a last argument. */
-function withRules<A extends unknown[], R>(
-  fn: (...args: A) => R,
-  ...args: [...A, unknown]
-): R {
-  return (fn as unknown as (...a: unknown[]) => R)(...args);
-}
-
 describe("conformance · 14. homebrew", () => {
   rule(
     {
@@ -58,7 +50,7 @@ describe("conformance · 14. homebrew", () => {
       category: 14,
       case: "Flanking toggle",
       source: "themonstersknow.com",
-      status: "M16",
+      status: "works",
     },
     () => {
       // With no positions on the sheet, flanking is a situation the player taps.
@@ -293,13 +285,15 @@ describe("conformance · 14. homebrew", () => {
   );
 
   rule(
-    { category: 14, case: "Death-save variants", source: "FVTT#7367", status: "M16" },
+    { category: 14, case: "Death-save variants", source: "FVTT#7367", status: "works" },
     () => {
       expect(diedInPlay({ deathFail: 3 })).toBe(true);
       // A table that needs five failures.
-      expect(
-        withRules(diedInPlay, { deathFail: 3 }, { deathSaves: { failures: 5 } })
-      ).toBe(false);
+      const tableRules = effectiveTableRules({
+        tableRules: { deathSaves: { successes: 3, failures: 5 } },
+      });
+      expect(diedInPlay({ deathFail: 3, tableRules })).toBe(false);
+      expect(diedInPlay({ deathFail: 5, tableRules })).toBe(true);
     }
   );
 });

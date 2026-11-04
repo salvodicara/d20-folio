@@ -624,6 +624,10 @@
     "slotsRecovered_other": "{{source}}: you recover {{count}} spell slots.",
     "castSlotRecovery_slots": "{{source}}: you can recover up to {{cap}} expended spell slots, none above level {{max}}.",
     "castSlotRecovery_levels": "{{source}}: you can recover expended spell slots totalling up to {{cap}} levels, none above level {{max}}.",
-    "slotRecoveryBudgetSlots": "{{remaining}} of {{cap}} slots left"
+    "slotRecoveryBudgetSlots": "{{remaining}} of {{cap}} slots left",
+    "situation": {
+      "flankingSummary_advantage": "You and an ally are on opposite sides of the target, both next to it: your melee attack rolls against it have Advantage.",
+      "flankingSummary_plus-2": "You and an ally are on opposite sides of the target, both next to it: your melee attack rolls against it get +2."
+    }
   }
 }

@@ -42,7 +42,8 @@ export function SituationChips() {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const activeFeatures = useCharacterStore((s) => s.character?.session.activeFeatures);
-  const chips = situationChipsView(locale).map((chip) => ({
+  const flanking = useCharacterStore((s) => s.character?.session.tableRules?.flanking);
+  const chips = situationChipsView(locale, flanking).map((chip) => ({
     ...chip,
     on: (activeFeatures ?? []).includes(chip.activeKey),
   }));

@@ -27,9 +27,25 @@ export const DEATH_SUCCESS_LIMIT = 3;
 /** SRD "Exhaustion": a creature dies when its Exhaustion level reaches 6. */
 export const EXHAUSTION_DEATH_LEVEL = 6;
 
-/** Died in play — three failed death saves in the live session. */
-export function diedInPlay(session: Pick<SessionState, "deathFail">): boolean {
-  return session.deathFail >= DEATH_FAIL_LIMIT;
+/** How many death saves end the track (M16): three each by RAW, or the campaign's
+ *  own counts when its table rules set them. */
+export function deathSaveLimits(session?: Pick<SessionState, "tableRules">): {
+  successes: number;
+  failures: number;
+} {
+  return (
+    session?.tableRules?.deathSaves ?? {
+      successes: DEATH_SUCCESS_LIMIT,
+      failures: DEATH_FAIL_LIMIT,
+    }
+  );
+}
+
+/** Died in play — the failed death saves the table counts (three by RAW). */
+export function diedInPlay(
+  session: Pick<SessionState, "deathFail" | "tableRules">
+): boolean {
+  return session.deathFail >= deathSaveLimits(session).failures;
 }
 
 /** Died of Exhaustion — level 6 in the live session (SRD "Exhaustion"), or the
@@ -43,9 +59,11 @@ export function diedOfExhaustion(
   );
 }
 
-/** Stabilised in play — three successful death saves in the live session. */
-export function stabilisedInPlay(session: Pick<SessionState, "deathSucc">): boolean {
-  return session.deathSucc >= DEATH_SUCCESS_LIMIT;
+/** Stabilised in play — the successful death saves the table counts (three by RAW). */
+export function stabilisedInPlay(
+  session: Pick<SessionState, "deathSucc" | "tableRules">
+): boolean {
+  return session.deathSucc >= deathSaveLimits(session).successes;
 }
 
 /**
