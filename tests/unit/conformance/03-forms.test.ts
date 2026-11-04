@@ -227,7 +227,7 @@ describe("conformance · 3. forms and transformations", () => {
       category: 3,
       case: "Polymorph and other effects",
       source: "SAC #135; SAC #136; SAC #137",
-      status: "M2",
+      status: "works",
     },
     () => {
       const lit = withSession(wizard(17), { activeFeatures: ["spell-bless"] });

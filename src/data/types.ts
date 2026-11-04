@@ -2514,6 +2514,12 @@ export interface BeastStatBlock {
   /** Stable ids of the Beast's always-on traits (`trait.pack-tactics`); names in
    *  the `beasts` catalogue. Reference-card display only — narrative, never a grant. */
   traits?: ReadonlyArray<string>;
+  /** The creature's own defenses, which are yours while you are in its form (M2:
+   *  a True Polymorph into an iron golem is immune to Fire). */
+  damageResistances?: ReadonlyArray<DamageType>;
+  damageImmunities?: ReadonlyArray<DamageType>;
+  damageVulnerabilities?: ReadonlyArray<DamageType>;
+  conditionImmunities?: ReadonlyArray<ConditionId>;
 }
 
 // ============================================================

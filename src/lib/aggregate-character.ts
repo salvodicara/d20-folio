@@ -69,7 +69,12 @@ import {
   effectiveSessionConditions,
   suppressedSessionConditions,
 } from "@/lib/effective-conditions";
-import { formCharacter, formFacts, formSourceKind } from "@/lib/polymorph";
+import {
+  formCharacter,
+  formFacts,
+  formSourceKind,
+  resolveFormDefenseSources,
+} from "@/lib/polymorph";
 import {
   sessionActiveKeys,
   worldStandingMaxHpDeltas,
@@ -236,6 +241,8 @@ function aggregateWithConditions(
         ...resolveSituationalStateSources(activeKeys),
         // A Speed loss that landed (a monster's rider) holds until its turn edge.
         ...resolveRiderSpeedLossSources(activeKeys),
+        // A creature's form gives its own defenses while held (M2).
+        ...resolveFormDefenseSources(session),
         // A lit Surprise puts Disadvantage on the Initiative roll until the fight ends.
         ...resolveSurpriseStateSources(activeKeys),
         // Wish Stress holds until a Long Rest.

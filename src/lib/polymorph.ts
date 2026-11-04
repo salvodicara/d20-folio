@@ -28,6 +28,7 @@ import { beastsByMaxCR, getBeast } from "@/data/beasts";
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import { totalLevel } from "@/lib/classes";
+import type { Grant, GrantSource } from "@/lib/grants";
 
 export type { SelfFormRule } from "@/data/types";
 
@@ -284,4 +285,32 @@ export function formCharacter<C extends Pick<CharacterData, "equipment" | "weapo
     equipment: character.equipment.filter((ref) => worn.has(gearKey(ref))),
     weapons: character.weapons.filter((ref) => worn.has(gearKey(ref))),
   };
+}
+
+/**
+ * The form's own defenses as a grant source while you hold it (M2): its damage
+ * resistances, immunities and vulnerabilities and its condition immunities. A
+ * Beast reads its catalogue block; a bestiary form its stored one.
+ */
+export function resolveFormDefenseSources(
+  session: Pick<SessionState, "activeForm">
+): GrantSource[] {
+  const form = session.activeForm;
+  const beast = form ? (form.statBlock ?? getBeast(form.beastId)) : undefined;
+  if (!form || !beast) return [];
+  const grants: Grant[] = [
+    ...(beast.damageResistances ?? []).map(
+      (damageType): Grant => ({ type: "damage-resistance", damageType })
+    ),
+    ...(beast.damageImmunities ?? []).map(
+      (damageType): Grant => ({ type: "damage-immunity", damageType })
+    ),
+    ...(beast.damageVulnerabilities ?? []).map(
+      (damageType): Grant => ({ type: "damage-vulnerability", damageType })
+    ),
+    ...(beast.conditionImmunities ?? []).map(
+      (condition): Grant => ({ type: "condition-immunity", condition })
+    ),
+  ];
+  return grants.length > 0 ? [{ id: `form:${form.beastId}`, grants }] : [];
 }
