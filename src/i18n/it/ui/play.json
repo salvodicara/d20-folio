@@ -153,7 +153,7 @@
       "unattune": "Termina sintonia",
       "attuneAnyway": "Sintonizza comunque",
       "attunedToast": "In sintonia con {{name}}",
-      "unattunedToast": "Sintonia con {{name}} terminata",
+      "unattunedToast": "Sintonia terminata: {{name}}",
       "refusedLimit": "Hai già {{limit}} oggetti in sintonia: {{names}}.",
       "refusedCopy": "Sei già in sintonia con un'altra copia di questo oggetto.",
       "refusedOnly": "Sintonia riservata a: {{who}}.",
