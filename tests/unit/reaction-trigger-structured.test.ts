@@ -229,9 +229,10 @@ interface SpellReactionRow {
 // "reaction"; structured data now carries the actual 2024 trigger instead.
 const CORRECTED_SPELL_TRIGGERS: Readonly<Record<string, string>> = {
   shield: "an attack hits you or Magic Missile targets you",
-  // A pack spell the parser never read: it answers a hit (modelled) or a failed D20
-  // Test (the M8 trigger rule, not a display token).
-  "moment-of-prescience": "an attack hits you",
+  // Pack spells the parser never read. Moment of Prescience answers a failed D20
+  // Test or a hit (the first token is the line compared); Reweave Fate a failed one.
+  "moment-of-prescience": "a creature fails a D20 Test",
+  "reweave-fate": "a creature fails a D20 Test",
 };
 
 // Every reaction spell — the smart-tracker derives a `"reaction"` action TYPE from
