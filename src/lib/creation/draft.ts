@@ -38,6 +38,7 @@ import {
 } from "@/lib/creation-choices";
 import { speciesNeedsSpellAbility } from "@/lib/species-spell-ability";
 import { speciesBundleKeys } from "@/lib/species-choices";
+import { fillReadyMadePicks } from "./ready-made";
 import {
   isAllChoicesComplete,
   partitionChoiceSlotsBySource,
@@ -145,6 +146,8 @@ export type CreationDraftAction =
   | { type: "setHumanFeat"; featId: string }
   | { type: "setLineageChoice"; bundleKey: string; optionId: string }
   | { type: "setSpeciesSpellAbility"; ability: AbilityCode }
+  /** Fill whatever class-side pick is still missing, the class preset's way. */
+  | { type: "fillReadyMade" }
   | { type: "setChoicePicks"; picks: ChoicePicks }
   | { type: "toggleClassSkill"; skillId: string }
   | {
@@ -247,6 +250,8 @@ export function creationDraftReducer(
         ...draft,
         lineageChoices: { ...draft.lineageChoices, [action.bundleKey]: action.optionId },
       };
+    case "fillReadyMade":
+      return fillReadyMadePicks(draft, creationFacts);
     case "setSpeciesSpellAbility":
       return { ...draft, speciesSpellAbility: action.ability };
     case "setChoicePicks":

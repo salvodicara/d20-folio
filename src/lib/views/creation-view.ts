@@ -29,6 +29,8 @@
  */
 
 import type { Locale } from "@/lib/locale";
+import type { CreationRequirementKey } from "@/lib/creation/draft";
+import type { CreationBuildError } from "@/lib/creation/build";
 import type {
   EquipmentCategory,
   BackgroundEquipmentItem,
@@ -484,3 +486,24 @@ export function classStartingEquipment(
     : undefined;
   return startingEquipmentOptions(cls?.startingEquipment, locale, ctx);
 }
+
+/** The "what's left" label of each creation requirement (both creation screens). */
+export const REQUIREMENT_LABEL_KEYS: Record<CreationRequirementKey, string> = {
+  name: "create.needName",
+  class: "create.needClass",
+  subclass: "create.needSubclass",
+  lineage: "create.needLineage",
+  humanFeat: "create.needHumanFeat",
+  originFeat: "create.needOriginFeat",
+  languages: "create.needLanguages",
+  skills: "create.needSkills",
+  spells: "create.needSpells",
+  bgAsi: "create.needBgAsi",
+};
+
+/** The message of each reason a draft cannot be built yet. */
+export const BUILD_ERROR_KEYS: Record<CreationBuildError, string> = {
+  name: "create.nameRequired",
+  class: "create.classRequired",
+  subclass: "create.subclassRequired",
+};

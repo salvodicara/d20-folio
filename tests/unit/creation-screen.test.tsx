@@ -4,12 +4,24 @@
  * own choices (an Elf's lineage, spellcasting ability and Keen Senses), and the abilities step opens on the class's
  * suggested scores with the background's +2/+1 already placed.
  */
-import { describe, expect, it } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 import { suggestedScores } from "@/domains/creation/creation-view";
 import { CreationScreen } from "@/domains/creation/ui/CreationScreen";
+import { useAuthStore } from "@/stores/authStore";
+
+const { createCharacterMock, navigateMock } = vi.hoisted(() => ({
+  createCharacterMock: vi.fn(() => Promise.resolve("new-id")),
+  navigateMock: vi.fn(),
+}));
+vi.mock("@/lib/firebase", () => ({ db: {} }));
+vi.mock("@/lib/firestore", () => ({ createCharacter: createCharacterMock }));
+vi.mock("react-router", async (orig) => ({
+  ...(await orig<typeof import("react-router")>()),
+  useNavigate: () => navigateMock,
+}));
 
 describe("CreationScreen", () => {
   it("a background is the player's pick: «—» and a waiting Next until then", () => {
@@ -67,4 +79,35 @@ describe("CreationScreen", () => {
     ).toEqual(expect.arrayContaining(["Suggested", "+2 / +1"]));
     expect(next().getAttribute("aria-disabled")).toBeNull();
   });
+
+  it("walks all six steps to a ready-made Riepilogo, and «Create» saves it", async () => {
+    useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
+    render(
+      <MemoryRouter>
+        <CreationScreen />
+      </MemoryRouter>
+    );
+    const next = () => screen.getByRole("button", { name: "Next" });
+    fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: /^Acolyte/ }));
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: /^Dwarf/ }));
+    fireEvent.click(next());
+    fireEvent.click(next());
+    // Equipaggiamento: the class package is chosen, and the Armor Class shows.
+    expect(screen.getByText(/^Armor Class \d+$/)).toBeTruthy();
+    fireEvent.click(next());
+    // Riepilogo: the class's ready-made spells, and only the name is owed.
+    expect(screen.getByText(/Guidance/)).toBeTruthy();
+    const create = screen.getByRole("button", { name: "Create character" });
+    expect(create.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.change(screen.getByLabelText("Character Name"), {
+      target: { value: "Selene" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Selene" }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/characters/new-id"));
+    expect(createCharacterMock).toHaveBeenCalledWith("u1", expect.anything());
+    useAuthStore.setState({ user: null });
+  }, 15_000);
 });

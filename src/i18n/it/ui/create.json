@@ -174,7 +174,14 @@
       "speciesAbility": "Caratteristica da incantatore della specie",
       "speciesAbilityHint": "Vale per gli incantesimi che ti dà la specie.",
       "speciesAbilityRequired": "Scegli la caratteristica da incantatore della specie.",
-      "speciesPending": "Completa le scelte della specie per continuare."
+      "speciesPending": "Completa le scelte della specie per continuare.",
+      "acTitle": "Classe armatura {{ac}}",
+      "acHint": "Più è alta, più i nemici faticano a colpirti.",
+      "subclassAt": "Sottoclasse al livello {{level}}",
+      "preparedSpells": "Incantesimi preparati",
+      "rulesNote": "Tutto è controllato con le regole 2024. Puoi cambiare ogni cosa anche dopo, dalla scheda.",
+      "createNamed": "Crea {{name}}",
+      "creating": "Creazione…"
     }
   }
 }

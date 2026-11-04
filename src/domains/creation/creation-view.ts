@@ -23,6 +23,9 @@ import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
 import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import type { ChoicePicks, FeatureChoiceSlots } from "@/lib/feature-choices";
 import { spellPickVM } from "@/lib/views/spell-pick-view";
+import { spellName } from "@/lib/views/level-up-view";
+import { ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
+import { formatSpeed } from "@/lib/utils";
 
 /** A class card's art: one kind for every class at a time. */
 export type ClassArt = { kind: "glyph"; icon: IconName };
@@ -328,4 +331,46 @@ export function toggleChoicePick(
       ? [...row.picked, id]
       : [...row.picked.slice(1), id];
   return { ...picks, [row.kind]: { ...picks[row.kind], [row.slotId]: next } };
+}
+
+/** The Riepilogo's rows: what the character is made of, every name localized. */
+export interface CreationReview {
+  hp: number;
+  ac: number;
+  /** «9 m» / «30 ft». */
+  speed: string;
+  /** The level its subclass arrives at, when not yet (null once due or never). */
+  subclassLevel: number | null;
+  cantrips: string[];
+  spells: string[];
+  /** Background, class and species skills, in table order. */
+  skills: string[];
+  /** Common plus the origin picks. */
+  languages: string[];
+}
+
+export function creationReview(
+  draft: CreationDraft,
+  facts: CreationFacts,
+  locale: Locale
+): CreationReview {
+  const t = i18n.getFixedT(locale);
+  const picked = new Set([
+    ...facts.backgroundSkillIds,
+    ...draft.classSkills,
+    ...Object.values(draft.choicePicks.skill).flat(),
+    ...Object.values(draft.choicePicks.skillOrTool).flat(),
+  ]);
+  const languages = ["common", ...(draft.languagePicks[ORIGIN_LANGUAGE_SLOT_ID] ?? [])];
+  const hasSubclasses = (facts.classTable?.subclasses.length ?? 0) > 0;
+  return {
+    hp: facts.maxHp,
+    ac: facts.armorClass,
+    speed: formatSpeed(String(facts.raceData?.speed ?? 30), locale),
+    subclassLevel: hasSubclasses && !facts.subclassDue ? facts.subclassLevel : null,
+    cantrips: draft.cantrips.map((id) => spellName(id, locale)),
+    spells: draft.spells.map((id) => spellName(id, locale)),
+    skills: ALL_SKILLS.filter((s) => picked.has(s.id)).map((s) => t(`skills.${s.id}`)),
+    languages: languages.map((id) => localizeSrd("language", id, "name", locale)),
+  };
 }
