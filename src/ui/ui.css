@@ -4127,4 +4127,7 @@
     grid-area: step;
     grid-template-columns: 40px 56px 40px;
   }
+  .fui .f-abil-grid[data-edit] .f-stepper > .f-in {
+    padding-inline: 4px;
+  }
 }
