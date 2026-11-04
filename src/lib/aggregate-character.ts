@@ -67,7 +67,7 @@ import {
   effectiveSessionConditions,
   suppressedSessionConditions,
 } from "@/lib/effective-conditions";
-import { formFacts, formSourceKind } from "@/lib/polymorph";
+import { formCharacter, formFacts, formSourceKind } from "@/lib/polymorph";
 import {
   sessionActiveKeys,
   worldStandingMaxHpDeltas,
@@ -173,9 +173,11 @@ function aggregationActiveKeys(session: AggregationSession): Set<string> {
  * ability-score floors, proficiencies, free-casts.
  */
 export function aggregateCharacterGrants(
-  character: CharacterDoc["character"],
+  ownCharacter: CharacterDoc["character"],
   session: AggregationSession
 ): CharacterAggregate {
+  // In a form whose gear merges, unworn gear has no effect (edge-case M2).
+  const character = formCharacter(ownCharacter, session);
   const conditionSession = {
     conditions: session.conditions ?? [],
     concentration: session.concentration ?? "",
@@ -497,7 +499,7 @@ export function effectiveAC(
   session: AggregationSession
 ): number {
   return acFromAggregate(
-    character,
+    formCharacter(character, session),
     aggregateCharacterGrants(character, session),
     session.itemResources
   );

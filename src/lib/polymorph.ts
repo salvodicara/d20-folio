@@ -252,3 +252,32 @@ export function revertBuildFromPrior(prior: PolymorphPrior): Partial<CharacterDa
     abilityScores: { ...prior.abilityScores },
   };
 }
+
+type FormGearSession = Pick<SessionState, "activeForm">;
+
+/** An equipment entry's key for {@link formCharacter}'s worn list. */
+export function gearKey(
+  ref: CharacterData["equipment"][number] | NonNullable<CharacterData["weapons"]>[number]
+): string {
+  if ("custom" in ref) return ref.instanceId;
+  return ("instanceId" in ref ? ref.instanceId : undefined) ?? ref.srdId;
+}
+
+/**
+ * The character as its form wears it: in a form whose gear merges (Wild Shape),
+ * equipment and weapons the table didn't rule worn have no effect. Any other case
+ * returns the character unchanged.
+ */
+export function formCharacter<C extends Pick<CharacterData, "equipment" | "weapons">>(
+  character: C,
+  session: FormGearSession
+): C {
+  const form = session.activeForm;
+  if (!form || !selfFormRule(form.sourceId).gearMerges) return character;
+  const worn = new Set(form.wornGear ?? []);
+  return {
+    ...character,
+    equipment: character.equipment.filter((ref) => worn.has(gearKey(ref))),
+    weapons: character.weapons.filter((ref) => worn.has(gearKey(ref))),
+  };
+}

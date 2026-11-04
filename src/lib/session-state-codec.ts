@@ -779,12 +779,16 @@ function parseActiveForm(value: unknown): SessionState["activeForm"] {
     return undefined;
   }
   const statBlock = parseFormStatBlock(value.statBlock);
+  const wornGear = Array.isArray(value.wornGear)
+    ? value.wornGear.filter((key): key is string => typeof key === "string")
+    : [];
   return {
     ...(value.permanent === true ? { permanent: true as const } : {}),
     sourceId: value.sourceId,
     beastId: value.beastId,
     ...(statBlock ? { statBlock } : {}),
     tempHpBefore: value.tempHpBefore,
+    ...(wornGear.length > 0 ? { wornGear } : {}),
   };
 }
 

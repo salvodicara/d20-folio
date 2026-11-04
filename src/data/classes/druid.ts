@@ -250,6 +250,9 @@ export const DRUID_FEATURES: SrdClassFeatureData[] = [
     formRule: {
       pool: "beasts",
       keepsMind: true,
+      // "Your gear falls, merges or is worn": merged by default, the table rules the
+      // rest per item.
+      gearMerges: true,
       reshift: false,
       endsWithoutTempHp: false,
       tempHp: "grants",

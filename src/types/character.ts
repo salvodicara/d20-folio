@@ -1367,6 +1367,9 @@ export interface SessionState {
     beastId: string;
     statBlock?: BeastStatBlock;
     tempHpBefore: number;
+    /** Gear the table ruled still worn in a form whose gear merges (equipment keys:
+     *  instance id, else catalogue id). */
+    wornGear?: string[];
   };
   /** A form stamped into the build by a v0.25 client (kept readable until v0.25 is
    *  retired; new forms are `activeForm`). */
