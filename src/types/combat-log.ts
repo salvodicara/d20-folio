@@ -32,6 +32,7 @@ import type { ExtraTurnSource } from "@/lib/play/extra-turns";
 import type { ActionType } from "@/data/types";
 import type { ConcentrationRef } from "@/types/ids";
 import type { LocText } from "@/lib/loc-text";
+import type { AbilityCode } from "@/types/ability";
 
 /**
  * The economy slot a committed action consumed — drives the log row's COLOUR
@@ -193,6 +194,9 @@ export type CombatEvent =
   /** Mixing potions (the DM's optional d100 table): the roll entered, the potions it
    *  mixed, and the table's outcome when the table is known. */
   | { kind: "potion-mixing"; roll: number; potions: LocText[]; outcome?: string }
+  /** The character used its Action to repeat a save against a condition (Otto's
+   *  Irresistible Dance): which condition, the save's ability, and the result. */
+  | { kind: "repeat-save"; conditionId: string; ability: AbilityCode; passed: boolean }
   /**
    * A turn ended → a new round started (`round` = the new round number). With
    * `extraTurn`, the turn ended and an EXTRA turn started in the SAME round
