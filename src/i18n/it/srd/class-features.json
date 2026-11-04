@@ -74,6 +74,11 @@
     "description": "Come parte dell'Azione Bonus che usi per entrare in Ira, puoi muoverti fino a metà della tua Velocità.",
     "name": "Balzo Istintivo"
   },
+  "barbarian-instinctive-pounce.grants.instinctive-pounce": {
+    "description": "Muoviti fino a metà della tua Velocità.",
+    "name": "Balzo Istintivo",
+    "trigger": "Quando entri in Ira."
+  },
   "barbarian-persistent-rage": {
     "description": "Quando tiri Iniziativa, puoi recuperare tutti gli usi di Ira spesi. Dopo aver recuperato usi in questo modo, non puoi farlo di nuovo fino a un Riposo Lungo. Inoltre, la tua Ira ora dura 10 minuti senza doverla estendere. Termina anticipatamente solo se hai la condizione Privo di Sensi o indossi un'armatura pesante.",
     "name": "Ira Persistente"

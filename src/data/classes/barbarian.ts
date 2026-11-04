@@ -364,6 +364,16 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-instinctive-pounce",
     class: "barbarian",
     level: 7,
+    // "As part of the Bonus Action you take to enter your Rage, you can move up to
+    // half your Speed": a free row beside Rage, like Tactical Shift's.
+    grants: [
+      {
+        id: "instinctive-pounce",
+        type: "granted-action",
+        slot: "free",
+        effects: [{ kind: "self-move", fraction: 0.5 }],
+      },
+    ],
     source: "SRD",
   },
   {
