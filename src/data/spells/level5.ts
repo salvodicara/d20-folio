@@ -117,6 +117,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     saveAbility: "DEX",
     area: true,
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "DEX", at: "target-turn-start" }],
       options: ["restrained"],
       on: "failed-save",
       lifetime: { kind: "source" },
@@ -206,6 +207,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-damaged" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: { kind: "source" },

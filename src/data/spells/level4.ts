@@ -257,6 +257,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-damaged" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: { kind: "source" },
@@ -622,6 +623,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     duration: { kind: "hours", amount: 1 },
     saveAbility: "WIS",
     conditionApplication: {
+      ends: [{ on: "target-damaged", by: "actor-side" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: timedConditionLifetime(60),

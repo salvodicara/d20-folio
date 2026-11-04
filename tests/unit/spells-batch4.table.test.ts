@@ -462,6 +462,7 @@ describe("spells batch 4: the cast's own consequence", () => {
   it("Otto's Irresistible Dance: a failed WIS save leaves the target Charmed", () => {
     const spec = combatResolutionSpec(castOf("ottos-irresistible-dance"));
     expect(spec.conditionApplication).toEqual({
+      ends: [{ on: "repeat-save", ability: "WIS", at: "target-action" }],
       options: ["charmed"],
       on: "failed-save",
       lifetime: { kind: "source" },
