@@ -96,6 +96,10 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "damageImmunities",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
+  "companion-mod": {
+    via: "summonMaxHp",
+    consumer: "src/features/character/companions/FamiliarPanel.tsx",
+  },
   "damage-vulnerability": {
     via: "damageVulnerabilities",
     consumer: "src/features/character/molecules/ResourceRail.tsx",

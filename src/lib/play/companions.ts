@@ -11,6 +11,7 @@ import {
   summonInstanceNumber,
   summonTimerKey,
 } from "@/lib/summon-count";
+import { totalLevel } from "@/lib/classes";
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -364,4 +365,16 @@ export function dismissFamiliar(session: SessionState): SessionState | null {
   const { familiar: _f, ...restSession } = session;
   void _f;
   return { ...restSession, companionHp: restHp };
+}
+
+/**
+ * A summoned creature's Hit Point maximum: its stat block's, plus what your feats
+ * add (`companion-mod`, Familiar Friend: twice your character level).
+ */
+export function summonMaxHp(doc: CharacterDoc, spellId: string, baseHp: number): number {
+  const level = totalLevel(doc.character);
+  const bonus = aggregateCharacterGrants(doc.character, doc.session)
+    .companionMods.filter((mod) => mod.companion === spellId)
+    .reduce((sum, mod) => sum + mod.hpPerCharacterLevel * level, 0);
+  return baseHp + bonus;
 }

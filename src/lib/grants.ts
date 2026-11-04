@@ -2014,6 +2014,12 @@ export interface AggregatedGrants {
    * Override-first (skipped when a per-weapon `attackBonusOverride` is pinned).
    */
   weaponAttackBonuses: ReadonlyArray<WeaponAttackBonusEntry>;
+  /** Changes to the creatures your spells summon (`companion-mod`). */
+  companionMods: ReadonlyArray<{
+    sourceId: string;
+    companion: string;
+    hpPerCharacterLevel: number;
+  }>;
   /**
    * Manipulations of a weapon's OWN damage dice (Great Weapon Fighting floor,
    * Savage Attacker reroll-keep-higher, Two-Weapon Fighting off-hand modifier,
@@ -2362,6 +2368,7 @@ export function emptyAggregate(): AggregatedGrants {
     armorProficiencies: new Set(),
     weaponAttackAbilities: [],
     weaponAttackBonuses: [],
+    companionMods: [],
     damageDieModifiers: [],
     spellResistancePenetration: new Set(),
     alwaysPrepared: [],
@@ -2626,6 +2633,11 @@ export function evaluateGrants(
     sourceId: string;
   }[] = [];
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
+  const companionMods: Array<{
+    sourceId: string;
+    companion: string;
+    hpPerCharacterLevel: number;
+  }> = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
   const spellResistancePenetration = new Set<DamageType>();
 
@@ -3236,6 +3248,13 @@ export function evaluateGrants(
           // Carried unconditionally (not only for a die upgrade): a swap that
           // WINS the attack roll names its rule in the breakdown why layer.
           sourceId,
+        });
+        break;
+      case "companion-mod":
+        companionMods.push({
+          sourceId,
+          companion: g.companion,
+          hpPerCharacterLevel: g.hpBonus.perCharacterLevel,
         });
         break;
       case "weapon-attack-bonus":
@@ -4217,6 +4236,7 @@ export function evaluateGrants(
     ),
     weaponAttackAbilities,
     weaponAttackBonuses,
+    companionMods,
     damageDieModifiers,
     spellResistancePenetration,
     alwaysPrepared,
