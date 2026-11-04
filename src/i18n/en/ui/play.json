@@ -217,7 +217,9 @@
         "darkness": "darkness",
         "magical-darkness": "magical darkness",
         "bright": "bright light"
-      }
+      },
+      "enter": "Enters the zone",
+      "enterWho": "Who walks in?"
     },
     "scroll": {
       "which": "Which spell is on this scroll?",

@@ -17,6 +17,9 @@ export interface PlayZone {
   caster: string;
   triggers: ReadonlyArray<SpellZone["triggers"][number]>;
   spared: string[];
+  /** My own zone that bites on entering: who could walk in (living, not spared, not
+   *  me), for «Entra nella zona». */
+  enter?: { id: string; name: string }[];
 }
 
 export interface PlayZonesView {
@@ -26,8 +29,10 @@ export interface PlayZonesView {
 
 export function playZonesView(
   effects: ReadonlyArray<ActiveCombatEffect>,
-  rows: ReadonlyArray<{ id: string; name: string }>,
-  locale: Locale
+  rows: ReadonlyArray<{ id: string; name: string; down?: boolean }>,
+  locale: Locale,
+  /** The viewer's combatant: their own zones offer «Entra nella zona». */
+  myId?: string
 ): PlayZonesView {
   const zones = activeZones(effects);
   const nameOf = (id: string) => rows.find((row) => row.id === id)?.name ?? "";
@@ -38,6 +43,15 @@ export function playZonesView(
       caster: nameOf(zone.casterId),
       triggers: zone.zone.triggers,
       spared: zone.spared.map(nameOf).filter(Boolean),
+      ...(myId && zone.casterId === myId && zone.zone.triggers.includes("enter")
+        ? {
+            enter: rows
+              .filter(
+                (row) => row.id !== myId && !row.down && !zone.spared.includes(row.id)
+              )
+              .map((row) => ({ id: row.id, name: row.name })),
+          }
+        : {}),
     })),
     light: zoneLight(zones),
   };

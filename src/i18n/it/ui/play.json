@@ -217,7 +217,9 @@
         "darkness": "oscurità",
         "magical-darkness": "oscurità magica",
         "bright": "luce intensa"
-      }
+      },
+      "enter": "Entra nella zona",
+      "enterWho": "Chi entra?"
     },
     "scroll": {
       "which": "Quale incantesimo è su questa pergamena?",

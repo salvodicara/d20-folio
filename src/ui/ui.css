@@ -3825,3 +3825,9 @@
 .fui .f-save-due > p {
   margin: 0;
 }
+
+/* «Entra nella zona»: who walked in, as chips under the zone. */
+.fui .f-zone-enter {
+  display: grid;
+  gap: 8px;
+}
