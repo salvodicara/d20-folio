@@ -1260,7 +1260,16 @@ export interface SessionState {
    * the older rule: a prepared summoning spell's creature shows. ADDITIVE-ONLY: an
    * older client keeps it verbatim as an unknown key.
    */
-  summons?: Record<string, { castLevel?: number; fallen?: true }>;
+  summons?: Record<
+    string,
+    {
+      castLevel?: number;
+      fallen?: true;
+      /** Game minutes since it fell (time passing, rests and rounds add to it), for
+       *  its revive window. Absent: fell before the sheet recorded it. ADDITIVE. */
+      fallenMinutes?: number;
+    }
+  >;
   /**
    * When the character died, on the game clock: the game minutes since (time
    * passing adds to it). Revivify reaches a creature dead within a minute, Raise

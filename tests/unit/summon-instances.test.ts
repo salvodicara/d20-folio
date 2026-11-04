@@ -117,7 +117,7 @@ describe("a companion that dies stays, fallen", () => {
     if (!dies) return; // no such companion in this build (the pack's Beast Master)
     const doc = paladin();
     const down = setCompanionHp(doc.session, dies.id, 0);
-    expect(down.summons?.[dies.id]).toEqual({ fallen: true });
+    expect(down.summons?.[dies.id]).toEqual({ fallen: true, fallenMinutes: 0 });
     const back = summonCompanion(down, dies.id);
     expect(back.summons?.[dies.id]).toEqual({});
     expect(back.companionHp?.[dies.id]).toBeUndefined();

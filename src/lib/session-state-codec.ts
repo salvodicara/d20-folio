@@ -497,9 +497,16 @@ function parseSummons(value: unknown): SessionState["summons"] {
       entry.castLevel <= 9
         ? entry.castLevel
         : undefined;
+    const fallenMinutes =
+      typeof entry.fallenMinutes === "number" &&
+      Number.isFinite(entry.fallenMinutes) &&
+      entry.fallenMinutes >= 0
+        ? entry.fallenMinutes
+        : undefined;
     summons[key] = {
       ...(castLevel !== undefined ? { castLevel } : {}),
       ...(entry.fallen === true ? { fallen: true as const } : {}),
+      ...(entry.fallen === true && fallenMinutes !== undefined ? { fallenMinutes } : {}),
     };
   }
   return summons;

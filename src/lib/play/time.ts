@@ -12,6 +12,7 @@
  * engine-held Concentration (`timePassEndsConcentration`), it ends it through the
  * store's Concentration teardown first, so the world's occurrence ends with it.
  */
+import { ageFallenSummons } from "./companions";
 import {
   advanceEffectTimers,
   equipmentAfterDawn,
@@ -136,8 +137,16 @@ export function setTimeOfDay(
   return timeOfDay === doc.session.timeOfDay ? null : { ...doc.session, timeOfDay };
 }
 
-/** The character after `minutes` pass, or null when nothing on it runs out or counts. */
+/** The character after `minutes` pass, or null when nothing on it runs out or counts.
+ *  A fallen companion's clock runs on too (its revive window). */
 export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | null {
+  const passed = passTimeOwn(doc, minutes);
+  const base = passed ?? doc;
+  const aged = ageFallenSummons(base.session, minutes);
+  return aged === base.session ? passed : { ...base, session: aged };
+}
+
+function passTimeOwn(doc: CharacterDoc, minutes: number): CharacterDoc | null {
   const passed = passEffects(doc, minutes);
   const dead = doc.session.death;
   const timeOfDay = advanceTimeOfDay(doc.session.timeOfDay, minutes);
