@@ -1113,6 +1113,9 @@ export interface SessionState {
   /** The table's answer to "can you see its source?", per condition instance
    *  (`effect:<id>` or `condition:<id>`), where the sheet can't derive it (M3). */
   seesSource?: Record<string, boolean>;
+  /** The ammunition spent since it was last recovered, by item id (SRD: half comes
+   *  back after a fight). ADDITIVE. */
+  ammoSpent?: Record<string, number>;
   /** The damage each of the caster's budgeted zones has dealt (Guardian of Faith
    *  vanishes at 60), by the zone's effect id (M9). */
   zoneSpent?: Record<string, number>;

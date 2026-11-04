@@ -41,6 +41,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   conditionSources?: Record<string, string>;
   seesSource?: Record<string, boolean>;
   zoneSpent?: Record<string, number>;
+  ammoSpent?: Record<string, number>;
   hiddenDc?: number;
   deathSucc?: number;
   deathFail?: number;
@@ -110,6 +111,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "concentrationConditions",
   "conditionSources",
   "seesSource",
+  "ammoSpent",
   "zoneSpent",
   "hiddenDc",
   "deathSucc",
@@ -372,6 +374,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   }
   if (session.seesSource && Object.keys(session.seesSource).length > 0) {
     state.seesSource = session.seesSource;
+  }
+  if (session.ammoSpent && Object.keys(session.ammoSpent).length > 0) {
+    state.ammoSpent = session.ammoSpent;
   }
   if (session.zoneSpent && Object.keys(session.zoneSpent).length > 0) {
     state.zoneSpent = session.zoneSpent;
@@ -915,6 +920,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   if (conditionSources) session.conditionSources = conditionSources;
   const seesSource = typedRecord(state.seesSource, "boolean");
   if (seesSource) session.seesSource = seesSource;
+  const ammoSpent = typedRecord(state.ammoSpent, "number");
+  if (ammoSpent) session.ammoSpent = ammoSpent;
   const zoneSpent = typedRecord(state.zoneSpent, "number");
   if (zoneSpent) session.zoneSpent = zoneSpent;
   if (typeof state.hiddenDc === "number") session.hiddenDc = state.hiddenDc;

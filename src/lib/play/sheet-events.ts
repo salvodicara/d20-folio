@@ -5,6 +5,7 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import { recoverAmmunition, withAmmoSpent } from "./ammunition";
 import { attuneItem, unattuneItem, type AttuneResult } from "@/lib/attunement-guard";
 import { settleZeroHpConsequence } from "./zero-hp-savers";
 import { isCharacterAlive } from "@/lib/character-status";
@@ -198,6 +199,10 @@ export type SheetEvent =
   /** The table answers whether the character sees a condition's source (null: no
    *  answer, the condition applies in full). */
   | { kind: "set-sees-source"; key: string; sees: boolean | null }
+  /** A piece of ammunition spent by an attack (counted for its recovery). */
+  | { kind: "ammo-spent"; itemId: string }
+  /** Search the battlefield: half the spent ammunition comes back (SRD). */
+  | { kind: "recover-ammunition" }
   /** A budgeted zone has dealt `spent` damage in all (Guardian of Faith, M9). */
   | { kind: "set-zone-spent"; effectId: string; spent: number }
   /** A lit state's round countdown starts (`tickedRound`: the round it counts from). */
@@ -464,6 +469,10 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       );
     case "unattune-item":
       return withAttunement(doc, unattuneItem(doc, event.instanceId));
+    case "ammo-spent":
+      return withSession(withAmmoSpent(doc.session, event.itemId));
+    case "recover-ammunition":
+      return recoverAmmunition(doc);
     case "set-sees-source":
       return withSession(setSeesSource(doc, event.key, event.sees));
     case "set-zone-spent":

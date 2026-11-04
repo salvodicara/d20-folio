@@ -882,7 +882,10 @@ export function TurnEconomyProvider({
     // remains (no row / empty quiver = nothing spent, never a block).
     const ammoItemId =
       action.source === "weapon" ? action.summary.ammo?.itemId : undefined;
-    if (ammoItemId != null) cs.adjustEquipmentQuantity(ammoItemId, -1);
+    // The piece spent is counted, so half can be recovered after the fight (SRD).
+    if (ammoItemId != null && cs.adjustEquipmentQuantity(ammoItemId, -1)) {
+      cs.dispatch({ kind: "ammo-spent", itemId: ammoItemId });
+    }
     // RA-09 — Dash extends the turn's movement budget by one Speed.
     if (economyActionCategory(action) === "dash") useCombatStore.getState().commitDash();
     const combat = useCombatStore.getState();
