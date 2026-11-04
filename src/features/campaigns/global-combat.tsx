@@ -500,9 +500,11 @@ export function GlobalCombatMount(): null {
 
   // My zones at a turn change (M9): the creature whose turn ended or starts may be
   // inside one that triggers then. The table says whether it is inside; a tap plays
-  // the zone's damage on it through the tray. The first look at a fight primes.
+  // the zone's damage on it through the tray. The first look at a fight primes. The
+  // device that owns the caster asks: a player for their PC's zones, the DM for the
+  // monsters' (the prompt waits under the monster's Scontro row).
   useEffect(() => {
-    if (!live || !primaryId || !uid || !status) {
+    if (!live || !primaryId || !uid || (!status && !primaryIsDm)) {
       observedZoneTurn.current = null;
       return;
     }
@@ -512,8 +514,11 @@ export function GlobalCombatMount(): null {
       observedZoneTurn.current?.scope === scope ? observedZoneTurn.current : null;
     observedZoneTurn.current = { scope, current, ledger: prior?.ledger ?? {} };
     const myId = `pc-${uid}`;
+    const monsters = new Set(
+      live.view.rows.filter((row) => row.kind === "monster").map((row) => row.id)
+    );
     const zones = activeZones(foldCombatEffectOps(live.encounter.effectOps)).filter(
-      (zone) => zone.casterId === myId
+      (zone) => (primaryIsDm ? monsters.has(zone.casterId) : zone.casterId === myId)
     );
     const pending = useZoneHitStore.getState();
     pending.keepZones(new Set(zones.map((z) => z.id)));
@@ -537,7 +542,7 @@ export function GlobalCombatMount(): null {
         creatureName: live.view.rows.find((row) => row.id === hit.creatureId)?.name ?? "",
       }))
     );
-  }, [live, primaryId, uid, status]);
+  }, [live, primaryId, uid, status, primaryIsDm]);
 
   // Once-per-turn uses (Sneak Attack) come back on every turn, anyone's: an opportunity
   // attack on the enemy's turn can use it again. When the fight moves to a new turn,
