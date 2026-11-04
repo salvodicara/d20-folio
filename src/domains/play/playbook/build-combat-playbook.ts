@@ -8,6 +8,7 @@
  * the view). No dice are rolled and no expected-value maths beyond a dice
  * average is used, so a beginner can follow every recommendation by hand.
  */
+import { canCharacterRest } from "@/lib/character-status";
 import { getSpellById } from "@/data/spells";
 import { effectiveMaxHp, effectiveConditions } from "@/lib/aggregate-character";
 import { getClasses } from "@/lib/classes";
@@ -567,8 +568,10 @@ function ritualActions(
 /** What a Short Rest would give back: spent Short Rest uses and Hit Point Dice. */
 function shortRestDraft(facts: Facts): Draft {
   const why: PlaybookWhy[] = [];
+  // A rest can't begin at 0 Hit Points (2024): nothing to suggest until it stands.
+  const canRest = canCharacterRest(facts.doc.status, facts.doc.session);
   for (const tracker of facts.trackers.values()) {
-    if (tracker.recovery !== "short-rest" || tracker.used <= 0) continue;
+    if (!canRest || tracker.recovery !== "short-rest" || tracker.used <= 0) continue;
     why.push({
       key: "recovers-on-short-rest",
       params: { used: tracker.used, total: tracker.total },
@@ -577,7 +580,7 @@ function shortRestDraft(facts: Facts): Draft {
   }
   const total = hitDicePool(facts.doc.character).reduce((n, e) => n + e.count, 0);
   const left = Math.max(0, total - facts.doc.session.hitDice.used);
-  if (selfHurt(facts) && left > 0) {
+  if (canRest && selfHurt(facts) && left > 0) {
     why.push({
       key: "hit-dice-heal",
       params: { left, total },

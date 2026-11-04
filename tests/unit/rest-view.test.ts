@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { restView, shortRestHeal } from "@/domains/play/rest-view";
 import { buildDevScenario } from "@/lib/dev-scenarios";
 import type { CharacterDoc } from "@/types/character";
+import { makeCharacterDoc } from "./_helpers";
 
 /** The level 7 dev druid, hurt, two dice and a Wild Shape use spent, one slot used. */
 function tired(): CharacterDoc {
@@ -79,5 +80,24 @@ describe("shortRestHeal", () => {
 
   it("needs no roll without dice", () => {
     expect(shortRestHeal(tired(), 0, "")).toEqual({ heal: 0, valid: true });
+  });
+});
+
+describe("restView — who can rest (2024: a rest needs at least 1 Hit Point)", () => {
+  const at = (hp: number, deathFail = 0): CharacterDoc => {
+    const doc = makeCharacterDoc(
+      { classId: "fighter", level: 3 },
+      { hp: { current: hp, temp: 0 } }
+    );
+    return { ...doc, session: { ...doc.session, deathFail } };
+  };
+  it("standing: the rest can begin", () => {
+    expect(restView(at(5), "short", "it").blocked).toBeNull();
+  });
+  it("at 0 Hit Points: not until it has 1", () => {
+    expect(restView(at(0), "long", "it").blocked).toBe("zero-hp");
+  });
+  it("dead: no rest", () => {
+    expect(restView(at(0, 3), "short", "it").blocked).toBe("dead");
   });
 });

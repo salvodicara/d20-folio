@@ -58,7 +58,8 @@ export function PlayRest({
     ...others.map(line),
     ...view.ends.map((name) => t("play.rest.ends", { name })),
   ];
-  const canRest = kind === "long" || heal.valid;
+  // A rest needs at least 1 Hit Point (2024): at 0, or dead, it says why and waits.
+  const canRest = view.blocked === null && (kind === "long" || heal.valid);
   const confirm = () => {
     const done =
       kind === "short" ? rest.shortRest(doc, count, heal.heal ?? 0) : rest.longRest(doc);
@@ -82,7 +83,14 @@ export function PlayRest({
         </>
       }
     >
-      {kind === "short" && (
+      {view.blocked && (
+        <p className="f-note" role="status">
+          {t(
+            view.blocked === "dead" ? "play.rest.blockedDead" : "play.rest.blockedZeroHp"
+          )}
+        </p>
+      )}
+      {kind === "short" && !view.blocked && (
         <div className="f-ask">
           <span className="f-lbl">{t("play.rest.spend")}</span>
           <p className="f-help">
@@ -133,20 +141,22 @@ export function PlayRest({
           )}
         </div>
       )}
-      <div className="f-ask">
-        <span className="f-lbl">
-          {t(kind === "short" ? "play.rest.alsoRecover" : "play.rest.onWaking")}
-        </span>
-        {lines.length > 0 ? (
-          <ul className="f-rest-lines">
-            {lines.map((text) => (
-              <li key={text}>{text}</li>
-            ))}
-          </ul>
-        ) : (
-          <p className="f-quiet">{t("play.rest.nothing")}</p>
-        )}
-      </div>
+      {!view.blocked && (
+        <div className="f-ask">
+          <span className="f-lbl">
+            {t(kind === "short" ? "play.rest.alsoRecover" : "play.rest.onWaking")}
+          </span>
+          {lines.length > 0 ? (
+            <ul className="f-rest-lines">
+              {lines.map((text) => (
+                <li key={text}>{text}</li>
+              ))}
+            </ul>
+          ) : (
+            <p className="f-quiet">{t("play.rest.nothing")}</p>
+          )}
+        </div>
+      )}
     </Dialog>
   );
 }

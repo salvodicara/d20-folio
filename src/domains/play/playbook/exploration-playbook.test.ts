@@ -316,6 +316,20 @@ describe("healing and Short Rest hints", () => {
     expect(pb.plan.picks.map((p) => p.stepId)).toContain("anytime:short-rest-recovery");
   });
 
+  it("at 0 Hit Points there is no Short Rest hint: a rest needs 1 Hit Point (2024)", () => {
+    expect(
+      stepIds(
+        buildCombatPlaybook(
+          fighter({
+            sessionHpCurrent: 0,
+            sessionTrackers: { "fighter-second-wind": { used: 1 } },
+          }),
+          EXPLORING
+        )
+      )
+    ).not.toContain("anytime:short-rest-recovery");
+  });
+
   it("Fighter: nothing spent and full HP gives no Short Rest hint", () => {
     expect(stepIds(buildCombatPlaybook(fighter(), EXPLORING))).not.toContain(
       "anytime:short-rest-recovery"
