@@ -34,7 +34,9 @@
       "noSlot": "No slot spent.",
       "charges": "{{remaining}} of {{total}} charges",
       "whichSpell": "Which spell?",
-      "castTitle": "Cast {{name}}"
+      "castTitle": "Cast {{name}}",
+      "castNoTarget": "Cast without choosing",
+      "confirmNoTarget": "Confirm without choosing"
     },
     "hands": {
       "title": "No free hand",

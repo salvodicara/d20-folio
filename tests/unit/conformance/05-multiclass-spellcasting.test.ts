@@ -457,15 +457,11 @@ describe("conformance · 5. multiclass and spellcasting", () => {
       category: 5,
       case: "Spell Scroll class restriction",
       source: "SAC #50; SAC #158; ITEMS",
-      status: "M13",
+      status: "works",
     },
     () => {
       // A Scroll of Cure Wounds: a Cleric (on the list) can cast it, a Wizard can't.
-      const scroll = {
-        srdId: "spell-scroll",
-        quantity: 1,
-        params: { spellId: "cure-wounds" },
-      };
+      const scroll = { srdId: "spell-scroll", quantity: 1, scrollSpell: "cure-wounds" };
       const castsFromScroll = (classId: string) =>
         resolveActions(character({ classId, level: 3, equipment: [scroll] })).some(
           (a) => a.spellId === "cure-wounds" && a.source !== "spell"

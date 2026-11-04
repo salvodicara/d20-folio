@@ -14,6 +14,8 @@
       "swallowDamage": "{{dice}} all'inizio di ogni turno di chi lo ha inghiottito"
     },
     "title": "Combattimento",
+    "scrollCheck": "Da una Pergamena, oltre i livelli che sai lanciare: fai una prova con la caratteristica da incantatore, CD {{dc}}. La pergamena si consuma comunque.",
+    "scrollCast": "Da una Pergamena: niente slot né componenti materiali; la pergamena si consuma.",
     "spellEndFalls": "Fine di {{spell}}: chi è ancora in aria cade, se non vola in altro modo.",
     "counteredToast": "Contrastato: {{name}} · slot di {{level}}° livello ripreso",
     "counteredAria": "Contrastato: {{name}}. Riprendi lo slot di {{level}}° livello",

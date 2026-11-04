@@ -34,7 +34,9 @@
       "noSlot": "Non spendi slot.",
       "charges": "{{remaining}} cariche su {{total}}",
       "whichSpell": "Quale incantesimo?",
-      "castTitle": "Lancia {{name}}"
+      "castTitle": "Lancia {{name}}",
+      "castNoTarget": "Lancia senza scegliere",
+      "confirmNoTarget": "Conferma senza scegliere"
     },
     "hands": {
       "title": "Nessuna mano libera",
