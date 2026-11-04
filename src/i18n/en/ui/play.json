@@ -213,7 +213,12 @@
     },
     "companions": {
       "vitals": "{{current}}/{{max}} HP · AC {{ac}}",
-      "fallen": "It has fallen: it comes back when its spell or feature calls it again."
+      "fallen": "It has fallen: it comes back when its spell or feature calls it again.",
+      "reviveHint": "Bring it back with a Magic action and a spell slot: it returns after {{minutes}} min with all its Hit Points.",
+      "reviveWith": "Level {{level}} slot",
+      "reviveWithPact": "Level {{level}} pact slot",
+      "reviveNoSlot": "You have no spell slot left to spend.",
+      "revived": "{{name}} comes back to life"
     },
     "down": {
       "title": "At 0 Hit Points: death saving throws",
