@@ -25,6 +25,8 @@ const h = vi.hoisted(() => {
   const state = {
     campaignsCb: null as null | ((c: CampaignDoc[]) => void),
     live: null as LiveEncounter | null,
+    /** Hand out a NEW live object on each read, as a re-rendering listener can. */
+    fresh: false,
   };
   return {
     state,
@@ -44,7 +46,8 @@ vi.mock("@/features/campaigns/campaign-io", () => ({
   subscribeToSharedCampaigns: h.subscribeToSharedCampaigns,
 }));
 vi.mock("@/features/campaigns/useLiveEncounter", () => ({
-  useLiveEncounter: () => h.state.live,
+  useLiveEncounter: () =>
+    h.state.fresh && h.state.live ? { ...h.state.live } : h.state.live,
 }));
 vi.mock("@/hooks/useIsAdmin", () => ({ useIsAdmin: () => false }));
 
@@ -124,6 +127,7 @@ let unsub: (() => void) | null = null;
 beforeEach(() => {
   h.state.campaignsCb = null;
   h.state.live = null;
+  h.state.fresh = false;
   h.subscribeToSharedCampaigns.mockClear();
   h.revokePersistentCombatEffectsBySource.mockClear();
   h.revokePersistentCombatEffect.mockClear();
@@ -527,5 +531,63 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
     expect(h.revokePersistentCombatEffect).not.toHaveBeenCalled();
     show(campaign, setHp(encounter, "monster-1", 0), 20, true);
     expect(h.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "monster-1-grab");
+  });
+});
+
+describe("GlobalCombatMount settles in a fight (P0, 2026-11-04)", () => {
+  // #682 subscribed the shell listener to the WHOLE open character; its own effects
+  // write the character (the encounter effects it projects), so every write re-rendered
+  // it and wrote again: «Maximum update depth exceeded», on every sheet, in every fight.
+  it("projecting the fight's effects onto the open character does not loop", async () => {
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    const encounter = campaign.encounter;
+    if (!encounter) throw new Error("expected encounter fixture");
+    encounter.order = [`pc-${UID}`];
+    h.state.fresh = true;
+    h.state.live = {
+      encounter,
+      view: buildEncounterView(
+        encounter,
+        {
+          [`pc-${UID}`]: {
+            name: "Hero",
+            ac: 16,
+            maxHp: 20,
+            currentHp: 20,
+            tempHp: 0,
+            conditions: [],
+            initiative: 12,
+            initiativeBonus: 2,
+            initiativeRoll: 10,
+            raceId: undefined,
+            classes: undefined,
+            portraitUrl: null,
+            portraitCrop: null,
+          },
+        },
+        false
+      ),
+      myCombatState: null,
+      myMaxHp: 20,
+    };
+    useCharacterStore.getState().setCharacter({ ...MOCK_CHARACTER, id: "char-1" });
+    const errors: unknown[] = [];
+    const spy = vi.spyOn(console, "error").mockImplementation((...args) => {
+      errors.push(args[0]);
+    });
+    let writes = 0;
+    const count = useCharacterStore.subscribe(() => {
+      writes += 1;
+    });
+    try {
+      mount();
+      act(() => h.state.campaignsCb?.([campaign]));
+      await waitFor(() => expect(useCombatStatusStore.getState().status).not.toBeNull());
+    } finally {
+      count();
+      spy.mockRestore();
+    }
+    expect(errors.filter((e) => String(e).includes("Maximum update depth"))).toEqual([]);
+    expect(writes).toBeLessThan(20);
   });
 });

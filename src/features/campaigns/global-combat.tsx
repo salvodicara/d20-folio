@@ -95,10 +95,11 @@ export function GlobalCombatMount(): null {
   const concentration = useCharacterStore(
     (s) => s.character?.session.concentration ?? ""
   );
-  const openCharacter = useCharacterStore((s) => s.character);
-  const proneAloft = useMemo(
-    () => (openCharacter ? proneInFlight(openCharacter) : false),
-    [openCharacter]
+  // A narrow value, never the whole character: this component's effects write the
+  // character (the encounter effects it projects), and a whole-doc subscription would
+  // re-render it on each of its own writes, forever (P0, 2026-11-04).
+  const proneAloft = useCharacterStore((s) =>
+    s.character ? proneInFlight(s.character) : false
   );
   const [campaigns, setCampaigns] = useState<CampaignDoc[]>([]);
   // The membership listener has delivered at least one snapshot (possibly empty).
