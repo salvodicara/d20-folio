@@ -1258,6 +1258,30 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
     attackType: "ranged",
+    // A failed save: −1d8 on all the target's damage rolls for the spell's duration (it
+    // repeats the save at the end of each of its turns, ending the spell on a success).
+    targetStates: [
+      {
+        type: "while-active",
+        activeKey: "ray-of-enfeeblement-weakened",
+        grants: [
+          {
+            type: "roll-die-adjustment",
+            rollType: "damage",
+            operation: "subtract",
+            dice: "1d8",
+            consume: "each",
+          },
+        ],
+      },
+    ],
+    effects: [
+      {
+        kind: "damage-roll-penalty",
+        dice: "1d8",
+        activeKey: "ray-of-enfeeblement-weakened",
+      },
+    ],
     source: "SRD",
   },
   {
