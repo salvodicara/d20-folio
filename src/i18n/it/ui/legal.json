@@ -80,6 +80,11 @@
       "liabilityD": "Nei limiti consentiti dalla legge, non rispondiamo di danni derivanti dall'uso di un servizio gratuito: conserva esportazioni JSON locali di ciò a cui tieni.",
       "lawT": "Legge applicabile",
       "lawD": "Questi termini sono regolati dalla legge italiana; restano ferme le tutele inderogabili del consumatore del tuo paese di residenza."
+    },
+    "footer": {
+      "privacy": "Privacy",
+      "terms": "Termini",
+      "srd": "Contenuti SRD 5.2.1 · CC BY 4.0"
     }
   }
 }

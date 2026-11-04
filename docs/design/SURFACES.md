@@ -169,6 +169,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `loading:app/AppShell`                                             | Shell      | todo   |
 | `loading:components/shared/AuthGuard`                              | Shell      | todo   |
 | `menu:components/shared/CardOverflowMenu`                          | Shell      | todo   |
+| `menu:domains/roster/ui/RosterScreen`                              | Shell      | todo   |
 | `menu:components/shared/PortraitEditMenu`                          | Shell      | todo   |
 | `notice:components/shared/SaveIndicator`                           | Shell      | todo   |
 | `picker:components/shared/SrdTagPicker`                            | Shell      | todo   |

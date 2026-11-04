@@ -62,7 +62,12 @@ export function NewAppShell() {
       footer={
         <>
           <span>Folio · {t("legal.terms.unofficialT")}</span>
-          <Link to="/legal">{t("legal.link")}</Link>
+          {/* the prototype's legal links: each to its own section of the legal page */}
+          <nav className="f-foot-links" aria-label={t("legal.link")}>
+            <Link to="/legal#privacy">{t("legal.footer.privacy")}</Link>
+            <Link to="/legal#terms">{t("legal.footer.terms")}</Link>
+            <Link to="/legal#attribution">{t("legal.footer.srd")}</Link>
+          </nav>
         </>
       }
     >
