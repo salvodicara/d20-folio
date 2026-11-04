@@ -472,21 +472,22 @@ describe("conformance · 6. reactions and timing", () => {
       category: 6,
       case: "Sneak Attack on others' turns",
       source: "SAC #58",
-      status: "M5",
+      status: "works",
     },
     () => {
       const rogue = character({ classId: "rogue", subclassId: "thief", level: 5 });
-      const spend: SheetEvent = {
+      const spend = (turnKey: string): SheetEvent => ({
         kind: "spend-tracker",
         trackerId: "rogue-sneak-attack",
         amount: 1,
-      };
+        turnKey,
+      });
       const doc = sheet(
         rogue,
-        spend, // Sneak Attack on the rogue's turn (round 1)
-        { kind: "recover-per-turn-trackers" }, // End Turn
-        spend, // a second Sneak Attack on the goblin's turn, with an OA
-        { kind: "expire-effect-boundaries", round: 2, phase: "turn-start" } // rogue's turn 2
+        spend("1:pc-rogue"), // Sneak Attack on the rogue's turn (round 1)
+        { kind: "recover-per-turn-trackers", turnKey: "1:monster-1" }, // the goblin's turn
+        spend("1:monster-1"), // a second Sneak Attack on the goblin's turn, with an OA
+        { kind: "recover-per-turn-trackers", turnKey: "2:pc-rogue" } // rogue's turn 2
       );
       // A new turn: the once-per-turn use is available again.
       expect(doc.session.trackers["rogue-sneak-attack"]?.used ?? 0).toBe(0);

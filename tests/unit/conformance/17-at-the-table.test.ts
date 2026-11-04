@@ -252,26 +252,17 @@ describe("conformance · 17. at-the-table gaps", () => {
       category: 17,
       case: "Per-turn limits on others' turns",
       source: "SAC #58",
-      status: "M5",
+      status: "works",
     },
     () => {
       // Sneak Attack used on the rogue's own turn (round 5): the same turn keeps it
       // spent; an opportunity attack on the enemy's turn may use it again.
       const rogue = makeCharacterDoc(
         { classId: "rogue", level: 5, features: [{ srdId: "rogue-sneak-attack" }] },
-        // `usedInTurn` is the turn identity the tracker would need (not stored today).
-        {
-          trackers: {
-            "rogue-sneak-attack": { used: 1, usedInTurn: "5:pc-rogue" } as never,
-          },
-        }
+        { trackers: { "rogue-sneak-attack": { used: 1, turnKey: "5:pc-rogue" } } }
       );
-      const recover = recoverPerTurnTrackers as (
-        doc: CharacterDoc,
-        turnKey: string
-      ) => ReturnType<typeof recoverPerTurnTrackers>;
-      expect(recover(rogue, "5:pc-rogue")).toBeNull();
-      expect(recover(rogue, "5:monster-1")).not.toBeNull();
+      expect(recoverPerTurnTrackers(rogue, "5:pc-rogue")).toBeNull();
+      expect(recoverPerTurnTrackers(rogue, "5:monster-1")).not.toBeNull();
     }
   );
 

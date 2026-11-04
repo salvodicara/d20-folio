@@ -347,6 +347,39 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
     );
   });
 
+  it("a new turn in the fight gives back a once-per-turn use spent in another turn", () => {
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    useCharacterStore.getState().setCharacter({
+      ...MOCK_CHARACTER,
+      id: "char-1",
+      character: {
+        ...MOCK_CHARACTER.character,
+        classes: [{ classId: "rogue", level: 5 }],
+        features: [{ srdId: "rogue-sneak-attack" }],
+      },
+      session: {
+        ...MOCK_CHARACTER.session,
+        trackers: { "rogue-sneak-attack": { used: 1 } },
+      },
+    });
+    mount();
+    activate(campaign);
+    const used = () =>
+      useCharacterStore.getState().character?.session.trackers["rogue-sneak-attack"]
+        ?.used ?? 0;
+    // The first look at the fight only primes: a reload is not a new turn.
+    expect(used()).toBe(1);
+
+    const live = h.state.live;
+    if (!live) throw new Error("no live fight");
+    h.state.live = {
+      ...live,
+      encounter: { ...live.encounter, currentCombatantId: "monster-1" },
+    };
+    act(() => h.state.campaignsCb?.([campaign]));
+    expect(used()).toBe(0);
+  });
+
   it("clears stale character concentration after an offline knockout", async () => {
     const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
     setCharacterConcentration("char-1", "hold-person");

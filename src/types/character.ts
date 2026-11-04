@@ -940,6 +940,9 @@ export interface TrackerState {
   used: number;
   /** Physical results waiting to be spent; `null` is an unfilled available slot. */
   rolls?: ReadonlyArray<number | null>;
+  /** A once-per-turn use: the turn it was spent in ("5:pc-rogue", round:combatant).
+   *  It comes back on any other turn (an opportunity attack on the enemy's turn). */
+  turnKey?: string;
 }
 
 export interface ItemResourceCounterState {

@@ -93,7 +93,13 @@ export type SheetEvent =
   | { kind: "restore-slot"; level: number; pactMagic: boolean }
   /** Font of Magic: one more normal slot, above the maximum if need be. */
   | { kind: "create-slot"; level: number }
-  | { kind: "spend-tracker"; trackerId: string; amount: number }
+  | {
+      kind: "spend-tracker";
+      trackerId: string;
+      amount: number;
+      /** The turn it is spent in, for a once-per-turn use ("5:pc-rogue"). */
+      turnKey?: string;
+    }
   | { kind: "restore-tracker"; trackerId: string; amount: number }
   | { kind: "set-tracker-roll"; trackerId: string; index: number; value: number | null }
   | { kind: "spend-tracker-roll"; trackerId: string; index: number }
@@ -165,7 +171,9 @@ export type SheetEvent =
   | { kind: "long-rest" }
   | { kind: "short-rest" }
   /** The owner's turn starts again: every spent per-turn tracker refills (Sneak Attack). */
-  | { kind: "recover-per-turn-trackers" }
+  /** A new turn: the once-per-turn uses come back. With `turnKey`, only those spent
+   *  in another turn (an opportunity attack's Sneak Attack on the enemy's turn). */
+  | { kind: "recover-per-turn-trackers"; turnKey?: string }
   /** A lit state's round countdown starts (`tickedRound`: the round it counts from). */
   | { kind: "arm-effect-timer"; key: string; rounds: number; tickedRound: number }
   /** A lit state ends at an encounter boundary (a round and the phase within it). */
@@ -201,6 +209,22 @@ export type SheetEvent =
 export type SheetEventKind = SheetEvent["kind"];
 
 /** The character after the event; null when the event changes nothing. */
+/** A once-per-turn spend records the turn it was spent in. */
+function stampTurn(
+  session: SessionState,
+  event: { trackerId: string; turnKey?: string }
+): SessionState {
+  const entry = session.trackers[event.trackerId];
+  if (event.turnKey === undefined || !entry) return session;
+  return {
+    ...session,
+    trackers: {
+      ...session.trackers,
+      [event.trackerId]: { ...entry, turnKey: event.turnKey },
+    },
+  };
+}
+
 export function applySheetEvent(
   doc: CharacterDoc,
   event: SheetEvent
@@ -264,7 +288,9 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
     case "create-slot":
       return withSession(createSpellSlot(doc, event.level));
     case "spend-tracker":
-      return withSession(spendTracker(doc, event.trackerId, event.amount));
+      return withSession(
+        stampTurn(spendTracker(doc, event.trackerId, event.amount), event)
+      );
     case "restore-tracker":
       return withSession(restoreTracker(doc, event.trackerId, event.amount));
     case "set-tracker-roll":
@@ -388,7 +414,7 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
         expireEffectBoundaries(doc, { round: event.round, phase: event.phase })
       );
     case "recover-per-turn-trackers":
-      return withSession(recoverPerTurnTrackers(doc)?.session);
+      return withSession(recoverPerTurnTrackers(doc, event.turnKey)?.session);
     case "time-passes":
       return passTime(doc, event.minutes);
     case "set-time-of-day":
