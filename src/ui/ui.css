@@ -2704,6 +2704,7 @@
       "hp hp"
       "stats stats"
       "acts acts"
+      "down down"
       "chips chips"
       "abil abil";
     gap: 0 16px;
@@ -3416,4 +3417,33 @@
 }
 .fui .f-act-group[data-group="companions"] .f-gh-slots {
   white-space: nowrap;
+}
+/* at 0 Hit Points (prototype x-play-down): the death saves under the Hit Points */
+.fui .f-down {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+.fui .f-down > .f-help {
+  margin: 0;
+}
+.fui .f-down-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fui .f-down-row > .f-lbl {
+  min-width: 96px;
+}
+.fui .f-down .f-pips[data-kind="succ"] {
+  --pip: var(--heal-icon);
+}
+.fui .f-down .f-pips[data-kind="fail"] {
+  --pip: var(--danger);
+}
+/* phone: the death saves take the header's full width, under the Hit Points */
+@media (max-width: 800px) {
+  .fui .f-sheet .f-down {
+    grid-area: down;
+  }
 }

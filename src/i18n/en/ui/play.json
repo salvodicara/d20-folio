@@ -98,7 +98,9 @@
       "exhaustionLine": "Exhaustion {{from}} → {{to}}",
       "trackerLine": "{{name}} +{{count}}",
       "nothing": "Nothing to recover",
-      "slotsLeft": "{{left}} of {{total}}"
+      "slotsLeft": "{{left}} of {{total}}",
+      "blockedZeroHp": "No rest at 0 Hit Points: you need at least 1 Hit Point to begin.",
+      "blockedDead": "A dead character can't rest."
     },
     "mixing": {
       "title": "Mixing potions",
@@ -212,6 +214,15 @@
     "companions": {
       "vitals": "{{current}}/{{max}} HP · AC {{ac}}",
       "fallen": "It has fallen: it comes back when its spell or feature calls it again."
+    },
+    "down": {
+      "title": "At 0 Hit Points: death saving throws",
+      "roll": "Roll the die",
+      "rollTitle": "Death saving throw",
+      "face": "What did the d20 show?",
+      "faceHint": "A 20 gets you up at 1 Hit Point; a 1 counts as two failures.",
+      "stable": "Stable: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
+      "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours)."
     }
   }
 }

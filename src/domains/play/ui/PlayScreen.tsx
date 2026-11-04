@@ -12,6 +12,7 @@ import { Link, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
+import { PlayDown } from "@/domains/play/ui/PlayDown";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
@@ -332,6 +333,7 @@ function PlayHeader({
               {t("combat.heal")}
             </Button>
           </div>
+          <PlayDown doc={doc} />
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}

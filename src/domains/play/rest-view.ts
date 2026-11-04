@@ -5,6 +5,7 @@
  * ends, named for the table. The heal is the player's entered roll plus Constitution
  * (golden rule 21: the app never rolls for them), through `shortRestHealing`.
  */
+import { canCharacterRest, isCharacterAlive } from "@/lib/character-status";
 import type { Locale } from "@/lib/locale";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { hitDicePool, hitDiceTotalRange, type HitDieSize } from "@/lib/play/hit-dice";
@@ -30,6 +31,8 @@ export interface RestView {
   recovers: RestLine[];
   /** The active states the rest ends, by name. */
   ends: string[];
+  /** Why the rest can't begin (2024: it needs at least 1 Hit Point, and life). */
+  blocked: "zero-hp" | "dead" | null;
 }
 
 export function restView(doc: CharacterDoc, kind: RestKind, locale: Locale): RestView {
@@ -80,6 +83,11 @@ export function restView(doc: CharacterDoc, kind: RestKind, locale: Locale): Res
     hp: { current: session.hp.current, max },
     recovers,
     ends: preview.ends.map((key) => names.get(key) ?? key),
+    blocked: canCharacterRest(doc.status, session)
+      ? null
+      : isCharacterAlive(doc.status, session)
+        ? "zero-hp"
+        : "dead",
   };
 }
 
