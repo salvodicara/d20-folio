@@ -6,10 +6,16 @@
 import { useTranslation } from "react-i18next";
 
 import {
+  appendPersistentCombatEffect,
+  reinstatePersistentCombatEffect,
+  revokePersistentCombatEffect,
+} from "@/features/campaigns/campaign-io";
+import {
   useRepeatSaveStore,
   type PendingRepeatSave,
 } from "@/features/campaigns/repeat-save-store";
 import { localizeSrd } from "@/i18n/resolver";
+import { combatEffectsV26On } from "@/lib/deployed-rules";
 import type { Locale } from "@/lib/locale";
 import { useToastStore } from "@/stores/toastStore";
 import { Button } from "@/ui";
@@ -41,20 +47,22 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
   const failed = () => store().remove(save.id);
   const saved = () => {
     store().remove(save.id);
-    void import("@/features/campaigns/campaign-io").then(
-      ({ revokePersistentCombatEffect }) =>
-        revokePersistentCombatEffect(save.campaignId, save.id)
-    );
+    void revokePersistentCombatEffect(save.campaignId, save.id).catch(() => undefined);
     useToastStore.getState().showToast({
       message: t("combat.repeatSaveEnded", { condition, target: save.targetName }),
       duration: 6000,
-      // The engine has no un-revoke: the same effect comes back under a fresh id.
+      // The same occurrence back (v0.26 rules); before that deploy, a copy under a
+      // fresh id (re-using the id would be ignored as a replay).
       onUndo: () => {
+        if (combatEffectsV26On()) {
+          void reinstatePersistentCombatEffect(save.campaignId, save.id).catch(
+            () => undefined
+          );
+          store().add(save);
+          return;
+        }
         const effect = { ...save.effect, id: `${save.effect.id}~${String(Date.now())}` };
-        void import("@/features/campaigns/campaign-io").then(
-          ({ appendPersistentCombatEffect }) =>
-            appendPersistentCombatEffect(save.campaignId, effect)
-        );
+        void appendPersistentCombatEffect(save.campaignId, effect).catch(() => undefined);
         store().add({ ...save, id: effect.id, effect });
       },
     });

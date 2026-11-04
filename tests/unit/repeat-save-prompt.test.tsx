@@ -9,8 +9,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 const io = vi.hoisted(() => ({
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
   appendPersistentCombatEffect: vi.fn(() => Promise.resolve()),
+  reinstatePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+const rules = vi.hoisted(() => ({ v26: false }));
+vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }));
 
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import {
@@ -34,6 +37,8 @@ describe("RepeatSavePrompts", () => {
   beforeEach(() => {
     io.revokePersistentCombatEffect.mockClear();
     io.appendPersistentCombatEffect.mockClear();
+    io.reinstatePersistentCombatEffect.mockClear();
+    rules.v26 = false;
     useRepeatSaveStore.setState({ saves: [save] });
     useToastStore.setState({ toasts: [] });
   });
@@ -52,7 +57,19 @@ describe("RepeatSavePrompts", () => {
     ).toBeTruthy();
   });
 
-  it("a success ends the condition; undo puts it back with its prompt", async () => {
+  it("with the v0.26 rules, undo reinstates the same effect and its prompt", async () => {
+    rules.v26 = true;
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
+    useToastStore.getState().toasts[0]?.onUndo?.();
+    await waitFor(() =>
+      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith("c1", "e1")
+    );
+    expect(io.appendPersistentCombatEffect).not.toHaveBeenCalled();
+    expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["e1"]);
+  });
+
+  it("before the v0.26 rules, a success ends the condition; undo puts a copy back with its prompt", async () => {
     render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
     fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
     await waitFor(() =>
