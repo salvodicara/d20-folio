@@ -14,6 +14,9 @@ import { fightControls, type FightControls } from "@/domains/combat/fight-contro
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { pastFights } from "@/domains/combat/past-fights-view";
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
+import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
+import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
+import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine } from "@/domains/combat/ui/FightLine";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -125,6 +128,7 @@ export function FightTab({
           isDm={isDm}
           uid={uid}
           locale={locale}
+          onToast={onToast}
         />
       ) : (
         <IdleFight campaign={campaign} controls={controls} actions={actions} />
@@ -172,6 +176,7 @@ function LiveFight({
   isDm,
   uid,
   locale,
+  onToast,
 }: {
   campaign: CampaignDoc;
   encounter: EncounterState;
@@ -181,6 +186,7 @@ function LiveFight({
   isDm: boolean;
   uid: string;
   locale: Locale;
+  onToast: Toaster;
 }) {
   const { t } = useTranslation();
   const view = useMemo(
@@ -234,6 +240,36 @@ function LiveFight({
             <Fragment key={row.ids.join("+")}>
               <FightLine row={row} />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* zones the DM's monsters cast: their turn questions, and casting one */}
+              {isDm && (
+                <MonsterZoneHits
+                  campaignId={campaign.id}
+                  casterIds={row.ids}
+                  rows={view.rows}
+                  locale={locale}
+                  onToast={onToast}
+                />
+              )}
+              {isDm &&
+                encounter.currentCombatantId &&
+                row.ids.includes(encounter.currentCombatantId) &&
+                encounter.combatants.some(
+                  (c) => c.id === encounter.currentCombatantId && c.kind === "monster"
+                ) && (
+                  <MonsterZoneCast
+                    campaignId={campaign.id}
+                    monsterId={encounter.currentCombatantId}
+                    monsterName={
+                      view.rows.find((r) => r.id === encounter.currentCombatantId)
+                        ?.name ?? ""
+                    }
+                    defaultDc={monsterSpellDc(
+                      monsterStatBlockOf(encounter, encounter.currentCombatantId)
+                    )}
+                    locale={locale}
+                    onToast={onToast}
+                  />
+                )}
               {/* the monster whose turn it is may spend its action to repeat a save */}
               {isDm &&
                 encounter.currentCombatantId &&
@@ -445,4 +481,10 @@ function IdleFight({
       </Panel>
     </div>
   );
+}
+
+/** A catalogue monster's stat block in the fight (none for homebrew or not found). */
+function monsterStatBlockOf(encounter: EncounterState, id: string) {
+  const c = encounter.combatants.find((x) => x.id === id);
+  return c?.kind === "monster" && c.srdId ? getMonster(c.srdId) : undefined;
 }
