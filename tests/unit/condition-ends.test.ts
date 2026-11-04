@@ -11,6 +11,7 @@ import { describe, expect, it } from "vitest";
 import {
   actionRepeatSaves,
   answerTrackedSave,
+  failedSaveExhaustion,
   trackSettled,
   conditionsEndingOn,
   type SourcedCondition,
@@ -269,5 +270,29 @@ describe("a save track", () => {
     expect(
       conditionsEndingOn([contagion], { kind: "turn-end", combatantId: "ogre" }).saves
     ).toEqual([expect.objectContaining({ track })]);
+  });
+});
+
+describe("a failed repeat save's effects", () => {
+  it("carries what each failure does, and reads its Exhaustion", () => {
+    const eons: SourcedCondition = {
+      id: "eons",
+      conditionId: "paralyzed",
+      targetId: "ogre",
+      ends: [
+        {
+          on: "repeat-save",
+          ability: "INT",
+          at: "target-turn-end",
+          onFailedRepeatSave: [{ kind: "exhaustion", levels: 1 }],
+        },
+      ],
+    };
+    const [due] = conditionsEndingOn([eons], {
+      kind: "turn-end",
+      combatantId: "ogre",
+    }).saves;
+    expect(due && failedSaveExhaustion(due)).toBe(1);
+    expect(failedSaveExhaustion({})).toBe(0);
   });
 });

@@ -461,6 +461,9 @@ export function GlobalCombatMount(): null {
         targetName: live.view.rows.find((row) => row.id === save.targetId)?.name ?? "",
         effect,
         turnSeen: live.encounter.currentCombatantId,
+        ...(!primaryIsDm && save.targetId === myId && status?.characterId
+          ? { characterId: status.characterId }
+          : {}),
         ...(save.actorId !== undefined
           ? {
               actorName:

@@ -9,6 +9,7 @@
  * source grows by data.
  */
 import type { AbilityCode, ConditionEnd, RepeatSaveMoment } from "@/data/types";
+import type { CatalogueEffect } from "@/lib/catalogue-effects";
 
 /** A condition occurrence with its source facts. */
 export interface SourcedCondition {
@@ -45,6 +46,16 @@ export interface DueRepeatSave {
   actorId?: string;
   /** Counted toward a save track instead of ending on one success. */
   track?: SaveTrack;
+  /** What each failure does to the target (Vision of Elapsing Eons: 1 Exhaustion). */
+  onFail?: ReadonlyArray<CatalogueEffect>;
+}
+
+/** The Exhaustion levels a failed repeat save gives its target. */
+export function failedSaveExhaustion(save: Pick<DueRepeatSave, "onFail">): number {
+  return (save.onFail ?? []).reduce(
+    (sum, effect) => (effect.kind === "exhaustion" ? sum + effect.levels : sum),
+    0
+  );
 }
 
 /** How many successes end a tracked condition, and how many failures settle it. */
@@ -131,6 +142,7 @@ function dueSave(
     ...(end.when ? { when: end.when } : {}),
     ...(condition.actorId !== undefined ? { actorId: condition.actorId } : {}),
     ...(end.track ? { track: end.track } : {}),
+    ...(end.onFailedRepeatSave?.length ? { onFail: end.onFailedRepeatSave } : {}),
   };
 }
 

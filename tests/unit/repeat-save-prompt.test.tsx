@@ -29,6 +29,8 @@ import {
 } from "@/features/campaigns/repeat-save-store";
 import { useToastStore } from "@/stores/toastStore";
 import { useSaveTallyStore } from "@/features/campaigns/save-tally-store";
+import { useCharacterStore } from "@/stores/characterStore";
+import { MOCK_CHARACTER } from "@/lib/mock";
 
 const save: PendingRepeatSave = {
   id: "e1",
@@ -188,5 +190,41 @@ describe("a tracked repeat save", () => {
     toast?.onUndo?.();
     expect(tally()).toEqual({ successes: 1, failures: 2 });
     expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["e1"]);
+  });
+});
+
+/** Vision of Elapsing Eons: "on each failed save, the target gains 1 Exhaustion level". */
+describe("what a failed repeat save does", () => {
+  const eons = { ...save, onFail: [{ kind: "exhaustion" as const, levels: 1 }] };
+  beforeEach(() => {
+    useToastStore.setState({ toasts: [] });
+    useCharacterStore.getState().setCharacter({
+      ...MOCK_CHARACTER,
+      id: "char-1",
+      session: { ...MOCK_CHARACTER.session, exhaustion: 1 },
+    });
+  });
+  const fail = (s: PendingRepeatSave) => {
+    useRepeatSaveStore.setState({ saves: [s] });
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Failed: it stays" }));
+  };
+  const exhaustion = () => useCharacterStore.getState().character?.session.exhaustion;
+
+  it("on my own character, the Exhaustion lands on my sheet, with an undo", () => {
+    fail({ ...eons, targetName: "Lyra", characterId: "char-1" });
+    expect(exhaustion()).toBe(2);
+    const toast = useToastStore.getState().toasts.at(-1);
+    expect(toast?.message).toBe("Lyra fails the save: +1 Exhaustion.");
+    toast?.onUndo?.();
+    expect(exhaustion()).toBe(1);
+  });
+
+  it("on a monster, the DM gets a note; no sheet changes", () => {
+    fail(eons);
+    expect(exhaustion()).toBe(1);
+    expect(useToastStore.getState().toasts.at(-1)?.message).toBe(
+      "Goblin fails the save: +1 Exhaustion; keep track of it on the monster."
+    );
   });
 });
