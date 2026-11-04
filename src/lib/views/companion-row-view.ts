@@ -159,7 +159,8 @@ function buildOne(
     scores,
     pbOverride,
     spellAttackMod,
-    spell
+    spell,
+    { concentration: session.concentration }
   );
   const prefix = variantPrefix(featureId, block, active.variantId);
 
@@ -180,7 +181,12 @@ function buildOne(
         ? localizeSrd(ns, atkKey, "name", locale)
         : atk.id,
       attackBonus: atk.attackBonus,
-      damage: `${atk.damageDice} ${t(`srd.damage_${atk.damageType}`)}`,
+      damage: [
+        `${atk.damageDice} ${t(`srd.damage_${atk.damageType}`)}`,
+        ...(atk.extraDamage ?? []).map(
+          (extra) => `${extra.dice} ${t(`srd.damage_${extra.damageType}`)}`
+        ),
+      ].join(" + "),
       reachFt: atk.reachFt,
       ranged: atk.ranged,
       rider: hasSrd(ns, atkKey, "rider", locale)

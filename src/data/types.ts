@@ -2271,6 +2271,15 @@ export interface CompanionUpgrade {
    *  (`<featureKey>.companion.upgrades.<id>`); name + description in the catalogue. */
   id: string;
   minLevel: number;
+  /** Extra damage the upgrade adds to one of the companion's attacks, while the
+   *  owner concentrates on a spell (Bestial Fury: the Beast's Strike adds Hunter's
+   *  Mark's 1d6 Force on the marked target). */
+  attackRider?: {
+    attackId: string;
+    dice: string;
+    damageType: DamageType;
+    whileConcentrating?: string;
+  };
 }
 
 /** Movement modes in feet — the one shape companions, Wild Shape Beasts and monsters share. */
