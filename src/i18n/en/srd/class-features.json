@@ -74,6 +74,11 @@
     "description": "As part of the Bonus Action you take to enter your Rage, you can move up to half your Speed.",
     "name": "Instinctive Pounce"
   },
+  "barbarian-instinctive-pounce.grants.instinctive-pounce": {
+    "description": "Move up to half your Speed.",
+    "name": "Instinctive Pounce",
+    "trigger": "When you enter your Rage."
+  },
   "barbarian-persistent-rage": {
     "description": "When you roll Initiative, you can regain all expended uses of Rage. After you regain uses this way, you can't do so again until you finish a Long Rest. In addition, your Rage now lasts for 10 minutes without you needing to extend it. It ends early only if you have the Unconscious condition or don Heavy armor.",
     "name": "Persistent Rage"

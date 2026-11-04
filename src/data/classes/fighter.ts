@@ -329,7 +329,14 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
     level: 5,
     // "Whenever you use your Second Wind, you can move up to half your Speed
     // without provoking Opportunity Attacks": a free row beside Second Wind.
-    grants: [{ id: "tactical-shift", type: "granted-action", slot: "free" }],
+    grants: [
+      {
+        id: "tactical-shift",
+        type: "granted-action",
+        slot: "free",
+        effects: [{ kind: "self-move", fraction: 0.5, noOpportunityAttacks: true }],
+      },
+    ],
     source: "SRD",
   },
   {

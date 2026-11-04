@@ -430,10 +430,14 @@ describe("conformance · 11. movement and mounts", () => {
       source: "WIKI barbarian:main; WIKI fighter:main",
       status: "M14",
     },
-    () => {
+    async () => {
       // Half speed attached to entering Rage / using Second Wind.
       expect(featureJson("barbarian-instinctive-pounce")).toContain("self-move");
-      expect(featureJson("fighter-tactical-shift")).toContain("self-move");
+      expect(featureJson("fighter-tactical-shift")).toContain("noOpportunityAttacks");
+      // The case works once the sheet moves the character by it.
+      const id = "@/lib/play/self-move";
+      const reader = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof reader.selfMoveFeet).toBe("function");
     }
   );
 
