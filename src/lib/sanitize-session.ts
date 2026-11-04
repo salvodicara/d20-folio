@@ -191,6 +191,12 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     ...(session.summons ? { summons: session.summons } : {}),
     // When the character died, on the game clock (Revivify's window).
     ...(session.death ? { death: session.death } : {}),
+    ...(typeof session.timeOfDay === "number" &&
+    Number.isInteger(session.timeOfDay) &&
+    session.timeOfDay >= 0 &&
+    session.timeOfDay < 1440
+      ? { timeOfDay: session.timeOfDay }
+      : {}),
     familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,

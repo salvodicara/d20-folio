@@ -1237,6 +1237,13 @@ export interface SessionState {
    */
   death?: { minutesSince: number };
   /**
+   * The time of day on the game clock, in minutes since midnight (0–1439), when the
+   * table has set one. Passing time and rests move it; crossing 06:00 is a dawn and
+   * 18:00 a dusk (item charges). Absent: no time set, and a Long Rest counts as
+   * passing a dawn. ADDITIVE.
+   */
+  timeOfDay?: number;
+  /**
    * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
    * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0
    * Beast or an unlocked Pact-of-the-Chain special form); `creatureType` is the
