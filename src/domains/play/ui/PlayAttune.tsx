@@ -33,10 +33,10 @@ export function PlayAttuneRow({
           attuned
             ? {
                 kind: "attune-item",
-                instanceId: attune.instanceId,
+                instanceId: attune.key,
                 ...(force ? { force } : {}),
               }
-            : { kind: "unattune-item", instanceId: attune.instanceId }
+            : { kind: "unattune-item", instanceId: attune.key }
         ),
       { turnScoped: false }
     );

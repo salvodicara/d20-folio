@@ -17,11 +17,7 @@ describe("PlayAttuneRow", () => {
 
   it("attunes an item with room", () => {
     render(
-      <PlayAttuneRow
-        attune={{ instanceId: "ring", attuned: false }}
-        name="Ring"
-        locale="en"
-      />
+      <PlayAttuneRow attune={{ key: "ring", attuned: false }} name="Ring" locale="en" />
     );
     fireEvent.click(screen.getByRole("button", { name: "Attune" }));
     expect(dispatch).toHaveBeenCalledWith({ kind: "attune-item", instanceId: "ring" });
@@ -29,11 +25,7 @@ describe("PlayAttuneRow", () => {
 
   it("ends an attunement", () => {
     render(
-      <PlayAttuneRow
-        attune={{ instanceId: "cloak", attuned: true }}
-        name="Cloak"
-        locale="en"
-      />
+      <PlayAttuneRow attune={{ key: "cloak", attuned: true }} name="Cloak" locale="en" />
     );
     fireEvent.click(screen.getByRole("button", { name: "End attunement" }));
     expect(dispatch).toHaveBeenCalledWith({ kind: "unattune-item", instanceId: "cloak" });
@@ -43,7 +35,7 @@ describe("PlayAttuneRow", () => {
     render(
       <PlayAttuneRow
         attune={{
-          instanceId: "gauntlets",
+          key: "gauntlets",
           attuned: false,
           refusal: { reason: "limit", limit: 3, names: ["Cloak", "Amulet", "Ring"] },
         }}
@@ -66,7 +58,7 @@ describe("PlayAttuneRow", () => {
     render(
       <PlayAttuneRow
         attune={{
-          instanceId: "staff",
+          key: "staff",
           attuned: false,
           refusal: {
             reason: "prerequisite",
