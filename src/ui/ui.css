@@ -3902,7 +3902,21 @@
   background: var(--gold);
   color: var(--bg);
 }
-.fui .f-step-of {
+/* the connector rule between two steps */
+.fui .f-steps li + li:not(.f-step-of)::before {
+  content: "";
+  display: inline-block;
+  width: 24px;
+  height: 1px;
+  margin-right: 16px;
+  vertical-align: middle;
+  background: var(--line-strong);
+}
+.fui .f-steps li {
+  display: inline-flex;
+  align-items: center;
+}
+.fui .f-steps .f-step-of {
   display: none;
   color: var(--muted);
 }
@@ -3974,10 +3988,17 @@
   flex: 1;
   min-width: 0;
 }
+/* the choice explained, as a quote with a gold rule (no box inside the panel) */
 .fui .f-create-pitch {
   display: grid;
   gap: 4px;
-  margin-top: 16px;
+  margin: 16px 0 0;
+  padding: 8px 0 8px 16px;
+  border-left: 2px solid var(--text);
+}
+.fui .f-create-pitch > b {
+  font: 600 var(--fs-lg) var(--font-title);
+  color: var(--strong);
 }
 .fui .f-create-pitch > p {
   margin: 0;
@@ -4014,8 +4035,7 @@
   .fui .f-steps li:not([aria-current="step"]):not(.f-step-of) {
     display: none;
   }
-  .fui .f-step-of {
-    display: list-item;
-    list-style: none;
+  .fui .f-steps .f-step-of {
+    display: inline-flex;
   }
 }

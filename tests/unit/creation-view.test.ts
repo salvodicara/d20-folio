@@ -51,7 +51,7 @@ describe("creationSummary", () => {
     expect(s.level).toBe(1);
     expect(s.hitDie).toBe("d8");
     expect(s.primaryAbility).toBe("Saggezza");
-    expect(s.armor.length).toBeGreaterThan(0);
+    expect(s.armor).toBe("leggere, medie, scudi");
     expect(s.background).toBe("Accolito");
   });
 });

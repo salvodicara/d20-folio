@@ -33,6 +33,13 @@ export function classCards(locale: Locale): ClassCard[] {
     .sort((a, b) => a.name.localeCompare(b.name, locale));
 }
 
+const ARMOR_ORDER: readonly string[] = [
+  "light-armor",
+  "medium-armor",
+  "heavy-armor",
+  "shields",
+];
+
 export interface CreationSummary {
   classId: string;
   className: string;
@@ -40,7 +47,8 @@ export interface CreationSummary {
   hitDie: string;
   /** The class's main ability (or abilities), named. */
   primaryAbility: string;
-  armor: string[];
+  /** The armour the class trains with, in a few words («leggere, medie, scudi»). */
+  armor: string;
   /** The background's name, once one is chosen. */
   background: string | null;
 }
@@ -61,9 +69,11 @@ export function creationSummary(
     primaryAbility: or.format(
       (table?.primaryAbility ?? []).map((a) => t(`abilities.${a}`))
     ),
-    armor: (table?.armorProficiencies ?? []).map((id) =>
-      localizeSrd("proficiency", id, "name", locale)
-    ),
+    armor: (table?.armorProficiencies ?? [])
+      .filter((id) => ARMOR_ORDER.includes(id))
+      .sort((a, b) => ARMOR_ORDER.indexOf(a) - ARMOR_ORDER.indexOf(b))
+      .map((id) => t(`create.screen.armorShort.${id}`))
+      .join(", "),
     background: facts.backgroundData
       ? localizeSrd("background", facts.backgroundData.id, "name", locale)
       : null,

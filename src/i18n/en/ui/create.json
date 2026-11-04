@@ -135,7 +135,29 @@
       "character": "Character",
       "classLevel": "{{name}}, level {{level}}",
       "primaryAbility": "Primary ability",
-      "searchBackground": "Search backgrounds"
+      "searchBackground": "Search backgrounds",
+      "goodIf": {
+        "artificer": "Good if you like inventing and backing up the party.",
+        "barbarian": "Good if you want to stand on the front line and take the hits.",
+        "bard": "Good if you want to do a bit of everything, talking and inspiring.",
+        "cleric": "Good if you want to help the others.",
+        "druid": "Good if you love nature and changing shape.",
+        "fighter": "Good if it's your first game.",
+        "monk": "Good if you want to move fast and strike bare-handed.",
+        "paladin": "Good if you want to protect the others and hit hard.",
+        "ranger": "Good if you'd rather fight at range and explore.",
+        "rogue": "Good if you like working from the shadows and striking at the right moment.",
+        "sorcerer": "Good if you want raw, instinctive magic.",
+        "warlock": "Good if you want a mysterious pact and a reliable cantrip.",
+        "wizard": "Good if you like studying and always having the right spell."
+      },
+      "armorShort": {
+        "light-armor": "light",
+        "medium-armor": "medium",
+        "heavy-armor": "heavy",
+        "shields": "shields"
+      },
+      "pickBackground": "Pick a background to go on."
     }
   }
 }

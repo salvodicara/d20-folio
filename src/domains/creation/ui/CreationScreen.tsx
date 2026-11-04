@@ -40,6 +40,10 @@ export function CreationScreen() {
   const cards = useMemo(() => classCards(locale), [locale]);
   const backgrounds = useMemo(() => backgroundRows(locale), [locale]);
   const card = cards.find((c) => c.id === draft.classId);
+  // The draft opens on a ready build, but a background is the player's to pick: until
+  // they do, it shows as «—» and the step waits (never a silent default).
+  const [bgPicked, setBgPicked] = useState(false);
+  const background = bgPicked ? summary.background : null;
   // The pack brings dozens of backgrounds: a search narrows them (name, skill, feat).
   const [bgQuery, setBgQuery] = useState("");
   const shownBackgrounds = useMemo(() => {
@@ -57,8 +61,15 @@ export function CreationScreen() {
   const nav = (
     <>
       {step > 0 && <Button onClick={() => go(step - 1)}>{t("common.back")}</Button>}
+      {step === 1 && !bgPicked && (
+        <span className="f-help">{t("create.screen.pickBackground")}</span>
+      )}
       {step < STEPS.length - 1 && (
-        <Button kind="primary" onClick={() => go(step + 1)}>
+        <Button
+          kind="primary"
+          disabled={step === 1 && !bgPicked}
+          onClick={() => go(step + 1)}
+        >
           {t("common.next")}
         </Button>
       )}
@@ -118,10 +129,11 @@ export function CreationScreen() {
                   {shownBackgrounds.map((bg) => (
                     <Choice
                       key={bg.id}
-                      on={draft.backgroundId === bg.id}
-                      onClick={() =>
-                        dispatch({ type: "selectBackground", backgroundId: bg.id })
-                      }
+                      on={bgPicked && draft.backgroundId === bg.id}
+                      onClick={() => {
+                        setBgPicked(true);
+                        dispatch({ type: "selectBackground", backgroundId: bg.id });
+                      }}
                     >
                       <span className="f-row-main">
                         <span className="f-row-t">{bg.name}</span>
@@ -137,11 +149,11 @@ export function CreationScreen() {
                     </Choice>
                   ))}
                 </div>
-                {summary.background && (
-                  <div className="f-note f-create-pitch">
-                    <b>{summary.background}</b>
+                {background && (
+                  <blockquote className="f-create-pitch">
+                    <b>{background}</b>
                     <p>{t("create.screen.backgroundHint")}</p>
-                  </div>
+                  </blockquote>
                 )}
               </div>
             ) : (
@@ -173,22 +185,16 @@ export function CreationScreen() {
                 <dt className="f-lbl">{t("create.screen.primaryAbility")}</dt>
                 <dd>{summary.primaryAbility}</dd>
               </div>
-              {summary.armor.length > 0 && (
+              {summary.armor && (
                 <div>
                   <dt className="f-lbl">{t("equipment.armor")}</dt>
-                  <dd>
-                    {new Intl.ListFormat(locale, { type: "conjunction" }).format(
-                      summary.armor
-                    )}
-                  </dd>
+                  <dd>{summary.armor}</dd>
                 </div>
               )}
-              {summary.background && (
-                <div>
-                  <dt className="f-lbl">{t("create.backgroundLabel")}</dt>
-                  <dd>{summary.background}</dd>
-                </div>
-              )}
+              <div>
+                <dt className="f-lbl">{t("create.backgroundLabel")}</dt>
+                <dd>{background ?? "—"}</dd>
+              </div>
             </dl>
           </Panel>
         </div>
@@ -226,10 +232,13 @@ function ClassStep({
         ))}
       </div>
       {current && (
-        <div className="f-note f-create-pitch">
+        <blockquote className="f-create-pitch">
           <b>{current.name}</b>
-          <p>{t(`create.tip_${current.id}`)}</p>
-        </div>
+          <p>
+            {t(`create.tip_${current.id}`)}{" "}
+            <strong>{t(`create.screen.goodIf.${current.id}`)}</strong>
+          </p>
+        </blockquote>
       )}
     </div>
   );

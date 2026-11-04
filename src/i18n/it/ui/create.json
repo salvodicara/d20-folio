@@ -135,7 +135,29 @@
       "character": "Personaggio",
       "classLevel": "{{name}}, livello {{level}}",
       "primaryAbility": "Caratteristica principale",
-      "searchBackground": "Cerca un background"
+      "searchBackground": "Cerca un background",
+      "goodIf": {
+        "artificer": "Buono se ti piace inventare e sostenere il gruppo.",
+        "barbarian": "Buono se vuoi stare in prima linea e incassare.",
+        "bard": "Buono se vuoi fare un po' di tutto, parlando e ispirando.",
+        "cleric": "Buono se vuoi aiutare gli altri.",
+        "druid": "Buono se ami la natura e le trasformazioni.",
+        "fighter": "Buono se è la tua prima partita.",
+        "monk": "Buono se vuoi muoverti veloce e colpire a mani nude.",
+        "paladin": "Buono se vuoi proteggere gli altri e colpire forte.",
+        "ranger": "Buono se preferisci combattere a distanza ed esplorare.",
+        "rogue": "Buono se ti piace agire nell'ombra e colpire al momento giusto.",
+        "sorcerer": "Buono se vuoi una magia potente e istintiva.",
+        "warlock": "Buono se vuoi un patto misterioso e un trucchetto affidabile.",
+        "wizard": "Buono se ti piace studiare e avere sempre l'incantesimo giusto."
+      },
+      "armorShort": {
+        "light-armor": "leggere",
+        "medium-armor": "medie",
+        "heavy-armor": "pesanti",
+        "shields": "scudi"
+      },
+      "pickBackground": "Scegli un background per andare avanti."
     }
   }
 }
