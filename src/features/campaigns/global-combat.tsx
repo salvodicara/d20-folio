@@ -34,8 +34,6 @@ import { localizeSrd } from "@/i18n/resolver";
 import { spellEndEffects } from "@/lib/activities/read";
 import { proneInFlight } from "@/lib/play/flight";
 import { markDropOffers } from "@/lib/play/mark-offers";
-import { ammunitionRecovery } from "@/lib/play/ammunition";
-import { registerUndoableToast } from "@/stores/undoStore";
 import { effectiveTableRules } from "@/lib/table-rules";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
@@ -44,6 +42,7 @@ import { tallyOf } from "@/features/campaigns/save-tally-store";
 import { trackSettled } from "@/lib/condition-ends";
 import { fightSideOf } from "@/features/character/center/outcome-offer";
 import { useZoneHitStore } from "@/features/campaigns/zone-hit-store";
+import { offerAmmunitionRecovery } from "@/features/character/ammo-recovery-offer";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -319,24 +318,8 @@ export function GlobalCombatMount(): null {
     if (!was || inFight === was) return;
     const doc = useCharacterStore.getState().character;
     if (!doc || doc.id !== was) return;
-    const back = ammunitionRecovery(doc);
-    if (back.length === 0) return;
-    const pieces = back.reduce((sum, r) => sum + r.recovered, 0);
-    showToast({
-      message: t("combat.ammoRecoverable", { count: pieces }),
-      duration: 30000,
-      action: {
-        label: t("common.recover"),
-        run: () => {
-          registerUndoableToast(
-            { message: t("combat.ammoRecovered", { count: pieces }) },
-            () => useCharacterStore.getState().dispatch({ kind: "recover-ammunition" }),
-            { turnScoped: false }
-          );
-        },
-      },
-    });
-  }, [status, openCharacterId, showToast, t]);
+    offerAmmunitionRecovery(t);
+  }, [status, openCharacterId, t]);
 
   // Project campaign-owned standing effects onto the viewer's own open character.
   // This reuses the primary encounter listener above; the character store scopes the
