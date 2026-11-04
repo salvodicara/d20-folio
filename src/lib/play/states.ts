@@ -171,9 +171,16 @@ export function setActiveSpellCastLevel(
 /** Refill every spent per-turn tracker (Sneak Attack) at the owner's turn start, or
  *  null when none needs it; `prior` is what the undo restores. */
 export function recoverPerTurnTrackers(
-  doc: CharacterDoc
+  doc: CharacterDoc,
+  /** The turn that starts ("5:monster-1"): only uses spent in another turn come back
+   *  (a use spent in this very turn stays spent). Absent: every once-per-turn use. */
+  turnKey?: string
 ): { session: SessionState; prior: Map<string, TrackerState | undefined> } | null {
-  const ids = resolvePerTurnRecoveryTrackerIds(doc);
+  const ids = resolvePerTurnRecoveryTrackerIds(doc).filter((id) => {
+    const entry = doc.session.trackers[id];
+    if (turnKey === undefined) return true;
+    return entry !== undefined && entry.used > 0 && entry.turnKey !== turnKey;
+  });
   if (ids.length === 0) return null;
   const prior = new Map<string, TrackerState | undefined>();
   let trackers = doc.session.trackers;
