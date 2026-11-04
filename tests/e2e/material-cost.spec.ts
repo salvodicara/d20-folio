@@ -66,7 +66,7 @@ for (const size of ["desktop", "mobile"] as const) {
     await page.screenshot({ path: shotPath(`material-paid-${size}.png`) });
     expect(await gold(page)).toBe("40");
     await page.goto("/characters/scn-material-cost?tab=play");
-    await expect(page.getByText("300 mo speso su Rinascita").first()).toBeAttached({
+    await expect(page.getByText("Speso: 300 mo su Rinascita").first()).toBeAttached({
       timeout: 45_000,
     });
   });
