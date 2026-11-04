@@ -80,6 +80,9 @@ export type CombatEvent =
       /** The spell slot the cast paid, so a Counterspell can give it back. An older
        *  reader ignores it. */
       paidSlot?: { level: number; pactMagic?: true };
+      /** The Metamagic options the cast was made with (Extended Spell gives its
+       *  Concentration saves Advantage). An older reader ignores it. */
+      metamagic?: string[];
     }
   /** The cast logged as `entryId` was countered: it kept its slot (Counterspell 2024),
    *  the action stays spent. */

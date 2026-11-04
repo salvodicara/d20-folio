@@ -213,7 +213,7 @@ describe("conformance · 2. concentration", () => {
       category: 2,
       case: "Advantage and disadvantage on the save",
       source: "WIKI feat:war-caster; WIKI feat:mage-slayer; rpgbot 2024 change log",
-      status: "M13",
+      status: "works",
     },
     () => {
       // Eldritch Mind: Advantage on the save.
@@ -229,22 +229,43 @@ describe("conformance · 2. concentration", () => {
       expect(
         concentrationSaveD20Context(warlock, pendingSave(warlock, 10)).advantageSourceIds
       ).not.toEqual([]);
-      // Extended Spell (2024): a Sorcerer who extended the held spell has Advantage too.
-      // (The cast record of M13 says which spell was extended; here the held Hold
-      // Person was cast with it.)
-      const sorcerer = makeCharacterDoc(
-        {
-          classes: [
-            { classId: "sorcerer", level: 5, metamagicChoices: ["extended-spell"] },
-          ],
-          spells: [{ srdId: "hold-person", prepared: true }],
-        },
-        { concentration: concentrationValue("hold-person") }
-      );
+      // Extended Spell (2024): Advantage on the saves to keep the spell it extended.
+      // The cast record (the cast's log line) says the held Hold Person was extended.
+      const sorcerer = (metamagic: string[]) =>
+        makeCharacterDoc(
+          {
+            classes: [
+              { classId: "sorcerer", level: 5, metamagicChoices: ["extended-spell"] },
+            ],
+            spells: [{ srdId: "hold-person", prepared: true }],
+          },
+          {
+            concentration: concentrationValue("hold-person"),
+            logEntries: [
+              {
+                id: "cast-1",
+                ts: 0,
+                event: {
+                  kind: "action-use",
+                  action: { srd: { kind: "spell", key: "hold-person", field: "name" } },
+                  effect: "spell-cast",
+                  slot: "action",
+                  metamagic,
+                },
+              },
+            ],
+          }
+        );
+      const extended = sorcerer(["extended-spell"]);
       expect(
-        concentrationSaveD20Context(sorcerer, pendingSave(sorcerer, 10))
+        concentrationSaveD20Context(extended, pendingSave(extended, 10))
           .advantageSourceIds
-      ).not.toEqual([]);
+      ).toContain("extended-spell");
+      // Knowing Extended Spell isn't enough: this cast didn't use it.
+      const plain = sorcerer([]);
+      expect(
+        concentrationSaveD20Context(plain, pendingSave(plain, 10)).advantageSourceIds
+      ).toEqual([]);
     }
   );
 

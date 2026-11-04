@@ -7,6 +7,7 @@
  * Advantage/Disadvantage sources at the commit boundary.
  */
 
+import { heldSpellCastWith } from "@/lib/play/cast-record";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { totalLevel } from "@/lib/classes";
 import {
@@ -241,11 +242,17 @@ export function concentrationSaveD20Context(
             },
           ]),
     ],
-    advantageSourceIds: matchingSourceIds(
-      aggregate.advantages,
-      CONCENTRATION_SAVE_VS,
-      "advantage"
-    ),
+    advantageSourceIds: [
+      ...matchingSourceIds(aggregate.advantages, CONCENTRATION_SAVE_VS, "advantage"),
+      // Extended Spell (2024): Advantage on the saves to keep the spell it extended.
+      ...(heldSpellCastWith(
+        character.session.logEntries,
+        character.session.concentration,
+        "extended-spell"
+      )
+        ? ["extended-spell"]
+        : []),
+    ],
     disadvantageSourceIds: matchingSourceIds(
       aggregate.disadvantages,
       CONCENTRATION_SAVE_VS,

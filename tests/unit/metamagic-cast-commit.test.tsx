@@ -101,6 +101,11 @@ async function castWith(option: RegExp) {
 it("Extended Spell doubles the armed countdown; undo clears it", async () => {
   await castWith(/extended/i);
   expect(live().session.effectTimers?.[KEY]?.roundsLeft).toBe(ROUNDS * 2);
+  // The cast record says it was extended (its Concentration saves get Advantage).
+  expect(live().session.logEntries.at(-1)?.event).toMatchObject({
+    kind: "action-use",
+    metamagic: ["extended-spell"],
+  });
   act(() => expect(useUndoStore.getState().undo()).toBe(true));
   expect(live().session.effectTimers?.[KEY]).toBeUndefined();
   expect(live().session.spellSlots["2"]?.used ?? 0).toBe(0);
