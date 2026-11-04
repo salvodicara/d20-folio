@@ -1,4 +1,5 @@
 /** Conformance, category 16: DM adjudication (corpus.md § 16). */
+import { castHandsWarning } from "@/lib/play/hands";
 import { effectiveTableRules } from "@/lib/table-rules";
 import { describe, expect } from "vitest";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -146,10 +147,22 @@ describe("conformance · 16. DM adjudication", () => {
       source: "SAC #107; KIBBLES #26",
       status: "M18",
     },
-    () => {
-      // A sword in one hand and a shield in the other leave no hand for a material
-      // component: the sheet must know what each hand holds.
-      expect(MOCK_CHARACTER.session).toHaveProperty("hands");
+    async () => {
+      // A sword in one hand and a Shield in the other leave no hand for a Somatic
+      // component; hands are derived from play (the Shield, the weapon last swung),
+      // never stored. The case works once the cast dialog shows the warning.
+      const swordAndBoard = {
+        shield: "plain",
+        heldWeaponHands: 1,
+        inCombat: true,
+      } as const;
+      expect(castHandsWarning({ v: true, s: true, m: false }, swordAndBoard)).toEqual({
+        kind: "no-free-hand",
+        stow: true,
+      });
+      const id = "@/lib/views/cast-hands-view";
+      const view = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(typeof view.castHandsView).toBe("function");
     }
   );
 
