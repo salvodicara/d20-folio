@@ -635,6 +635,8 @@
     "dispelEnd": "End it",
     "dispelCheckPassed": "Check succeeded: end it",
     "dispelCheckFailed": "Check failed",
-    "dispelEnded": "{{spell}} on {{target}} ends"
+    "dispelEnded": "{{spell}} on {{target}} ends",
+    "reactionTrigger_selfFailsSave": "you fail a saving throw",
+    "reactionTrigger_selfFailsConSave": "you fail a Constitution saving throw"
   }
 }

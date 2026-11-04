@@ -185,7 +185,11 @@ export type ReactionTrigger =
   // the Enchanter's Instinctive Charm.
   | "creatureAttacksYou"
   // A creature you can see fails a D20 Test (Reweave Fate: it rerolls with Advantage).
-  | "creatureFailsD20Test";
+  | "creatureFailsD20Test"
+  // You fail a saving throw (Symbiotic Being: add a Hit Point Die to it), or a
+  // Constitution one (Aberrant Fortitude).
+  | "selfFailsSave"
+  | "selfFailsConSave";
 
 /** Runtime list of every {@link ReactionTrigger} token (exhaustive by construction). */
 export const ALL_REACTION_TRIGGERS = [
@@ -207,6 +211,8 @@ export const ALL_REACTION_TRIGGERS = [
   "takeDamage",
   "creatureAttacksYou",
   "creatureFailsD20Test",
+  "selfFailsSave",
+  "selfFailsConSave",
 ] as const satisfies ExhaustiveTuple<
   ReactionTrigger,
   [
@@ -228,6 +234,8 @@ export const ALL_REACTION_TRIGGERS = [
     "takeDamage",
     "creatureAttacksYou",
     "creatureFailsD20Test",
+    "selfFailsSave",
+    "selfFailsConSave",
   ]
 >;
 

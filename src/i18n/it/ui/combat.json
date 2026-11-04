@@ -635,6 +635,8 @@
     "dispelEnd": "Termina",
     "dispelCheckPassed": "Prova riuscita: termina",
     "dispelCheckFailed": "Prova fallita",
-    "dispelEnded": "{{spell}} su {{target}} termina"
+    "dispelEnded": "{{spell}} su {{target}} termina",
+    "reactionTrigger_selfFailsSave": "fallisci un tiro salvezza",
+    "reactionTrigger_selfFailsConSave": "fallisci un tiro salvezza su Costituzione"
   }
 }
