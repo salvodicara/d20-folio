@@ -27,7 +27,7 @@ export function MasteryRiders({ riders, spent = [], onApply }: MasteryRidersProp
 
   return (
     <div className="rider-strip" data-testid="mastery-riders">
-      <span className="rider-strip-label">{t("weaponMastery.eyebrow")}</span>
+      <span className="rider-strip-label">{t("abilities.weaponMastery")}</span>
       <div className="rider-tokens">
         {riders.map((rider) => {
           const line = masteryRiderLine(rider, t);

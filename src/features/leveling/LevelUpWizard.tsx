@@ -2123,7 +2123,7 @@ export function LevelUpWizard() {
                   rows.push({
                     key: "weapon-mastery",
                     step: "choices",
-                    label: t("weaponMastery.eyebrow"),
+                    label: t("abilities.weaponMastery"),
                     value: join(weaponMasteryPicks, (id) => equipmentName(id, locale)),
                   });
                 }

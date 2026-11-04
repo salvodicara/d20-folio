@@ -83,7 +83,7 @@ export const weaponMasterySpec: CompendiumPickerSpec<MasteryEntry> = {
     eyebrow: (
       <span className="inline-flex items-center gap-2">
         <Icon as={FolioCombatIcon} size="sm" className="text-accent" decorative />
-        {t("weaponMastery.eyebrow")}
+        {t("abilities.weaponMastery")}
       </span>
     ),
     description: mText(e, "description", locale),
