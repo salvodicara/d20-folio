@@ -41,6 +41,7 @@ export function takeSoloExtraTurn(
     reactionOutcomeOccurrenceId: c.reactionOutcomeOccurrenceId,
     movementUsedFt: c.movementUsedFt,
     dashesThisTurn: c.dashesThisTurn,
+    extraMovementFt: c.extraMovementFt,
     spellSlotCastsThisTurn: c.spellSlotCastsThisTurn,
     spellSlotCastTurnKey: c.spellSlotCastTurnKey,
     nextAttackAdvantage: c.nextAttackAdvantage,

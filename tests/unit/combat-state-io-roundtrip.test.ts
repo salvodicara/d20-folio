@@ -252,6 +252,7 @@ function completeState(): CombatState {
       reactionOutcomeOccurrenceId: "counterspell-1",
       movementUsedFt: 25,
       dashesThisTurn: 2,
+      extraMovementFt: 15,
       spellSlotCastsThisTurn: 1,
       spellSlotCastTurnKey: "encounter:camp-1:12:8:pc-u1",
       damageTakenThisRound: true,
@@ -562,6 +563,7 @@ describe("combat-state IO — full persistence contract", () => {
       "bonus-extend",
     ]);
     expect(restored.dashesThisTurn).toBe(2);
+    expect(restored.extraMovementFt).toBe(15);
     expect(restored.spellSlotCastsThisTurn).toBe(1);
     expect(restored.spellSlotCastTurnKey).toBe("encounter:camp-1:12:8:pc-u1");
     expect(restored.damageTakenThisRound).toBe(true);

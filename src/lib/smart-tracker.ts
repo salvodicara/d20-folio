@@ -989,6 +989,9 @@ export interface ResolvedAction {
    * raw {@link RawResolvedAction} (the values are already locale-free numbers).
    */
   useEffects?: ReadonlyArray<ResolvedUseEffect>;
+  /** Using it lets you move up to `fraction` of your Speed this turn (Tactical
+   *  Shift, Instinctive Pounce), without Opportunity Attacks when it says so. */
+  selfMove?: { fraction: number; noOpportunityAttacks?: true };
 }
 
 /**
@@ -6386,9 +6389,20 @@ export function grantedActionRows(
     const description = maneuver
       ? srdText("maneuver", maneuver.id, "description")
       : granted.description;
+    const move = activity.effects.find((effect) => effect.kind === "self-move");
     rows.push({
       id: activity.id,
       name: grantedActionName(granted),
+      ...(move?.kind === "self-move"
+        ? {
+            selfMove: {
+              fraction: move.fraction,
+              ...(move.noOpportunityAttacks
+                ? { noOpportunityAttacks: true as const }
+                : {}),
+            },
+          }
+        : {}),
       type,
       source: "feature",
       spellLevel: null,

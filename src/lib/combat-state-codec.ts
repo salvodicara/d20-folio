@@ -410,6 +410,7 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     reactionOutcomeOccurrenceId,
     movementUsedFt: number(row.movementUsedFt),
     dashesThisTurn: number(row.dashesThisTurn),
+    extraMovementFt: number(row.extraMovementFt),
     spellSlotCastsThisTurn,
     spellSlotCastTurnKey,
     damageTakenThisRound: row.damageTakenThisRound === true,

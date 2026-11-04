@@ -197,10 +197,12 @@ interface CombatState {
    * movement equal to your Speed, so the turn's movement budget is
    * `speed × (1 + dashesThisTurn)`. Turn-scoped (resets at every turn/round
    * boundary alongside `movementUsedFt`), NOT persisted — re-derived like the
-   * economy budget. The same seam serves future speed riders (Tactical Shift,
-   * Cunning-Strike speed) via `commitDash`.
+   * economy budget.
    */
   dashesThisTurn: number;
+  /** Movement a use adds this turn beyond the Dashes, in feet (Tactical Shift,
+   *  Instinctive Pounce: half your Speed). Turn-scoped like the Dashes. */
+  extraMovementFt: number;
   /**
    * RA-08 — the number of spell SLOTS expended to cast a spell on
    * {@link spellSlotCastTurnKey} (2024
@@ -247,6 +249,8 @@ interface CombatState {
    * mis-tapped Dash is recoverable. No-op restore when read-only.
    */
   commitDash: () => () => void;
+  /** Add `feet` of movement to this turn; returns its undo. */
+  grantMovement: (feet: number) => () => void;
   /**
    * RA-08 — atomically claim the one slot expenditure allowed on `turnKey`.
    * Returns an exact causal inverse, or `null` when that global turn already has
@@ -424,6 +428,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   reactionOutcomeOccurrenceId: null,
   movementUsedFt: 0,
   dashesThisTurn: 0,
+  extraMovementFt: 0,
   spellSlotCastsThisTurn: 0,
   spellSlotCastTurnKey: null,
   damageTakenThisRound: false,
@@ -448,6 +453,11 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     if (sheetReadonly()) return () => {};
     set((s) => ({ dashesThisTurn: s.dashesThisTurn + 1 }));
     return () => set((s) => ({ dashesThisTurn: Math.max(0, s.dashesThisTurn - 1) }));
+  },
+  grantMovement: (feet) => {
+    if (sheetReadonly() || feet <= 0) return () => {};
+    set((s) => ({ extraMovementFt: s.extraMovementFt + feet }));
+    return () => set((s) => ({ extraMovementFt: Math.max(0, s.extraMovementFt - feet) }));
   },
   commitSpellSlotCast: (turnKey) => {
     if (sheetReadonly() || turnKey.length === 0) return null;
@@ -787,6 +797,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       reactionOutcomeOccurrenceId: null,
       movementUsedFt: 0,
       dashesThisTurn: 0,
+      extraMovementFt: 0,
       spellSlotCastsThisTurn: 0,
       spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
@@ -811,6 +822,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       reactionOutcomeOccurrenceId: null,
       movementUsedFt: 0,
       dashesThisTurn: 0,
+      extraMovementFt: 0,
       spellSlotCastsThisTurn: 0,
       spellSlotCastTurnKey: null,
       damageTakenThisRound: false,
@@ -878,6 +890,7 @@ function freshTurn(): Pick<
   | "reactionOutcomeOccurrenceId"
   | "movementUsedFt"
   | "dashesThisTurn"
+  | "extraMovementFt"
   | "spellSlotCastsThisTurn"
   | "spellSlotCastTurnKey"
   | "nextAttackAdvantage"
@@ -903,6 +916,7 @@ function freshTurn(): Pick<
     reactionOutcomeOccurrenceId: null,
     movementUsedFt: 0,
     dashesThisTurn: 0,
+    extraMovementFt: 0,
     spellSlotCastsThisTurn: 0,
     spellSlotCastTurnKey: null,
     nextAttackAdvantage: false,
