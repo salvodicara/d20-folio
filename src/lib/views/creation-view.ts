@@ -314,7 +314,7 @@ export function lineageBundleVMs(raceId: string, locale: Locale): LineageBundleV
       ref: { kind: "race", key: rawRaceTraitCatKey(race.id, trait) },
     };
     (trait.grants ?? []).forEach((g, i) => {
-      if (g.type === "choice-grant-bundle" && g.choiceFrequency === "creation") {
+      if (g.type === "choice-grant-bundle") {
         const bundleRef = topGrantRef(src, g, i);
         bundles.push({
           bundleKey: g.bundleKey,

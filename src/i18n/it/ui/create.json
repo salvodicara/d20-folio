@@ -170,7 +170,11 @@
       "suggestedHint": "Sono già al posto giusto per la classe {{class}}. Per spostarli usa l'acquisto a punti.",
       "pointBuyHint": "27 punti: ogni caratteristica va da 8 a 15.",
       "pickAbilities": "Assegna il bonus del background per andare avanti.",
-      "overBudget": "Hai speso più di 27 punti."
+      "overBudget": "Hai speso più di 27 punti.",
+      "speciesAbility": "Caratteristica da incantatore della specie",
+      "speciesAbilityHint": "Vale per gli incantesimi che ti dà la specie.",
+      "speciesAbilityRequired": "Scegli la caratteristica da incantatore della specie.",
+      "speciesPending": "Completa le scelte della specie per continuare."
     }
   }
 }

@@ -17,7 +17,12 @@ import { appliedQuickbuildState } from "@/lib/quickbuild";
 import { raceTraitNames } from "@/lib/views/creation-view";
 import type { AbilityCode } from "@/types/ability";
 import type { IconName } from "@/ui/icon-names";
-import { skillNameToId } from "@/lib/skills";
+import { ALL_SKILLS, skillNameToId } from "@/lib/skills";
+import { SRD_TOOLS_2024 } from "@/lib/tools";
+import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
+import { listAvailableForSlot } from "@/lib/feat-spell-choices";
+import type { ChoicePicks, FeatureChoiceSlots } from "@/lib/feature-choices";
+import { spellPickVM } from "@/lib/views/spell-pick-view";
 
 /** A class card's art: one kind for every class at a time. */
 export type ClassArt = { kind: "glyph"; icon: IconName };
@@ -180,3 +185,139 @@ function primaryScoreOf(
 /** A modifier as the sheet writes it: «+2», «−1» (a real minus sign). */
 export const signed = (n: number): string =>
   n >= 0 ? `+${String(n)}` : `−${String(-n)}`;
+
+/** One pick a species or its feat asks for, ready to draw as chips. */
+export interface ChoiceSlotRow {
+  kind: "skill" | "tool" | "skillOrTool" | "language" | "spell" | "expertise";
+  slotId: string;
+  /** «Scegli 1 abilità», «Scegli 2 trucchetti da Mago». */
+  title: string;
+  amount: number;
+  picked: readonly string[];
+  options: ReadonlyArray<{ id: string; label: string }>;
+}
+
+/**
+ * Every slot in `slots` as a row of options: the slot's own pool (an empty skill
+ * pool is any skill), minus what the build already owns (`ownedSkills`,
+ * `ownedSpells`) unless it is this slot's own pick.
+ */
+export function choiceSlotRows(
+  slots: FeatureChoiceSlots,
+  picks: ChoicePicks,
+  owned: { skills: ReadonlySet<string>; spells: ReadonlySet<string> },
+  locale: Locale
+): ChoiceSlotRow[] {
+  const t = i18n.getFixedT(locale);
+  const skill = (id: string) => ({ id, label: t(`skills.${id}`) });
+  const free = (picked: readonly string[], set: ReadonlySet<string>) => (id: string) =>
+    picked.includes(id) || !set.has(id);
+  const allSkills = ALL_SKILLS.map((s) => s.id);
+  const rows: ChoiceSlotRow[] = [];
+  for (const slot of slots.skill) {
+    const picked = picks.skill[slot.slotId] ?? [];
+    rows.push({
+      kind: "skill",
+      slotId: slot.slotId,
+      title: t("featChoices.pickSkills", { count: slot.amount }),
+      amount: slot.amount,
+      picked,
+      options: (slot.options.length ? slot.options : allSkills)
+        .filter(free(picked, owned.skills))
+        .map(skill),
+    });
+  }
+  for (const slot of slots.skillOrTool) {
+    const picked = picks.skillOrTool[slot.slotId] ?? [];
+    rows.push({
+      kind: "skillOrTool",
+      slotId: slot.slotId,
+      title: t("featChoices.pickSkillsOrTools", { count: slot.amount }),
+      amount: slot.amount,
+      picked,
+      options: [
+        ...allSkills.filter(free(picked, owned.skills)).map(skill),
+        ...SRD_TOOLS_2024.map((tool) => ({
+          id: tool.id,
+          label: localizeSrd("equipment", tool.id, "name", locale),
+        })),
+      ],
+    });
+  }
+  for (const slot of slots.expertise) {
+    const picked = picks.expertise[slot.slotId] ?? [];
+    rows.push({
+      kind: "expertise",
+      slotId: slot.slotId,
+      title: t("featChoices.pickExpertise", { count: slot.amount }),
+      amount: slot.amount,
+      picked,
+      options: [...owned.skills].map(skill),
+    });
+  }
+  for (const slot of slots.tool) {
+    rows.push({
+      kind: "tool",
+      slotId: slot.slotId,
+      title: t("featChoices.pickTools", { count: slot.amount }),
+      amount: slot.amount,
+      picked: picks.tool[slot.slotId] ?? [],
+      options: slot.options.map((id) => ({
+        id,
+        label: localizeSrd("equipment", id, "name", locale),
+      })),
+    });
+  }
+  for (const slot of slots.language) {
+    rows.push({
+      kind: "language",
+      slotId: slot.slotId,
+      title: t("featChoices.pickLanguages", { count: slot.amount }),
+      amount: slot.amount,
+      picked: picks.language[slot.slotId] ?? [],
+      options: listAvailableForLanguageSlot(slot).map((id) => ({
+        id,
+        label: localizeSrd("language", id, "name", locale),
+      })),
+    });
+  }
+  for (const slot of slots.spell) {
+    const picked = picks.spell[slot.slotId] ?? [];
+    const className = slot.classSpellList ? t(`srd.class_${slot.classSpellList}`) : "";
+    const key = className
+      ? slot.kind === "cantrip"
+        ? "featChoices.pickClassCantrips"
+        : "featChoices.pickClassSpells"
+      : slot.kind === "cantrip"
+        ? "featChoices.pickCantrips"
+        : "featChoices.pickSpells";
+    const excluded = new Set([...owned.spells].filter((id) => !picked.includes(id)));
+    rows.push({
+      kind: "spell",
+      slotId: slot.slotId,
+      // The shared rubric marks the class with <c>…</c> for the old picker's emphasis.
+      title: t(key, { count: slot.count, className }).replace(/<\/?c>/g, ""),
+      amount: slot.count,
+      picked,
+      options: listAvailableForSlot(slot, excluded).map((sp) => {
+        const vm = spellPickVM(sp, locale);
+        return { id: vm.id, label: vm.name };
+      }),
+    });
+  }
+  return rows;
+}
+
+/** `picks` with `id` toggled in one slot: added up to the amount, then the oldest gives way. */
+export function toggleChoicePick(
+  picks: ChoicePicks,
+  row: Pick<ChoiceSlotRow, "kind" | "slotId" | "amount" | "picked">,
+  id: string
+): ChoicePicks {
+  const next = row.picked.includes(id)
+    ? row.picked.filter((p) => p !== id)
+    : row.picked.length < row.amount
+      ? [...row.picked, id]
+      : [...row.picked.slice(1), id];
+  return { ...picks, [row.kind]: { ...picks[row.kind], [row.slotId]: next } };
+}

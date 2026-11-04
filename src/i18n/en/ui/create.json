@@ -170,7 +170,11 @@
       "suggestedHint": "Already where the {{class}} class needs them. To move them, use point buy.",
       "pointBuyHint": "27 points: each ability goes from 8 to 15.",
       "pickAbilities": "Place the background bonus to go on.",
-      "overBudget": "You've spent more than 27 points."
+      "overBudget": "You've spent more than 27 points.",
+      "speciesAbility": "Species spellcasting ability",
+      "speciesAbilityHint": "It applies to the spells your species gives you.",
+      "speciesAbilityRequired": "Choose your species spellcasting ability.",
+      "speciesPending": "Finish the species choices to continue."
     }
   }
 }

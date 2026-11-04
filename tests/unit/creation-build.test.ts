@@ -76,12 +76,14 @@ describe("buildNewCharacter — the level-1 Fighter quickbuild", () => {
     expect(character.ac).toBe(11);
   });
 
-  it("writes background + class skills and the origin languages", () => {
+  it("writes background, class and species skills and the origin languages", () => {
     expect(character.skills).toEqual({
       athletics: "proficient",
       intimidation: "proficient",
       perception: "proficient",
       survival: "proficient",
+      // The Human's Skillful pick.
+      insight: "proficient",
     });
     expect(character.languageIds).toEqual(["common", "dwarvish", "orc"]);
   });

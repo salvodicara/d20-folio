@@ -1,14 +1,23 @@
 /**
  * Creation steps 3 (Specie) and 4 (Caratteristiche), approved prototypes create-3/4.
- * Species: every species with three of its traits, searchable, then its own choices
- * (a lineage, a Human's origin feat). Abilities: how they're set (suggested, point
+ * Species: every species with three of its traits, searchable, then every choice it
+ * owes, read from the engine: its lineage, legacy or ancestry, the spellcasting
+ * ability its spells use, its traits' picks (Keen Senses, Skillful), and for a
+ * Human the Versatile origin feat with that feat's own picks. Abilities: how they're set (suggested, point
  * buy, rolled at the table), six tiles with the score's breakdown, and the
  * background's +2/+1 (or +1/+1/+1) placed on its three abilities.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { abilityTiles, signed, speciesRows } from "@/domains/creation/creation-view";
+import {
+  abilityTiles,
+  choiceSlotRows,
+  signed,
+  speciesRows,
+  toggleChoicePick,
+  type ChoiceSlotRow,
+} from "@/domains/creation/creation-view";
 import type {
   CreationDraft,
   CreationDraftAction,
@@ -21,6 +30,42 @@ import type { AbilityCode } from "@/types/ability";
 import { Chip, Choice, Field, Stepper } from "@/ui";
 
 export type AbilityMethod = "suggested" | "pointBuy" | "rolled";
+
+/** The three abilities a species' spells may use. */
+const SPECIES_SPELL_ABILITIES = ["INT", "WIS", "CHA"] as const;
+
+/** Each slot as a titled row of chips; a tap adds, removes or replaces the oldest. */
+function SlotChips({
+  rows,
+  draft,
+  dispatch,
+}: {
+  rows: readonly ChoiceSlotRow[];
+  draft: CreationDraft;
+  dispatch: (action: CreationDraftAction) => void;
+}) {
+  return rows.map((row) => (
+    <div key={row.slotId} className="f-ask">
+      <span className="f-lbl">{row.title}</span>
+      <div className="f-chips">
+        {row.options.map((o) => (
+          <Chip
+            key={o.id}
+            pressed={row.picked.includes(o.id)}
+            onClick={() =>
+              dispatch({
+                type: "setChoicePicks",
+                picks: toggleChoicePick(draft.choicePicks, row, o.id),
+              })
+            }
+          >
+            {o.label}
+          </Chip>
+        ))}
+      </div>
+    </div>
+  ));
+}
 
 /** Lower case without accents, for a forgiving search. */
 function fold(text: string): string {
@@ -63,6 +108,16 @@ export function SpeciesStep({
         : [],
     [facts.isHuman, facts.backgroundFeat, locale]
   );
+  const owned = {
+    skills: new Set([...facts.backgroundSkillIds, ...draft.classSkills]),
+    spells: new Set([...draft.cantrips, ...draft.spells]),
+  };
+  const speciesSlots = picked
+    ? choiceSlotRows(facts.speciesChoiceSlots, draft.choicePicks, owned, locale)
+    : [];
+  const featSlots = picked
+    ? choiceSlotRows(facts.humanFeatSlots, draft.choicePicks, owned, locale)
+    : [];
   return (
     <div className="f-ask">
       <Field
@@ -114,6 +169,26 @@ export function SpeciesStep({
           </div>
         </div>
       ))}
+      {picked && facts.needsSpeciesSpellAbility && (
+        <div className="f-ask">
+          <span className="f-lbl">{t("create.screen.speciesAbility")}</span>
+          <p className="f-help">{t("create.screen.speciesAbilityHint")}</p>
+          <div className="f-chips">
+            {SPECIES_SPELL_ABILITIES.map((code) => (
+              <Chip
+                key={code}
+                pressed={draft.speciesSpellAbility === code}
+                onClick={() =>
+                  dispatch({ type: "setSpeciesSpellAbility", ability: code })
+                }
+              >
+                {t(`abilities.${code}`)}
+              </Chip>
+            ))}
+          </div>
+        </div>
+      )}
+      <SlotChips rows={speciesSlots} draft={draft} dispatch={dispatch} />
       {picked && facts.isHuman && (
         <div className="f-ask">
           <span className="f-lbl">{t("create.humanVersatileLabel")}</span>
@@ -132,6 +207,7 @@ export function SpeciesStep({
               </Choice>
             ))}
           </div>
+          <SlotChips rows={featSlots} draft={draft} dispatch={dispatch} />
         </div>
       )}
     </div>

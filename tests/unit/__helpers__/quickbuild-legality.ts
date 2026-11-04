@@ -60,17 +60,14 @@ export function expectLegalPreset(classId: string, preset: QuickbuildPreset): vo
   expect(background?.abilityOptions, `${classId} +1`).toContain(secondary);
   expect(draft.bgAsiChoices).toEqual({ [primary]: 2, [secondary]: 1 });
 
-  // ── The species' creation-time lineage ─────────────────────────────────────
+  // ── The species' creation-time bundles (lineage, legacy, ancestry) ─────────
   const bundles = (race?.traits ?? []).flatMap((trait) =>
-    (trait.grants ?? []).filter(
-      (g) => g.type === "choice-grant-bundle" && g.choiceFrequency === "creation"
-    )
+    (trait.grants ?? []).filter((g) => g.type === "choice-grant-bundle")
   );
   expect(Object.keys(preset.lineage ?? {}).sort()).toEqual(
-    bundles.map((b) => (b.type === "choice-grant-bundle" ? b.bundleKey : "")).sort()
+    bundles.map((b) => b.bundleKey).sort()
   );
   for (const bundle of bundles) {
-    if (bundle.type !== "choice-grant-bundle") continue;
     expect(bundle.options.map((o) => o.id)).toContain(preset.lineage?.[bundle.bundleKey]);
   }
 
@@ -156,7 +153,11 @@ export function expectLegalPreset(classId: string, preset: QuickbuildPreset): vo
   }
   for (const slot of slots.skill) {
     for (const id of draft.choicePicks.skill[slot.slotId] ?? []) {
-      expect(slot.options, `skill ${id}`).toContain(id);
+      // An empty pool is any skill (Human Skillful).
+      if (slot.options.length > 0) expect(slot.options, `skill ${id}`).toContain(id);
+      else expect(isSkillId(id), `skill ${id}`).toBe(true);
+      // A skill the build already has would be a wasted, unofferable pick.
+      expect([...bgSkills, ...preset.classSkills], `skill ${id}`).not.toContain(id);
     }
   }
   for (const slot of slots.language) {

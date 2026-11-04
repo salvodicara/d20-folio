@@ -25,7 +25,7 @@ import {
 import { useCreationDraft } from "@/features/creation/use-creation-draft";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
-import { creationFacts } from "@/lib/creation/draft";
+import { creationFacts, speciesStepComplete } from "@/lib/creation/draft";
 import { Button, Choice, Field, Icon, Panel, Room } from "@/ui";
 
 const STEPS = [
@@ -64,8 +64,7 @@ export function CreationScreen() {
   }, [backgrounds, bgQuery]);
   // A species is the player's pick too (never a silent default), with its own choices.
   const [speciesPicked, setSpeciesPicked] = useState(false);
-  const speciesReady =
-    speciesPicked && facts.lineageComplete && (!facts.isHuman || draft.humanFeat !== "");
+  const speciesReady = speciesPicked && speciesStepComplete(draft, facts);
   // How the scores are set; «Valori consigliati» seeds the class's ready-made scores
   // the first time the step opens for that class.
   const [method, setMethod] = useState<AbilityMethod>("suggested");
@@ -102,7 +101,11 @@ export function CreationScreen() {
           ? t("create.screen.pickSpecies")
           : !facts.lineageComplete
             ? t("create.lineageRequired")
-            : t("create.needHumanFeat")
+            : facts.needsSpeciesSpellAbility && !draft.speciesSpellAbility
+              ? t("create.screen.speciesAbilityRequired")
+              : facts.isHuman && !draft.humanFeat
+                ? t("create.needHumanFeat")
+                : t("create.screen.speciesPending")
         : !facts.abilityBonusValid
           ? t("create.screen.pickAbilities")
           : t("create.screen.overBudget");

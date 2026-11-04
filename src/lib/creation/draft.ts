@@ -31,7 +31,12 @@ import type { ToolChoiceContext } from "@/data/background-equipment";
 import { buildGrantedFeatures } from "@/lib/character-build";
 import { abilityModifier, calculateMaxHP, proficiencyBonus } from "@/lib/compute";
 import { hpPerLevelGrantBonus } from "@/lib/level-up";
-import { ORIGIN_LANGUAGE_SLOTS, creationChoiceSlots } from "@/lib/creation-choices";
+import {
+  ORIGIN_LANGUAGE_SLOTS,
+  SPECIES_SLOT_PREFIX,
+  creationChoiceSlots,
+} from "@/lib/creation-choices";
+import { speciesNeedsSpellAbility } from "@/lib/species-spell-ability";
 import {
   isAllChoicesComplete,
   partitionChoiceSlotsBySource,
@@ -138,6 +143,7 @@ export type CreationDraftAction =
   | { type: "setLanguagePicks"; picks: LanguageChoicePicks }
   | { type: "setHumanFeat"; featId: string }
   | { type: "setLineageChoice"; bundleKey: string; optionId: string }
+  | { type: "setSpeciesSpellAbility"; ability: AbilityCode }
   | { type: "setChoicePicks"; picks: ChoicePicks }
   | { type: "toggleClassSkill"; skillId: string }
   | {
@@ -184,7 +190,13 @@ export function creationDraftReducer(
     case "setSubclass":
       return { ...draft, subclassId: action.subclassId };
     case "selectRace":
-      return { ...draft, raceId: action.raceId, humanFeat: "", lineageChoices: {} };
+      return {
+        ...draft,
+        raceId: action.raceId,
+        humanFeat: "",
+        lineageChoices: {},
+        speciesSpellAbility: "",
+      };
     case "selectBackground": {
       // A new background brings its own three eligible abilities and its own
       // skill grants, so the prior +2/+1 and class skills cannot simply carry
@@ -231,6 +243,8 @@ export function creationDraftReducer(
         ...draft,
         lineageChoices: { ...draft.lineageChoices, [action.bundleKey]: action.optionId },
       };
+    case "setSpeciesSpellAbility":
+      return { ...draft, speciesSpellAbility: action.ability };
     case "setChoicePicks":
       return { ...draft, choicePicks: action.picks };
     case "toggleClassSkill": {
@@ -277,15 +291,16 @@ function classSkillCount(classId: string): number {
 
 /**
  * The creation-time lineage bundles a species asks for (Elven / Gnomish
- * Lineage): the keys of its `choice-grant-bundle` grants chosen at creation.
+ * Lineage): the keys of EVERY `choice-grant-bundle` its traits carry. A 2024
+ * species decides each one when it is chosen (Elven Lineage, Fiendish Legacy,
+ * Draconic and Giant Ancestry), whatever the bundle's `choiceFrequency` says about
+ * changing it later; the pick lands in `session.grantBundleChoices` either way.
  */
 export function creationLineageBundleKeys(raceId: string): string[] {
   const race = SRD_RACES.find((r) => r.id === raceId);
   return (race?.traits ?? []).flatMap((trait) =>
     (trait.grants ?? []).flatMap((g) =>
-      g.type === "choice-grant-bundle" && g.choiceFrequency === "creation"
-        ? [g.bundleKey]
-        : []
+      g.type === "choice-grant-bundle" ? [g.bundleKey] : []
     )
   );
 }
@@ -355,8 +370,17 @@ export interface CreationFacts {
   choicePicks: ChoicePicks;
   /** The slots the Human Versatile feat causes (render under its picker). */
   humanFeatSlots: FeatureChoiceSlots;
-  /** Every other slot (background feat + class features). */
+  /**
+   * Every other slot (background feat + class features + species traits). The
+   * species' own slots are ALSO listed in {@link speciesChoiceSlots}, for a
+   * screen that asks them on the species step.
+   */
   otherChoiceSlots: FeatureChoiceSlots;
+  /** The slots the species' traits confer (Elf Keen Senses, Human Skillful). */
+  speciesChoiceSlots: FeatureChoiceSlots;
+  speciesChoicesComplete: boolean;
+  /** The species' lineage spells use an INT/WIS/CHA the player picks. */
+  needsSpeciesSpellAbility: boolean;
   humanFeatChoicesComplete: boolean;
   otherChoicesComplete: boolean;
   otherSpellChoicesComplete: boolean;
@@ -385,6 +409,35 @@ export interface CreationFacts {
 
   /** The draft differs from the build it was last prefilled with. */
   sculpted: boolean;
+}
+
+/** The slots of every kind whose namespaced id starts with `prefix`. */
+function slotsWithPrefix(slots: FeatureChoiceSlots, prefix: string): FeatureChoiceSlots {
+  const keep = <T extends { slotId: string }>(list: T[]) =>
+    list.filter((s) => s.slotId.startsWith(prefix));
+  return {
+    skill: keep(slots.skill),
+    tool: keep(slots.tool),
+    skillOrTool: keep(slots.skillOrTool),
+    language: keep(slots.language),
+    spell: keep(slots.spell),
+    expertise: keep(slots.expertise),
+    feat: keep(slots.feat),
+  };
+}
+
+/**
+ * Every decision the species owes is made: each lineage bundle, the spellcasting
+ * ability its lineage spells use, every pick its traits confer, and for a Human
+ * the Versatile origin feat with that feat's own picks.
+ */
+export function speciesStepComplete(draft: CreationDraft, facts: CreationFacts): boolean {
+  return (
+    facts.lineageComplete &&
+    (!facts.needsSpeciesSpellAbility || draft.speciesSpellAbility !== "") &&
+    facts.speciesChoicesComplete &&
+    (!facts.isHuman || (draft.humanFeat !== "" && facts.humanFeatChoicesComplete))
+  );
 }
 
 /** Derive every fact of a draft (pure; cheap enough to run per render). */
@@ -420,6 +473,7 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     backgroundId: draft.backgroundId,
     humanFeat: draft.humanFeat,
     bgFeat: backgroundFeat,
+    raceId: draft.raceId,
   });
   const choicePicks = pruneChoicePicks(choiceSlots, draft.choicePicks);
   const { caused: humanFeatSlots, rest: otherChoiceSlots } = partitionChoiceSlotsBySource(
@@ -427,6 +481,7 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     isHuman ? draft.humanFeat : null
   );
 
+  const speciesChoiceSlots = slotsWithPrefix(choiceSlots, SPECIES_SLOT_PREFIX);
   const lineageBundleKeys = creationLineageBundleKeys(draft.raceId);
 
   const classEquipmentOptions = classTable?.startingEquipment ?? [];
@@ -489,6 +544,9 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     choicePicks,
     humanFeatSlots,
     otherChoiceSlots,
+    speciesChoiceSlots,
+    speciesChoicesComplete: isAllChoicesComplete(speciesChoiceSlots, choicePicks),
+    needsSpeciesSpellAbility: speciesNeedsSpellAbility(draft.raceId),
     humanFeatChoicesComplete: isAllChoicesComplete(humanFeatSlots, choicePicks),
     otherChoicesComplete: isAllChoicesComplete(otherChoiceSlots, choicePicks),
     otherSpellChoicesComplete: isSpellChoicesComplete(
@@ -554,6 +612,7 @@ function appliedFields(draft: CreationDraft): AppliedQuickbuild {
     languagePicks: draft.languagePicks,
     lineageChoices: draft.lineageChoices,
     humanFeat: draft.humanFeat,
+    speciesSpellAbility: draft.speciesSpellAbility,
     choicePicks: draft.choicePicks,
     classEquipLabel: draft.classEquipLabel,
     bgEquipLabel: draft.bgEquipLabel,

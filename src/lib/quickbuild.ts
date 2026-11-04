@@ -15,6 +15,7 @@
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { classTables } from "@/data/classes";
 import { skillNameToId } from "@/lib/skills";
+import { speciesNeedsSpellAbility } from "@/lib/species-spell-ability";
 import type { AbilityCode } from "@/data/types";
 import type { QuickbuildPreset } from "@/data/quickbuild";
 import { creationChoiceSlots, ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
@@ -59,6 +60,7 @@ export function presetChoiceSlots(
     backgroundId: preset.backgroundId,
     humanFeat: preset.humanFeat ?? "",
     bgFeat: SRD_BACKGROUNDS.find((b) => b.id === preset.backgroundId)?.feat ?? "",
+    raceId: preset.raceId,
   });
 }
 
@@ -186,6 +188,8 @@ export interface AppliedQuickbuild {
   languagePicks: LanguageChoicePicks;
   lineageChoices: Readonly<Record<string, string>>;
   humanFeat: string;
+  /** The INT/WIS/CHA the species' lineage spells use ("" until asked or unowed). */
+  speciesSpellAbility: AbilityCode | "";
   choicePicks: ChoicePicks;
   classEquipLabel: string;
   bgEquipLabel: string;
@@ -213,6 +217,11 @@ export function appliedQuickbuildState(
     languagePicks: draft.languagePicks,
     lineageChoices: preset.lineage ?? {},
     humanFeat: preset.humanFeat ?? "",
+    speciesSpellAbility: speciesNeedsSpellAbility(preset.raceId)
+      ? (preset.speciesSpellAbility ??
+        preset.abilityOrder.find((c) => c === "INT" || c === "WIS" || c === "CHA") ??
+        "CHA")
+      : "",
     choicePicks: draft.choicePicks,
     classEquipLabel: "A",
     bgEquipLabel: "A",
