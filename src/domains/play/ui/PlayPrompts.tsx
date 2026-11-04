@@ -17,7 +17,8 @@ import {
 } from "@/features/character/center/playPromptStore";
 import { localizeSrd } from "@/i18n/resolver";
 import { selfFormRule } from "@/lib/polymorph";
-import { arcaneRecoveryPicker } from "@/lib/arcane-recovery";
+import { ARCANE_RECOVERY_MAX_SLOT_LEVEL, arcaneRecoveryCap } from "@/lib/arcane-recovery";
+import { recoverableSlots, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
 import { hitPointDiceAmount } from "@/lib/play/hit-point-dice";
 import {
   metamagicChipStates,
@@ -61,6 +62,7 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
       <PoolDialog />
       <ItemInputDialog />
       <ArcaneDialog />
+      <SlotRecoveryDialog locale={locale} />
       <MixingDialog locale={locale} />
       <HitDiceDialog locale={locale} />
       <SpellListDialog locale={locale} />
@@ -736,19 +738,58 @@ function ArcaneDialog() {
 
 function ArcaneStep({ prompt }: { prompt: Prompts["arcane-recovery"] }) {
   const { t } = useTranslation();
-  const [counts, setCounts] = useState<Record<number, number>>({});
-  const cancel = useOnce(prompt.onCancel);
-  const pick = arcaneRecoveryPicker(
-    prompt.request.wizardLevel,
-    prompt.request.expended,
-    counts
+  return (
+    <SlotRecoveryStep
+      title={t("combat.arcaneRecoveryTitle")}
+      rule={{
+        totalLevels: arcaneRecoveryCap(prompt.request.wizardLevel),
+        maxSlotLevel: ARCANE_RECOVERY_MAX_SLOT_LEVEL,
+      }}
+      expended={prompt.request.expended}
+      onConfirm={prompt.onConfirm}
+      onCancel={prompt.onCancel}
+    />
   );
+}
+
+/** A cast that recovers expended slots (M12): the same picker, the spell's rule. */
+function SlotRecoveryDialog({ locale }: { locale: Locale }) {
+  const prompt = usePlayPrompt("slot-recovery");
+  return prompt ? (
+    <SlotRecoveryStep
+      title={localizeText(prompt.source, locale)}
+      rule={prompt.rule}
+      expended={prompt.expended}
+      onConfirm={prompt.onConfirm}
+      onCancel={prompt.onCancel}
+    />
+  ) : null;
+}
+
+/** Which expended slots to recover, within a budget of levels or of slots. */
+function SlotRecoveryStep({
+  title,
+  rule,
+  expended,
+  onConfirm,
+  onCancel,
+}: {
+  title: string;
+  rule: SlotRecoveryRule;
+  expended: ReadonlyArray<{ level: number; expended: number }>;
+  onConfirm: (slotLevels: number[]) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useTranslation();
+  const [counts, setCounts] = useState<Record<number, number>>({});
+  const cancel = useOnce(onCancel);
+  const pick = recoverableSlots(rule, expended, counts);
   return (
     <Dialog
       open
       onClose={cancel}
       color="res"
-      title={t("combat.arcaneRecoveryTitle")}
+      title={title}
       closeLabel={t("common.close")}
       actions={
         <>
@@ -758,7 +799,7 @@ function ArcaneStep({ prompt }: { prompt: Prompts["arcane-recovery"] }) {
           <Button
             kind="primary"
             disabled={pick.slotLevels.length === 0}
-            onClick={() => prompt.onConfirm(pick.slotLevels)}
+            onClick={() => onConfirm(pick.slotLevels)}
           >
             {t("common.recover")}
           </Button>
@@ -770,10 +811,12 @@ function ArcaneStep({ prompt }: { prompt: Prompts["arcane-recovery"] }) {
       ) : (
         <>
           <p className="f-note" data-c="res">
-            {t("combat.arcaneRecoveryBudget", {
-              remaining: pick.remaining,
-              cap: pick.cap,
-            })}
+            {t(
+              pick.budget.kind === "slots"
+                ? "combat.slotRecoveryBudgetSlots"
+                : "combat.arcaneRecoveryBudget",
+              { remaining: pick.budget.remaining, cap: pick.budget.cap }
+            )}
           </p>
           {pick.rows.map((r) => {
             const label = t("combat.arcaneRecoverySlotLevel", { level: r.level });

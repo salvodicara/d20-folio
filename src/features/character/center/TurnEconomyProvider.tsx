@@ -28,6 +28,8 @@ import { castTriggerFacts, firedCastTriggers } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
+import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
+import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import {
   hitPointDiceAmount,
   hitPointDiceContext,
@@ -542,6 +544,11 @@ export function TurnEconomyProvider({
   const [formPickerSpellId, setFormPickerSpellId] = useState<string | null>(null);
   // Mixing potions (M18): the potions a drink mixes, while the d100 is offered.
   const [mixing, setMixing] = useState<LocText[] | null>(null);
+  // Expended slots a cast lets the player recover (M12), asked after the cast.
+  const [slotRecovery, setSlotRecovery] = useState<{
+    source: LocText;
+    rule: SlotRecoveryRule;
+  } | null>(null);
   // Hit Point Dice a cast lets the player spend (Necromancy Adept), asked in turn.
   const [hitDiceOffers, setHitDiceOffers] = useState<
     Array<{ source: LocText; offer: HitPointDiceOffer; limitedBy?: string }>
@@ -1563,6 +1570,15 @@ export function TurnEconomyProvider({
     return null;
   }
 
+  function recoverOfferedSlots(
+    { source, rule }: { source: LocText; rule: SlotRecoveryRule },
+    slotLevels: number[]
+  ) {
+    recoverSlots(rule, slotLevels, (count) =>
+      t("combat.slotsRecovered", { source: localizeText(source, locale), count })
+    );
+  }
+
   /**
    * Spend the Hit Point Dice the player chose and gain what they give: healing or
    * temporary HP on the sheet; extra damage or a save bonus told to the player.
@@ -1650,6 +1666,31 @@ export function TurnEconomyProvider({
         }),
         duration: 8000,
       });
+    }
+    // A spell that recovers expended slots (M12): the player picks which.
+    const recovery = spell?.effects?.find((e) => e.kind === "recover-slots");
+    if (recovery?.kind === "recover-slots" && spell) {
+      const rule = slotRecoveryRuleForCast(
+        recovery,
+        slotLevel ?? spell.level,
+        spell.level
+      );
+      const source = srdText("spell", spell.id, "name");
+      if (!renderPrompts) setSlotRecovery({ source, rule });
+      else
+        showToast({
+          message: t(
+            rule.count !== undefined
+              ? "combat.castSlotRecovery_slots"
+              : "combat.castSlotRecovery_levels",
+            {
+              source: localizeText(source, locale),
+              cap: rule.count ?? rule.totalLevels ?? 0,
+              max: rule.maxSlotLevel,
+            }
+          ),
+          duration: 8000,
+        });
     }
     const regains = onCastRegains(cs.character, spellId, slotLevel);
     const refunds = regains.map((regain) => regain.refund);
@@ -3090,6 +3131,25 @@ export function TurnEconomyProvider({
     };
   })();
   usePublishPlayPrompt("hit-point-dice", hitDicePrompt);
+  const slotRecoveryPrompt = ((): PlayPrompts["slot-recovery"] | null => {
+    if (!slotRecovery || !character) return null;
+    return {
+      ...slotRecovery,
+      expended: character.character.spellSlots
+        .filter((s) => !s.pactMagic)
+        .map((s) => ({
+          level: s.level,
+          expended: character.session.spellSlots[slotUsageKey(s)]?.used ?? 0,
+        })),
+      onCancel: () => setSlotRecovery(null),
+      onConfirm: (slotLevels) => {
+        const offered = slotRecovery;
+        setSlotRecovery(null);
+        recoverOfferedSlots(offered, slotLevels);
+      },
+    };
+  })();
+  usePublishPlayPrompt("slot-recovery", slotRecoveryPrompt);
 
   return (
     <TurnEconomyContext.Provider value={api}>
