@@ -602,6 +602,8 @@
     "repeatSaveTally": "Successes {{successes}}/{{needed}} · failures {{failures}}/{{limit}}",
     "repeatSaveCounted": "{{target}}: successes {{successes}}/{{needed}}, failures {{failures}}/{{limit}}",
     "repeatSaveSettled": "{{condition}} lasts its full duration: {{target}}",
+    "repeatSaveExhaustion": "{{target}} fails the save: +{{count}} Exhaustion.",
+    "repeatSaveExhaustionMonster": "{{target}} fails the save: +{{count}} Exhaustion; keep track of it on the monster.",
     "zoneOutside": "Outside"
   }
 }

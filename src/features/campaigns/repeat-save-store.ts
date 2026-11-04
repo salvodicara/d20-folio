@@ -15,6 +15,9 @@ export interface PendingRepeatSave extends DueRepeatSave {
   targetName: string;
   /** The one who applied it, named for a "can't see them" prompt (Fear). */
   actorName?: string;
+  /** The target's character, when it is this device's own (a failure's Exhaustion
+   *  lands on that sheet). */
+  characterId?: string;
   /** The condition effect a success ends, kept so an undo can put it back. */
   effect: ActiveCombatEffect;
   /** Whose turn it was when last looked at: a target's turn "begins" only when the

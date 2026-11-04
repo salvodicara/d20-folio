@@ -23,7 +23,12 @@ import {
   tallyOf,
   useSaveTallyStore,
 } from "@/features/campaigns/save-tally-store";
-import { answerTrackedSave, type SaveTally } from "@/lib/condition-ends";
+import {
+  answerTrackedSave,
+  failedSaveExhaustion,
+  type SaveTally,
+} from "@/lib/condition-ends";
+import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { Button } from "@/ui";
 
@@ -92,6 +97,35 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
   };
   const failed = () => {
     if (!counted(false)) store().remove(save.id);
+    failureEffects();
+  };
+  // What a failure does (Vision of Elapsing Eons: 1 Exhaustion): on this device's own
+  // character, onto its sheet with an undo; on a monster, a note for the DM.
+  const failureEffects = () => {
+    const levels = failedSaveExhaustion(save);
+    if (levels === 0) return;
+    const sheet = useCharacterStore.getState();
+    const own = sheet.character && sheet.character.id === save.characterId;
+    if (!own) {
+      useToastStore.getState().showToast({
+        message: t("combat.repeatSaveExhaustionMonster", {
+          target: save.targetName,
+          count: levels,
+        }),
+        duration: 8000,
+      });
+      return;
+    }
+    const before = sheet.character?.session.exhaustion ?? 0;
+    sheet.setExhaustion(before + levels);
+    useToastStore.getState().showToast({
+      message: t("combat.repeatSaveExhaustion", {
+        target: save.targetName,
+        count: levels,
+      }),
+      duration: 6000,
+      onUndo: () => useCharacterStore.getState().setExhaustion(before),
+    });
   };
   const saved = () => {
     if (counted(true)) return;
