@@ -63,6 +63,12 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
     effect: "damage",
     slot: "action",
   },
+  "repeat-save": {
+    kind: "repeat-save",
+    conditionId: "charmed",
+    ability: "WIS",
+    passed: true,
+  },
   "potion-mixing": {
     kind: "potion-mixing",
     roll: 42,

@@ -54,6 +54,8 @@
     "slotRestoredPact_one": "Recuperato uno slot di Magia del Patto di livello {{level}}",
     "slotRestoredPact_other": "Recuperati {{count}} slot di Magia del Patto di livello {{level}}",
     "inspirationGained": "Ottenuta Ispirazione Eroica",
-    "inspirationSpent": "Spesa Ispirazione Eroica"
+    "inspirationSpent": "Spesa Ispirazione Eroica",
+    "repeatSavePassed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: riuscito",
+    "repeatSaveFailed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: fallito"
   }
 }

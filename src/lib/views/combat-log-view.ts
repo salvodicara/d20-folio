@@ -139,6 +139,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("spell-cast");
     case "potion-mixing":
       return resolveLogStyle("generic");
+    case "repeat-save":
+      return resolveLogStyle(event.passed ? "condition-remove" : "generic");
     case "exhaustion-change":
       return resolveLogStyle(
         event.to > event.from ? "condition-add" : "condition-remove"
@@ -274,6 +276,14 @@ export function localizeCombatEvent(
       });
       return event.outcome ? `${line} · ${event.outcome}` : line;
     }
+    case "repeat-save":
+      return t(
+        event.passed ? "combatLog.repeatSavePassed" : "combatLog.repeatSaveFailed",
+        {
+          ability: t(`abilities.${event.ability}`),
+          condition: resolveConditionName(event.conditionId),
+        }
+      );
     case "spell-countered":
       return t("combatLog.spellCountered", {
         name: resolveActionRef(event.action),

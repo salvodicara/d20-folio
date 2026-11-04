@@ -173,6 +173,16 @@ export function combatEventToPlayEvent(
         target: me,
         ...(event.source ? { source: event.source } : {}),
       };
+    // The Action spent on the save; a success's end of the condition comes from the
+    // encounter, so the session hears the attempt only.
+    case "repeat-save":
+      return {
+        kind: "action",
+        actor: me,
+        source: { srd: { kind: "condition", key: event.conditionId, field: "name" } },
+        slot: "action",
+        outcome: event.passed ? "saved" : "failed",
+      };
     // A mixing roll is the sheet's own note for the DM; the session reads it there.
     case "potion-mixing":
     case "tracker-regain":

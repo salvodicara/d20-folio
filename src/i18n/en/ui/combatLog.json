@@ -54,6 +54,8 @@
     "slotRestoredPact_one": "Regained a level {{level}} Pact Magic slot",
     "slotRestoredPact_other": "Regained {{count}} level {{level}} Pact Magic slots",
     "inspirationGained": "Gained Heroic Inspiration",
-    "inspirationSpent": "Spent Heroic Inspiration"
+    "inspirationSpent": "Spent Heroic Inspiration",
+    "repeatSavePassed": "Used the action to repeat the {{ability}} save against {{condition}}: succeeded",
+    "repeatSaveFailed": "Used the action to repeat the {{ability}} save against {{condition}}: failed"
   }
 }
