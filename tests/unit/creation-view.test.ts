@@ -12,6 +12,7 @@ import {
   classCards,
   creationSummary,
   choiceSlotRows,
+  creationReview,
   speciesRows,
   suggestedBonus,
   toggleChoicePick,
@@ -183,5 +184,32 @@ describe("choiceSlotRows", () => {
     const current = row();
     if (current) picks = toggleChoicePick(picks, current, "mage-hand");
     expect(row()?.picked).toEqual(["prestidigitation"]);
+  });
+});
+
+describe("creationReview", () => {
+  it("a ready-made level-1 Cleric: HP, AC, spells, skills and languages by name", () => {
+    const draft = [
+      { type: "selectClass", classId: "cleric" } as const,
+      { type: "selectBackground", backgroundId: "acolyte" } as const,
+      { type: "selectRace", raceId: "dwarf" } as const,
+      { type: "fillReadyMade" } as const,
+    ].reduce(creationDraftReducer, initialCreationDraft());
+    const facts = creationFacts(draft);
+    const review = creationReview(draft, facts, "en");
+    expect(review.hp).toBe(facts.maxHp);
+    // Option A's Chain Shirt (13 + DEX, max 2) and Shield (+2), worn from the start.
+    expect(review.ac).toBe(
+      13 + Math.min(2, Math.floor((draft.abilityScores.DEX - 10) / 2)) + 2
+    );
+    expect(review.subclassLevel).toBe(3);
+    expect(review.cantrips).toHaveLength(facts.cantripsNeeded);
+    expect(review.cantrips).toContain("Guidance");
+    expect(review.spells).toContain("Bless");
+    // The Acolyte's Insight and Religion, with the class's two.
+    expect(review.skills).toEqual(expect.arrayContaining(["Insight", "Religion"]));
+    expect(review.skills).toHaveLength(4);
+    expect(review.languages[0]).toBe("Common");
+    expect(review.languages).toHaveLength(3);
   });
 });

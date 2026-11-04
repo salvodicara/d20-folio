@@ -19,6 +19,7 @@ import {
   getExpandedSpellsThroughLevel,
   injectExpandedSpells,
 } from "@/lib/expanded-spells";
+import { effectiveAC } from "@/lib/aggregate-character";
 import { applyChoicePicks } from "@/lib/feature-choices";
 import { applyLanguagePicks } from "@/lib/feat-language-choices";
 import { asAlignmentId } from "@/lib/lore-utils";
@@ -265,10 +266,13 @@ export function buildNewCharacter(
 
   // Every origin/feature choice (skills, tools, languages, spells, …) in one
   // pass, then the origin languages.
-  const finalCharacter = applyLanguagePicks(
+  const picked = applyLanguagePicks(
     applyChoicePicks(character, facts.choiceSlots, facts.choicePicks),
     draft.languagePicks
   );
+  // The AC the sheet will show (the starting armor worn, shield, grants): the same
+  // single source the auto-save stamps, never the unarmored placeholder.
+  const finalCharacter = { ...picked, ac: effectiveAC(picked, session) };
 
   return {
     ok: true,

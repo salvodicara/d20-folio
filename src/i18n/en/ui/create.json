@@ -174,7 +174,14 @@
       "speciesAbility": "Species spellcasting ability",
       "speciesAbilityHint": "It applies to the spells your species gives you.",
       "speciesAbilityRequired": "Choose your species spellcasting ability.",
-      "speciesPending": "Finish the species choices to continue."
+      "speciesPending": "Finish the species choices to continue.",
+      "acTitle": "Armor Class {{ac}}",
+      "acHint": "The higher it is, the harder you are to hit.",
+      "subclassAt": "Subclass at level {{level}}",
+      "preparedSpells": "Prepared spells",
+      "rulesNote": "Everything is checked against the 2024 rules. You can change any of it later, from the sheet.",
+      "createNamed": "Create {{name}}",
+      "creating": "Creating…"
     }
   }
 }

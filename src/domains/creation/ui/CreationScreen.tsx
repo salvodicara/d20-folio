@@ -1,17 +1,21 @@
 /**
  * «Nuovo personaggio» on the new frame (approved prototypes create-1…6): the armoury
  * above the page, six guided steps, and the «Personaggio» summary beside the step
- * (below it on a phone). This version holds steps 1 (Classe) and 2 (Background); the
- * others follow. The form state is the core draft (`useCreationDraft`), its facts
- * `creationFacts`: the screen keeps only which step is open.
+ * (below it on a phone). Entering Equipaggiamento fills whatever class-side pick is
+ * still missing the class preset's way (`fillReadyMade`), so the Riepilogo shows a
+ * complete build; «Crea» saves it and opens the sheet. The form state is the core
+ * draft (`useCreationDraft`), its facts `creationFacts`: the screen keeps only
+ * which step is open and what the player has picked so far.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 import {
   backgroundRows,
   classCards,
   creationSummary,
+  previewArmorClass,
   signed,
   suggestedBonus,
   suggestedScores,
@@ -19,13 +23,23 @@ import {
 } from "@/domains/creation/creation-view";
 import {
   AbilitiesStep,
+  EquipmentStep,
+  ReviewStep,
   SpeciesStep,
   type AbilityMethod,
 } from "@/domains/creation/ui/CreationSteps";
 import { useCreationDraft } from "@/features/creation/use-creation-draft";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
-import { creationFacts, speciesStepComplete } from "@/lib/creation/draft";
+import { buildNewCharacter } from "@/lib/creation/build";
+import {
+  creationFacts,
+  missingCreationRequirements,
+  speciesStepComplete,
+} from "@/lib/creation/draft";
+import { createCharacter } from "@/lib/firestore";
+import { BUILD_ERROR_KEYS } from "@/lib/views/creation-view";
+import { useAuthStore } from "@/stores/authStore";
 import { Button, Choice, Field, Icon, Panel, Room } from "@/ui";
 
 const STEPS = [
@@ -45,6 +59,10 @@ export function CreationScreen() {
   const facts = creationFacts(draft);
   const summary = creationSummary(draft, facts, locale);
   const [step, setStep] = useState(0);
+  const user = useAuthStore((s) => s.user);
+  const navigate = useNavigate();
+  const [saving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const cards = useMemo(() => classCards(locale), [locale]);
   const backgrounds = useMemo(() => backgroundRows(locale), [locale]);
   const card = cards.find((c) => c.id === draft.classId);
@@ -86,6 +104,7 @@ export function CreationScreen() {
   const go = (to: number) => {
     if (to === 3 && method === "suggested" && suggestedFor !== draft.classId)
       applySuggested();
+    if (to >= 4) dispatch({ type: "fillReadyMade" });
     setStep(to);
     window.scrollTo({ top: 0 });
   };
@@ -109,11 +128,44 @@ export function CreationScreen() {
         : !facts.abilityBonusValid
           ? t("create.screen.pickAbilities")
           : t("create.screen.overBudget");
+  const last = step === STEPS.length - 1;
+  const ready = missingCreationRequirements(draft, facts).length === 0;
+  const create = async () => {
+    if (!user || saving) return;
+    const built = buildNewCharacter(draft, { displayName: user.displayName });
+    if (!built.ok) {
+      setCreateError(t(BUILD_ERROR_KEYS[built.error]));
+      return;
+    }
+    setSaving(true);
+    setCreateError(null);
+    try {
+      const id = await createCharacter(user.uid, built.payload);
+      void navigate(`/characters/${id}`);
+      window.scrollTo({ top: 0 });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : t("character.failedCreate"));
+      setSaving(false);
+    }
+  };
   const nav = (
     <>
       {step > 0 && <Button onClick={() => go(step - 1)}>{t("common.back")}</Button>}
       {blocked && <span className="f-help">{blockedHint}</span>}
-      {step < STEPS.length - 1 && (
+      {createError && last && (
+        <span className="f-err" role="alert">
+          {createError}
+        </span>
+      )}
+      {last ? (
+        <Button kind="primary" disabled={!ready || saving} onClick={() => void create()}>
+          {saving
+            ? t("create.screen.creating")
+            : draft.name.trim()
+              ? t("create.screen.createNamed", { name: draft.name.trim() })
+              : t("roster.create")}
+        </Button>
+      ) : (
         <Button kind="primary" disabled={blocked} onClick={() => go(step + 1)}>
           {t("common.next")}
         </Button>
@@ -228,8 +280,26 @@ export function CreationScreen() {
                 }}
                 dispatch={dispatch}
               />
+            ) : step === 4 ? (
+              <EquipmentStep
+                draft={draft}
+                facts={facts}
+                locale={locale}
+                backgroundName={summary.background ?? ""}
+                dispatch={dispatch}
+              />
             ) : (
-              <p className="f-help">{t("create.screen.soon")}</p>
+              <ReviewStep
+                draft={draft}
+                facts={facts}
+                locale={locale}
+                identity={[
+                  `${summary.className} ${String(summary.level)}`,
+                  summary.species,
+                  summary.background ?? "",
+                ].join(" · ")}
+                dispatch={dispatch}
+              />
             )}
           </Panel>
           <Panel
@@ -271,6 +341,12 @@ export function CreationScreen() {
                 <dt className="f-lbl">{t("create.speciesLabel")}</dt>
                 <dd>{speciesPicked ? summary.species : "—"}</dd>
               </div>
+              {step >= 4 && (
+                <div>
+                  <dt className="f-lbl">{t("character.armorClass")}</dt>
+                  <dd>{previewArmorClass(draft, facts)}</dd>
+                </div>
+              )}
               {step >= 3 && summary.primaryScore && (
                 <div>
                   <dt className="f-lbl">{t(`abilities.${summary.primaryScore.code}`)}</dt>

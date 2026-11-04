@@ -67,10 +67,9 @@ import {
   creationFacts,
   creationStepBlocked,
   missingCreationRequirements,
-  type CreationRequirementKey,
 } from "@/lib/creation/draft";
 import type { AbilityScoreBonusMode } from "@/lib/creation/ability-bonus";
-import { buildNewCharacter, type CreationBuildError } from "@/lib/creation/build";
+import { buildNewCharacter } from "@/lib/creation/build";
 import { FeatureChoicesSection } from "@/components/sheet/FeatureChoicesSection";
 import { LanguageChoicePicker } from "@/components/sheet/LanguageChoicePicker";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
@@ -114,30 +113,10 @@ import { SkillsPickerSection } from "./steps/pickers";
 import { ClassGallery, ClassPlaques } from "./steps/ClassGallery";
 import { QuickChapter } from "./steps/QuickChapter";
 import { useCreationDraft } from "./use-creation-draft";
+import { BUILD_ERROR_KEYS, REQUIREMENT_LABEL_KEYS } from "@/lib/views/creation-view";
 import type { Locale } from "@/lib/locale";
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
-
-/** The "what's left" label of each creation requirement. */
-const REQUIREMENT_LABEL_KEYS: Record<CreationRequirementKey, string> = {
-  name: "create.needName",
-  class: "create.needClass",
-  subclass: "create.needSubclass",
-  lineage: "create.needLineage",
-  humanFeat: "create.needHumanFeat",
-  originFeat: "create.needOriginFeat",
-  languages: "create.needLanguages",
-  skills: "create.needSkills",
-  spells: "create.needSpells",
-  bgAsi: "create.needBgAsi",
-};
-
-/** The message of each reason a draft cannot be built yet. */
-const BUILD_ERROR_KEYS: Record<CreationBuildError, string> = {
-  name: "create.nameRequired",
-  class: "create.classRequired",
-  subclass: "create.subclassRequired",
-};
 
 export function CreationWizard() {
   const { t } = useTranslation();

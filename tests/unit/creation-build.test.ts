@@ -69,11 +69,12 @@ describe("buildNewCharacter — the level-1 Fighter quickbuild", () => {
     });
   });
 
-  it("derives HP and AC from the boosted scores", () => {
-    // d10 at level 1 + CON 15 (+2) = 12; unarmored AC 10 + DEX 13 (+1) = 11.
+  it("derives HP from the boosted scores and AC from the armor it starts wearing", () => {
+    // d10 at level 1 + CON 15 (+2) = 12.
     expect(character.hp).toEqual({ max: 12 });
     expect(session.hp).toEqual({ current: 12, temp: 0 });
-    expect(character.ac).toBe(11);
+    // Option A's Chain Mail, worn: AC 16 (heavy armor adds no Dexterity).
+    expect(character.ac).toBe(16);
   });
 
   it("writes background, class and species skills and the origin languages", () => {
