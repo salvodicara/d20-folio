@@ -508,6 +508,54 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
     expect(h.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", `pc-${UID}-grab`);
   });
 
+  it("my Hex's target dropping to 0 tells me the curse can move", () => {
+    const toasts = () =>
+      useToastStore.getState().toasts.map((toast) => String(toast.message));
+    useCharacterStore.getState().setCharacter({
+      ...MOCK_CHARACTER,
+      id: "char-1",
+      character: {
+        ...MOCK_CHARACTER.character,
+        spells: [...MOCK_CHARACTER.character.spells, { srdId: "hex", prepared: true }],
+      },
+      session: {
+        ...MOCK_CHARACTER.session,
+        activeFeatures: [...(MOCK_CHARACTER.session.activeFeatures ?? []), "spell-hex"],
+      },
+    });
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    const withGoblin = addMonster(campaign.encounter as EncounterState, {
+      name: "Goblin",
+      ac: 15,
+      maxHp: 7,
+      count: 1,
+      initiative: 10,
+    });
+    const hex: CombatEffectOp = {
+      id: "op-hex",
+      kind: "apply",
+      effect: {
+        id: "hex-1",
+        actor: {
+          kind: "pc",
+          combatantId: `pc-${UID}`,
+          memberUid: UID,
+          characterId: "char-1",
+        },
+        target: { kind: "monster", combatantId: "monster-1" },
+        source: { kind: "spell", id: "hex", actionId: "spell-hex" },
+        payload: { kind: "target-mark", activeKey: "spell-hex", scope: "cursed" },
+        duration: { kind: "encounter" },
+      },
+    };
+    const encounter = { ...withGoblin, effectOps: [hex] };
+    mount();
+    show(campaign, encounter, 20, false);
+    expect(toasts().some((m) => /Hex: its target dropped/.test(m))).toBe(false);
+    show(campaign, setHp(encounter, "monster-1", 0), 20, false);
+    expect(toasts().some((m) => /Hex: its target dropped/.test(m))).toBe(true);
+  });
+
   it("the DM's device ends a monster's grapple when the monster drops", () => {
     const base = campWithEnc("c1", "char-1", 500, {}, "monster-1");
     // The viewer runs the table: no PC of theirs in this fight.

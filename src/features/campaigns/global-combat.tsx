@@ -33,6 +33,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { localizeSrd } from "@/i18n/resolver";
 import { spellEndEffects } from "@/lib/activities/read";
 import { proneInFlight } from "@/lib/play/flight";
+import { markDropOffers } from "@/lib/play/mark-offers";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -334,7 +335,31 @@ export function GlobalCombatMount(): null {
         showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
       });
     }
-  }, [live, primaryId, primaryIsDm, uid, showToast, t]);
+    // A creature your Hex or Hunter's Mark is on just dropped to 0: on a later turn,
+    // a Bonus Action moves the mark (the spell's trigger rule). A notice, not a
+    // prompt: the move row is already on the sheet while the spell lasts.
+    const doc = useCharacterStore.getState().character;
+    if (primaryIsDm || !doc || doc.id !== status?.characterId) return;
+    for (const offer of markDropOffers(
+      doc,
+      before,
+      rows,
+      live.encounter.effectOps,
+      myId
+    )) {
+      showToast({
+        message: t("combat.markCanMove", {
+          source: localizeSrd(
+            offer.sourceKind === "spell" ? "spell" : "class-feature",
+            offer.sourceId,
+            "name",
+            locale
+          ),
+        }),
+        duration: 8000,
+      });
+    }
+  }, [live, primaryId, primaryIsDm, uid, showToast, t, status, locale]);
 
   // Once-per-turn uses (Sneak Attack) come back on every turn, anyone's: an opportunity
   // attack on the enemy's turn can use it again. When the fight moves to a new turn,
