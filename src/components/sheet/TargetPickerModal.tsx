@@ -16,7 +16,13 @@ import type {
 } from "@/features/character/center/target-step";
 
 export interface TargetPickerModalProps {
-  request: { actionName: string; isSpell: boolean; step: TargetStep } | null;
+  request: {
+    actionName: string;
+    isSpell: boolean;
+    step: TargetStep;
+    /** The spell being cast, when it is one (the free-hands warning reads it). */
+    spellId?: string;
+  } | null;
   onConfirm: (targetIds: string[]) => void;
   onCancel: () => void;
 }

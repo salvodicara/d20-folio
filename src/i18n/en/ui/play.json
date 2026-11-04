@@ -38,6 +38,13 @@
       "castNoTarget": "Cast without choosing",
       "confirmNoTarget": "Confirm without choosing"
     },
+    "hands": {
+      "title": "No free hand",
+      "held": "In hand: {{weapon}}. This spell's components need a free hand.",
+      "heldWithShield": "In hand: {{weapon}} and Shield. This spell's components need a free hand.",
+      "stow": "Stow the weapon (free interaction)",
+      "stowed": "Weapon stowed · object interaction used"
+    },
     "react": "React",
     "trayTotalHint": "What you rolled at the table, for example 8+6+3",
     "hp": {

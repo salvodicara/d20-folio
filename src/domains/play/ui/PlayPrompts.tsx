@@ -33,6 +33,11 @@ import {
 } from "@/lib/views/item-resource-view";
 import { localizeTrackerUnit } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
+import { getSpellById } from "@/data/spells";
+import { resolveActions } from "@/lib/smart-tracker";
+import { castHandsView } from "@/lib/views/cast-hands-view";
+import { localizeAction } from "@/lib/views/combat-action-view";
 import { Button, Chip, Choice, Dialog, Field, Stepper } from "@/ui";
 
 import { PlayFormPicker } from "./PlayFormPicker";
@@ -49,7 +54,7 @@ export function PlayPrompts({ locale }: { locale: Locale }) {
   const doc = useCharacterStore((s) => s.character);
   return (
     <>
-      <CastDialogs />
+      <CastDialogs locale={locale} />
       <PaymentDialog />
       <PoolDialog />
       <ItemInputDialog />
@@ -87,15 +92,61 @@ function useOnce(fn: () => void): () => void {
 }
 
 /** Lancia X: first the slot (when there is a choice), then on whom (when it asks). */
-function CastDialogs() {
+function CastDialogs({ locale }: { locale: Locale }) {
   const cast = usePlayPrompt("cast-level");
   const target = usePlayPrompt("target");
-  if (cast) return <SlotStep key={cast.request.spellName} prompt={cast} />;
-  if (target) return <TargetStep key={target.request.actionName} prompt={target} />;
+  if (cast)
+    return <SlotStep key={cast.request.spellName} prompt={cast} locale={locale} />;
+  if (target)
+    return <TargetStep key={target.request.actionName} prompt={target} locale={locale} />;
   return null;
 }
 
-function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
+/**
+ * No hand free for the spell's components (a weapon in hand, a Shield): a warning,
+ * never a block, with a one-tap stow that spends the turn's object interaction.
+ */
+function HandsNote({ spellId, locale }: { spellId: string | undefined; locale: Locale }) {
+  const { t } = useTranslation();
+  const doc = useCharacterStore((s) => s.character);
+  const { executeAction } = useTurnEconomy();
+  const [stowed, setStowed] = useState(false);
+  const spell = spellId ? getSpellById(spellId) : undefined;
+  const view = doc && spell ? castHandsView(doc, spell) : null;
+  if (stowed) {
+    return (
+      <div className="f-ask">
+        <p className="f-quiet">{t("play.hands.stowed")}</p>
+      </div>
+    );
+  }
+  if (!doc || !view?.weaponId) return null;
+  const weapon = localizeSrd("equipment", view.weaponId, "name", locale);
+  const interaction = resolveActions(doc).find((a) => a.id === "base-object-interaction");
+  return (
+    <div className="f-ask">
+      <span className="f-lbl">{t("play.hands.title")}</span>
+      <p className="f-quiet">
+        {t(view.shield ? "play.hands.heldWithShield" : "play.hands.held", { weapon })}
+      </p>
+      {view.stow && interaction && (
+        <div>
+          <Button
+            kind="ghost"
+            onClick={() => {
+              executeAction(localizeAction(interaction, locale));
+              setStowed(true);
+            }}
+          >
+            {t("play.hands.stow")}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SlotStep({ prompt, locale }: { prompt: Prompts["cast-level"]; locale: Locale }) {
   const { t } = useTranslation();
   const { request } = prompt;
   const cantrip = request.baseLevel === 0;
@@ -155,6 +206,7 @@ function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
         </>
       }
     >
+      <HandsNote spellId={request.spellId} locale={locale} />
       {options.length > 0 && (
         <div className="f-ask">
           <span className="f-lbl">{t("play.ask.whichSlot")}</span>
@@ -282,7 +334,7 @@ function SlotTile({
   );
 }
 
-function TargetStep({ prompt }: { prompt: Prompts["target"] }) {
+function TargetStep({ prompt, locale }: { prompt: Prompts["target"]; locale: Locale }) {
   const { t } = useTranslation();
   const { request } = prompt;
   const { step } = request;
@@ -331,6 +383,7 @@ function TargetStep({ prompt }: { prompt: Prompts["target"] }) {
         </>
       }
     >
+      {request.isSpell && <HandsNote spellId={request.spellId} locale={locale} />}
       <span className="f-lbl">
         {step.max > 1
           ? t("play.ask.onWhomMany", { count: step.max })

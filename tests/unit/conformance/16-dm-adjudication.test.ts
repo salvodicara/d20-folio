@@ -1,5 +1,6 @@
 /** Conformance, category 16: DM adjudication (corpus.md § 16). */
-import { castHandsWarning } from "@/lib/play/hands";
+import { castHandsView } from "@/lib/views/cast-hands-view";
+import { srdText } from "@/lib/loc-text";
 import { effectiveTableRules } from "@/lib/table-rules";
 import { describe, expect } from "vitest";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
@@ -145,24 +146,40 @@ describe("conformance · 16. DM adjudication", () => {
       category: 16,
       case: "Somatic components and free hands",
       source: "SAC #107; KIBBLES #26",
-      status: "M18",
+      status: "works",
     },
-    async () => {
+    () => {
       // A sword in one hand and a Shield in the other leave no hand for a Somatic
-      // component; hands are derived from play (the Shield, the weapon last swung),
-      // never stored. The case works once the cast dialog shows the warning.
-      const swordAndBoard = {
-        shield: "plain",
-        heldWeaponHands: 1,
-        inCombat: true,
-      } as const;
-      expect(castHandsWarning({ v: true, s: true, m: false }, swordAndBoard)).toEqual({
+      // component. Hands are derived from play (the equipped Shield, the weapon last
+      // swung), never stored; the cast dialog warns and offers to stow the weapon.
+      const doc = {
+        ...MOCK_CHARACTER,
+        character: {
+          ...MOCK_CHARACTER.character,
+          equipment: [{ srdId: "shield", equipped: true }],
+        },
+        session: {
+          ...MOCK_CHARACTER.session,
+          logEntries: [
+            {
+              id: "swing",
+              ts: 1,
+              event: {
+                kind: "action-use" as const,
+                action: srdText("equipment", "longsword", "name"),
+                effect: "attack" as const,
+                slot: "action" as const,
+              },
+            },
+          ],
+        },
+      };
+      expect(castHandsView(doc, { components: { v: true, s: true, m: false } })).toEqual({
         kind: "no-free-hand",
         stow: true,
+        shield: true,
+        weaponId: "longsword",
       });
-      const id = "@/lib/views/cast-hands-view";
-      const view = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
-      expect(typeof view.castHandsView).toBe("function");
     }
   );
 
