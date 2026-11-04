@@ -234,7 +234,10 @@
       "reviveWith": "Level {{level}} slot",
       "reviveWithPact": "Level {{level}} pact slot",
       "reviveNoSlot": "You have no spell slot left to spend.",
-      "revived": "{{name}} comes back to life"
+      "revived": "{{name}} comes back to life",
+      "reviveTooLate": "Too late: it fell {{minutes}} min ago (the limit is {{limit}} min).",
+      "reviveInTime": "In time: it fell {{minutes}} min ago, limit {{limit}} min.",
+      "reviveUnknown": "Time of the fall unknown: the limit is {{limit}} min."
     },
     "down": {
       "title": "At 0 Hit Points: death saving throws",

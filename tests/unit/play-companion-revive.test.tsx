@@ -74,4 +74,53 @@ describe("ReviveRow", () => {
     expect(screen.getByText("You have no spell slot left to spend.")).toBeTruthy();
     expect(screen.queryByRole("button")).toBeNull();
   });
+
+  it("past the limit: says how long ago, and offers no slot", () => {
+    render(
+      <ReviveRow
+        companion={beast}
+        revive={{
+          ...revive,
+          window: { fallenMinutes: 75, withinMinutes: 60, within: false },
+        }}
+        readonly={false}
+      />
+    );
+    expect(
+      screen.getByText("Too late: it fell 75 min ago (the limit is 60 min).")
+    ).toBeTruthy();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
+
+  it("in time: says how long ago, and offers the slots", () => {
+    render(
+      <ReviveRow
+        companion={beast}
+        revive={{
+          ...revive,
+          window: { fallenMinutes: 12, withinMinutes: 60, within: true },
+        }}
+        readonly={false}
+      />
+    );
+    expect(screen.getByText("In time: it fell 12 min ago, limit 60 min.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Level 1 slot" })).toBeTruthy();
+  });
+
+  it("time unknown: says so, and still offers the slots", () => {
+    render(
+      <ReviveRow
+        companion={beast}
+        revive={{
+          ...revive,
+          window: { fallenMinutes: null, withinMinutes: 60, within: null },
+        }}
+        readonly={false}
+      />
+    );
+    expect(
+      screen.getByText("Time of the fall unknown: the limit is 60 min.")
+    ).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Level 1 slot" })).toBeTruthy();
+  });
 });
