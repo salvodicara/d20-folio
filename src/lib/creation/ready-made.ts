@@ -131,70 +131,93 @@ export function fillReadyMadePicks(
       preset.backgroundId === next.backgroundId
         ? quickbuildDraft(next.classId, preset).choicePicks
         : undefined;
-    const ownedSkills = new Set([...facts.backgroundSkillIds, ...next.classSkills]);
-    const ownedSpells = new Set([...next.cantrips, ...next.spells]);
-    const allSkills = ALL_SKILLS.map((s) => s.id);
-    const picks: ChoicePicks = { ...next.choicePicks };
-    /** One kind's slots, each kept when full, else the preset's or the first legal options. */
-    const fill = <T extends { slotId: string }>(
-      kind: keyof ChoicePicks,
-      list: readonly T[],
-      amount: (slot: T) => number,
-      pool: (slot: T) => readonly string[]
-    ) => {
-      const byId = { ...picks[kind] };
-      for (const slot of list) {
-        const have = byId[slot.slotId] ?? [];
-        if (have.length >= amount(slot)) continue;
-        const legal = pool(slot);
-        const fromPreset = (presetPicks?.[kind][slot.slotId] ?? []).filter((id) =>
-          legal.includes(id)
-        );
-        byId[slot.slotId] = topUp(have, [...fromPreset, ...legal], amount(slot));
-      }
-      picks[kind] = byId;
+    next = {
+      ...next,
+      choicePicks: fillChoiceSlots(next, facts, slots, presetPicks),
     };
-    fill(
-      "skill",
-      slots.skill,
-      (s) => s.amount,
-      (s) =>
-        (s.options.length > 0 ? s.options : allSkills).filter(
-          (id) => !ownedSkills.has(id)
-        )
-    );
-    fill(
-      "tool",
-      slots.tool,
-      (s) => s.amount,
-      (s) => s.options
-    );
-    fill(
-      "skillOrTool",
-      slots.skillOrTool,
-      (s) => s.amount,
-      () => allSkills.filter((id) => !ownedSkills.has(id))
-    );
-    fill(
-      "language",
-      slots.language,
-      (s) => s.amount,
-      (s) => listAvailableForLanguageSlot(s)
-    );
-    fill(
-      "expertise",
-      slots.expertise,
-      (s) => s.amount,
-      () => [...ownedSkills]
-    );
-    fill(
-      "spell",
-      slots.spell,
-      (s) => s.count,
-      (s) => listAvailableForSlot(s, ownedSpells).map((sp) => sp.id)
-    );
-    next = { ...next, choicePicks: picks };
   }
 
   return next === draft || JSON.stringify(next) === JSON.stringify(draft) ? draft : next;
+}
+
+/**
+ * `draft`'s choice picks with every slot in `slots` filled to its amount: a pick
+ * already made is kept, then the preset's (when given), then the first legal
+ * options (a skill or spell the build already owns is never offered).
+ */
+export function fillChoiceSlots(
+  draft: CreationDraft,
+  facts: CreationFacts,
+  slots: FeatureChoiceSlots,
+  presetPicks?: ChoicePicks
+): ChoicePicks {
+  const next = draft;
+  const ownedSkills = new Set([...facts.backgroundSkillIds, ...next.classSkills]);
+  const ownedSpells = new Set([...next.cantrips, ...next.spells]);
+  const allSkills = ALL_SKILLS.map((s) => s.id);
+  const picks: ChoicePicks = { ...next.choicePicks };
+  /** One kind's slots, each kept when full, else the preset's or the first legal options. */
+  const fill = <T extends { slotId: string }>(
+    kind: keyof ChoicePicks,
+    list: readonly T[],
+    amount: (slot: T) => number,
+    pool: (slot: T) => readonly string[]
+  ) => {
+    const byId = { ...picks[kind] };
+    for (const slot of list) {
+      const have = byId[slot.slotId] ?? [];
+      if (have.length >= amount(slot)) continue;
+      const legal = pool(slot);
+      const fromPreset = (presetPicks?.[kind][slot.slotId] ?? []).filter((id) =>
+        legal.includes(id)
+      );
+      byId[slot.slotId] = topUp(have, [...fromPreset, ...legal], amount(slot));
+    }
+    picks[kind] = byId;
+  };
+  fill(
+    "skill",
+    slots.skill,
+    (s) => s.amount,
+    // Skills it doesn't have first; one it has only when nothing else is left
+    // (a short list it already knows, as a Bard Changeling's).
+    (s) => {
+      const pool = s.options.length > 0 ? s.options : allSkills;
+      return [
+        ...pool.filter((id) => !ownedSkills.has(id)),
+        ...pool.filter((id) => ownedSkills.has(id)),
+      ];
+    }
+  );
+  fill(
+    "tool",
+    slots.tool,
+    (s) => s.amount,
+    (s) => s.options
+  );
+  fill(
+    "skillOrTool",
+    slots.skillOrTool,
+    (s) => s.amount,
+    () => allSkills.filter((id) => !ownedSkills.has(id))
+  );
+  fill(
+    "language",
+    slots.language,
+    (s) => s.amount,
+    (s) => listAvailableForLanguageSlot(s)
+  );
+  fill(
+    "expertise",
+    slots.expertise,
+    (s) => s.amount,
+    () => [...ownedSkills]
+  );
+  fill(
+    "spell",
+    slots.spell,
+    (s) => s.count,
+    (s) => listAvailableForSlot(s, ownedSpells).map((sp) => sp.id)
+  );
+  return picks;
 }
