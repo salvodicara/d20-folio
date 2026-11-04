@@ -246,6 +246,7 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
             ...(revive.withinMinutes !== undefined
               ? { withinMinutes: revive.withinMinutes }
               : {}),
+            ...(revive.fromDust ? { fromDust: true } : {}),
           }
         : undefined,
     hitPointThreshold:
@@ -272,6 +273,7 @@ const SPELL_NOT_ROUND_TRIPPED = new Set([
   "followUp", // round-tripped as an action below
   "formRule", // read by the Transform flow (lib/polymorph `selfFormRule`)
   "suppressesMagic", // read by the summon view (a held Antimagic Field, M6)
+  "onReduceToZero", // read by the action summary into the tray plan (M7)
 ]);
 
 function spellMechanics(
