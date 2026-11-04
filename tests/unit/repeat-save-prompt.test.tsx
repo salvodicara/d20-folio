@@ -12,6 +12,13 @@ const io = vi.hoisted(() => ({
   reinstatePersistentCombatEffect: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => io);
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  functions: {},
+  storage: {},
+}));
 const rules = vi.hoisted(() => ({ v26: false }));
 vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }));
 
