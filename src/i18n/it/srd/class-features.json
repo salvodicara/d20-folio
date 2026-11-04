@@ -540,7 +540,7 @@
     "label": "Recuperare Energie"
   },
   "fighter-tactical-mind.mechanics.actions.0": {
-    "description": "Spendi un uso di Recuperare Energie: +1d10 a una prova fallita.",
+    "description": "Usa Recuperare Energie: +1d10 a una prova fallita.",
     "label": "Mente Tattica"
   },
   "fighter-studied-attacks": {
@@ -592,7 +592,7 @@
   "monk-deflect-attacks.mechanics.actions.1": {
     "description": "Dopo aver ridotto il danno a 0, spendi 1 Punto Concentrazione. Il bersaglio effettua un TS su Destrezza o subisce 2 dadi Arti Marziali + mod DES danni del tipo innescante.",
     "name": "Sviare Attacco",
-    "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 dadi di Arti Marziali + DES"
+    "summary": "A 0 danni: 1 Concentrazione · TS DES · 2 Arti Marziali + DES"
   },
   "monk-deflect-energy": {
     "description": "Ora puoi usare la tua capacità Devia Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",
