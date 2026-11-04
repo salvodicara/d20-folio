@@ -19,6 +19,7 @@
  *  - existing cast fields: Banishment's Incapacitated, Otto's Charmed, Conjure
  *    Fey's 3d12 + mod Psychic melee spell attack with Frightened on a hit.
  */
+import { resolveDice } from "@/lib/scalar";
 import { describe, expect, it } from "vitest";
 import { getSpellById, spells } from "@/data/spells";
 import type { CombatTargeting } from "@/data/types";
@@ -189,7 +190,11 @@ function factsOf(agg: AggregatedGrants): Required<LitFacts> {
     incomingAdv: agg.incomingAttackAdvantages.length,
     incomingDis: agg.incomingAttackDisadvantages.length,
     riders: agg.damageRiders.map((r) => ({
-      dice: typeof r.dice === "string" ? r.dice : "",
+      // A dice table by cast level reads at the spell's own level (its `below`).
+      dice:
+        typeof r.dice === "string"
+          ? r.dice
+          : (resolveDice(r.dice ?? "", { "cast.level": 0 })?.formula ?? ""),
       types: r.damageTypeChoices ?? [r.damageType],
     })),
     notes: agg.defenseNotes.length,
