@@ -396,9 +396,17 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     components: { v: true, s: false, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 8 },
-    damageType: "radiant",
+    // "Any enemy that moves to a space within 10 feet of the guardian for the first
+    // time on a turn or starts its turn there makes a Dexterity saving throw, taking
+    // 20 Radiant damage on a failed save or half as much damage on a successful one."
+    // A flat 20, not dice: the damage is an authored effect (the flat `damageDice`
+    // field takes dice only).
     saveAbility: "DEX",
-    damageOnSave: "half",
+    effects: [
+      { kind: "damage", dice: { dice: "20" }, types: ["radiant"], onSave: "half" },
+    ],
+    recurrence: "on-enter-or-start-turn",
+    zone: { anchor: "point", spellLevel: 4, triggers: ["enter", "start-turn"] },
     // "The guardian vanishes when it has dealt a total of 60 damage."
     budget: { max: 60, counts: "damage-dealt" },
     source: "SRD",

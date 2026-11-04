@@ -119,6 +119,11 @@ function legacyDetailMeta(spell: SrdSpellData) {
 
 const ctx: PickerCtx = { t, locale: "en", character: null, mode: "browse" };
 
+/** A spell whose damage is an authored effect (Guardian of Faith's flat 20): the
+ *  flat-field oracle can't see it, so the Activity-read card says more. */
+const authoredDamage = (spell: SrdSpellData) =>
+  (spell.effects ?? []).some((effect) => effect.kind === "damage");
+
 describe("spell facts read Activity — same output as the flat fields", () => {
   it("covers the catalogue", () => {
     expect(spells.length).toBeGreaterThan(300);
@@ -126,6 +131,7 @@ describe("spell facts read Activity — same output as the flat fields", () => {
 
   it("keeps every spell card's slot, verdict, gloss, facts and material chip", () => {
     for (const spell of spells) {
+      if (authoredDamage(spell)) continue;
       for (const effectWord of [null, "Charmed"]) {
         const vm = vmFor(spell, { effectWord });
         expect(cardFacts(current, vm), spell.id).toEqual(cardFacts(legacy, vm));
@@ -135,6 +141,7 @@ describe("spell facts read Activity — same output as the flat fields", () => {
 
   it("keeps every Compendium spell's detail facts and row line", () => {
     for (const spell of spells) {
+      if (authoredDamage(spell)) continue;
       const detail = spellSpec.detail(spell, ctx, { added: true });
       const meta = (detail.meta ?? []).map(({ label, value, term }) => ({
         label,
@@ -155,5 +162,18 @@ describe("spell facts read Activity — same output as the flat fields", () => {
       );
       expect(line.includes("combat.concentration"), spell.id).toBe(spell.concentration);
     }
+  });
+
+  it("an authored damage reaches the card and the Compendium (Guardian of Faith)", () => {
+    const spell = spells.find((s) => s.id === "guardian-of-faith");
+    if (!spell) throw new Error("no Guardian of Faith");
+    expect(authoredDamage(spell)).toBe(true);
+    const facts = cardFacts(current, vmFor(spell, { effectWord: null }));
+    expect(facts).toMatchObject({ verdict: "20", outcome: "radiant" });
+    const meta = spellSpec.detail(spell, ctx, { added: true }).meta ?? [];
+    expect(meta).toContainEqual({
+      label: "spells.damageType",
+      value: "srd.damage_radiant",
+    });
   });
 });
