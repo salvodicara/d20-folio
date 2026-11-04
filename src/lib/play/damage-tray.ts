@@ -72,6 +72,9 @@ export interface DamageTrayPlan {
   perTarget?: true;
   /** The spell returns a dead target to life with these Hit Points (Revivify: 1). */
   revive?: SpellRevive;
+  /** The attack is a melee one: a hit that would drop a creature to 0 may knock it
+   *  out instead (SRD 5.2.1 "Knocking Out a Creature"). */
+  melee?: true;
   /** The target's current Hit Points pick what happens (Power Word Kill / Stun). */
   hitPointThreshold?: SpellHitPointThreshold;
   targets: string[];
@@ -208,6 +211,8 @@ export function damageTrayPlan(
           },
         }
       : {}),
+    // A melee attack may knock out instead of dropping to 0 (SRD "Knocking Out").
+    ...(attacks && s.attackMode === "melee" ? { melee: true as const } : {}),
     ...(attacks
       ? {
           attack: {
@@ -317,6 +322,8 @@ export interface TrayRow {
   onRoll20Defense?: Partial<Record<DamageType, TargetDefense>>;
   /** What the spell does to this target from its own Hit Points, when it hangs on them. */
   outcome?: TrayOutcome;
+  /** The attacker chose to knock this target out (`canKnockOut`): 1 HP, Unconscious. */
+  knockOut?: true;
   /** The target's own defense against each part's type, when the hit has several
    *  ({@link DamageTrayPlan.damageTypes}). Counted while the defense chip is on. */
   partDefense?: Partial<Record<DamageType, TargetDefense>>;
@@ -727,4 +734,24 @@ export function previewHp(
     temp: hp.temp - absorbed,
     current: Math.max(0, hp.current - (amount - absorbed)),
   };
+}
+
+/**
+ * Whether the tray offers «Mettilo KO» on a row: a melee hit that would drop a
+ * standing character to 0 Hit Points (temporary ones first). Only a character's sheet
+ * can be left at 1 Hit Point and Unconscious (`reducePcDamage`'s `knockOut`).
+ */
+export function canKnockOut(
+  plan: Pick<DamageTrayPlan, "melee">,
+  target: { kind: "pc" | "monster"; hp?: { current: number; temp: number } },
+  amount: number
+): boolean {
+  const hp = target.hp;
+  return (
+    plan.melee === true &&
+    target.kind === "pc" &&
+    hp !== undefined &&
+    hp.current > 0 &&
+    amount >= hp.current + hp.temp
+  );
 }
