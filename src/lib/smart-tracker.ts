@@ -388,6 +388,9 @@ export interface ActionSummary {
   saveSuccessEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
   /** The feature whose `targetStates` hold them. */
   saveSuccessSourceId?: string;
+  /** The catalogue entry a condition that can end early comes from, so the fight
+   *  keeps it as a sourced effect (Abjure Foes' Frightened ends on damage). */
+  conditionSource?: { kind: "spell" | "feature"; id: string };
   /**
    * The generic riders the action's effects carry (push or pull, Speed loss, Hit
    * Point maximum drain, swallow) as display lines, distances in the reader's units;
@@ -5170,6 +5173,18 @@ function spellSaveDcWithParts(
  * `summary.damage`/`damageType`(`/damageTypes`) a damage spell uses — so the
  * existing chip + facts recipe renders "2d10 Fire · DC N DEX" with no view code.
  */
+/** A condition that can end early names its catalogue source, so the fight can
+ *  keep it as a sourced effect (`conditionEndsOf`). */
+function stampConditionSource(summary: RawActionSummary, activity: Activity): void {
+  if (!summary.conditionApplication?.ends?.length) return;
+  const source = activity.source;
+  if (source.kind === "spell")
+    summary.conditionSource = { kind: "spell", id: source.spellId };
+  if (source.kind === "feature" && source.owner === "class-feature") {
+    summary.conditionSource = { kind: "feature", id: source.ownerId };
+  }
+}
+
 function applySaveAttackSummary(
   summary: RawActionSummary,
   activity: Activity,
@@ -5195,7 +5210,10 @@ function applySaveAttackSummary(
     );
   }
   const [condition] = effectsOfKind(activity, "condition");
-  if (condition) summary.conditionApplication = condition.apply;
+  if (condition) {
+    summary.conditionApplication = condition.apply;
+    stampConditionSource(summary, activity);
+  }
   if (target?.affinity) {
     summary.targeting = resolveActionTargeting(
       {
@@ -7131,7 +7149,10 @@ function resolveSpellActions(
       };
     }
     const [condition] = effectsOfKind(activity, "condition");
-    if (condition) summary.conditionApplication = condition.apply;
+    if (condition) {
+      summary.conditionApplication = condition.apply;
+      stampConditionSource(summary, activity);
+    }
     if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
     const [revive] = effectsOfKind(activity, "revive");
     if (revive) {
