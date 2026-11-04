@@ -361,20 +361,16 @@ export function applyTray(
               )
             : undefined;
           if (result.ends && status && held) {
-            const io = import("@/features/campaigns/campaign-io");
-            void io.then(({ revokePersistentCombatEffect }) =>
-              revokePersistentCombatEffect(status.campaignId, held.id)
-            );
+            writeFightEffect(status.campaignId, { revoke: held.id }, t);
             useToastStore.getState().showToast({
               message: t("combat.zoneBudgetSpent", { name: offer.actionName }),
               duration: 6000,
             });
             reversals.push(() => {
-              void io.then(({ appendPersistentCombatEffect }) =>
-                appendPersistentCombatEffect(status.campaignId, {
-                  ...held,
-                  id: crypto.randomUUID(),
-                })
+              writeFightEffect(
+                status.campaignId,
+                { append: { ...held, id: crypto.randomUUID() } },
+                t
               );
             });
           }
