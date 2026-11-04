@@ -726,6 +726,9 @@
     "description": "Puoi effettuare l'azione Scatto come Azione Bonus. Se spendi 1 Punto Concentrazione, puoi anche effettuare l'azione Disimpegno come parte della stessa Azione Bonus, e la distanza di salto è raddoppiata per il turno.",
     "name": "Passo del Vento"
   },
+  "monk-step-of-the-wind.grants.0": {
+    "label": "Passo del Vento"
+  },
   "monk-step-of-the-wind.mechanics.actions.0": {
     "description": "Scatto come Azione Bonus senza spendere Concentrazione.",
     "label": "Passo del Vento",
