@@ -81,7 +81,10 @@ describe("playActionsView", () => {
   it("a condition that blocks a slot marks its rows blocked, as the engine says", () => {
     const stunnedDoc = wizard({ conditions: ["incapacitated"] });
     const stunned = playActionsView(stunnedDoc, "en").groups.flatMap((g) => g.rows);
-    const gates = resolveConditionEffects(effectiveSessionConditions(stunnedDoc.session));
+    const gates = resolveConditionEffects(
+      effectiveSessionConditions(stunnedDoc.session),
+      {}
+    );
     const engineBlocked = sortActions(localizeActions(stunnedDoc, "en"))
       .filter(
         (a) =>

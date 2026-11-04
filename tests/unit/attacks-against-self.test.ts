@@ -47,7 +47,12 @@ const expected = Object.entries(CONDITION_RULES).flatMap(([id, rule]) => {
 });
 
 const limitersOf = (id: string) =>
-  composeTurnLimiters({ conditions: [id], attackRollState: "none", exhaustion: 0 });
+  composeTurnLimiters({
+    facts: {},
+    conditions: [id],
+    attackRollState: "none",
+    exhaustion: 0,
+  });
 
 describe("attacks against you, from the rules table", () => {
   it("covers the conditions whose 2024 text changes attacks against you", () => {

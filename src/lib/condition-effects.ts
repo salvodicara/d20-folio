@@ -229,8 +229,9 @@ export function resolveConditionEffects(
   // Accepts the session's raw `conditions: string[]` — unknown / custom
   // condition strings simply have no gate and are skipped.
   active: ReadonlyArray<string>,
-  /** What the table says about the facts a condition depends on. */
-  facts: ConditionFacts = {}
+  /** What the sheet and the table say about the facts a condition depends on:
+   *  from `conditionFactsFor` (lib/condition-sources), never left out. */
+  facts: ConditionFacts
 ): ResolvedConditionEffects {
   const blockedSlots = new Set<GatedSlot>();
   const autoFailSaves = new Set<AbilityCode>();

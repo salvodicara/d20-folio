@@ -7,6 +7,7 @@
  */
 import { effectiveConditions } from "@/lib/aggregate-character";
 import { resolveConditionEffects } from "@/lib/condition-effects";
+import { conditionFactsFor, type ConditionEncounter } from "@/lib/condition-sources";
 import type { Locale } from "@/lib/locale";
 import {
   actionFilterCounts,
@@ -75,13 +76,20 @@ export function playActionsView(
   locale: Locale,
   turn: ActionTurnState = FRESH_TURN,
   /** "spellbook" keeps the spells that aren't prepared too (the Spells tab). */
-  scope: "combat" | "spellbook" = "combat"
+  scope: "combat" | "spellbook" = "combat",
+  /** The fight around the sheet, so a Frightened source's sight can be derived. */
+  encounter?: ConditionEncounter
 ): PlayActionsView {
   const conditions = effectiveConditions(doc);
-  const effects = resolveConditionEffects(conditions);
+  const conditionFacts = conditionFactsFor(doc, encounter);
+  const effects = resolveConditionEffects(conditions, conditionFacts);
   const blocked = effects.blockedSlots;
   const all = sortActions(localizeActions(doc, locale, scope));
-  const ctas = actionCtaView(doc, all, turn, { list: conditions, effects });
+  const ctas = actionCtaView(doc, all, turn, {
+    list: conditions,
+    effects,
+    facts: conditionFacts,
+  });
   // Two-Weapon Fighting: an off-hand attack is not offered (nor counted) yet.
   const actions = all.filter((a) => !ctas.get(a.id)?.hidden);
   const facts = actions.map((a) => actionRowFacts(doc, a, blocked));

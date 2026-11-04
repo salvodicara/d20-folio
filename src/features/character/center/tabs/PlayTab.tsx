@@ -25,6 +25,8 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
+import { conditionFactsFor } from "@/lib/condition-sources";
+import { useConditionEncounter } from "@/features/character/condition-encounter";
 import { useCallback, useState, useMemo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -392,9 +394,14 @@ export function PlayTab() {
   // B2 — the self-side conditions read ONCE at the board root, so every card
   // knows its condition-blocked state BEFORE a tap.
   const conditions = character ? effectiveConditions(character) : EMPTY_CONDITIONS;
+  const conditionEncounter = useConditionEncounter(character?.id);
+  const conditionFacts = useMemo(
+    () => (character ? conditionFactsFor(character, conditionEncounter) : {}),
+    [character, conditionEncounter]
+  );
   const conditionEffects: ResolvedConditionEffects = useMemo(
-    () => resolveConditionEffects(conditions),
-    [conditions]
+    () => resolveConditionEffects(conditions, conditionFacts),
+    [conditions, conditionFacts]
   );
   // Extra Attack / War Magic: which casts ride a swing (ONE reducer, golden rule 6).
   const warMagicMax = useMemo(
@@ -431,8 +438,8 @@ export function PlayTab() {
     ]
   );
   const actionConditions = useMemo(
-    () => ({ list: conditions, effects: conditionEffects }),
-    [conditions, conditionEffects]
+    () => ({ list: conditions, effects: conditionEffects, facts: conditionFacts }),
+    [conditions, conditionEffects, conditionFacts]
   );
   const ctas = useMemo(
     () =>
@@ -484,7 +491,7 @@ export function PlayTab() {
   const baseAttackChips = useMemo<AdvantageChip[]>(() => {
     if (!character) return [];
     const aggregate = aggregateCharacterGrants(character.character, character.session);
-    const cond = resolveConditionEffects(effectiveConditions(character));
+    const cond = resolveConditionEffects(effectiveConditions(character), conditionFacts);
     // S13 — wearing armor the class lacks proficiency with imposes Disadvantage on
     // STR/DEX attacks (+ checks/saves); merged like the condition clauses so it
     // nets into the attack-roll state alongside Frightened/Poisoned/etc.
@@ -512,7 +519,7 @@ export function PlayTab() {
     // (`combatGloss`), because the sheet models no enemies and cannot know whether
     // it applies to this swing.
     return attackChips;
-  }, [character, round, nextAttackAdvantage]);
+  }, [character, round, nextAttackAdvantage, conditionFacts]);
   const attackRoll = useMemo(
     () => (character ? deriveAttackRollView(baseAttackChips) : NO_ATTACK_ROLL),
     [character, baseAttackChips]

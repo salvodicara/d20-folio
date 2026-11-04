@@ -37,7 +37,12 @@ const senseFails = rows.flatMap((r) =>
 );
 
 const limitersOf = (id: string) =>
-  composeTurnLimiters({ conditions: [id], attackRollState: "none", exhaustion: 0 });
+  composeTurnLimiters({
+    facts: {},
+    conditions: [id],
+    attackRollState: "none",
+    exhaustion: 0,
+  });
 
 describe("source and sense gates from the rules table", () => {
   it("finds Charmed and Deafened (and Blinded's sight)", () => {
@@ -50,7 +55,7 @@ describe("source and sense gates from the rules table", () => {
   });
 
   it.each(rows.map((r) => [r.id] as const))("%s: gates match its rules", (id) => {
-    const effects = resolveConditionEffects([id]);
+    const effects = resolveConditionEffects([id], {});
     expect(effects.cantHarmSource).toBe(blocksSource.includes(id));
     expect(effects.sourceSocialAdvantage).toBe(sourceSocial.includes(id));
     expect([...effects.autoFailSenseChecks]).toEqual(
@@ -84,6 +89,7 @@ describe("source and sense gates from the rules table", () => {
 
   it("two sense conditions name both senses once, the first as the cause", () => {
     const limiters = composeTurnLimiters({
+      facts: {},
       conditions: ["deafened", "blinded"],
       attackRollState: "none",
       exhaustion: 0,

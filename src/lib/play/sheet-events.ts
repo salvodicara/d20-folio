@@ -49,6 +49,7 @@ import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { takeDamage, type DamageOptions } from "./damage";
 import { dropBeastForm, setFormGearWorn } from "./forms";
+import { setSeesSource } from "./conditions";
 import { reviveCharacter } from "./revive";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
@@ -177,6 +178,9 @@ export type SheetEvent =
   | { kind: "recover-per-turn-trackers"; turnKey?: string }
   /** The table rules an item still worn (or merged) in a form whose gear merges. */
   | { kind: "set-form-gear-worn"; key: string; worn: boolean }
+  /** The table answers whether the character sees a condition's source (null: no
+   *  answer, the condition applies in full). */
+  | { kind: "set-sees-source"; key: string; sees: boolean | null }
   /** A lit state's round countdown starts (`tickedRound`: the round it counts from). */
   | { kind: "arm-effect-timer"; key: string; rounds: number; tickedRound: number }
   /** A lit state ends at an encounter boundary (a round and the phase within it). */
@@ -432,6 +436,8 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       return withSession(recoverPerTurnTrackers(doc, event.turnKey)?.session);
     case "set-form-gear-worn":
       return setFormGearWorn(doc, event.key, event.worn);
+    case "set-sees-source":
+      return withSession(setSeesSource(doc, event.key, event.sees));
     case "time-passes":
       return passTime(doc, event.minutes);
     case "set-time-of-day":

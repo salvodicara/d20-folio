@@ -28,6 +28,8 @@
  * (add-spell / edit-lore / equip) together.
  */
 
+import { NO_CONDITION_EFFECTS, sheetConditionEffects } from "@/lib/condition-sources";
+import { liveConditionEncounter } from "@/features/character/condition-encounter";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { totalLevel } from "@/lib/classes";
@@ -52,7 +54,6 @@ import { useUIStore } from "@/stores/uiStore";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { RestModal } from "../RestModal";
 import { proficiencyBonus, initiativeRollState } from "@/lib/compute";
-import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { InitiativeAdvantageOverride } from "@/types/character";
 import {
   aggregateCharacterGrants,
@@ -61,7 +62,6 @@ import {
   computeCharacterAcBreakdown,
   computedInitiativeBonus,
   computedInitiativeBreakdown,
-  effectiveConditions,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { effectiveWalkingSpeedFt, shownWalkingSpeedFt } from "@/lib/smart-tracker";
@@ -276,7 +276,9 @@ export function CombatHeader() {
   const initRoll = initiativeRollState(
     initAgg,
     initAdvOverride,
-    resolveConditionEffects(characterDoc ? effectiveConditions(characterDoc) : [])
+    characterDoc
+      ? sheetConditionEffects(characterDoc, liveConditionEncounter(characterDoc.id))
+      : NO_CONDITION_EFFECTS
   );
   function cycleInitAdvantage(): void {
     // auto (null) → advantage → disadvantage → off → auto (null)

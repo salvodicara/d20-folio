@@ -7,7 +7,11 @@
  * owns every reversal. Pure: no store reads; the conditions arrive already resolved,
  * so every screen passes the same list.
  */
-import type { GatedSlot, ResolvedConditionEffects } from "@/lib/condition-effects";
+import type {
+  ConditionFacts,
+  GatedSlot,
+  ResolvedConditionEffects,
+} from "@/lib/condition-effects";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { ActionEconomyCategory } from "@/data/types";
 import {
@@ -69,6 +73,8 @@ export interface ActionTurnState {
 export interface ActionConditions {
   list: ReadonlyArray<string>;
   effects: ResolvedConditionEffects;
+  /** The facts `effects` was resolved with (`conditionFactsFor`). */
+  facts: ConditionFacts;
 }
 
 /** The CTA grammar's four states (see {@link combatCtaState}). */
@@ -198,7 +204,7 @@ export function actionBlockReason(
   return {
     kind: "condition",
     condition: conditions.list.find((id) =>
-      resolveConditionEffects([id]).blockedSlots.has(reason.slot)
+      resolveConditionEffects([id], conditions.facts).blockedSlots.has(reason.slot)
     ),
   };
 }

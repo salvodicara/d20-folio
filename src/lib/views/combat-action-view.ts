@@ -28,7 +28,7 @@ import { formatModifier } from "@/lib/utils";
 import { localizeText, resolveWhy } from "@/lib/views/srd-i18n";
 import { uiText } from "@/lib/loc-text";
 import { resolveConditionEffects } from "@/lib/condition-effects";
-import type { GatedSlot } from "@/lib/condition-effects";
+import type { ConditionFacts, GatedSlot } from "@/lib/condition-effects";
 import type { ConditionSense } from "@/types/condition";
 import { attacksAgainstSelf, type AttacksAgainstLine } from "@/lib/play/attacks-against";
 import {
@@ -775,6 +775,8 @@ export type TurnLimiterVM =
  */
 export function composeTurnLimiters(args: {
   conditions: ReadonlyArray<string>;
+  /** The facts the conditions resolve with (`conditionFactsFor`). */
+  facts: ConditionFacts;
   /** The netted attack-roll state (B1's `attackRollState`) — only "disadvantage"
    *  surfaces an attack limiter; "advantage"/"none" do not (an advantage source
    *  cancels a condition's disadvantage, so the player is NOT limited). */
@@ -783,14 +785,14 @@ export function composeTurnLimiters(args: {
   /** RA-08 — slot expenditures on the currently projected global turn. */
   spellSlotCasts?: number;
 }): TurnLimiterVM[] {
-  const { conditions, attackRollState, exhaustion, spellSlotCasts = 0 } = args;
-  const effects = resolveConditionEffects(conditions);
+  const { conditions, facts, attackRollState, exhaustion, spellSlotCasts = 0 } = args;
+  const effects = resolveConditionEffects(conditions, facts);
   const limiters: TurnLimiterVM[] = [];
 
   // The first active condition that produced a given effect is the cause —
   // re-derived from the SAME resolver, never re-stated (single source of truth).
   const causeFor = (predicate: (e: typeof effects) => boolean): string | undefined =>
-    conditions.find((c) => predicate(resolveConditionEffects([c])));
+    conditions.find((c) => predicate(resolveConditionEffects([c], facts)));
 
   // 0. Blocked action economy — the most totalising constraint (you can't take
   //    the forbidden slots at all), so it leads. The forbidden slots are a STABLE
@@ -814,7 +816,9 @@ export function composeTurnLimiters(args: {
     // the scoped sentence. Every other attack-dis condition (Blinded/Frightened/
     // Poisoned/Prone/Restrained) is blanket.
     const causeId = conditions.find((c) =>
-      resolveConditionEffects([c]).disadvantages.some((d) => d.rollType === "attack")
+      resolveConditionEffects([c], facts).disadvantages.some(
+        (d) => d.rollType === "attack"
+      )
     );
     if (causeId) {
       limiters.push({

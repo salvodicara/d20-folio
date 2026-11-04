@@ -69,7 +69,7 @@ describe("conformance · 16. DM adjudication", () => {
       ).toBe("disadvantage");
       // An Invisible creature has Advantage on Initiative.
       expect(
-        resolveConditionEffects(["invisible"]).advantages.some(
+        resolveConditionEffects(["invisible"], {}).advantages.some(
           (a) => a.rollType === "initiative"
         )
       ).toBe(true);
