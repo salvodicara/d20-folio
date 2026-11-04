@@ -172,6 +172,14 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     damageType: "necrotic",
     damageDice: "11d8",
     conditionApplication: {
+      ends: [
+        {
+          on: "repeat-save",
+          ability: "CON",
+          at: "target-turn-end",
+          track: { successes: 3, failures: 3 },
+        },
+      ],
       options: ["poisoned"],
       on: "failed-save",
       lifetime: { kind: "manual" },
