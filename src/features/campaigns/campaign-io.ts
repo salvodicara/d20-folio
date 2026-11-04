@@ -18,6 +18,7 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import type { DamageOptions } from "@/lib/play/damage";
 import { conformTableRules } from "@/lib/table-rules";
 import {
   arrayRemove,
@@ -938,7 +939,15 @@ function writePeerCombatEffect(
 }
 
 export type CampaignCombatMutation =
-  | { kind: "hp"; operation: { kind: "damage" | "heal"; amount: number } }
+  | {
+      kind: "hp";
+      operation: {
+        kind: "damage" | "heal";
+        amount: number;
+        /** A melee hit the attacker chose to knock out with (1 HP, Unconscious). */
+        knockOut?: true;
+      };
+    }
   | { kind: "condition"; operation: { kind: "add" | "remove"; conditionId: string } }
   | { kind: "temp-hp"; value: number }
   | { kind: "death-save"; outcome: "success" | "failure" }
@@ -1046,7 +1055,12 @@ export async function writeCampaignCombatEffect(
     const after = updateDevCombatState(uid, characterId, fallback, (current) => {
       before = current;
       return target && mutation.kind === "hp"
-        ? peerDamageState(target, current, mutation.operation.amount)
+        ? peerDamageState(
+            target,
+            current,
+            mutation.operation.amount,
+            knockOutOptions(mutation.operation)
+          )
         : reduceCampaignCombatMutation(current, mutation, maxHp, { status: "active" });
     });
     return { before, after, spends: [] };
@@ -1085,7 +1099,13 @@ export async function writeCampaignCombatEffect(
     if (target && mutation.kind === "hp" && ledgerOn) {
       // Every stage runs; what the hit spends on the target's sheet is appended to its
       // ledger in this same transaction.
-      const hit = peerHit(target, current, ledger, mutation.operation.amount);
+      const hit = peerHit(
+        target,
+        current,
+        ledger,
+        mutation.operation.amount,
+        knockOutOptions(mutation.operation)
+      );
       if (hit.ledgerFull) {
         // Loud, never silent: the hit landed without the ward or the dodge.
         diagnosticsLog("error", "combat.peer-spends-full", { characterId });
@@ -1093,7 +1113,12 @@ export async function writeCampaignCombatEffect(
       next = hit.state;
       spends = hit.spends;
     } else if (target && mutation.kind === "hp") {
-      next = peerDamageState(target, current, mutation.operation.amount);
+      next = peerDamageState(
+        target,
+        current,
+        mutation.operation.amount,
+        knockOutOptions(mutation.operation)
+      );
     } else {
       next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
     }
@@ -2553,4 +2578,11 @@ export async function createSession(
     }) as Record<string, unknown>
   );
   return ref.id;
+}
+
+/** A knock-out is only ever chosen on a melee hit: the target's rule needs both. */
+function knockOutOptions(operation: { knockOut?: true }): DamageOptions {
+  return operation.knockOut
+    ? { knockOut: true, hit: { attacker: null, attackMode: "melee" } }
+    : {};
 }

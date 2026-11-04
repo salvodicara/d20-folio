@@ -58,6 +58,7 @@ interface AppliedRow {
   amount: number;
   conditions: string[];
   outcome?: AttackOutcome;
+  knockOut?: true;
 }
 
 /** Write the attack's one shared result onto the use's own log line; the returned
@@ -91,6 +92,7 @@ export function applyTray(
         amount: effect && row ? (amounts[index] ?? 0) : 0,
         conditions: row ? rowConditions(row) : [],
         ...(row?.attack ? { outcome: row.attack } : {}),
+        ...(row?.knockOut ? { knockOut: true as const } : {}),
       };
     })
     .filter((row) => row.amount > 0 || row.conditions.length > 0);
@@ -219,10 +221,10 @@ export function applyTray(
             );
           }
         }
-        for (const { target, amount, conditions, outcome } of peers) {
+        for (const { target, amount, conditions, outcome, knockOut } of peers) {
           if (effect && amount > 0)
             peerUndos.push(
-              givePeer(target, effect, amount, undefined, source, t, outcome)
+              givePeer(target, effect, amount, undefined, source, t, outcome, knockOut)
             );
           for (const conditionId of conditions)
             peerUndos.push(givePeer(target, "condition", 0, conditionId, source, t));
@@ -278,7 +280,8 @@ function givePeer(
   conditionId: string | undefined,
   source: LocText,
   t: T,
-  outcome?: AttackOutcome
+  outcome?: AttackOutcome,
+  knockOut?: true
 ): Promise<() => void> {
   const row = target.row;
   const memberUid = row?.memberUid;
@@ -322,6 +325,7 @@ function givePeer(
                 operation: {
                   kind: effect === "heal" ? ("heal" as const) : ("damage" as const),
                   amount,
+                  ...(knockOut && effect === "damage" ? { knockOut } : {}),
                 },
               };
   const failed = (error: unknown): void => {
