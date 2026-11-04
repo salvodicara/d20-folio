@@ -170,7 +170,7 @@ function Initiative({
                     : null,
                 ]
                   .filter(Boolean)
-                  .join(" · ")}
+                  .join("\u00a0· ")}
               </span>
             </div>
           ))}
