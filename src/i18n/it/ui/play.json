@@ -276,7 +276,7 @@
       "title": "Scelte da completare",
       "body": "La tua specie ti fa scegliere: {{items}}.",
       "open": "Completa",
-      "ability": "Caratteristica da incantatore"
+      "abilityNote": "Caratteristica per gli incantesimi della specie: oggi usa Carisma — scegli quella giusta."
     }
   }
 }

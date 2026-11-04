@@ -4,15 +4,14 @@
  *
  *   - its `choice-grant-bundle`s (lineage, legacy, ancestry): decided in
  *     `session.grantBundleChoices[bundleKey]`;
- *   - the spellcasting ability its lineage spells use, when any of them defers to
- *     it: `character.speciesSpellAbility`;
- *   - every `choice-*` its traits confer (Elf Keen Senses, Human Skillful): their
- *     picks apply like any other choice, and are RECORDED per slot in
- *     `character.speciesChoices` (tool picks also in `toolChoices`), because a
- *     skill pick on its own merges into `skills` and could not be told apart.
+ *   - the spellcasting ability its spells use, when any of them defers to it:
+ *     `character.speciesSpellAbility` (unset reads Charisma);
+ *   - every `choice-*` its traits confer (Elf Keen Senses, Human Skillful).
  *
- * A character saved before the record existed reads its trait picks as pending:
- * the sheet asks them once, and nothing is written until the player chooses.
+ * For a saved character, what is still owed comes from `unresolvedBuildChoices`
+ * (the same list the production survey reads): a skill pick from named options
+ * counts as made when one of them is proficient, and a pick "from any skill"
+ * (Skillful) cannot be told apart from a class's, so it is never asked again.
  * The Human Versatile feat is not one of these slots: `humanOriginFeat` holds it.
  *
  * Pure module — no React, no locale reads.
@@ -26,7 +25,7 @@ import {
 } from "@/lib/feature-choices";
 import type { GrantSource } from "@/lib/grants";
 import { resolveGrantSourcesForRace } from "@/lib/resolve-grant-sources";
-import { speciesNeedsSpellAbility } from "@/lib/species-spell-ability";
+import { unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
 import type { CharacterData, SessionState } from "@/types/character";
 
 /** The species' trait sources whose `choice-*` grants it owes (Versatile left out). */
@@ -47,13 +46,13 @@ export function speciesBundleKeys(raceId: string): string[] {
   );
 }
 
-/** What a saved character's species still owes. */
+/** What a saved character's species still owes, ready for the pickers. */
 export interface PendingSpeciesChoices {
   /** Bundle keys with no pick in the session. */
   bundleKeys: string[];
-  /** The spellcasting ability its species spells use is still unset. */
+  /** The spellcasting ability its species spells use is unset (reads Charisma). */
   spellAbility: boolean;
-  /** The trait slots with no recorded pick. */
+  /** The trait slots still owed (only the ones the sheet can tell were never made). */
   slots: FeatureChoiceSlots;
   /** Anything at all is owed. */
   any: boolean;
@@ -81,58 +80,56 @@ function filterSlots(
 export function pendingSpeciesChoices(
   character: Pick<
     CharacterData,
-    "race" | "speciesSpellAbility" | "speciesChoices" | "toolChoices"
+    "race" | "skills" | "humanOriginFeat" | "speciesSpellAbility"
   >,
   session: Pick<SessionState, "grantBundleChoices">
 ): PendingSpeciesChoices {
-  const raceId = character.race;
-  const bundleKeys = speciesBundleKeys(raceId).filter(
-    (key) => session.grantBundleChoices?.[key] === undefined
+  const owed = unresolvedBuildChoices(character, session);
+  const bundleKeys = owed.flatMap((c) => (c.kind === "bundle" ? [c.bundleKey] : []));
+  const spellAbility = owed.some((c) => c.kind === "species-spell-ability");
+  // A trait's slots are namespaced `race:<raceId>:<traitId>::…`.
+  const traits = new Set(
+    owed.flatMap((c) =>
+      c.kind === "skill" && c.verifiable ? [`race:${character.race}:${c.traitId}::`] : []
+    )
   );
-  const spellAbility =
-    speciesNeedsSpellAbility(raceId) && character.speciesSpellAbility === undefined;
-  const recorded = (slotId: string) =>
-    (character.speciesChoices?.[slotId]?.length ?? 0) > 0 ||
-    (character.toolChoices?.[slotId]?.length ?? 0) > 0;
   const slots = filterSlots(
-    collectChoiceSlots(speciesChoiceSources(raceId)),
-    (slotId) => !recorded(slotId)
+    collectChoiceSlots(speciesChoiceSources(character.race)),
+    (slotId) => [...traits].some((prefix) => slotId.startsWith(prefix))
   );
-  const anySlot = Object.values(slots).some((list: unknown[]) => list.length > 0);
   return {
     bundleKeys,
     spellAbility,
     slots,
-    any: bundleKeys.length > 0 || spellAbility || anySlot,
+    any: bundleKeys.length > 0 || spellAbility || traits.size > 0,
   };
 }
 
-/**
- * `picks` for the species' `slots` applied to `character` (skills, tools,
- * languages, spells…) and recorded in `speciesChoices`, so they never read as
- * pending again. Picks for other slots are ignored.
- */
+/** `picks` applied for the given species `slots` only; other slots' picks are ignored. */
 export function applySpeciesChoices(
   character: CharacterData,
   slots: FeatureChoiceSlots,
   picks: ChoicePicks
 ): CharacterData {
-  const own = new Set(
-    Object.values(slots).flatMap((list: { slotId: string }[]) =>
-      list.map((s) => s.slotId)
-    )
+  const own = filterSlots(slots, () => true);
+  const ids = new Set(
+    Object.values(own).flatMap((list: { slotId: string }[]) => list.map((s) => s.slotId))
   );
-  const record: Record<string, string[]> = { ...character.speciesChoices };
-  for (const byId of Object.values(picks) as Record<string, ReadonlyArray<string>>[]) {
-    for (const [slotId, ids] of Object.entries(byId)) {
-      if (own.has(slotId) && ids.length > 0) record[slotId] = [...ids];
-    }
-  }
-  if (Object.keys(record).length === Object.keys(character.speciesChoices ?? {}).length) {
-    const unchanged = Object.entries(record).every(
-      ([id, ids]) => character.speciesChoices?.[id]?.join() === ids.join()
+  const only = (byId: Readonly<Record<string, ReadonlyArray<string>>>) =>
+    Object.fromEntries(
+      Object.entries(byId).filter(([id, picked]) => ids.has(id) && picked.length > 0)
     );
-    if (unchanged) return character;
-  }
-  return { ...applyChoicePicks(character, slots, picks), speciesChoices: record };
+  const mine: ChoicePicks = {
+    skill: only(picks.skill),
+    tool: only(picks.tool),
+    skillOrTool: only(picks.skillOrTool),
+    language: only(picks.language),
+    spell: only(picks.spell),
+    expertise: only(picks.expertise),
+    feat: only(picks.feat),
+  };
+  const any = Object.values(mine).some(
+    (byId: Record<string, ReadonlyArray<string>>) => Object.keys(byId).length > 0
+  );
+  return any ? applyChoicePicks(character, own, mine) : character;
 }

@@ -1,8 +1,9 @@
 /**
  * A saved character's species choices: what is still owed (the «Scelte da
- * completare» the sheet lists) and how a choice lands. Nothing is pending for a
- * character whose species asks nothing; a trait pick reads as pending until it is
- * RECORDED, because a skill on its own cannot say which slot it answered.
+ * completare» the sheet lists, read from `unresolvedBuildChoices`) and how a choice
+ * lands. Nothing is pending for a species that asks nothing; a skill from named
+ * options counts as made once one is proficient; Skillful («any skill») cannot be
+ * verified, so it is never asked again.
  */
 import { describe, expect, it } from "vitest";
 
@@ -20,8 +21,7 @@ const as = (race: string, extra: Partial<CharacterData> = {}): CharacterData => 
   ...MOCK_CHARACTER.character,
   race: race as CharacterData["race"],
   speciesSpellAbility: undefined,
-  speciesChoices: undefined,
-  toolChoices: undefined,
+  skills: {},
   spells: [],
   ...extra,
 });
@@ -40,7 +40,7 @@ describe("pendingSpeciesChoices", () => {
   it("each made choice leaves the list; all made, nothing is owed", () => {
     const elf = as("elf", {
       speciesSpellAbility: "WIS",
-      speciesChoices: { "race:elf:keen-senses::skill-slot-0": ["perception"] },
+      skills: { perception: "proficient" },
     });
     const pending = pendingSpeciesChoices(elf, {
       grantBundleChoices: { "elf-lineage": "wood-elf" },
@@ -62,25 +62,22 @@ describe("pendingSpeciesChoices", () => {
     }
   });
 
-  it("a Human owes Skillful, never Versatile as a slot", () => {
-    const pending = pendingSpeciesChoices(as("human"), {});
-    expect(pending.slots.skill).toHaveLength(1);
-    expect(pending.slots.feat).toHaveLength(0);
+  it("a Human with its feat owes nothing: Skillful cannot be verified, so it is not asked", () => {
+    const pending = pendingSpeciesChoices(as("human", { humanOriginFeat: "alert" }), {});
+    expect(pending.slots.skill).toHaveLength(0);
+    expect(pending.any).toBe(false);
   });
 });
 
 describe("applySpeciesChoices", () => {
-  it("grants the skill and records the slot, so it is no longer owed", () => {
-    const elf = as("elf", { skills: {} });
+  it("grants the skill, so Keen Senses is no longer owed", () => {
+    const elf = as("elf");
     const { slots } = pendingSpeciesChoices(elf, {});
     const next = applySpeciesChoices(elf, slots, {
       ...EMPTY_CHOICE_PICKS,
       skill: { "race:elf:keen-senses::skill-slot-0": ["survival"] },
     });
     expect(next.skills.survival).toBe("proficient");
-    expect(next.speciesChoices).toEqual({
-      "race:elf:keen-senses::skill-slot-0": ["survival"],
-    });
     expect(pendingSpeciesChoices(next, {}).slots.skill).toHaveLength(0);
   });
 

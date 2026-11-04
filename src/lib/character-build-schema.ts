@@ -118,7 +118,6 @@ const PROFICIENCIES_SCHEMA = objectSchema({
     unionSchema([literalSchema("proficient"), literalSchema("expertise")])
   ),
   toolChoices: recordSchema("string", arraySchema(ID_SCHEMA, 1)),
-  speciesChoices: recordSchema("string", arraySchema(ID_SCHEMA, 1)),
   toolIds: STRING_SET_SCHEMA,
 });
 

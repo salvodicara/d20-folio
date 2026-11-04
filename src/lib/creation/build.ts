@@ -19,7 +19,7 @@ import {
   getExpandedSpellsThroughLevel,
   injectExpandedSpells,
 } from "@/lib/expanded-spells";
-import { applyChoicePicks, type ChoicePicks } from "@/lib/feature-choices";
+import { applyChoicePicks } from "@/lib/feature-choices";
 import { applyLanguagePicks } from "@/lib/feat-language-choices";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { deriveSpellSlots, highestSpellSlotLevel } from "@/lib/multiclass-slots";
@@ -37,12 +37,7 @@ import type {
   SrdSpellRef,
   SrdWeaponRef,
 } from "@/types/character";
-import {
-  creationFacts,
-  draftGrantedFeatures,
-  type CreationDraft,
-  type CreationFacts,
-} from "./draft";
+import { creationFacts, draftGrantedFeatures, type CreationDraft } from "./draft";
 
 /** What a new character is created with (the fields `createCharacter` stores). */
 export type NewCharacterPayload = Pick<
@@ -196,8 +191,6 @@ export function buildNewCharacter(
     ...(draft.speciesSpellAbility
       ? { speciesSpellAbility: draft.speciesSpellAbility }
       : {}),
-    // The species trait picks, recorded per slot (so the sheet never asks them again).
-    ...speciesChoiceRecord(facts),
     lore: {
       traits: "",
       ideals: "",
@@ -288,23 +281,4 @@ export function buildNewCharacter(
       session,
     },
   };
-}
-
-/** `{ speciesChoices }` for the draft's answered species slots (nothing when none). */
-function speciesChoiceRecord(facts: CreationFacts): {
-  speciesChoices?: Record<string, string[]>;
-} {
-  const ids = new Set(
-    Object.values(facts.speciesChoiceSlots).flatMap((list: { slotId: string }[]) =>
-      list.map((slot) => slot.slotId)
-    )
-  );
-  const record: Record<string, string[]> = {};
-  const kinds = Object.values(facts.choicePicks) as ChoicePicks["skill"][];
-  for (const byId of kinds) {
-    for (const [slotId, picked] of Object.entries(byId)) {
-      if (ids.has(slotId) && picked.length > 0) record[slotId] = [...picked];
-    }
-  }
-  return Object.keys(record).length > 0 ? { speciesChoices: record } : {};
 }

@@ -17,7 +17,7 @@ export type PendingSpeciesItem =
 export function pendingSpeciesItems(
   character: Pick<
     CharacterData,
-    "race" | "speciesSpellAbility" | "speciesChoices" | "toolChoices"
+    "race" | "skills" | "humanOriginFeat" | "speciesSpellAbility"
   >,
   session: Pick<SessionState, "grantBundleChoices">,
   locale: Locale
@@ -37,4 +37,29 @@ export function pendingSpeciesItems(
     }
   }
   return items;
+}
+
+type Translate = (key: string, args?: Record<string, string>) => string;
+
+/**
+ * The banner's sentence: the named choices, then the ability on its own — an unset
+ * one already reads Charisma, so it says so («oggi usa Carisma — scegli quella giusta»).
+ */
+export function speciesChoicesLine(
+  items: readonly PendingSpeciesItem[],
+  t: Translate,
+  locale: Locale
+): string {
+  const names = items.flatMap((item) => (item.kind === "ability" ? [] : [item.label]));
+  const parts = names.length
+    ? [
+        t("play.speciesChoices.body", {
+          items: new Intl.ListFormat(locale, { type: "conjunction" }).format(names),
+        }),
+      ]
+    : [];
+  if (items.some((item) => item.kind === "ability")) {
+    parts.push(t("play.speciesChoices.abilityNote"));
+  }
+  return parts.join(" ");
 }

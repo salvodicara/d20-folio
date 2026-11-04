@@ -14,7 +14,10 @@ import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import type { Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
-import { pendingSpeciesItems } from "@/lib/views/species-choices-view";
+import {
+  pendingSpeciesItems,
+  speciesChoicesLine,
+} from "@/lib/views/species-choices-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/types/ability";
@@ -35,10 +38,6 @@ export function PlaySpeciesChoices({
   const [open, setOpen] = useState(false);
   const items = pendingSpeciesItems(doc.character, doc.session, locale);
   if (readonly || items.length === 0) return null;
-  const names = items.map((item) =>
-    item.kind === "ability" ? t("play.speciesChoices.ability") : item.label
-  );
-  const and = new Intl.ListFormat(locale, { type: "conjunction" });
   return (
     <div
       className="f-note f-suggest f-species-due"
@@ -48,7 +47,7 @@ export function PlaySpeciesChoices({
       <p>
         <b>{t("play.speciesChoices.title")}</b>
         {" · "}
-        {t("play.speciesChoices.body", { items: and.format(names) })}
+        {speciesChoicesLine(items, t, locale)}
       </p>
       <Button kind="primary" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {t("play.speciesChoices.open")}

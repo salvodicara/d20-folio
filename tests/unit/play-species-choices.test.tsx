@@ -21,7 +21,6 @@ function load(race: string): CharacterDoc {
       race: asRaceId(race),
       skills: {},
       spells: [],
-      speciesChoices: undefined,
       speciesSpellAbility: undefined,
     },
     session: { ...base.session, grantBundleChoices: {} },
@@ -54,7 +53,7 @@ describe("PlaySpeciesChoices", () => {
     expect(
       screen.getByRole("group", { name: "Choices to finish" }).textContent
     ).toContain(
-      "Your species asks you to choose: Elven Lineage, Spellcasting ability, and Keen Senses."
+      "Your species asks you to choose: Elven Lineage and Keen Senses. Species spellcasting ability: it uses Charisma today — choose the right one."
     );
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     fireEvent.click(screen.getByRole("button", { name: "Wood Elf" }));

@@ -20,7 +20,6 @@ function loadElf() {
       race: asRaceId("elf"),
       skills: {},
       spells: [],
-      speciesChoices: undefined,
       speciesSpellAbility: undefined,
     },
     session: { ...base.session, grantBundleChoices: {} },
@@ -40,34 +39,41 @@ afterEach(() => {
   useCharacterStore.setState({ readonly: false });
 });
 
+// The modal mounts the sheet's full skill picker: room under a loaded parallel run.
+const SUITE_TIMEOUT = 15_000;
+
 describe("SpeciesChoicesBanner", () => {
-  it("asks an Elf's lineage, ability and Keen Senses, then leaves", () => {
-    loadElf();
-    render(<SpeciesChoicesBanner />);
-    const banner = screen.getByRole("group", { name: "Choices to finish" });
-    expect(banner.textContent).toContain(
-      "Elven Lineage, Spellcasting ability, and Keen Senses"
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
-    fireEvent.click(screen.getByRole("button", { name: "High Elf" }));
-    fireEvent.click(screen.getByRole("button", { name: "Intelligence" }));
-    const perception = screen
-      .getAllByRole("button")
-      .find(
-        (b) => b.classList.contains("wiz-row") && b.textContent.includes("Perception")
+  it(
+    "asks an Elf's lineage, ability and Keen Senses, then leaves",
+    () => {
+      loadElf();
+      render(<SpeciesChoicesBanner />);
+      const banner = screen.getByRole("group", { name: "Choices to finish" });
+      expect(banner.textContent).toContain(
+        "Elven Lineage and Keen Senses. Species spellcasting ability: it uses Charisma today"
       );
-    if (!perception) throw new Error("Keen Senses row not found");
-    fireEvent.click(perception);
-    expect(
-      useCharacterStore.getState().character?.character.skills.perception
-    ).toBeUndefined();
-    fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    const doc = useCharacterStore.getState().character;
-    expect(doc?.session.grantBundleChoices?.["elf-lineage"]).toBe("high-elf");
-    expect(doc?.character.speciesSpellAbility).toBe("INT");
-    expect(doc?.character.skills.perception).toBe("proficient");
-    expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
-  });
+      fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+      fireEvent.click(screen.getByRole("button", { name: "High Elf" }));
+      fireEvent.click(screen.getByRole("button", { name: "Intelligence" }));
+      const perception = screen
+        .getAllByRole("button")
+        .find(
+          (b) => b.classList.contains("wiz-row") && b.textContent.includes("Perception")
+        );
+      if (!perception) throw new Error("Keen Senses row not found");
+      fireEvent.click(perception);
+      expect(
+        useCharacterStore.getState().character?.character.skills.perception
+      ).toBeUndefined();
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      const doc = useCharacterStore.getState().character;
+      expect(doc?.session.grantBundleChoices?.["elf-lineage"]).toBe("high-elf");
+      expect(doc?.character.speciesSpellAbility).toBe("INT");
+      expect(doc?.character.skills.perception).toBe("proficient");
+      expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+    },
+    SUITE_TIMEOUT
+  );
 
   it("is absent on a read-only sheet", () => {
     loadElf();

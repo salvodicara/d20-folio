@@ -304,56 +304,6 @@ describe("codec — schema-3 is the ONLY supported format (no upgrade-on-read)",
     };
     expect(env.build).not.toHaveProperty("toolChoices");
   });
-
-  it("build.speciesChoices (the species trait picks) round-trips byte-stably", () => {
-    const v3 = JSON.stringify({
-      schema: 3,
-      build: {
-        name: "Lia",
-        race: "elf",
-        classes: [{ classId: "ranger", level: 1 }],
-        background: "soldier",
-        abilities: { STR: 12, DEX: 15, CON: 14, INT: 10, WIS: 13, CHA: 8 },
-        speciesChoices: { "race:elf:keen-senses::skill-slot-0": ["insight"] },
-      },
-      state: {},
-    });
-    const res = parseCharacter(v3);
-    expect(res.success).toBe(true);
-    if (!res.success) return;
-    expect(res.doc.character.speciesChoices).toEqual({
-      "race:elf:keen-senses::skill-slot-0": ["insight"],
-    });
-    const env = JSON.parse(serializeCharacter(lift(res))) as {
-      build: { speciesChoices?: Record<string, string[]> };
-    };
-    expect(env.build.speciesChoices).toEqual({
-      "race:elf:keen-senses::skill-slot-0": ["insight"],
-    });
-  });
-
-  it("an empty speciesChoices is DROPPED on minimize", () => {
-    const res = parseCharacter(
-      JSON.stringify({
-        schema: 3,
-        build: {
-          name: "Old",
-          race: "human",
-          classes: [{ classId: "fighter", level: 1 }],
-          background: "soldier",
-          abilities: { STR: 15, DEX: 13, CON: 14, INT: 10, WIS: 12, CHA: 8 },
-          speciesChoices: {},
-        },
-        state: {},
-      })
-    );
-    expect(res.success).toBe(true);
-    if (!res.success) return;
-    const env = JSON.parse(serializeCharacter(lift(res))) as {
-      build: Record<string, unknown>;
-    };
-    expect(env.build).not.toHaveProperty("speciesChoices");
-  });
 });
 
 // ── GR10 — proficiency override KEY conform-on-read (token migration) ──────────

@@ -20,7 +20,6 @@ function loadElf() {
       ...doc.character,
       race: asRaceId("elf"),
       skills: {},
-      speciesChoices: undefined,
       speciesSpellAbility: undefined,
     },
   });
@@ -32,7 +31,7 @@ afterEach(() => {
 });
 
 describe("species choices through the store", () => {
-  it("a Keen Senses pick grants the skill and records the slot", () => {
+  it("a Keen Senses pick grants the skill", () => {
     loadElf();
     useCharacterStore.getState().resolveSpeciesChoices({
       ...EMPTY_CHOICE_PICKS,
@@ -40,7 +39,6 @@ describe("species choices through the store", () => {
     });
     const c = useCharacterStore.getState().character?.character;
     expect(c?.skills.perception).toBe("proficient");
-    expect(c?.speciesChoices).toEqual({ [KEEN]: ["perception"] });
   });
 
   it("sets the species spellcasting ability", () => {
