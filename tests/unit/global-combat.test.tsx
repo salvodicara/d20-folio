@@ -663,7 +663,10 @@ describe("GlobalCombatMount — the incapacitation sweep", () => {
       members: [UID],
       memberDetails: { [UID]: { displayName: "GM", characterId: null, role: "dm" } },
     };
-    let encounter = { ...(campaign.encounter as EncounterState), combatants: [] };
+    let encounter: EncounterState = {
+      ...(campaign.encounter as EncounterState),
+      combatants: [],
+    };
     for (const name of ["Cultist", "Goblin"]) {
       encounter = addMonster(encounter, {
         name,
