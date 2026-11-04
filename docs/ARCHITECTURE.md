@@ -784,8 +784,9 @@ whole-item compare-and-swap operation from an exact command and table-entered fa
 `ItemResourceCommandProvider` resolves every required input before mutation, then the character store
 commits one operation or an entire recovery boundary atomically. Undo is causal LIFO, redo replans the
 same facts at a fresh revision, and a stale copy/attunement/state conflict mutates nothing. Short Rest,
-Long Rest, Dawn and Dusk are distinct typed boundaries: rests never impersonate sunrise, while the
-Table Clock exposes Dawn/Dusk as explicit story declarations rather than device-time events. A copy
+Long Rest, Dawn and Dusk are distinct typed boundaries. Dawn and Dusk come from the game clock, never
+device time: with a time of day set (`session.timeOfDay`), passing time or a rest that crosses 06:00
+or 18:00 fires them; with none set, the Table Clock declares them by hand. A copy
 whose disposition becomes nonmagical, consumed or destroyed immediately stops contributing grants,
 casts, actions and intrinsic equipment bonuses. Legacy `ref.charges` and item-id session trackers are
 temporary corpus-migration inputs only; they are never fallback owners for a typed item.
