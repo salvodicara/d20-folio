@@ -1359,7 +1359,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   },
   setEncounterEffects: (characterId, effects = []) => {
     const projection = characterId ? { characterId, effects } : null;
-    const { character } = get();
+    const { character, encounterEffectProjection } = get();
+    // Idempotent: the listener rebuilds equal effects on every run, and a fresh
+    // character on each write would re-render its subscribers in a loop.
+    if (JSON.stringify(projection) === JSON.stringify(encounterEffectProjection)) return;
     set({
       encounterEffectProjection: projection,
       ...(character ? { character: { ...character } } : {}),
