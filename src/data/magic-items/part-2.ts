@@ -312,6 +312,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wand",
     attunement: true,
+    attunementBy: { spellcaster: true },
     // Uncommon variant = +1 to spell attack rolls (Rare +2 / Very Rare +3 are
     // the same item at higher rarity — this row is uncommon). Scoped to ALL
     // spells. The "ignore Half Cover on spell attacks" clause stays descriptive
@@ -344,6 +345,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wand",
     attunement: true,
+    attunementBy: { spellcaster: true },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
     resources: [
@@ -782,6 +784,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wondrous",
     attunement: true,
+    attunementBy: { classes: ["cleric", "druid", "paladin"] },
     source: "SRD",
   },
   {
@@ -1056,6 +1059,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "staff",
     attunement: true,
+    attunementBy: {
+      classes: ["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"],
+    },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
     resources: [
@@ -1108,6 +1114,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "staff",
     attunement: true,
+    attunementBy: { classes: ["bard", "cleric", "druid"] },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
     resources: [
@@ -1172,6 +1179,9 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "staff",
     attunement: true,
+    attunementBy: {
+      classes: ["bard", "cleric", "druid", "sorcerer", "warlock", "wizard"],
+    },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 10"],
     resources: [
@@ -1222,6 +1232,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "staff",
     attunement: true,
+    attunementBy: { classes: ["druid"] },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose, and
     // "+2 bonus to spell attack rolls while holding it" is a standing stat
     // (the quarterstaff's own +2 attack/damage is the appended item-bound grant).
@@ -1480,6 +1491,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wand",
     attunement: true,
+    attunementBy: { spellcaster: true },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
     resources: [
@@ -1535,6 +1547,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wand",
     attunement: true,
+    attunementBy: { spellcaster: true },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7"],
     resources: [
@@ -1590,6 +1603,7 @@ export const MAGIC_ITEMS_PART_2: SrdMagicItemData[] = [
     rarity: "rare",
     type: "wand",
     attunement: true,
+    attunementBy: { spellcaster: true },
     // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
     properties: ["charges: 7", "recharge: 1d6+1 / dawn"],
     resources: [DAWN_CHARGES(7, { dice: 1, sides: 6, modifier: 1 }, "destroyed")],

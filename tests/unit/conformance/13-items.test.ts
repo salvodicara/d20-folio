@@ -70,7 +70,7 @@ describe("conformance · 13. items", () => {
       category: 13,
       case: "Attunement class requirements",
       source: "ITEMS",
-      status: "M18",
+      status: "works",
     },
     () => {
       // A Wand of Fireballs requires attunement by a spellcaster; a Fighter 5

@@ -346,6 +346,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "weapon",
     attunement: true,
+    attunementBy: { classes: ["paladin"] },
     price: "150000 GP",
     properties: [
       "+3 bonus",
@@ -737,6 +738,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "uncommon",
     type: "wondrous",
     attunement: true,
+    attunementBy: { spellcaster: true },
     price: "1000 GP",
     properties: ["recover spell slot ≤ 3rd", "1/dawn"],
     // The slot recovery is the player's own edit; the 1/dawn use is counted.
@@ -879,6 +881,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
+    attunementBy: { classes: ["sorcerer", "warlock", "wizard"] },
     price: "60000 GP",
     properties: [
       "+2 bonus",
@@ -905,6 +908,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     rarity: "legendary",
     type: "staff",
     attunement: true,
+    attunementBy: { classes: ["sorcerer", "warlock", "wizard"] },
     price: "200000 GP",
     properties: [
       "+2 spell attacks",

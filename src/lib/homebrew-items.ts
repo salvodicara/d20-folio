@@ -160,6 +160,15 @@ export const HOMEBREW_ITEM_FIELD_SCHEMAS: {
   rarity: literals(ALL_MAGIC_ITEM_RARITIES),
   type: literals(ALL_MAGIC_ITEM_TYPES),
   attunement: booleanSchema,
+  attunementBy: objectSchema(
+    {},
+    {
+      spellcaster: literalSchema(true),
+      classes: arraySchema(stringSchema),
+      species: arraySchema(stringSchema),
+      attunedItem: stringSchema,
+    }
+  ),
   price: stringSchema,
   weight: numberSchema,
   grants: arraySchema(GRANT),
