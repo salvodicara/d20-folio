@@ -1658,6 +1658,8 @@ export interface AggregatedGrants {
   }>;
   /** Trigger rules (M8): on an event, an action, with an optional per-rest limit. */
   triggers: ReadonlyArray<TriggerRule>;
+  /** Metamagic options one spell may carry (Sorcery Incarnate: 2). Default 1. */
+  metamagicPerSpell: number;
   /** The zero-HP savers, one per granting source (read by `play/zero-hp-savers`). */
   atZeroHpInterrupts: ReadonlyArray<AtZeroHpSaverGrant>;
   /** Lit states that halve the next hit from an attack (Uncanny Dodge). */
@@ -2296,6 +2298,7 @@ export function emptyAggregate(): AggregatedGrants {
     spellSlotTrackerRecoveries: [],
     initiativeTrackerTopUps: [],
     triggers: [],
+    metamagicPerSpell: 1,
     atZeroHpInterrupts: [],
     incomingDamageScales: [],
     damageAbsorbPools: [],
@@ -2570,6 +2573,7 @@ export function evaluateGrants(
   const spellSlotTrackerRecoveries: AggregatedGrants["spellSlotTrackerRecoveries"][number][] =
     [];
   const triggers: TriggerRule[] = [];
+  let metamagicPerSpell = 1;
   const initiativeTrackerTopUps: AggregatedGrants["initiativeTrackerTopUps"][number][] =
     [];
   const atZeroHpInterrupts: AggregatedGrants["atZeroHpInterrupts"][number][] = [];
@@ -2955,6 +2959,9 @@ export function evaluateGrants(
         });
         break;
       // Read where the maintained states are resolved (`resolveActiveMaintainedEffects`).
+      case "metamagic-per-spell":
+        metamagicPerSpell = Math.max(metamagicPerSpell, Math.floor(g.max));
+        break;
       case "upkeep-waiver":
         break;
       case "trigger":
@@ -4119,6 +4126,7 @@ export function evaluateGrants(
     spellSlotTrackerRecoveries,
     initiativeTrackerTopUps,
     triggers,
+    metamagicPerSpell,
     atZeroHpInterrupts,
     incomingDamageScales,
     damageAbsorbPools,

@@ -6,6 +6,7 @@ import { describe, it, expect } from "vitest";
 import {
   buildCastOptions,
   classifySpellCastingTime,
+  metamagicChipStates,
   metamagicOptionsForCast,
   toggleMetamagicSelection,
   type MetamagicSpellFacts,
@@ -539,5 +540,43 @@ describe("toggleMetamagicSelection (BUG-6 one-primary rule)", () => {
     expect(toggleMetamagicSelection(sel, "quickened-spell", stackers)).toEqual([
       "empowered-spell",
     ]);
+  });
+
+  it("Sorcery Incarnate: two primaries ride one spell; a third replaces the oldest", () => {
+    const stackers = new Set(["empowered-spell"]);
+    const two = toggleMetamagicSelection(
+      ["quickened-spell"],
+      "twinned-spell",
+      stackers,
+      2
+    );
+    expect(two).toEqual(["quickened-spell", "twinned-spell"]);
+    expect(toggleMetamagicSelection(two, "careful-spell", stackers, 2)).toEqual([
+      "twinned-spell",
+      "careful-spell",
+    ]);
+    const row = (id: string, cost: number) => ({
+      id,
+      cost,
+      affordable: true,
+      appliesToSpell: true,
+      stacksWithPrimary: id === "empowered-spell",
+    });
+    const rows = [
+      row("quickened-spell", 2),
+      row("twinned-spell", 1),
+      row("careful-spell", 1),
+    ];
+    // One picked of two allowed: the next one adds, it doesn't swap.
+    expect(
+      metamagicChipStates(rows, ["quickened-spell"], 5, 2).chips.find(
+        (c) => c.id === "twinned-spell"
+      )?.why
+    ).toBeNull();
+    expect(
+      metamagicChipStates(rows, ["quickened-spell"], 5).chips.find(
+        (c) => c.id === "twinned-spell"
+      )?.why
+    ).toBe("swaps");
   });
 });

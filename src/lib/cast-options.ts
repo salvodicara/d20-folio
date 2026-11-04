@@ -190,6 +190,9 @@ export interface MetamagicSpellFacts {
   dealsDamage: boolean;
   /** True when the spell makes a spell attack roll (`SrdSpellData.attackType`). */
   makesAttack: boolean;
+  /** True when a higher slot adds a target (`targeting.maxTargetsPerUpcast`).
+   *  Absent: it doesn't (Twinned Spell can't apply). */
+  gainsTargetsWhenUpcast?: boolean;
 }
 
 /** The four mechanically distinct spell-casting time classes. */
@@ -249,7 +252,8 @@ export function metamagicOptionsForCast(
         isActionCastingTime(spell.castingTime)) &&
       (when?.requiresDamage !== true || spell.dealsDamage) &&
       (when?.requiresAttack !== true || spell.makesAttack) &&
-      (when?.excludesCantrip !== true || spell.level > 0);
+      (when?.excludesCantrip !== true || spell.level > 0) &&
+      (when?.requiresUpcastTargets !== true || spell.gainsTargetsWhenUpcast === true);
     out.push({
       id: opt.id,
       cost: opt.cost,
@@ -277,12 +281,17 @@ export function metamagicOptionsForCast(
 export function toggleMetamagicSelection(
   selected: ReadonlyArray<string>,
   id: string,
-  stackerIds: ReadonlySet<string>
+  stackerIds: ReadonlySet<string>,
+  maxPrimaries = 1
 ): string[] {
   if (selected.includes(id)) return selected.filter((x) => x !== id);
   if (stackerIds.has(id)) return [...selected, id];
-  // A primary swaps out any currently-selected primary.
-  return [...selected.filter((x) => stackerIds.has(x)), id];
+  // A primary past the limit (one; two with Sorcery Incarnate) swaps out the
+  // oldest selected primary.
+  const primaries = selected.filter((x) => !stackerIds.has(x));
+  if (primaries.length < maxPrimaries) return [...selected, id];
+  const dropped = primaries[0];
+  return [...selected.filter((x) => x !== dropped), id];
 }
 
 /** One per-cast Metamagic option as the cast dialog offers it (ids, costs, gates). */
@@ -313,19 +322,23 @@ export interface MetamagicChipState {
 export function metamagicChipStates(
   rows: ReadonlyArray<MetamagicChipInput>,
   selected: ReadonlyArray<string>,
-  sorceryRemaining: number
+  sorceryRemaining: number,
+  maxPrimaries = 1
 ): { remaining: number; chips: MetamagicChipState[] } {
   const spent = rows
     .filter((m) => selected.includes(m.id))
     .reduce((sum, m) => sum + m.cost, 0);
-  const currentPrimary = rows.find(
-    (m) => selected.includes(m.id) && !m.stacksWithPrimary
-  );
+  const primaries = selected.flatMap((id) => {
+    const row = rows.find((m) => m.id === id && !m.stacksWithPrimary);
+    return row ? [row] : [];
+  });
+  // At the limit, a new primary replaces the oldest one (see the reducer).
+  const replaced = primaries.length >= maxPrimaries ? primaries[0] : undefined;
   const chips = rows.map((m): MetamagicChipState => {
     const on = selected.includes(m.id);
     if (on) return { id: m.id, selected: true, enabled: true, why: null };
-    const swaps = !m.stacksWithPrimary && currentPrimary !== undefined;
-    const left = sorceryRemaining - spent + (swaps ? currentPrimary.cost : 0);
+    const swaps = !m.stacksWithPrimary && replaced !== undefined;
+    const left = sorceryRemaining - spent + (swaps ? replaced.cost : 0);
     if (!m.appliesToSpell)
       return { id: m.id, selected: false, enabled: false, why: "not-applicable" };
     if (!m.affordable || m.cost > left)

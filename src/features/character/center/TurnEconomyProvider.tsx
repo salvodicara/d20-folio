@@ -24,7 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
-import { effectiveConditions } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
 import { runEndTurn } from "@/lib/play/end-turn";
 import { actsOfUse } from "@/lib/play/states";
 import {
@@ -452,6 +452,8 @@ export function TurnEconomyProvider({
     options: CastLevelOption[];
     metamagic?: MetamagicCastRow[];
     sorceryRemaining?: number;
+    /** Metamagic options this spell may carry (Sorcery Incarnate: 2). */
+    metamagicPerSpell?: number;
     execution: ActionExecution;
     // ATTACK-PIPS — this cast REPLACES one attack of the in-progress Attack action
     // (War Magic): the confirmed option consumes an attack pip instead of a fresh
@@ -1638,6 +1640,8 @@ export function TurnEconomyProvider({
       options,
       metamagic: metamagic.length > 0 ? metamagic : undefined,
       sorceryRemaining: remainingSorceryPoints(character),
+      metamagicPerSpell: aggregateCharacterGrants(character.character, character.session)
+        .metamagicPerSpell,
       execution,
       ...(ridesPip ? { ridesPip } : {}),
       ...(onConfigured ? { onConfigured } : {}),
@@ -2734,6 +2738,7 @@ export function TurnEconomyProvider({
         options: castRequest.options,
         metamagic: castRequest.metamagic,
         sorceryRemaining: castRequest.sorceryRemaining,
+        metamagicPerSpell: castRequest.metamagicPerSpell,
         upcast: castRequest.upcast,
       }
     : null;

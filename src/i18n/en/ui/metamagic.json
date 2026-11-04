@@ -9,6 +9,7 @@
     "notApplicable": "Doesn't apply to this spell",
     "notEnoughSp": "Not enough Sorcery Points",
     "onePrimaryRule": "Use one Metamagic option per spell. Empowered and Seeking can stack on top.",
+    "twoPrimaryRule": "Use up to two Metamagic options per spell (Sorcery Incarnate). Empowered and Seeking can stack on top.",
     "swapsPrimary": "Replaces your current Metamagic option"
   }
 }

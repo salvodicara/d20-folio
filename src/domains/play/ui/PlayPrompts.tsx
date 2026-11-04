@@ -113,7 +113,13 @@ function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
   const [metamagic, setMetamagic] = useState<string[]>([]);
   const cancel = useOnce(prompt.onCancel);
   const rows = request.metamagic ?? [];
-  const chips = metamagicChipStates(rows, metamagic, request.sorceryRemaining ?? 0);
+  const perSpell = request.metamagicPerSpell ?? 1;
+  const chips = metamagicChipStates(
+    rows,
+    metamagic,
+    request.sorceryRemaining ?? 0,
+    perSpell
+  );
   const stackers = new Set(rows.filter((m) => m.stacksWithPrimary).map((m) => m.id));
   const option = options[picked];
   const confirm = () => {
@@ -193,7 +199,9 @@ function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
                           : undefined
                   }
                   onClick={() =>
-                    setMetamagic((s) => toggleMetamagicSelection(s, m.id, stackers))
+                    setMetamagic((s) =>
+                      toggleMetamagicSelection(s, m.id, stackers, perSpell)
+                    )
                   }
                 >
                   {`${m.name} · ${t("levelUp.metamagicCost", { cost: m.cost })}`}
@@ -201,7 +209,9 @@ function SlotStep({ prompt }: { prompt: Prompts["cast-level"] }) {
               );
             })}
           </div>
-          <p className="f-help">{t("metamagic.onePrimaryRule")}</p>
+          <p className="f-help">
+            {t(perSpell > 1 ? "metamagic.twoPrimaryRule" : "metamagic.onePrimaryRule")}
+          </p>
         </div>
       )}
       {request.higherLevels && (

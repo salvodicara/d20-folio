@@ -360,6 +360,10 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/features/character/center/TurnEconomyProvider.tsx",
   },
   trigger: { via: "firedTriggerRestores", consumer: "src/lib/smart-tracker.ts" },
+  "metamagic-per-spell": {
+    via: "metamagicPerSpell",
+    consumer: "src/features/character/center/TurnEconomyProvider.tsx",
+  },
   "upkeep-waiver": {
     via: "resolveActiveMaintainedEffects",
     consumer: "src/lib/smart-tracker.ts",

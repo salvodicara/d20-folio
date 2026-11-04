@@ -9,6 +9,7 @@
     "notApplicable": "Non si applica a questo incantesimo",
     "notEnoughSp": "Punti Stregoneria insufficienti",
     "onePrimaryRule": "Usa una sola opzione di Metamagia per incantesimo. Potenziato e Localizzante possono aggiungersi.",
+    "twoPrimaryRule": "Usa fino a due opzioni di Metamagia per incantesimo (Stregoneria Incarnata). Potenziato e Localizzante possono aggiungersi.",
     "swapsPrimary": "Sostituisce la tua opzione di Metamagia attuale"
   }
 }

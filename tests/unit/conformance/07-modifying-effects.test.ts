@@ -73,6 +73,7 @@ function facts(spellId: string): MetamagicSpellFacts {
     forcesSave: spell.saveAbility != null,
     dealsDamage: spell.damageDice != null,
     makesAttack: spell.attackType != null,
+    gainsTargetsWhenUpcast: (spell.targeting?.maxTargetsPerUpcast ?? 0) > 0,
   };
 }
 
@@ -99,7 +100,7 @@ describe("conformance · 7. effects that modify other effects", () => {
       category: 7,
       case: "One Metamagic per spell, with exceptions",
       source: "WIKI sorcerer:main; SAC #62",
-      status: "M13",
+      status: "works",
     },
     () => {
       // Normally a second primary option replaces the first.
@@ -118,7 +119,7 @@ describe("conformance · 7. effects that modify other effects", () => {
       category: 7,
       case: "Twinned Spell 2024",
       source: "DDB 2024 sorcerer; SAC #66",
-      status: "M13",
+      status: "works",
     },
     () => {
       // Only spells that gain a target when upcast: Hold Person yes, Fireball no.
