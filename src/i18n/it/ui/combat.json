@@ -607,6 +607,10 @@
     "repeatSaveSettledInto": "{{condition}} diventa {{next}}: {{target}}",
     "repeatSaveExhaustion": "{{target}} non supera il TS: +{{count}} Indebolimento.",
     "repeatSaveExhaustionMonster": "{{target}} non supera il TS: +{{count}} Indebolimento, da segnare sul mostro.",
-    "zoneOutside": "Fuori"
+    "zoneOutside": "Fuori",
+    "actionRepeatSave": "Usa l'azione: ripeti il TS su {{ability}} contro {{condition}}.",
+    "actionRepeatSaveDc": "Usa l'azione: ripeti il TS su {{ability}} (CD {{dc}}) contro {{condition}}.",
+    "actionRepeatSaveSpent": "Azione usata per ripetere il TS",
+    "actionRepeatSaveEnded": "{{condition}} termina"
   }
 }

@@ -14,6 +14,7 @@ import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
+import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
@@ -35,6 +36,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
@@ -221,6 +223,7 @@ function PlayHeader({
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
   // The player's own combatant: a repeat save due on it waits here.
+  const fight = useCombatStatusStore((st) => st.status);
   const uid = useAuthStore((st) => st.user?.uid);
   const [hpOpen, setHpOpen] = useState(false);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
@@ -339,6 +342,15 @@ function PlayHeader({
           </div>
           <PlayDown doc={doc} />
           {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
+          {fight?.isMyTurn && (
+            <ActionRepeatSaves
+              campaignId={fight.campaignId}
+              effectOps={fight.encounter.effectOps}
+              targetId={fight.myId}
+              locale={locale}
+              spendAction
+            />
+          )}
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
