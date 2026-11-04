@@ -34,6 +34,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { spellEndEffects } from "@/lib/activities/read";
 import { proneInFlight } from "@/lib/play/flight";
 import { markDropOffers } from "@/lib/play/mark-offers";
+import { effectiveTableRules } from "@/lib/table-rules";
 import { fightConditionEnds, type FightLook } from "@/lib/play/fight-condition-ends";
 import { activeZones, zoneTurnHits, type ZoneLedger } from "@/lib/zones";
 import { openZoneTray } from "@/features/character/center/zone-tray";
@@ -288,6 +289,18 @@ export function GlobalCombatMount(): null {
       round: live.encounter.round,
     };
   }, [devCombat, devPip, devStatus, uid, primaryId, live]);
+
+  // The table's rules (M16): the open character plays by its campaign's variants
+  // (a solo sheet, or a RAW table, by RAW). The setter is idempotent.
+  const setTableRules = useCharacterStore((s) => s.setTableRules);
+  useEffect(() => {
+    if (!openCharacterId || !uid) return;
+    const campaign = campaigns.find(
+      (c) => c.memberDetails[uid]?.characterId === openCharacterId
+    );
+    const varies = campaign?.tableRules && Object.keys(campaign.tableRules).length > 0;
+    setTableRules(openCharacterId, varies ? effectiveTableRules(campaign) : null);
+  }, [campaigns, openCharacterId, uid, setTableRules]);
 
   // Project campaign-owned standing effects onto the viewer's own open character.
   // This reuses the primary encounter listener above; the character store scopes the

@@ -25,6 +25,7 @@
  */
 
 import { speechBlocksCast } from "@/lib/play/speech";
+import { RAW_TABLE_RULES } from "@/lib/table-rules";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { hitStateWriter, saveSuccessWriter } from "./outcome-offer";
 import { sheetConditionEffects } from "@/lib/condition-sources";
@@ -929,7 +930,11 @@ export function TurnEconomyProvider({
   /** "Search: Perception 17 vs DC 15, success": the toast of a use with its check. */
   function localizeCheckToast(name: string, check: CheckResult): string {
     const skill = t(`skills.${check.skill}`);
-    const succeeded = checkSucceeded(check);
+    // The table may rule that a natural 1 fails a check (M16).
+    const succeeded = checkSucceeded(
+      check,
+      useCharacterStore.getState().character?.session.tableRules ?? RAW_TABLE_RULES
+    );
     return succeeded === undefined
       ? t("combat.checkToast", { name, skill, total: check.total })
       : t("combat.checkDcToast", {
