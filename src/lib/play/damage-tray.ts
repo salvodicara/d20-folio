@@ -14,6 +14,7 @@ import { getSpellById } from "@/data/spells";
 import {
   combatDamageParts,
   riderConditionSave,
+  riderConditionSource,
   combatResolutionSpec,
   type SaveDamageOutcome,
 } from "@/lib/combat-resolution";
@@ -24,7 +25,12 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { AttackOutcome } from "@/types/combat-log";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
-import type { CreatureType, SpellHitPointThreshold, SpellRevive } from "@/data/types";
+import type {
+  CombatConditionLifetime,
+  CreatureType,
+  SpellHitPointThreshold,
+  SpellRevive,
+} from "@/data/types";
 import { hitPointThresholdOutcome, revivalHitPoints } from "@/lib/play/spell-outcomes";
 
 export type { AttackOutcome } from "@/types/combat-log";
@@ -81,6 +87,12 @@ export interface DamageTrayPlan {
     pickOne: boolean;
     optIn?: true;
     save?: { ability: string; dc: number };
+    /** The feature a hit-gated rider's condition comes from (Poisoner), written as
+     *  the fight effect's source when the use has no catalogue source of its own. */
+    source?: { kind: "feature"; id: string };
+    /** How long each condition lasts, when its data says (Poisoned until the end
+     *  of the attacker's next turn); absent: until removed. */
+    lifetimes?: Partial<Record<string, CombatConditionLifetime>>;
     /** On only for a target that already has one of these (Rotting Claw). */
     ifTargetHas?: string[];
   };
@@ -184,6 +196,13 @@ export function damageTrayPlan(
           .map((id) => riderConditionSave(action, id))
           .find((save) => save !== undefined)
       : undefined;
+  const riderSource =
+    condition?.kind === "condition" && condition.optIn
+      ? condition.conditionIds
+          .map((id) => riderConditionSource(action, id))
+          .find((source) => source !== undefined)
+      : undefined;
+  const conditionLifetimes = spec.conditionApplication?.lifetimes;
   // A save governs the damage only when the damage itself rides it (Fireball), not
   // when an attack deals it and the save only gates a rider.
   const parts = combatDamageParts(action);
@@ -247,6 +266,8 @@ export function damageTrayPlan(
             // A hit-gated rider's condition rides its own save (Topple's CON;
             // Brew Poison's CON vs 8 + PB + the feat's ability).
             ...(riderSave ? { save: riderSave } : {}),
+            ...(riderSource ? { source: riderSource } : {}),
+            ...(conditionLifetimes ? { lifetimes: conditionLifetimes } : {}),
           },
         }
       : {}),
