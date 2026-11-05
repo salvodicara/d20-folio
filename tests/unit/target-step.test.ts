@@ -47,6 +47,13 @@ const FIGHT: TargetRoster = {
     { id: "m-zomb", kind: "monster", side: "enemy", name: "Zombie" },
   ],
 };
+// Out of a fight in a campaign: the party, for the «Il gruppo» group.
+const PARTY: TargetRoster = {
+  selfId: "pc-me",
+  selfName: "Mirovel",
+  party: true,
+  rows: [{ id: "pc-bren", kind: "pc", side: "ally", name: "Bren" }],
+};
 const ids = (action: ResolvedAction, roster: TargetRoster) =>
   targetStepFor(action, roster)?.candidates.map((c) => c.id);
 
@@ -179,5 +186,44 @@ describe("targetStepFor — the dead", () => {
 
   it("Revivify offers the dead ally too", () => {
     expect(ids(spellAction("revivify"), WAKE)).toContain("pc-bren");
+  });
+});
+
+describe("out of a fight: the party («Il gruppo»)", () => {
+  it("Mage Armor offers me and Bren, as the party", () => {
+    const step = targetStepFor(spellAction("mage-armor"), PARTY);
+    expect(step?.party).toBe(true);
+    expect(step?.candidates.map((c) => c.id)).toEqual(["pc-me", "pc-bren"]);
+  });
+
+  it("a spell that leaves nothing standing does not ask (Fireball, Cure Wounds)", () => {
+    expect(targetStepFor(spellAction("fireball"), PARTY)).toBeNull();
+    expect(targetStepFor(spellAction("cure-wounds"), PARTY)).toBeNull();
+  });
+
+  it("each row carries its creature's portrait, for the round medallion", () => {
+    const crop = { x: 1, y: 2, width: 50, height: 50 };
+    const step = targetStepFor(spellAction("mage-armor"), {
+      ...PARTY,
+      selfPortraitUrl: "me.jpeg",
+      rows: [
+        {
+          id: "pc-bren",
+          kind: "pc",
+          side: "ally",
+          name: "Bren",
+          portraitUrl: "bren.jpeg",
+          portraitCrop: crop,
+        },
+      ],
+    });
+    expect(step?.candidates.map((c) => [c.portraitUrl, c.portraitCrop])).toEqual([
+      ["me.jpeg", undefined],
+      ["bren.jpeg", crop],
+    ]);
+  });
+
+  it("in a fight the groups stay allies and enemies", () => {
+    expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });
 });

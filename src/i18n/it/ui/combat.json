@@ -541,6 +541,7 @@
     "targetStepHintOne": "Facoltativo · tocca il bersaglio",
     "targetStepHintMany": "Facoltativo · fino a {{count}}",
     "targetAllies": "Alleati",
+    "targetParty": "Il gruppo",
     "targetEnemies": "Nemici",
     "targetMe": "Io ({{name}})",
     "targetSkipNone": "Salta · nessun bersaglio",

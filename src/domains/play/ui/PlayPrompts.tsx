@@ -398,9 +398,15 @@ function TargetStep({ prompt, locale }: { prompt: Prompts["target"]; locale: Loc
       </span>
       {sides.map((g) => (
         <div key={g.side} className="f-ask">
-          {sides.length > 1 && (
+          {(sides.length > 1 || step.party) && (
             <span className="f-help">
-              {t(g.side === "ally" ? "combat.targetAllies" : "combat.targetEnemies")}
+              {t(
+                step.party
+                  ? "combat.targetParty"
+                  : g.side === "ally"
+                    ? "combat.targetAllies"
+                    : "combat.targetEnemies"
+              )}
             </span>
           )}
           <div className="f-chips">

@@ -9179,6 +9179,27 @@ button.create-need:focus-visible .create-need-chev {
   background: var(--accent-primary);
   box-shadow: inset 0 0 0 3px var(--bg-surface-1);
 }
+/* A creature's round portrait medallion in the «Su chi?» rows (PRODUCT.md): its
+   portrait, else the shared tinted fallback. */
+.cl-target .cl-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-xs);
+}
+.cl-target .cl-avatar > * {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
 /* Chromatic slot seal — diamond pip in the per-level --sl colour. */
 .cl-slot .cl-seal {
   display: inline-flex;

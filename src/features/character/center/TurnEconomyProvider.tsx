@@ -30,6 +30,9 @@ import { featureNameLoc } from "@/lib/srd-feature-lookup";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
 import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
 import { standingAtCommit, standingEffectsForTargets } from "@/lib/play/standing-effects";
+import { standingOnClock } from "@/lib/play/campaign-effects";
+import { concentrationBudgetRounds } from "@/lib/spell-duration";
+import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import { dispelSpell } from "@/features/character/center/dispel-commit";
 import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
@@ -97,6 +100,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
   targetStepFor,
+  type TargetRoster,
   withSelfRecipient,
   type TargetStep,
 } from "@/features/character/center/target-step";
@@ -1559,7 +1563,8 @@ export function TurnEconomyProvider({
     const status = useCombatStatusStore.getState().status;
     const uid = useAuthStore.getState().user?.uid;
     const doc = useCharacterStore.getState().character;
-    if (!status || !uid || !doc || status.characterId !== doc.id || !combatEffectsV26On())
+    if (!status) return leaveStandingsOnClock(action, castLevel, targets);
+    if (!uid || !doc || status.characterId !== doc.id || !combatEffectsV26On())
       return null;
     const spec = standingAtCommit(action, castLevel);
     if (!spec) return null;
@@ -1605,6 +1610,70 @@ export function TurnEconomyProvider({
                 )
               )
             )
+          : undefined
+      );
+    };
+  }
+
+  /**
+   * Out of a fight in a campaign: the state a cast leaves on the party members it
+   * names lands on the campaign clock (`campaigns/{id}/effects`), for its countdown or,
+   * held by Concentration, its budget. Returns the undo, which ends the same effects.
+   */
+  function leaveStandingsOnClock(
+    action: ResolvedAction,
+    castLevel: number | undefined,
+    targets: ReadonlyArray<string>
+  ): (() => void) | null {
+    const party = usePartyRosterStore.getState().party;
+    const uid = useAuthStore.getState().user?.uid;
+    const doc = useCharacterStore.getState().character;
+    if (!party || !uid || !doc || party.characterId !== doc.id || !combatEffectsV26On())
+      return null;
+    const spec = standingAtCommit(action, castLevel);
+    if (!spec) return null;
+    const named = party.members.filter(({ ref }) => targets.includes(ref.combatantId));
+    if (named.length === 0) return null;
+    const effects = standingOnClock({
+      spec,
+      caster: {
+        kind: "pc",
+        combatantId: party.selfId,
+        memberUid: uid,
+        characterId: doc.id,
+      },
+      targets: named.map(({ ref }) => ref),
+      minute: party.minute,
+      concentrationRounds:
+        spec.source.kind === "spell"
+          ? concentrationBudgetRounds(spec.source.id, castLevel)
+          : null,
+      spellcastingModifier: hitPointDiceContext(doc).spellcastingMod,
+      newId: () => crypto.randomUUID(),
+    });
+    if (effects.length === 0) return null;
+    const failed = () =>
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+    const io = import("@/features/campaigns/campaign-effects-io");
+    const written = io
+      .then(({ writeCampaignEffects }) => writeCampaignEffects(party.campaignId, effects))
+      .then(() => true)
+      .catch(() => {
+        failed();
+        return false;
+      });
+    return () => {
+      void written.then((ok) =>
+        ok
+          ? io
+              .then(({ setCampaignEffectsEnded }) =>
+                setCampaignEffectsEnded(
+                  party.campaignId,
+                  effects.map((effect) => effect.id),
+                  "revoked"
+                )
+              )
+              .catch(failed)
           : undefined
       );
     };
@@ -3107,11 +3176,36 @@ export function TurnEconomyProvider({
     return status?.myId ?? (uid ? `pc-${uid}` : "self");
   }
 
-  function targetRoster() {
+  function targetRoster(): TargetRoster {
     const status = useCombatStatusStore.getState().status;
+    const doc = useCharacterStore.getState().character;
+    const selfName = doc?.character.name ?? "";
+    const selfPortrait = {
+      selfPortraitUrl: doc?.portraitUrl ?? null,
+      selfPortraitCrop: doc?.portraitCrop ?? null,
+    };
+    // Out of a fight in a campaign: the party, for a state left on its recipient.
+    const party = !status ? usePartyRosterStore.getState().party : null;
+    if (party && doc && party.characterId === doc.id && combatEffectsV26On()) {
+      return {
+        selfId: party.selfId,
+        selfName,
+        ...selfPortrait,
+        party: true,
+        rows: party.members.map(({ ref, name, portraitUrl, portraitCrop }) => ({
+          id: ref.combatantId,
+          kind: "pc" as const,
+          side: "ally" as const,
+          name,
+          portraitUrl: portraitUrl ?? null,
+          portraitCrop: portraitCrop ?? null,
+        })),
+      };
+    }
     return {
       selfId: selfCombatantId(),
-      selfName: useCharacterStore.getState().character?.character.name ?? "",
+      selfName,
+      ...selfPortrait,
       rows: status?.view.rows ?? [],
     };
   }

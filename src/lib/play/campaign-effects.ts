@@ -5,10 +5,12 @@
  * and the store: an effect that outlasts its fight moves here with the same id, and a
  * fight reads the store rather than copying it. Pure.
  */
+import type { CombatStandingEffectSpec } from "@/lib/combat-resolution";
 import { foldCombatEffectOps } from "@/lib/combat-effects";
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
 import type {
   ActiveCombatEffect,
+  CombatantRef,
   CombatEffectOp,
   EncounterPosition,
 } from "@/types/combat-effect";
@@ -143,4 +145,46 @@ export function withCampaignEffects(
 ): ActiveCombatEffect[] {
   const ids = new Set(fight.map((effect) => effect.id));
   return [...fight, ...store.filter((effect) => !ids.has(effect.id))];
+}
+
+/**
+ * What a cast out of a fight leaves on the party members it names, on the campaign
+ * clock from `minute`: its countdown in whole minutes (Mage Armor, 8 hours), or, held
+ * by Concentration, the spell's Concentration budget with the link to it. A state
+ * bound to the turn order, or one with under a minute, leaves nothing out of a fight.
+ */
+export function standingOnClock(input: {
+  spec: CombatStandingEffectSpec;
+  caster: CombatantRef;
+  targets: ReadonlyArray<CombatantRef>;
+  minute: number;
+  /** The spell's Concentration budget at the level cast, for a Concentration state. */
+  concentrationRounds?: number | null;
+  spellcastingModifier?: number;
+  newId: () => string;
+}): ActiveCombatEffect[] {
+  const { spec, caster } = input;
+  if (spec.lifetime.turnBoundary) return [];
+  const rounds = spec.lifetime.concentration
+    ? (input.concentrationRounds ?? spec.lifetime.maxRounds)
+    : spec.lifetime.maxRounds;
+  const minutes = rounds == null ? 0 : Math.floor(rounds / ROUNDS_PER_MINUTE);
+  if (minutes < 1) return [];
+  return input.targets.map((target) => ({
+    id: input.newId(),
+    actor: caster,
+    target,
+    source: spec.source,
+    payload: spec.payload,
+    ...(input.spellcastingModifier !== undefined
+      ? { bindings: { spellcastingModifier: input.spellcastingModifier } }
+      : {}),
+    duration: {
+      kind: "game-clock" as const,
+      untilMinute: input.minute + minutes,
+      ...(spec.lifetime.concentration
+        ? { concentration: { actorId: caster.combatantId, sourceId: spec.source.id } }
+        : {}),
+    },
+  }));
 }

@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Portrait } from "@/components/shared/Portrait";
 import type {
   TargetCandidate,
   TargetStep,
@@ -86,8 +87,13 @@ function TargetPickerContent({
         disabled={many && !on && picked.length >= step.max}
         onClick={() => (many ? toggle(candidate.id) : onConfirm([candidate.id]))}
       >
-        <span className="cl-seal" aria-hidden>
-          {candidate.name.charAt(0).toUpperCase()}
+        <span className="cl-avatar" aria-hidden>
+          <Portrait
+            src={candidate.portraitUrl ?? null}
+            crop={candidate.portraitCrop ?? null}
+            name={candidate.name}
+            seed={candidate.id}
+          />
         </span>
         <span className="cl-name">{name}</span>
         {many && <span className="cl-check" aria-hidden />}
@@ -112,7 +118,13 @@ function TargetPickerContent({
         {groups.map((group) => (
           <section key={group.side} className="cl-group">
             <h3 className="cl-group-label">
-              {t(group.side === "ally" ? "combat.targetAllies" : "combat.targetEnemies")}
+              {t(
+                step.party
+                  ? "combat.targetParty"
+                  : group.side === "ally"
+                    ? "combat.targetAllies"
+                    : "combat.targetEnemies"
+              )}
             </h3>
             <div className="cl-opts">{group.rows.map(row)}</div>
           </section>

@@ -9,6 +9,7 @@
  * are creatures to name; solo, only a recipient state that would light on "me".
  */
 import type { ResolvedAction } from "@/lib/smart-tracker";
+import type { PortraitCrop } from "@/types/character";
 import { combatResolutionSpec, shouldResolveCombatAction } from "@/lib/combat-resolution";
 
 /** One creature the sheet knows about: the encounter's visible rows. */
@@ -20,6 +21,9 @@ export interface TargetRosterRow {
   /** At 0 Hit Points (a monster there is dead; a PC is dying). */
   down?: boolean;
   deathSaves?: { successes: number; failures: number };
+  /** The creature's portrait, for the row's round medallion. */
+  portraitUrl?: string | null;
+  portraitCrop?: PortraitCrop | null;
 }
 
 /** Dead: a monster at 0 Hit Points, a PC with three failed death saves. */
@@ -31,8 +35,13 @@ export interface TargetRoster {
   /** This player's combatant id (`pc-<uid>`), used for the "me" row. */
   selfId: string;
   selfName: string;
+  selfPortraitUrl?: string | null;
+  selfPortraitCrop?: PortraitCrop | null;
   /** The live encounter's visible rows; empty when no encounter is running. */
   rows: ReadonlyArray<TargetRosterRow>;
+  /** Out of a fight in a campaign, the rows are the party («Il gruppo»): only a state
+   *  the use leaves on its recipient reaches them (on the campaign clock). */
+  party?: boolean;
 }
 
 export interface TargetCandidate {
@@ -40,12 +49,21 @@ export interface TargetCandidate {
   name: string;
   side: "ally" | "enemy";
   self: boolean;
+  portraitUrl?: string | null;
+  portraitCrop?: PortraitCrop | null;
 }
+
+const portraitOf = (url?: string | null, crop?: PortraitCrop | null) => ({
+  ...(url ? { portraitUrl: url } : {}),
+  ...(url && crop ? { portraitCrop: crop } : {}),
+});
 
 export interface TargetStep {
   /** How many may be picked: 1 = a tap commits; more = tick then confirm. */
   max: number;
   candidates: TargetCandidate[];
+  /** Out of a fight: the candidates are the party, one group («Il gruppo»). */
+  party?: true;
 }
 
 /** A standing state the cast leaves on its chosen recipient (Mage Armor, Bless). */
@@ -58,6 +76,8 @@ export function targetStepFor(
   action: ResolvedAction,
   roster: TargetRoster
 ): TargetStep | null {
+  // Out of a fight, the party is offered only for a state left on its recipient.
+  if (roster.party && !recipientStateKey(action)) return null;
   // Help names a creature with nothing to resolve: the pick only tags the log line.
   if (!shouldResolveCombatAction(action) && !action.namesTarget) return null;
   const spec = combatResolutionSpec(action);
@@ -72,7 +92,13 @@ export function targetStepFor(
   const allies: TargetCandidate[] = [];
   const enemies: TargetCandidate[] = [];
   if (wantsAllies && !spec.excludeSelf)
-    allies.push({ id: roster.selfId, name: roster.selfName, side: "ally", self: true });
+    allies.push({
+      id: roster.selfId,
+      name: roster.selfName,
+      side: "ally",
+      self: true,
+      ...portraitOf(roster.selfPortraitUrl, roster.selfPortraitCrop),
+    });
   for (const row of roster.rows) {
     if (row.id === roster.selfId) continue;
     // Only a spell that reaches the dead (Revivify) offers them.
@@ -83,6 +109,7 @@ export function targetStepFor(
       name: row.name,
       side,
       self: false,
+      ...portraitOf(row.portraitUrl, row.portraitCrop),
     };
     if (side === "ally" && wantsAllies) allies.push(candidate);
     if (side === "enemy" && wantsEnemies) enemies.push(candidate);
@@ -96,6 +123,7 @@ export function targetStepFor(
   return {
     max: Math.max(1, Math.min(spec.targetCap, candidates.length)),
     candidates,
+    ...(roster.party ? { party: true as const } : {}),
   };
 }
 

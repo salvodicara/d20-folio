@@ -25,6 +25,7 @@ import type {
   PendingTurn,
 } from "@/features/campaigns/global-combat-context";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
+import type { PartyRoster } from "@/features/campaigns/party-roster";
 import { sortByInitiative } from "@/features/campaigns/encounter";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 import { asRaceId } from "@/data/srd-names";
@@ -1482,6 +1483,31 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
     initiativeBonus: 2,
     initiativeRoll: 15,
     round,
+  };
+}
+
+/** The SHEET-side party seam (`d20-dev-party`): out of a fight, the open evoker's party
+ *  in the dev campaign is Bren, for the «Su chi?» step's «Il gruppo» group and the cast
+ *  that writes its state on the campaign clock. `null` when the flag is unset. */
+export function makeDevParty(): PartyRoster | null {
+  if (typeof window === "undefined") return null;
+  if (window.localStorage.getItem("d20-dev-party") !== "1") return null;
+  return {
+    campaignId: "mock-1",
+    characterId: "scn-evoker-wizard",
+    selfId: "pc-mock-uid",
+    minute: 0,
+    members: [
+      {
+        ref: {
+          kind: "pc",
+          combatantId: "pc-mock-ally",
+          memberUid: "mock-ally",
+          characterId: "scn-champion-6",
+        },
+        name: "Bren",
+      },
+    ],
   };
 }
 

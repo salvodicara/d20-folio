@@ -66,6 +66,7 @@ import {
   makeDevPip,
   makeDevGlobalCombat,
   makeDevChronicleCombat,
+  makeDevParty,
   devPipMode,
   turnFlickerReplayMode,
   makeTurnFlickerSteps,
@@ -89,6 +90,7 @@ import type { CampaignDoc, EncounterPc } from "@/types/campaign";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCampaignClockProjection } from "@/features/campaigns/campaign-clock-projection";
+import { partyRosterOf, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import {
   subscribeCampaignEffects,
   setCampaignEffectsEnded,
@@ -367,6 +369,25 @@ export function GlobalCombatMount(): null {
     () => (uid ? campaignEffectsFor(storeEffects, `pc-${uid}`, clockMinute) : []),
     [storeEffects, uid, clockMinute]
   );
+
+  // The party out of a fight, for the «Su chi?» step's «Il gruppo» group: a cast that
+  // leaves a state on one of them writes it on the campaign clock.
+  const setParty = usePartyRosterStore((s) => s.setParty);
+  const devParty = useMemo(
+    () => (import.meta.env.DEV && DEV_BYPASS_AUTH ? makeDevParty() : null),
+    []
+  );
+  useEffect(() => {
+    if (devParty) {
+      setParty(devParty);
+      return;
+    }
+    setParty(
+      effectsCampaignId && clockCampaign && uid && openCharacterId
+        ? partyRosterOf(clockCampaign, uid, openCharacterId)
+        : null
+    );
+  }, [devParty, effectsCampaignId, clockCampaign, uid, openCharacterId, setParty]);
 
   // Concentration out of a fight: what my Concentration held on the campaign ends with
   // it, and the undo of that end brings the same effects back. The first look only

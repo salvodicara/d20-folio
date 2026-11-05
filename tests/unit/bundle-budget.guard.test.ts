@@ -795,7 +795,12 @@ describe("bundle budget — eager entry + precache ceilings (P3)", () => {
   it("ships no dev-only seam: a live player can't turn on what the rules don't accept", () => {
     // The e2e seams (#793 follow-up) sit under `import.meta.env.DEV`: the production
     // build must drop them, so no localStorage key turns the v0.26.0 writers on early.
-    const DEV_SEAMS = ["d20-dev-effects-v26", "__d20DevEffectOps"];
+    const DEV_SEAMS = [
+      "d20-dev-effects-v26",
+      "__d20DevEffectOps",
+      "d20-dev-party",
+      "__d20DevCampaignEffects",
+    ];
     const files = readdirSync(ASSETS).filter((f) => f.endsWith(".js"));
     const leaks = files.flatMap((file) => {
       const text = readFileSync(resolve(ASSETS, file), "utf8");
