@@ -648,6 +648,8 @@
     "reactionTrigger_selfFailsSave": "fallisci un tiro salvezza",
     "reactionTrigger_selfFailsConSave": "fallisci un tiro salvezza su Costituzione",
     "reactionTrigger_selfSucceedsSave": "superi un tiro salvezza",
-    "useHitPointDice": "{{source}}: puoi spendere fino a {{max}} dei tuoi Dadi Vita."
+    "useHitPointDice": "{{source}}: puoi spendere fino a {{max}} dei tuoi Dadi Vita.",
+    "rerollOffer": "{{name}}: ritira",
+    "rerollOfferBonus": "{{name}}: ritira +{{bonus}}"
   }
 }

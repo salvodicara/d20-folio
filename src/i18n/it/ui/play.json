@@ -300,6 +300,12 @@
         "weaponMasteries_one": "{{count}} Padronanza d'Armi",
         "weaponMasteries_other": "{{count}} Padronanze d'Armi"
       }
+    },
+    "rollReaction": {
+      "toastReroll": "{{name}}: {{target}} ripete il tiro salvezza",
+      "toastRerollNoTarget": "{{name}}: ripeti il tiro salvezza",
+      "toastRerollAdvantage": "{{name}}: {{target}} ripete il tiro salvezza con Vantaggio",
+      "toastRerollAdvantageNoTarget": "{{name}}: ripeti il tiro salvezza con Vantaggio"
     }
   }
 }
