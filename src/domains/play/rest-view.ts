@@ -5,10 +5,16 @@
  * ends, named for the table. The heal is the player's entered roll plus Constitution
  * (golden rule 21: the app never rolls for them), through `shortRestHealing`.
  */
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { canCharacterRest, isCharacterAlive } from "@/lib/character-status";
 import type { Locale } from "@/lib/locale";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
-import { hitDicePool, hitDiceTotalRange, type HitDieSize } from "@/lib/play/hit-dice";
+import {
+  hitDicePool,
+  hitDiceTotalRange,
+  type HitDieSize,
+  readHitDiceRoll,
+} from "@/lib/play/hit-dice";
 import { longRestCharacter } from "@/lib/play/rests";
 import { restPreview, type RestKind } from "@/lib/play/rest-preview";
 import { shortRestHealing } from "@/lib/play/short-rest-healing";
@@ -97,16 +103,25 @@ export function shortRestHeal(
   doc: CharacterDoc,
   count: number,
   typed: string
-): { heal: number | null; valid: boolean } {
+): { heal: number | null; valid: boolean; faces?: number[] } {
   if (count <= 0) return { heal: 0, valid: true };
-  const roll = Number(typed.trim());
+  // A floor on the faces (Powerful Recovery) takes them one per die, floored.
+  const floor = aggregateCharacterGrants(doc.character, doc.session).hitDieFloor;
+  const read = readHitDiceRoll(typed, count, floor);
   const range = hitDiceTotalRange(hitDicePool(doc.character), count);
+  if (read === null) return { heal: null, valid: false };
   const valid =
-    typed.trim() !== "" &&
-    Number.isInteger(roll) &&
-    roll >= range.min &&
-    roll <= range.max;
+    floor !== undefined || (read.total >= range.min && read.total <= range.max);
   return valid
-    ? { heal: shortRestHealing(doc, count, roll), valid }
+    ? {
+        heal: shortRestHealing(doc, count, read.total),
+        valid,
+        ...(read.faces ? { faces: read.faces } : {}),
+      }
     : { heal: null, valid };
+}
+
+/** The floor on this character's Hit Point Die faces, when it has one. */
+export function hitDieFloorOf(doc: CharacterDoc) {
+  return aggregateCharacterGrants(doc.character, doc.session).hitDieFloor;
 }

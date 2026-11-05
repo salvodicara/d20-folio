@@ -8,7 +8,12 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { restView, shortRestHeal, type RestLine } from "@/domains/play/rest-view";
+import {
+  restView,
+  shortRestHeal,
+  hitDieFloorOf,
+  type RestLine,
+} from "@/domains/play/rest-view";
 import { useRestCommit } from "@/features/character/use-rest-commit";
 import type { Locale } from "@/lib/locale";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
@@ -33,6 +38,7 @@ export function PlayRest({
   const [count, setCount] = useState(0);
   const [typed, setTyped] = useState("");
   const heal = shortRestHeal(doc, count, typed);
+  const floor = hitDieFloorOf(doc);
   const pool = hitDicePool(doc.character);
   const range = hitDiceTotalRange(pool, count);
   const dice = hitDiceLabel(pool, count).dice ?? hitDiceLabel(pool).sizes;
@@ -117,19 +123,38 @@ export function PlayRest({
           </div>
           {count > 0 && (
             <Field
-              label={t("rest.diceTotal")}
-              inputMode="numeric"
+              label={t(floor ? "rest.diceFaces" : "rest.diceTotal")}
+              inputMode={floor ? "text" : "numeric"}
               autoComplete="off"
               className="f-in f-in-big f-in-short"
               value={typed}
-              help={t("rest.diceTotalHint", { dice })}
+              help={
+                floor
+                  ? t("rest.diceFacesHint", {
+                      dice,
+                      count,
+                      below: floor.floorBelow,
+                      to: floor.floorTo,
+                    })
+                  : t("rest.diceTotalHint", { dice })
+              }
               error={
                 typed.trim() !== "" && !heal.valid
-                  ? t("rest.diceTotalError", { min: range.min, max: range.max })
+                  ? floor
+                    ? t("rest.diceFacesError", { count })
+                    : t("rest.diceTotalError", { min: range.min, max: range.max })
                   : undefined
               }
               onChange={(e) => setTyped(e.target.value)}
             />
+          )}
+          {heal.faces && (
+            <p className="f-help" role="status">
+              {t("rest.diceFacesSum", {
+                faces: heal.faces.join(" + "),
+                total: heal.faces.reduce((sum, face) => sum + face, 0),
+              })}
+            </p>
           )}
           {heal.heal !== null && heal.heal > 0 && (
             <p className="f-note" data-c="res" role="status">

@@ -391,6 +391,13 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
    * no Concentration save while such a spell is the one held. Dropping to 0 HP
    * still ends it.
    */
+  /** A Hit Point Die rolled at `floorBelow` or lower counts as `floorTo` (a feat's
+   *  Powerful Recovery: a 1 or 2 counts as a 3), wherever the dice are spent. */
+  "hit-die-floor": objectSchema({
+    type: literalSchema("hit-die-floor"),
+    floorBelow: numberSchema,
+    floorTo: numberSchema,
+  }),
   "concentration-damage-proof": objectSchema(
     { type: literalSchema("concentration-damage-proof") },
     {
