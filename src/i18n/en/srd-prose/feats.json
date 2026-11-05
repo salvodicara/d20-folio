@@ -1,0 +1,59 @@
+{
+  "ability-score-improvement": {
+    "gist": "+2 to one ability score or +1 to two, to a maximum of 20"
+  },
+  "alert": {
+    "gist": "Add your Proficiency Bonus to Initiative and swap Initiative with a willing ally"
+  },
+  "archery": {
+    "gist": "+2 to attack rolls with Ranged weapons"
+  },
+  "boon-of-combat-prowess": {
+    "gist": "+1 to one ability score (max 30); once per round, turn a miss into a hit"
+  },
+  "boon-of-dimensional-travel": {
+    "gist": "+1 to one ability score (max 30); teleport 30 ft after the Attack or Magic action"
+  },
+  "boon-of-fate": {
+    "gist": "+1 to one ability score (max 30); add or subtract 2d4 on a d20 Test within 60 ft"
+  },
+  "boon-of-irresistible-offense": {
+    "gist": "+1 Str or Dex (max 30); your Bludgeoning, Piercing, Slashing damage ignores Resistance"
+  },
+  "boon-of-spell-recall": {
+    "gist": "+1 Int, Wis or Cha (max 30); a level 1-4 slot isn't spent if 1d4 equals its level"
+  },
+  "boon-of-the-night-spirit": {
+    "gist": "+1 to one ability score (max 30); in Dim Light or Darkness: Invisible and Resistance"
+  },
+  "boon-of-truesight": {
+    "gist": "+1 to one ability score (max 30); Truesight out to 60 feet"
+  },
+  "defense": {
+    "gist": "+1 to Armor Class while you wear armor"
+  },
+  "grappler": {
+    "gist": "+1 Str or Dex; hit and grapple with one Unarmed Strike; Advantage vs creatures you grapple"
+  },
+  "great-weapon-fighting": {
+    "gist": "Treat 1s and 2s on damage dice as 3s with two-handed Melee weapons"
+  },
+  "magic-initiate-cleric": {
+    "gist": "Learn two Cleric cantrips and a level 1 spell, cast free once per Long Rest"
+  },
+  "magic-initiate-druid": {
+    "gist": "Learn two Druid cantrips and a level 1 spell, cast free once per Long Rest"
+  },
+  "magic-initiate-wizard": {
+    "gist": "Learn two Wizard cantrips and a level 1 spell, cast free once per Long Rest"
+  },
+  "savage-attacker": {
+    "gist": "Once per turn, roll a weapon's damage dice twice and use either roll"
+  },
+  "skilled": {
+    "gist": "Proficiency in any three skills or tools; repeatable"
+  },
+  "two-weapon-fighting": {
+    "gist": "Add your ability modifier to the damage of the Light weapon extra attack"
+  }
+}
