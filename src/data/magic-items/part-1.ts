@@ -1,9 +1,23 @@
 import { ENLARGE_EFFECT_GRANTS } from "../enlarge-effect";
+import type { Grant } from "@/lib/grants";
 import type { SrdMagicItemData } from "../types";
 import { asProficiencyToken } from "@/lib/proficiency-tokens";
 import { POTION_STATE } from "./_potion";
 import { DAWN_CHARGES, DAWN_USES, FINITE_SUPPLY } from "./_resource";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
+
+/** The Staff of Power's spell table (2024). */
+const STAFF_OF_POWER_SPELLS = [
+  "cone-of-cold",
+  "fireball",
+  "globe-of-invulnerability",
+  "hold-monster",
+  "levitate",
+  "lightning-bolt",
+  "magic-missile",
+  "ray-of-enfeeblement",
+  "wall-of-force",
+] as const;
 
 export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
   // ============================================================
@@ -875,23 +889,53 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     attunement: true,
     attunementBy: { classes: ["sorcerer", "warlock", "wizard"] },
     price: "60000 GP",
-    properties: [
-      "+2 bonus",
-      "+2 AC",
-      "+2 saves",
-      "charges: 20",
-      "retributive strike",
-      "recharge: 2d8+4 / dawn",
-    ],
+    properties: ["+2 bonus", "+2 AC", "+2 saves", "charges: 20", "retributive strike"],
     // While holding: +2 AC (ref.acBonus → computeAC), +2 to ALL saves
     // (save-bonus flat), and +2 to spell attack rolls (spell-attack-bonus, all
-    // classes). The +2 quarterstaff enchant rides the weapon pipeline; the 20
-    // charges of stored spells + Retributive Strike stay manual.
+    // classes). The +2 quarterstaff enchant rides the weapon pipeline. Its 20
+    // charges (2d8 + 4 back at dawn) pay the spell table; Fireball and Lightning
+    // Bolt are cast as their level 5 version. The last-charge d20 (a 1 keeps only
+    // the +2 attack and damage, a 20 regains 1d8 + 2) and Retributive Strike stay
+    // with the table.
+    resources: [DAWN_CHARGES(20, { dice: 2, sides: 8, modifier: 4 })],
     grants: [
       { type: "ac-bonus", amount: 2 },
       { type: "save-bonus", amount: 2 },
       { type: "spell-attack-bonus", amount: 2, scope: "all" },
       { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 },
+      ...STAFF_OF_POWER_SPELLS.map(
+        (spellId): Grant => ({ type: "always-prepared-spell", spellId })
+      ),
+      {
+        type: "free-cast-from-list",
+        spellIds: [
+          "cone-of-cold",
+          "globe-of-invulnerability",
+          "hold-monster",
+          "levitate",
+          "magic-missile",
+          "ray-of-enfeeblement",
+          "wall-of-force",
+        ],
+        spellCosts: {
+          "cone-of-cold": 5,
+          "globe-of-invulnerability": 6,
+          "hold-monster": 5,
+          levitate: 2,
+          "magic-missile": 1,
+          "ray-of-enfeeblement": 1,
+          "wall-of-force": 5,
+        },
+        resourceCost: { resourceId: "charges" },
+      },
+      ...(["fireball", "lightning-bolt"] as const).map(
+        (spellId): Grant => ({
+          type: "free-cast-spell",
+          spellId,
+          resourceCost: { resourceId: "charges" },
+          castLevels: [{ level: 5, cost: 5 }],
+        })
+      ),
     ],
     source: "SRD",
   },
