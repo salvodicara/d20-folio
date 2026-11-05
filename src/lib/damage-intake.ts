@@ -89,6 +89,14 @@ export const NO_DEFENSES: DamageDefenses = {
   saveDamageRules: [],
 };
 
+/** An object's defenses (SRD 5.2.1 "Object"): immune to Poison and Psychic damage.
+ *  An object also fails every saving throw; its AC, HP and any resistances its
+ *  material gives are the DM's. */
+export const OBJECT_DEFENSES: DamageDefenses = {
+  ...NO_DEFENSES,
+  immunities: new Set(["poison", "psychic"]),
+};
+
 /** One instance after the defense math — every step kept for the shown formula. */
 export interface ResolvedDamagePart {
   amount: number;
