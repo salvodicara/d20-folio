@@ -286,6 +286,11 @@ describe("conformance · 17. at-the-table gaps", () => {
       const id = "@/lib/item-overlays";
       const overlays = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
       expect(typeof overlays.revealCurse).toBe("function");
+      // Engine-ready, needs a caller: the case works once the DM's item panel
+      // (mocked and approved first) reveals it.
+      const panelId = "@/domains/campaign/dm-item-panel-view";
+      const panel = (await import(/* @vite-ignore */ panelId)) as Record<string, unknown>;
+      expect(typeof panel.dmItemPanelView).toBe("function");
     }
   );
 
