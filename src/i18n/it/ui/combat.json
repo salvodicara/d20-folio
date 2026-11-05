@@ -19,6 +19,8 @@
     "spellEndFalls": "Fine di {{spell}}: chi è ancora in aria cade, se non vola in altro modo.",
     "proneInFlight": "Prono in volo: se sei in aria, cadi.",
     "markCanMove": "{{source}}: il bersaglio è sceso a 0 PF. In un turno successivo, un'Azione Bonus lo sposta su un'altra creatura.",
+    "castGainTempHp": "{{source}}: ottieni {{amount}} PF temporanei.",
+    "castGainSpeed": "{{source}}: la tua Velocità aumenta di {{feet}} fino alla fine del turno.",
     "castHitPointDice": "{{source}}: puoi tirare fino a {{max}} dei tuoi Dadi Vita e recuperare il totale più il livello dello slot.",
     "ammoRecoverable": "Il combattimento è finito: un minuto a cercare sul campo recupera {{count}} munizioni.",
     "ammoRecovered": "Munizioni recuperate: {{count}}",

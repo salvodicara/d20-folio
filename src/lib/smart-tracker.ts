@@ -9953,9 +9953,11 @@ export function getInitiativeTrackerTopUps(character: CharacterDoc): Map<string,
 export interface TriggerFacts {
   /** reduced-to-zero: the creature is the one your effect marks (Hunter's Mark, Hex). */
   targetMarked?: boolean;
-  /** cast-spell: the spell's school, and whether it was cast with a slot. */
+  /** cast-spell: the spell's school, whether it was cast with a slot, and the
+   *  slot's level (what a gain scaled by the slot multiplies). */
   school?: string;
   slot?: boolean;
+  slotLevel?: number;
   /** cast-spell: the spell cast, whether it is a cantrip, and its damage type. */
   spellId?: string;
   cantrip?: boolean;
@@ -9980,6 +9982,7 @@ export function castTriggerFacts(
   return {
     school: spell?.school,
     slot: slotLevel !== null,
+    ...(slotLevel !== null ? { slotLevel } : {}),
     ...(spellId ? { spellId } : {}),
     cantrip: spell?.level === 0,
     ...(spell?.damageType ? { damageType: spell.damageType } : {}),
@@ -10043,6 +10046,14 @@ export function firedCastTriggers(
     /** The caster's spellcasting modifier, when the rule rides a state they cast. */
     casterSpellcastingMod?: number;
   }>;
+  /** What a rule gives scaled by the slot, applied at the cast: temporary Hit Points
+   *  (Abjuration Adept), feet added to this turn's movement (Transmutation Adept). */
+  gains: Array<{
+    sourceId: string;
+    kind: "temp-hp" | "speed-bonus";
+    amount: number;
+    limited: boolean;
+  }>;
 } {
   const restores = firedTriggerRestores(character, "cast-spell", facts);
   // The fight's states on you count too (Synostodweomer's imbued target casting).
@@ -10064,7 +10075,23 @@ export function firedCastTriggers(
       },
     ];
   });
-  return { ...restores, hitPointDice };
+  const gains = triggers.flatMap((rule) => {
+    if (rule.on !== "cast-spell") return [];
+    if (rule.do.kind !== "temp-hp" && rule.do.kind !== "speed-bonus") return [];
+    if (facts.slotLevel === undefined || !triggerHolds(rule, facts)) return [];
+    if (triggerLimitReached(rule, character)) return [];
+    const amount = rule.do.perSlotLevel * facts.slotLevel;
+    if (amount <= 0) return [];
+    return [
+      {
+        sourceId: rule.sourceId,
+        kind: rule.do.kind,
+        amount,
+        limited: rule.limit !== undefined,
+      },
+    ];
+  });
+  return { ...restores, hitPointDice, gains };
 }
 
 /**
