@@ -8,11 +8,6 @@
  * written on the campaign, the sheet marks the minute it has caught up to, and the
  * undo takes the step back as well.
  */
-import {
-  setCampaignClockTime,
-  stepCampaignClock,
-  undoCampaignClockStep,
-} from "@/features/campaigns/clock-io";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { docAtClock, MAX_CLOCK_STEP } from "@/lib/play/campaign-clock";
 import { clockFor } from "@/lib/play/clock";
@@ -60,9 +55,11 @@ export function passTimeWithUndo(
       );
       return () => {
         if (restore && !restore()) return false;
-        void undoCampaignClockStep(campaign.campaignId, uid, false).catch(
-          clockWriteFailed
-        );
+        void import("@/features/campaigns/clock-io")
+          .then(({ undoCampaignClockStep }) =>
+            undoCampaignClockStep(campaign.campaignId, uid, false)
+          )
+          .catch(clockWriteFailed);
         return true;
       };
     },
@@ -78,6 +75,8 @@ async function moveCampaignClock(
   known: number | undefined
 ): Promise<void> {
   try {
+    const { setCampaignClockTime, stepCampaignClock } =
+      await import("@/features/campaigns/clock-io");
     if (timeOfDay !== undefined && timeOfDay !== known) {
       await setCampaignClockTime(campaignId, timeOfDay);
     }
