@@ -158,7 +158,13 @@ function clause(why: PlaybookWhy, step: PlaybookStep, facts: Facts): string | nu
       return t("why.extraAttack", locale, { attacks: Number(p.attacks ?? 2) });
     case "weapon-mastery":
       return t("why.weaponMastery", locale, {
-        mastery: localizeSrd("weapon-mastery", String(p.mastery ?? ""), "name", locale),
+        // The fact carries the property as printed ("Sap"); the catalogue keys by id.
+        mastery: localizeSrd(
+          "weapon-mastery",
+          String(p.mastery ?? "").toLowerCase(),
+          "name",
+          locale
+        ),
       });
     case "sneak-attack":
       return t("why.sneakAttack", locale, { dice: String(p.dice ?? "") });

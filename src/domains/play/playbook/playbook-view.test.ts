@@ -9,7 +9,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { ensureLocale } from "@/i18n";
-import { buildDevScenario } from "@/lib/dev-scenarios";
+import { DEV_SCENARIOS, buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "../../../../tests/unit/_helpers";
 import { playbookView, type PlaybookLine } from "./playbook-view";
@@ -128,9 +128,27 @@ describe("playbookView", () => {
     expect(line?.why).toBe("Ti dà un'azione in più; ti resta 1 uso su 1.");
   });
 
+  it("a mastered weapon's why names its mastery (the property as printed: Sap)", () => {
+    const doc = buildScenario({
+      name: "Fighter 1",
+      raceId: "human",
+      classId: "fighter",
+      level: 1,
+      background: "soldier",
+      abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+      weapons: [{ srdId: "longsword", quantity: 1 }],
+      weaponMasteries: ["longsword"],
+    });
+    expect(find(playbookView(doc, "en").plan, "default-attack")?.why).toMatch(
+      /its mastery adds Sap/
+    );
+  });
+
   it("English: Sneak Attack's condition rides the attack's why", () => {
-    const doc = buildDevScenario("scn-thief-reflexes");
-    if (!doc) throw new Error("scenario missing");
+    // Without its Weapon Masteries: a mastery would be the why's second reason.
+    const spec = DEV_SCENARIOS["thief-reflexes"];
+    if (!spec) throw new Error("scenario missing");
+    const doc = buildScenario({ ...spec, owesClassPicks: true });
     const line = find(playbookView(doc, "en").plan, "default-attack");
     expect(line?.after).toBe(" on the nearest enemy.");
     expect(line?.why).toMatch(

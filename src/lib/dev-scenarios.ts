@@ -58,6 +58,7 @@ import { slotUsageKey } from "@/lib/cast-options";
 import { FIND_FAMILIAR_SPELL_ID, type FamiliarCreatureType } from "@/lib/familiar-ids";
 import { getBeast } from "@/data/beasts";
 import { concentrationValue } from "@/lib/concentration";
+import { fillOwedClassPicks } from "@/lib/owed-class-picks";
 
 export interface ScenarioSpec {
   /** Display name shown in the header. */
@@ -97,6 +98,14 @@ export interface ScenarioSpec {
   /** Weapon Mastery picks (SRD weapon ids) riding the PRIMARY class entry —
    *  exercises the owned-mastery chip gating on the unified weapon cards. */
   weaponMasteries?: string[];
+  /**
+   * The scenario is MEANT to owe its class picks (it exercises «Scelte da
+   * completare»): the build keeps only the picks named above. Otherwise every
+   * pick the level table gives and the spec leaves out is filled with the first
+   * legal options (`fillOwedClassPicks`), so a scenario is a properly built
+   * character.
+   */
+  owesClassPicks?: boolean;
   /** `while-active` feature keys to start toggled ON. */
   activeFeatures?: string[];
   /** Single-select `choice-grant-bundle` picks to start with, `bundleKey → optionId`
@@ -390,7 +399,10 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     id: "",
     portraitUrl: null,
     portraitCrop: null,
-    character: typedItemState(character, session),
+    character: typedItemState(
+      spec.owesClassPicks ? character : fillOwedClassPicks(character),
+      session
+    ),
     session,
   };
   return spec.startingForm ? applyStartingForm(doc, spec.startingForm) : doc;
