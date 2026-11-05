@@ -9,7 +9,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { rerollOffers, rollReactionOf } from "@/lib/play/roll-reactions";
+import {
+  rerollOffers,
+  rerollPlanCopy,
+  rollReactionOf,
+  rollReactionPlan,
+} from "@/lib/play/roll-reactions";
 import { resolveActions } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 
@@ -100,5 +105,37 @@ describe("Countercharm", () => {
       a.id.includes("bard-countercharm")
     );
     expect(action && rollReactionOf(action, bard)).toMatchObject({ advantage: true });
+  });
+});
+
+describe("Countercharm on another creature", () => {
+  it("plans the reroll of that creature's save, with Advantage", () => {
+    const action = resolveActions(bard, "combat").find((a) =>
+      a.id.includes("bard-countercharm")
+    );
+    const reaction = action && rollReactionOf(action, bard);
+    if (!reaction) throw new Error("no Countercharm");
+    const plan = rollReactionPlan(reaction, {
+      roll: "save",
+      target: { id: "pc-bren", name: "Bren" },
+    });
+    expect(plan).toEqual({
+      reroll: true,
+      advantage: true,
+      roll: "save",
+      target: { id: "pc-bren", name: "Bren" },
+    });
+    expect(rerollPlanCopy(plan ?? undefined)).toEqual({
+      key: "play.rollReaction.toastRerollAdvantage",
+      values: { target: "Bren" },
+    });
+  });
+
+  it("a plain reroll of your own save names no target", () => {
+    expect(rerollPlanCopy({ reroll: true, roll: "save" })).toEqual({
+      key: "play.rollReaction.toastRerollNoTarget",
+      values: {},
+    });
+    expect(rerollPlanCopy(undefined)).toBeNull();
   });
 });

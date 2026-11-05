@@ -300,6 +300,12 @@
         "weaponMasteries_one": "{{count}} Weapon Mastery",
         "weaponMasteries_other": "{{count}} Weapon Masteries"
       }
+    },
+    "rollReaction": {
+      "toastReroll": "{{name}}: {{target}} rerolls the save",
+      "toastRerollNoTarget": "{{name}}: reroll the save",
+      "toastRerollAdvantage": "{{name}}: {{target}} rerolls the save with Advantage",
+      "toastRerollAdvantageNoTarget": "{{name}}: reroll the save with Advantage"
     }
   }
 }

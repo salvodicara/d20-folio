@@ -140,3 +140,17 @@ export function rerollOffers<A extends { summary: { rollEffect?: ActionRollEffec
     return [{ action, reaction }];
   });
 }
+
+/** The toast for a planned reroll, as an i18n key and its values: whose roll is
+ *  taken again (`target`), and whether the new roll has Advantage (Countercharm on
+ *  Bren: «Bren ritira il tiro salvezza con Vantaggio»). Null for no plan, or a die. */
+export function rerollPlanCopy(
+  plan: RollReactionPlan | undefined
+): { key: string; values: { target?: string } } | null {
+  if (!plan || !("reroll" in plan)) return null;
+  const mode = plan.advantage ? "Advantage" : "";
+  return {
+    key: `play.rollReaction.toastReroll${mode}${plan.target ? "" : "NoTarget"}`,
+    values: plan.target ? { target: plan.target.name } : {},
+  };
+}
