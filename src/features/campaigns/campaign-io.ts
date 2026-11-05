@@ -18,6 +18,8 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { deriveCharacter } from "@/lib/views/derive-character";
+import { resolveDamageIntake, type DamageInstance } from "@/lib/damage-intake";
 import { effectiveDoc, effectsOnTarget } from "@/lib/play/effective-doc";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { conformCampaignEffect } from "@/features/campaigns/campaign-effects-io";
@@ -974,6 +976,10 @@ export type CampaignCombatMutation =
         amount: number;
         /** A melee hit the attacker chose to knock out with (1 HP, Unconscious). */
         knockOut?: true;
+        /** The hit's damage before defenses, by type (`rowDamageParts`): the write
+         *  resolves Resistance, Immunity and Vulnerability from the target's sheet as
+         *  it stands then, and `amount` is only the hitter's preview. */
+        parts?: ReadonlyArray<DamageInstance>;
       };
     }
   | { kind: "condition"; operation: { kind: "add" | "remove"; conditionId: string } }
@@ -1128,6 +1134,15 @@ export async function writeCampaignCombatEffect(
           )
         : null;
     const target = stored ? effectiveDoc(stored, othersLeft) : null;
+    // The write decides the defenses from the sheet as it stands now (a Warding Bond
+    // that landed after the hitter's tray opened still halves the hit).
+    const dealt =
+      target && mutation.kind === "hp" && mutation.operation.parts
+        ? resolveDamageIntake(mutation.operation.parts, deriveCharacter(target).defenses)
+            .netTotal
+        : mutation.kind === "hp"
+          ? mutation.operation.amount
+          : 0;
     let next: CombatState;
     let spends: PeerSpend[] = [];
     if (target && mutation.kind === "hp" && ledgerOn) {
@@ -1137,7 +1152,7 @@ export async function writeCampaignCombatEffect(
         target,
         current,
         ledger,
-        mutation.operation.amount,
+        dealt,
         knockOutOptions(mutation.operation)
       );
       if (hit.ledgerFull) {
@@ -1147,12 +1162,7 @@ export async function writeCampaignCombatEffect(
       next = hit.state;
       spends = hit.spends;
     } else if (target && mutation.kind === "hp") {
-      next = peerDamageState(
-        target,
-        current,
-        mutation.operation.amount,
-        knockOutOptions(mutation.operation)
-      );
+      next = peerDamageState(target, current, dealt, knockOutOptions(mutation.operation));
     } else {
       next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
     }

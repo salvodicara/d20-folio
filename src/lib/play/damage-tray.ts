@@ -16,7 +16,7 @@ import {
   combatResolutionSpec,
   type SaveDamageOutcome,
 } from "@/lib/combat-resolution";
-import type { DamageDefenses } from "@/lib/damage-intake";
+import type { DamageDefenses, DamageInstance } from "@/lib/damage-intake";
 import { compileCombatOutcomeReceipts } from "@/lib/combat-outcomes";
 import { castFollowUps } from "@/lib/play/cast-follow-ups";
 import type { ResolvedAction } from "@/lib/smart-tracker";
@@ -668,6 +668,44 @@ export function rowAmountByType(
     sum += own ? applyMultiplier(afterRow, defenseMultiplier(own)) : afterRow;
   }
   return sum;
+}
+
+/**
+ * What a row sends to a sheet on another device, so that write decides the target's
+ * defenses (Resistance, Immunity, Vulnerability) from the sheet as it stands then, not
+ * from this tray's possibly stale view: each type's damage before any defense, after
+ * the save or miss. Null when the tray's own number stands: a hand-picked multiplier,
+ * a defense chip turned off on purpose, an on-a-20 rider line, a spell that ignores
+ * Resistance, or no damage.
+ */
+export function rowDamageParts(
+  row: TrayRow,
+  plan: DamageTrayPlan,
+  input: { total: number | null; byType?: Partial<Record<DamageType, number>> }
+): DamageInstance[] | null {
+  if (plan.effect !== "damage" || plan.ignoresResistance) return null;
+  if (row.multiplier !== factsMultiplier(row, plan)) return null;
+  if ((row.defense || row.partDefense) && !row.defenseOn) return null;
+  if (onRoll20Lines(row, plan).length > 0) return null;
+  const bare = { ...row, defenseOn: false };
+  const pre: TrayRow = { ...bare, multiplier: factsMultiplier(bare, plan) };
+  const delivery = plan.attack ? "attack" : plan.save ? "save" : "automatic";
+  const parts: DamageInstance[] = input.byType
+    ? (Object.entries(input.byType) as Array<[DamageType, number]>).map(
+        ([type, total]) => ({
+          amount: applyMultiplier(Math.max(0, Math.floor(total)), pre.multiplier),
+          type,
+          delivery,
+        })
+      )
+    : [
+        {
+          amount: rowAmount(input.total ?? 0, pre, plan),
+          ...(plan.damageType ? { type: plan.damageType } : {}),
+          delivery,
+        },
+      ];
+  return parts.some((part) => part.amount > 0) ? parts : null;
 }
 
 /** The conditions this row lands: none once the target saved or the attack missed,
