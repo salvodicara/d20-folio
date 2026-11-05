@@ -109,8 +109,16 @@ if [ "$(gh api "repos/$PACK_REPO/commits/main" --jq .sha)" != "$packMainBefore" 
   echo "✗ the pack's main or a PR moved during Verify: rebase and run again (nothing merged)." >&2
   exit 1
 fi
-if [ "$(gh pr view "$app" --repo "$APP_REPO" --json mergeable --jq .mergeable)" = "CONFLICTING" ]; then
-  echo "✗ #$app now conflicts with main: rebase and run again (nothing merged)." >&2
+# Right before the pack: the app PR must still merge cleanly onto today's main
+# (another merge may have landed meanwhile). GitHub computes this lazily, so wait for
+# a verdict; anything but MERGEABLE + CLEAN stops here, before the pack is touched.
+for _ in $(seq 1 20); do
+  verdict="$(gh pr view "$app" --repo "$APP_REPO" --json mergeable,mergeStateStatus \
+    --jq '.mergeable + " " + .mergeStateStatus')"
+  case "$verdict" in UNKNOWN* | *" UNKNOWN") sleep 15 ;; *) break ;; esac
+done
+if [ "$verdict" != "MERGEABLE CLEAN" ]; then
+  echo "✗ #$app is not cleanly mergeable onto main ($verdict): rebase and run again (nothing merged)." >&2
   exit 1
 fi
 
