@@ -1,5 +1,6 @@
 /** Explicit table-time boundaries for exact typed magic-item resources. */
 
+import { clockFor } from "@/lib/play/clock";
 import { useMemo, useRef, useState } from "react";
 import { Clock3, Moon, Sun } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -38,7 +39,7 @@ export function TableClockControl() {
     readonly ||
     !commands ||
     available.length === 0 ||
-    character.session.timeOfDay !== undefined
+    clockFor(character).timeOfDay !== undefined
   )
     return null;
 

@@ -197,6 +197,11 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     session.timeOfDay < 1440
       ? { timeOfDay: session.timeOfDay }
       : {}),
+    ...(typeof session.clockSeen === "number" &&
+    Number.isSafeInteger(session.clockSeen) &&
+    session.clockSeen >= 0
+      ? { clockSeen: session.clockSeen }
+      : {}),
     ...(typeof session.stableSince === "number" &&
     Number.isFinite(session.stableSince) &&
     session.stableSince >= 0

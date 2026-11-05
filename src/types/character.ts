@@ -1304,6 +1304,16 @@ export interface SessionState {
    */
   timeOfDay?: number;
   /**
+   * The campaign minute this sheet's countdowns last caught up to (the campaign
+   * clock, `lib/play/campaign-clock.ts`). Readers derive a countdown as the stored
+   * timer minus the campaign minutes since; the owner's device stores the catch-up.
+   * Absent: the sheet adopts the campaign's minute with nothing elapsed. ADDITIVE.
+   */
+  clockSeen?: number;
+  /** The clock of the campaign the character plays in, projected onto the open
+   *  sheet at runtime (like `tableRules`): the codec never serializes it. */
+  campaignClock?: import("@/lib/play/clock").ProjectedCampaignClock;
+  /**
    * Game minutes since the character became Stable at 0 HP (three successes): after
    * 1d4 hours it regains 1 HP. Meaningful only while it is still Stable at 0 HP
    * (`stableMinutes`). ADDITIVE.

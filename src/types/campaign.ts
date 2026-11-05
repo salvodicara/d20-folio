@@ -6,6 +6,7 @@
  */
 
 import type { TableRulesOverrides } from "@/lib/table-rules";
+import type { CampaignClock } from "@/lib/play/clock";
 import type {
   CreatureType,
   CurrencyUnit,
@@ -486,6 +487,9 @@ export interface CampaignDoc {
   inviteCode: string;
   /** Rules this table varies from RAW (`effectiveTableRules`); absent = RAW. */
   tableRules?: TableRulesOverrides;
+  /** The table's game clock (`lib/play/campaign-clock.ts`): every member's sheet reads
+   *  its time of day and countdowns from it. Absent: minute 0, no time of day set. */
+  gameClock?: CampaignClock;
   treasury: CampaignTreasury;
   treasuryLog: TreasuryLogEntry[];
   /**

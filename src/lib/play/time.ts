@@ -13,6 +13,7 @@
  * store's Concentration teardown first, so the world's occurrence ends with it.
  */
 import { ageFallenSummons } from "./companions";
+import { clockFor } from "./clock";
 import {
   advanceEffectTimers,
   equipmentAfterDawn,
@@ -108,7 +109,7 @@ export function stableMinutes(
 /** Whether a rest of `minutes` brings a dawn: when it crosses 06:00, or always when
  *  the table has set no time of day (a Long Rest stands in for the night). */
 export function restCrossesDawn(doc: CharacterDoc, minutes: number): boolean {
-  const { timeOfDay } = doc.session;
+  const { timeOfDay } = clockFor(doc);
   return timeOfDay === undefined || crossedDawn(timeOfDay, minutes);
 }
 
@@ -149,18 +150,22 @@ export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | nul
 function passTimeOwn(doc: CharacterDoc, minutes: number): CharacterDoc | null {
   const passed = passEffects(doc, minutes);
   const dead = doc.session.death;
-  const timeOfDay = advanceTimeOfDay(doc.session.timeOfDay, minutes);
-  const clockMoved = timeOfDay !== doc.session.timeOfDay;
+  // A campaign character's clock is the campaign's: its sheet's own stays put.
+  const clock = clockFor(doc);
+  const timeOfDay =
+    clock.scope === "sheet" ? advanceTimeOfDay(clock.timeOfDay, minutes) : undefined;
+  const clockMoved = clock.scope === "sheet" && timeOfDay !== clock.timeOfDay;
   const stable = stableMinutes(doc.session);
+  // Charges that come back at dawn come back when the clock crosses it.
+  const dawn = crossedDawn(clock.timeOfDay, minutes);
   if (
     (!dead || !(minutes > 0)) &&
     !clockMoved &&
+    !dawn &&
     (stable === undefined || !(minutes > 0))
   )
     return passed;
   const base = passed ?? doc;
-  // Charges that come back at dawn come back when the clock crosses it.
-  const dawn = crossedDawn(doc.session.timeOfDay, minutes);
   return {
     ...base,
     ...(dawn

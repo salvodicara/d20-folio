@@ -6,6 +6,7 @@
 import { useMemo } from "react";
 
 import { partyNames } from "@/domains/campaign/party-rows-view";
+import { atCampaignClock } from "@/features/campaigns/campaign-clock-projection";
 import { hydrateMemberDoc } from "@/features/campaigns/party-stats";
 import {
   useMemberCharacterDocs,
@@ -29,11 +30,13 @@ export function useLiveDocs(campaign: CampaignDoc): Record<string, CharacterDoc 
     const out: Record<string, CharacterDoc | null> = {};
     for (const { uid } of refs) {
       const st = docs[uid];
-      if (st?.status === "ready") out[uid] = hydrateMemberDoc(st.doc, combat[uid]);
-      else if (st?.status === "error") out[uid] = null;
+      if (st?.status === "ready") {
+        const doc = hydrateMemberDoc(st.doc, combat[uid]);
+        out[uid] = doc && atCampaignClock(doc, campaign);
+      } else if (st?.status === "error") out[uid] = null;
     }
     return out;
-  }, [refs, docs, combat]);
+  }, [refs, docs, combat, campaign]);
 }
 
 /** Each character's name by member, as the Gruppo panel shows it. */

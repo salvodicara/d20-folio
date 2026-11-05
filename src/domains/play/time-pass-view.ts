@@ -3,6 +3,7 @@
  * offers, and what a stretch would end, named, read from the engine's own preview
  * (`timePassEnds`, `timePassEndsConcentration`) before anything changes.
  */
+import { clockFor } from "@/lib/play/clock";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import {
@@ -60,7 +61,7 @@ export function timePassView(
   minutes: number,
   locale: Locale,
   /** The time of day the table says it is now, if it differs from the clock's. */
-  timeOfDay: number | undefined = doc.session.timeOfDay
+  timeOfDay: number | undefined = clockFor(doc).timeOfDay
 ): TimePassView {
   const ended = timePassEnds(doc, minutes);
   const names = deriveStatuses(doc)

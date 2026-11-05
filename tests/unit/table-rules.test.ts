@@ -107,4 +107,14 @@ describe("the campaign read boundary", () => {
     ).toBeUndefined();
     expect(toCampaignDoc("c3", { memberDetails: {} }).tableRules).toBeUndefined();
   });
+
+  it("toCampaignDoc keeps a well-formed game clock and drops a malformed one", () => {
+    expect(
+      toCampaignDoc("c1", { memberDetails: {}, gameClock: { minute: 5.5 } }).gameClock
+    ).toBeUndefined();
+    expect(
+      toCampaignDoc("c1", { memberDetails: {}, gameClock: { minute: 5, timeOfDay: 60 } })
+        .gameClock
+    ).toEqual({ minute: 5, timeOfDay: 60 });
+  });
 });

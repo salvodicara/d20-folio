@@ -36,6 +36,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useCampaignSubscription } from "@/features/campaigns/useCampaignSubscription";
+import { useCampaignClockProjection } from "@/features/campaigns/campaign-clock-projection";
 import { useMemberCharacterSubscription } from "@/features/campaigns/useMemberCharacterSubscription";
 import { useCharacterStore } from "@/stores/characterStore";
 import { CockpitView } from "@/features/character/CharacterCockpit";
@@ -87,6 +88,9 @@ function MemberSheet({
     canView && characterId ? memberUid : undefined,
     canView && characterId ? characterId : undefined
   );
+
+  // Read at the campaign's clock: a countdown the clock has passed shows over.
+  useCampaignClockProjection(canView ? characterId : undefined, campaign);
 
   const character = useCharacterStore((s) => s.character);
   const loading = useCharacterStore((s) => s.loading);
