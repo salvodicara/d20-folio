@@ -225,9 +225,19 @@ export function deathSaveD20Context(
 }
 
 /** Build the live Constitution save used to maintain one queued Concentration spell. */
+/** A failed save taken again (Indomitable, Countercharm): the source that allows it,
+ *  the bonus to the new roll (Indomitable: the Fighter level), and whether the new
+ *  roll has Advantage. The new roll stands. */
+export interface FailedSaveReroll {
+  readonly sourceId: string;
+  readonly bonus?: number;
+  readonly advantage?: true;
+}
+
 export function concentrationSaveD20Context(
   character: CharacterDoc,
-  pending: PendingConcentrationSave
+  pending: PendingConcentrationSave,
+  reroll?: FailedSaveReroll
 ): CharacterConcentrationSaveD20Context {
   const { aggregate, scores } = effectiveScores(character);
   const data = character.character;
@@ -283,9 +293,13 @@ export function concentrationSaveD20Context(
               value: exhaustion,
             },
           ]),
+      ...(reroll?.bonus
+        ? [{ sourceId: reroll.sourceId, kind: "feature" as const, value: reroll.bonus }]
+        : []),
     ],
     advantageSourceIds: [
       ...matchingSourceIds(aggregate.advantages, CONCENTRATION_SAVE_VS, "advantage"),
+      ...(reroll?.advantage ? [reroll.sourceId] : []),
       // Extended Spell (2024): Advantage on the saves to keep the spell it extended.
       ...(heldSpellCastWith(
         character.session.logEntries,
@@ -431,13 +445,15 @@ export function resolveCharacterConcentrationSave(
   character: CharacterDoc,
   pending: PendingConcentrationSave,
   faces: ReadonlyArray<number>,
-  rerolled: ReadonlyArray<ReadonlyArray<number>> = []
+  rerolled: ReadonlyArray<ReadonlyArray<number>> = [],
+  /** The failed save taken again (Indomitable): its bonus and Advantage. */
+  reroll?: FailedSaveReroll
 ): CharacterEnteredD20Result {
   if (concentrationSaveDc(pending.damage) !== pending.difficultyClass) {
     throw new TypeError("pending Concentration save has a stale damage/DC pair");
   }
   return resolveEnteredFaces(
-    concentrationSaveD20Context(character, pending),
+    concentrationSaveD20Context(character, pending, reroll),
     faces,
     rerolled
   );

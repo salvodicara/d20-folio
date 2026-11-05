@@ -179,6 +179,7 @@ import {
   conditionEndsHeldConcentration,
   damageQueuesConcentrationSave,
   resolveCharacterConcentrationSave,
+  type FailedSaveReroll,
   resolveCharacterDeathSave,
   type CharacterEnteredD20Result,
 } from "@/lib/character-d20-tests";
@@ -563,7 +564,9 @@ interface CharacterState {
    * damage/DC pair, or character state is rejected without mutation. */
   commitPendingConcentrationSave: (
     pending: PendingConcentrationSave,
-    faces: ReadonlyArray<number>
+    faces: ReadonlyArray<number>,
+    /** The failed save taken again (Indomitable): its bonus and Advantage. */
+    reroll?: FailedSaveReroll
   ) => D20TestCommitResult | null;
   /**
    * Surface the RAW damage-while-concentrating consequence for damage the
@@ -2766,7 +2769,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
-  commitPendingConcentrationSave: (pending, faces) => {
+  commitPendingConcentrationSave: (pending, faces, reroll) => {
     if (get().readonly) return null;
     const live = get().character;
     const head = get().combatPendingConcentrationSaves[0];
@@ -2787,7 +2790,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!before) return null;
     let result: CharacterEnteredD20Result;
     try {
-      result = resolveCharacterConcentrationSave(live, pending, faces);
+      result = resolveCharacterConcentrationSave(live, pending, faces, [], reroll);
     } catch {
       return null;
     }
