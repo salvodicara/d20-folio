@@ -84,6 +84,8 @@ export interface LevelUpPicks {
   spellMastery: SpellMasteryPicks | null;
   signatureSpells: SignatureSpellsPicks | null;
   swap: SpellSwapChoice;
+  /** A cantrip swapped for another (Bard, Sorcerer, Warlock); absent: none. */
+  cantripSwap?: SpellSwapChoice;
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -426,11 +428,13 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     };
   }
 
-  if (swapChoice.removeId !== null && swapChoice.replaceId !== null) {
-    updated = {
-      ...updated,
-      spells: applySpellSwap(updated.spells, swapChoice.removeId, swapChoice.replaceId),
-    };
+  for (const swap of [swapChoice, picks.cantripSwap]) {
+    if (swap?.removeId != null && swap.replaceId != null) {
+      updated = {
+        ...updated,
+        spells: applySpellSwap(updated.spells, swap.removeId, swap.replaceId),
+      };
+    }
   }
 
   if (updated.levelUpChecklist && handledChecklistKeys.length > 0) {

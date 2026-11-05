@@ -77,7 +77,8 @@
       "byLevel": "Livello dell'incantesimo",
       "details": "Su {{name}}",
       "none": "Nessun incantesimo corrisponde.",
-      "unpick": "Togli"
+      "unpick": "Togli",
+      "ritual": "rituale"
     }
   }
 }

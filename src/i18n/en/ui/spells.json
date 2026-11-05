@@ -77,7 +77,8 @@
       "byLevel": "Spell level",
       "details": "About {{name}}",
       "none": "No spell matches.",
-      "unpick": "Remove"
+      "unpick": "Remove",
+      "ritual": "ritual"
     }
   }
 }

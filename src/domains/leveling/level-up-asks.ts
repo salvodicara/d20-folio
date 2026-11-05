@@ -74,6 +74,7 @@ export interface LevelUpAnswers {
   newSpells: readonly string[];
   mcSkills: readonly string[];
   swap: SpellSwapChoice;
+  cantripSwap: SpellSwapChoice;
 }
 
 export const NO_ANSWERS: LevelUpAnswers = {
@@ -92,6 +93,7 @@ export const NO_ANSWERS: LevelUpAnswers = {
   newSpells: [],
   mcSkills: [],
   swap: emptySwapChoice(),
+  cantripSwap: emptySwapChoice(),
 };
 
 /** Which answer a row writes. `slot` rows carry their slot in `slotRow`. */
@@ -114,7 +116,9 @@ export type AskKey =
   | "newSpells"
   | "mcSkills"
   | "swapRemove"
-  | "swapReplace";
+  | "swapReplace"
+  | "cantripRemove"
+  | "cantripReplace";
 
 export interface AskRow {
   key: AskKey;
@@ -403,7 +407,8 @@ export function levelUpAsks(
       title: t("levelUp.screen.swapForget"),
       count: 0,
       picked: one(a.swap.removeId),
-      // A cantrip is not swapped this way: only a levelled spell, as the classic wizard does.
+      // SRD 5.2.1: "replace one spell on your list with another [class] spell for which
+      // you have spell slots"; a cantrip has its own swap, below.
       options: plan.knownNonCantripRefs
         .filter((s) => (SPELL_LEVEL.get(s.srdId) ?? 0) > 0)
         .map((s) => ({
@@ -427,10 +432,42 @@ export function levelUpAsks(
             exclude: new Set([...plan.existingSpellIds, ...a.newSpells]),
           },
           locale
-        )
-          // 2024: the new spell is of the same level as the one it replaces.
-          .filter((s) => s.level === SPELL_LEVEL.get(a.swap.removeId ?? ""))
-          .map((s) => ({ id: s.id, label: s.name })),
+        ).map((s) => ({ id: s.id, label: s.name })),
+      });
+    }
+  }
+  // SRD 5.2.1: "replace one of your cantrips with another [class] cantrip".
+  const knownCantrips = plan.canSwapSpell
+    ? plan.knownNonCantripRefs.filter((s) => SPELL_LEVEL.get(s.srdId) === 0)
+    : [];
+  if (knownCantrips.length > 0) {
+    rows.push({
+      key: "cantripRemove",
+      spell: true,
+      title: t("levelUp.screen.cantripForget"),
+      count: 0,
+      picked: one(a.cantripSwap.removeId),
+      options: knownCantrips.map((s) => ({
+        id: s.srdId,
+        label: localizeSrd("spell", s.srdId, "name", locale),
+      })),
+    });
+    if (a.cantripSwap.removeId) {
+      rows.push({
+        key: "cantripReplace",
+        spell: true,
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.cantripSwap.replaceId),
+        options: learnableSpellVMs(
+          {
+            classId,
+            cantripsOnly: true,
+            maxLevel: 0,
+            exclude: new Set([...plan.existingSpellIds, ...a.newCantrips]),
+          },
+          locale
+        ).map((s) => ({ id: s.id, label: s.name })),
       });
     }
   }
@@ -468,6 +505,7 @@ export function levelUpAsks(
     spellMastery: plan.needsSpellMastery ? emptySpellMasteryPicks() : null,
     signatureSpells: plan.needsSignatureSpells ? emptySignatureSpellsPicks() : null,
     swap: a.swap,
+    cantripSwap: a.cantripSwap,
     bundlePicks: plan.needsBundles ? a.bundlePicks : {},
   };
   return {
@@ -536,6 +574,16 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
       return { ...a, swap: { removeId: flip(a.swap.removeId), replaceId: null } };
     case "swapReplace":
       return { ...a, swap: { ...a.swap, replaceId: flip(a.swap.replaceId) } };
+    case "cantripRemove":
+      return {
+        ...a,
+        cantripSwap: { removeId: flip(a.cantripSwap.removeId), replaceId: null },
+      };
+    case "cantripReplace":
+      return {
+        ...a,
+        cantripSwap: { ...a.cantripSwap, replaceId: flip(a.cantripSwap.replaceId) },
+      };
     case "expertise":
     case "weaponMasteries":
     case "metamagic":

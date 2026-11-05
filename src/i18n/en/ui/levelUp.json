@@ -166,7 +166,8 @@
         "magicItems": "Replicable magic items",
         "preparedSpells": "Spells you can prepare"
       },
-      "classLine": "Class: {{class}}"
+      "classLine": "Class: {{class}}",
+      "cantripForget": "Swap a cantrip you know (optional)"
     }
   }
 }

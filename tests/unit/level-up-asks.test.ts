@@ -123,8 +123,11 @@ describe("levelUpAsks", () => {
     expect(levelUpAsks(doc, "bard", a, "en").complete).toBe(false);
   });
 
-  it("a swap forgets a levelled spell, for another of the same level", () => {
-    const doc = makeCharacterDoc({
+  // SRD 5.2.1, Bard / Sorcerer / Warlock: "Whenever you gain a [class] level, you can
+  // replace one spell on your list with another [class] spell for which you have
+  // spell slots", and, apart, "one of your cantrips with another [class] cantrip".
+  const bard = () =>
+    makeCharacterDoc({
       classId: "bard",
       level: 4,
       spells: [
@@ -133,6 +136,9 @@ describe("levelUpAsks", () => {
         { srdId: "shatter" },
       ],
     });
+
+  it("a levelled spell is swapped for one of any level the new slots reach", () => {
+    const doc = bard();
     const forget = levelUpAsks(doc, "bard", NO_ANSWERS, "en").rows.find(
       (r) => r.key === "swapRemove"
     );
@@ -145,6 +151,47 @@ describe("levelUpAsks", () => {
     const levels = new Set(
       spellPickRows(learn?.options.map((o) => o.id) ?? [], "en").map((r) => r.level)
     );
-    expect([...levels]).toEqual([2]);
+    // A Bard reaching 5 has 3rd-level slots: levels 1 to 3, never a cantrip.
+    expect([...levels].sort()).toEqual([1, 2, 3]);
+  });
+
+  it("a cantrip is swapped apart, for another cantrip, and saved", () => {
+    const doc = bard();
+    const forget = levelUpAsks(doc, "bard", NO_ANSWERS, "en").rows.find(
+      (r) => r.key === "cantripRemove"
+    );
+    expect(forget?.options.map((o) => o.id)).toEqual(["vicious-mockery"]);
+    if (!forget) return;
+    let a = toggleAnswer(NO_ANSWERS, forget, "vicious-mockery");
+    const learn = levelUpAsks(doc, "bard", a, "en").rows.find(
+      (r) => r.key === "cantripReplace"
+    );
+    expect(
+      new Set(
+        spellPickRows(learn?.options.map((o) => o.id) ?? [], "en").map((r) => r.level)
+      )
+    ).toEqual(new Set([0]));
+    if (!learn) return;
+    a = toggleAnswer(a, learn, "light");
+    // Forgetting without a replacement is not finished; with one it is, and saves.
+    expect(levelUpAsks(doc, "bard", toggleAnswer(a, learn, "light"), "en").complete).toBe(
+      false
+    );
+    const ids = commitLevelUp(
+      doc,
+      levelUpAsks(doc, "bard", a, "en").picks
+    ).character.spells.map((s) => ("srdId" in s ? s.srdId : ""));
+    expect(ids).toContain("light");
+    expect(ids).not.toContain("vicious-mockery");
+  });
+
+  it("a Wizard prepares from its list: no swap at level-up", () => {
+    const doc = makeCharacterDoc({
+      classId: "wizard",
+      level: 4,
+      spells: [{ srdId: "fire-bolt" }, { srdId: "magic-missile" }],
+    });
+    const keys = levelUpAsks(doc, "wizard", NO_ANSWERS, "en").rows.map((r) => r.key);
+    expect(keys.filter((k) => /swap|cantripRemove/.test(k))).toEqual([]);
   });
 });

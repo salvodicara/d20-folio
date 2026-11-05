@@ -1,8 +1,8 @@
 /**
  * Spells to pick from, as rows that say what each one is (D&D Beyond's list,
- * the classic wizard's search, the sheet's spell rows): the name with its
- * Concentration / Ritual marks, «Livello 3 · Invocazione · Azione · 45 metri»,
- * its effect («8d6 Fuoco»), and a button for the full text. No prose in the
+ * the classic wizard's search, the sheet's spell rows): the name, one facts line
+ * «Livello 3 · Invocazione · Azione · 45 metri · concentrazione», its effect
+ * («8d6 Fuoco»), and a light button inside the row for the full text. No prose in the
  * row. Past `SPELL_FILTER_FROM` options a search field and a filter by spell
  * level narrow the list. A tap on a row picks or unpicks it.
  */
@@ -40,8 +40,18 @@ export function SpellPickList({
   const shown = filtering ? filterSpellRows(rows, query, level) : rows;
   const levelName = (n: number) =>
     n === 0 ? t("spells.cantrip") : t("spells.level", { level: n });
+  // The sheet's spell row: Concentration and Ritual are quiet words in the facts line.
   const facts = (r: SpellPickRow) =>
-    [levelName(r.level), r.school, r.castingTime, r.range].filter(Boolean).join(" · ");
+    [
+      levelName(r.level),
+      r.school,
+      r.castingTime,
+      r.range,
+      r.concentration ? t("play.concentration") : null,
+      r.ritual ? t("spells.pick.ritual") : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
 
   return (
     <div className="f-spellpick">
@@ -80,10 +90,6 @@ export function SpellPickList({
                 <span className="f-row-t">
                   {/* A long name wraps without leaving its last word alone. */}
                   {r.name.replace(/ (\S+)$/, "\u00a0$1")}
-                  {r.concentration && (
-                    <Chip kind="conc">{t("spells.concentration")}</Chip>
-                  )}
-                  {r.ritual && <Chip>{t("spells.ritual")}</Chip>}
                 </span>
                 <span className="f-row-s">{facts(r)}</span>
                 {r.effect && (
