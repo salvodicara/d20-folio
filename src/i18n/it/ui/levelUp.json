@@ -180,7 +180,8 @@
       "gist": "In breve",
       "readAll": "Leggi tutto",
       "invocation": "Supplica occulta",
-      "maneuver": "Manovra"
+      "maneuver": "Manovra",
+      "hoverHint": "Passa sopra un'opzione per leggere cosa fa."
     }
   }
 }

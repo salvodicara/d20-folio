@@ -317,6 +317,8 @@ window.__audit = (opts) => {
       const [a, ra] = rects[i],
         [b, rb] = rects[j];
       if (a.contains(b) || b.contains(a)) continue;
+      // a tooltip floats over its neighbours on purpose (BG3)
+      if (a.closest(".f-slot-tip") || b.closest(".f-slot-tip")) continue;
       const pa = getComputedStyle(a).position,
         pb = getComputedStyle(b).position;
       if (
@@ -339,6 +341,8 @@ window.__audit = (opts) => {
         }
     }
   for (const [e, rs] of rects) {
+    // a tooltip floats outside its icon on purpose (BG3)
+    if (e.closest(".f-slot-tip")) continue;
     const box = e.closest("button,.btn,.chip,.sg,.choice,.pill,.plate,.tag,.tg");
     if (!box || box === document.body) continue;
     const br = box.getBoundingClientRect();
@@ -362,6 +366,7 @@ window.__audit = (opts) => {
         a.parentElement === b.parentElement
       )
         continue;
+      if (a.closest(".f-slot-tip") || b.closest(".f-slot-tip")) continue;
       if (a.closest("p,li") && a.closest("p,li") === b.closest("p,li")) continue;
       if (a.closest(".dw,.f-dw") && a.closest(".dw,.f-dw") === b.closest(".dw,.f-dw"))
         continue;
@@ -403,7 +408,7 @@ window.__audit = (opts) => {
     return tops.length;
   };
   const ONE =
-    ".btn,.f-btn,button:not(.choice):not(.f-choice):not(.f-lvl-opt):not(.cc):not(.f-cc):not(.row):not(.arow__name):not(.tip__head):not(.abil):not(.badge):not(.plate):not(.f-char-hp-open),.chip,.f-chip,.pill,.tabs>*,.f-tabs>*,.boxtabs span,nav a,.label,.atable__head *,.stats .lbl,.num .lbl,.f-num .f-lbl,.ini .tag,.sg,.plate small,.tg,th,.grp .lbl,.f-grp .f-lbl";
+    ".btn,.f-btn,button:not(.choice):not(.f-choice):not(.f-lvl-opt):not(.f-slot):not(.cc):not(.f-cc):not(.row):not(.arow__name):not(.tip__head):not(.abil):not(.badge):not(.plate):not(.f-char-hp-open),.chip,.f-chip,.pill,.tabs>*,.f-tabs>*,.boxtabs span,nav a,.label,.atable__head *,.stats .lbl,.num .lbl,.f-num .f-lbl,.ini .tag,.sg,.plate small,.tg,th,.grp .lbl,.f-grp .f-lbl";
   for (const e of document.querySelectorAll(ONE)) {
     if (!vis(e) || !(e.innerText || "").trim()) continue;
     if (lines(e) > 1) add("wrap", lines(e) + " lines " + label(e));
