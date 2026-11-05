@@ -3,10 +3,14 @@
  * `campaigns/{id}/effects/{effectId}` (`lib/play/campaign-effects.ts`). A member
  * writes the effects they cast; ending one only sets `ended`, so its undo brings the
  * same occurrence back. Under dev bypass an in-memory store stands in, with the same
- * listeners. Firebase loads on first use.
+ * listeners. Imports only the Firestore functions it uses: a dynamic import of the whole
+ * Firestore namespace would keep every export in the shared, eager Firebase chunk.
  */
+import { collection, deleteField, doc, onSnapshot, writeBatch } from "firebase/firestore";
+
 import { isActiveCombatEffect } from "@/lib/combat-effect-io";
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
+import { db } from "@/lib/firebase";
 import type { CampaignEffectDoc } from "@/lib/play/campaign-effects";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
@@ -49,28 +53,17 @@ export function subscribeCampaignEffects(
     onDocs([...devDocs(campaignId).values()]);
     return () => set.delete(onDocs);
   }
-  let unsubscribe: (() => void) | null = null;
-  let closed = false;
-  void Promise.all([import("firebase/firestore"), import("@/lib/firebase")])
-    .then(([{ collection, onSnapshot }, { db }]) => {
-      if (closed) return;
-      unsubscribe = onSnapshot(
-        collection(db, "campaigns", campaignId, "effects"),
-        (snap) =>
-          onDocs(
-            snap.docs.flatMap((doc) => {
-              const effect = conformCampaignEffect(doc.data());
-              return effect ? [effect] : [];
-            })
-          ),
-        onError
-      );
-    })
-    .catch(onError);
-  return () => {
-    closed = true;
-    unsubscribe?.();
-  };
+  return onSnapshot(
+    collection(db, "campaigns", campaignId, "effects"),
+    (snap) =>
+      onDocs(
+        snap.docs.flatMap((stored) => {
+          const effect = conformCampaignEffect(stored.data());
+          return effect ? [effect] : [];
+        })
+      ),
+    onError
+  );
 }
 
 /** Write effects that live on the campaign clock (one document each, by id). */
@@ -85,10 +78,6 @@ export async function writeCampaignEffects(
     devPublish(campaignId);
     return;
   }
-  const [{ doc, writeBatch }, { db }] = await Promise.all([
-    import("firebase/firestore"),
-    import("@/lib/firebase"),
-  ]);
   const batch = writeBatch(db);
   for (const effect of effects) {
     batch.set(doc(db, "campaigns", campaignId, "effects", effect.id), effect);
@@ -115,10 +104,6 @@ export async function setCampaignEffectsEnded(
     devPublish(campaignId);
     return;
   }
-  const [{ deleteField, doc, writeBatch }, { db }] = await Promise.all([
-    import("firebase/firestore"),
-    import("@/lib/firebase"),
-  ]);
   const batch = writeBatch(db);
   for (const id of ids) {
     batch.update(doc(db, "campaigns", campaignId, "effects", id), {
