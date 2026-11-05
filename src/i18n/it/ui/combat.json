@@ -651,6 +651,7 @@
     "reactionTrigger_selfSucceedsSave": "superi un tiro salvezza",
     "useHitPointDice": "{{source}}: puoi spendere fino a {{max}} dei tuoi Dadi Vita.",
     "rerollOffer": "{{name}}: ritira",
-    "rerollOfferBonus": "{{name}}: ritira +{{bonus}}"
+    "rerollOfferBonus": "{{name}}: ritira +{{bonus}}",
+    "oncePerTurnTaken": "{{name}}: già usato in questo turno"
   }
 }
