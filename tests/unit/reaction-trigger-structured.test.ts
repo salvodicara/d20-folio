@@ -137,7 +137,18 @@ const CORRECTED_TRIGGERS: Record<string, string> = {
   // Instinctive Charm answers an attack roll against you, before it hits (the parser
   // read "fails a save" from its own wording).
   "wizard-enchanter-instinctive-charm": "a creature attacks you",
+  // Your OWN failed save, not an ally's (rules sweep 2026-11-04).
+  "aberrant-dragonmark": "you fail a Constitution saving throw",
+  "transmuted-anatomy": "you fail a Constitution saving throw",
+  "mythal-touched": "you fail a saving throw",
+  // A Frightened creature starting its turn within 60 ft of you.
+  "boon-of-terror": "creature starts its turn near you",
 };
+
+// Features whose reaction has no concise structured trigger yet: the parser's
+// "ally fails save" was wrong (Infernal Bulwark answers YOUR successful save), so the
+// row carries no token and shows no "Trigger:" line.
+const NO_STRUCTURED_TRIGGER: ReadonlySet<string> = new Set(["infernal-bulwark"]);
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {
   it("enumerates every reaction action (guards against a vacuous pass)", () => {
@@ -155,7 +166,9 @@ describe("structured reaction trigger — equivalence with the retired parser", 
         : undefined;
       // For audit-corrected features the structured token deliberately
       // diverges from the (wrong) parser output — assert the corrected EN instead.
-      const expectedEn = CORRECTED_TRIGGERS[row.featureId] ?? row.expectedEn;
+      const expectedEn = NO_STRUCTURED_TRIGGER.has(row.featureId)
+        ? undefined
+        : (CORRECTED_TRIGGERS[row.featureId] ?? row.expectedEn);
       expect(
         structuredEn,
         `${row.featureId}: structured trigger EN ("${structuredEn ?? "—"}") must equal the ` +
