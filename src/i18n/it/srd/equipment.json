@@ -43,7 +43,7 @@
     "name": "Cornamusa"
   },
   "ball-bearings": {
-    "description": "Come azione Utilizzo, puoi spargere le Biglie per coprire un'area piana di 3 metri quadrati entro 3 metri da te. Una creatura che entra in quest'area per la prima volta nel suo turno deve superare un tiro salvezza su Destrezza con CD 10 o ottenere la condizione Prono.",
+    "description": "Come azione Utilizzo, puoi spargere le Sfere Metalliche per coprire un'area piana quadrata di 3 metri di lato entro 3 metri da te. Una creatura che entra in quest'area per la prima volta nel suo turno deve superare un tiro salvezza su Destrezza con CD 10 o ottenere la condizione Prono.",
     "gist": "Coprono un quadrato di 3 m: TS su DES CD 10 o cadi Prono",
     "name": "Sfere Metalliche"
   },
@@ -118,7 +118,7 @@
     "name": "Scorte da Calligrafo"
   },
   "caltrops": {
-    "description": "Come azione Utilizzo, puoi spargere i Triboli per coprire un'area di 1,5 metri quadrati entro 1,5 metri da te. Una creatura che entra in quest'area deve superare un tiro salvezza su Destrezza con CD 15 o subire 1 danno Perforante e avere la Velocità ridotta a 0 fino all'inizio del suo prossimo turno.",
+    "description": "Come azione Utilizzo, puoi spargere i Triboli per coprire un'area quadrata di 1,5 metri di lato entro 1,5 metri da te. Una creatura che entra in quest'area deve superare un tiro salvezza su Destrezza con CD 15 o subire 1 danno Perforante e avere la Velocità ridotta a 0 fino all'inizio del suo prossimo turno.",
     "gist": "Coprono un quadrato di 1,5 m: TS su DES CD 15 o 1 danno Perforante e Velocità 0",
     "name": "Triboli"
   },
@@ -451,7 +451,7 @@
     "gist": "Martello da guerra compatto per colpi rapidi o brevi lanci"
   },
   "lock": {
-    "description": "Un Lucchetto viene con una chiave. Senza la chiave, una creatura può scassinarlo con gli Arnesi da Scasso (prova di Destrezza Rapidità di Mano con CD 15).",
+    "description": "Una Serratura viene con una chiave. Senza la chiave, una creatura può scassinarla con gli Arnesi da Scasso (prova di Destrezza Rapidità di Mano con CD 15).",
     "gist": "Ha una chiave; senza, si scassina con gli Arnesi da Scasso (Rapidità di Mano CD 15)",
     "name": "Serratura"
   },
@@ -617,7 +617,7 @@
   },
   "pouch": {
     "name": "Borsa",
-    "description": "Una borsa può contenere fino a 3 chilogrammi in circa 12 litri di volume.",
+    "description": "Una borsa può contenere fino a 3 chilogrammi in circa 6 litri di volume.",
     "gist": "Contiene fino a 3 chilogrammi"
   },
   "priests-pack": {
