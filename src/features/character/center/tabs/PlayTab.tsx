@@ -159,7 +159,11 @@ import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { useTurnEconomy } from "../useTurnEconomy";
 import { RollReactionDialog } from "../RollReactionDialog";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
-import { rollReactionView, type RollReactionView } from "../roll-reaction-view";
+import {
+  featureArtId,
+  rollReactionView,
+  type RollReactionView,
+} from "../roll-reaction-view";
 import { rollReactionOf } from "@/lib/play/roll-reactions";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
@@ -484,7 +488,8 @@ export function PlayTab() {
     const status = useCombatStatusStore.getState().status;
     return rollReactionView(
       reaction,
-      status ? { myId: status.myId, rows: status.view.rows } : null
+      status ? { myId: status.myId, rows: status.view.rows } : null,
+      action.summary.uses
     );
   };
 
@@ -1096,6 +1101,7 @@ export function PlayTab() {
               {rolling && (
                 <RollReactionDialog
                   name={rolling.action.name}
+                  featureId={featureArtId(rolling.action.nameLoc)}
                   view={rolling.view}
                   onClose={() => setRolling(null)}
                   onUse={(plan) => {

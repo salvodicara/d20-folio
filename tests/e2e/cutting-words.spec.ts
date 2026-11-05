@@ -57,8 +57,12 @@ for (const size of ["desktop", "mobile"] as const) {
       .filter({ hasText: "Ogre" })
       .click();
     await dialog.getByRole("button", { name: "Tiro per colpire" }).click();
+    // The die reads at a glance, and the result line says the whole use.
+    await expect(dialog.getByText("−1d10")).toBeVisible();
     await expect(
-      dialog.getByText("Tira 1d10 e sottrailo da quel tiro.").first()
+      dialog.locator(".rr-result", {
+        hasText: "Parole Taglienti su Ogre (tiro per colpire): tira 1d10 e sottrailo",
+      })
     ).toBeVisible();
     await page.screenshot({ path: shotPath(`cutting-words-dialog-${size}.png`) });
 

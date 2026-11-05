@@ -10,21 +10,42 @@ import {
   type TargetCandidate,
   type TargetRosterRow,
 } from "@/features/character/center/target-step";
-import type { ReactableRoll } from "@/data/types";
+import type { CreatureType, ReactableRoll } from "@/data/types";
+import type { LocText } from "@/lib/loc-text";
 import type { RollReaction } from "@/lib/play/roll-reactions";
 
 export interface RollReactionView {
-  /** The living others, enemies first, as the «Su chi?» rows draw them. */
-  targets: TargetCandidate[];
+  /** The living others, enemies first, as the «Su chi?» rows draw them; a monster
+   *  names its catalogue id (its painted icon) and type (the glyph without one). */
+  targets: RollTarget[];
   rolls: ReadonlyArray<ReactableRoll>;
   operations: ReadonlyArray<"add" | "subtract">;
   die: string;
+  /** The uses left of what it spends (Bardic Inspiration 3 / 4), as pips. */
+  uses?: { current: number; total: number };
 }
+
+/** The class feature behind a use, for its painted icon (`feature/<id>`), read off
+ *  the use's name reference; undefined for anything else. */
+export function featureArtId(nameLoc: LocText | undefined): string | undefined {
+  return nameLoc && "srd" in nameLoc && nameLoc.srd.kind === "class-feature"
+    ? nameLoc.srd.key
+    : undefined;
+}
+
+export type RollTarget = TargetCandidate & {
+  srdId?: string;
+  creatureType?: CreatureType;
+};
+
+/** A fight row, with the monster identity the encounter view carries. */
+type FightRow = TargetRosterRow & { srdId?: string; creatureType?: CreatureType };
 
 /** The dialog's choices; null for a use with no die to show (a reroll). */
 export function rollReactionView(
   reaction: RollReaction,
-  fight: { myId: string; rows: ReadonlyArray<TargetRosterRow> } | null
+  fight: { myId: string; rows: ReadonlyArray<FightRow> } | null,
+  uses?: { current: number; total: number }
 ): RollReactionView | null {
   if (reaction.kind !== "die") return null;
   const targets =
@@ -39,7 +60,7 @@ export function rollReactionView(
           const allies = others.filter((row) => sideOf(row.id) === mine);
           const candidate =
             (side: "ally" | "enemy") =>
-            (row: TargetRosterRow): TargetCandidate => ({
+            (row: FightRow): RollTarget => ({
               id: row.id,
               name: row.name,
               side,
@@ -47,6 +68,10 @@ export function rollReactionView(
               ...(row.portraitUrl ? { portraitUrl: row.portraitUrl } : {}),
               ...(row.portraitUrl && row.portraitCrop
                 ? { portraitCrop: row.portraitCrop }
+                : {}),
+              ...(row.kind === "monster" && row.srdId ? { srdId: row.srdId } : {}),
+              ...(row.kind === "monster" && row.creatureType
+                ? { creatureType: row.creatureType }
                 : {}),
             });
           return [...enemies.map(candidate("enemy")), ...allies.map(candidate("ally"))];
@@ -57,5 +82,6 @@ export function rollReactionView(
     rolls: reaction.rolls,
     operations: reaction.operations,
     die: reaction.die,
+    ...(uses ? { uses } : {}),
   };
 }
