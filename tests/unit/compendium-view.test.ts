@@ -63,6 +63,14 @@ describe("compendium filters", () => {
     }
   });
 
+  it("offers Ritual, Concentration and Bonus Action, each keeping only its spells", () => {
+    const other = compendiumFilters("spell", rows, "en").find((g) => g.id === "other");
+    expect(other?.options.map((o) => o.id)).toEqual(["ritual", "concentration", "bonus"]);
+    const bonus = filterCompRows(rows, "", { other: ["bonus"] }).map((r) => r.id);
+    expect(bonus).toContain("healing-word");
+    expect(bonus).not.toContain("cure-wounds");
+  });
+
   it("an empty group ticks nothing out", () => {
     expect(filterCompRows(rows, "", { level: [] })).toHaveLength(rows.length);
   });

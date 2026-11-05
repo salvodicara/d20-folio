@@ -33,7 +33,7 @@ import { ActionIcon } from "@/domains/play/ui/ActionIcon";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
-import { Button, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
+import { Button, Check, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
 
 const CATEGORY_LABEL: Record<CompCategory, string> = {
   spell: "nav.spells",
@@ -278,21 +278,18 @@ function Filters({
           <fieldset key={g.id} className="f-comp-group">
             <legend className="f-lbl">{g.label}</legend>
             {g.options.map((o) => (
-              <label key={o.id} className="f-check">
-                <input
-                  type="checkbox"
-                  checked={on.includes(o.id)}
-                  onChange={() =>
-                    onChange({
-                      ...picks,
-                      [g.id]: on.includes(o.id)
-                        ? on.filter((x) => x !== o.id)
-                        : [...on, o.id],
-                    })
-                  }
-                />
-                <span>{tieLast(o.label)}</span>
-              </label>
+              <Check
+                key={o.id}
+                on={on.includes(o.id)}
+                onChange={(tick) =>
+                  onChange({
+                    ...picks,
+                    [g.id]: tick ? [...on, o.id] : on.filter((x) => x !== o.id),
+                  })
+                }
+              >
+                {tieLast(o.label)}
+              </Check>
             ))}
           </fieldset>
         );
@@ -357,11 +354,9 @@ function CompGlyph({ icon }: { icon: CompIcon }) {
 /** A long name wraps without leaving its last word alone. */
 const tieLast = (name: string) => name.replace(/ (\S+)$/, "\u00a0$1");
 
-/** Each line of prose ends on its last three words together, never on a lone word. */
+/** Each line of prose ends on its last two words together, never on a lone word. */
 const tieTails = (md: string) =>
   md
     .split("\n")
-    .map((line) =>
-      line.startsWith("|") ? line : line.replace(/ (\S+) (\S+)$/, "\u00a0$1\u00a0$2")
-    )
+    .map((line) => (line.startsWith("|") ? line : line.replace(/ (\S+)$/, "\u00a0$1")))
     .join("\n");

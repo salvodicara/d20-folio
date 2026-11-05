@@ -4286,6 +4286,9 @@
 }
 .fui .f-comp-group {
   display: grid;
+  /* two columns where they fit (the phone's dialog), one in the side panel */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  column-gap: 16px;
   margin: 0;
   padding: 0;
   border: 0;
@@ -4296,30 +4299,31 @@
   align-items: center;
   gap: 8px;
   min-height: 40px;
-  cursor: pointer;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
-.fui .f-check > input {
-  appearance: none;
+.fui .f-check-box {
   flex: none;
   display: grid;
   place-items: center;
   width: 20px;
   height: 20px;
-  margin: 0;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  background: none;
-  cursor: pointer;
+  border-radius: var(--r-frame);
 }
-.fui .f-check:hover > input {
+.fui .f-check:hover > .f-check-box {
   border-color: var(--gold-line);
 }
-.fui .f-check > input:checked {
+.fui .f-check[aria-checked="true"] > .f-check-box {
   border-color: var(--text);
   background: var(--text);
 }
-.fui .f-check > input:checked::after {
+.fui .f-check[aria-checked="true"] > .f-check-box::after {
   content: "";
   width: 6px;
   height: 11px;
@@ -4328,7 +4332,7 @@
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
-.fui .f-check > input:focus-visible {
+.fui .f-check:focus-visible {
   outline: 2px solid var(--gold-hi);
   outline-offset: 2px;
 }

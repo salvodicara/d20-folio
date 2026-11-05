@@ -125,7 +125,7 @@ function spellRow(s: SrdSpellData, locale: Locale): CompRow {
   const other = [
     s.ritual ? "ritual" : null,
     s.concentration ? "concentration" : null,
-    castKey === "bonus" ? "bonus" : null,
+    castKey === "bonus action" ? "bonus" : null,
   ].filter((v): v is string => v !== null);
   return {
     id: s.id,

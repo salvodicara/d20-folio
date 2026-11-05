@@ -3,6 +3,7 @@ import "./ui.css";
 export { AppShell, PhoneBar, type ShellAction, type ShellLink } from "./AppShell";
 export { useShellMenu } from "./shell-bar";
 export { Button } from "./Button";
+export { Check } from "./Check";
 export { Chip } from "./Chip";
 export { Choice } from "./Choice";
 export { Dialog } from "./Dialog";
