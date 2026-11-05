@@ -3180,22 +3180,34 @@ export function TurnEconomyProvider({
     const status = useCombatStatusStore.getState().status;
     const doc = useCharacterStore.getState().character;
     const selfName = doc?.character.name ?? "";
+    const selfPortrait = {
+      selfPortraitUrl: doc?.portraitUrl ?? null,
+      selfPortraitCrop: doc?.portraitCrop ?? null,
+    };
     // Out of a fight in a campaign: the party, for a state left on its recipient.
     const party = !status ? usePartyRosterStore.getState().party : null;
     if (party && doc && party.characterId === doc.id && combatEffectsV26On()) {
       return {
         selfId: party.selfId,
         selfName,
+        ...selfPortrait,
         party: true,
-        rows: party.members.map(({ ref, name }) => ({
+        rows: party.members.map(({ ref, name, portraitUrl, portraitCrop }) => ({
           id: ref.combatantId,
           kind: "pc" as const,
           side: "ally" as const,
           name,
+          portraitUrl: portraitUrl ?? null,
+          portraitCrop: portraitCrop ?? null,
         })),
       };
     }
-    return { selfId: selfCombatantId(), selfName, rows: status?.view.rows ?? [] };
+    return {
+      selfId: selfCombatantId(),
+      selfName,
+      ...selfPortrait,
+      rows: status?.view.rows ?? [],
+    };
   }
 
   // The async reaction handler is exposed as a fire-and-forget `() => void` on

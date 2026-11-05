@@ -201,6 +201,28 @@ describe("out of a fight: the party («Il gruppo»)", () => {
     expect(targetStepFor(spellAction("cure-wounds"), PARTY)).toBeNull();
   });
 
+  it("each row carries its creature's portrait, for the round medallion", () => {
+    const crop = { x: 1, y: 2, width: 50, height: 50 };
+    const step = targetStepFor(spellAction("mage-armor"), {
+      ...PARTY,
+      selfPortraitUrl: "me.jpeg",
+      rows: [
+        {
+          id: "pc-bren",
+          kind: "pc",
+          side: "ally",
+          name: "Bren",
+          portraitUrl: "bren.jpeg",
+          portraitCrop: crop,
+        },
+      ],
+    });
+    expect(step?.candidates.map((c) => [c.portraitUrl, c.portraitCrop])).toEqual([
+      ["me.jpeg", undefined],
+      ["bren.jpeg", crop],
+    ]);
+  });
+
   it("in a fight the groups stay allies and enemies", () => {
     expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });

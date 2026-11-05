@@ -7,6 +7,7 @@
 import { create } from "zustand";
 
 import type { CampaignDoc } from "@/types/campaign";
+import type { PortraitCrop } from "@/types/character";
 import type { CombatantRef } from "@/types/combat-effect";
 
 export interface PartyRoster {
@@ -18,7 +19,12 @@ export interface PartyRoster {
   /** The campaign clock's minute now. */
   minute: number;
   /** The other members' characters. */
-  members: Array<{ ref: Extract<CombatantRef, { kind: "pc" }>; name: string }>;
+  members: Array<{
+    ref: Extract<CombatantRef, { kind: "pc" }>;
+    name: string;
+    portraitUrl?: string | null;
+    portraitCrop?: PortraitCrop | null;
+  }>;
 }
 
 export const usePartyRosterStore = create<{
@@ -51,6 +57,8 @@ export function partyRosterOf(
                 characterId: member.characterId,
               },
               name: member.character?.name ?? member.displayName,
+              portraitUrl: member.character?.portraitUrl ?? null,
+              portraitCrop: member.character?.portraitCrop ?? null,
             },
           ]
         : []
