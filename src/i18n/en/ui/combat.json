@@ -569,6 +569,8 @@
       "rowTotal": "Rolled total for {{name}}",
       "saved": "Saved",
       "savedAria": "{{name}} saved",
+      "succeeded": "Succeeded",
+      "succeededAria": "{{name}} succeeded",
       "conditionSave": "{{condition}} · {{ability}} save DC {{dc}}",
       "multiplier": "Multiplier for {{name}}",
       "resistant": "Resistant",

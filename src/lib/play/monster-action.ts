@@ -196,7 +196,7 @@ export function monsterTrayLandings(
     return {
       targetId: row.targetId,
       amount: plan.effect ? rowAmount(total, row, plan) : 0,
-      conditions: rowConditions(row),
+      conditions: rowConditions(row, plan),
       ...(outcome ? { outcome } : {}),
     };
   });

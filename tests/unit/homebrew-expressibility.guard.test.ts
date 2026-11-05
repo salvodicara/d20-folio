@@ -283,6 +283,7 @@ function spellThroughLibraryCodec(spell: CustomSpell): CustomSpell {
  *  still proves them (Power Word Fortify's pool, a half-on-miss, a primary target). */
 const PACK_ONLY_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
   tempHpPool: 120,
+  appliesOnSuccess: true,
   targetStates: [
     {
       type: "while-active",

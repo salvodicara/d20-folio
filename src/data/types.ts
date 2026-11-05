@@ -1449,6 +1449,10 @@ export interface SrdSpellData {
   /** Only an unwilling target makes the save; a willing one takes the spell
    *  (Enlarge/Reduce, Teleport): the tray offers «Consenziente». */
   saveIfUnwilling?: true;
+  /** What the spell does lands only on a target that succeeds (a reroll of a failed
+   *  D20 Test: Temporary Hit Points if the new roll succeeds): the tray marks each
+   *  row «Successo», and only marked rows take the amount, conditions and states. */
+  appliesOnSuccess?: true;
   saveAbility?: AbilityCode;
   /** Attack type (if spell requires an attack roll) */
   attackType?: "melee" | "ranged";

@@ -220,7 +220,7 @@ export function applyTray(
         target,
         amount: effect && row ? (amounts[index] ?? 0) : 0,
         ...(effect === "damage" && parts[index] ? { parts: parts[index] } : {}),
-        conditions: row ? rowConditions(row) : [],
+        conditions: row ? rowConditions(row, plan) : [],
         ...(row?.attack ? { outcome: row.attack } : {}),
         ...(row?.knockOut ? { knockOut: true as const } : {}),
         ...(row?.saved && offer.onSaved ? { saved: true as const } : {}),

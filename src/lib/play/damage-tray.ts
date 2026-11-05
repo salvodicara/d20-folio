@@ -37,6 +37,10 @@ export type TrayMultiplier = "0" | "0.25" | "0.5" | "1" | "2";
 export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.25", "0.5", "1", "2"];
 
 export interface DamageTrayPlan {
+  /** The use lands only on a target that succeeds (`appliesOnSuccess`): each row
+   *  is marked «Successo» (the row's `saved`), and only marked rows take the amount,
+   *  the conditions and the states. */
+  gate?: "success";
   /** What the one number is; `null` for a condition-only action (Hold Person). */
   effect: TrayEffect | null;
   /** The one damage type, when the action deals exactly one (for defenses). */
@@ -260,6 +264,9 @@ export function damageTrayPlan(
         : {}),
     ...(standsOnSave && action.spellId && getSpellById(action.spellId)?.saveIfUnwilling
       ? { willing: true as const }
+      : {}),
+    ...(action.spellId && getSpellById(action.spellId)?.appliesOnSuccess
+      ? { gate: "success" as const }
       : {}),
     ...(spec.revives ? { revive: { ...spec.revives } } : {}),
     ...(spec.onZeroHp ? { onZeroHp: spec.onZeroHp } : {}),
@@ -630,6 +637,8 @@ function applyMultiplier(amount: number, multiplier: TrayMultiplier): number {
  *  on-a-20 damage: of the primary type before the multiplier ({@link onRoll20Amount}),
  *  of another type as its own line with its own multiplier ({@link onRoll20Lines}). */
 export function rowAmount(total: number, row: TrayRow, plan: DamageTrayPlan): number {
+  // Gated on success: nothing until the row is marked «Successo».
+  if (plan.gate === "success" && !row.saved) return 0;
   // A spell that hangs on the target's Hit Points (Power Word Kill) deals its damage
   // only on its `otherwise` branch. Before the DM answers (`null`) the row reads as
   // the print does; the answer narrows it.
@@ -710,7 +719,8 @@ export function rowDamageParts(
 
 /** The conditions this row lands: none once the target saved or the attack missed,
  *  and for a Hit Point threshold only on its `condition` branch (Power Word Stun). */
-export function rowConditions(row: TrayRow): string[] {
+export function rowConditions(row: TrayRow, plan?: DamageTrayPlan): string[] {
+  if (plan?.gate === "success") return row.saved ? row.conditions : [];
   const branch = thresholdBranch(row);
   if (branch !== null && branch !== "condition") return [];
   return row.saved || row.attack === "miss" ? [] : row.conditions;
