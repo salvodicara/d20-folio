@@ -17,7 +17,7 @@ import { createElement, Fragment, useMemo, useState, type ReactNode } from "reac
 import { useTranslation } from "react-i18next";
 
 import { BlockMarkdown } from "@/components/shared/BlockMarkdown";
-import { FolioFeatIcon } from "@/components/shared/folio-icons";
+import { FolioBookIcon, FolioFeatIcon } from "@/components/shared/folio-icons";
 import { spells as allSpells } from "@/data/spells";
 import { optionInfo, type InfoKind } from "@/domains/spells/option-info";
 import {
@@ -32,6 +32,7 @@ import { tieLast, tieTails } from "@/lib/text-ties";
 import { Art, Button, Chip, Field, type ArtKind } from "@/ui";
 
 const SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
+const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
 
 /** Which painted art an option kind wears on its card. */
 const CARD_ART: Partial<Record<InfoKind, ArtKind>> = {
@@ -47,6 +48,7 @@ export function PickGrid({
   art,
   info,
   chips,
+  count,
   locale,
   onToggle,
 }: {
@@ -61,6 +63,8 @@ export function PickGrid({
   info?: InfoKind;
   /** Draw the options as chips (skills, tools, languages): no art, same card. */
   chips?: boolean;
+  /** How many to pick: the learned row shows that many slots (BG3). */
+  count?: number;
   locale: Locale;
   onToggle: (id: string) => void;
 }) {
@@ -104,6 +108,67 @@ export function PickGrid({
   const toggle = (id: string) => {
     onToggle(id);
     if (kind) setFocus(id);
+  };
+  const names = new Map(options.map((o) => [o.id, o.label]));
+  // BG3's spellbook: one row per spell level (T, I, II…); other kinds one row.
+  const groups: [number | null, { id: string; label: string }[]][] = spells
+    ? [...new Set(shown.map((o) => byId.get(o.id)?.level ?? 0))]
+        .sort((a, b) => a - b)
+        .map((lv) => [lv, shown.filter((o) => (byId.get(o.id)?.level ?? 0) === lv)])
+    : [[null, [...shown]]];
+  /** One square icon slot: the art edge to edge, a tooltip on hover, gold when picked. */
+  const slot = (o: { id: string; label: string }, inPicked = false) => {
+    const on = picked.includes(o.id);
+    const spell = byId.get(o.id);
+    const school = SCHOOL.get(o.id);
+    return (
+      <Fragment key={o.id}>
+        <button
+          type="button"
+          className="f-slot"
+          aria-pressed={on}
+          aria-label={o.label}
+          onClick={() => toggle(o.id)}
+          {...reads(o.id)}
+        >
+          <span className="f-slot-art" aria-hidden="true">
+            {spell && school ? (
+              <SpellArt id={o.id} school={school} size="fill" />
+            ) : (
+              <Art
+                kind={art ?? "feat"}
+                id={o.id}
+                fallback={createElement(FolioFeatIcon, { "aria-hidden": true })}
+              />
+            )}
+          </span>
+          {spell && spell.level > 0 && (
+            <span className="f-slot-lv" aria-hidden="true">
+              {ROMAN[spell.level]}
+            </span>
+          )}
+          {on && (
+            <span className="f-slot-tick" aria-hidden="true">
+              ✓
+            </span>
+          )}
+          {/* BG3's tooltip at the icon (wide screen); the name under it on a phone. */}
+          <span className="f-slot-tip" aria-hidden="true">
+            <b>{o.label}</b>
+            {spell && (
+              <small>
+                {levelName(spell.level)} · {spell.school}
+              </small>
+            )}
+            {spell?.effect && <em>{spell.effect}</em>}
+          </span>
+          <span className="f-slot-n" aria-hidden="true">
+            {tieLast(o.label).replace(/\//g, "/\u200b")}
+          </span>
+        </button>
+        {!wide && !inPicked && o.id === inspectedId && inspectCard}
+      </Fragment>
+    );
   };
   // DDB opens the card in place: on a phone it sits right under the option tapped.
   const inspectCard =
@@ -161,7 +226,9 @@ export function PickGrid({
         </div>
       )}
       {/* BG3 shows the inspect card beside the list: a side column on a wide screen. */}
-      <div className="f-pick" data-inspect={card ? "" : undefined}>
+      {/* The side column is always there on a wide screen: a card appearing on hover
+          would shift the grid under the pointer. */}
+      <div className="f-pick" data-inspect={card || (wide && kind) ? "" : undefined}>
         {chips ? (
           <div className="f-chips" role="group" aria-label={label}>
             {shown.map((o) => (
@@ -173,52 +240,37 @@ export function PickGrid({
             ))}
           </div>
         ) : (
-          <div className="f-lvl-grid" role="group" aria-label={label}>
-            {shown.map((o) => {
-              const on = picked.includes(o.id);
-              const spell = byId.get(o.id);
-              const school = SCHOOL.get(o.id);
-              return (
-                <Fragment key={o.id}>
-                  <button
-                    type="button"
-                    className="f-lvl-opt"
-                    aria-pressed={on}
-                    onClick={() => toggle(o.id)}
-                    {...reads(o.id)}
-                  >
-                    {spell && school ? (
-                      <SpellArt id={o.id} school={school} />
-                    ) : art ? (
-                      <span className="f-lvl-opt-art">
-                        <Art
-                          kind={art}
-                          id={o.id}
-                          fallback={createElement(FolioFeatIcon, { "aria-hidden": true })}
-                        />
-                      </span>
-                    ) : null}
-                    {spell && (
-                      <span className="f-lvl-opt-lv">
-                        {spell.level === 0 ? "T" : spell.level}
-                      </span>
-                    )}
-                    {on && (
-                      <span className="f-lvl-tick" aria-hidden="true">
-                        ✓
-                      </span>
-                    )}
-                    <span className="f-lvl-opt-n">
-                      {tieLast(o.label).replace(/\//g, "/\u200b")}
-                    </span>
-                  </button>
-                  {!wide && o.id === inspectedId && inspectCard}
-                </Fragment>
-              );
-            })}
+          <div className="f-slotbook" role="group" aria-label={label}>
+            {count !== undefined && count > 0 && (
+              // BG3's learned row: the picks so far, then empty slots up to the count.
+              <div className="f-slotrow f-slotrow-picked">
+                <span className="f-slotrow-l" aria-hidden="true">
+                  {createElement(FolioBookIcon)}
+                </span>
+                <div className="f-slots-run">
+                  {picked.map((id) => slot({ id, label: names.get(id) ?? id }, true))}
+                  {Array.from({ length: Math.max(0, count - picked.length) }, (_, n) => (
+                    <span key={`empty-${String(n)}`} className="f-slot" data-empty="" />
+                  ))}
+                </div>
+              </div>
+            )}
+            {groups.map(([lv, items]) => (
+              <div key={String(lv)} className="f-slotrow">
+                {lv !== null && (
+                  <span className="f-slotrow-l" title={levelName(lv)}>
+                    {lv === 0 ? "T" : ROMAN[lv]}
+                  </span>
+                )}
+                <div className="f-slots-run">{items.map((o) => slot(o))}</div>
+              </div>
+            ))}
           </div>
         )}
         {(wide || chips) && inspectCard}
+        {wide && kind && !inspectCard && (
+          <p className="f-lvl-inspect f-pick-hint">{t("levelUp.screen.hoverHint")}</p>
+        )}
       </div>
     </>
   );
@@ -259,7 +311,7 @@ function Inspect({
         )}
         {card.text &&
           (open ? (
-            <BlockMarkdown className="f-prose" text={tieTails(card.text)} />
+            <BlockMarkdown className="f-prose" text={tieTails(card.text, 3)} />
           ) : (
             <>
               <Button kind="quiet" aria-expanded={full} onClick={() => setFull(!full)}>

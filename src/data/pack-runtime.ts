@@ -7,7 +7,7 @@
  * empty pack as `src/data/pack-empty.ts`. Every module that imports `@pack`
  * evaluates after this one, so the data layer composes exactly what it composes
  * in the bundled build. Same named exports as the other two resolutions; it also
- * serves the `@pack/monsters`, `@pack/monster-art` and `@pack/item-art`
+ * serves the `@pack/monsters`, `@pack/monster-art`, `@pack/item-art` and `@pack/icon-art`
  * sub-entries. See docs/ARCHITECTURE.md → "The content-pack seam".
  */
 import * as empty from "@/data/pack-empty";
@@ -33,6 +33,9 @@ export const packBeasts = pack.packBeasts;
 export const packMonsters = pack.packMonsters;
 export const packMonsterArt = pack.packMonsterArt;
 export const packItemArt = pack.packItemArt;
+// A pack emitted before the icons existed has none.
+export const packIconArt: Readonly<Record<string, string>> =
+  (pack as Partial<typeof pack>).packIconArt ?? {};
 export const packClassTables = pack.packClassTables;
 export const packClassFeatures = pack.packClassFeatures;
 export const packSubclasses = pack.packSubclasses;

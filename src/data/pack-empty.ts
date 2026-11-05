@@ -56,6 +56,8 @@ export const packMonsters: MonsterStatBlock[] = [];
 export const packMonsterArt: Readonly<Record<string, string>> = {};
 /** Canonical item illustrations are absent from an SRD-only pack resolution. */
 export const packItemArt: Readonly<Record<string, string>> = {};
+/** The pack's painted icons, `"<kind>/<id>"` → URL (`@pack/icon-art`). */
+export const packIconArt: Readonly<Record<string, string>> = {};
 export const packClassTables: SrdClassTable[] = [];
 export const packClassFeatures: SrdClassFeatureData[] = [];
 export const packSubclasses: Readonly<Record<string, readonly SrdSubclassInfo[]>> = {};
