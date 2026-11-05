@@ -25,6 +25,7 @@ import type {
   ActionEconomyCategory,
   ActionType,
   CombatConditionApplication,
+  ActionRollEffect,
   CombatResolutionGate,
   ConditionId,
   CreatureType,
@@ -388,6 +389,8 @@ export type ActivityEffect =
       typesByLevel: Readonly<Record<number, ReadonlyArray<DamageType>>>;
     })
   | (EffectBase & { kind: "check-bonus"; dice: string; refundOnFail?: true })
+  /** What the use does to a roll already rolled (Cutting Words, Indomitable). */
+  | (EffectBase & { kind: "roll-effect"; effect: ActionRollEffect })
   /** The next attack roll gains Advantage: by the user, or, with `against:
    *  "target"`, against the target (Stunning Strike on a success), until `until`. */
   | (EffectBase & {

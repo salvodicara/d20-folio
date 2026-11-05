@@ -554,6 +554,20 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
   maintain: { action: { ...base, type: "bonus", maintainsActiveKey: "house-state" } },
   stabilize: { action: { ...base, stabilize: true } },
   "check-bonus": { action: { ...base, checkBonus: { dice: "1d4" } } },
+  "roll-effect": {
+    action: {
+      ...base,
+      type: "reaction",
+      rollEffect: {
+        kind: "die",
+        die: { dice: "1d6" },
+        operation: "subtract",
+        rolls: ["attack"],
+        whose: "other",
+        timing: "before-outcome",
+      },
+    },
+  },
   "next-attack-advantage": { action: { ...base, grantsNextAttackAdvantage: true } },
   "speed-halved": { action: { ...base, effects: [{ kind: "speed-halved" }] } },
   "save-disadvantage": {

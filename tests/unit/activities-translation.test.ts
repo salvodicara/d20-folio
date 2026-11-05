@@ -459,6 +459,7 @@ function actionFromActivity(
           upTo: must(effect("restore-resource")).upTo,
         }
       : undefined,
+    rollEffect: effect("roll-effect")?.effect,
     checkBonus: effect("check-bonus")
       ? {
           dice: must(effect("check-bonus")).dice,
