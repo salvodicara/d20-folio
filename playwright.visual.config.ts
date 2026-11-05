@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import { env } from "node:process";
 import { FOLIO_SERVER_GUARD, folioServers } from "./tests/folio-server-guard";
+import { localWorkers } from "./scripts/local-workers";
 
 const RUNTIME_ENV = env as Record<string, string | undefined>;
 const VISUAL_PORT = Number(RUNTIME_ENV.VISUAL_REVIEW_PORT ?? 5194);
@@ -11,6 +12,8 @@ export default defineConfig({
   testDir: "./tests/visual",
   globalSetup: FOLIO_SERVER_GUARD,
   retries: 0,
+  // Locally at most `FOLIO_LOCAL_WORKERS` (default 3); CI unchanged.
+  workers: localWorkers(),
   outputDir: `${ARTIFACT_ROOT}/output`,
   reporter: [["html", { outputFolder: `${ARTIFACT_ROOT}/report`, open: "never" }]],
   use: {

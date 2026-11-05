@@ -1,5 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 import { FOLIO_SERVER_GUARD, folioServers } from "./tests/folio-server-guard";
+import { localWorkers } from "./scripts/local-workers";
 
 // E2E_PORT lets a PARALLEL worktree run the suite on its own port so two
 // checkouts never collide on 5174 (the SW journey then uses E2E_PORT+1).
@@ -71,8 +72,9 @@ export default defineConfig({
   // at workers=1) AND starves slow renders — `.wiz-orbs` toBeVisible timed out and
   // flaked the gate red. Parallelism comes from SHARDING instead: each shard is
   // its OWN runner with its OWN dev server (Playwright `--shard`), so more shards
-  // scale cleanly with no contention. Locally: auto default (one worker per core).
-  workers: process.env.CI ? 1 : undefined,
+  // scale cleanly with no contention. Locally: at most `FOLIO_LOCAL_WORKERS`
+  // (default 3), so a run never takes every core of the owner's Mac.
+  workers: process.env.CI ? 1 : localWorkers(),
   reporter: "html",
   use: {
     // Port 5174 so E2E tests never collide with the dev server (5173) that the
