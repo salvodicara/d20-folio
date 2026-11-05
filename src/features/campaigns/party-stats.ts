@@ -12,6 +12,8 @@
  * resolved at the React render edge by the card. Pure — no store, no Firebase.
  */
 
+import { effectiveDoc } from "@/lib/play/effective-doc";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
 import { applyCombatToSession } from "@/lib/combat-state";
 import { deriveCharacter } from "@/lib/views/derive-character";
@@ -140,10 +142,13 @@ export function hydrateMemberDoc(
 export function derivePcLive(
   doc: CharacterDoc,
   combat: CombatState | null | undefined,
-  roll: number | null
+  roll: number | null,
+  /** The effects others left on the PC (`useEffectsOnParty`): its numbers read them. */
+  effects: ReadonlyArray<ActiveCombatEffect>
 ): PcLive | null {
-  const hydrated = hydrateMemberDoc(doc, combat);
-  if (!hydrated) return null;
+  const member = hydrateMemberDoc(doc, combat);
+  if (!member) return null;
+  const hydrated = effectiveDoc(member, effects);
   const stats = derivePartyMemberStats(hydrated);
   return {
     name: doc.character.name,

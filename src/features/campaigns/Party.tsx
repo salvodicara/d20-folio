@@ -30,6 +30,8 @@
  * only a PURE REFERENCE per PC; the live view is composed by {@link buildEncounterView}.
  */
 
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
 import { lazy, Suspense, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeftRight, Crown, Plus, Swords, UserRound } from "lucide-react";
@@ -209,6 +211,7 @@ export function Party() {
   // + the live `combat/state` + the campaign's `encounterInit` roll table (the
   // initiative SSOT) — the encounter view's PC source (NO copy off the doc).
   const encounterInit = campaign?.encounterInit;
+  const effectsOn = useEffectsOnParty(campaign);
   const pcLiveById = useMemo<Record<string, PcLive>>(() => {
     const out: Record<string, PcLive> = {};
     for (const ref of liveRefs) {
@@ -217,13 +220,14 @@ export function Party() {
         const live = derivePcLive(
           st.doc,
           combatStates[ref.uid],
-          encounterRollFor(encounterInit, ref.uid)
+          encounterRollFor(encounterInit, ref.uid),
+          effectsOn(ref.uid)
         );
         if (live) out[`pc-${ref.uid}`] = live;
       }
     }
     return out;
-  }, [liveRefs, docs, combatStates, encounterInit]);
+  }, [liveRefs, docs, combatStates, encounterInit, effectsOn]);
 
   // The render-ready combat view (PC refs + monsters → sorted rows + current id),
   // hidden combatants filtered for non-DM viewers. Only when an encounter runs.
@@ -464,6 +468,7 @@ export function Party() {
     campaignId,
     docs,
     combatStates,
+    effectsOn,
     encounterInit,
     // C3 — turns have BEGUN (the order is frozen): a PC's initiative chip locks. A NULLISH
     // current pointer = the gathering phase (still editable); no encounter = irrelevant. Use
@@ -1347,6 +1352,8 @@ interface MemberCardCtx {
   campaignId: string;
   docs: Record<string, MemberDocState>;
   combatStates: Record<string, CombatState | null | undefined>;
+  /** The effects others left on a member's PC (`useEffectsOnParty`). */
+  effectsOn: (uid: string) => ActiveCombatEffect[];
   /** The campaign's `encounterInit` roll table (`uid → raw d20`; the initiative SSOT).
    *  Absent/empty = nobody has rolled this fight. */
   encounterInit: Record<string, number> | undefined;
@@ -1491,6 +1498,7 @@ function MemberCard({
         isMe={isMe}
         isDm={ctx.isDm}
         combat={ctx.combatStates[uid]}
+        effects={ctx.effectsOn(uid)}
         encounterConditions={encounterConditions}
         inCombat={inCombat}
         initLocked={ctx.initLocked}

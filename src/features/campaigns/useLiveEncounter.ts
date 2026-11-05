@@ -20,6 +20,7 @@
  * the same live lifecycle without a special one-shot fixture path.
  */
 
+import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
 import { useEffect, useMemo, useState } from "react";
 import { subscribeToCampaign } from "@/features/campaigns/campaign-io";
 import {
@@ -94,6 +95,7 @@ export function useLiveEncounter(
   const combatStates = usePartyCombatStates(refs);
 
   const encounterInit = campaign?.encounterInit;
+  const effectsOn = useEffectsOnParty(campaign);
   const pcLiveById = useMemo<Record<string, PcLive>>(() => {
     const out: Record<string, PcLive> = {};
     for (const ref of refs) {
@@ -104,13 +106,14 @@ export function useLiveEncounter(
         const live = derivePcLive(
           st.doc,
           combatStates[ref.uid],
-          encounterRollFor(encounterInit, ref.uid)
+          encounterRollFor(encounterInit, ref.uid),
+          effectsOn(ref.uid)
         );
         if (live) out[`pc-${ref.uid}`] = live;
       }
     }
     return out;
-  }, [refs, docs, combatStates, encounterInit]);
+  }, [refs, docs, combatStates, encounterInit, effectsOn]);
 
   // A player's cockpit read keeps hidden (ambush) monsters filtered; the topbar pip passes
   // `viewerIsDm` for a PC-less DM primary, so the DM's pip can name a hidden actor's turn.

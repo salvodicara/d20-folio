@@ -3,6 +3,8 @@
  * combat state folded in (missing while it loads, null when it can't be read), and each
  * character's name as the Gruppo panel shows it (`partyNames`).
  */
+import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
+import { effectiveDoc } from "@/lib/play/effective-doc";
 import { useMemo } from "react";
 
 import { partyNames } from "@/domains/campaign/party-rows-view";
@@ -26,17 +28,19 @@ export function useLiveDocs(campaign: CampaignDoc): Record<string, CharacterDoc 
   );
   const docs = useMemberCharacterDocs(refs);
   const combat = usePartyCombatStates(refs);
+  const effectsOn = useEffectsOnParty(campaign);
   return useMemo(() => {
     const out: Record<string, CharacterDoc | null> = {};
     for (const { uid } of refs) {
       const st = docs[uid];
       if (st?.status === "ready") {
         const doc = hydrateMemberDoc(st.doc, combat[uid]);
-        out[uid] = doc && atCampaignClock(doc, campaign);
+        // Read with the effects others left on the PC (`effectiveDoc`).
+        out[uid] = doc && effectiveDoc(atCampaignClock(doc, campaign), effectsOn(uid));
       } else if (st?.status === "error") out[uid] = null;
     }
     return out;
-  }, [refs, docs, combat, campaign]);
+  }, [refs, docs, combat, campaign, effectsOn]);
 }
 
 /** Each character's name by member, as the Gruppo panel shows it. */

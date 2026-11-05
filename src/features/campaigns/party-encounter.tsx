@@ -35,6 +35,8 @@
  * rule 7): condition ids resolve to localized chips only at the render edge.
  */
 
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { effectiveDoc } from "@/lib/play/effective-doc";
 import {
   lazy,
   Suspense,
@@ -539,6 +541,7 @@ export function PcCombatantCard({
   isMe,
   isDm,
   combat,
+  effects,
   encounterConditions,
   inCombat,
   initLocked,
@@ -549,6 +552,8 @@ export function PcCombatantCard({
   recordEvent,
 }: {
   state: MemberDocState;
+  /** The effects others left on this PC (`useEffectsOnParty`): its card reads them. */
+  effects: ReadonlyArray<ActiveCombatEffect>;
   snapshot: MemberCharacterSnapshot;
   memberUid: string;
   campaignId: string;
@@ -587,10 +592,11 @@ export function PcCombatantCard({
     state.status === "ready" && combat !== undefined
       ? hydrateMemberDoc(state.doc, combat)
       : null;
-  if (hydrated) {
+  const read = hydrated && effectiveDoc(hydrated, effects);
+  if (read) {
     return (
       <PcReadyCard
-        doc={hydrated}
+        doc={read}
         combat={combat ?? null}
         encounterConditions={encounterConditions}
         memberUid={memberUid}

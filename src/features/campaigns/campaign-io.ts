@@ -18,6 +18,9 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { effectiveDoc, effectsOnTarget } from "@/lib/play/effective-doc";
+import { combatEffectsV26On } from "@/lib/deployed-rules";
+import { conformCampaignEffect } from "@/features/campaigns/campaign-effects-io";
 import { conformCampaignClock } from "@/lib/play/campaign-clock";
 import type { DamageOptions } from "@/lib/play/damage";
 import { conformTableRules, type TableRulesOverrides } from "@/lib/table-rules";
@@ -1090,6 +1093,10 @@ export async function writeCampaignCombatEffect(
   const parentRef = memberCharacterDoc(uid, characterId);
   const spendsRef = peerSpendsRef(uid, characterId);
   const ledgerOn = peerSpendsWriterOn();
+  // The effects others left on the target (the fight's, the campaign's store), read
+  // just before the transaction: a fresh enough view, and the transaction stays free
+  // of the busy campaign doc.
+  const othersLeft = await effectsLeftOn(uid, parentRef);
   return runTransaction(db, async (txn) => {
     const [combatSnap, parentSnap, spendsSnap] = await Promise.all([
       txn.get(combatRef),
@@ -1101,8 +1108,9 @@ export async function writeCampaignCombatEffect(
     const rawCombat = combatSnap.exists() ? combatSnap.data() : null;
     const current = storedTargetCombatState(rawCombat, parentData);
     // A hit lands through the TARGET's own damage rule (edge-case M1): its sheet is
-    // rebuilt from the documents this transaction just read.
-    const target =
+    // rebuilt from the documents this transaction just read, with the effects others
+    // left on it projected as its owner's device projects them (`effectiveDoc`).
+    const stored =
       mutation.kind === "hp" && mutation.operation.kind === "damage" && parentData
         ? await hydrateStoredCharacter(characterId, parentData, rawCombat).catch(
             (error: unknown) => {
@@ -1115,6 +1123,7 @@ export async function writeCampaignCombatEffect(
             }
           )
         : null;
+    const target = stored ? effectiveDoc(stored, othersLeft) : null;
     let next: CombatState;
     let spends: PeerSpend[] = [];
     if (target && mutation.kind === "hp" && ledgerOn) {
@@ -1152,6 +1161,54 @@ export async function writeCampaignCombatEffect(
     if (appended.length > 0) txn.set(spendsRef, { entries: [...ledger, ...appended] });
     return { before: current, after: next, spends };
   });
+}
+
+/**
+ * The effects others left on `uid`'s PC in its attached campaign: the live fight's
+ * and, with this release's rules, the campaign's out of a fight at the clock's minute
+ * (`effectsOnTarget`). None when the sheet is in no campaign or a read fails (the hit
+ * still lands, by the sheet alone, and the failure is reported).
+ */
+async function effectsLeftOn(
+  uid: string,
+  parentRef: ReturnType<typeof memberCharacterDoc>
+): Promise<ActiveCombatEffect[]> {
+  try {
+    const parent = await getDoc(parentRef);
+    const campaignId: unknown = parent.exists()
+      ? parent.data().attachedCampaignId
+      : undefined;
+    if (typeof campaignId !== "string" || campaignId === "") return [];
+    const campaignSnap = await getDoc(campaignDoc(campaignId));
+    if (!campaignSnap.exists()) return [];
+    const data = campaignSnap.data();
+    const encounter = storedEncounter(data.encounter);
+    const minute = conformCampaignClock(data.gameClock)?.minute ?? 0;
+    const store = combatEffectsV26On()
+      ? (await getDocs(collection(db, "campaigns", campaignId, "effects"))).docs.flatMap(
+          (stored) => {
+            const effect = conformCampaignEffect(stored.data());
+            return effect ? [effect] : [];
+          }
+        )
+      : [];
+    return effectsOnTarget(`pc-${uid}`, {
+      ...(encounter
+        ? {
+            encounter: {
+              operations: encounter.effectOps,
+              position: encounterPosition(encounter),
+            },
+          }
+        : {}),
+      campaign: { docs: store, minute },
+    });
+  } catch (error) {
+    diagnosticsLog("warn", "combat.peer-target-effects-unreadable", {
+      message: String(error),
+    });
+    return [];
+  }
 }
 
 /** Interpret lifecycle facts from their canonical owner: `status` on the parent,

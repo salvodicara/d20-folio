@@ -25,6 +25,7 @@
  * primary live-encounter listeners; a user NOT in combat pays just the shared query.
  */
 
+import { effectsOnTarget } from "@/lib/play/effective-doc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "@/stores/authStore";
@@ -87,7 +88,6 @@ import {
 } from "@/features/campaigns/combat-reconcile";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { CampaignDoc, EncounterPc } from "@/types/campaign";
-import { effectsForTarget } from "@/lib/combat-effects";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCampaignClockProjection } from "@/features/campaigns/campaign-clock-projection";
 import { partyRosterOf, usePartyRosterStore } from "@/features/campaigns/party-roster";
@@ -97,10 +97,8 @@ import {
   writeCampaignEffects,
 } from "@/features/campaigns/campaign-effects-io";
 import {
-  campaignEffectsFor,
   concentrationChange,
   outlastingFightEffects,
-  withCampaignEffects,
   type CampaignEffectDoc,
   type ConcentrationMemo,
 } from "@/lib/play/campaign-effects";
@@ -366,7 +364,12 @@ export function GlobalCombatMount(): null {
     [storeRead, effectsCampaignId]
   );
   const myStoreEffects = useMemo(
-    () => (uid ? campaignEffectsFor(storeEffects, `pc-${uid}`, clockMinute) : []),
+    () =>
+      uid
+        ? effectsOnTarget(`pc-${uid}`, {
+            campaign: { docs: storeEffects, minute: clockMinute },
+          })
+        : [],
     [storeEffects, uid, clockMinute]
   );
 
@@ -461,8 +464,10 @@ export function GlobalCombatMount(): null {
 
   // Project campaign-owned standing effects onto the viewer's own open character.
   // This reuses the primary encounter listener above; the character store scopes the
-  // projection by character id and the character codec never persists it.
+  // projection by character id and the character codec never persists it. A teammate's
+  // sheet open read-only carries its own projection (MemberSheetView).
   useEffect(() => {
+    if (useCharacterStore.getState().readonly) return;
     if (!status || !live) {
       if (openCharacterId && myStoreEffects.length > 0) {
         setEncounterEffects(openCharacterId, myStoreEffects);
@@ -484,10 +489,13 @@ export function GlobalCombatMount(): null {
       operations: live.encounter.effectOps,
       position,
     };
-    const effects = withCampaignEffects(
-      effectsForTarget(live.encounter.effectOps, status.myId, position),
-      status.characterId === openCharacterId ? myStoreEffects : []
-    );
+    // The same projection every reader of another's sheet uses (`effectsOnTarget`).
+    const effects = effectsOnTarget(status.myId, {
+      encounter: { operations: live.encounter.effectOps, position },
+      ...(status.characterId === openCharacterId
+        ? { campaign: { docs: storeEffects, minute: clockMinute } }
+        : {}),
+    });
     setEncounterEffects(status.characterId, effects);
     const current = useCharacterStore.getState().character;
     const ownRow = live.view.rows.find((row) => row.id === status.myId);
@@ -502,7 +510,15 @@ export function GlobalCombatMount(): null {
     ) {
       useCharacterStore.getState().setConcentration("", { undoable: false });
     }
-  }, [status, live, setEncounterEffects, openCharacterId, myStoreEffects]);
+  }, [
+    status,
+    live,
+    setEncounterEffects,
+    openCharacterId,
+    myStoreEffects,
+    storeEffects,
+    clockMinute,
+  ]);
 
   // The incapacitation sweep: a creature that can no longer act (0 HP, Unconscious,
   // Stunned…) loses its Concentration effects and the grapples it holds. Each device
