@@ -11,8 +11,8 @@
  *      CC-BY-4.0 attribution statements (the shipped prose draws on both documents;
  *      each license requires its own exact statement), reproduced VERBATIM (English
  *      on EN; WotC's own official Italian statements on IT), are the ceremonial
- *      centrepiece: a centred chapter-head ornament (the site-footer's
- *      diamond-on-fading-rule grammar) + title, then two stacked full-width engraved
+ *      centrepiece: a centred chapter-head hairline (the site footer's plain
+ *      fading rule) + title, then two stacked full-width engraved
  *      plates whose inscriptions centre at a capped measure — the OBJECTS span the
  *      leaf, the text keeps its measure.
  *   2. THE TWIN LICENSE COLUMNS (Licenses) — the two governing licenses (SRD content

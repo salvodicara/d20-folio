@@ -1,7 +1,7 @@
 /**
  * SiteFooter — a minimal, premium colophon at the foot of every page (D32/D39/D41).
  *
- * A quiet sign-off: a centered gold diamond + hairline rule, then one colophon row —
+ * A quiet sign-off: a faint fading hairline («Lume»), then one colophon row —
  * the wordmark · the build version · a discreet link to the full Legal & Attribution
  * page (the required SRD 5.2.1 / CC-BY-4.0 + WotC trademark text lives there, one
  * click away, rather than as boilerplate on every page — owner 2026-06-08). Rendered
@@ -21,9 +21,7 @@ export function SiteFooter() {
   return (
     <footer className="site-footer" role="contentinfo">
       <div className="site-footer-inner">
-        <span className="site-footer-rule" aria-hidden>
-          <span className="site-footer-diamond" />
-        </span>
+        <span className="site-footer-rule" aria-hidden />
         {/* The colophon sits on the backdrop art on EVERY route — there is no card
             under it anywhere in the app — so it opts in to the on-art ground; the
             brand and the "you are here" link keep their own gold via the footer

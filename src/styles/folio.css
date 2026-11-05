@@ -11000,13 +11000,8 @@ button.create-need:focus-visible .create-need-chev {
   align-items: center;
   text-align: center;
 }
-/* The chapter-head ornament: a centred gold-leaf diamond on a fading hairline —
-   the site-footer's colophon grammar, so the leaf opens in the same illuminated
-   system it signs off in.
-   ponytail: third diamond-on-fading-hairline sibling (`.site-footer-rule`/
-   `.site-footer-diamond`, `.bm-rule`) — a shared ornament class parameterized by
-   a `--thread-*` ink would fold all three; deferred because it rewrites two other
-   shipped surfaces' markup (an ornament-vocabulary pass of its own). */
+/* The chapter head: a faint fading hairline, the site footer's own («Lume», owner
+   2026-11-03: no ornament on a line). */
 .colophon-hero-rule {
   position: relative;
   width: min(240px, 60%);
@@ -11018,17 +11013,6 @@ button.create-need:focus-visible .create-need-chev {
     transparent
   );
 }
-.colophon-hero-rule::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  transform: translate(-50%, -50%) rotate(45deg);
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-glow) 55%, transparent);
-}
 [data-theme="light"] .colophon-hero-rule {
   background: linear-gradient(
     90deg,
@@ -11036,10 +11020,6 @@ button.create-need:focus-visible .create-need-chev {
     color-mix(in oklab, var(--accent-text) 45%, transparent),
     transparent
   );
-}
-[data-theme="light"] .colophon-hero-rule::after {
-  background: var(--accent-text);
-  box-shadow: none;
 }
 /* The centred rubric — the `.sec-title` voice (display italic gold), one type
    step up for the ceremonial head. Cinzel stays reserved (Ceremonial-Title Rule). */
@@ -12667,7 +12647,7 @@ h6.bm-heading {
   font-family: var(--font-numeric);
   font-size: 0.85em;
 }
-/* `---` scene break — a centred gilt diamond on a hairline, not a bare rule. It has
+/* `---` scene break — a faint fading hairline («Lume»: no ornament on it). It has
    to SEPARATE: a generous, EQUAL gap above and below (the `--sp-8` block margin far
    exceeds the `.bm-p` `--sp-2` bottom margin it collapses against, so the gap is an
    identical `--sp-8` on both sides) and a 1px hairline that actually renders. */
@@ -12687,27 +12667,9 @@ h6.bm-heading {
   );
   position: relative;
 }
-.bm-rule::after {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 8px;
-  height: 8px;
-  transform: translate(-50%, -50%) rotate(45deg);
-  /* Bright gilt + candle glow on the dark art. */
-  background: var(--accent-primary-bright);
-  box-shadow:
-    0 0 0 4px var(--bg-surface-1),
-    0 0 10px 1px color-mix(in oklab, var(--accent-primary) 45%, transparent);
-}
 /* Light: a clean deep-gilt, card-safe look. The candlelit
    glow muddies into a grey halo on cream, so drop it — keep ONLY the surface-
    coloured knockout ring that parts the hairline so the diamond reads crisp. */
-[data-theme="light"] .bm-rule::after {
-  background: var(--accent-text);
-  box-shadow: 0 0 0 4px var(--bg-surface-1);
-}
 
 /* ── Chronicle version history (D27) — the collapsible "restore a revision" list
    under the editor textarea. The toggle sits above; the list itself reuses the
@@ -18242,9 +18204,7 @@ button.econ-tok-filter:active .econ-disc {
   align-items: center;
   gap: var(--sp-3, 12px);
 }
-/* Centered gold-leaf diamond on a fading hairline rule (matches the .sec-head
-   ornament so the footer reads as part of the illuminated system, not a tacked-on
-   bar). */
+/* A faint fading hairline above the colophon («Lume»: no ornament on it). */
 .site-footer-rule {
   position: relative;
   width: min(220px, 60%);
@@ -18255,16 +18215,6 @@ button.econ-tok-filter:active .econ-disc {
     color-mix(in oklab, var(--accent-primary) 38%, transparent),
     transparent
   );
-}
-.site-footer-diamond {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 6px;
-  height: 6px;
-  transform: translate(-50%, -50%) rotate(45deg);
-  background: var(--accent-primary);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--accent-glow) 50%, transparent);
 }
 /* The footer sits on the candlelit backdrop (NO box). The decorative glyph + the
    hairline rule are bright gilt gold; the "d20 Folio" wordmark is gold too — the
@@ -18287,10 +18237,6 @@ button.econ-tok-filter:active .econ-disc {
 [data-theme="light"] :is(.site-footer-colophon, .site-footer-ver, .site-footer-link) {
   color: var(--text-on-backdrop);
   text-shadow: var(--on-art-halo);
-}
-[data-theme="light"] .site-footer-diamond {
-  background: var(--gold-leaf-300);
-  box-shadow: 0 0 7px color-mix(in oklab, var(--gold-leaf-300) 55%, transparent);
 }
 [data-theme="light"] .site-footer-rule {
   background: linear-gradient(
