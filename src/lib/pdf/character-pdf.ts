@@ -184,22 +184,6 @@ function hairline(page: PDFPage, x1: number, x2: number, y: number): void {
   page.drawLine({ start: { x: x1, y }, end: { x: x2, y }, thickness: 0.5, color: HAIR });
 }
 
-/** A small decorative fleuron — a four-point lozenge with a pin-dot centre, the
- *  ornament that flanks section titles (original, evokes an illuminated folio). */
-function fleuron(
-  page: PDFPage,
-  cx: number,
-  cy: number,
-  s: number,
-  color: RGB = BORDER
-): void {
-  page.drawSvgPath(`M 0 ${-s} L ${s * 0.62} 0 L 0 ${s} L ${-s * 0.62} 0 Z`, {
-    x: cx,
-    y: cy,
-    color,
-  });
-}
-
 /** A shield outline (AC) — a generic heraldic shape drawn from scratch. Drawn in a
  *  local top-left frame (y DOWN), placed so the shield's top edge sits at `topY`. */
 function shield(page: PDFPage, cx: number, topY: number, w: number, h: number): void {
@@ -304,9 +288,8 @@ function panelHeader(
   const cx = box.x + box.w / 2;
   const titleStr = clip(fonts.scBold, s.toLowerCase(), size, box.w - 10);
   textCenter(page, titleStr, cx, top - bandH + 4.6, fonts.scBold, size, TITLE);
-  // engraved flanking rules — short hairlines either side of the title, drawn only
-  // where there's genuine room (wide content panels), so compact stat boxes stay
-  // clean. A subtle, original ornament that lifts the section headers.
+  // flanking rules — short hairlines either side of the title, drawn only where
+  // there's genuine room (wide content panels), so compact stat boxes stay clean.
   const half = width(fonts.scBold, titleStr, size) / 2;
   const ruleEnd = cx - half - 8;
   if (ruleEnd - (box.x + 16) > 16) {
@@ -315,11 +298,7 @@ function panelHeader(
     const rOut = box.x + box.w - 16;
     hairline(page, lOut + 2, ruleEnd, ry);
     hairline(page, cx + half + 8, rOut - 2, ry);
-    // fleurons hugging the title, terminal beads at the band edges
-    fleuron(page, ruleEnd, ry, 2.3);
-    fleuron(page, cx + half + 8, ry, 2.3);
-    page.drawCircle({ x: lOut, y: ry, size: 1, color: HAIR });
-    page.drawCircle({ x: rOut, y: ry, size: 1, color: HAIR });
+    // Plain rules only («Lume», owner 2026-11-03: no ornament beside a title).
   }
 }
 
