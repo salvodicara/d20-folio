@@ -9,7 +9,13 @@ import { useLocale } from "@/hooks/useLocale";
 import {
   concentrationSaveD20Context,
   enteredD20FaceCount,
+  resolveCharacterConcentrationSave,
 } from "@/lib/character-d20-tests";
+import { failedD20Savers, type FailedD20Saver } from "@/lib/play/failed-d20";
+import type { Locale } from "@/lib/locale";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
+import { beginWholeStateUndo } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { concentrationLabel } from "@/lib/views/tracker-view";
 import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
@@ -59,8 +65,54 @@ function ConcentrationSavePrompt({
         ? "disadvantage"
         : null;
 
+  const faces = faceCount === 2 ? [firstFace, secondFace] : [firstFace];
+  // A failed save a Reaction spell can turn into a 20 (`failedD20Becomes`), while the
+  // Reaction is free: offered beside «Applica».
+  const reactionFree = useCombatStore((state) => !state.reactionUsed);
+  const saver = useMemo(() => {
+    if (!reactionFree) return null;
+    try {
+      const failed =
+        resolveCharacterConcentrationSave(character, pending, faces).reviewedOutcome
+          .status === "failure";
+      return failed ? (failedD20Savers(character)[0] ?? null) : null;
+    } catch {
+      return null;
+    }
+    // `faces` is rebuilt from the two face states each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [character, pending, reactionFree, firstFace, secondFace, faceCount]);
+
+  /** Cast the saver as a Reaction: its slot and the Reaction are spent, the d20 counts
+   *  as its face, and one undo takes all of it back. */
+  function castSaver(): void {
+    if (!saver) return;
+    const store = useCharacterStore.getState();
+    const seal = beginWholeStateUndo();
+    store.dispatch({ kind: "spend-slot", level: saver.slotLevel, pactMagic: false });
+    const reacted = useCombatStore.getState().useReaction(`spell-${saver.spellId}`);
+    const committed = store.commitPendingConcentrationSave(
+      pending,
+      faces.map(() => saver.face)
+    );
+    const restore = seal?.() ?? null;
+    const undo = () => {
+      const ok = restore ? restore() : false;
+      if (reacted) useCombatStore.getState().resetReaction();
+      return ok;
+    };
+    if (!committed) {
+      undo();
+      return;
+    }
+    const message = t("combat.failedD20UsedToast", {
+      spell: saverName(saver, locale),
+      total: committed.result.total,
+    });
+    registerUndoableResult({ message }, undo, castSaver);
+  }
+
   function commit(): void {
-    const faces = faceCount === 2 ? [firstFace, secondFace] : [firstFace];
     const committed = useCharacterStore
       .getState()
       .commitPendingConcentrationSave(pending, faces);
@@ -110,7 +162,22 @@ function ConcentrationSavePrompt({
         <Button variant="secondary" size="sm" onClick={commit}>
           {t("combat.apply")}
         </Button>
+        {saver && (
+          <Button variant="primary" size="sm" onClick={castSaver}>
+            {t("combat.failedD20Use", {
+              spell: saverName(saver, locale),
+              face: saver.face,
+            })}
+          </Button>
+        )}
       </div>
     </div>
   );
+}
+
+/** The saver spell's name: a homebrew spell's own, a catalogue spell's localized. */
+function saverName(saver: FailedD20Saver, locale: Locale): string {
+  return saver.customName
+    ? homebrewText(saver.customName, locale)
+    : concentrationLabel(saver.spellId, locale);
 }

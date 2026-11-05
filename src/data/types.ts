@@ -1457,6 +1457,9 @@ export interface SrdSpellData {
    *  D20 Test: Temporary Hit Points if the new roll succeeds): the tray marks each
    *  row «Successo», and only marked rows take the amount, conditions and states. */
   appliesOnSuccess?: true;
+  /** Cast as a Reaction when you fail a D20 Test, the d20 becomes this face (a
+   *  failed roll turned into a 20): offered on the saves the app records. */
+  failedD20Becomes?: number;
   saveAbility?: AbilityCode;
   /** Attack type (if spell requires an attack roll) */
   attackType?: "melee" | "ranged";

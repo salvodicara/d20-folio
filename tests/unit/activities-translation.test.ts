@@ -281,6 +281,7 @@ const SPELL_NOT_ROUND_TRIPPED = new Set([
   "targetStates", // the state an effect's `activeKey` leaves on the target (Ray of Enfeeblement)
   "saveIfUnwilling", // read by the tray plan from the catalogue («Consenziente»)
   "appliesOnSuccess", // read by the tray plan from the catalogue («Successo»)
+  "failedD20Becomes", // read by the failed-save offer from the catalogue
 ]);
 
 function spellMechanics(
