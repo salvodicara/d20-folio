@@ -176,7 +176,9 @@
       "owed_other": "Mancano {{count}} scelte",
       "new": "Nuovo",
       "cantripsKnown": "Trucchetti · {{count}}",
-      "spellsKnown": "Incantesimi · {{count}}"
+      "spellsKnown": "Incantesimi · {{count}}",
+      "gist": "In breve",
+      "readAll": "Leggi tutto"
     }
   }
 }

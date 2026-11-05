@@ -11,7 +11,7 @@
  */
 import { spells as allSpells } from "@/data/spells";
 import type { SrdSpellData } from "@/data/types";
-import { localizeSrd } from "@/i18n/resolver";
+import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import i18n from "@/i18n";
 import type { Locale } from "@/lib/locale";
 import { rankedSearch } from "@/lib/search";
@@ -32,6 +32,8 @@ export interface SpellPickRow {
   ritual: boolean;
   /** Its damage, healing or the condition it applies; null when it has none. */
   effect: string | null;
+  /** One line on what it does (the catalogue's gist), or null when it has none. */
+  readonly gist: string | null;
   /** The full text (markdown), for the detail. */
   description: string;
   searchText: string;
@@ -79,6 +81,11 @@ export function spellPickRows(ids: readonly string[], locale: Locale): SpellPick
         concentration: vm.concentration,
         ritual: vm.ritual,
         effect: effectOf(spell, locale),
+        get gist() {
+          return hasSrd("spell", id, "gist", locale)
+            ? localizeSrd("spell", id, "gist", locale) || null
+            : null;
+        },
         description: vm.description,
         searchText: vm.searchText,
         get searchDesc() {

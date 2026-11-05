@@ -176,7 +176,9 @@
       "owed_other": "{{count}} choices still to make",
       "new": "New",
       "cantripsKnown": "Cantrips · {{count}}",
-      "spellsKnown": "Spells · {{count}}"
+      "spellsKnown": "Spells · {{count}}",
+      "gist": "In short",
+      "readAll": "Read the full text"
     }
   }
 }

@@ -120,7 +120,7 @@ export function LevelUpScreen({
   const conMod = abilityModifier(c.abilityScores.CON);
   // «5 + 2», «d8 − 1»: the die, then the CON modifier every level adds.
   const plusCon = conMod >= 0 ? `+ ${String(conMod)}` : `− ${String(-conMod)}`;
-  const classLine = `${className(classId, locale)} ${String(plan.newClassLevel)}`;
+  const classLine = `${className(classId, locale)}\u00a0${String(plan.newClassLevel)}`;
 
   async function confirm() {
     if (!after || !uid || !asks.complete) return;
@@ -187,7 +187,7 @@ export function LevelUpScreen({
 
   return (
     <>
-      <Room room="study" small />
+      <Room room="study" band />
       <main id="main" className="f-page f-lvl">
         <div
           className="f-lvl-rail"
@@ -230,10 +230,12 @@ export function LevelUpScreen({
                 {tieLast(t("spells.level", { level: plan.newLevel }))}
               </h1>
               <p>
-                {c.name} · {classLine}
+                {c.name}
+                {"\u00a0· "}
+                {classLine}
                 {owned.length === 1 && eligibleNewClasses(c).length > 0 && (
                   <>
-                    {" · "}
+                    {"\u00a0· "}
                     <Link className="f-link" to={classic}>
                       {t("levelUp.screen.otherClass")}
                     </Link>
@@ -590,7 +592,7 @@ function Question({
           );
         })}
       </div>
-      {inspected && <Inspect spell={inspected} />}
+      {inspected && <Inspect key={inspected.id} spell={inspected} />}
       {row.count === 0 && <p className="f-help">{t("levelUp.screen.optionalHint")}</p>}
     </section>
   );
@@ -599,6 +601,7 @@ function Question({
 /** The spell touched last, read in full: art, level and school, effect, facts, text. */
 function Inspect({ spell }: { spell: SpellPickRow }) {
   const { t } = useTranslation();
+  const [full, setFull] = useState(false);
   const school = SCHOOL.get(spell.id);
   return (
     <article className="f-lvl-inspect">
@@ -613,13 +616,23 @@ function Inspect({ spell }: { spell: SpellPickRow }) {
           {spell.school}
         </p>
         {spell.effect && <p className="f-lvl-effect">{spell.effect}</p>}
+        {spell.gist && (
+          <p className="f-lvl-gist">
+            <span className="f-lbl">{t("levelUp.screen.gist")}</span>
+            {tieLast(spell.gist)}
+          </p>
+        )}
         <p className="f-lvl-facts">
           <span>{spell.castingTime}</span>
           <span>{spell.range}</span>
           {spell.concentration && <span>{t("play.concentration")}</span>}
           {spell.ritual && <span>{t("spells.pick.ritual")}</span>}
         </p>
-        <BlockMarkdown className="f-prose" text={tieTails(spell.description)} />
+        {/* The full text on request: the card says what the spell does in one line. */}
+        <Button kind="quiet" aria-expanded={full} onClick={() => setFull(!full)}>
+          {full ? t("common.showLess") : t("levelUp.screen.readAll")}
+        </Button>
+        {full && <BlockMarkdown className="f-prose" text={tieTails(spell.description)} />}
       </div>
     </article>
   );

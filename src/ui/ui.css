@@ -224,6 +224,17 @@
     background-position: 50% 44%;
   }
 }
+.fui .f-room.f-band {
+  height: 120px;
+  margin-bottom: -56px;
+  mask: linear-gradient(var(--shade) 40%, transparent 100%);
+}
+@media (max-width: 640px) {
+  .fui .f-room.f-band {
+    height: 80px;
+    margin-bottom: -40px;
+  }
+}
 
 /* ---------- panel: one box, one header ---------- */
 .fui .f-pn {
@@ -4343,6 +4354,17 @@
   padding: 0;
   list-style: none;
 }
+@media (min-width: 1101px) {
+  /* every gain on one row: the grid sizes the tiles */
+  .fui .f-lvl-gains {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    grid-template-columns: none;
+  }
+  .fui .f-lvl-gains > li {
+    padding-inline: 8px;
+  }
+}
 .fui .f-lvl-gains > li {
   display: grid;
   justify-items: center;
@@ -4553,6 +4575,16 @@
   margin: 8px 0;
   font: 700 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
+}
+.fui .f-lvl-gist {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 12px;
+  color: var(--strong);
+  text-wrap: pretty;
+}
+.fui .f-lvl-gist > .f-lbl {
+  margin: 0;
 }
 .fui .f-lvl-facts {
   display: flex;
@@ -4790,9 +4822,6 @@
   .fui .f-lvl-hero .f-crest-art {
     --sz: 56px;
   }
-  .fui .f-lvl-hero h1 {
-    font-size: var(--fs-lg);
-  }
   .fui .f-lvl-hero .f-btn-lab {
     display: none;
   }
@@ -4801,6 +4830,12 @@
   }
   .fui .f-lvl-bar small {
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 360px) {
+  .fui .f-lvl-hero h1 {
+    font-size: var(--fs-lg);
   }
 }
 
