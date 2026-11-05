@@ -721,6 +721,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       { srdId: "ray-of-frost" },
       // An ally-or-enemy save state with a willing ally (Enlarge/Reduce).
       { srdId: "enlarge-reduce", prepared: true },
+      // A buff that outlasts a fight, cast on the party out of one (Mage Armor).
+      { srdId: "mage-armor", prepared: true },
     ],
     exercises:
       "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball + Hold Person).",

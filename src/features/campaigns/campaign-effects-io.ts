@@ -23,6 +23,10 @@ const devMode = () => import.meta.env.DEV && DEV_BYPASS;
 
 function devPublish(campaignId: string): void {
   const docs = [...(devStore.get(campaignId)?.values() ?? [])];
+  // DEV ONLY: an e2e reads what was written (`party-target`).
+  (
+    window as unknown as { __d20DevCampaignEffects?: CampaignEffectDoc[] }
+  ).__d20DevCampaignEffects = docs;
   for (const listener of devListeners.get(campaignId) ?? []) listener(docs);
 }
 
