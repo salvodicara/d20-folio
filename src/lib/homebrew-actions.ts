@@ -124,6 +124,8 @@ export const CONDITION_APPLICATION_SCHEMA: ExactSchema = objectSchema(
   }
 );
 
+const REACTABLE_ROLL = literals(["attack", "check", "save", "damage", "initiative"]);
+
 const COST_SPEC = unionSchema([
   objectSchema({ kind: literalSchema("spell-slot"), minLevel: numberSchema }),
   objectSchema(
@@ -302,6 +304,27 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
   ),
   requiresBundleOption: objectSchema({ bundleKey: stringSchema, optionId: stringSchema }),
   checkBonus: objectSchema({ dice: stringSchema }, { refundOnFail: booleanSchema }),
+  rollEffect: unionSchema([
+    objectSchema({
+      kind: literals(["die"]),
+      die: unionSchema([
+        objectSchema({ tracker: TRUE }),
+        objectSchema({ dice: stringSchema }),
+      ]),
+      operation: literals(["add", "subtract", "choice"]),
+      rolls: arraySchema(REACTABLE_ROLL),
+      whose: literals(["self", "other", "any"]),
+      timing: literals(["before-outcome", "after-fail", "after-outcome"]),
+    }),
+    objectSchema(
+      {
+        kind: literals(["reroll"]),
+        rolls: arraySchema(REACTABLE_ROLL),
+        whose: literals(["self", "other", "any"]),
+      },
+      { advantage: TRUE }
+    ),
+  ]),
   cureConditions: arraySchema(
     objectSchema(
       { condition: CONDITION_ID_SCHEMA, costHp: numberSchema },
