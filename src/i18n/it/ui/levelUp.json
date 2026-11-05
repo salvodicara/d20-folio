@@ -161,7 +161,10 @@
         "weaponMastery": "Padronanze delle armi",
         "invocationsKnown": "Suppliche conosciute",
         "metamagicKnown": "Opzioni di Metamagia",
-        "pactSlotLevel": "Livello degli slot del patto"
+        "pactSlotLevel": "Livello degli slot del patto",
+        "plansKnown": "Progetti conosciuti",
+        "magicItems": "Oggetti magici replicabili",
+        "preparedSpells": "Incantesimi preparabili"
       },
       "classLine": "Classe: {{class}}"
     }

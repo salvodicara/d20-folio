@@ -36,7 +36,7 @@ export type ReviewNumber =
   | {
       id: string;
       kind: "table";
-      /** The class-table column (`TABLE_COLUMNS`). */
+      /** The class-table column, e.g. `sneakAttackDice` (its label: `levelUp.screen.table.<key>`). */
       key: string;
       /** Formatted: «d8», «3d6», «+2», «9 m»; null for a class's first level. */
       before: string | null;
@@ -44,27 +44,20 @@ export type ReviewNumber =
     };
 
 /**
- * The class-table columns the summary shows, each with how its value reads.
- * Uses (Rage, Second Wind, Focus, Sorcery Points, Lay on Hands, Bardic
- * Inspiration uses) are left out: the class-resource rows show them by name.
+ * How a class-table column's value reads when it is not the plain value. Every
+ * column that changes is shown (a pack column too), except the uses in
+ * `TABLE_USES`; each needs its label at `levelUp.screen.table.<key>`.
  */
-export const TABLE_COLUMNS: Record<
+export const TABLE_FORMAT: Record<
   string,
   (v: number | string, locale: Locale) => string
 > = {
-  bardicInspirationDie: (v) => String(v),
-  martialArtsDie: (v) => String(v),
   sneakAttackDice: (v) => `${String(v)}d6`,
   rageDamage: (v) => `+${String(v)}`,
-  extraAttacks: (v) => String(v),
   unarmoredMovement: (v, locale) => `+${localeDistance(Number(v), locale)}`,
-  wildShapeMaxCR: (v) => String(v),
-  weaponMastery: (v) => String(v),
-  invocationsKnown: (v) => String(v),
-  metamagicKnown: (v) => String(v),
   pactSlotLevel: (v) => `${String(v)}°`,
 };
-/** Columns a class-resource row already shows, by the tracker's name. */
+/** Uses (Rage, Second Wind, Focus…): a class-resource row already shows them, by name. */
 export const TABLE_USES = new Set([
   "rages",
   "bardicInspirationUses",
@@ -196,9 +189,9 @@ export function levelUpReview(
       table?.levels.find((l) => l.level === level)?.classSpecific;
     const prev = row(was) ?? {};
     for (const [key, value] of Object.entries(row(entry.level) ?? {})) {
-      const format = TABLE_COLUMNS[key];
+      const format = TABLE_FORMAT[key] ?? ((v: number | string) => String(v));
       const old = prev[key];
-      if (!format || old === value) continue;
+      if (TABLE_USES.has(key) || old === value) continue;
       numbers.push({
         id: `table:${entry.classId}:${key}`,
         kind: "table",

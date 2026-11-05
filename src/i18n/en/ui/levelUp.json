@@ -161,7 +161,10 @@
         "weaponMastery": "Weapon Masteries",
         "invocationsKnown": "Invocations known",
         "metamagicKnown": "Metamagic options",
-        "pactSlotLevel": "Pact slot level"
+        "pactSlotLevel": "Pact slot level",
+        "plansKnown": "Plans known",
+        "magicItems": "Replicable magic items",
+        "preparedSpells": "Spells you can prepare"
       },
       "classLine": "Class: {{class}}"
     }
