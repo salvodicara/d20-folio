@@ -874,3 +874,40 @@ describe("a spell prepared through one class", () => {
     ]);
   });
 });
+
+describe("the ability a feat increased", () => {
+  const withFeat = (feature: Record<string, unknown>, spell?: Record<string, unknown>) =>
+    ({
+      ...MOCK_CHARACTER,
+      character: {
+        ...MOCK_CHARACTER.character,
+        features: [feature],
+        spells: spell ? [spell] : [],
+      },
+    }) as unknown as CharacterDoc;
+
+  it("keeps the feat's chosen ability and its spell's deferred marker across a save and a load", () => {
+    const res = parseCharacter(
+      serializeCharacter(
+        withFeat(
+          { srdId: "grappler", featAbility: "DEX" },
+          { srdId: "misty-step", prepared: true, featSpellAbility: "grappler" }
+        )
+      )
+    );
+    if (!res.success) throw new Error(res.error);
+    expect(
+      res.doc.character.features.find((f) => "srdId" in f && f.srdId === "grappler")
+    ).toEqual({ srdId: "grappler", featAbility: "DEX" });
+    expect(
+      res.doc.character.spells.find((s) => "srdId" in s && s.srdId === "misty-step")
+    ).toEqual({ srdId: "misty-step", prepared: true, featSpellAbility: "grappler" });
+  });
+
+  it("rejects a feat ability that is not an ability code", () => {
+    const res = parseCharacter(
+      serializeCharacter(withFeat({ srdId: "grappler", featAbility: "LUCK" }))
+    );
+    expect(res.success).toBe(false);
+  });
+});

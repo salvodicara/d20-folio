@@ -301,6 +301,7 @@ const SRD_SPELL_KEYS = [
   "wizardSpellMastery",
   "wizardSignatureSpell",
   "speciesSpellAbility",
+  "featSpellAbility",
   "freeCastSource",
 ] as const;
 
@@ -342,6 +343,12 @@ function parseSrdSpellRef(obj: Record<string, unknown>, path: string): SrdSpellR
       obj.speciesSpellAbility,
       isBool,
       `${path}.speciesSpellAbility`
+    );
+  if (obj.featSpellAbility !== undefined)
+    ref.featSpellAbility = opt(
+      obj.featSpellAbility,
+      isString,
+      `${path}.featSpellAbility`
     );
   if (obj.freeCastSource !== undefined)
     ref.freeCastSource = parseFreeCastSource(
@@ -469,6 +476,7 @@ const SRD_FEATURE_KEYS = [
   "actionOverrides",
   "contentOverrides",
   "overrides",
+  "featAbility",
 ] as const;
 
 function parseSrdFeatureRef(obj: Record<string, unknown>, path: string): SrdFeatureRef {
@@ -490,6 +498,8 @@ function parseSrdFeatureRef(obj: Record<string, unknown>, path: string): SrdFeat
     ref.contentOverrides = recordArray(obj.contentOverrides, `${path}.contentOverrides`);
   if (obj.overrides !== undefined)
     ref.overrides = opt(obj.overrides, isRecord, `${path}.overrides`);
+  if (obj.featAbility !== undefined)
+    ref.featAbility = opt(obj.featAbility, isAbilityCode, `${path}.featAbility`);
   const unknown = leftover(obj, SRD_FEATURE_KEYS);
   if (unknown) ref.unknown = unknown;
   return ref;

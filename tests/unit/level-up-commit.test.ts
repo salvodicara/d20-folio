@@ -63,6 +63,44 @@ describe("commitLevelUp", () => {
     ]);
   });
 
+  // "Grappler … Ability Score Increase. Increase your Strength or Dexterity score
+  // by 1": the feat ref keeps which one, beside the +1 it applies.
+  it("a feat that lets you choose its increase keeps the ability chosen, beside the +1", () => {
+    const doc = makeCharacterDoc({ classId: "fighter", level: 3 });
+    const next = commitLevelUp(doc, {
+      ...none("fighter"),
+      asi: {
+        mode: "feat",
+        plusTwo: null,
+        plusOneA: null,
+        plusOneB: null,
+        featId: "grappler",
+        featAbility: "DEX",
+      },
+    });
+    expect(next.character.features).toContainEqual({
+      srdId: "grappler",
+      featAbility: "DEX",
+    });
+    expect(next.character.abilityScores.DEX).toBe(doc.character.abilityScores.DEX + 1);
+  });
+
+  it("a feat with no increase to choose stores no ability", () => {
+    const doc = makeCharacterDoc({ classId: "fighter", level: 3 });
+    const next = commitLevelUp(doc, {
+      ...none("fighter"),
+      asi: {
+        mode: "feat",
+        plusTwo: null,
+        plusOneA: null,
+        plusOneB: null,
+        featId: "alert",
+        featAbility: null,
+      },
+    });
+    expect(next.character.features).toContainEqual({ srdId: "alert" });
+  });
+
   it("writes the bundle picks to the session", () => {
     const doc = makeCharacterDoc({ classId: "druid", level: 1 });
     const next = commitLevelUp(doc, {
