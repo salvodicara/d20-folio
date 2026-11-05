@@ -88,6 +88,23 @@ export interface OwedClassPicksSurvey {
   byClass: Record<string, Record<string, { characters: number; picks: number }>>;
   /** Documents that couldn't be read, by reason code (counts only). */
   unreadable: Record<string, number>;
+  /** For characters owing Weapon Mastery: raw field paths (array indices as `[]`,
+   *  never values) that mention "master" outside `build.classes[].weaponMasteries`,
+   *  so an older home of the picks the reader misses would show up here. */
+  masteryPathsElsewhere: Record<string, number>;
+}
+
+/** Field paths under `value` whose last key mentions "master" (indices as `[]`). */
+function masteryPaths(value: unknown, path: string, out: Set<string>): void {
+  if (Array.isArray(value)) {
+    for (const item of value) masteryPaths(item, `${path}[]`, out);
+  } else if (isRecord(value)) {
+    for (const [key, child] of Object.entries(value)) {
+      const next = path ? `${path}.${key}` : key;
+      if (/master/i.test(key)) out.add(next);
+      masteryPaths(child, next, out);
+    }
+  }
 }
 
 /** Survey the corpus. Pure: no credentials, no Firebase. */
@@ -108,6 +125,7 @@ export function surveyOwedClassPicks(
     owingAny: 0,
     byClass: {},
     unreadable: {},
+    masteryPathsElsewhere: {},
   };
   const unreadable = (code: string) => {
     survey.unreadable[code] = (survey.unreadable[code] ?? 0) + 1;
@@ -131,6 +149,16 @@ export function surveyOwedClassPicks(
       .filter((c) => c.kind === "class-pick");
     survey.characters += 1;
     if (owed.length > 0) survey.owingAny += 1;
+    if (owed.some((c) => c.pick === "weaponMasteries")) {
+      const paths = new Set<string>();
+      masteryPaths(parent.data, "", paths);
+      if (child) masteryPaths(child.data, "combat/state", paths);
+      paths.delete("build.classes[].weaponMasteries");
+      for (const found of paths) {
+        survey.masteryPathsElsewhere[found] =
+          (survey.masteryPathsElsewhere[found] ?? 0) + 1;
+      }
+    }
     for (const { classId = "?", pick = "?", owed: n = 0 } of owed) {
       const byKind = (survey.byClass[classId] ??= {});
       const row = (byKind[pick] ??= { characters: 0, picks: 0 });

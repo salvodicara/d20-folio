@@ -56,7 +56,29 @@ describe("surveyOwedClassPicks", () => {
       owingAny: 1,
       byClass: { warlock: { invocations: { characters: 1, picks: 4 } } },
       unreadable: { "invalid-envelope": 1 },
+      masteryPathsElsewhere: {},
     });
     expect(JSON.stringify(survey)).not.toMatch(/u1|u2|u3|characters\/a/);
+  });
+
+  it("names a raw field that mentions masteries elsewhere for a character owing them", () => {
+    // A rogue owing its two picks, with a hypothetical older home of them in the raw
+    // document: the survey reports the path (never the values), so a reader that
+    // misses it can be fixed before anyone is asked to re-pick.
+    const rogue = makeCharacterDoc({ classes: [{ classId: "rogue", level: 1 }] });
+    const [parent, child] = family(rogue, "users/u1/characters/a");
+    const legacy = {
+      ...parent,
+      data: {
+        ...parent.data,
+        build: { ...(parent.data.build as RawMap), masteries: ["dagger"] },
+      },
+    };
+    const survey = surveyOwedClassPicks([legacy, child]);
+    expect(survey.byClass).toEqual({
+      rogue: { weaponMasteries: { characters: 1, picks: 2 } },
+    });
+    expect(survey.masteryPathsElsewhere).toEqual({ "build.masteries": 1 });
+    expect(JSON.stringify(survey)).not.toMatch(/dagger/);
   });
 });
