@@ -1533,7 +1533,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const character = get().character;
     if (!character || get().readonly || entries.length === 0) return [];
     const pending = pendingPeerSpends(character.session, entries);
-    const session = foldPeerSpendsInto(character.session, entries);
+    // A Concentration ended or brought back from another device goes through the
+    // store's own teardown, so what it held ends with it (the world, the fight).
+    for (const entry of pending) {
+      const held = get().character?.session.concentration ?? "";
+      if (entry.kind === "concentration-end" && held === entry.spell)
+        get().setConcentration("", { undoable: false });
+      else if (entry.kind === "concentration-restore" && held === "")
+        get().setConcentration(entry.spell as StoredConcentration, { undoable: false });
+    }
+    const current = get().character ?? character;
+    const session = foldPeerSpendsInto(current.session, entries);
     const before = character.session.foldedPeerSpends ?? [];
     const after = session.foldedPeerSpends ?? [];
     if (pending.length > 0 || before.join("\u0000") !== after.join("\u0000")) {

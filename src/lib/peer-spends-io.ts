@@ -53,6 +53,13 @@ export function parsePeerSpends(data: unknown): PeerSpend[] {
     ) {
       return [{ id: entry.id, kind: entry.kind, key: entry.key }];
     }
+    if (
+      (entry.kind === "concentration-end" || entry.kind === "concentration-restore") &&
+      typeof entry.spell === "string" &&
+      entry.spell !== ""
+    ) {
+      return [{ id: entry.id, kind: entry.kind, spell: entry.spell }];
+    }
     return [];
   });
 }

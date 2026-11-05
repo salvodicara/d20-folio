@@ -4,7 +4,12 @@
  * the hit spent on the target's sheet; every reader folds the pending entries; the
  * owner folds them into its sheet once, by id.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/firebase", () => ({ db: {} }));
+vi.mock("firebase/firestore", () => ({}));
+
+import { parsePeerSpends } from "@/lib/peer-spends-io";
 
 import {
   foldPeerSpends,
@@ -141,5 +146,17 @@ describe("a hit from another device, with the ledger", () => {
     expect(hit.ledgerFull).toBe(true);
     expect(hit.spends).toEqual([]);
     expect(hit.state.hp).toEqual({ current: 25, temp: 0 });
+  });
+});
+
+describe("Concentration entries", () => {
+  it("are read from the ledger and inverted by an undo", () => {
+    const end = { id: "e", kind: "concentration-end", spell: "haste" } as const;
+    expect(
+      parsePeerSpends({ entries: [end, { id: "x", kind: "concentration-end" }] })
+    ).toEqual([end]);
+    expect(invertPeerSpends([end], () => "r")).toEqual([
+      { id: "r", kind: "concentration-restore", spell: "haste" },
+    ]);
   });
 });

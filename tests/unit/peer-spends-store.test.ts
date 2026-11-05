@@ -57,3 +57,42 @@ describe("the owner's sheet folds the ledger", () => {
     expect(store().character?.session.trackers.ward).toBeUndefined();
   });
 });
+
+describe("a state from another device ends this sheet's Concentration", () => {
+  beforeEach(() => useCharacterStore.setState({ character: null }));
+
+  function concentrating(spell: string): void {
+    const doc = makeCharacterDoc(
+      {
+        classes: [{ classId: "wizard", level: 5 }],
+        spells: [{ srdId: spell, prepared: true }],
+      },
+      { concentration: spell as never }
+    );
+    doc.id = `conc-${Math.random().toString(36).slice(2)}`;
+    useCharacterStore.setState({
+      character: doc,
+      readonly: false,
+      loading: false,
+      error: null,
+    });
+  }
+
+  it("ends the Concentration it names, once; the inverse brings it back", () => {
+    concentrating("haste");
+    const end: PeerSpend = { id: "e", kind: "concentration-end", spell: "haste" };
+    store().foldPeerSpends([end]);
+    expect(store().character?.session.concentration).toBe("");
+    const restore: PeerSpend = { id: "r", kind: "concentration-restore", spell: "haste" };
+    store().foldPeerSpends([end, restore]);
+    expect(store().character?.session.concentration).toBe("haste");
+  });
+
+  it("a Concentration taken up since (another spell) is left alone", () => {
+    concentrating("fly");
+    store().foldPeerSpends([{ id: "e", kind: "concentration-end", spell: "haste" }]);
+    expect(store().character?.session.concentration).toBe("fly");
+    store().foldPeerSpends([{ id: "r", kind: "concentration-restore", spell: "haste" }]);
+    expect(store().character?.session.concentration).toBe("fly");
+  });
+});

@@ -4088,6 +4088,10 @@ export function evaluateGrants(
         });
         break;
 
+      // Read where a state lands (`effectEndsConcentration`), not aggregated.
+      case "ends-concentration":
+        break;
+
       // ── Exhaustiveness guard — a future un-cased Grant kind is a compile
       //    error (g narrows to `never` here only if all members are handled). ─
       default:
