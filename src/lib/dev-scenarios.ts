@@ -22,6 +22,7 @@
  *
  * **To add a scenario: append one entry to `DEV_SCENARIOS`.** No other wiring.
  */
+import type { CustomFeature } from "@/types/character";
 import type { AbilityCode } from "@/data/types";
 import type {
   CharacterDoc,
@@ -129,7 +130,7 @@ export interface ScenarioSpec {
    */
   toolPicks?: { class?: string[]; background?: string[] };
   /** EXTRA feature refs beyond the derived build (e.g. a feat under test). */
-  extraFeatures?: SrdFeatureRef[];
+  extraFeatures?: Array<SrdFeatureRef | CustomFeature>;
   /** Walking speed as a plain number string (default `"30"`). */
   speed?: string;
   /** A short, human-facing note on what mechanic this scenario exercises. */
@@ -904,6 +905,31 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
   // character hits next session): picking a feat with nested choices (Magic
   // Initiate) expands its spell pickers INLINE in a cause-attributed block; met
   // prerequisites are silent; the "More" detail rides the selected card only.
+  "hearty-fighter": {
+    // `/characters/scn-hearty-fighter`: a Fighter whose homebrew feature floors a Hit
+    // Point Die's face (a 1 or 2 counts as a 3): the Short Rest asks the faces.
+    name: "Bram, Hearty",
+    raceId: "human",
+    classId: "fighter",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 10, CHA: 8 },
+    sessionHpCurrent: 12,
+    extraFeatures: [
+      {
+        custom: true,
+        title: "Hearty Recovery",
+        emoji: "*",
+        source: "Homebrew",
+        tags: [],
+        contentBlocks: [],
+        grants: [{ type: "hit-die-floor", floorBelow: 2, floorTo: 3 }],
+        instanceId: "custom-hearty-recovery",
+      },
+    ],
+    exercises:
+      "a floor on Hit Point Die faces: the Short Rest asks the faces, a 1 or 2 counts as a 3.",
+  },
   "fighter-3": {
     name: "Bram, Champion",
     raceId: "human",
