@@ -6,11 +6,13 @@
  * and what is left of their duration.
  */
 import { describe, expect, it } from "vitest";
+import type { CombatStandingEffectSpec } from "@/lib/combat-resolution";
 import {
   campaignEffectsFor,
   concentrationChange,
   concentrationLinkedIds,
   outlastingFightEffects,
+  standingOnClock,
   type CampaignEffectDoc,
   withCampaignEffects,
 } from "@/lib/play/campaign-effects";
@@ -261,5 +263,71 @@ describe("one identity across the fight and the store", () => {
     const a = onClock("a", 60);
     const b = onClock("b", 60);
     expect(withCampaignEffects([a], [a, b]).map((e) => e.id)).toEqual(["a", "b"]);
+  });
+});
+
+describe("a cast out of a fight on a party member", () => {
+  const spec = (lifetime: CombatStandingEffectSpec["lifetime"], id = "mage-armor") => ({
+    source: { kind: "spell" as const, id, actionId: `spell-${id}` },
+    payload: { kind: "grant-group" as const, activeKey: `spell-${id}` },
+    lifetime,
+  });
+  let n = 0;
+  const newId = () => `e${++n}`;
+
+  it("Mage Armor (8 hours) lands on Bren until 8 hours on the clock", () => {
+    n = 0;
+    expect(
+      standingOnClock({
+        spec: spec({ concentration: false, maxRounds: 4800 }),
+        caster: me,
+        targets: [bren],
+        minute: 100,
+        spellcastingModifier: 4,
+        newId,
+      })
+    ).toEqual([
+      {
+        id: "e1",
+        actor: me,
+        target: bren,
+        source: { kind: "spell", id: "mage-armor", actionId: "spell-mage-armor" },
+        payload: { kind: "grant-group", activeKey: "spell-mage-armor" },
+        bindings: { spellcastingModifier: 4 },
+        duration: { kind: "game-clock", untilMinute: 580 },
+      },
+    ]);
+  });
+
+  it("a Concentration spell runs for its budget, linked to the caster's Concentration", () => {
+    const [placed] = standingOnClock({
+      spec: spec({ concentration: true }, "aid-like"),
+      caster: me,
+      targets: [bren],
+      minute: 0,
+      concentrationRounds: 600,
+      newId,
+    });
+    expect(placed?.duration).toEqual({
+      kind: "game-clock",
+      untilMinute: 60,
+      concentration: { actorId: "pc-u1", sourceId: "aid-like" },
+    });
+  });
+
+  it("a turn-bound state, or one under a minute, leaves nothing out of a fight", () => {
+    const none = (lifetime: CombatStandingEffectSpec["lifetime"]) =>
+      standingOnClock({
+        spec: spec(lifetime),
+        caster: me,
+        targets: [bren],
+        minute: 0,
+        newId,
+      });
+    expect(
+      none({ concentration: false, turnBoundary: { phase: "turn-end", turns: 1 } })
+    ).toEqual([]);
+    expect(none({ concentration: false, maxRounds: 5 })).toEqual([]);
+    expect(none({ concentration: false })).toEqual([]);
   });
 });
