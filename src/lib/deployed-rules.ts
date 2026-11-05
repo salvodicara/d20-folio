@@ -9,5 +9,17 @@
  * a zone a cast leaves, and a condition's save DC (`bindings.saveDc`).
  */
 export function combatEffectsV26On(): boolean {
-  return import.meta.env.VITE_COMBAT_EFFECTS_V26 === "true";
+  if (import.meta.env.VITE_COMBAT_EFFECTS_V26 === "true") return true;
+  // DEV ONLY: an e2e turns the deployed rules on for its own page (`tray-states`).
+  return (
+    import.meta.env.DEV &&
+    typeof window !== "undefined" &&
+    (() => {
+      try {
+        return window.localStorage.getItem("d20-dev-effects-v26") === "1";
+      } catch {
+        return false;
+      }
+    })()
+  );
 }

@@ -1725,6 +1725,12 @@ function appendPersistentCombatEffectOpOptimistic(
   const store = useCampaignStore.getState();
   const campaign = store.campaign;
   const encounter = currentDevEncounter(campaignId);
+  // The dev sheet's fight (`d20-dev-combat-chronicle`) has no campaign loaded: each
+  // operation is kept on the window, so an e2e can see what a use wrote.
+  if (import.meta.env.DEV && typeof window !== "undefined") {
+    const seen = window as unknown as { __d20DevEffectOps?: CombatEffectOp[] };
+    seen.__d20DevEffectOps = [...(seen.__d20DevEffectOps ?? []), operation];
+  }
   if (!campaign || !encounter) return;
   if (
     operation.kind === "apply" &&
