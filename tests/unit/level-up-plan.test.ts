@@ -51,4 +51,13 @@ describe("levelUpPlan", () => {
     expect(plan.newClassLevel).toBe(1);
     expect(plan.newLevel).toBe(4);
   });
+
+  it("a Warlock is asked the new invocations each time its table count grows", () => {
+    // 2024 Warlock invocations known: 1 at level 1, 3 at 2, 5 at 5, 6 at 7…
+    const at = (level: number) =>
+      levelUpPlan(makeCharacterDoc({ classId: "warlock", level }), "warlock", interim);
+    expect(at(1)).toMatchObject({ needsInvocations: true, invocationPicksNeeded: 2 });
+    expect(at(4)).toMatchObject({ needsInvocations: true, invocationPicksNeeded: 2 });
+    expect(at(2).needsInvocations).toBe(false);
+  });
 });
