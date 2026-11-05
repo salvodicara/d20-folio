@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 
 import { choiceSlotRows, toggleChoicePick } from "@/domains/creation/creation-view";
 import { ChoiceRowChips } from "@/domains/creation/ui/ChoiceRowChips";
+import { PickGrid } from "@/domains/spells/ui/PickGrid";
 import { togglePick } from "@/lib/creation/picks";
 import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import type { Locale } from "@/lib/locale";
@@ -28,7 +29,7 @@ import {
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/types/ability";
-import { Button, Chip, Choice, Dialog } from "@/ui";
+import { Button, Chip, Dialog } from "@/ui";
 
 const ABILITIES = ["INT", "WIS", "CHA"] as const;
 
@@ -169,16 +170,14 @@ function SpeciesChoicesDialog({
           <div className="f-ask">
             <span className="f-lbl">{t("create.humanVersatileLabel")}</span>
             <p className="f-help">{t("create.humanVersatileHint")}</p>
-            <div className="f-choices f-create-list">
-              {feats.map((f) => (
-                <Choice key={f.id} on={featId === f.id} onClick={() => setFeatId(f.id)}>
-                  <span className="f-row-main">
-                    <span className="f-row-t">{f.name}</span>
-                    {f.halfFeat && <span className="f-row-s">{f.halfFeat}</span>}
-                  </span>
-                </Choice>
-              ))}
-            </div>
+            <PickGrid
+              label={t("create.humanVersatileLabel")}
+              options={feats.map((f) => ({ id: f.id, label: f.name }))}
+              picked={featId ? [featId] : []}
+              art="feat"
+              locale={locale}
+              onToggle={setFeatId}
+            />
           </div>
         )}
         {pending.spellAbility && (

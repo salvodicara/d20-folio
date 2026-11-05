@@ -29,6 +29,7 @@ import {
   type CreationFacts,
 } from "@/lib/creation/draft";
 import { ChoiceRowChips } from "@/domains/creation/ui/ChoiceRowChips";
+import { PickGrid } from "@/domains/spells/ui/PickGrid";
 import {
   classStartingEquipment,
   lineageBundleVMs,
@@ -195,20 +196,14 @@ export function SpeciesStep({
         <div className="f-ask">
           <span className="f-lbl">{t("create.humanVersatileLabel")}</span>
           <p className="f-help">{t("create.humanVersatileHint")}</p>
-          <div className="f-choices f-create-list">
-            {feats.map((f) => (
-              <Choice
-                key={f.id}
-                on={draft.humanFeat === f.id}
-                onClick={() => dispatch({ type: "setHumanFeat", featId: f.id })}
-              >
-                <span className="f-row-main">
-                  <span className="f-row-t">{f.name}</span>
-                  {f.halfFeat && <span className="f-row-s">{f.halfFeat}</span>}
-                </span>
-              </Choice>
-            ))}
-          </div>
+          <PickGrid
+            label={t("create.humanVersatileLabel")}
+            options={feats.map((f) => ({ id: f.id, label: f.name }))}
+            picked={draft.humanFeat ? [draft.humanFeat] : []}
+            art="feat"
+            locale={locale}
+            onToggle={(featId) => dispatch({ type: "setHumanFeat", featId })}
+          />
           <SlotChips rows={featSlots} draft={draft} dispatch={dispatch} />
         </div>
       )}

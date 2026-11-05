@@ -204,7 +204,7 @@ window.__audit = (opts) => {
       (parseFloat(cs.borderTopWidth) || parseFloat(cs.borderLeftWidth)) &&
       gold.test(bc) &&
       !e.matches(
-        ".btn.primary,.f-btn[data-kind=primary],.b1,.btn--primary,.crest,.av,.f-av,.medal,.medal *,.hero,.hero *,[data-identity],[data-identity] *,.cc.on,.stp *,.tile,.wpanel,.welcome *"
+        ".btn.primary,.f-btn[data-kind=primary],.b1,.btn--primary,.crest,.av,.f-av,.medal,.medal *,.hero,.hero *,[data-identity],[data-identity] *,.cc.on,.f-lvl-opt[aria-pressed=true],.stp *,.tile,.wpanel,.welcome *"
       ) &&
       !e.closest("[data-identity],.hero,.frz")
     )
