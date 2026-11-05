@@ -176,8 +176,8 @@ export type CatalogueMode = "srd-only" | "composed";
  * spent down) migrates with the legacy max as the rolled capacity and the beads left
  * as they are; a max the roll could never make stays ambiguous. */
 export const EXPECTED_CATALOGUE_FINGERPRINTS: Readonly<Record<CatalogueMode, string>> = {
-  "srd-only": "ad4192ebf419ed34a33c5ec77ea7411c10b07adc0afd8117c3eb5d93e4970db9",
-  composed: "1299cb35b7df9b590f6d394d4e934e774036a68fde124fa5a03410166b19bd6d",
+  "srd-only": "db79d22ad98ccec599ccd7e6b95a052d7dd1acae5fd2e7dfea1da7c93039ff3c",
+  composed: "fa1e8d0724e629239346b0eb06a1dde449b59ef5e03a2f97a37fd39f4afa1888",
 };
 
 export function catalogueFingerprint(
