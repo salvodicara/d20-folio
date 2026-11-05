@@ -63,6 +63,7 @@ export async function emitPack(outDir: string, bucket: string): Promise<EmittedP
       ...source.exports,
       packMonsterArt: placeArt("monsters", source.exports.packMonsterArt),
       packItemArt: placeArt("items", source.exports.packItemArt),
+      packIconArt: placeArt("icons", source.exports.packIconArt),
     },
   });
 

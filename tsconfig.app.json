@@ -45,6 +45,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@pack/item-art": ["./content-pack/data/item-art.ts", "./src/data/pack-empty.ts"],
+      "@pack/icon-art": ["./content-pack/data/icon-art.ts", "./src/data/pack-empty.ts"],
       "@pack/monster-art": [
         "./content-pack/data/monster-art.ts",
         "./src/data/pack-empty.ts"
