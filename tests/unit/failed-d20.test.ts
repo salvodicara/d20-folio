@@ -41,7 +41,12 @@ function seer(used: Record<string, { used: number }> = {}): CharacterDoc {
 describe("a failed d20 that a Reaction spell can turn into a 20", () => {
   it("offered with the lowest free slot of its level or higher", () => {
     expect(failedD20Savers(seer())).toEqual([
-      { spellId: `custom:${omen.instanceId}`, face: 20, slotLevel: 8 },
+      {
+        spellId: `custom:${omen.instanceId}`,
+        customName: "Omen of Twenty",
+        face: 20,
+        slotLevel: 8,
+      },
     ]);
     expect(failedD20Savers(seer({ "8": { used: 1 } }))[0]?.slotLevel).toBe(9);
   });

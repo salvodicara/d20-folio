@@ -22,6 +22,7 @@
  *
  * **To add a scenario: append one entry to `DEV_SCENARIOS`.** No other wiring.
  */
+import type { CustomSpell } from "@/types/character";
 import type { AbilityCode } from "@/data/types";
 import type {
   CharacterDoc,
@@ -133,6 +134,11 @@ export interface ScenarioSpec {
   sessionTrackers?: Record<string, { used: number }>;
   /** Session spell-slot SPEND state (keyed by slot level), e.g. `{ "2": { used: 2 } }`. */
   sessionSpellSlots?: Record<string, { used: number }>;
+  /** Homebrew spells the hero knows, beside its catalogue `spells` (a neutral
+   *  stand-in for a rule only private content has). */
+  customSpells?: CustomSpell[];
+  /** A spell the hero starts concentrating on (its id). */
+  sessionConcentration?: string;
   /**
    * Starting CURRENT HP (default = full = the rolled max). Set BELOW half-max to
    * start the scenario Bloodied — for HP-band surfaces (the S5 Bloodied mark, the
@@ -301,7 +307,7 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     customToolProficiencies: [],
     spellcasting,
     spellSlots,
-    spells: spec.spells ?? [],
+    spells: [...(spec.spells ?? []), ...(spec.customSpells ?? [])],
     weapons: toolKit
       ? [...(spec.weapons ?? []), ...toolKit.weapons]
       : (spec.weapons ?? []),
@@ -343,7 +349,9 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     hitDice: { used: 0 },
     trackers: { ...(spec.sessionTrackers ?? {}) },
     spellSlots: sessionSlots,
-    concentration: "",
+    concentration: spec.sessionConcentration
+      ? concentrationValue(spec.sessionConcentration)
+      : "",
     initiative: "",
     conditions: spec.conditions ?? [],
     deathSucc: 0,
@@ -694,6 +702,40 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     equipment: [{ srdId: "potion-of-flying", quantity: 2 }],
     exercises:
       "Potion of Flying: drinking lights Fly = walking Speed on the Senses rail with a 600-round countdown that clears it.",
+  },
+  "omen-seer": {
+    // `/characters/scn-omen-seer`: a level-17 Wizard holding Bless, with a homebrew
+    // Reaction spell that turns a failed d20 into a 20 (`failedD20Becomes`): a failed
+    // Concentration save offers it.
+    name: "Ilka, Omen Seer",
+    raceId: "human",
+    classId: "wizard",
+    level: 17,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 10, INT: 20, WIS: 12, CHA: 10 },
+    spells: [{ srdId: "bless", prepared: true }],
+    customSpells: [
+      {
+        custom: true,
+        name: { en: "Omen of Twenty", it: "Presagio del Venti" },
+        level: 8,
+        school: "divination",
+        castingTime: "reaction",
+        range: "self",
+        components: { v: true, s: false, m: false },
+        duration: "instantaneous",
+        concentration: false,
+        description: {
+          en: "A failed roll becomes a 20.",
+          it: "Un tiro fallito diventa un 20.",
+        },
+        instanceId: "custom-omen-of-twenty",
+        mechanics: { failedD20Becomes: 20 },
+      },
+    ],
+    sessionConcentration: "bless",
+    exercises:
+      "a failed Concentration save offered the Reaction spell that turns it into a 20.",
   },
   "evoker-wizard": {
     name: "Pyra, Evoker Wizard",

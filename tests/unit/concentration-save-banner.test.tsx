@@ -139,7 +139,9 @@ describe("a failed Concentration save a Reaction spell turns into a 20", () => {
     fireEvent.change(roll, { target: { value: "15" } });
     expect(screen.queryByRole("button", { name: /the d20 becomes 20/i })).toBeNull();
     fireEvent.change(roll, { target: { value: "2" } });
-    fireEvent.click(screen.getByRole("button", { name: /the d20 becomes 20/i }));
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Omen of Twenty: the d20 becomes 20$/i })
+    );
     const after = useCharacterStore.getState();
     expect(after.character?.session.concentration).toBe(conc("bless"));
     expect(after.character?.session.spellSlots["8"]?.used).toBe(1);
