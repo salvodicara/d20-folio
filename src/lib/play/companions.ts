@@ -14,6 +14,7 @@ import {
 import { totalLevel } from "@/lib/classes";
 import { proficiencyBonus } from "@/lib/proficiency";
 import { ROUNDS_PER_MINUTE } from "@/lib/spell-duration";
+import { summonTurnOf, type SummonPlacement } from "@/lib/play/summon-initiative";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 /** The familiar has no companion stat block: "when the familiar drops to 0 Hit
@@ -441,4 +442,14 @@ export function summonMods(
         : []
     ),
   };
+}
+
+/**
+ * Where a companion acts in the Initiative order (edge-case M19), from its source's
+ * text: the familiar rolls its own Initiative (Find Familiar); a summon follows its
+ * spell (`summonTurnOf`: right after the caster, on the caster's turn, or its own).
+ */
+export function companionInitiative(sourceId: string): SummonPlacement {
+  if (sourceId === FIND_FAMILIAR_SPELL_ID) return "own";
+  return summonTurnOf({ spellId: sourceId });
 }

@@ -33,3 +33,24 @@ export function resolveFamiliarForms(
     .filter((m): m is MonsterStatBlock => m !== undefined);
   return [...base, ...special];
 }
+
+/** Where a creature is (edge-case M19): a plane, or inside an extradimensional space
+ *  (a container's instanceId: a Bag of Holding, a Rope Trick), which is on no plane. */
+export interface CreatureLocation {
+  plane?: string;
+  inside?: string;
+}
+
+/**
+ * Whether two creatures share a plane (the familiar's link, a planar check). Inside
+ * an extradimensional space, only with one in the same space; an untagged creature
+ * shares the other's plane (today's behaviour, where nothing is tagged).
+ */
+export function sharesPlane(
+  a: CreatureLocation | undefined,
+  b: CreatureLocation | undefined
+): boolean {
+  if (a?.inside || b?.inside) return a?.inside !== undefined && a.inside === b?.inside;
+  if (!a?.plane || !b?.plane) return true;
+  return a.plane === b.plane;
+}

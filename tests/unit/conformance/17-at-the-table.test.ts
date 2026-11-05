@@ -204,6 +204,12 @@ describe("conformance · 17. at-the-table gaps", () => {
       // …but its own initiative (familiar) or the caster's (summon) needs a roster.
       const companions: Record<string, unknown> = await import("@/lib/play/companions");
       expect(companions.companionInitiative).toBeTypeOf("function");
+      // Engine-ready, needs a caller: the case works once the encounter takes the
+      // companion's Initiative row and the campaign keeps creatures between fights
+      // (the roster).
+      const id = "@/features/campaigns/roster-io";
+      const roster = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(roster.subscribeRoster).toBeTypeOf("function");
     }
   );
 
