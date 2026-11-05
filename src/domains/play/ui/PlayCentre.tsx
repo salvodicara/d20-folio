@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
 import { helpView, type HelpView } from "@/domains/play/help-view";
 import {
+  featureArtId,
   rollReactionView,
   type RollReactionView,
 } from "@/features/character/center/roll-reaction-view";
@@ -721,9 +722,8 @@ function ActionLine({
     const rollView = reaction
       ? rollReactionView(
           reaction,
-          status && doc && status.characterId === doc.id
-            ? { myId: status.myId, rows: status.view.rows }
-            : null
+          status ? { myId: status.myId, rows: status.view.rows } : null,
+          row.action.summary.uses
         )
       : null;
     if (rollView) {
@@ -839,6 +839,7 @@ function ActionLine({
       {rolling && (
         <RollReactionDialog
           name={row.name}
+          featureId={featureArtId(row.action.nameLoc)}
           view={rolling}
           onClose={() => setRolling(null)}
           onUse={(rollPlan) => {
