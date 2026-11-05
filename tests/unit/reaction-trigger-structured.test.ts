@@ -143,12 +143,13 @@ const CORRECTED_TRIGGERS: Record<string, string> = {
   "mythal-touched": "you fail a saving throw",
   // A Frightened creature starting its turn within 60 ft of you.
   "boon-of-terror": "creature starts its turn near you",
+  // YOUR successful save, not an ally's failed one (the parser's reading).
+  "infernal-bulwark": "you succeed on a saving throw",
 };
 
-// Features whose reaction has no concise structured trigger yet: the parser's
-// "ally fails save" was wrong (Infernal Bulwark answers YOUR successful save), so the
-// row carries no token and shows no "Trigger:" line.
-const NO_STRUCTURED_TRIGGER: ReadonlySet<string> = new Set(["infernal-bulwark"]);
+// Features whose reaction has no concise structured trigger yet: the row carries no
+// token and shows no "Trigger:" line. None today.
+const NO_STRUCTURED_TRIGGER: ReadonlySet<string> = new Set<string>();
 
 describe("structured reaction trigger — equivalence with the retired parser", () => {
   it("enumerates every reaction action (guards against a vacuous pass)", () => {
