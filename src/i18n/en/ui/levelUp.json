@@ -121,6 +121,35 @@
     "subclassGrantsHead": "Granted at level {{level}}",
     "subclassSpellsHead": "Bonus spells · always prepared",
     "spellMasteryRow": "Spell Mastery",
-    "signatureSpellsRow": "Signature Spells"
+    "signatureSpellsRow": "Signature Spells",
+    "screen": {
+      "title": "{{name}} reaches level {{level}}",
+      "stepNews": "What's new",
+      "stepSummary": "Summary",
+      "whichClass": "Which class gains the level?",
+      "hpQuestion": "How many Hit Points do you gain?",
+      "hpAverage": "average (recommended)",
+      "hpRoll": "your roll",
+      "hpRolled": "Your d{{die}} roll",
+      "less": "Lower",
+      "more": "Higher",
+      "otherClass": "Take this level in another class",
+      "featAbility": "Raise an ability by +{{amount}}",
+      "chooseCantrips_one": "Choose {{count}} cantrip",
+      "chooseCantrips_other": "Choose {{count}} cantrips",
+      "chooseSpells_one": "Choose {{count}} spell",
+      "chooseSpells_other": "Choose {{count}} spells",
+      "swapForget": "Swap a spell you know (optional)",
+      "swapLearn": "In its place",
+      "changes": "What changes",
+      "gained": "You gain",
+      "hp": "Maximum Hit Points",
+      "pb": "Proficiency bonus",
+      "pactSlot": "Pact slots (level {{level}})",
+      "rest": "Everything else updates by itself: rolls, DCs, spells.",
+      "confirm": "Confirm level {{level}}",
+      "done": "{{name}} is level {{level}}",
+      "levelUp": "Level up"
+    }
   }
 }

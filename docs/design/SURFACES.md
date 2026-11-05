@@ -127,6 +127,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `panel:features/creation/steps/EquipmentStep`                      | Creation   | todo   |
 | `panel:features/creation/steps/ReviewStep`                         | Creation   | todo   |
 | `route:/characters/:characterId/level-up`                          | Creation   | todo   |
+| `route:/characters/:characterId/level-up/classic`                  | Creation   | todo   |
 | `route:/characters/new`                                            | Creation   | todo   |
 | `state:creation/guided-abilities`                                  | Creation   | todo   |
 | `state:creation/guided-background`                                 | Creation   | todo   |
