@@ -716,6 +716,9 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       { srdId: "magic-missile", prepared: true },
       // Hold Person: the save-or-condition shape for the damage tray's review shots.
       { srdId: "hold-person", prepared: true },
+      // A failed save's state (Slow) and a hit's (Ray of Frost) for the tray e2e.
+      { srdId: "slow", prepared: true },
+      { srdId: "ray-of-frost" },
     ],
     exercises:
       "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball + Hold Person).",
