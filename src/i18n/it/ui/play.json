@@ -300,6 +300,22 @@
         "weaponMasteries_one": "{{count}} Padronanza d'Armi",
         "weaponMasteries_other": "{{count}} Padronanze d'Armi"
       }
+    },
+    "rollReaction": {
+      "title": "{{name}}",
+      "which": "Su quale tiro?",
+      "roll_attack": "Tiro per colpire",
+      "roll_check": "Prova di caratteristica",
+      "roll_save": "Tiro salvezza",
+      "roll_damage": "Tiro per i danni",
+      "subtract": "Sottrai",
+      "doSubtract": "Tira {{die}} e sottrailo da quel tiro.",
+      "doAdd": "Tira {{die}} e aggiungilo a quel tiro.",
+      "confirm": "Usa la Reazione",
+      "toastSubtract": "{{name}} su {{target}} ({{roll}}): tira {{die}} e sottrailo",
+      "toastAdd": "{{name}} su {{target}} ({{roll}}): tira {{die}} e aggiungilo",
+      "toastSubtractNoTarget": "{{name}} ({{roll}}): tira {{die}} e sottrailo",
+      "toastAddNoTarget": "{{name}} ({{roll}}): tira {{die}} e aggiungilo"
     }
   }
 }
