@@ -4203,7 +4203,45 @@
 .fui .f-lvl-arrow {
   color: var(--faint);
 }
-.fui .f-lvl-group {
+
+/* ---------- spells to pick: rows that say what each spell is (D&D Beyond's list) ---------- */
+.fui .f-spellpick {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-spellpick-tools {
   display: grid;
   gap: 8px;
+}
+.fui .f-spellpick-row {
+  position: relative;
+}
+/* the details button sits inside the row's border, on the right, without a frame */
+.fui .f-spellpick-row > .f-choice {
+  padding-right: 52px;
+}
+.fui .f-spellpick-row .f-row-t {
+  text-wrap: balance;
+}
+.fui .f-spellpick-effect {
+  color: var(--strong);
+}
+.fui .f-spellpick-more {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--r);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.fui .f-spellpick-more:hover {
+  background: var(--hover);
+  color: var(--text);
 }

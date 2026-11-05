@@ -37,6 +37,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
+import { SpellPickList } from "@/domains/spells/ui/SpellPickList";
 import { Button, Chip, Choice, Dialog, Stepper } from "@/ui";
 
 type Step = "hp" | "news" | "summary";
@@ -296,24 +297,26 @@ export function LevelUpDialog({
                 <span className="f-lvl-count">{` ${String(row.picked.length)}/${String(row.count)}`}</span>
               )}
             </p>
-            {groups(row.options).map(([level, options]) => (
-              <div key={level ?? "all"} className="f-lvl-group">
-                {level !== undefined && (
-                  <span className="f-lbl">{t("spells.level", { level })}</span>
-                )}
-                <div className="f-chips">
-                  {options.map((o) => (
-                    <Chip
-                      key={o.id}
-                      pressed={row.picked.includes(o.id)}
-                      onClick={() => setAnswers(toggleAnswer(answers, row, o.id))}
-                    >
-                      {o.label}
-                    </Chip>
-                  ))}
-                </div>
+            {row.spell ? (
+              <SpellPickList
+                ids={row.options.map((o) => o.id)}
+                picked={row.picked}
+                locale={locale}
+                onToggle={(id) => setAnswers(toggleAnswer(answers, row, id))}
+              />
+            ) : (
+              <div className="f-chips">
+                {row.options.map((o) => (
+                  <Chip
+                    key={o.id}
+                    pressed={row.picked.includes(o.id)}
+                    onClick={() => setAnswers(toggleAnswer(answers, row, o.id))}
+                  >
+                    {o.label}
+                  </Chip>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         ))}
 
@@ -336,15 +339,6 @@ export function LevelUpDialog({
       )}
     </Dialog>
   );
-}
-
-/** Options by their group (a spell's level), in order; one group when none is set. */
-function groups<T extends { group?: number }>(
-  options: readonly T[]
-): Array<[number | undefined, T[]]> {
-  const by = new Map<number | undefined, T[]>();
-  for (const o of options) by.set(o.group, [...(by.get(o.group) ?? []), o]);
-  return [...by.entries()].sort(([a], [b]) => (a ?? 0) - (b ?? 0));
 }
 
 /** Before → after, the new value in bold: Hit Points, proficiency, slots, uses. */

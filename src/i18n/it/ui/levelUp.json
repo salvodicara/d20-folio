@@ -166,7 +166,8 @@
         "magicItems": "Oggetti magici replicabili",
         "preparedSpells": "Incantesimi preparabili"
       },
-      "classLine": "Classe: {{class}}"
+      "classLine": "Classe: {{class}}",
+      "cantripForget": "Cambia un trucchetto che conosci (facoltativo)"
     }
   }
 }

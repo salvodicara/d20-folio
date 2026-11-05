@@ -71,6 +71,14 @@
     "prepareToCast": "Prepara per lanciare",
     "filterByLevel": "Filtra per livello incantesimo",
     "filterConcentration": "Solo incantesimi a concentrazione",
-    "preparedMax": "Max preparati"
+    "preparedMax": "Max preparati",
+    "pick": {
+      "search": "Cerca un incantesimo",
+      "byLevel": "Livello dell'incantesimo",
+      "details": "Su {{name}}",
+      "none": "Nessun incantesimo corrisponde.",
+      "unpick": "Togli",
+      "ritual": "rituale"
+    }
   }
 }
