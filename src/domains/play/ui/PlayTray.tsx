@@ -118,7 +118,8 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
       targets,
       form.rows,
       form.amounts.map((v) => v ?? 0),
-      t
+      t,
+      form.parts
     );
     close();
   };

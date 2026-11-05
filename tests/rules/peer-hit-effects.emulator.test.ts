@@ -153,4 +153,38 @@ describe("a hit from another device reads the effects others left on its target"
     await campaign({});
     expect(await dmHitsBren(30)).toBe(0);
   });
+
+  it("a stale tray: Warding Bond landed after the DM's tray opened, and the write still halves the hit", async () => {
+    // The tray saw no defense on Bren, so its preview is the whole 10; it sends the
+    // hit's parts and the write resolves them on Bren's sheet as it stands now.
+    await campaign({ gameClock: { minute: 0 } });
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "campaigns", "camp1", "effects", "fx-bond"), {
+        ...deathWard({ kind: "game-clock", untilMinute: 60 }),
+        id: "fx-bond",
+        source: { kind: "spell", id: "warding-bond", actionId: "spell-warding-bond" },
+        payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+      });
+    });
+    as("dm");
+    const { before, after } = await writeCampaignCombatEffect("a", brenId, null, 30, {
+      kind: "hp",
+      operation: {
+        kind: "damage",
+        amount: 10,
+        parts: [{ amount: 10, type: "slashing", delivery: "attack" }],
+      },
+    });
+    expect(before.hp.current - after.hp.current).toBe(5);
+  });
+
+  it("a number the hitter chose on purpose (no parts) stands", async () => {
+    await campaign({ gameClock: { minute: 0 } });
+    as("dm");
+    const { before, after } = await writeCampaignCombatEffect("a", brenId, null, 30, {
+      kind: "hp",
+      operation: { kind: "damage", amount: 7 },
+    });
+    expect(before.hp.current - after.hp.current).toBe(7);
+  });
 });

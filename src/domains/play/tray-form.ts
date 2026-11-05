@@ -7,6 +7,7 @@
  * target's own defense). Pure: the screen keeps what was typed and tapped, this says
  * what it means.
  */
+import type { DamageInstance } from "@/lib/damage-intake";
 import {
   initialTrayRowFor,
   type TrayTarget,
@@ -16,6 +17,7 @@ import {
   rowAmount,
   applyDieFaceFloor,
   rowAmountByType,
+  rowDamageParts,
   rowNeedsTotal,
   type DamageTrayPlan,
   type TrayRow,
@@ -70,6 +72,8 @@ export interface TrayForm {
   typeInvalid: Partial<Record<DamageType, true>>;
   /** What each row applies, or null while it still needs a number. */
   amounts: (number | null)[];
+  /** Each row's damage before defenses, for another PC's write (`rowDamageParts`). */
+  parts: (DamageInstance[] | null)[];
   canApply: boolean;
   /** The dice faces typed, floored and summed with the bonus; null when none. */
   faces: TrayFaces | null;
@@ -142,6 +146,9 @@ export function trayForm(input: TrayFormInput): TrayForm {
       rowInvalid: rows.map(() => false),
       typeInvalid,
       amounts,
+      parts: rows.map((row) =>
+        anyType ? rowDamageParts(row, plan, { total: null, byType }) : null
+      ),
       canApply:
         rows.length > 0 &&
         Object.keys(typeInvalid).length === 0 &&
@@ -173,6 +180,9 @@ export function trayForm(input: TrayFormInput): TrayForm {
     rowInvalid,
     typeInvalid,
     amounts,
+    parts: rows.map((row, i) =>
+      amounts[i] === null ? null : rowDamageParts(row, plan, { total: totals[i] ?? null })
+    ),
     canApply,
     faces,
     facesInvalid,
