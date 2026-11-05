@@ -18,6 +18,7 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { conformCampaignClock } from "@/lib/play/campaign-clock";
 import type { DamageOptions } from "@/lib/play/damage";
 import { conformTableRules, type TableRulesOverrides } from "@/lib/table-rules";
 import {
@@ -219,6 +220,11 @@ export function toCampaignDoc(id: string, data: Record<string, unknown>): Campai
     const tableRules = conformTableRules(doc.tableRules);
     if (Object.keys(tableRules).length > 0) doc.tableRules = tableRules;
     else delete doc.tableRules;
+  }
+  if (doc.gameClock !== undefined) {
+    const gameClock = conformCampaignClock(doc.gameClock);
+    if (gameClock) doc.gameClock = gameClock;
+    else delete doc.gameClock;
   }
   if (!doc.encounter) return { ...doc, memberDetails };
   const currentEncounter = parseEncounterState(doc.encounter);

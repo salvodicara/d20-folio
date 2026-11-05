@@ -6,6 +6,8 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
+import { docAtClock } from "@/lib/play/campaign-clock";
+import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock";
 import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
 import { reconcileBuildChoices } from "@/lib/reconcile-build";
@@ -293,6 +295,8 @@ interface CharacterState {
   ) => void;
   /** Project the campaign's table rules onto the open character (`null`: RAW). */
   setTableRules: (characterId: string, rules: TableRules | null) => void;
+  /** Project the campaign's clock onto the open character (`null`: a solo sheet). */
+  setCampaignClock: (characterId: string, clock: ProjectedCampaignClock | null) => void;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
   /** Persist the current complete play owner through the injected seam. */
@@ -1401,6 +1405,21 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (rules) session.tableRules = rules;
     else delete session.tableRules;
     set({ character: { ...character, session } });
+  },
+
+  setCampaignClock: (characterId, clock) => {
+    const { character } = get();
+    if (!character || character.id !== characterId) return;
+    // Idempotent, as `setTableRules`: an unchanged clock publishes nothing.
+    if (
+      JSON.stringify(character.session.campaignClock ?? null) === JSON.stringify(clock)
+    ) {
+      return;
+    }
+    // A read-only view is read at the clock (Mage Armor already over for the DM); the
+    // owner's own sheet stores its catch-up (`catchUpCampaignClock`).
+    const projected = withCampaignClock(character, clock);
+    set({ character: get().readonly ? docAtClock(projected) : projected });
   },
 
   setEncounterEffects: (characterId, effects = []) => {

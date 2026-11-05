@@ -994,6 +994,51 @@ service cloud.firestore {
       // Shared notes live in the `notes` / `dmNotes` subcollections; the legacy
       // inline `sharedNotes` array is retired (production holds none, 2026-11-03),
       // so no member or DM may write it again. The admin may still clear one.
+      // The campaign clock (lib/play/campaign-clock.ts): a member moves it only forward,
+      // by at most a day (one long rest's worth) per write, recording the step as theirs;
+      // the step back that undoes it is the writer's or the DM's alone; setting the time
+      // of day leaves the minute and the step as they were.
+      function gameClockUnchanged() {
+        return request.resource.data.get('gameClock', null)
+          == resource.data.get('gameClock', null);
+      }
+      function validGameClock(clock) {
+        return clock is map
+          && clock.keys().hasOnly(['minute', 'timeOfDay', 'last'])
+          && clock.get('minute', -1) is int
+          && clock.minute >= 0
+          && (!('timeOfDay' in clock)
+            || (clock.timeOfDay is int && clock.timeOfDay >= 0 && clock.timeOfDay < 1440));
+      }
+      function gameClockWrite() {
+        let before = resource.data.get('gameClock', null);
+        let after = request.resource.data.get('gameClock', null);
+        let from = before == null ? 0 : before.get('minute', 0);
+        let last = before == null ? null : before.get('last', null);
+        return gameClockUnchanged()
+          || (validGameClock(after)
+            && (
+              // A forward step, recorded as the writer's.
+              (after.minute > from
+                && after.minute - from <= 1440
+                && after.get('last', null) is map
+                && after.last.keys().hasOnly(['by', 'minutes'])
+                && after.last.get('by', '') == request.auth.uid
+                && after.last.get('minutes', -1) == after.minute - from)
+              ||
+              // The last step taken back, by its writer or the DM.
+              (last != null
+                && after.minute == from - last.get('minutes', 0)
+                && !('last' in after)
+                && (last.get('by', '') == request.auth.uid
+                  || request.auth.uid == resource.data.dmUid))
+              ||
+              // The time of day set, nothing else.
+              (after.minute == from
+                && after.get('last', null) == last)
+            ));
+      }
+
       function sharedNotesUnchanged() {
         return request.resource.data.get('sharedNotes', null)
           == resource.data.get('sharedNotes', null);
@@ -1059,10 +1104,10 @@ service cloud.firestore {
       // the slim bulk-revoke validator, a batch of 8 revokes keeps a margin of about 30 trivial
       // checks; before, under 5). Keep new member checks OFF this path; see
       // docs/architecture/2026-11-simplify-core.md for the per-operation-document follow-up.
-      allow update: if isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && combatEffectFieldsOnlyChanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged();
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && sharedNotesUnchanged())
-        || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged() && memberStartsFight() && sharedNotesUnchanged())
-        || (isDm() && sharedNotesUnchanged())
+      allow update: if isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && combatEffectFieldsOnlyChanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && gameClockUnchanged();
+      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && sharedNotesUnchanged() && gameClockWrite())
+        || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged() && memberStartsFight() && sharedNotesUnchanged() && gameClockUnchanged())
+        || (isDm() && sharedNotesUnchanged() && gameClockWrite())
         || isAdmin()
         || isSelfJoin();
       allow delete: if isDm();

@@ -5,6 +5,7 @@
  * toasts) stay with the caller. Not the session log's `PlayEvent`, which records
  * what happened at the table.
  */
+import { docAtClock } from "./campaign-clock";
 import { recoverAmmunition, withAmmoSpent } from "./ammunition";
 import { attuneItem, unattuneItem, type AttuneResult } from "@/lib/attunement-guard";
 import { settleZeroHpConsequence } from "./zero-hp-savers";
@@ -227,6 +228,10 @@ export type SheetEvent =
    * Pinned in tests/unit/time-passes.test.ts.
    */
   | { kind: "time-passes"; minutes: number }
+  /** A campaign character's sheet catches up to the campaign clock (`docAtClock`):
+   *  the minutes since it last did pass. The caller ends an engine-held
+   *  Concentration first, as for `time-passes` (`catchUpCampaignClock`). */
+  | { kind: "clock-catch-up" }
   /** The table sets the time of day (minutes since midnight), or clears it. */
   | { kind: "set-time-of-day"; minutes: number | null }
   /** Start holding breath (SRD Suffocation); `choking`: no air at all. */
@@ -486,6 +491,10 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       );
     case "time-passes":
       return passTime(doc, event.minutes);
+    case "clock-catch-up": {
+      const caught = docAtClock(doc);
+      return caught === doc ? null : caught;
+    }
     case "set-time-of-day":
       return withSession(setTimeOfDay(doc, event.minutes));
     case "hold-breath":

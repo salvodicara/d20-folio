@@ -1221,6 +1221,118 @@ describe("firestore.rules — /campaigns access", () => {
   });
 });
 
+describe("firestore.rules — the campaign clock (gameClock)", () => {
+  const seedClock = async (gameClock: Record<string, unknown>) => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), "campaigns", "camp1"), {
+        ...campaignDoc(["dm", "member", "peer"]),
+        gameClock,
+      });
+    });
+  };
+  const as = (uid: string) =>
+    doc(testEnv.authenticatedContext(uid).firestore(), "campaigns", "camp1");
+
+  it("a member steps it forward by up to a day, recorded as theirs", async () => {
+    await assertSucceeds(
+      updateDoc(as("member"), {
+        gameClock: { minute: 480, last: { by: "member", minutes: 480 } },
+      })
+    );
+    await assertSucceeds(
+      updateDoc(as("member"), {
+        gameClock: { minute: 1920, last: { by: "member", minutes: 1440 } },
+      })
+    );
+  });
+
+  it("a non-member can't move it", async () => {
+    await assertFails(
+      updateDoc(as("outsider"), {
+        gameClock: { minute: 60, last: { by: "outsider", minutes: 60 } },
+      })
+    );
+  });
+
+  it("a step back, a step over a day, or a step in someone else's name is refused", async () => {
+    await seedClock({ minute: 600, last: { by: "member", minutes: 60 } });
+    await assertFails(
+      updateDoc(as("member"), {
+        gameClock: { minute: 2041, last: { by: "member", minutes: 1441 } },
+      })
+    );
+    await assertFails(
+      updateDoc(as("member"), {
+        gameClock: { minute: 660, last: { by: "peer", minutes: 60 } },
+      })
+    );
+    await assertFails(
+      updateDoc(as("member"), {
+        gameClock: { minute: 660, last: { by: "member", minutes: 30 } },
+      })
+    );
+    await assertFails(updateDoc(as("peer"), { gameClock: { minute: 300 } }));
+  });
+
+  it("a malformed clock is refused", async () => {
+    await assertFails(
+      updateDoc(as("member"), {
+        gameClock: { minute: 60.5, last: { by: "member", minutes: 60.5 } },
+      })
+    );
+    await assertFails(
+      updateDoc(as("member"), { gameClock: { minute: 0, timeOfDay: 1440 } })
+    );
+    await assertFails(updateDoc(as("member"), { gameClock: "noon" }));
+    await assertFails(
+      updateDoc(as("member"), {
+        gameClock: { minute: 60, last: { by: "member", minutes: 60 }, extra: 1 },
+      })
+    );
+  });
+
+  it("the last step is undone by its writer or the DM, not by another member", async () => {
+    await seedClock({ minute: 600, timeOfDay: 700, last: { by: "member", minutes: 60 } });
+    await assertFails(
+      updateDoc(as("peer"), { gameClock: { minute: 540, timeOfDay: 640 } })
+    );
+    await assertSucceeds(
+      updateDoc(as("member"), { gameClock: { minute: 540, timeOfDay: 640 } })
+    );
+    await seedClock({ minute: 600, last: { by: "member", minutes: 60 } });
+    await assertSucceeds(updateDoc(as("dm"), { gameClock: { minute: 540 } }));
+    // Nothing left to undo: no second step back.
+    await assertFails(updateDoc(as("dm"), { gameClock: { minute: 480 } }));
+  });
+
+  it("any member may set the time of day, the minute and the step untouched", async () => {
+    await seedClock({ minute: 600, last: { by: "member", minutes: 60 } });
+    await assertSucceeds(
+      updateDoc(as("peer"), {
+        gameClock: { minute: 600, timeOfDay: 1320, last: { by: "member", minutes: 60 } },
+      })
+    );
+    await assertFails(
+      updateDoc(as("peer"), { gameClock: { minute: 600, timeOfDay: 1320 } })
+    );
+  });
+
+  it("a fresh campaign's time of day can be set before any step", async () => {
+    await assertSucceeds(
+      updateDoc(as("member"), { gameClock: { minute: 0, timeOfDay: 480 } })
+    );
+  });
+
+  it("the combat-effect write path can't carry a clock change", async () => {
+    await assertFails(
+      updateDoc(as("member"), {
+        "encounter.round": 2,
+        gameClock: { minute: 60, last: { by: "member", minutes: 60 } },
+      })
+    );
+  });
+});
+
 describe("firestore.rules — character parents: access matrix, revision CAS, DM detach", () => {
   // Cross-user access is DERIVED LIVE: the char doc carries only the
   // `attachedCampaignId` pointer (written atomically with the roster by the attach

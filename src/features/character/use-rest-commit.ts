@@ -6,11 +6,15 @@
  * (rest-world-boundary.ts), applies a Short Rest's heal and its spent Hit Point Dice,
  * and ends the current fight. A rest is the undo stack's fence: it is not undone.
  */
+import { clockFor } from "@/lib/play/clock";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { canCharacterRest } from "@/lib/character-status";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { stepCampaignClock } from "@/features/campaigns/clock-io";
+import { diagnosticsLog } from "@/lib/diagnostics";
+import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -64,13 +68,27 @@ export function useRestCommit() {
   /** With a time of day set, the dawn or dusk the rest crosses (M18): what recovers
    *  then, recovers now, each with its undo toast. */
   function fireClock(reviewed: CharacterDoc, minutes: number): void {
-    for (const kind of crossedBoundaries(reviewed.session.timeOfDay, minutes)) {
+    for (const kind of crossedBoundaries(clockFor(reviewed).timeOfDay, minutes)) {
       void declareClockBoundary(
         itemResourceCommands,
         kind,
         t(`magicItems.clockApplied_${kind}`)
       );
     }
+  }
+
+  /** A campaign character's rest moves the campaign's clock (`clockFor`): the step is
+   *  written on the campaign and the sheet marks the minute it caught up to. */
+  function stepCampaign(reviewed: CharacterDoc, minutes: number): void {
+    const clock = clockFor(reviewed);
+    const uid = useAuthStore.getState().user?.uid;
+    if (clock.scope !== "campaign" || !uid) return;
+    updateSession({ clockSeen: clock.minute + minutes });
+    void stepCampaignClock(clock.campaignId, minutes, uid).catch((error: unknown) =>
+      diagnosticsLog("warn", "play.campaign-clock-write-failed", {
+        message: String(error),
+      })
+    );
   }
 
   /** A Short Rest healing `healedHp` (the entered roll + CON per die, 0 without
@@ -89,6 +107,7 @@ export function useRestCommit() {
     );
     restThroughWorld("short", { healedHp });
     fireClock(reviewed, SHORT_REST_MINUTES);
+    stepCampaign(reviewed, SHORT_REST_MINUTES);
     if (healedHp > 0) setHP(newHp);
     if (hitDice > 0) updateSession({ hitDice: { used: session.hitDice.used + hitDice } });
     // A short rest ends the current fight — return combat to baseline.
@@ -102,6 +121,7 @@ export function useRestCommit() {
     if (!prepared) return null;
     restThroughWorld("long");
     fireClock(reviewed, LONG_REST_MINUTES);
+    stepCampaign(reviewed, LONG_REST_MINUTES);
     // A long rest ends the current fight — return combat to baseline.
     useCombatStore.getState().endCombat();
     return prepared;

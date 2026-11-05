@@ -3,6 +3,7 @@
  * passes (1 minute, 10 minutes, 1 hour, 8 hours, or any number of minutes), what it
  * ends, named, then «Fai passare», with its undo toast (`passTimeWithUndo`).
  */
+import { clockFor } from "@/lib/play/clock";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -14,7 +15,7 @@ import {
 } from "@/domains/play/time-pass-view";
 import { useOptionalItemResourceCommands } from "@/features/character/center/useItemResourceCommands";
 import { declareClockBoundary } from "@/features/character/clock-boundaries";
-import { passTimeWithUndo } from "@/features/character/pass-time";
+import { longestTimePass, passTimeWithUndo } from "@/features/character/pass-time";
 import { crossedBoundaries } from "@/lib/play/time";
 import type { Locale } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
@@ -35,7 +36,7 @@ export function PlayTime({
   const [typed, setTyped] = useState("");
   // The time of day (M18): optional. Once set, it is shown here every time, moved by
   // the time that passed; never asked twice.
-  const known = doc.session.timeOfDay;
+  const known = clockFor(doc).timeOfDay;
   const [askTime, setAskTime] = useState(known !== undefined);
   const [clock, setClock] = useState(known !== undefined ? clockText(known) : "");
   const timeOfDay = askTime ? (parseClockText(clock) ?? undefined) : known;
@@ -77,7 +78,7 @@ export function PlayTime({
           </Button>
           <Button
             kind="primary"
-            disabled={minutes <= 0}
+            disabled={minutes <= 0 || minutes > longestTimePass(doc)}
             onClick={() => {
               // «Passa 1 ora», «Passano 10 minuti»: the verb agrees with the span.
               const one = minutes === 1 || minutes === 60;

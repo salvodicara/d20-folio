@@ -72,6 +72,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   summons?: NonNullable<SessionState["summons"]>;
   death?: NonNullable<SessionState["death"]>;
   timeOfDay?: number;
+  clockSeen?: number;
   stableSince?: number;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
@@ -142,6 +143,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "summons",
   "death",
   "timeOfDay",
+  "clockSeen",
   "stableSince",
   "familiar",
   "manifestedWeaponOverrides",
@@ -437,6 +439,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.summons) state.summons = session.summons;
   if (session.death) state.death = session.death;
   if (session.timeOfDay !== undefined) state.timeOfDay = session.timeOfDay;
+  if (session.clockSeen !== undefined) state.clockSeen = session.clockSeen;
   if (session.stableSince !== undefined) state.stableSince = session.stableSince;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
@@ -1037,6 +1040,13 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   }
   const timeOfDay = parseTimeOfDay(state.timeOfDay);
   if (timeOfDay !== undefined) session.timeOfDay = timeOfDay;
+  if (
+    typeof state.clockSeen === "number" &&
+    Number.isSafeInteger(state.clockSeen) &&
+    state.clockSeen >= 0
+  ) {
+    session.clockSeen = state.clockSeen;
+  }
   if (
     typeof state.stableSince === "number" &&
     Number.isFinite(state.stableSince) &&

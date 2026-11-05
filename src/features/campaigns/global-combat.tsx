@@ -88,6 +88,8 @@ import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { CampaignDoc, EncounterPc } from "@/types/campaign";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCampaignClockProjection } from "@/features/campaigns/campaign-clock-projection";
+import { catchUpCampaignClock, clockCatchUpTarget } from "@/features/character/pass-time";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
 
@@ -307,6 +309,19 @@ export function GlobalCombatMount(): null {
     const varies = campaign?.tableRules && Object.keys(campaign.tableRules).length > 0;
     setTableRules(openCharacterId, varies ? effectiveTableRules(campaign) : null);
   }, [campaigns, openCharacterId, uid, setTableRules]);
+
+  // The campaign clock (`lib/play/clock.ts`): the open character reads its time of
+  // day and countdowns from its campaign's clock, with this release's rules deployed.
+  // Re-projected when a reload drops it; the owner's sheet then catches up to it.
+  const clockCampaign =
+    openCharacterId && uid
+      ? campaigns.find((c) => c.memberDetails[uid]?.characterId === openCharacterId)
+      : undefined;
+  useCampaignClockProjection(openCharacterId ?? undefined, clockCampaign);
+  const catchUpTo = useCharacterStore(clockCatchUpTarget);
+  useEffect(() => {
+    if (catchUpTo !== null) catchUpCampaignClock();
+  }, [catchUpTo]);
 
   // A fight of mine just ended: half the ammunition it spent can be recovered (SRD,
   // a minute searching the battlefield). Offered once, with its undo.

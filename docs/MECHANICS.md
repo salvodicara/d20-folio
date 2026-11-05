@@ -270,6 +270,14 @@ effects (log, undo, persistence, the encounter) stay with the store
 - `session.timeOfDay` is optional (minutes since midnight). Dawn is 06:00, dusk 18:00.
   Crossing dawn recharges dawn item charges (`equipmentAfterDawn`). With no time of day set, a
   Long Rest counts as a dawn (`restCrossesDawn`).
+- The campaign clock (`src/lib/play/clock.ts`, `campaign-clock.ts`): a character in a campaign
+  reads its time of day and countdowns from `campaign.gameClock` through `clockFor`; a solo sheet
+  reads its own. No other file reads `session.timeOfDay` (`clock-reads.guard`). Countdowns are
+  derived on read: `docAtClock` passes the campaign minutes since `session.clockSeen`, so any
+  viewer sees them; the owner's device stores that catch-up (`catchUpCampaignClock`). A member's
+  «Passa il tempo» or rest steps the clock forward (at most 1440 minutes, recorded as theirs);
+  the undo steps back, by the writer or the DM only (firestore.rules `gameClockWrite`). Behind
+  `VITE_COMBAT_EFFECTS_V26`.
 - Stable at 0 HP is tracked (`stableMinutes`); the 1d4-hour wake is the table's roll.
 
 ### Conditions
