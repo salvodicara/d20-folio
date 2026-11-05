@@ -50,7 +50,14 @@ export type CombatEffectDuration =
       round: number;
       phase: "turn-start" | "turn-end";
     }
-  | { kind: "encounter" };
+  | { kind: "encounter" }
+  /** On the campaign clock, out of a fight (`campaigns/{id}/effects`): live until the
+   *  campaign minute `untilMinute`; one held by Concentration also ends with it. */
+  | {
+      kind: "game-clock";
+      untilMinute: number;
+      concentration?: { actorId: string; sourceId: string };
+    };
 
 /** Values frozen when an effect is created because they belong to the source, not the
  * recipient. They are deliberately numeric snapshots: later source-sheet changes must

@@ -1286,10 +1286,101 @@ service cloud.firestore {
         || (chestCol == 'chestLog' && resource.data.by == request.auth.uid))));
     }
 
+    // The campaign's effects out of a fight (lib/play/campaign-effects.ts): a state one
+    // creature left on another, live on the campaign clock (`game-clock`, until a
+    // campaign minute), possibly held by its caster's Concentration. A member writes the
+    // effects they cast (actor = their own PC); `ended` (Concentration over, or revoked)
+    // is the only change, by the actor or the DM, so an undo brings the same occurrence
+    // back. Excluded from the member wildcard below.
+    function ceText(value) {
+      return value is string && value.size() > 0 && value.size() <= 256;
+    }
+    function ceRef(ref) {
+      return ref is map
+        && ceText(ref.get('combatantId', ''))
+        && (
+          (ref.get('kind', '') == 'monster' && ref.keys().hasOnly(['kind', 'combatantId']))
+          ||
+          (ref.get('kind', '') == 'pc'
+            && ceText(ref.get('memberUid', ''))
+            && ceText(ref.get('characterId', ''))
+            && ref.keys().hasOnly(['kind', 'combatantId', 'memberUid', 'characterId']))
+        );
+    }
+    function ceValid(effect, effectId) {
+      let source = effect.get('source', {});
+      let payload = effect.get('payload', {});
+      let lasts = effect.get('duration', {});
+      let link = lasts.get('concentration', null);
+      let bindings = effect.get('bindings', null);
+      return effect.keys().hasOnly(['id', 'actor', 'target', 'source', 'payload', 'bindings', 'duration'])
+        && effect.get('id', '') == effectId
+        && ceRef(effect.get('actor', null))
+        && ceRef(effect.get('target', null))
+        && source is map
+        && source.get('kind', '') in ['spell', 'feature']
+        && ceText(source.get('id', ''))
+        && ceText(source.get('actionId', ''))
+        && source.keys().hasOnly(['kind', 'id', 'actionId', 'castLevel'])
+        && (source.get('castLevel', 1) is int)
+        && payload is map
+        && (
+          (payload.get('kind', '') == 'grant-group'
+            && ceText(payload.get('activeKey', ''))
+            && payload.get('phase', 'active') in ['active', 'aftereffect']
+            && payload.keys().hasOnly(['kind', 'activeKey', 'phase']))
+          ||
+          (payload.get('kind', '') == 'target-mark'
+            && ceText(payload.get('activeKey', ''))
+            && payload.get('scope', '') in ['marked', 'cursed', 'vowed']
+            && payload.keys().hasOnly(['kind', 'activeKey', 'scope']))
+          ||
+          (payload.get('kind', '') == 'condition'
+            && ceText(payload.get('conditionId', ''))
+            && payload.keys().hasOnly(['kind', 'conditionId']))
+        )
+        && (bindings == null
+          || (bindings is map
+            && bindings.keys().hasOnly(['spellcastingModifier', 'saveDc'])
+            && bindings.get('spellcastingModifier', 0) is int
+            && bindings.get('saveDc', 1) is int))
+        && lasts is map
+        && lasts.get('kind', '') == 'game-clock'
+        && lasts.keys().hasOnly(['kind', 'untilMinute', 'concentration'])
+        && lasts.get('untilMinute', -1) is int
+        && lasts.untilMinute >= 0
+        && (link == null
+          || (link is map
+            && link.keys().hasOnly(['actorId', 'sourceId'])
+            && link.get('actorId', '') == effect.actor.combatantId
+            && ceText(link.get('sourceId', ''))));
+    }
+    match /campaigns/{campId}/effects/{effectId} {
+      function ceCampaign() {
+        return get(/databases/$(database)/documents/campaigns/$(campId)).data;
+      }
+      function ceMember() {
+        return isNotBlocked() && request.auth.uid in ceCampaign().members;
+      }
+      function ceDm() {
+        return isAdmin() || (isNotBlocked() && request.auth.uid == ceCampaign().dmUid);
+      }
+      function ceActor(effect) {
+        return effect.actor.get('memberUid', '') == request.auth.uid;
+      }
+      allow read: if ceDm() || ceMember();
+      allow create: if (ceDm() || (ceMember() && ceActor(request.resource.data)))
+        && ceValid(request.resource.data, effectId);
+      allow update: if (ceDm() || (ceMember() && ceActor(resource.data)))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['ended'])
+        && request.resource.data.get('ended', null) in [null, 'concentration', 'revoked'];
+      allow delete: if ceDm() || (ceMember() && ceActor(resource.data));
+    }
+
     match /campaigns/{campId}/{subcol}/{docId} {
       allow read, write: if subcol != 'dmNotes' && subcol != 'sessionLogs' && subcol != 'combat'
         && subcol != 'chest' && subcol != 'pickups' && subcol != 'chestLog'
-        && subcol != 'dmItems' && subcol != 'itemReveals' && isNotBlocked()
+        && subcol != 'dmItems' && subcol != 'itemReveals' && subcol != 'effects' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
     }
 

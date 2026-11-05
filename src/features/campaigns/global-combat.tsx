@@ -89,6 +89,23 @@ import type { CampaignDoc, EncounterPc } from "@/types/campaign";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCampaignClockProjection } from "@/features/campaigns/campaign-clock-projection";
+import {
+  subscribeCampaignEffects,
+  setCampaignEffectsEnded,
+  writeCampaignEffects,
+} from "@/features/campaigns/campaign-effects-io";
+import {
+  campaignEffectsFor,
+  concentrationChange,
+  outlastingFightEffects,
+  withCampaignEffects,
+  type CampaignEffectDoc,
+  type ConcentrationMemo,
+} from "@/lib/play/campaign-effects";
+import { combatEffectsV26On } from "@/lib/deployed-rules";
+import { concentrationTimerKey } from "@/lib/spell-duration";
+import type { CombatEffectOp, EncounterPosition } from "@/types/combat-effect";
+import { diagnosticsLog } from "@/lib/diagnostics";
 import { catchUpCampaignClock, clockCatchUpTarget } from "@/features/character/pass-time";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
@@ -323,6 +340,77 @@ export function GlobalCombatMount(): null {
     if (catchUpTo !== null) catchUpCampaignClock();
   }, [catchUpTo]);
 
+  // The campaign's effects out of a fight (lib/play/campaign-effects.ts): what others
+  // left on my character that lasts on the game clock, read at the campaign minute.
+  // One identity with the fight: the fight's effects are joined, never copied.
+  const effectsCampaignId =
+    clockCampaign && combatEffectsV26On() ? clockCampaign.id : null;
+  const clockMinute = clockCampaign?.gameClock?.minute ?? 0;
+  const [storeRead, setStoreRead] = useState<{
+    campaignId: string;
+    docs: CampaignEffectDoc[];
+  } | null>(null);
+  useEffect(() => {
+    if (!effectsCampaignId) return;
+    return subscribeCampaignEffects(
+      effectsCampaignId,
+      (docs) => setStoreRead({ campaignId: effectsCampaignId, docs }),
+      (error) =>
+        diagnosticsLog("warn", "campaign.effects-read-failed", { message: String(error) })
+    );
+  }, [effectsCampaignId]);
+  const storeEffects = useMemo(
+    () => (storeRead && storeRead.campaignId === effectsCampaignId ? storeRead.docs : []),
+    [storeRead, effectsCampaignId]
+  );
+  const myStoreEffects = useMemo(
+    () => (uid ? campaignEffectsFor(storeEffects, `pc-${uid}`, clockMinute) : []),
+    [storeEffects, uid, clockMinute]
+  );
+
+  // Concentration out of a fight: what my Concentration held on the campaign ends with
+  // it, and the undo of that end brings the same effects back. The first look only
+  // records it (a reload is not a drop).
+  const effectsConcentration = useRef<{ scope: string; memo: ConcentrationMemo } | null>(
+    null
+  );
+  useEffect(() => {
+    if (!effectsCampaignId || !uid || !openCharacterId) {
+      effectsConcentration.current = null;
+      return;
+    }
+    const scope = `${effectsCampaignId}:${openCharacterId}`;
+    const prior =
+      effectsConcentration.current?.scope === scope
+        ? effectsConcentration.current.memo
+        : null;
+    const change = concentrationChange(prior, concentration, storeEffects, `pc-${uid}`);
+    effectsConcentration.current = { scope, memo: change.memo };
+    const failed = () =>
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+    void setCampaignEffectsEnded(effectsCampaignId, change.end, "concentration").catch(
+      failed
+    );
+    void setCampaignEffectsEnded(effectsCampaignId, change.reinstate, null).catch(failed);
+  }, [
+    effectsCampaignId,
+    uid,
+    openCharacterId,
+    concentration,
+    storeEffects,
+    showToast,
+    t,
+  ]);
+
+  // The last look at my fight, so its end can move what outlasts it to the campaign.
+  const lastFight = useRef<{
+    campaignId: string;
+    characterId: string;
+    myId: string;
+    operations: ReadonlyArray<CombatEffectOp> | undefined;
+    position: EncounterPosition;
+  } | null>(null);
+
   // A fight of mine just ended: half the ammunition it spent can be recovered (SRD,
   // a minute searching the battlefield). Offered once, with its undo.
   useEffect(() => {
@@ -334,22 +422,51 @@ export function GlobalCombatMount(): null {
     const doc = useCharacterStore.getState().character;
     if (!doc || doc.id !== was) return;
     offerAmmunitionRecovery(t);
-  }, [status, openCharacterId, t]);
+    // What I left that outlasts the fight moves to the campaign, same identity (Mage
+    // Armor on an ally keeps its hours); what ends with the fight stays behind.
+    const fight = lastFight.current;
+    if (!fight || fight.characterId !== was || fight.campaignId !== effectsCampaignId)
+      return;
+    const moving = outlastingFightEffects(fight.operations, fight.position, {
+      actorId: fight.myId,
+      minute: clockMinute,
+      concentrationRoundsLeft: (sourceId) =>
+        doc.session.effectTimers?.[concentrationTimerKey(sourceId)]?.roundsLeft,
+    });
+    void writeCampaignEffects(fight.campaignId, moving).catch(() =>
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 })
+    );
+  }, [status, openCharacterId, t, effectsCampaignId, clockMinute, showToast]);
 
   // Project campaign-owned standing effects onto the viewer's own open character.
   // This reuses the primary encounter listener above; the character store scopes the
   // projection by character id and the character codec never persists it.
   useEffect(() => {
     if (!status || !live) {
-      setEncounterEffects(null);
+      if (openCharacterId && myStoreEffects.length > 0) {
+        setEncounterEffects(openCharacterId, myStoreEffects);
+      } else {
+        setEncounterEffects(null);
+      }
       return;
     }
-    const effects = effectsForTarget(live.encounter.effectOps, status.myId, {
+    const position: EncounterPosition = {
       round: live.encounter.round,
       currentCombatantId: live.encounter.currentCombatantId,
       phase: "turn-start",
       order: live.encounter.order ?? live.view.turnOrderIds,
-    });
+    };
+    lastFight.current = {
+      campaignId: status.campaignId,
+      characterId: status.characterId,
+      myId: status.myId,
+      operations: live.encounter.effectOps,
+      position,
+    };
+    const effects = withCampaignEffects(
+      effectsForTarget(live.encounter.effectOps, status.myId, position),
+      status.characterId === openCharacterId ? myStoreEffects : []
+    );
     setEncounterEffects(status.characterId, effects);
     const current = useCharacterStore.getState().character;
     const ownRow = live.view.rows.find((row) => row.id === status.myId);
@@ -364,7 +481,7 @@ export function GlobalCombatMount(): null {
     ) {
       useCharacterStore.getState().setConcentration("", { undoable: false });
     }
-  }, [status, live, setEncounterEffects]);
+  }, [status, live, setEncounterEffects, openCharacterId, myStoreEffects]);
 
   // The incapacitation sweep: a creature that can no longer act (0 HP, Unconscious,
   // Stunned…) loses its Concentration effects and the grapples it holds. Each device

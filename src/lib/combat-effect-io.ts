@@ -37,6 +37,16 @@ function isCombatEffectDuration(value: unknown): boolean {
   if (value.kind === "concentration") {
     return isString(value.actorId) && isString(value.sourceId);
   }
+  if (value.kind === "game-clock") {
+    const link = value.concentration;
+    return (
+      typeof value.untilMinute === "number" &&
+      Number.isSafeInteger(value.untilMinute) &&
+      value.untilMinute >= 0 &&
+      (link === undefined ||
+        (isRecord(link) && isString(link.actorId) && isString(link.sourceId)))
+    );
+  }
   return (
     value.kind === "turn-boundary" &&
     isString(value.combatantId) &&
