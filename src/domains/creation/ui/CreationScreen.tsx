@@ -30,6 +30,7 @@ import {
   SpeciesStep,
   type AbilityMethod,
 } from "@/domains/creation/ui/CreationSteps";
+import { ClassCrest } from "@/domains/leveling/ui/ClassCrest";
 import { useCreationDraft } from "@/features/creation/use-creation-draft";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
@@ -45,7 +46,7 @@ import {
 import { createCharacter } from "@/lib/firestore";
 import { BUILD_ERROR_KEYS } from "@/lib/views/creation-view";
 import { useAuthStore } from "@/stores/authStore";
-import { Button, Choice, Field, Icon, Panel, Room } from "@/ui";
+import { Button, Choice, Field, Panel, Room } from "@/ui";
 
 const STEPS = [
   "create.stepClass",
@@ -189,7 +190,7 @@ export function CreationScreen() {
   );
   return (
     <>
-      <Room room="armoury" />
+      <Room room="armoury" band />
       <main id="main" className="f-page f-create">
         <header className="f-ph">
           <div>
@@ -354,9 +355,7 @@ export function CreationScreen() {
                 className="f-create-sum"
               >
                 <div className="f-create-who">
-                  <span className="f-medal medal" aria-hidden="true">
-                    {card && <Icon name={card.art.icon} size={56} />}
-                  </span>
+                  {card && <ClassCrest classId={card.id} size="md" />}
                   <b>
                     {t("create.screen.classLevel", {
                       name: summary.className,
@@ -526,9 +525,7 @@ function ClassStep({
             aria-pressed={current?.id === c.id}
             onClick={() => onPick(c.id)}
           >
-            <span className="f-medal medal" aria-hidden="true">
-              <Icon name={c.art.icon} size={40} />
-            </span>
+            <ClassCrest classId={c.id} size="md" />
             <span className="f-class-name">{c.name}</span>
           </button>
         ))}

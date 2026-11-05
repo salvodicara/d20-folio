@@ -16,11 +16,10 @@
  * Confirming saves a snapshot first, then the level; the toast's «Annulla» puts the
  * snapshot back. Levels this screen cannot draw yet open the classic wizard.
  */
-import { createElement, useMemo, useState, type ReactNode } from "react";
+import { createElement, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate } from "react-router";
 
-import { BlockMarkdown } from "@/components/shared/BlockMarkdown";
 import {
   FolioBookIcon,
   FolioFeatIcon,
@@ -43,14 +42,7 @@ import {
   levelUpReview,
   type ReviewNumber,
 } from "@/domains/leveling/level-up-review-view";
-import {
-  filterSpellRows,
-  spellPickRows,
-  SPELL_FILTER_FROM,
-  type SpellPickRow,
-} from "@/domains/spells/spell-pick-rows";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
-import { spells as allSpells } from "@/data/spells";
 import { getClasses, primaryClassId } from "@/lib/classes";
 import { abilityModifier } from "@/lib/compute";
 import {
@@ -68,11 +60,13 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
-import { Art, Button, Chip, Choice, Field, Room, Stepper, type ArtKind } from "@/ui";
+import { Button, Chip, Choice, Room, Stepper, type ArtKind } from "@/ui";
+
+import { PickGrid } from "@/domains/spells/ui/PickGrid";
+import { tieLast } from "@/lib/text-ties";
 
 import { ClassCrest } from "./ClassCrest";
 
-const SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
 /** The questions whose options are catalogue entries with painted art. */
 const ROW_ART: Partial<Record<string, ArtKind>> = {
   subclass: "subclass",
@@ -96,7 +90,6 @@ export function LevelUpScreen({
   const owned = getClasses(c);
   const [classId, setClassId] = useState(() => primaryClassId(c));
   const [answers, setAnswers] = useState<LevelUpAnswers>(NO_ANSWERS);
-  const [focus, setFocus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -177,10 +170,7 @@ export function LevelUpScreen({
     }
   }
 
-  const toggle = (row: AskRow, id: string) => {
-    setAnswers(toggleAnswer(answers, row, id));
-    if (row.spell) setFocus(id);
-  };
+  const toggle = (row: AskRow, id: string) => setAnswers(toggleAnswer(answers, row, id));
   const confirmLabel = t("levelUp.screen.confirm", { level: plan.newLevel });
   const owedLabel = t("levelUp.screen.owed", { count: owed });
   const canConfirm = asks.complete && !saving && after !== null;
@@ -322,7 +312,6 @@ export function LevelUpScreen({
               row={row}
               step={steps.find((s) => s.key === row.key)}
               locale={locale}
-              focus={focus}
               onToggle={(id) => toggle(row, id)}
             />
           ))}
@@ -472,45 +461,14 @@ function Question({
   row,
   step,
   locale,
-  focus,
   onToggle,
 }: {
   row: AskRow;
   step: LevelUpStep | undefined;
   locale: Locale;
-  focus: string | null;
   onToggle: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const spellRows = useMemo(
-    () =>
-      row.spell
-        ? spellPickRows(
-            row.options.map((o) => o.id),
-            locale
-          )
-        : [],
-    [row, locale]
-  );
-  const byId = new Map(spellRows.map((s) => [s.id, s]));
-  const [query, setQuery] = useState("");
-  const [level, setLevel] = useState<number | null>(null);
-  const filtering = spellRows.length > SPELL_FILTER_FROM;
-  const levels = [...new Set(spellRows.map((r) => r.level))].sort((a, b) => a - b);
-  // A long list narrows by name and level; the picks stay on top whatever the filter.
-  const shown = filtering
-    ? [
-        ...row.options.filter((o) => row.picked.includes(o.id)),
-        ...filterSpellRows(spellRows, query, level)
-          .filter((r) => !row.picked.includes(r.id))
-          .map((r) => ({ id: r.id, label: r.name })),
-      ]
-    : row.options;
-  const levelName = (n: number) =>
-    n === 0 ? t("spells.cantrip") : t("spells.level", { level: n });
-  const inspected =
-    (focus && byId.get(focus)) ?? (row.picked[0] ? byId.get(row.picked[0]) : undefined);
-  const kind = ROW_ART[row.key];
   return (
     <section id={`lvl-${row.key}`} className="f-lvl-sec">
       <h2>
@@ -524,117 +482,17 @@ function Question({
           </span>
         )}
       </h2>
-      {filtering && (
-        <div className="f-lvl-tools">
-          <Field
-            label={t("spells.pick.search")}
-            type="search"
-            autoComplete="off"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {levels.length > 1 && (
-            <div className="f-chips" role="group" aria-label={t("spells.pick.byLevel")}>
-              <Chip pressed={level === null} onClick={() => setLevel(null)}>
-                {t("common.all")}
-              </Chip>
-              {levels.map((n) => (
-                <Chip
-                  key={n}
-                  pressed={level === n}
-                  onClick={() => setLevel(level === n ? null : n)}
-                >
-                  {levelName(n)}
-                </Chip>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      <div className="f-lvl-grid" role="group" aria-label={row.title}>
-        {shown.map((o) => {
-          const on = row.picked.includes(o.id);
-          const spell = byId.get(o.id);
-          const school = SCHOOL.get(o.id);
-          return (
-            <button
-              key={o.id}
-              type="button"
-              className="f-lvl-opt"
-              aria-pressed={on}
-              onClick={() => onToggle(o.id)}
-            >
-              {spell && school ? (
-                <SpellArt id={o.id} school={school} />
-              ) : kind ? (
-                <span className="f-lvl-opt-art">
-                  <Art
-                    kind={kind}
-                    id={o.id}
-                    fallback={createElement(FolioFeatIcon, { "aria-hidden": true })}
-                  />
-                </span>
-              ) : null}
-              {spell && (
-                <span className="f-lvl-opt-lv">
-                  {spell.level === 0 ? "T" : spell.level}
-                </span>
-              )}
-              {on && (
-                <span className="f-lvl-tick" aria-hidden="true">
-                  ✓
-                </span>
-              )}
-              <span className="f-lvl-opt-n">
-                {tieLast(o.label).replace(/\//g, "/\u200b")}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {inspected && <Inspect key={inspected.id} spell={inspected} />}
+      <PickGrid
+        label={row.title}
+        options={row.options}
+        picked={row.picked}
+        spells={row.spell}
+        art={ROW_ART[row.key]}
+        locale={locale}
+        onToggle={onToggle}
+      />
       {row.count === 0 && <p className="f-help">{t("levelUp.screen.optionalHint")}</p>}
     </section>
-  );
-}
-
-/** The spell touched last, read in full: art, level and school, effect, facts, text. */
-function Inspect({ spell }: { spell: SpellPickRow }) {
-  const { t } = useTranslation();
-  const [full, setFull] = useState(false);
-  const school = SCHOOL.get(spell.id);
-  return (
-    <article className="f-lvl-inspect">
-      {school && <SpellArt id={spell.id} school={school} size="lg" />}
-      <div>
-        <h3>{spell.name}</h3>
-        <p className="f-row-s">
-          {spell.level === 0
-            ? t("spells.cantrip")
-            : t("spells.level", { level: spell.level })}
-          {" · "}
-          {spell.school}
-        </p>
-        {spell.effect && <p className="f-lvl-effect">{spell.effect}</p>}
-        {spell.gist && (
-          <p className="f-lvl-gist">
-            <span className="f-lbl">{t("levelUp.screen.gist")}</span>
-            {tieLast(spell.gist)}
-          </p>
-        )}
-        <p className="f-lvl-facts">
-          <span>{spell.castingTime}</span>
-          <span>{spell.range}</span>
-          {spell.concentration && <span>{t("play.concentration")}</span>}
-          {spell.ritual && <span>{t("spells.pick.ritual")}</span>}
-        </p>
-        {/* The full text on request: the card says what the spell does in one line. */}
-        <Button kind="quiet" aria-expanded={full} onClick={() => setFull(!full)}>
-          {full ? t("common.showLess") : t("levelUp.screen.readAll")}
-        </Button>
-        {full && <BlockMarkdown className="f-prose" text={tieTails(spell.description)} />}
-      </div>
-    </article>
   );
 }
 
@@ -666,13 +524,3 @@ function KnownRow({
     </div>
   );
 }
-
-/** A name wraps without leaving its last word alone. */
-const tieLast = (text: string) => text.replace(/ (\S+)$/, "\u00a0$1");
-
-/** Each line of prose ends on its last two words together, never on a lone word. */
-const tieTails = (md: string) =>
-  md
-    .split("\n")
-    .map((line) => (line.startsWith("|") ? line : line.replace(/ (\S+)$/, "\u00a0$1")))
-    .join("\n");

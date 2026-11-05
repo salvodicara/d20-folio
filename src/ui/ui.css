@@ -226,13 +226,13 @@
 }
 .fui .f-room.f-band {
   height: 120px;
-  margin-bottom: -56px;
+  margin-bottom: -16px;
   mask: linear-gradient(var(--shade) 40%, transparent 100%);
 }
 @media (max-width: 640px) {
   .fui .f-room.f-band {
     height: 80px;
-    margin-bottom: -40px;
+    margin-bottom: -8px;
   }
 }
 
@@ -4109,11 +4109,11 @@
   align-self: end;
 }
 
-/* Creation steps 3–4: the species list in two columns, the six ability tiles. */
-@media (min-width: 900px) {
+/* Creation steps 3–4: the species list in two columns where a row fits one facts line. */
+@media (min-width: 1200px) {
   .fui .f-create-list.f-create-two {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     align-content: start;
     column-gap: 12px;
   }
@@ -4247,6 +4247,9 @@
     0 0 40px color-mix(in srgb, var(--gold) 20%, transparent);
   color: var(--gold-hi);
 }
+.fui .f-crest-art[data-size="md"] {
+  --sz: 80px;
+}
 .fui .f-crest-art[data-size="sm"] {
   --sz: 52px;
   box-shadow: none;
@@ -4258,6 +4261,8 @@
 
 /* ---------- level up: the moment (owner's pick 2026-11-05, mockup A «Momento BG3») ---------- */
 .fui .f-lvl {
+  /* the crest overlaps the room band's lower edge (BG3's level-up crest on the scene) */
+  margin-top: -40px;
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 320px;
   gap: 24px;
@@ -4458,6 +4463,11 @@
   height: 22px;
   color: var(--gold);
 }
+.fui .f-pick-title {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
 .fui .f-lvl-count {
   margin-left: auto;
   font: 700 var(--fs-md) var(--font-title);
@@ -4499,7 +4509,7 @@
   cursor: pointer;
 }
 .fui .f-lvl-opt:hover {
-  border-color: var(--gold-line);
+  border-color: var(--line-strong);
 }
 .fui .f-lvl-opt:focus-visible {
   outline: 2px solid var(--gold-hi);
@@ -4553,6 +4563,21 @@
 }
 .fui .f-lvl-opt-n {
   text-wrap: balance;
+}
+.fui .f-pick {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 1101px) {
+  .fui .f-pick[data-inspect] {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+  .fui .f-pick > .f-lvl-inspect {
+    position: sticky;
+    top: 24px;
+    flex-direction: column;
+  }
 }
 .fui .f-lvl-inspect {
   display: flex;
@@ -4710,6 +4735,7 @@
 }
 @media (max-width: 760px) {
   .fui .f-lvl {
+    margin-top: -24px;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     padding-bottom: 88px;
@@ -4837,46 +4863,4 @@
   .fui .f-lvl-hero h1 {
     font-size: var(--fs-lg);
   }
-}
-
-/* ---------- spells to pick: rows that say what each spell is (D&D Beyond's list) ---------- */
-.fui .f-spellpick {
-  display: grid;
-  gap: 12px;
-}
-.fui .f-spellpick-tools {
-  display: grid;
-  gap: 8px;
-}
-.fui .f-spellpick-row {
-  position: relative;
-}
-/* the details button sits inside the row's border, on the right, without a frame */
-.fui .f-spellpick-row > .f-choice {
-  padding-right: 52px;
-}
-.fui .f-spellpick-row .f-row-t {
-  text-wrap: balance;
-}
-.fui .f-spellpick-effect {
-  color: var(--strong);
-}
-.fui .f-spellpick-more {
-  position: absolute;
-  top: 50%;
-  right: 4px;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: var(--r);
-  background: none;
-  color: var(--muted);
-  cursor: pointer;
-  transform: translateY(-50%);
-}
-.fui .f-spellpick-more:hover {
-  background: var(--hover);
-  color: var(--text);
 }

@@ -40,7 +40,7 @@ export function ClassCrest({
   size = "lg",
 }: {
   classId: string;
-  size?: "sm" | "lg";
+  size?: "sm" | "md" | "lg";
 }) {
   return (
     <span className="f-crest-art" data-size={size} data-identity aria-hidden="true">
