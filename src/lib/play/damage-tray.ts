@@ -13,6 +13,7 @@
 import { getSpellById } from "@/data/spells";
 import {
   combatDamageParts,
+  riderConditionSave,
   combatResolutionSpec,
   type SaveDamageOutcome,
 } from "@/lib/combat-resolution";
@@ -177,7 +178,12 @@ export function damageTrayPlan(
       : []
   );
   const hasSave = Boolean(s.saveAbility || s.saveDC);
-  const toppleDc = s.masteryDetail?.toppleDc;
+  const riderSave =
+    condition?.kind === "condition" && condition.optIn
+      ? condition.conditionIds
+          .map((id) => riderConditionSave(action, id))
+          .find((save) => save !== undefined)
+      : undefined;
   // A save governs the damage only when the damage itself rides it (Fireball), not
   // when an attack deals it and the save only gates a rider.
   const parts = combatDamageParts(action);
@@ -238,11 +244,9 @@ export function damageTrayPlan(
             options: condition.conditionIds,
             pickOne: condition.pickOne,
             ...(condition.optIn ? { optIn: true as const } : {}),
-            // SRD 5.2.1 Topple: a Constitution save, DC 8 + the attack's ability
-            // modifier + PB (the engine's `masteryNumbers`).
-            ...(toppleDc !== undefined && condition.conditionIds.includes("prone")
-              ? { save: { ability: "CON", dc: toppleDc } }
-              : {}),
+            // A hit-gated rider's condition rides its own save (Topple's CON;
+            // Brew Poison's CON vs 8 + PB + the feat's ability).
+            ...(riderSave ? { save: riderSave } : {}),
           },
         }
       : {}),
