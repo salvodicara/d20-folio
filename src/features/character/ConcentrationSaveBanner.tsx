@@ -17,7 +17,9 @@ import { bareActionSpend } from "@/lib/play/cast-payment";
 import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import { localizeActions } from "@/lib/views/combat-action-view";
-import { failedD20Savers } from "@/lib/play/failed-d20";
+import { failedD20Savers, type FailedD20Saver } from "@/lib/play/failed-d20";
+import type { Locale } from "@/lib/locale";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
 import { beginWholeStateUndo } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
@@ -133,7 +135,7 @@ function ConcentrationSavePrompt({
       return;
     }
     const message = t("combat.failedD20UsedToast", {
-      spell: concentrationLabel(saver.spellId, locale),
+      spell: saverName(saver, locale),
       total: committed.result.total,
     });
     registerUndoableResult({ message }, undo, castSaver);
@@ -242,7 +244,7 @@ function ConcentrationSavePrompt({
         {saver && (
           <Button variant="primary" size="sm" onClick={castSaver}>
             {t("combat.failedD20Use", {
-              spell: concentrationLabel(saver.spellId, locale),
+              spell: saverName(saver, locale),
               face: saver.face,
             })}
           </Button>
@@ -288,4 +290,11 @@ function ConcentrationSavePrompt({
       )}
     </div>
   );
+}
+
+/** The saver spell's name: a homebrew spell's own, a catalogue spell's localized. */
+function saverName(saver: FailedD20Saver, locale: Locale): string {
+  return saver.customName
+    ? homebrewText(saver.customName, locale)
+    : concentrationLabel(saver.spellId, locale);
 }

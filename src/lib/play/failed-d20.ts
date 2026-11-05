@@ -7,12 +7,15 @@
 import { getSpellById } from "@/data/spells";
 import { slotUsageKey } from "@/lib/cast-options";
 import { homebrewSpellData } from "@/lib/homebrew-spells";
+import type { HomebrewText } from "@/lib/homebrew-text";
 import type { CharacterDoc } from "@/types/character";
 
 export interface FailedD20Saver {
   /** The catalogue id, or the homebrew spell's `custom:<instanceId>` ref (named
    *  through `concentrationLabel`, as a held spell is). */
   spellId: string;
+  /** A homebrew spell's own name (a catalogue spell is named by its id). */
+  customName?: HomebrewText;
   /** The face the d20 becomes. */
   face: number;
   /** The lowest slot level it can be cast with now. */
@@ -41,6 +44,7 @@ export function failedD20Savers(doc: CharacterDoc): FailedD20Saver[] {
     return [
       {
         spellId: custom ? `custom:${spell.instanceId}` : spell.srdId,
+        ...(custom ? { customName: spell.name } : {}),
         face: data.failedD20Becomes,
         slotLevel,
       },
