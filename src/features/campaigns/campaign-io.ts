@@ -57,7 +57,11 @@ import { passTurn, turnBack } from "@/features/campaigns/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
 import { peerDamageState, peerHit } from "@/lib/play/peer-damage";
-import { invertPeerSpends, type PeerSpend } from "@/lib/play/peer-spends";
+import {
+  invertPeerSpends,
+  PEER_SPENDS_CAP,
+  type PeerSpend,
+} from "@/lib/play/peer-spends";
 import { parsePeerSpends, peerSpendsRef } from "@/lib/peer-spends-io";
 import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
@@ -1209,6 +1213,62 @@ async function effectsLeftOn(
     });
     return [];
   }
+}
+
+/**
+ * A state that ends Concentration landed on another PC (`ends-concentration`): the end
+ * of the Concentration its sheet holds is appended to its spends ledger, read fresh in
+ * one transaction; the owner's sheet ends it once. Resolves with the entries written
+ * (none when it holds no Concentration), which the undo inverts
+ * (`appendPeerSpendsInverse`).
+ */
+export async function endPeerConcentration(
+  uid: string,
+  characterId: string
+): Promise<PeerSpend[]> {
+  if ((import.meta.env.DEV && DEV_BYPASS) || !peerSpendsWriterOn()) return [];
+  const combatRef = combatStateRef(uid, characterId);
+  const parentRef = memberCharacterDoc(uid, characterId);
+  const spendsRef = peerSpendsRef(uid, characterId);
+  return runTransaction(db, async (txn) => {
+    const [combatSnap, parentSnap, spendsSnap] = await Promise.all([
+      txn.get(combatRef),
+      txn.get(parentRef),
+      txn.get(spendsRef),
+    ]);
+    if (!parentSnap.exists()) return [];
+    const target = await hydrateStoredCharacter(
+      characterId,
+      parentSnap.data(),
+      combatSnap.exists() ? combatSnap.data() : null
+    );
+    const spell = target.session.concentration;
+    if (!spell) return [];
+    const ledger = spendsSnap.exists() ? parsePeerSpends(spendsSnap.data()) : [];
+    if (ledger.length >= PEER_SPENDS_CAP) return [];
+    const entries: PeerSpend[] = [
+      { id: crypto.randomUUID(), kind: "concentration-end", spell },
+    ];
+    txn.set(spendsRef, { entries: [...ledger, ...entries] });
+    return entries;
+  });
+}
+
+/** Append the inverse of entries this device wrote to a PC's spends ledger (an undo). */
+export async function appendPeerSpendsInverse(
+  uid: string,
+  characterId: string,
+  spends: ReadonlyArray<PeerSpend>
+): Promise<void> {
+  if ((import.meta.env.DEV && DEV_BYPASS) || spends.length === 0) return;
+  const spendsRef = peerSpendsRef(uid, characterId);
+  await runTransaction(db, async (txn) => {
+    const snap = await txn.get(spendsRef);
+    const ledger = snap.exists() ? parsePeerSpends(snap.data()) : [];
+    txn.set(spendsRef, {
+      entries: [...ledger, ...invertPeerSpends(spends, () => crypto.randomUUID())],
+    });
+  });
 }
 
 /** Interpret lifecycle facts from their canonical owner: `status` on the parent,

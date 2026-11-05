@@ -117,7 +117,11 @@ export interface PendingConcentrationSave {
 export type PeerSpend =
   | { id: string; kind: "tracker"; trackerId: string; amount: number }
   | { id: string; kind: "state-end"; key: string }
-  | { id: string; kind: "state-restore"; key: string };
+  | { id: string; kind: "state-restore"; key: string }
+  /** A state that ends Concentration landed on the PC: the one it held ends. */
+  | { id: string; kind: "concentration-end"; spell: string }
+  /** That end's undo: the Concentration comes back, if none was taken up since. */
+  | { id: string; kind: "concentration-restore"; spell: string };
 
 export interface CombatState {
   hp: { current: number; temp: number };

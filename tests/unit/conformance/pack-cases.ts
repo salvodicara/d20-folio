@@ -25,6 +25,7 @@ export const PACK_CASES: ReadonlyArray<string> = [
   "11:Mounted feats and redirects",
   "12:Portent has no range limit",
   // The 2026 books' new mechanics (their subjects are pack entries).
+  "2:A failed save that ends the target's Concentration",
   "4:Feats that change your familiar",
   "5:Always-prepared spells gated by slot level",
   "6:Reacting to another creature's failed D20 Test",

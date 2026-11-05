@@ -401,6 +401,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       alsoWhileIncapacitated: literalSchema(true),
     }
   ),
+  /**
+   * Landing on a creature, this state ends its Concentration (a spell whose failed save
+   * breaks it). The device that applies the state ends it, once: the caster's own sheet,
+   * another PC's through its spends ledger, a monster's Concentration effects revoked.
+   */
+  "ends-concentration": objectSchema({ type: literalSchema("ends-concentration") }),
   "healing-blocked": objectSchema({
     type: literalSchema("healing-blocked"),
   }),

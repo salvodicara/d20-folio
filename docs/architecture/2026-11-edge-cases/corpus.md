@@ -41,6 +41,7 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **Concentration moves become new spells (2024 change)** — Spiritual Weapon now needs concentration, while Divine Favor and Magic Weapon no longer do. Concentration is per-spell data, so the 2014 and 2024 versions of a spell differ. [https://www.wargamer.com/dnd/spiritual-weapon-nerf; KIBBLES #38]
 - **Hex and Hunter's Mark can be moved** — When the cursed target drops to 0 HP, a later Bonus Action moves the same concentration effect to a new target. A higher slot only lengthens the duration. [WIKI spell:hex http://dnd2024.wikidot.com/spell:hex]
 - **Wild Shape ends on Incapacitated, but concentration is separate** — If the Druid is Stunned, Wild Shape ends and concentration also ends. These are two effects ending from one trigger. [WIKI druid:main]
+- **A failed save that ends the target's Concentration** — A spell can make a creature that fails its save lose its Concentration at once, and keep it harder (Disadvantage on the saves to maintain it) while the spell lasts. The state lands on the target and ends its Concentration where it lands. [WIKI spell:disruptive-tune]
 
 ## 3. Forms and transformations
 

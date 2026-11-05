@@ -54,9 +54,11 @@ export function foldPeerSpends(
       trackers = used > 0 ? { ...rest, [id]: { used } } : rest;
     } else if (entry.kind === "state-end") {
       active = active.filter((key) => key !== entry.key);
-    } else if (!active.includes(entry.key)) {
-      active = [...active, entry.key];
+    } else if (entry.kind === "state-restore") {
+      if (!active.includes(entry.key)) active = [...active, entry.key];
     }
+    // Concentration entries end or bring back the held spell through the store's
+    // Concentration teardown (`characterStore.foldPeerSpends`), not here.
   }
   return {
     ...session,
@@ -74,6 +76,15 @@ export function invertPeerSpends(
   return [...spends].reverse().map((entry, index): PeerSpend => {
     const id = newId(index);
     if (entry.kind === "tracker") return { ...entry, id, amount: -entry.amount };
+    if (entry.kind === "concentration-end" || entry.kind === "concentration-restore")
+      return {
+        id,
+        kind:
+          entry.kind === "concentration-end"
+            ? "concentration-restore"
+            : "concentration-end",
+        spell: entry.spell,
+      };
     return {
       id,
       kind: entry.kind === "state-end" ? "state-restore" : "state-end",
