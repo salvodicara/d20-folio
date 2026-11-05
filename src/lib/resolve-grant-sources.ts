@@ -11,6 +11,7 @@
  * path. Keeps the per-page imports trivial — they don't need to pull the
  * SRD indices themselves; the shared `getSrdFeatureSource` does the lookup.
  */
+import { resolveFeatAbilityGrants } from "@/lib/feat-ability";
 import type { GrantSource, Grant } from "@/lib/grants";
 import type {
   SrdFeatureRef,
@@ -138,7 +139,8 @@ export function resolveGrantSourcesForFeatures(
     if (!src) continue;
     sources.push({
       id: "id" in src ? src.id : f.srdId,
-      grants: src.grants,
+      // "The ability increased by this feat" reads the feat's stored answer.
+      grants: src.grants && resolveFeatAbilityGrants(src.grants, f.featAbility ?? null),
       ref: srdRefForFeatureSource(src),
     });
   }

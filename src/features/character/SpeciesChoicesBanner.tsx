@@ -1,7 +1,8 @@
 /**
  * «Scelte da completare» on the classic sheet: the species choices a saved
  * character still owes (a lineage, legacy or ancestry; the spellcasting ability its
- * species spells use; Keen Senses, Skillful), named in a banner whose «Completa»
+ * species spells use; Keen Senses, Skillful) and the ability a feat's increase
+ * raised when the feat never stored it, named in a banner whose «Completa»
  * opens them with the sheet's own pickers. Nothing is written until «Salva»; each
  * choice made then leaves the list. The new UI's twin is `PlaySpeciesChoices`;
  * both read `pendingSpeciesItems` and write through the same store actions.
@@ -79,6 +80,11 @@ function SpeciesChoicesModal({
   const [bundlePicks, setBundlePicks] = useState<Record<string, string>>({});
   const [ability, setAbility] = useState<AbilityCode | null>(null);
   const [featId, setFeatId] = useState<string | null>(null);
+  // Each feat's answer: which ability its increase raised.
+  const [featAbilities, setFeatAbilities] = useState<Record<string, AbilityCode>>({});
+  const featItems = pendingSpeciesItems(doc.character, doc.session, locale).flatMap(
+    (item) => (item.kind === "feat-ability" ? [item] : [])
+  );
   // A Human's Versatile: any origin feat but the one its background already grants.
   const feats = pending.feat
     ? originFeatVMs(locale, new Set(doc.character.bgFeat ? [doc.character.bgFeat] : []))
@@ -88,6 +94,7 @@ function SpeciesChoicesModal({
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
     featId !== null ||
+    Object.keys(featAbilities).length > 0 ||
     Object.values(picks).some((byId: Record<string, ReadonlyArray<string>>) =>
       Object.values(byId).some((ids) => ids.length > 0)
     );
@@ -97,6 +104,8 @@ function SpeciesChoicesModal({
       store.setGrantBundleChoice(key, optionId);
     if (featId) store.setHumanOriginFeat(featId);
     if (ability) store.setSpeciesSpellAbility(ability);
+    for (const [id, code] of Object.entries(featAbilities))
+      store.setFeatAbility(id, code);
     store.resolveSpeciesChoices(picks);
     onClose();
   };
@@ -163,6 +172,26 @@ function SpeciesChoicesModal({
               ))}
             </div>
           )}
+          {featItems.map((item) => (
+            <div key={item.featId} className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs font-semibold text-text-secondary">
+                {t("play.speciesChoices.featAbilityLabel", { feat: item.label })}
+              </span>
+              {item.abilities.map((code) => (
+                <button
+                  key={code}
+                  type="button"
+                  aria-pressed={featAbilities[item.featId] === code}
+                  onClick={() =>
+                    setFeatAbilities({ ...featAbilities, [item.featId]: code })
+                  }
+                  className="fchip fchip-sm"
+                >
+                  {t(`abilities.${code}`)}
+                </button>
+              ))}
+            </div>
+          ))}
           {/* Every skill stays offered: picking one already held only records it. */}
           <FeatureChoicesSection
             slots={pending.slots}

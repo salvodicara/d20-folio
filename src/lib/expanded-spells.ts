@@ -87,7 +87,13 @@ export function getExpandedSpellsThroughLevel(
  */
 export type AlwaysPreparedEntry =
   | string
-  | { spellId: string; spellAbility?: AbilityCode; speciesSpellAbility?: boolean };
+  | {
+      spellId: string;
+      spellAbility?: AbilityCode;
+      speciesSpellAbility?: boolean;
+      /** The granting feat whose `featAbility` casts it (deferred, read live). */
+      featSpellAbility?: string;
+    };
 
 export function injectExpandedSpells(
   existing: ReadonlyArray<SrdSpellRef | CustomSpell>,
@@ -114,12 +120,15 @@ export function injectExpandedSpells(
     const ability = typeof entry === "string" ? undefined : entry.spellAbility;
     const speciesDeferred =
       typeof entry === "string" ? undefined : entry.speciesSpellAbility;
+    const featDeferred = typeof entry === "string" ? undefined : entry.featSpellAbility;
     const upgraded: SrdSpellRef = { ...s, prepared: true, alwaysPrepared: true };
     // Only fill an ability source the stored ref lacks (preserve a player pin).
     if (ability && upgraded.spellAbilityOverride == null) {
       upgraded.spellAbilityOverride = ability;
-    } else if (speciesDeferred && upgraded.spellAbilityOverride == null) {
-      upgraded.speciesSpellAbility = true;
+    } else if (upgraded.spellAbilityOverride == null) {
+      if (speciesDeferred) upgraded.speciesSpellAbility = true;
+      if (featDeferred && upgraded.featSpellAbility == null)
+        upgraded.featSpellAbility = featDeferred;
     }
     return upgraded;
   });
@@ -131,11 +140,16 @@ export function injectExpandedSpells(
     const ability = typeof entry === "string" ? undefined : entry.spellAbility;
     const speciesDeferred =
       typeof entry === "string" ? undefined : entry.speciesSpellAbility;
+    const featDeferred = typeof entry === "string" ? undefined : entry.featSpellAbility;
     const ref: SrdSpellRef = { srdId: id, prepared: true, alwaysPrepared: true };
-    // `spellAbility` (concrete pin) and `speciesSpellAbility` (deferred to the
-    // character's species pick) are mutually exclusive; prefer the concrete pin.
+    // `spellAbility` (concrete pin) wins over the deferred markers: the feat's
+    // answer (`featSpellAbility`), then the species pick (`speciesSpellAbility`,
+    // also the feat's unanswered fallback when its grant names it).
     if (ability) ref.spellAbilityOverride = ability;
-    else if (speciesDeferred) ref.speciesSpellAbility = true;
+    else {
+      if (featDeferred) ref.featSpellAbility = featDeferred;
+      if (speciesDeferred) ref.speciesSpellAbility = true;
+    }
     added.push(ref);
     haveIds.add(id);
   }
@@ -174,14 +188,17 @@ export interface AlwaysPreparedOptions {
 }
 
 export function getAlwaysPreparedFromGrants(
-  grantSources: ReadonlyArray<{ grants?: ReadonlyArray<Grant> }>,
+  grantSources: ReadonlyArray<{ id?: string; grants?: ReadonlyArray<Grant> }>,
   opts: AlwaysPreparedOptions = {}
 ): AlwaysPreparedEntry[] {
   const { level, maxSlotLevel, bundleChoices } = opts;
   const out: AlwaysPreparedEntry[] = [];
   const seen = new Set<string>();
 
-  const pushSpell = (g: Extract<Grant, { type: "always-prepared-spell" }>) => {
+  const pushSpell = (
+    g: Extract<Grant, { type: "always-prepared-spell" }>,
+    sourceId: string | undefined
+  ) => {
     if (seen.has(g.spellId)) return;
     // minLevel gate — skip spells the character hasn't reached yet.
     if (g.minLevel != null && level != null && level < g.minLevel) return;
@@ -194,28 +211,34 @@ export function getAlwaysPreparedFromGrants(
       out.push({ spellId: g.spellId, spellAbility: g.spellAbility });
     } else if (g.spellAbilitySource === "species") {
       out.push({ spellId: g.spellId, speciesSpellAbility: true });
+    } else if (g.spellAbilitySource === "feat" && sourceId) {
+      out.push({
+        spellId: g.spellId,
+        featSpellAbility: sourceId,
+        ...(g.spellAbilityFallback === "species" ? { speciesSpellAbility: true } : {}),
+      });
     } else {
       out.push(g.spellId);
     }
   };
 
-  const walk = (grants: ReadonlyArray<Grant>) => {
+  const walk = (grants: ReadonlyArray<Grant>, sourceId: string | undefined) => {
     for (const g of grants) {
       if (g.type === "always-prepared-spell") {
-        pushSpell(g);
+        pushSpell(g, sourceId);
       } else if (g.type === "choice-grant-bundle") {
         const selected = bundleChoices?.get(g.bundleKey);
         if (selected == null) continue;
         const chosen = g.options.find((o) => o.id === selected);
         // One level deep — descend only the selected option's grants.
         for (const inner of chosen?.grants ?? []) {
-          if (inner.type === "always-prepared-spell") pushSpell(inner);
+          if (inner.type === "always-prepared-spell") pushSpell(inner, sourceId);
         }
       }
     }
   };
 
-  for (const src of grantSources) walk(src.grants ?? []);
+  for (const src of grantSources) walk(src.grants ?? [], src.id);
   return out;
 }
 

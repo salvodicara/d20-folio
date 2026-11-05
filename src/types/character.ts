@@ -111,6 +111,15 @@ export interface SrdSpellRef {
    * "species"`. A literal `spellAbilityOverride` still takes precedence.
    */
   speciesSpellAbility?: boolean;
+  /**
+   * A feat's spell whose casting ability is "the ability increased by this feat"
+   * (Fey-Touched's Misty Step): the granting feat's id. A DEFERRED marker like
+   * `speciesSpellAbility`: `resolveSpellAbility` reads that feat ref's live
+   * `featAbility`; while it is unanswered the spell keeps the rest of the chain
+   * (the species marker, then the class ability). Stamped by the always-prepared
+   * injection from a grant's `spellAbilitySource: "feat"`.
+   */
+  featSpellAbility?: string;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }
@@ -168,6 +177,15 @@ export interface SrdFeatureRef {
   contentOverrides?: Partial<ContentBlockData>[];
   /** Generic field overrides */
   overrides?: Record<string, unknown>;
+  /**
+   * The ability this feat's "Ability Score Increase" raised, when the feat lets
+   * you choose (Fey-Touched: INT, WIS or CHA). The one source of truth for "the
+   * ability increased by this feat": its spells, Concentration bonus and formulas
+   * read it live (`featAbilityOf`). Written by the level-up commit that applies
+   * the +1; absent on older characters, which the «Scelte da completare» banner
+   * asks once (the +1 itself is already in their scores).
+   */
+  featAbility?: AbilityCode;
   /** Unknown persisted keys, preserved verbatim by the codec — never read by the app. */
   unknown?: Record<string, unknown>;
 }

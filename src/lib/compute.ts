@@ -1200,13 +1200,23 @@ export function flatSaveBonus(
 export function resolveConcentrationSaveBonus(
   aggregate: Pick<
     AggregatedGrants,
-    "concentrationSaveBonusFlat" | "concentrationSaveBonusAbilities"
+    | "concentrationSaveBonusFlat"
+    | "concentrationSaveBonusAbilities"
+    | "concentrationSaveSchoolBonuses"
   >,
-  abilityScores: Record<AbilityCode, number>
+  abilityScores: Record<AbilityCode, number>,
+  /** The school of the spell held, for the bonuses scoped to one. */
+  heldSchool?: string
 ): number {
   let total = aggregate.concentrationSaveBonusFlat;
   for (const { ability, min } of aggregate.concentrationSaveBonusAbilities) {
     total += Math.max(abilityModifier(abilityScores[ability]), min);
+  }
+  for (const b of aggregate.concentrationSaveSchoolBonuses) {
+    if (b.school !== heldSchool) continue;
+    total += b.ability
+      ? Math.max(abilityModifier(abilityScores[b.ability]), b.min)
+      : b.amount;
   }
   return total;
 }

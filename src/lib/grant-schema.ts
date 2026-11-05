@@ -1108,6 +1108,10 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("WIS"),
         literalSchema("CHA"),
       ]),
+      /** "The ability increased by this feat" casts the picked spell: it reads the
+       *  owning feat's `featAbility` live. Picks are traced back to the feat by
+       *  their `freeCastSource`, which such a slot must carry. */
+      spellAbilitySource: literalSchema("feat"),
       spellAbilityChoice: arraySchema(
         unionSchema([
           literalSchema("STR"),
@@ -1271,7 +1275,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("WIS"),
         literalSchema("CHA"),
       ]),
-      spellAbilitySource: literalSchema("species"),
+      /** Whose pick sets the casting ability: the species' INT/WIS/CHA pick, or
+       *  "the ability increased by this feat" (the owning feat's `featAbility`). */
+      spellAbilitySource: unionSchema([literalSchema("species"), literalSchema("feat")]),
+      /** With `spellAbilitySource: "feat"`: what the spell reads while the feat's
+       *  answer is missing (the species pick, as before the answer was stored). */
+      spellAbilityFallback: literalSchema("species"),
     }
   ),
   /**
@@ -1492,6 +1501,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("concentration-save-bonus"),
     },
     {
+      /** `"feat"`: the ability increased by the owning feat (its `featAbility`);
+       *  no bonus while that answer is missing. */
       ability: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),
@@ -1499,9 +1510,13 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("INT"),
         literalSchema("WIS"),
         literalSchema("CHA"),
+        literalSchema("feat"),
       ]),
       amount: numberSchema,
       min: numberSchema,
+      /** Only while the spell held is of this school (Conjuration Adept's
+       *  Persistent Conjuration). */
+      school: stringSchema,
     }
   ),
   "ability-check-bonus": objectSchema(

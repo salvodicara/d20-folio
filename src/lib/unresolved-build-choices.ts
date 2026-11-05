@@ -9,8 +9,14 @@
  * skill chosen "from any" (a Human's Skillful) can't be told apart from a class's.
  * Those come back `verifiable: false`; a pick from named options counts as made
  * when any of them is proficient.
+ *
+ * Beyond the species: a feat whose increase you choose, when something reads the
+ * choice ("the ability increased by this feat") and the feat ref never stored it
+ * (`featAbility`, written by level-ups since it existed).
  */
+import { FEATS_BY_ID } from "@/data/feats";
 import { getRace } from "@/data/races";
+import { featsOwingAbility } from "@/lib/feat-ability";
 import type { CharacterData, SessionState } from "@/types/character";
 
 export type UnresolvedBuildChoice =
@@ -21,16 +27,33 @@ export type UnresolvedBuildChoice =
   /** An origin feat the species grants, never chosen. */
   | { kind: "feat"; traitId: string }
   /** A skill pick; `verifiable: false` when the sheet can't tell it was made. */
-  | { kind: "skill"; traitId: string; verifiable: boolean };
+  | { kind: "skill"; traitId: string; verifiable: boolean }
+  /** Which ability a feat's increase raised, when something reads it. */
+  | { kind: "feat-ability"; featId: string };
 
-type Build = Pick<
+export type BuildForChoices = Pick<
   CharacterData,
   "race" | "skills" | "humanOriginFeat" | "speciesSpellAbility"
->;
+> &
+  Partial<Pick<CharacterData, "features">>;
 
-/** Every pick the character's species asks for that the stored build lacks. */
+/** Every pick the character's species and feats ask for that the stored build lacks. */
 export function unresolvedBuildChoices(
-  character: Build,
+  character: BuildForChoices,
+  session: Pick<SessionState, "grantBundleChoices">
+): UnresolvedBuildChoice[] {
+  const out = speciesChoicesOwed(character, session);
+  for (const featId of featsOwingAbility(
+    { features: character.features ?? [] },
+    (id) => FEATS_BY_ID.get(id)?.grants
+  )) {
+    out.push({ kind: "feat-ability", featId });
+  }
+  return out;
+}
+
+function speciesChoicesOwed(
+  character: BuildForChoices,
   session: Pick<SessionState, "grantBundleChoices">
 ): UnresolvedBuildChoice[] {
   const race = getRace(character.race);

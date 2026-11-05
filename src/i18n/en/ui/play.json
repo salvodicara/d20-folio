@@ -283,7 +283,9 @@
       "title": "Choices to finish",
       "body": "Your species asks you to choose: {{items}}.",
       "open": "Finish",
-      "abilityNote": "Species spellcasting ability: it uses Charisma today. Choose the right one."
+      "abilityNote": "Species spellcasting ability: it uses Charisma today. Choose the right one.",
+      "featAbilityNote": "{{feats}}: which ability did you increase with this feat? Choose it once.",
+      "featAbilityLabel": "Ability increased by {{feat}}"
     }
   }
 }

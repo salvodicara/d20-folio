@@ -212,7 +212,15 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     } else if (asiChoice.featId) {
       const feat = SRD_FEATS.find((f) => f.id === asiChoice.featId);
       if (feat) {
-        const featRef: SrdFeatureRef = { srdId: feat.id };
+        // A chosen increase is recorded on the feat itself: the one place "the
+        // ability increased by this feat" is read from (`featAbilityOf`).
+        const chooses = (feat.grants ?? []).some(
+          (g) => g.type === "choice-ability-score"
+        );
+        const featRef: SrdFeatureRef =
+          chooses && asiChoice.featAbility
+            ? { srdId: feat.id, featAbility: asiChoice.featAbility }
+            : { srdId: feat.id };
         updated = { ...updated, features: [...updated.features, featRef] };
         const flatHp = (feat.grants ?? []).reduce(
           (sum, g) =>

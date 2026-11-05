@@ -286,7 +286,7 @@ import {
   withOverride,
 } from "@/lib/value-breakdown";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
-import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
+import { resolveSpellAbility, spellAbilityPinned } from "@/lib/resolve-spell-ability";
 import {
   casterClassAbilities,
   resolveSpellOwningClassId,
@@ -6823,10 +6823,9 @@ function resolveSpellActions(
     // whole number; the class-scoped grant bump matches the OWNING class.
     const spellCastAbility =
       resolveSpellAbility(spellRef, charData, spell.classes) ?? castAbility;
-    const spellOwningClassId =
-      spellRef.spellAbilityOverride != null || srdRef?.speciesSpellAbility
-        ? castClassId
-        : resolveSpellOwningClassId(spell.classes, charData, castClassId);
+    const spellOwningClassId = spellAbilityPinned(spellRef, charData)
+      ? castClassId
+      : resolveSpellOwningClassId(spell.classes, charData, castClassId);
     // Recompute when the ability OR the owning class diverges from the primary
     // (B6): the global `dc`/`atkBonus` fold the PRIMARY-class-scoped bump, so a
     // class-scoped grant (Innate Sorcery → `scope:"sorcerer"`, Rod of the Pact

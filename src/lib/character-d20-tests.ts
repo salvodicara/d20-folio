@@ -140,6 +140,11 @@ export function damageQueuesConcentrationSave(character: CharacterDoc): boolean 
   return heldConcentrationClauses(character).length === 0;
 }
 
+/** The school of the spell held (by its id), for school-scoped bonuses. */
+function heldSpellSchool(held: string | null | undefined): string | undefined {
+  return held ? getSpellById(held)?.school : undefined;
+}
+
 /** The damage-proof clauses that cover the spell `character` holds. */
 function heldConcentrationClauses(character: CharacterDoc) {
   const held = character.session.concentration;
@@ -241,7 +246,13 @@ export function concentrationSaveD20Context(
   // established override-first contract by withholding concentration-only
   // derived bonuses in that case; Exhaustion remains a universal D20 penalty.
   const concentrationOnly =
-    override == null ? resolveConcentrationSaveBonus(aggregate, scores) : 0;
+    override == null
+      ? resolveConcentrationSaveBonus(
+          aggregate,
+          scores,
+          heldSpellSchool(character.session.concentration)
+        )
+      : 0;
   const exhaustion = exhaustionPenalty(exhaustionOf(character.session));
   return {
     testId: `concentration-save:${pending.id}`,

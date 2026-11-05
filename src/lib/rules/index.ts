@@ -435,6 +435,9 @@ export function compileGrant(grant: Grant): Rule[] | null {
         },
       ];
     case "concentration-save-bonus":
+      // A school-scoped bonus is the held spell's to add (the aggregate's
+      // `concentrationSaveSchoolBonuses`); "feat" is resolved before it gets here.
+      if (grant.school !== undefined || grant.ability === "feat") return [];
       return [
         {
           op: "add",
