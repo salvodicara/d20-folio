@@ -1,0 +1,491 @@
+{
+  "acid": {
+    "gist": "Thrown within 20 ft: Dex save or 2d6 Acid damage"
+  },
+  "alchemists-fire": {
+    "gist": "Thrown within 20 ft: Dex save or 1d4 Fire damage and the target starts burning"
+  },
+  "alchemists-supplies": {
+    "gist": "Make useful concoctions such as Acid or Alchemist's Fire"
+  },
+  "antitoxin": {
+    "gist": "Bonus Action: Advantage on saves against Poisoned for 1 hour"
+  },
+  "arcane-focus": {
+    "gist": "A crystal, orb, rod, staff or wand used as a spellcasting focus"
+  },
+  "arrows": {
+    "gist": "Ammunition for bows, in bundles of 20"
+  },
+  "backpack": {
+    "gist": "Holds up to 30 pounds; can serve as a saddlebag"
+  },
+  "bagpipes": {
+    "gist": "Wind instrument; proficiency adds your bonus to play it"
+  },
+  "ball-bearings": {
+    "gist": "Cover a 10-ft square: DC 10 Dex save or fall Prone"
+  },
+  "basket": {
+    "gist": "Holds up to 40 pounds"
+  },
+  "battleaxe": {
+    "gist": "Martial axe for one- or two-handed blows"
+  },
+  "bedroll": {
+    "gist": "Sleeps one creature; automatic success on saves against extreme cold"
+  },
+  "bell": {
+    "gist": "Rings out a sound heard up to 60 ft away"
+  },
+  "blanket": {
+    "gist": "Advantage on saves against extreme cold"
+  },
+  "block-and-tackle": {
+    "gist": "Hoist up to four times the weight you can normally lift"
+  },
+  "blowgun": {
+    "gist": "Quiet tube that shoots small needles"
+  },
+  "blowgun-needles": {
+    "gist": "Ammunition for blowguns, in bundles of 50"
+  },
+  "book": {
+    "gist": "Holds poetry, history, science or lore on almost any subject"
+  },
+  "breastplate": {
+    "gist": "Fitted metal cuirass that guards the torso and leaves the limbs free"
+  },
+  "brewers-supplies": {
+    "gist": "Ferment beverages and purify water"
+  },
+  "bucket": {
+    "gist": "Holds up to half a cubic foot"
+  },
+  "burglars-pack": {
+    "gist": "Backpack, ball bearings, crowbar, hooded lantern, oil, rations, rope and more"
+  },
+  "calligraphers-supplies": {
+    "gist": "Write with elegant, precise lettering"
+  },
+  "caltrops": {
+    "gist": "Cover a 5-ft square: DC 15 Dex save or 1 Piercing damage and Speed 0"
+  },
+  "candle": {
+    "gist": "Burns 1 hour: Bright Light 5 ft, Dim Light 5 ft more"
+  },
+  "carpenters-tools": {
+    "gist": "Build and repair wooden structures and objects"
+  },
+  "cartographers-tools": {
+    "gist": "Draw and read maps"
+  },
+  "chain": {
+    "gist": "Bind a Grappled, Incapacitated or Restrained creature; DC 18 to escape"
+  },
+  "chain-mail": {
+    "gist": "Heavy armor of interlocking metal rings over padding"
+  },
+  "chain-shirt": {
+    "gist": "Shirt of metal rings worn under clothing for discreet protection"
+  },
+  "climbers-kit": {
+    "gist": "Anchor yourself so you can't fall more than 25 ft"
+  },
+  "clothes-fine": {
+    "gist": "Expensive clothes; some events and places admit only those wearing them"
+  },
+  "clothes-travelers": {
+    "gist": "Resilient clothes for travel in various environments"
+  },
+  "club": {
+    "gist": "Compact wooden bludgeon, handy at close quarters or with another light weapon"
+  },
+  "cobblers-tools": {
+    "gist": "Make and repair footwear"
+  },
+  "component-pouch": {
+    "gist": "Watertight pouch holding all your spells' free Material components"
+  },
+  "cooks-utensils": {
+    "gist": "Prepare meals"
+  },
+  "costume": {
+    "gist": "Elaborate outfit for a disguise or a performance"
+  },
+  "crossbow-bolts": {
+    "gist": "Ammunition for crossbows, in bundles of 20"
+  },
+  "crowbar": {
+    "gist": "Advantage on Strength checks where leverage helps"
+  },
+  "dagger": {
+    "gist": "Small balanced blade for precise strikes, close fighting or throwing"
+  },
+  "dart": {
+    "gist": "Weighted throwing point for quick, accurate short-range throws"
+  },
+  "dice-set": {
+    "gist": "Gaming set; proficiency adds your bonus to play games with it"
+  },
+  "diplomats-pack": {
+    "gist": "Chest, fine clothes, ink, pens, lamp, oil, paper, parchment, perfume and more"
+  },
+  "disguise-kit": {
+    "gist": "Proficiency adds your bonus to Deception checks for visual disguises"
+  },
+  "druidic-focus": {
+    "gist": "Mistletoe, totem, staff or yew wand used as a focus for druid spells"
+  },
+  "drum": {
+    "gist": "Percussion instrument; proficiency adds your bonus to play it"
+  },
+  "dulcimer": {
+    "gist": "Stringed instrument; proficiency adds your bonus to play it"
+  },
+  "dungeoneers-pack": {
+    "gist": "Backpack, caltrops, crowbar, oil, 10 days of rations, rope, 10 torches and more"
+  },
+  "entertainers-pack": {
+    "gist": "Backpack, bedroll, bell, lantern, 3 costumes, mirror, oil, rations and more"
+  },
+  "explorers-pack": {
+    "gist": "Backpack, bedroll, oil, 10 days of rations, rope, 10 torches and more"
+  },
+  "firearm-bullets": {
+    "gist": "Ammunition for firearms, in bundles of 10"
+  },
+  "flail": {
+    "gist": "Weighted head on a chain for heavy swinging blows"
+  },
+  "flute": {
+    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it"
+  },
+  "forgery-kit": {
+    "gist": "Create convincing fakes of documents and other physical items"
+  },
+  "glaive": {
+    "gist": "Two-handed polearm with a single-edged blade that cuts beyond normal reach"
+  },
+  "glass-bottle": {
+    "gist": "Holds up to 1½ pints"
+  },
+  "glassblowers-tools": {
+    "gist": "Shape glass"
+  },
+  "grappling-hook": {
+    "gist": "Utilize: hook a catch within 50 ft (DC 13 Acrobatics); climb it with a Rope"
+  },
+  "greataxe": {
+    "gist": "Massive two-handed axe for powerful sweeping cuts"
+  },
+  "greatclub": {
+    "gist": "Heavy two-handed cudgel for crushing blows"
+  },
+  "greatsword": {
+    "gist": "Long, heavy two-handed blade for broad, forceful cuts"
+  },
+  "halberd": {
+    "gist": "Long polearm with axe blade, spear point and hook"
+  },
+  "half-plate-armor": {
+    "gist": "Metal plates guard torso and vitals, with more mobility than full plate"
+  },
+  "hand-crossbow": {
+    "gist": "Compact crossbow used in one hand, with less power and range"
+  },
+  "handaxe": {
+    "gist": "Light, balanced axe for melee or throwing"
+  },
+  "healers-kit": {
+    "gist": "10 uses; Utilize: stabilize a creature at 0 HP without a Medicine check"
+  },
+  "heavy-crossbow": {
+    "gist": "Powerful two-handed crossbow that shoots bolts over long distances"
+  },
+  "herbalism-kit": {
+    "gist": "Identify and apply herbs; craft antitoxin and healing potions"
+  },
+  "hide-armor": {
+    "gist": "Thick hide and fur: rugged protection, little flexibility"
+  },
+  "holy-symbol": {
+    "gist": "Spellcasting focus for Cleric and Paladin spells"
+  },
+  "holy-water": {
+    "gist": "Thrown 20 ft: Dex save or 2d8 Radiant damage to a Fiend or Undead"
+  },
+  "horn": {
+    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it"
+  },
+  "hunting-trap": {
+    "gist": "Stepping on it: DC 13 Dex save or 1d4 Piercing damage and Speed 0"
+  },
+  "ink": {
+    "gist": "1-ounce bottle, enough to write about 500 pages"
+  },
+  "ink-pen": {
+    "gist": "Write or draw, using Ink"
+  },
+  "iron-pot": {
+    "gist": "Holds up to 1 gallon"
+  },
+  "iron-spikes": {
+    "gist": "Bundle of ten; hammer one in to jam a door or tie off a Rope or Chain"
+  },
+  "javelin": {
+    "gist": "Light spear for thrusting or long-range throwing"
+  },
+  "jewelers-tools": {
+    "gist": "Cut and set gemstones"
+  },
+  "ladder": {
+    "gist": "10 feet tall; you must climb to move up or down it"
+  },
+  "lamp": {
+    "gist": "Burns Oil: Bright Light 15 ft, Dim Light 30 ft more"
+  },
+  "lance": {
+    "gist": "Long cavalry spear that turns a mounted charge into a piercing strike"
+  },
+  "lantern-bullseye": {
+    "gist": "Burns Oil: Bright Light in a 60-ft Cone, Dim Light 60 ft more"
+  },
+  "lantern-hooded": {
+    "gist": "Bright Light 30 ft, Dim 30 ft more; Bonus Action hood: Dim Light 5 ft"
+  },
+  "leather-armor": {
+    "gist": "Hardened leather that protects without hindering agile movement"
+  },
+  "leatherworkers-tools": {
+    "gist": "Make and repair leather goods"
+  },
+  "light-crossbow": {
+    "gist": "Two-handed crossbow with a manageable draw and dependable reach"
+  },
+  "light-hammer": {
+    "gist": "Compact war hammer for quick blows or short throws"
+  },
+  "lock": {
+    "gist": "Comes with a key; without it, picked with Thieves' Tools (DC 15 Sleight of Hand)"
+  },
+  "longbow": {
+    "gist": "Tall two-handed bow with exceptional range"
+  },
+  "longsword": {
+    "gist": "Martial blade used in one hand or with both"
+  },
+  "lute": {
+    "gist": "Stringed instrument; proficiency adds your PB to Performance checks with it"
+  },
+  "lyre": {
+    "gist": "Stringed instrument; proficiency adds your Proficiency Bonus to checks to play it"
+  },
+  "mace": {
+    "gist": "Metal-headed bludgeon for concentrated impacts"
+  },
+  "manacles": {
+    "gist": "Bind a Grappled, Incapacitated or Restrained foe; escape DC 20, burst DC 25"
+  },
+  "map": {
+    "gist": "+5 to Survival checks to find your way in the place it depicts"
+  },
+  "map-or-scroll-case": {
+    "gist": "Holds up to 10 sheets of paper or 5 of parchment"
+  },
+  "masons-tools": {
+    "gist": "Build with stone"
+  },
+  "maul": {
+    "gist": "Oversized two-handed hammer with crushing weight"
+  },
+  "mirror": {
+    "gist": "Handheld steel mirror for grooming, peeking around corners or signalling"
+  },
+  "morningstar": {
+    "gist": "One-handed haft with a spiked head for piercing blows"
+  },
+  "musical-instrument": {
+    "gist": "Lute, flute, drum or other instrument; a Bard's spellcasting focus"
+  },
+  "musket": {
+    "gist": "Long two-handed firearm with a powerful shot, then reload"
+  },
+  "navigators-tools": {
+    "gist": "Chart a course and follow navigation charts"
+  },
+  "net": {
+    "gist": "Thrown 15 ft: Dex save or Restrained; escape DC 10 Athletics"
+  },
+  "oil": {
+    "gist": "Douse a creature (Dex save): +5 Fire damage if it burns within 1 min; fuel"
+  },
+  "padded-armor": {
+    "gist": "Quilted cloth that softens impacts but hinders stealth"
+  },
+  "painters-supplies": {
+    "gist": "Create paintings"
+  },
+  "pan-flute": {
+    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it"
+  },
+  "paper": {
+    "gist": "One sheet holds about 250 handwritten words"
+  },
+  "parchment": {
+    "gist": "One sheet holds about 250 handwritten words"
+  },
+  "perfume": {
+    "gist": "Small vial of pleasant-smelling perfume"
+  },
+  "pike": {
+    "gist": "Very long two-handed spear that threatens foes well beyond arm's reach"
+  },
+  "pistol": {
+    "gist": "Compact one-handed firearm with a powerful close-range shot"
+  },
+  "plate-armor": {
+    "gist": "Plates cover the whole body: exceptional protection, but heavy and noisy"
+  },
+  "playing-card-set": {
+    "gist": "Gaming set; proficiency adds your Proficiency Bonus to checks to play"
+  },
+  "poison-basic": {
+    "gist": "Bonus Action: coat a weapon or 3 ammo; a hit deals +1d4 Poison damage"
+  },
+  "poisoners-kit": {
+    "gist": "Proficiency adds your Proficiency Bonus to checks to craft poisons"
+  },
+  "pole": {
+    "gist": "10 feet long; touch things 10 ft away or vault with Advantage on a jump"
+  },
+  "portable-ram": {
+    "gist": "+4 to Strength checks to break down a door; a helper grants Advantage"
+  },
+  "potters-tools": {
+    "gist": "Shape and fire clay"
+  },
+  "pouch": {
+    "gist": "Holds up to 6 pounds"
+  },
+  "priests-pack": {
+    "gist": "Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, Tinderbox"
+  },
+  "quarterstaff": {
+    "gist": "Sturdy wooden staff used in one hand or, with more force, in two"
+  },
+  "quiver": {
+    "gist": "Holds up to 20 arrows"
+  },
+  "rapier": {
+    "gist": "Slender thrusting sword for precise, agile point work"
+  },
+  "rations": {
+    "gist": "Travel-ready food for one day"
+  },
+  "ring-mail": {
+    "gist": "Rings sewn on leather: plain protection, little freedom of movement"
+  },
+  "robe": {
+    "gist": "Loose, flowing outer garment, often worn by spellcasters"
+  },
+  "rope": {
+    "gist": "50 feet; tie knots (DC 10) and bind Grappled or Restrained foes (escape DC 15)"
+  },
+  "scale-mail": {
+    "gist": "Metal scales over leather: solid protection, but heavy and noisy"
+  },
+  "scholars-pack": {
+    "gist": "Backpack, Book, Ink, Ink Pen, Lamp, 10 Oil, 10 Parchment, Tinderbox"
+  },
+  "scimitar": {
+    "gist": "Light, curved blade for fast, flowing cuts"
+  },
+  "shawm": {
+    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it"
+  },
+  "shield": {
+    "gist": "Handheld wood or metal barrier that turns aside attacks"
+  },
+  "shortbow": {
+    "gist": "Compact two-handed bow, easy to carry, effective at battlefield range"
+  },
+  "shortsword": {
+    "gist": "Light, straight blade for quick, precise close-quarters thrusts"
+  },
+  "shovel": {
+    "gist": "In 1 hour, dig a 5-foot-cube hole in soil or similar"
+  },
+  "sickle": {
+    "gist": "Light hooked blade for swift close-range cuts"
+  },
+  "signal-whistle": {
+    "gist": "Utilize: a sound heard up to 600 feet away"
+  },
+  "sling": {
+    "gist": "Leather cradle and cord that hurls stones or bullets"
+  },
+  "sling-bullets": {
+    "gist": "Ammunition for slings, in bundles of 20"
+  },
+  "smiths-tools": {
+    "gist": "Forge and repair metal items"
+  },
+  "spear": {
+    "gist": "Pointed shaft for one- or two-handed thrusts or throwing"
+  },
+  "spellbook": {
+    "gist": "Leather tome with 100 blank pages for a Wizard to record spells"
+  },
+  "splint-armor": {
+    "gist": "Metal strips over padding form a rigid, highly protective suit"
+  },
+  "string": {
+    "gist": "10 feet long; tie a knot in it as a Utilize action"
+  },
+  "studded-leather-armor": {
+    "gist": "Leather reinforced with metal studs: better protection, still mobile"
+  },
+  "tent": {
+    "gist": "Sleeps up to two Small or Medium creatures"
+  },
+  "thieves-tools": {
+    "gist": "Proficiency adds your Proficiency Bonus to pick locks and disarm traps"
+  },
+  "tinderbox": {
+    "gist": "Light a Candle, Lamp, Lantern or Torch as a Bonus Action; other fires in 1 min"
+  },
+  "tinkers-tools": {
+    "gist": "Make and repair small objects and mechanisms"
+  },
+  "torch": {
+    "gist": "1 hour: Bright Light 20 ft, Dim 20 ft more; as a weapon deals 1 Fire damage"
+  },
+  "trident": {
+    "gist": "Three-pronged spear for thrusting, throwing or two-handed attacks"
+  },
+  "vial": {
+    "gist": "Holds up to 4 ounces"
+  },
+  "viol": {
+    "gist": "Stringed instrument; proficiency adds your Proficiency Bonus to checks to play it"
+  },
+  "war-pick": {
+    "gist": "Reinforced pick that focuses force into a single piercing point"
+  },
+  "warhammer": {
+    "gist": "Martial hammer used in one hand or for heavier two-handed blows"
+  },
+  "waterskin": {
+    "gist": "Holds up to 4 pints of water"
+  },
+  "weavers-tools": {
+    "gist": "Make cloth"
+  },
+  "whip": {
+    "gist": "Flexible lash that trades raw power for finesse and reach"
+  },
+  "woodcarvers-tools": {
+    "gist": "Knife, gouge and saw; proficiency adds your PB to checks to carve wood"
+  }
+}

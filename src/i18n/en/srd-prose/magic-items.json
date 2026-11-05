@@ -1,0 +1,776 @@
+{
+  "adamantine-armor": {
+    "gist": "Any critical hit against you becomes a normal hit"
+  },
+  "ammunition-1-2-or-3": {
+    "gist": "+1, +2 or +3 to attack and damage rolls; loses its magic once it hits"
+  },
+  "amulet-of-health": {
+    "gist": "Your Constitution score becomes 19"
+  },
+  "amulet-of-proof-against-detection-and-location": {
+    "gist": "Divination spells and magical scrying can't target or perceive you"
+  },
+  "amulet-of-the-planes": {
+    "gist": "DC 15 Int (Arcana) check to cast Plane Shift; on a failure you land somewhere random"
+  },
+  "animated-shield": {
+    "gist": "Bonus Action: the Shield floats and protects you hands-free for 1 minute"
+  },
+  "armor-of-invulnerability": {
+    "gist": "Resistance to Bludgeoning, Piercing, Slashing damage; Immunity for 10 min once per dawn"
+  },
+  "armor-of-resistance": {
+    "gist": "Resistance to one damage type while you wear it"
+  },
+  "armor-of-vulnerability": {
+    "gist": "Resistance to Bludgeoning, Piercing or Slashing; cursed: Vulnerability to the other two"
+  },
+  "armor-plus-1": {
+    "gist": "+1 bonus to AC"
+  },
+  "armor-plus-2": {
+    "gist": "+2 bonus to AC"
+  },
+  "armor-plus-3": {
+    "gist": "+3 bonus to AC"
+  },
+  "arrow-catching-shield": {
+    "gist": "+2 AC against ranged attacks; Reaction to become the target of one within 5 ft"
+  },
+  "bag-of-beans": {
+    "gist": "3d4 beans: dumped, they explode for 5d4 Force (DC 15 Dex); planted, a random effect"
+  },
+  "bag-of-devouring": {
+    "gist": "Devours creatures and organic matter put inside; DC 15 Str (Athletics) to escape"
+  },
+  "bag-of-holding": {
+    "gist": "Holds up to 500 lb in 64 cubic feet; retrieving an item takes an action"
+  },
+  "bag-of-tricks": {
+    "gist": "Throw a fuzzy ball that becomes a friendly random Beast, up to 3 per dawn"
+  },
+  "bead-of-force": {
+    "gist": "Thrown 60 ft: 5d4 Force (DC 15 Dex) and traps creatures in a force sphere for 1 minute"
+  },
+  "bead-of-nourishment": {
+    "gist": "Provides as much nourishment as 1 day of Rations"
+  },
+  "belt-of-dwarvenkind": {
+    "gist": "+2 Constitution (max 20), Dwarvish, Advantage with dwarves; Darkvision for non-dwarves"
+  },
+  "belt-of-giant-strength": {
+    "gist": "Your Strength score becomes 21 to 29, depending on the giant type"
+  },
+  "berserker-axe": {
+    "gist": "+1 to attack and damage, +1 HP per level; cursed: may go berserk when hurt (DC 15 Wis)"
+  },
+  "boots-of-elvenkind": {
+    "gist": "Silent steps; Advantage on Stealth checks to move silently"
+  },
+  "boots-of-levitation": {
+    "gist": "Cast Levitate on yourself at will"
+  },
+  "boots-of-speed": {
+    "gist": "Bonus Action: double Speed and Disadvantage on Opportunity Attacks for 10 minutes"
+  },
+  "boots-of-striding-and-springing": {
+    "gist": "Speed at least 30 ft, not slowed by weight or armor; jump 30 ft for 10 ft of movement"
+  },
+  "boots-of-the-winterlands": {
+    "gist": "Resistance to Cold damage; ignore Difficult Terrain from ice or snow"
+  },
+  "bowl-of-commanding-water-elementals": {
+    "gist": "Once per dawn, summon an obedient Water Elemental for 1 hour"
+  },
+  "bracers-of-archery": {
+    "gist": "Proficiency with Longbow and Shortbow and +2 to their damage rolls"
+  },
+  "bracers-of-defense": {
+    "gist": "+2 to AC while you wear no armor and use no Shield"
+  },
+  "brazier-of-commanding-fire-elementals": {
+    "gist": "Once per dawn, summon an obedient Fire Elemental for 1 hour"
+  },
+  "brooch-of-shielding": {
+    "gist": "Resistance to Force damage and Immunity to Magic Missile"
+  },
+  "broom-of-flying": {
+    "gist": "Ride it with a Fly Speed of 50 ft (30 ft over 200 lb); returns on command"
+  },
+  "cape-of-the-mountebank": {
+    "gist": "Cast Dimension Door once per dawn, leaving a cloud of smoke"
+  },
+  "carpet-of-flying": {
+    "gist": "Flies on command; Fly Speed and capacity depend on its size"
+  },
+  "censer-of-controlling-air-elementals": {
+    "gist": "Once per dawn, summon an obedient Air Elemental for 1 hour"
+  },
+  "chime-of-opening": {
+    "gist": "Cast Knock; 10 uses, then it cracks"
+  },
+  "circlet-of-blasting": {
+    "gist": "Cast Scorching Ray (+5 to hit) once per dawn"
+  },
+  "cloak-of-arachnida": {
+    "gist": "Poison Resistance, Climb Speed, free of webs; cast Web (DC 13) once per dawn"
+  },
+  "cloak-of-displacement": {
+    "gist": "Attack rolls against you have Disadvantage until you're hit"
+  },
+  "cloak-of-elvenkind": {
+    "gist": "Hood up: Disadvantage on Perception to see you, Advantage on Stealth to hide"
+  },
+  "cloak-of-invisibility": {
+    "gist": "3 charges: spend 1 to be Invisible for 1 hour; regains 1d3 at dawn"
+  },
+  "cloak-of-protection": {
+    "gist": "+1 bonus to AC and saving throws"
+  },
+  "cloak-of-the-manta-ray": {
+    "gist": "Breathe underwater and gain a Swim Speed of 60 feet"
+  },
+  "crystal-ball": {
+    "gist": "Cast Scrying (save DC 17)"
+  },
+  "crystal-ball-of-mind-reading": {
+    "gist": "Cast Scrying and Detect Thoughts through its sensor (save DC 17)"
+  },
+  "crystal-ball-of-telepathy": {
+    "gist": "Cast Scrying (DC 17), speak telepathically and cast Suggestion through the sensor"
+  },
+  "crystal-ball-of-true-seeing": {
+    "gist": "Cast Scrying (DC 17) with Truesight 120 ft around the sensor"
+  },
+  "cubic-gate": {
+    "gist": "3 charges: cast Gate or Plane Shift to the plane keyed to one side"
+  },
+  "dagger-of-venom": {
+    "gist": "+1 to attack and damage; once a day, the next hit deals +2d10 Poison (DC 15 Con half)"
+  },
+  "dancing-sword": {
+    "gist": "Bonus Action: it flies and attacks on its own, up to four times"
+  },
+  "decanter-of-endless-water": {
+    "gist": "Pours water on command; its geyser deals 1d4 Bludgeoning and knocks Prone (DC 13 Str)"
+  },
+  "deck-of-illusions": {
+    "gist": "Draw a card to create a harmless illusory creature within 30 feet"
+  },
+  "deck-of-many-things": {
+    "gist": "Draw 1-5 cards with immediate effects, from wealth and levels to death"
+  },
+  "defender": {
+    "gist": "+3 to attack and damage; each turn, shift some of the bonus to your AC"
+  },
+  "demon-armor": {
+    "gist": "+1 AC, Abyssal, 1d8 Slashing claws; cursed: can't remove, Disadvantage vs demons"
+  },
+  "dimensional-shackles": {
+    "gist": "Bind an Incapacitated creature, blocking teleportation and planar travel"
+  },
+  "dragon-scale-mail": {
+    "gist": "+1 AC, Advantage on saves vs dragon breath, Resistance to the dragon's damage type"
+  },
+  "dragon-slayer": {
+    "gist": "+1 to attack and damage; extra 3d6 damage against Dragons"
+  },
+  "dust-of-disappearance": {
+    "gist": "You and creatures within 10 ft are Invisible for 2d4 minutes"
+  },
+  "dust-of-dryness": {
+    "gist": "Turns a 15-ft Cube of water into a pellet; 10d6 Necrotic to water elementals (DC 13 Con)"
+  },
+  "dust-of-sneezing-and-choking": {
+    "gist": "Creatures within 30 ft make a DC 15 Con save or are Incapacitated and suffocating"
+  },
+  "dwarven-plate": {
+    "gist": "+2 AC; Reaction to reduce forced movement by up to 10 feet"
+  },
+  "dwarven-thrower": {
+    "gist": "+3 to attack and damage; thrown, extra 1d8 Force (2d8 vs Giants), returns to hand"
+  },
+  "efreeti-bottle": {
+    "gist": "Releases an efreeti: usually it obeys for 1 hour, but it may attack or grant a Wish"
+  },
+  "elemental-gem": {
+    "gist": "Break it to summon an obedient elemental for 1 hour"
+  },
+  "elixir-of-health": {
+    "gist": "Cures magical contagions and ends Blinded, Deafened, Paralyzed and Poisoned"
+  },
+  "elven-chain": {
+    "gist": "+1 AC; you're proficient with it even without Medium armor training"
+  },
+  "energy-bow": {
+    "gist": "+1 to attack and damage; conjures golden energy arrows that deal Force damage"
+  },
+  "eversmoking-bottle": {
+    "gist": "Opened, smoke Heavily Obscures a 60-ft Emanation that grows to 120 ft"
+  },
+  "eyes-of-charming": {
+    "gist": "3 charges: cast Charm Person (DC 13), 1 charge per spell level"
+  },
+  "eyes-of-minute-seeing": {
+    "gist": "Darkvision within 1 foot and Advantage on Investigation to examine things there"
+  },
+  "eyes-of-the-eagle": {
+    "gist": "Advantage on Perception checks that rely on sight; make out distant details"
+  },
+  "figurine-of-wondrous-power": {
+    "gist": "Thrown, it becomes a friendly creature that obeys you for a set time"
+  },
+  "flame-tongue": {
+    "gist": "Bonus Action to ignite: extra 2d6 Fire damage and Bright Light in 40 ft"
+  },
+  "folding-boat": {
+    "gist": "A box that unfolds into a Rowboat or a Keelboat on command"
+  },
+  "frost-brand": {
+    "gist": "Extra 1d6 Cold damage on a hit; Resistance to Fire damage while held"
+  },
+  "gauntlets-of-ogre-power": {
+    "gist": "Your Strength score becomes 19"
+  },
+  "gem-of-brightness": {
+    "gist": "50 charges: light, a blinding beam (DC 15 Con) or a blinding 30-ft Cone"
+  },
+  "gem-of-seeing": {
+    "gist": "3 charges: Truesight out to 120 ft for 10 minutes; regains 1d3 at dawn"
+  },
+  "giant-slayer": {
+    "gist": "+1 to attack and damage; extra 2d6 vs Giants, who fall Prone on a failed DC 15 Str save"
+  },
+  "glamoured-studded-leather": {
+    "gist": "+1 Studded Leather; Bonus Action to make it look like clothing or other armor"
+  },
+  "gloves-of-missile-snaring": {
+    "gist": "Reaction: cut ranged weapon damage by 1d10 + Dex modifier; catch it at 0"
+  },
+  "gloves-of-swimming-and-climbing": {
+    "gist": "Climb and Swim Speed equal to your Speed; +5 to Athletics to climb or swim"
+  },
+  "gloves-of-thievery": {
+    "gist": "+5 bonus to Sleight of Hand checks; imperceptible while worn"
+  },
+  "goggles-of-night": {
+    "gist": "Darkvision out to 60 ft, or +60 ft if you already have it"
+  },
+  "hammer-of-thunderbolts": {
+    "gist": "+1 to attack and damage; 5 charges to hurl it and Stun nearby creatures (DC 17 Con)"
+  },
+  "hat-of-disguise": {
+    "gist": "Cast Disguise Self; the spell ends if the hat is removed"
+  },
+  "hat-of-many-spells": {
+    "gist": "Wizard Spellcasting Focus; try an unknown Wizard spell with an Arcana check"
+  },
+  "headband-of-intellect": {
+    "gist": "Your Intelligence score becomes 19"
+  },
+  "helm-of-brilliance": {
+    "gist": "Its gems cast spells (DC 18), set weapons aflame (+1d6 Fire) and grant Fire Resistance"
+  },
+  "helm-of-comprehending-languages": {
+    "gist": "Cast Comprehend Languages from it while worn"
+  },
+  "helm-of-telepathy": {
+    "gist": "Telepathy 30 ft; cast Detect Thoughts or Suggestion (DC 13), each once per dawn"
+  },
+  "helm-of-teleportation": {
+    "gist": "3 charges: spend 1 to cast Teleport; regains 1d3 at dawn"
+  },
+  "holy-avenger": {
+    "gist": "+3 attack and damage, +2d10 Radiant vs Fiends and Undead; allies' Advantage vs spells"
+  },
+  "horn-of-blasting": {
+    "gist": "30-ft Cone, DC 15 Con save: 5d8 Thunder and Deafened; 20% chance to explode"
+  },
+  "horn-of-valhalla": {
+    "gist": "Summons 2 to 5 Berserker spirits within 60 ft; once every 7 days"
+  },
+  "horseshoes-of-a-zephyr": {
+    "gist": "Mount floats over water or lava, ignores Difficult Terrain, travels 12 hours a day"
+  },
+  "horseshoes-of-speed": {
+    "gist": "A set of four that raises the mount's Speed by 30 feet"
+  },
+  "immovable-rod": {
+    "gist": "Press to fix it in place; holds up to 8,000 lb, DC 30 Strength check to move"
+  },
+  "javelin-of-lightning": {
+    "gist": "Once per dawn becomes a 5-ft line: DC 13 Dex save, 4d6 Lightning, half on success"
+  },
+  "lantern-of-revealing": {
+    "gist": "Bright Light 30 ft that makes Invisible creatures and objects visible"
+  },
+  "luck-blade": {
+    "gist": "+1 attack, damage and saves; reroll one d20 per dawn; may hold Wish charges"
+  },
+  "mace-of-disruption": {
+    "gist": "+2d6 Radiant vs Fiends and Undead; at 25 HP or less, DC 15 Wis save or destroyed"
+  },
+  "mace-of-smiting": {
+    "gist": "+1 attack and damage (+3 vs Constructs); a 20 adds 7 Bludgeoning (14 vs Constructs)"
+  },
+  "mace-of-terror": {
+    "gist": "3 charges: creatures within 30 ft make a DC 15 Wis save or are Frightened 1 minute"
+  },
+  "mantle-of-spell-resistance": {
+    "gist": "Advantage on saving throws against spells"
+  },
+  "manual-of-bodily-health": {
+    "gist": "48 hours of study raise your Constitution by 2, to a maximum of 30"
+  },
+  "manual-of-gainful-exercise": {
+    "gist": "48 hours of study raise your Strength by 2, to a maximum of 30"
+  },
+  "manual-of-golems": {
+    "gist": "Lets a caster with level 5 slots build a golem under their control"
+  },
+  "manual-of-quickness-of-action": {
+    "gist": "48 hours of study raise your Dexterity by 2, to a maximum of 30"
+  },
+  "medallion-of-thoughts": {
+    "gist": "5 charges: spend 1 to cast Detect Thoughts (DC 13); regains 1d4 at dawn"
+  },
+  "mirror-of-life-trapping": {
+    "gist": "Creatures seeing their reflection within 30 ft: DC 15 Cha save or trapped inside"
+  },
+  "mithral-armor": {
+    "gist": "No Disadvantage on Stealth and no Strength requirement"
+  },
+  "necklace-of-adaptation": {
+    "gist": "Breathe in any environment; Advantage on saves against Poisoned"
+  },
+  "necklace-of-fireballs": {
+    "gist": "1d6+3 beads, each thrown 60 ft as a Fireball (8d6 Fire, DC 15 Dex save)"
+  },
+  "necklace-of-prayer-beads": {
+    "gist": "1d4+2 beads, each casts a spell such as Bless as a Bonus Action once per dawn"
+  },
+  "nine-lives-stealer": {
+    "gist": "+2 attack and damage; on a crit vs under 100 HP, DC 15 Con save or die (1d8+1 charges)"
+  },
+  "oathbow": {
+    "gist": "Sworn enemy: Advantage, ignores cover and long range, +3d6 Piercing on a hit"
+  },
+  "oil-of-etherealness": {
+    "gist": "Applied in 10 minutes, grants the Etherealness spell's effect for 1 hour"
+  },
+  "oil-of-sharpness": {
+    "gist": "Makes a nonmagical Slashing or Piercing weapon +3, or 20 pieces of ammunition +3"
+  },
+  "pearl-of-power": {
+    "gist": "Once per dawn, recover one expended spell slot of level 3 or lower"
+  },
+  "periapt-of-health": {
+    "gist": "Regain 2d4+2 HP once per dawn; Advantage on saves against Poisoned"
+  },
+  "periapt-of-proof-against-poison": {
+    "gist": "Immunity to Poison damage and the Poisoned condition"
+  },
+  "periapt-of-wound-closure": {
+    "gist": "Stabilize automatically when dying; Hit Dice restore double HP"
+  },
+  "pipes-of-haunting": {
+    "gist": "3 charges: creatures within 30 ft make a DC 15 Wis save or are Frightened 1 minute"
+  },
+  "pipes-of-the-sewers": {
+    "gist": "3 charges: call Swarms of Rats; swarms within 30 ft, DC 15 Wis save or Friendly"
+  },
+  "plate-armor-of-etherealness": {
+    "gist": "Once per dawn, gain the Etherealness spell's effect"
+  },
+  "portable-hole": {
+    "gist": "Cloth that opens a 10-ft-deep extradimensional hole on any surface"
+  },
+  "potion-of-animal-friendship": {
+    "gist": "Cast the level 3 version of Animal Friendship (DC 13)"
+  },
+  "potion-of-clairvoyance": {
+    "gist": "Gain the Clairvoyance spell's effect, no Concentration needed"
+  },
+  "potion-of-climbing": {
+    "gist": "Climb Speed equal to your Speed for 1 hour; Advantage on checks to climb"
+  },
+  "potion-of-diminution": {
+    "gist": "Gain the reduce effect of Enlarge/Reduce for 1d4 hours, no Concentration"
+  },
+  "potion-of-flying": {
+    "gist": "Fly Speed equal to your Speed for 1 hour, and you can hover"
+  },
+  "potion-of-giant-strength": {
+    "gist": "Strength becomes 21 to 29 for 1 hour, by giant type"
+  },
+  "potion-of-growth": {
+    "gist": "Enlarge for 1d4 hours: Advantage on Strength checks and saves, +1d4 damage"
+  },
+  "potion-of-healing": {
+    "gist": "Restores 2d4+2 HP, up to 10d4+20 for Supreme; a Bonus Action to drink"
+  },
+  "potion-of-heroism": {
+    "gist": "10 Temporary HP and the Bless effect for 1 hour, no Concentration"
+  },
+  "potion-of-invisibility": {
+    "gist": "Invisible for 1 hour; ends if you attack, deal damage or cast a spell"
+  },
+  "potion-of-invulnerability": {
+    "gist": "Resistance to all damage for 1 minute"
+  },
+  "potion-of-longevity": {
+    "gist": "Reduces your physical age by 1d6+6 years; repeated doses may age you instead"
+  },
+  "potion-of-mind-reading": {
+    "gist": "Gain Detect Thoughts (DC 13) for 10 minutes, no Concentration"
+  },
+  "potion-of-poison": {
+    "gist": "Looks beneficial; deals 4d6 Poison and DC 13 Con save or Poisoned for 1 hour"
+  },
+  "potion-of-resistance": {
+    "gist": "Resistance to one damage type for 1 hour"
+  },
+  "potion-of-speed": {
+    "gist": "Haste for 1 minute, no Concentration: double Speed, +2 AC, an extra action"
+  },
+  "potion-of-vitality": {
+    "gist": "Removes Exhaustion and Poisoned; Hit Dice heal the maximum for 24 hours"
+  },
+  "potion-of-water-breathing": {
+    "gist": "Breathe underwater for 1 hour"
+  },
+  "quarterstaff-of-the-acrobat": {
+    "gist": "+2 attack and damage; reshapes, +5 AC as a Reaction once per rest, returns when thrown"
+  },
+  "ring-of-animal-influence": {
+    "gist": "3 charges: cast Animal Friendship, Fear or Speak with Animals (DC 13)"
+  },
+  "ring-of-djinni-summoning": {
+    "gist": "Summon a Friendly Djinni for up to 1 hour with Concentration"
+  },
+  "ring-of-evasion": {
+    "gist": "3 charges: as a Reaction, turn a failed Dex save into a success"
+  },
+  "ring-of-feather-falling": {
+    "gist": "Fall 60 feet per round and take no falling damage"
+  },
+  "ring-of-free-action": {
+    "gist": "Ignore Difficult Terrain; magic can't slow you or make you Paralyzed or Restrained"
+  },
+  "ring-of-invisibility": {
+    "gist": "Become Invisible as a Magic action until you choose to reappear"
+  },
+  "ring-of-jumping": {
+    "gist": "Cast Jump from it, targeting only yourself"
+  },
+  "ring-of-mind-shielding": {
+    "gist": "Immune to magic that reads your thoughts or detects lies; telepathy only if you allow"
+  },
+  "ring-of-protection": {
+    "gist": "+1 bonus to AC and saving throws"
+  },
+  "ring-of-regeneration": {
+    "gist": "Regain 1d6 HP every 10 minutes and regrow lost body parts"
+  },
+  "ring-of-shooting-stars": {
+    "gist": "Cast Light and Dancing Lights; 6 charges for Faerie Fire, lightning spheres, motes"
+  },
+  "ring-of-spell-storing": {
+    "gist": "Stores up to 5 levels of spells that any wearer can cast"
+  },
+  "ring-of-spell-turning": {
+    "gist": "Advantage on saves vs spells; a success can reflect a level 7 or lower spell"
+  },
+  "ring-of-swimming": {
+    "gist": "Swim Speed of 40 feet"
+  },
+  "ring-of-telekinesis": {
+    "gist": "Cast Telekinesis from the ring"
+  },
+  "ring-of-the-ram": {
+    "gist": "3 charges: +7 ranged spell attack, 2d10 Force per charge and a 5-ft push"
+  },
+  "ring-of-three-wishes": {
+    "gist": "3 charges, each casts Wish"
+  },
+  "ring-of-warmth": {
+    "gist": "Reduces Cold damage by 2d8 and protects you from extreme cold"
+  },
+  "ring-of-water-walking": {
+    "gist": "Cast Water Walk on yourself"
+  },
+  "ring-of-x-ray-vision": {
+    "gist": "See through solid objects within 30 ft for 1 minute; reuse risks Exhaustion"
+  },
+  "robe-of-eyes": {
+    "gist": "Darkvision and Truesight 120 ft, Advantage on sight-based Perception checks"
+  },
+  "robe-of-scintillating-colors": {
+    "gist": "3 charges: attackers have Disadvantage; DC 15 Wis save or Stunned"
+  },
+  "robe-of-stars": {
+    "gist": "+1 to saves; 6 stars cast level 5 Magic Missile; travel to the Astral Plane"
+  },
+  "robe-of-the-archmagi": {
+    "gist": "AC 15 + Dex without armor, Advantage vs spells, +2 spell save DC and spell attacks"
+  },
+  "robe-of-useful-items": {
+    "gist": "Detach patches that become real objects, from daggers to a rowboat"
+  },
+  "rod-of-absorption": {
+    "gist": "Absorb spells targeting only you as a Reaction and reuse the energy as spell slots"
+  },
+  "rod-of-alertness": {
+    "gist": "Advantage on Perception and Initiative; detection spells; +1 AC and saves aura"
+  },
+  "rod-of-lordly-might": {
+    "gist": "+3 magic Mace whose buttons turn it into blades, a ladder pole and more"
+  },
+  "rod-of-resurrection": {
+    "gist": "5 charges: cast Heal (1 charge) or Resurrection (5 charges)"
+  },
+  "rod-of-rulership": {
+    "gist": "Once per dawn, creatures within 120 ft: DC 15 Wis save or Charmed for 8 hours"
+  },
+  "rod-of-security": {
+    "gist": "Transports you and up to 199 creatures to a safe demiplane; once per 10 days"
+  },
+  "rope-of-climbing": {
+    "gist": "60-ft rope that moves, ties and knots itself on command"
+  },
+  "rope-of-entanglement": {
+    "gist": "Entangle a creature within 20 ft: DC 15 Dex save or Restrained"
+  },
+  "scarab-of-protection": {
+    "gist": "+1 AC, Advantage vs spells, 12 charges to succeed on failed saves vs Necromancy"
+  },
+  "scimitar-of-speed": {
+    "gist": "+2 attack and damage; one extra attack as a Bonus Action each turn"
+  },
+  "sending-stones": {
+    "gist": "Paired stones: cast Sending to the other stone's bearer once per dawn"
+  },
+  "sentinel-shield": {
+    "gist": "Advantage on Initiative and Wisdom (Perception) checks"
+  },
+  "shield-of-missile-attraction": {
+    "gist": "Resistance to Ranged weapon damage; cursed, draws ranged attacks within 10 ft"
+  },
+  "shield-of-the-cavalier": {
+    "gist": "+2 AC; shield bash for 2d6+2 Force and a push; Reaction barrier vs attacks"
+  },
+  "shield-plus-1": {
+    "gist": "+1 bonus to AC on top of the shield's normal bonus"
+  },
+  "shield-plus-2": {
+    "gist": "+2 bonus to AC on top of the shield's normal bonus"
+  },
+  "shield-plus-3": {
+    "gist": "+3 bonus to AC on top of the shield's normal bonus"
+  },
+  "slippers-of-spider-climbing": {
+    "gist": "Climb Speed equal to your Speed, walls and ceilings, hands free"
+  },
+  "sovereign-glue": {
+    "gist": "Permanently bonds two objects; only Universal Solvent or Wish undoes it"
+  },
+  "spell-scroll": {
+    "gist": "Holds one spell you can cast once without components if it's on your list"
+  },
+  "spellguard-shield": {
+    "gist": "Advantage on saves vs spells and magic; spell attacks have Disadvantage against you"
+  },
+  "sphere-of-annihilation": {
+    "gist": "Obliterates matter it touches: 8d10 Force; DC 25 Arcana check to control it"
+  },
+  "staff-of-charming": {
+    "gist": "10 charges: cast Charm Person, Command or Comprehend Languages; resist Enchantment"
+  },
+  "staff-of-fire": {
+    "gist": "Fire Resistance; 10 charges for Burning Hands, Fireball and Wall of Fire"
+  },
+  "staff-of-frost": {
+    "gist": "Cold Resistance; 10 charges for Cone of Cold, Ice Storm and other spells"
+  },
+  "staff-of-healing": {
+    "gist": "10 charges: cast Cure Wounds, Lesser Restoration or Mass Cure Wounds"
+  },
+  "staff-of-power": {
+    "gist": "+2 to attack, damage, AC, saves and spell attacks; 20 charges for spells"
+  },
+  "staff-of-striking": {
+    "gist": "+3 Quarterstaff; on a hit spend up to 3 charges for +1d6 Force each"
+  },
+  "staff-of-swarming-insects": {
+    "gist": "10 charges: fill a 30-ft Emanation with insects or cast Giant Insect, Insect Plague"
+  },
+  "staff-of-the-magi": {
+    "gist": "+2 to spell attacks, 50 charges of spells, Advantage on saves against spells"
+  },
+  "staff-of-the-python": {
+    "gist": "Throw it to turn it into a Giant Constrictor Snake under your control"
+  },
+  "staff-of-the-woodlands": {
+    "gist": "+2 Quarterstaff, +2 to spell attacks, 6 charges of nature spells or turn into a tree"
+  },
+  "staff-of-thunder-and-lightning": {
+    "gist": "+2 Quarterstaff; once a day each: +2d6 Lightning, Stun, 9d6 Lightning Line, thunderclap"
+  },
+  "staff-of-withering": {
+    "gist": "3 charges: on a hit, +2d10 Necrotic and DC 15 Con save or Disadvantage on Str/Con"
+  },
+  "stone-of-controlling-earth-elementals": {
+    "gist": "Once a day, summon an Earth Elemental that obeys you for 1 hour"
+  },
+  "stone-of-good-luck-luckstone": {
+    "gist": "+1 to ability checks and saving throws"
+  },
+  "sun-blade": {
+    "gist": "+2 longsword blade of Radiant damage, +1d8 against Undead, sheds sunlight"
+  },
+  "sword-of-life-stealing": {
+    "gist": "On a 20, +15 Necrotic damage and you gain that many Temporary Hit Points"
+  },
+  "sword-of-sharpness": {
+    "gist": "Max damage against objects; on a 20, +14 Slashing and 1 Exhaustion level"
+  },
+  "sword-of-wounding": {
+    "gist": "+2d6 Necrotic on a hit; DC 15 Con save or the target can't regain HP for 1 hour"
+  },
+  "talisman-of-pure-good": {
+    "gist": "+2 to spell attacks; 7 charges to open a fissure that destroys a target (DC 20 Dex)"
+  },
+  "talisman-of-the-sphere": {
+    "gist": "Advantage to control a Sphere of Annihilation and move it farther"
+  },
+  "talisman-of-ultimate-evil": {
+    "gist": "+2 to spell attacks; 6 charges to open a fissure that destroys a target (DC 20 Dex)"
+  },
+  "thunderous-greatclub": {
+    "gist": "Strength 20, +1d8 Thunder on hits; can knock creatures Prone or cause an earthquake"
+  },
+  "tome-of-clear-thought": {
+    "gist": "After 48 hours of study, your Intelligence increases by 2 (max 30)"
+  },
+  "tome-of-leadership-and-influence": {
+    "gist": "After 48 hours of study, your Charisma increases by 2 (max 30)"
+  },
+  "tome-of-understanding": {
+    "gist": "After 48 hours of study, your Wisdom increases by 2 (max 30)"
+  },
+  "trident-of-fish-command": {
+    "gist": "3 charges: cast Dominate Beast (DC 15) on a Beast with a Swim Speed"
+  },
+  "universal-solvent": {
+    "gist": "Each ounce dissolves 1 square foot of adhesive, even Sovereign Glue"
+  },
+  "vicious-weapon": {
+    "gist": "+2d6 damage of the weapon's type to any creature it hits"
+  },
+  "vorpal-sword": {
+    "gist": "+3 to attack and damage; on a natural 20 it cuts off one of the target's heads"
+  },
+  "wand-of-binding": {
+    "gist": "7 charges: cast Hold Person (2) or Hold Monster (5), save DC 17"
+  },
+  "wand-of-enemy-detection": {
+    "gist": "7 charges: for 1 minute, sense the direction of the nearest Hostile creature in 60 ft"
+  },
+  "wand-of-fear": {
+    "gist": "7 charges: cast Command (1) or Fear (3), save DC 15"
+  },
+  "wand-of-fireballs": {
+    "gist": "7 charges: cast Fireball (DC 15), 1 to 3 charges for levels 3 to 5"
+  },
+  "wand-of-lightning-bolts": {
+    "gist": "7 charges: cast Lightning Bolt (DC 15), 1 to 3 charges for levels 3 to 5"
+  },
+  "wand-of-magic-detection": {
+    "gist": "3 charges: cast Detect Magic"
+  },
+  "wand-of-magic-missiles": {
+    "gist": "7 charges: cast Magic Missile, 1 to 3 charges for levels 1 to 3"
+  },
+  "wand-of-paralysis": {
+    "gist": "7 charges: a ray within 60 ft, DC 15 Con save or Paralyzed for 1 minute"
+  },
+  "wand-of-polymorph": {
+    "gist": "7 charges: cast Polymorph (save DC 15)"
+  },
+  "wand-of-secrets": {
+    "gist": "3 charges: points to the nearest secret door or trap within 60 ft"
+  },
+  "wand-of-the-war-mage-1-2-or-3": {
+    "gist": "+1, +2 or +3 to spell attack rolls and they ignore Half Cover"
+  },
+  "wand-of-the-war-mage-plus-2": {
+    "gist": "+2 to spell attack rolls and they ignore Half Cover"
+  },
+  "wand-of-the-war-mage-plus-3": {
+    "gist": "+3 to spell attack rolls and they ignore Half Cover"
+  },
+  "wand-of-web": {
+    "gist": "7 charges: cast Web (save DC 13)"
+  },
+  "wand-of-wonder": {
+    "gist": "7 charges: a random spell or magical effect at a point within 120 ft"
+  },
+  "weapon-of-warning": {
+    "gist": "You and allies within 30 ft have Advantage on Initiative and wake when combat begins"
+  },
+  "weapon-plus-1": {
+    "gist": "+1 to attack and damage rolls"
+  },
+  "weapon-plus-2": {
+    "gist": "+2 to attack and damage rolls"
+  },
+  "weapon-plus-3": {
+    "gist": "+3 to attack and damage rolls"
+  },
+  "well-of-many-worlds": {
+    "gist": "Unfolds into a two-way portal to another world or plane"
+  },
+  "wind-fan": {
+    "gist": "Cast Gust of Wind (DC 13); each extra use that day risks tearing it"
+  },
+  "winged-boots": {
+    "gist": "4 charges: gain a Fly Speed of 30 ft for 1 hour"
+  },
+  "wings-of-flying": {
+    "gist": "Turns into wings with a Fly Speed of 60 ft for 1 hour"
+  },
+  "ioun-stone": {
+    "gist": "Orbits your head and grants a benefit that depends on its type"
+  },
+  "oil-of-slipperiness": {
+    "gist": "Grants Freedom of Movement for 8 hours, or poured out works as Grease"
+  },
+  "philter-of-love": {
+    "gist": "You are Charmed for 1 hour by the next creature you see"
+  },
+  "cloak-of-the-bat": {
+    "gist": "Advantage on Stealth; in Dim Light or Darkness, fly at 40 ft or become a Bat"
+  },
+  "cube-of-force": {
+    "gist": "10 charges: cast Mage Armor, Shield, Wall of Force and more (save DC 17)"
+  },
+  "potion-of-gaseous-form": {
+    "gist": "Gain the effect of Gaseous Form for 1 hour, no Concentration"
+  },
+  "ring-of-resistance": {
+    "gist": "Resistance to one damage type, shown by its gemstone"
+  },
+  "ammunition-of-slaying": {
+    "gist": "Against one creature type: DC 17 Con save or an extra 6d10 Force damage"
+  },
+  "candle-of-invocation": {
+    "gist": "While lit, Advantage on D20 Tests in its light; can cast Gate once"
+  },
+  "iron-flask": {
+    "gist": "Trap an extraplanar creature (DC 17 Wis save); released, it obeys you for 1 hour"
+  },
+  "ring-of-elemental-command": {
+    "gist": "Advantage against Elementals, compel them (DC 18), and powers of its linked plane"
+  }
+}

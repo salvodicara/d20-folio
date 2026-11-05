@@ -40,45 +40,26 @@ const itLocale = mergedUi("it");
 // R3 (LOCK 4 over `srd/`): the SRD content catalogues are id-keyed JSON that must
 // stay key-for-key parallel across locales with no empty value — exactly the
 // chrome rule, extended to the lifted SRD strings.
-import enSpells from "@/i18n/en/srd/spells.json";
 import itSpells from "@/i18n/it/srd/spells.json";
-import enFeats from "@/i18n/en/srd/feats.json";
 import itFeats from "@/i18n/it/srd/feats.json";
-import enRaces from "@/i18n/en/srd/races.json";
 import itRaces from "@/i18n/it/srd/races.json";
-import enBackgrounds from "@/i18n/en/srd/backgrounds.json";
 import itBackgrounds from "@/i18n/it/srd/backgrounds.json";
-import enConditions from "@/i18n/en/srd/conditions.json";
 import itConditions from "@/i18n/it/srd/conditions.json";
-import enEquipment from "@/i18n/en/srd/equipment.json";
 import itEquipment from "@/i18n/it/srd/equipment.json";
-import enMagicItems from "@/i18n/en/srd/magic-items.json";
 import itMagicItems from "@/i18n/it/srd/magic-items.json";
-import enManeuvers from "@/i18n/en/srd/maneuvers.json";
 import itManeuvers from "@/i18n/it/srd/maneuvers.json";
-import enMetamagic from "@/i18n/en/srd/metamagic.json";
 import itMetamagic from "@/i18n/it/srd/metamagic.json";
-import enInvocations from "@/i18n/en/srd/invocations.json";
 import itInvocations from "@/i18n/it/srd/invocations.json";
-import enClasses from "@/i18n/en/srd/classes.json";
 import itClasses from "@/i18n/it/srd/classes.json";
-import enSubclasses from "@/i18n/en/srd/subclasses.json";
 import itSubclasses from "@/i18n/it/srd/subclasses.json";
-import enClassFeatures from "@/i18n/en/srd/class-features.json";
 import itClassFeatures from "@/i18n/it/srd/class-features.json";
-import enLanguages from "@/i18n/en/srd/languages.json";
 import itLanguages from "@/i18n/it/srd/languages.json";
-import enProficiencies from "@/i18n/en/srd/proficiencies.json";
 import itProficiencies from "@/i18n/it/srd/proficiencies.json";
-import enWeaponProperties from "@/i18n/en/srd/weapon-properties.json";
 import itWeaponProperties from "@/i18n/it/srd/weapon-properties.json";
-import enBeasts from "@/i18n/en/srd/beasts.json";
 import itBeasts from "@/i18n/it/srd/beasts.json";
-import enRules from "@/i18n/en/srd/rules.json";
 import itRules from "@/i18n/it/srd/rules.json";
 // The lazy display-only bestiary catalogue (the lazy SRD-kind tier). Statically
 // imported HERE for parity only — the app loads it lazily via `ensureSrdKind`.
-import enMonsters from "@/i18n/en/srd/monsters.json";
 import itMonsters from "@/i18n/it/srd/monsters.json";
 
 // The frozen English-in-IT baseline for magic-items (the deferred P4 batch).
@@ -131,7 +112,7 @@ describe("i18n EN ↔ IT key parity (#35)", () => {
 // after the file (`character.json` → `{ "character": { … } }`). This keeps the
 // runtime merge a plain object-assign (no key rewriting) and the split boring +
 // predictable, and pins EN ↔ IT shard parity at the FILE level too.
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -179,26 +160,51 @@ describe("i18n ui/ shard layout (SLICE 8)", () => {
 
 // ── R3: the SRD content catalogues (LOCK 4 extended over `srd/`) ──────────────
 
+/**
+ * The English side as the runtime composes it: the bundled `en/srd/<file>.json` plus
+ * the lazy `en/srd-prose/<file>.json` (display-only fields such as `gist`, loaded
+ * after first paint). Read from disk, because the in-memory catalogue module gains
+ * the prose once it loads.
+ */
+function enComposed(file: string): Json {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "../../src/i18n/en");
+  const read = (dir: string) => {
+    const path = join(root, dir, `${file}.json`);
+    return existsSync(path)
+      ? (JSON.parse(readFileSync(path, "utf-8")) as Record<string, Json>)
+      : {};
+  };
+  const composed: Record<string, Json> = read("srd");
+  for (const [id, fields] of Object.entries(read("srd-prose"))) {
+    composed[id] = { ...(composed[id] ?? {}), ...fields };
+  }
+  return composed;
+}
+
 const SRD_CATALOGUES: { file: string; en: Json; it: Json }[] = [
-  { file: "spells", en: enSpells, it: itSpells },
-  { file: "feats", en: enFeats, it: itFeats },
-  { file: "races", en: enRaces, it: itRaces },
-  { file: "backgrounds", en: enBackgrounds, it: itBackgrounds },
-  { file: "conditions", en: enConditions, it: itConditions },
-  { file: "equipment", en: enEquipment, it: itEquipment },
-  { file: "magic-items", en: enMagicItems, it: itMagicItems },
-  { file: "maneuvers", en: enManeuvers, it: itManeuvers },
-  { file: "metamagic", en: enMetamagic, it: itMetamagic },
-  { file: "invocations", en: enInvocations, it: itInvocations },
-  { file: "classes", en: enClasses, it: itClasses },
-  { file: "subclasses", en: enSubclasses, it: itSubclasses },
-  { file: "class-features", en: enClassFeatures, it: itClassFeatures },
-  { file: "languages", en: enLanguages, it: itLanguages },
-  { file: "proficiencies", en: enProficiencies, it: itProficiencies },
-  { file: "weapon-properties", en: enWeaponProperties, it: itWeaponProperties },
-  { file: "beasts", en: enBeasts, it: itBeasts },
-  { file: "rules", en: enRules, it: itRules },
-  { file: "monsters", en: enMonsters, it: itMonsters },
+  { file: "spells", en: enComposed("spells"), it: itSpells },
+  { file: "feats", en: enComposed("feats"), it: itFeats },
+  { file: "races", en: enComposed("races"), it: itRaces },
+  { file: "backgrounds", en: enComposed("backgrounds"), it: itBackgrounds },
+  { file: "conditions", en: enComposed("conditions"), it: itConditions },
+  { file: "equipment", en: enComposed("equipment"), it: itEquipment },
+  { file: "magic-items", en: enComposed("magic-items"), it: itMagicItems },
+  { file: "maneuvers", en: enComposed("maneuvers"), it: itManeuvers },
+  { file: "metamagic", en: enComposed("metamagic"), it: itMetamagic },
+  { file: "invocations", en: enComposed("invocations"), it: itInvocations },
+  { file: "classes", en: enComposed("classes"), it: itClasses },
+  { file: "subclasses", en: enComposed("subclasses"), it: itSubclasses },
+  { file: "class-features", en: enComposed("class-features"), it: itClassFeatures },
+  { file: "languages", en: enComposed("languages"), it: itLanguages },
+  { file: "proficiencies", en: enComposed("proficiencies"), it: itProficiencies },
+  {
+    file: "weapon-properties",
+    en: enComposed("weapon-properties"),
+    it: itWeaponProperties,
+  },
+  { file: "beasts", en: enComposed("beasts"), it: itBeasts },
+  { file: "rules", en: enComposed("rules"), it: itRules },
+  { file: "monsters", en: enComposed("monsters"), it: itMonsters },
 ];
 
 describe("SRD content i18n EN ↔ IT parity + no-empty (R3, LOCK 4 over srd/)", () => {
@@ -255,7 +261,7 @@ describe("no English-in-IT leak (R3, beyond parity)", () => {
   );
 
   it("magic-items: the English-in-IT leak set only ever SHRINKS (P4 batch)", () => {
-    const found = englishInItLeaks(enMagicItems, itMagicItems);
+    const found = englishInItLeaks(enComposed("magic-items"), itMagicItems);
     const foundByField = (field: string) =>
       new Set(found.filter((l) => l.field === field).map((l) => l.id));
     const desc = foundByField("description");

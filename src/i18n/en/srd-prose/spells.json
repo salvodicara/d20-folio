@@ -1,0 +1,1019 @@
+{
+  "acid-splash": {
+    "gist": "Creatures in a 5-foot Sphere make a Dex save or take 1d6 Acid damage"
+  },
+  "aid": {
+    "gist": "Up to three creatures gain 5 to their Hit Point maximum and current Hit Points"
+  },
+  "alarm": {
+    "gist": "A door, window or area up to a 20-foot Cube alerts you when a creature enters it"
+  },
+  "alter-self": {
+    "gist": "You gain aquatic adaptation, a new appearance or 1d6 natural weapons"
+  },
+  "animal-friendship": {
+    "gist": "A Beast makes a Wisdom saving throw or is Charmed for the duration"
+  },
+  "animal-messenger": {
+    "gist": "A Tiny Beast carries a message of up to 25 words to a recipient you describe"
+  },
+  "animal-shapes": {
+    "gist": "Willing creatures turn into Large or smaller Beasts of Challenge Rating 4 or lower"
+  },
+  "animate-dead": {
+    "gist": "Bones or a corpse rise as a Skeleton or Zombie under your control for 24 hours"
+  },
+  "animate-objects": {
+    "gist": "Nonmagical objects become Constructs you command with a Bonus Action"
+  },
+  "antilife-shell": {
+    "gist": "A 10-foot aura stops creatures other than Constructs and Undead from passing"
+  },
+  "antimagic-field": {
+    "gist": "A 10-foot aura in which spells and magic items stop working"
+  },
+  "antipathy-sympathy": {
+    "gist": "A chosen kind of creature makes a Wisdom save or flees from, or is drawn to, a target"
+  },
+  "arcane-eye": {
+    "gist": "An Invisible eye you can move sends you what it sees, with 30-foot Darkvision"
+  },
+  "arcane-lock": {
+    "gist": "A closed door, window or container stays locked against nonmagical means"
+  },
+  "astral-projection": {
+    "gist": "You and up to eight willing creatures project your astral forms into the Astral Plane"
+  },
+  "augury": {
+    "gist": "The GM gives an omen on a course of action you plan within 30 minutes"
+  },
+  "aura-of-life": {
+    "gist": "You and allies in 30 feet have Resistance to Necrotic damage; allies at 0 HP regain 1"
+  },
+  "awaken": {
+    "gist": "A Beast or plant gains Intelligence 10 and a language, and is Charmed by you"
+  },
+  "bane": {
+    "gist": "Up to three creatures fail a Charisma save and subtract 1d4 from attacks and saves"
+  },
+  "banishment": {
+    "gist": "One creature makes a Charisma save or is sent to a harmless demiplane, Incapacitated"
+  },
+  "barkskin": {
+    "gist": "A willing creature's Armor Class becomes 17 if it was lower"
+  },
+  "beacon-of-hope": {
+    "gist": "Targets have Advantage on Wisdom and Death saves and maximise healing received"
+  },
+  "befuddlement": {
+    "gist": "One creature makes an Int save or takes 10d12 Psychic damage and can't cast spells"
+  },
+  "bestow-curse": {
+    "gist": "A touched creature makes a Wisdom save or is cursed with an effect you choose"
+  },
+  "bigbys-hand": {
+    "gist": "A Large hand that punches for 5d8 Force damage, pushes, grapples or shields"
+  },
+  "blade-barrier": {
+    "gist": "A wall of blades: creatures in it make a Dex save or take 6d10 Force damage"
+  },
+  "bless": {
+    "gist": "Up to three creatures add 1d4 to attack rolls and saving throws"
+  },
+  "blight": {
+    "gist": "One creature makes a Constitution save or takes 8d8 Necrotic damage"
+  },
+  "blindness-deafness": {
+    "gist": "One creature makes a Constitution save or is Blinded or Deafened"
+  },
+  "blink": {
+    "gist": "At the end of each of your turns, on a 4–6 on 1d6 you vanish to the Ethereal Plane"
+  },
+  "blur": {
+    "gist": "Creatures have Disadvantage on attack rolls against you"
+  },
+  "burning-hands": {
+    "gist": "Creatures in a 15-foot Cone make a Dex save or take 3d6 Fire damage"
+  },
+  "call-lightning": {
+    "gist": "Bolts from a storm cloud deal 3d10 Lightning damage within 5 feet; Dex save halves"
+  },
+  "calm-emotions": {
+    "gist": "Humanoids in a 20-foot Sphere make a Charisma save or are calmed"
+  },
+  "chain-lightning": {
+    "gist": "Up to four targets make a Dex save or take 10d8 Lightning damage"
+  },
+  "charm-monster": {
+    "gist": "One creature makes a Wisdom save or is Charmed and Friendly to you"
+  },
+  "charm-person": {
+    "gist": "One Humanoid makes a Wisdom save or is Charmed and Friendly to you"
+  },
+  "chill-touch": {
+    "gist": "Melee spell attack: 1d10 Necrotic damage; the target can't heal until your next turn ends"
+  },
+  "chromatic-orb": {
+    "gist": "Ranged spell attack: 3d8 damage of a type you choose, sometimes leaping to more targets"
+  },
+  "circle-of-death": {
+    "gist": "Creatures in a 60-foot Sphere make a Con save or take 8d8 Necrotic damage"
+  },
+  "clairvoyance": {
+    "gist": "An Invisible sensor lets you see or hear a distant place"
+  },
+  "clone": {
+    "gist": "An inert duplicate of a creature receives its soul if the creature dies"
+  },
+  "cloudkill": {
+    "gist": "A drifting 20-foot fog: Con save or 5d8 Poison damage, half on a success"
+  },
+  "color-spray": {
+    "gist": "Creatures in a 15-foot Cone make a Con save or are Blinded until your next turn ends"
+  },
+  "command": {
+    "gist": "One creature makes a Wisdom save or obeys a one-word command on its next turn"
+  },
+  "commune": {
+    "gist": "A deity truly answers up to three yes-or-no questions"
+  },
+  "commune-with-nature": {
+    "gist": "You learn three facts about the land within 3 miles of you"
+  },
+  "comprehend-languages": {
+    "gist": "You understand the literal meaning of any language you hear, see signed or touch"
+  },
+  "compulsion": {
+    "gist": "Creatures make a Wisdom save or are Charmed and must move where you direct"
+  },
+  "cone-of-cold": {
+    "gist": "Creatures in a 60-foot Cone make a Con save or take 8d8 Cold damage"
+  },
+  "confusion": {
+    "gist": "Creatures in a 10-foot Sphere make a Wisdom save or act randomly each turn"
+  },
+  "conjure-animals": {
+    "gist": "A spectral pack deals 3d10 Slashing damage to nearby creatures that fail a Dex save"
+  },
+  "conjure-celestial": {
+    "gist": "A pillar of light heals 4d12 + modifier or deals 6d12 Radiant damage"
+  },
+  "conjure-elemental": {
+    "gist": "A Large spirit deals 8d8 damage and Restrains creatures that fail a Dex save"
+  },
+  "conjure-fey": {
+    "gist": "A fey spirit attacks for 3d12 + modifier Psychic damage and leaves the target Frightened"
+  },
+  "conjure-minor-elementals": {
+    "gist": "Your attacks deal an extra 2d8 damage to creatures within 15 feet of you"
+  },
+  "conjure-woodland-beings": {
+    "gist": "Spirits around you deal 5d8 Force damage, half on a Wisdom save"
+  },
+  "contact-other-plane": {
+    "gist": "Pass a DC 15 Int save to ask an entity five questions, or take 6d6 Psychic damage"
+  },
+  "contagion": {
+    "gist": "A touched creature makes a Con save or takes 11d8 Necrotic damage and is Poisoned"
+  },
+  "contingency": {
+    "gist": "A spell of level 5 or lower on you takes effect when a trigger you set occurs"
+  },
+  "continual-flame": {
+    "gist": "An object sheds a heatless flame that can't be smothered or quenched"
+  },
+  "control-water": {
+    "gist": "Water in up to a 100-foot Cube floods, parts, changes flow or swirls"
+  },
+  "control-weather": {
+    "gist": "You change precipitation, temperature and wind within 5 miles of you"
+  },
+  "counterspell": {
+    "gist": "A creature casting a spell makes a Con save or the spell fails"
+  },
+  "create-food-and-water": {
+    "gist": "You create 45 pounds of food and 30 gallons of fresh water"
+  },
+  "create-or-destroy-water": {
+    "gist": "You create or destroy up to 10 gallons of water, or rain or fog in a 30-foot Cube"
+  },
+  "create-undead": {
+    "gist": "At night, up to three corpses become Ghouls under your control"
+  },
+  "creation": {
+    "gist": "You create an object up to a 5-foot Cube of plant or mineral matter"
+  },
+  "cure-wounds": {
+    "gist": "A touched creature regains 2d8 + your spellcasting modifier Hit Points"
+  },
+  "dancing-lights": {
+    "gist": "Up to four torch-size lights hover and move as you direct"
+  },
+  "darkness": {
+    "gist": "Magical Darkness fills a 15-foot Sphere that Darkvision can't see through"
+  },
+  "darkvision": {
+    "gist": "A willing creature gains Darkvision out to 150 feet"
+  },
+  "daylight": {
+    "gist": "Sunlight fills a 60-foot Sphere with Bright Light"
+  },
+  "death-ward": {
+    "gist": "The first time the target would drop to 0 Hit Points, it drops to 1 instead"
+  },
+  "delayed-blast-fireball": {
+    "gist": "A bead explodes at the end for 12d6 Fire damage, +1d6 each turn; Dex save halves"
+  },
+  "demiplane": {
+    "gist": "A shadowy door leads to an empty 30-foot room on a demiplane"
+  },
+  "detect-evil-and-good": {
+    "gist": "You sense Aberrations, Celestials, Elementals, Fey, Fiends and Undead within 30 feet"
+  },
+  "detect-magic": {
+    "gist": "You sense magic within 30 feet and can see its aura and school"
+  },
+  "detect-poison-and-disease": {
+    "gist": "You sense poisons, poisonous creatures and magical contagions within 30 feet"
+  },
+  "detect-thoughts": {
+    "gist": "You sense thoughts within 30 feet and can read a creature's surface thoughts"
+  },
+  "dimension-door": {
+    "gist": "You teleport to a spot within range and can bring one willing creature"
+  },
+  "disguise-self": {
+    "gist": "You and your gear look different until the spell ends"
+  },
+  "disintegrate": {
+    "gist": "A ray deals 10d6 + 40 Force damage on a failed Dex save; a target at 0 HP turns to dust"
+  },
+  "dispel-evil-and-good": {
+    "gist": "Celestials, Elementals, Fey, Fiends and Undead have Disadvantage to attack you"
+  },
+  "dispel-magic": {
+    "gist": "Ends spells of level 3 or lower on a target; higher ones need a check (DC 10 + level)"
+  },
+  "dissonant-whispers": {
+    "gist": "Wisdom save or 3d6 Psychic damage and the target must flee using its Reaction"
+  },
+  "divination": {
+    "gist": "Ask the GM one question about a goal or event within 7 days and get a truthful reply"
+  },
+  "divine-favor": {
+    "gist": "Your weapon attacks deal an extra 1d4 Radiant damage on a hit"
+  },
+  "divine-smite": {
+    "gist": "The attack deals an extra 2d8 Radiant damage, +1d8 against Fiends and Undead"
+  },
+  "divine-word": {
+    "gist": "Charisma save; failed targets with 50 HP or fewer are deafened, blinded, stunned or die"
+  },
+  "dominate-beast": {
+    "gist": "A Beast makes a Wisdom save or is Charmed and obeys your telepathic commands"
+  },
+  "dominate-monster": {
+    "gist": "A creature makes a Wisdom save or is Charmed and obeys your telepathic commands"
+  },
+  "dominate-person": {
+    "gist": "A Humanoid makes a Wisdom save or is Charmed and obeys your telepathic commands"
+  },
+  "dragons-breath": {
+    "gist": "A willing creature can exhale a 15-ft Cone: Dex save or 3d6 damage of a chosen type"
+  },
+  "drawmijs-instant-summons": {
+    "gist": "Mark an object of 10 lb or less; crush the sapphire later to bring it to your hand"
+  },
+  "dream": {
+    "gist": "A messenger enters a known creature's dreams to talk, or to terrify it for 3d6 Psychic"
+  },
+  "druidcraft": {
+    "gist": "Create a minor nature effect: predict the weather, bloom a flower, light or snuff a flame"
+  },
+  "earthquake": {
+    "gist": "A 100-ft-radius tremor: Dex save each turn or fall Prone and lose Concentration"
+  },
+  "eldritch-blast": {
+    "gist": "Ranged spell attack that deals 1d10 Force damage"
+  },
+  "elementalism": {
+    "gist": "Create a minor elemental effect: a breeze, dust, embers, mist or a crudely shaped element"
+  },
+  "enhance-ability": {
+    "gist": "A touched creature has Advantage on ability checks with one chosen ability"
+  },
+  "enlarge-reduce": {
+    "gist": "A creature or object grows or shrinks one size; an unwilling target makes a Con save"
+  },
+  "ensnaring-strike": {
+    "gist": "On a hit, Strength save or Restrained by vines, taking 1d6 Piercing damage each turn"
+  },
+  "entangle": {
+    "gist": "Plants fill a 20-ft square: Strength save or Restrained; the area is Difficult Terrain"
+  },
+  "enthrall": {
+    "gist": "Creatures fail a Wisdom save and take −10 to Perception checks and Passive Perception"
+  },
+  "etherealness": {
+    "gist": "You step into the Border Ethereal, unseen and untouchable by the plane you left"
+  },
+  "evards-black-tentacles": {
+    "gist": "Tentacles fill a 20-ft square: Strength save or 3d6 Bludgeoning damage and Restrained"
+  },
+  "expeditious-retreat": {
+    "gist": "Take the Dash action now and as a Bonus Action on later turns"
+  },
+  "eyebite": {
+    "gist": "Wisdom save or the target is Unconscious, Frightened or Poisoned; a new target each turn"
+  },
+  "fabricate": {
+    "gist": "Turn raw materials into a finished object of the same material, up to Large size"
+  },
+  "faerie-fire": {
+    "gist": "A 20-ft Cube: Dex save or outlined in light, and attacks against them have Advantage"
+  },
+  "false-life": {
+    "gist": "You gain 2d4 + 4 Temporary Hit Points"
+  },
+  "fear": {
+    "gist": "A 30-ft Cone: Wisdom save or drop what it holds, become Frightened and flee"
+  },
+  "feather-fall": {
+    "gist": "Up to five falling creatures descend at 60 ft per round and take no falling damage"
+  },
+  "find-familiar": {
+    "gist": "Gain a spirit familiar in animal form that obeys you and shares its senses"
+  },
+  "find-steed": {
+    "gist": "Summon a loyal Large otherworldly steed that fights beside you and can be ridden"
+  },
+  "find-the-path": {
+    "gist": "Sense the most direct route to a familiar location on the same plane"
+  },
+  "find-traps": {
+    "gist": "Sense whether a trap is within range and line of sight, but not where it is"
+  },
+  "finger-of-death": {
+    "gist": "Con save or 7d8 + 30 Necrotic damage; a slain Humanoid rises as your Zombie"
+  },
+  "fire-bolt": {
+    "gist": "Ranged spell attack that deals 1d10 Fire damage and ignites flammable objects"
+  },
+  "fire-shield": {
+    "gist": "Resist Cold or Fire, and melee attackers within 5 ft take 2d8 Fire or Cold damage"
+  },
+  "fire-storm": {
+    "gist": "Up to ten 10-ft Cubes of fire: Dexterity save or 7d10 Fire damage, half on a success"
+  },
+  "fireball": {
+    "gist": "A 20-ft-radius explosion: Dexterity save or 8d6 Fire damage, half on a success"
+  },
+  "flame-blade": {
+    "gist": "A fiery blade in your hand; a melee spell attack deals 3d6 + your modifier Fire damage"
+  },
+  "flame-strike": {
+    "gist": "A column of fire: Dex save or 5d6 Fire and 5d6 Radiant damage, half on a success"
+  },
+  "flaming-sphere": {
+    "gist": "A rolling sphere of fire: Dex save or 2d6 Fire damage to creatures ending turns near it"
+  },
+  "flesh-to-stone": {
+    "gist": "Con save or Restrained, then three failed saves turn the target to stone (Petrified)"
+  },
+  "fly": {
+    "gist": "A willing creature gains a Fly Speed of 60 feet and can hover"
+  },
+  "fog-cloud": {
+    "gist": "A 20-ft-radius Sphere of fog that is Heavily Obscured"
+  },
+  "forbiddance": {
+    "gist": "Blocks teleportation and planar travel into an area and damages chosen creature types"
+  },
+  "forcecage": {
+    "gist": "An Invisible, immobile cage or box of force traps creatures inside it"
+  },
+  "foresight": {
+    "gist": "A willing creature has Advantage on D20 Tests; attacks against it have Disadvantage"
+  },
+  "freedom-of-movement": {
+    "gist": "Ignore Difficult Terrain and magic that slows, paralyzes or restrains; gain a Swim Speed"
+  },
+  "gaseous-form": {
+    "gist": "A willing creature becomes a misty cloud: 10-ft Fly Speed, resists weapon damage"
+  },
+  "gate": {
+    "gist": "Open a portal to a precise location on another plane of existence"
+  },
+  "geas": {
+    "gist": "Wisdom save or Charmed by your command, taking 5d10 Psychic damage for defying it"
+  },
+  "gentle-repose": {
+    "gist": "A corpse is protected from decay and can't become Undead"
+  },
+  "giant-insect": {
+    "gist": "Summon a giant centipede, spider or wasp that fights as your ally"
+  },
+  "glibness": {
+    "gist": "Treat Charisma check rolls as 15, and truth-detecting magic says you're truthful"
+  },
+  "globe-of-invulnerability": {
+    "gist": "Spells of level 5 or lower cast from outside can't affect anything in a 10-ft barrier"
+  },
+  "glyph-of-warding": {
+    "gist": "Inscribe a hidden glyph that unleashes an explosion or a stored spell when triggered"
+  },
+  "goodberry": {
+    "gist": "Ten berries that each restore 1 Hit Point and feed a creature for a day"
+  },
+  "grease": {
+    "gist": "A 10-ft square of grease is Difficult Terrain; Dexterity save or fall Prone"
+  },
+  "greater-invisibility": {
+    "gist": "A touched creature has the Invisible condition for the duration"
+  },
+  "greater-restoration": {
+    "gist": "Remove one effect: Exhaustion level, Charmed, Petrified, a curse or an ability drain"
+  },
+  "guardian-of-faith": {
+    "gist": "A spectral guardian deals 20 Radiant damage (Dex save halves) to enemies that come near"
+  },
+  "guards-and-wards": {
+    "gist": "Ward up to 2,500 sq ft with fog, locked doors, webs and other protective effects"
+  },
+  "guidance": {
+    "gist": "A willing creature adds 1d4 to ability checks with one chosen skill"
+  },
+  "guiding-bolt": {
+    "gist": "Ranged spell attack: 4d6 Radiant damage, and the next attack on it has Advantage"
+  },
+  "gust-of-wind": {
+    "gist": "A 60-ft Line of wind: Strength save or pushed 15 ft away; disperses gas and flames"
+  },
+  "hallow": {
+    "gist": "An area up to 60 ft in radius bars chosen creature types and gains one extra effect"
+  },
+  "hallucinatory-terrain": {
+    "gist": "Make natural terrain in a 150-ft Cube look, sound and smell like other terrain"
+  },
+  "harm": {
+    "gist": "Con save or 14d6 Necrotic damage that also lowers the target's Hit Point maximum"
+  },
+  "haste": {
+    "gist": "Double Speed, +2 AC, Advantage on Dex saves and an extra action; lethargy afterwards"
+  },
+  "heal": {
+    "gist": "A creature regains 70 Hit Points and is cured of Blinded, Deafened and Poisoned"
+  },
+  "healing-word": {
+    "gist": "A creature you can see regains 2d4 + your spellcasting modifier Hit Points"
+  },
+  "heat-metal": {
+    "gist": "A metal object glows red-hot: 2d8 Fire damage to whoever touches it, each turn"
+  },
+  "hellish-rebuke": {
+    "gist": "The creature that damaged you: Dex save or 2d10 Fire damage, half on a success"
+  },
+  "heroes-feast": {
+    "gist": "Twelve diners get 24 h of Poison resistance, immunity to Frightened and Poisoned, +2d10 HP"
+  },
+  "heroism": {
+    "gist": "Immune to Frightened and gains Temporary HP equal to your modifier each turn"
+  },
+  "hex": {
+    "gist": "Your hits deal an extra 1d6 Necrotic damage; it has Disadvantage on one ability's checks"
+  },
+  "hold-monster": {
+    "gist": "A creature you see fails a Wisdom save or is Paralyzed; it repeats the save each turn"
+  },
+  "hold-person": {
+    "gist": "A Humanoid you see fails a Wisdom save or is Paralyzed; it repeats the save each turn"
+  },
+  "holy-aura": {
+    "gist": "Chosen creatures in a 30-ft aura get Advantage on saves; attacks on them have Disadvantage"
+  },
+  "hunters-mark": {
+    "gist": "Mark a creature: your attack hits deal +1d6 Force damage and you track it with Advantage"
+  },
+  "hypnotic-pattern": {
+    "gist": "Creatures in a 30-ft Cube fail a Wisdom save or are Charmed, Incapacitated and at Speed 0"
+  },
+  "ice-knife": {
+    "gist": "Ranged spell attack for 1d10 Piercing, then a Dex save or 2d6 Cold to all within 5 ft"
+  },
+  "ice-storm": {
+    "gist": "Hail in a 20-ft-radius Cylinder: Dex save or 2d10 Bludgeoning plus 4d6 Cold damage"
+  },
+  "identify": {
+    "gist": "Touch an object to learn its magic properties, charges and spells affecting it"
+  },
+  "illusory-script": {
+    "gist": "Writing that only creatures you choose can read; to others it looks unintelligible"
+  },
+  "imprisonment": {
+    "gist": "A creature you see fails a Wisdom save and is imprisoned until a trigger you set"
+  },
+  "incendiary-cloud": {
+    "gist": "A 20-ft-radius cloud of embers that moves each turn: Dex save or 10d8 Fire damage"
+  },
+  "inflict-wounds": {
+    "gist": "A creature you touch makes a Constitution save or takes 2d10 Necrotic damage"
+  },
+  "insect-plague": {
+    "gist": "Locusts fill a 20-ft-radius Sphere: Constitution save or 4d10 Piercing damage"
+  },
+  "invisibility": {
+    "gist": "A creature you touch is Invisible until it attacks, deals damage or casts a spell"
+  },
+  "jump": {
+    "gist": "A willing creature you touch can jump 30 feet once per turn for 10 feet of movement"
+  },
+  "knock": {
+    "gist": "Unlocks one mundane lock or bar, or suppresses Arcane Lock for 10 minutes"
+  },
+  "legend-lore": {
+    "gist": "Learn a brief summary of the significant lore about a famous person, place or object"
+  },
+  "leomunds-secret-chest": {
+    "gist": "Hide a chest and its contents on the Ethereal Plane and recall it with its replica"
+  },
+  "leomunds-tiny-hut": {
+    "gist": "A 10-ft dome that bars outsiders and spells of level 3 or lower"
+  },
+  "lesser-restoration": {
+    "gist": "End one condition on a creature you touch: Blinded, Deafened, Paralyzed or Poisoned"
+  },
+  "levitate": {
+    "gist": "Lift a creature or object up to 20 feet to float there; a Con save resists if unwilling"
+  },
+  "light": {
+    "gist": "An object you touch sheds Bright Light in a 20-ft radius and Dim Light 20 ft beyond"
+  },
+  "lightning-bolt": {
+    "gist": "A 100-ft Line: each creature makes a Dex save or takes 8d6 Lightning damage"
+  },
+  "locate-animals-or-plants": {
+    "gist": "Learn the direction and distance to the nearest Beast or plant of a kind within 5 miles"
+  },
+  "locate-creature": {
+    "gist": "Sense the direction to a familiar creature within 1,000 feet"
+  },
+  "locate-object": {
+    "gist": "Sense the direction to a familiar object within 1,000 feet"
+  },
+  "longstrider": {
+    "gist": "A creature you touch gains +10 feet of Speed"
+  },
+  "mage-armor": {
+    "gist": "A creature you touch with no armor has a base AC of 13 + its Dexterity modifier"
+  },
+  "mage-hand": {
+    "gist": "A spectral hand within 30 feet manipulates objects and carries up to 10 pounds"
+  },
+  "magic-circle": {
+    "gist": "A 10-ft Cylinder chosen creature types can't enter and attack into at Disadvantage"
+  },
+  "magic-jar": {
+    "gist": "Your soul moves into a container and can possess a Humanoid that fails a Charisma save"
+  },
+  "magic-missile": {
+    "gist": "Three darts each strike a creature you see for 1d4 + 1 Force damage"
+  },
+  "magic-mouth": {
+    "gist": "An object speaks a message of up to 25 words when a trigger you set occurs"
+  },
+  "magic-weapon": {
+    "gist": "A nonmagical weapon you touch gains +1 to attack and damage rolls"
+  },
+  "major-image": {
+    "gist": "A realistic illusion up to a 20-ft Cube with sound, smell and temperature"
+  },
+  "mass-cure-wounds": {
+    "gist": "Up to six creatures in a 30-ft Sphere regain 5d8 + your spellcasting modifier HP"
+  },
+  "mass-heal": {
+    "gist": "Split up to 700 Hit Points among creatures you see; ends Blinded, Deafened, Poisoned"
+  },
+  "mass-healing-word": {
+    "gist": "Up to six creatures you see regain 2d4 + your spellcasting modifier Hit Points"
+  },
+  "mass-suggestion": {
+    "gist": "Up to twelve creatures fail a Wisdom save and are Charmed into following a suggestion"
+  },
+  "maze": {
+    "gist": "Banish a creature to a labyrinth demiplane until it passes a DC 20 Investigation check"
+  },
+  "meld-into-stone": {
+    "gist": "You merge with your gear into a stone surface, hidden from nonmagical senses"
+  },
+  "melfs-acid-arrow": {
+    "gist": "Ranged spell attack: 4d4 Acid damage plus 2d4 Acid at the end of its next turn"
+  },
+  "mending": {
+    "gist": "Repair a single break or tear up to 1 foot in an object you touch"
+  },
+  "message": {
+    "gist": "Whisper a message to a creature within range, which can whisper a reply only you hear"
+  },
+  "meteor-swarm": {
+    "gist": "Four 40-ft-radius Spheres: Dex save or 20d6 Fire plus 20d6 Bludgeoning damage"
+  },
+  "mind-blank": {
+    "gist": "A willing creature is immune to Psychic damage, Charmed and all magical mind-reading"
+  },
+  "mind-spike": {
+    "gist": "Wisdom save or 3d8 Psychic damage; on a fail you always know the target's location"
+  },
+  "minor-illusion": {
+    "gist": "Create a sound or an image of an object within range"
+  },
+  "mirage-arcane": {
+    "gist": "Make up to a square mile of terrain look, sound and feel like another terrain"
+  },
+  "mirror-image": {
+    "gist": "Three illusory duplicates may take attack hits in your place on a d6 roll of 3+"
+  },
+  "mislead": {
+    "gist": "You turn Invisible while an illusory double you control appears in your place"
+  },
+  "misty-step": {
+    "gist": "Teleport up to 30 feet to an unoccupied space you can see"
+  },
+  "modify-memory": {
+    "gist": "A creature that fails a Wisdom save is Charmed while you rewrite a recent memory"
+  },
+  "moonbeam": {
+    "gist": "A movable 5-ft-radius beam: Constitution save or 2d10 Radiant damage"
+  },
+  "mordenkainens-faithful-hound": {
+    "gist": "A watchdog only you see barks at intruders and bites: Dex save or 4d8 Force damage"
+  },
+  "mordenkainens-magnificent-mansion": {
+    "gist": "Conjure a door to a furnished extradimensional mansion with 100 servants"
+  },
+  "mordenkainens-private-sanctum": {
+    "gist": "Ward a cube up to 100 feet against sound, sight, divination, teleportation as you choose"
+  },
+  "mordenkainens-sword": {
+    "gist": "A floating sword makes melee spell attacks for 4d12 + your spellcasting modifier Force"
+  },
+  "move-earth": {
+    "gist": "Reshape dirt, sand or clay in an area up to 40 feet on a side"
+  },
+  "nondetection": {
+    "gist": "Hide a creature, place or object you touch from Divination spells and scrying"
+  },
+  "nystuls-magic-aura": {
+    "gist": "Make a creature read as another creature type, or fake an object's magical aura"
+  },
+  "otilukes-freezing-sphere": {
+    "gist": "A 60-ft-radius burst: Constitution save or 10d6 Cold damage; it can also freeze water"
+  },
+  "otilukes-resilient-sphere": {
+    "gist": "Seal a Large or smaller creature or object in an impenetrable sphere (Dex save)"
+  },
+  "ottos-irresistible-dance": {
+    "gist": "Wisdom save or Charmed and dancing: Disadvantage on attacks, Advantage against it"
+  },
+  "pass-without-trace": {
+    "gist": "You and allies in a 30-ft aura gain +10 to Stealth checks and leave no tracks"
+  },
+  "passwall": {
+    "gist": "Open a passage up to 5 ft wide, 8 ft tall and 20 ft deep through wood, plaster or stone"
+  },
+  "phantasmal-force": {
+    "gist": "Intelligence save or the target sees a phantasm it believes real, up to a 10-ft Cube"
+  },
+  "phantasmal-killer": {
+    "gist": "Wisdom save or 4d10 Psychic and Disadvantage, repeating each turn until it saves"
+  },
+  "phantom-steed": {
+    "gist": "Summon a quasi-real horse with Speed 100 feet that you or an ally can ride"
+  },
+  "planar-ally": {
+    "gist": "A Celestial, Elemental or Fiend appears and may serve you in exchange for payment"
+  },
+  "planar-binding": {
+    "gist": "A Celestial, Elemental, Fey or Fiend fails a Charisma save and must serve you"
+  },
+  "plane-shift": {
+    "gist": "You and up to eight willing creatures holding hands travel to another plane"
+  },
+  "plant-growth": {
+    "gist": "Plants in a 100-ft radius overgrow, costing 4 feet of movement per foot, or yield double"
+  },
+  "poison-spray": {
+    "gist": "Ranged spell attack dealing 1d12 Poison damage"
+  },
+  "polymorph": {
+    "gist": "A creature that fails a Wisdom save becomes a Beast of your choice with its CR or lower"
+  },
+  "power-word-heal": {
+    "gist": "A creature regains all its Hit Points and is freed of several conditions"
+  },
+  "power-word-kill": {
+    "gist": "A creature with 100 Hit Points or fewer dies; otherwise it takes 12d12 Psychic damage"
+  },
+  "power-word-stun": {
+    "gist": "A creature with 150 HP or fewer is Stunned, saving with Con each turn; else Speed 0"
+  },
+  "prayer-of-healing": {
+    "gist": "Up to five creatures gain a Short Rest's benefits and regain 2d8 Hit Points"
+  },
+  "prestidigitation": {
+    "gist": "Minor magic tricks: sparks, light a candle, clean, chill or flavor, mark, tiny trinket"
+  },
+  "prismatic-spray": {
+    "gist": "Eight rays in a 60-ft Cone; Dex save against a random ray, most dealing 12d6 damage"
+  },
+  "prismatic-wall": {
+    "gist": "A seven-layer wall of light; each layer passed forces a Dex save against its effect"
+  },
+  "produce-flame": {
+    "gist": "A flame in your hand sheds light; hurl it for a ranged spell attack dealing 1d8 Fire"
+  },
+  "programmed-illusion": {
+    "gist": "An illusion up to a 30-ft Cube that performs a scripted show when a trigger occurs"
+  },
+  "project-image": {
+    "gist": "An illusory copy of you appears at a place you've seen; you see and hear through it"
+  },
+  "protection-from-energy": {
+    "gist": "A willing creature gains Resistance to Acid, Cold, Fire, Lightning or Thunder damage"
+  },
+  "protection-from-evil-and-good": {
+    "gist": "Aberrations, Celestials, Elementals, Fey, Fiends, Undead have Disadvantage against it"
+  },
+  "protection-from-poison": {
+    "gist": "End Poisoned on a creature; it gains Resistance to Poison and Advantage on such saves"
+  },
+  "purify-food-and-drink": {
+    "gist": "Remove poison and rot from nonmagical food and drink in a 5-ft-radius Sphere"
+  },
+  "raise-dead": {
+    "gist": "Revives a creature dead up to 10 days with 1 HP; −4 to D20 Tests that fades"
+  },
+  "rarys-telepathic-bond": {
+    "gist": "Up to eight willing creatures share a telepathic link at any distance"
+  },
+  "ray-of-enfeeblement": {
+    "gist": "Constitution save or Disadvantage on Strength D20 Tests and −1d8 to damage rolls"
+  },
+  "ray-of-frost": {
+    "gist": "Ranged spell attack: 1d8 Cold damage and −10 feet of Speed"
+  },
+  "ray-of-sickness": {
+    "gist": "Ranged spell attack: 2d8 Poison damage and the target is Poisoned"
+  },
+  "regenerate": {
+    "gist": "A touched creature regains 4d8 + 15 HP, then 1 HP each turn; lost limbs regrow"
+  },
+  "reincarnate": {
+    "gist": "A Humanoid dead up to 10 days returns in a new body of a random species"
+  },
+  "remove-curse": {
+    "gist": "Ends all curses on one creature or object you touch"
+  },
+  "resistance": {
+    "gist": "A touched creature reduces damage of one chosen type by 1d4, once per turn"
+  },
+  "resurrection": {
+    "gist": "Revives a creature dead up to a century with all its Hit Points"
+  },
+  "reverse-gravity": {
+    "gist": "Gravity flips in a 50-foot-radius Cylinder; unanchored things fall upward"
+  },
+  "revivify": {
+    "gist": "A creature that died within the last minute returns to life with 1 HP"
+  },
+  "rope-trick": {
+    "gist": "A rope leads to a hidden extradimensional space for up to eight creatures"
+  },
+  "sacred-flame": {
+    "gist": "Dexterity save or 1d8 Radiant damage; cover gives no bonus to the save"
+  },
+  "sanctuary": {
+    "gist": "Anyone targeting the warded creature must pass a Wisdom save or pick another"
+  },
+  "scorching-ray": {
+    "gist": "Three rays, each a ranged spell attack for 2d6 Fire damage"
+  },
+  "scrying": {
+    "gist": "See and hear a chosen creature on your plane unless it passes a Wisdom save"
+  },
+  "searing-smite": {
+    "gist": "Hit deals +1d6 Fire damage, then 1d6 Fire each turn until a Constitution save"
+  },
+  "see-invisibility": {
+    "gist": "You see Invisible creatures and objects and into the Ethereal Plane"
+  },
+  "seeming": {
+    "gist": "Gives chosen creatures an illusory appearance; unwilling ones get a Charisma save"
+  },
+  "sending": {
+    "gist": "Send a 25-word message to a known creature anywhere; it can reply"
+  },
+  "sequester": {
+    "gist": "Hides an object or willing creature from magic; a creature is put in stasis"
+  },
+  "shapechange": {
+    "gist": "You transform into a creature of CR up to your level, gaining its HP as Temp HP"
+  },
+  "shatter": {
+    "gist": "10-foot-radius Sphere: Constitution save or 3d8 Thunder damage, half on a success"
+  },
+  "shield": {
+    "gist": "Reaction: +5 AC until your next turn and no damage from Magic Missile"
+  },
+  "shield-of-faith": {
+    "gist": "A creature gains a +2 bonus to AC"
+  },
+  "shillelagh": {
+    "gist": "Your club or quarterstaff uses your spellcasting ability and deals a d8"
+  },
+  "shining-smite": {
+    "gist": "Hit deals +2d6 Radiant damage; the target glows and attacks on it have Advantage"
+  },
+  "shocking-grasp": {
+    "gist": "Melee spell attack: 1d8 Lightning damage and no Opportunity Attacks"
+  },
+  "silence": {
+    "gist": "No sound in a 20-foot-radius Sphere: creatures are Deafened, no Verbal spells"
+  },
+  "silent-image": {
+    "gist": "Creates a soundless visual illusion up to a 15-foot Cube that you can move"
+  },
+  "simulacrum": {
+    "gist": "Creates an obedient ice duplicate of a Beast or Humanoid with half its HP"
+  },
+  "sleep": {
+    "gist": "Wisdom save or Incapacitated, then Unconscious on a second failure"
+  },
+  "sleet-storm": {
+    "gist": "Sleet fills a 20-foot-radius Cylinder: Difficult Terrain, Dexterity save or Prone"
+  },
+  "slow": {
+    "gist": "Up to six creatures: Wisdom save or halved Speed, −2 AC, an action or Bonus Action"
+  },
+  "sorcerous-burst": {
+    "gist": "Ranged spell attack: 1d8 damage of a chosen type; an 8 rolls another d8"
+  },
+  "spare-the-dying": {
+    "gist": "A creature at 0 Hit Points becomes Stable"
+  },
+  "speak-with-animals": {
+    "gist": "You can understand and talk with Beasts"
+  },
+  "speak-with-dead": {
+    "gist": "A corpse answers up to five questions with what it knew in life"
+  },
+  "speak-with-plants": {
+    "gist": "Plants within 30 feet talk to you, obey simple commands and shape terrain"
+  },
+  "spider-climb": {
+    "gist": "A willing creature walks on walls and ceilings with a Climb Speed"
+  },
+  "spike-growth": {
+    "gist": "20-foot-radius Difficult Terrain: 2d4 Piercing damage per 5 feet moved"
+  },
+  "spirit-guardians": {
+    "gist": "Foes in a 15-foot Emanation move at half Speed; Wisdom save or 3d8 damage"
+  },
+  "spiritual-weapon": {
+    "gist": "Floating weapon makes melee spell attacks for 1d8 + modifier Force damage"
+  },
+  "starry-wisp": {
+    "gist": "Ranged spell attack: 1d8 Radiant damage and the target can't be Invisible"
+  },
+  "stinking-cloud": {
+    "gist": "20-foot-radius gas: Constitution save or Poisoned and no action or Bonus Action"
+  },
+  "stone-shape": {
+    "gist": "Reshape a Medium stone object or 5-foot section of stone into any form"
+  },
+  "stoneskin": {
+    "gist": "A willing creature gains Resistance to Bludgeoning, Piercing and Slashing damage"
+  },
+  "storm-of-vengeance": {
+    "gist": "A 300-foot-radius storm cloud strikes with thunder, acid, lightning and hail over turns"
+  },
+  "suggestion": {
+    "gist": "Wisdom save or Charmed and follows a reasonable suggestion of up to 25 words"
+  },
+  "summon-dragon": {
+    "gist": "Summons a Draconic Spirit ally that acts right after you"
+  },
+  "sunbeam": {
+    "gist": "60-foot Line: Con save or 6d8 Radiant damage and Blinded; recast as a Magic action"
+  },
+  "sunburst": {
+    "gist": "60-foot-radius Sphere: Constitution save or 12d6 Radiant damage and Blinded"
+  },
+  "symbol": {
+    "gist": "Inscribe a hidden glyph that triggers a harmful effect such as Death or Fear"
+  },
+  "tashas-hideous-laughter": {
+    "gist": "Wisdom save or Prone and Incapacitated, laughing uncontrollably"
+  },
+  "telekinesis": {
+    "gist": "Move a creature (Strength save) or an object up to 30 feet with your mind"
+  },
+  "teleport": {
+    "gist": "Teleports you and up to eight willing creatures to a known destination"
+  },
+  "teleportation-circle": {
+    "gist": "Opens a portal to a permanent teleportation circle whose sigils you know"
+  },
+  "tensers-floating-disk": {
+    "gist": "A floating disk of force carries up to 500 pounds and follows you"
+  },
+  "thaumaturgy": {
+    "gist": "Creates a minor wonder, such as a booming voice, flickering flames or a phantom sound"
+  },
+  "thunderwave": {
+    "gist": "15-foot Cube: Constitution save or 2d8 Thunder damage and pushed 10 feet"
+  },
+  "time-stop": {
+    "gist": "Time stops for others while you take 1d4 + 1 turns in a row"
+  },
+  "tongues": {
+    "gist": "A touched creature understands any language and is understood by all"
+  },
+  "transport-via-plants": {
+    "gist": "Links a Large plant to a distant one; creatures step through between them"
+  },
+  "tree-stride": {
+    "gist": "Step into a tree and out of another of the same kind within 500 feet"
+  },
+  "true-polymorph": {
+    "gist": "Turns a creature or object into another creature or object; Wisdom save resists"
+  },
+  "true-resurrection": {
+    "gist": "Revives a creature dead up to 200 years with all HP, even with a new body"
+  },
+  "true-seeing": {
+    "gist": "A willing creature gains Truesight out to 120 feet"
+  },
+  "true-strike": {
+    "gist": "Weapon attack using your spellcasting ability; damage can be Radiant"
+  },
+  "tsunami": {
+    "gist": "A moving wall of water: Strength save or 6d10 Bludgeoning damage, half on a success"
+  },
+  "unseen-servant": {
+    "gist": "An invisible force performs simple tasks at your command"
+  },
+  "vampiric-touch": {
+    "gist": "Melee spell attack: 3d6 Necrotic damage, and you heal half the damage"
+  },
+  "vicious-mockery": {
+    "gist": "Wisdom save or 1d6 Psychic damage and Disadvantage on its next attack"
+  },
+  "vitriolic-sphere": {
+    "gist": "20-foot-radius Sphere: Dexterity save or 10d4 Acid damage, then 5d4 more"
+  },
+  "wall-of-fire": {
+    "gist": "A wall of fire: Dexterity save or 5d8 Fire damage; one side burns nearby creatures"
+  },
+  "wall-of-force": {
+    "gist": "Creates an invisible, indestructible wall of force that nothing passes"
+  },
+  "wall-of-ice": {
+    "gist": "A wall of ice: Dexterity save or 10d6 Cold damage for those it cuts through"
+  },
+  "wall-of-stone": {
+    "gist": "Creates a nonmagical wall of stone made of ten 10-foot panels"
+  },
+  "wall-of-thorns": {
+    "gist": "A wall of thorns: Dexterity save or 7d8 Piercing damage; slow and painful to cross"
+  },
+  "warding-bond": {
+    "gist": "Ally gets +1 AC and saves and Resistance to all damage; you take the same damage"
+  },
+  "water-breathing": {
+    "gist": "Up to ten willing creatures can breathe underwater"
+  },
+  "water-walk": {
+    "gist": "Up to ten willing creatures walk on water and other liquids as solid ground"
+  },
+  "web": {
+    "gist": "Sticky webs fill a 20-foot Cube: Difficult Terrain, Dexterity save or Restrained"
+  },
+  "weird": {
+    "gist": "Chosen creatures: Wisdom save or 10d10 Psychic damage and Frightened"
+  },
+  "wind-walk": {
+    "gist": "You and up to ten creatures become clouds with a 300-foot Fly Speed"
+  },
+  "wind-wall": {
+    "gist": "A wall of wind: Strength save or 4d8 Bludgeoning damage; it deflects arrows"
+  },
+  "wish": {
+    "gist": "Duplicate any spell of level 8 or lower, or alter reality itself"
+  },
+  "word-of-recall": {
+    "gist": "You and up to five willing creatures teleport to your prepared sanctuary"
+  },
+  "zone-of-truth": {
+    "gist": "Creatures in a 15-foot-radius Sphere that fail a Charisma save can't lie"
+  }
+}

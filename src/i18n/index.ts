@@ -120,13 +120,14 @@ export function ensureSrdKind(kind: LazySrdKind): Promise<void> {
 let enProseTask: Promise<void> | null = null;
 
 /**
- * Load the pack's lazy English prose (`@pack/i18n-en-prose`, the catalogue
- * descriptions) into the EN registry, once. Started at boot without being awaited;
+ * Load the lazy English prose — the public gists (`./en-prose`) and the pack's
+ * catalogue descriptions and gists (`@pack/i18n-en-prose`) — into the EN registry, once. Started at boot without being awaited;
  * a failed load is retried on the next request.
  */
 export function ensureEnProse(): Promise<void> {
-  enProseTask ??= import("@pack/i18n-en-prose")
-    .then(({ packSrdEnProse }) => {
+  enProseTask ??= Promise.all([import("./en-prose"), import("@pack/i18n-en-prose")])
+    .then(([{ publicSrdEnProse }, { packSrdEnProse }]) => {
+      registerEnProse(publicSrdEnProse);
       registerEnProse(packSrdEnProse);
       // Re-render what showed a blank description: every surface that localizes
       // re-renders on `languageChanged` (react-i18next), and the language is unchanged.
