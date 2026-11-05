@@ -9192,7 +9192,7 @@ button.create-need:focus-visible .create-need-chev {
   border: 1px solid var(--border-strong);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--text-xs);
 }
 .cl-target .cl-avatar > * {
   width: 100%;
