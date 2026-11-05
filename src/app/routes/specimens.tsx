@@ -38,7 +38,6 @@ export function SpecimensPage(): ReactNode {
         style={{ padding: "var(--sp-6)", display: "grid", gap: "var(--sp-4)" }}
       >
         <div className="rail-head" style={{ marginBottom: 0 }}>
-          <span className="rh-diamond" aria-hidden="true" />
           <h5>The Gilded Plate — Cinzel · Alegreya · Source Serif 4</h5>
           <span className="rh-rule" aria-hidden="true" />
         </div>

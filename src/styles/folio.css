@@ -140,7 +140,8 @@ svg.icon[stroke],
 /* ─────────────────────────── SECTION DIVIDERS (Divider A) ─────────────────────────── */
 .sec-head {
   display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  /* title · fading rule · meta (no leading marker: «Lume», owner 2026-11-03) */
+  grid-template-columns: auto 1fr auto;
   gap: var(--sp-3);
   align-items: center;
   margin: var(--sp-6) 0 var(--sp-3);
@@ -151,21 +152,11 @@ svg.icon[stroke],
 .sec-head:first-child {
   margin-top: 0;
 }
-.sec-diamond {
-  width: 8px;
-  height: 8px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-glow) 55%, transparent);
-}
 /* Section headers default to the deep gilt (card-safe: deep gold reads on the
    ivory cards AND on the lighter field). On the candlelit BACKDROP — inside an
    `.on-art-scope`, or `.sec-meta` which is always loose — they switch to bright
    gilt + the dark outline so they read over the busy art (rules further below). */
-[data-theme="light"] .sec-diamond {
-  background: var(--accent-text);
-  box-shadow: none;
-}
+
 .sec-title {
   font-family: var(--font-display);
   font-weight: 700;
@@ -176,8 +167,8 @@ svg.icon[stroke],
   white-space: nowrap;
 }
 /* THE one divider rule (DESIGN.md §5 "The ornament vocabulary"): a hairline that
-   FADES AT BOTH TIPS and stays nodeless — the section rubric's leading
-   `.sec-diamond` is the divider's marker; the run and its tips are quiet.
+   FADES AT BOTH TIPS and stays nodeless, with no marker before the title
+   («Lume», owner 2026-11-03); the run and its tips are quiet.
    Parameterized by `--rule-c` — the light theme and the econ-typed headers only
    re-tint it. */
 .sec-rule {
@@ -198,8 +189,7 @@ svg.icon[stroke],
    action type so they scan like the ActionGroup headers, NOT the generic gold
    rubric (owner: "why is Reazioni gold not red? Azioni Base should be green").
    Title uses the theme-correct AA hue (`--at-*`: bright on dark, deep on cream);
-   the diamond + rule use the BRIGHT palette hue + a coloured glow so the marker
-   reads flashy in both themes. */
+   the rule uses the BRIGHT palette hue so it reads in both themes. */
 .sec-head[data-econ="reaction"] {
   --sec-c: var(--at-reaction);
   --sec-bright: var(--at-reaction-vivid);
@@ -213,10 +203,6 @@ svg.icon[stroke],
      (a card), NOT the backdrop — so the title text stays the deep AA hue (`--sec-c`);
      the diamond carries the vivid scan-colour. No glow (it's on a light card). */
   color: var(--sec-c);
-}
-.sec-head[data-econ] .sec-diamond {
-  background: var(--sec-bright);
-  box-shadow: 0 0 9px color-mix(in oklab, var(--sec-bright) 60%, transparent);
 }
 .sec-head[data-econ] .sec-rule {
   --rule-c: color-mix(in oklab, var(--sec-bright) 55%, transparent);
@@ -240,10 +226,10 @@ svg.icon[stroke],
    bleed through and the deep-gold numeral read BROWN. The disclosure knob uses the
    same self-backed light-theme strike. ── */
 .sec-head.has-count {
-  grid-template-columns: auto auto auto 1fr;
+  grid-template-columns: auto auto 1fr;
 }
 .sec-head.has-count.has-meta {
-  grid-template-columns: auto auto auto 1fr auto;
+  grid-template-columns: auto auto 1fr auto;
 }
 .sec-count {
   position: relative;
@@ -573,43 +559,7 @@ svg.icon[stroke],
   border-color: color-mix(in oklab, var(--gold-leaf-300) 58%, transparent);
   text-shadow: 0 1px 1px rgba(20, 13, 3, 0.5);
 }
-/* The section diamond is a graphic — bright gilt ONLY when loose on the backdrop;
-   a diamond inside a card keeps its default gold (same exclusion as the text). */
-[data-theme="light"]
-  .on-art-scope
-  .sec-diamond:not(
-    :where(
-        .opt-cell,
-        .info-card,
-        .badge,
-        .choice-picker-card,
-        .party-card,
-        .rcard,
-        .lvl-pick,
-        .lvl-card,
-        .wiz-entry,
-        .wiz-card,
-        .wiz-hero,
-        .wiz-path,
-        .wiz-abil,
-        .wiz-budget,
-        .wiz-asi,
-        .wiz-fork-tab,
-        .wiz-kept,
-        .wiz-summary,
-        .wiz-equip-item,
-        .wiz-asi-tile,
-        .wiz-done,
-        .vital,
-        .input,
-        .seg,
-        [class*="bg-"]
-      )
-      *
-  ) {
-  background: var(--text-on-backdrop-title);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--text-on-backdrop-title) 55%, transparent);
-}
+
 /* Error/required ink loose on the backdrop (the wizard's required-field "*" and
    inline error lines): the deep light-theme --semantic-danger ink vanishes on the
    dark art exactly like the field text, so it takes the lifted on-backdrop danger
@@ -896,11 +846,11 @@ svg.icon[stroke],
    With `white-space: nowrap` they set a min-content width WIDER than a 390px
    viewport, stretching the whole page (and every dotted-leader row) into
    horizontal overflow. Below 720px we drop the meta onto its own wrapping row so
-   the hint can never force page width — diamond · title · fading rule keep their
+   the hint can never force page width — title · fading rule keep their
    one-line rhythm, the hint flows beneath, right-aligned. */
 @media (max-width: 720px) {
   .sec-head {
-    grid-template-columns: auto auto 1fr;
+    grid-template-columns: auto 1fr;
   }
   .sec-meta {
     grid-column: 1 / -1;
@@ -2342,16 +2292,6 @@ button.pr-dot.lg::before {
   align-items: center;
   gap: 5px;
 }
-.modal-rubric::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-}
-[data-theme="light"] .modal-rubric::before {
-  background: var(--accent-text);
-}
 .modal-title {
   font-family: var(--font-title);
   font-weight: 700;
@@ -2438,16 +2378,6 @@ button.pr-dot.lg::before {
   display: flex;
   align-items: center;
   gap: 5px;
-}
-.pop-rubric::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-}
-[data-theme="light"] .pop-rubric::before {
-  background: var(--accent-text);
 }
 .pop-body {
   padding: var(--sp-3) var(--sp-4);
@@ -4408,21 +4338,6 @@ button.pr-dot.lg::before {
   align-items: center;
   gap: 6px;
   margin-bottom: var(--sp-2);
-}
-.rail-head .rh-diamond {
-  /* 7px + faint gold glow so the Illuminated-Folio diamond motif survives at
-     rail scale (was 6px gold-on-near-black — barely perceptible) and reads as
-     the same language as the content section dividers, just subordinate. */
-  width: 7px;
-  height: 7px;
-  transform: rotate(45deg);
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--accent-glow) 55%, transparent);
-  flex-shrink: 0;
-}
-[data-theme="light"] .rail-head .rh-diamond {
-  background: var(--accent-text);
-  box-shadow: 0 0 5px color-mix(in oklab, var(--accent-text) 35%, transparent);
 }
 .rail-head h5 {
   font-family: var(--font-numeric);
@@ -12729,7 +12644,7 @@ h6.bm-heading {
 .bm-ul > li {
   position: relative;
 }
-/* A struck gilt diamond bullet, matching the .sec-diamond vocabulary. */
+/* A struck gilt diamond bullet: a list marker, not an ornament. */
 .bm-ul > li::before {
   content: "";
   position: absolute;
@@ -12780,13 +12695,13 @@ h6.bm-heading {
   width: 8px;
   height: 8px;
   transform: translate(-50%, -50%) rotate(45deg);
-  /* Same vocabulary as `.sec-diamond`: bright gilt + candle glow on the dark art. */
+  /* Bright gilt + candle glow on the dark art. */
   background: var(--accent-primary-bright);
   box-shadow:
     0 0 0 4px var(--bg-surface-1),
     0 0 10px 1px color-mix(in oklab, var(--accent-primary) 45%, transparent);
 }
-/* Light: match `.sec-diamond`'s clean deep-gilt, card-safe look. The candlelit
+/* Light: a clean deep-gilt, card-safe look. The candlelit
    glow muddies into a grey halo on cream, so drop it — keep ONLY the surface-
    coloured knockout ring that parts the hairline so the diamond reads crisp. */
 [data-theme="light"] .bm-rule::after {
@@ -14835,7 +14750,7 @@ button.party-avatar-btn:focus-visible {
    from BG3's menu language into the lapidary identity: everything GEOMETRIC —
    faceted diamond nodes and gems, tapered hairlines — never organic foliage;
    everything vector + tintable, crisp at 1x/2x. Ornament marks the START of a
-   section rubric (`.sec-diamond`), rail-heads (`.rh-diamond`), and slot/charge
+   section rubrics, rail-heads, and slot/charge
    pips; panel corners, divider centres, and scrollbar ends stay QUIET. The
    selection metals (`--metal-silver`/`--metal-bronze`) drive the selected frame
    (`--frame-selected`) that marks the wizard hero altar and the chosen plaque. */
@@ -16042,7 +15957,7 @@ button.econ-tok-filter:active .econ-disc {
      keeps the AA `--ac`. */
   --ac-vivid: var(--at-action-vivid);
   display: grid;
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: auto 1fr;
   gap: var(--sp-3);
   align-items: center;
   margin-bottom: var(--sp-2);
@@ -16058,13 +15973,6 @@ button.econ-tok-filter:active .econ-disc {
 .agroup[data-slot="free"] .ag-head {
   --ac: var(--at-free);
   --ac-vivid: var(--at-free-vivid);
-}
-.ag-diamond {
-  width: 8px;
-  height: 8px;
-  transform: rotate(45deg);
-  background: var(--ac-vivid);
-  box-shadow: 0 0 9px color-mix(in oklab, var(--ac-vivid) 60%, transparent);
 }
 .ag-title {
   font-family: var(--font-display);
@@ -18044,14 +17952,7 @@ button.econ-tok-filter:active .econ-disc {
    ONE coherent surface. The per-step domain accent lives ONLY on the left
    card border (.lvl-card) and the selection/active states (.lvl-pick.selected)
    — that's enough wayfinding without fragmenting the headers into 5 pigments. */
-.lvl-step .sec-diamond {
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 8px color-mix(in oklab, var(--accent-glow) 40%, transparent);
-}
-[data-theme="light"] .lvl-step .sec-diamond {
-  background: var(--accent-text);
-  box-shadow: none;
-}
+
 .lvl-step .sec-rule {
   background: linear-gradient(
     to right,
@@ -18504,10 +18405,6 @@ button.econ-tok-filter:active .econ-disc {
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
     0 1px 3px rgba(0, 0, 0, 0.42),
     0 0 10px color-mix(in oklab, var(--seg-accent) 32%, transparent);
-}
-[data-theme="light"] .sec-diamond {
-  background: var(--accent-primary-bright);
-  box-shadow: 0 0 6px color-mix(in oklab, var(--gold-leaf-500) 50%, transparent);
 }
 [data-theme="light"] .sec-rule {
   background: linear-gradient(
@@ -22121,7 +22018,6 @@ body:has(.fob) .toast-region {
 .wb .rail-head {
   display: block;
 }
-.wb .rail-head .rh-diamond,
 .wb .rail-head .rh-rule {
   display: none;
 }
@@ -22165,10 +22061,6 @@ body:has(.fob) .toast-region {
 
 /* §16.3 — inside the scope a stamp may not float on a line: the diamonds
    retire; the fading rules stay (they already ARE the grammar's hairline). */
-.wb .sec-head .sec-diamond,
-.wb .ag-head .ag-diamond {
-  display: none;
-}
 
 /* §16.3 — the entry title's divider joins the knot grammar: the SAME shared
    construction above; only the seat differs (the knot block hangs so its line
