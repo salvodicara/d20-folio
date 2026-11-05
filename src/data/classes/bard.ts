@@ -379,6 +379,10 @@ export const BARD_FEATURES: SrdClassFeatureData[] = [
         classSpellLists: ["cleric", "druid", "wizard"],
         maxLevel: 9,
         amount: 2,
+        // "Each spell you choose must be a cantrip or a spell for which you have
+        // spell slots."
+        castableOnly: true,
+        includeCantrips: true,
       },
     ],
     source: "SRD",

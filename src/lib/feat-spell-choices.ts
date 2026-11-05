@@ -41,6 +41,8 @@ export interface SpellChoiceSlot {
   classSpellLists?: ReadonlyArray<ClassId>;
   /** Max spell level. Cantrips force 0; non-cantrips use the grant's maxLevel. */
   maxLevel: number;
+  /** A "spell" slot that also accepts cantrips (Magical Discoveries). */
+  includeCantrips?: boolean;
   /**
    * choice-spell ritualOnly: when true, the picker restricts the pool to
    * Ritual-tagged spells (`spell.ritual === true`) across ALL class lists —
@@ -235,6 +237,17 @@ export function pendingSpellChoicesForFeat(
           recur = { count: recur.count - prior.count, maxLevel: recur.maxLevel };
         }
       }
+      // Only levels the character can cast (Magical Discoveries): the highest slot
+      // level any class row shows, when the caller knows the rows.
+      if (g.castableOnly && ctx?.spellSlotsByClass) {
+        const highest = Math.max(
+          0,
+          ...Object.values(ctx.spellSlotsByClass).map((row) =>
+            row.reduce((top, count, i) => (count > 0 ? i + 1 : top), 0)
+          )
+        );
+        recur = { ...recur, maxLevel: Math.min(recur.maxLevel, highest) };
+      }
       // amount:0 means "pool-widener, no picker" (e.g. bard-magical-secrets
       // widens the prepared-spell pool to Bard+Cleric+Druid+Wizard without
       // granting fixed extra spells). Never surface a 0-count picker.
@@ -244,6 +257,7 @@ export function pendingSpellChoicesForFeat(
           classSpellList: g.classSpellList,
           classSpellLists: g.classSpellLists,
           maxLevel: recur.maxLevel,
+          ...(g.includeCantrips ? { includeCantrips: true } : {}),
           count: recur.count,
           slotId: `slot-${idx++}`,
           spellAbility: g.spellAbility,
@@ -454,7 +468,10 @@ export function listAvailableForSlot(
   return ALL_SPELLS.filter((s) => {
     if (existingSpellIds.has(s.id)) return false;
     if (slot.kind === "cantrip" && s.level !== 0) return false;
-    if (slot.kind === "spell" && (s.level === 0 || s.level > slot.maxLevel)) {
+    if (
+      slot.kind === "spell" &&
+      ((s.level === 0 && !slot.includeCantrips) || s.level > slot.maxLevel)
+    ) {
       return false;
     }
     // Pact of the Tome's Book of Shadows: the two L1 picks must carry the
