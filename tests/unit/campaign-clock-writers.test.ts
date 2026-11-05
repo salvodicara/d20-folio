@@ -51,13 +51,16 @@ describe("«Passa il tempo» on a campaign character", () => {
       })
     );
     passTimeWithUndo(60, "1 hour passes");
-    await Promise.resolve();
-    expect(io.stepCampaignClock).toHaveBeenCalledWith("c1", 60, "u1");
+    await vi.waitFor(() =>
+      expect(io.stepCampaignClock).toHaveBeenCalledWith("c1", 60, "u1")
+    );
     expect(store().character?.session.clockSeen).toBe(160);
     expect(store().character?.session.timeOfDay).toBeUndefined();
 
     expect(useUndoStore.getState().undo()).toBe(true);
-    expect(io.undoCampaignClockStep).toHaveBeenCalledWith("c1", "u1", false);
+    await vi.waitFor(() =>
+      expect(io.undoCampaignClockStep).toHaveBeenCalledWith("c1", "u1", false)
+    );
     expect(store().character?.session.clockSeen).toBe(100);
   });
 

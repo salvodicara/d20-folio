@@ -81,7 +81,9 @@ describe("a rest on the campaign clock", () => {
     fireEvent.click(screen.getByText("Long Rest"));
     fireEvent.click(screen.getByRole("button", { name: "Complete rest" }));
     await screen.findByText("Long Rest Complete");
-    expect(io.stepCampaignClock).toHaveBeenCalledWith("c1", 480, "u1");
+    await vi.waitFor(() =>
+      expect(io.stepCampaignClock).toHaveBeenCalledWith("c1", 480, "u1")
+    );
     expect(useCharacterStore.getState().character?.session.clockSeen).toBe(780);
   });
 

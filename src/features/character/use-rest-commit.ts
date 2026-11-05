@@ -12,7 +12,6 @@ import { useTranslation } from "react-i18next";
 
 import { canCharacterRest } from "@/lib/character-status";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
-import { stepCampaignClock } from "@/features/campaigns/clock-io";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -84,11 +83,13 @@ export function useRestCommit() {
     const uid = useAuthStore.getState().user?.uid;
     if (clock.scope !== "campaign" || !uid) return;
     updateSession({ clockSeen: clock.minute + minutes });
-    void stepCampaignClock(clock.campaignId, minutes, uid).catch((error: unknown) =>
-      diagnosticsLog("warn", "play.campaign-clock-write-failed", {
-        message: String(error),
-      })
-    );
+    void import("@/features/campaigns/clock-io")
+      .then(({ stepCampaignClock }) => stepCampaignClock(clock.campaignId, minutes, uid))
+      .catch((error: unknown) =>
+        diagnosticsLog("warn", "play.campaign-clock-write-failed", {
+          message: String(error),
+        })
+      );
   }
 
   /** A Short Rest healing `healedHp` (the entered roll + CON per die, 0 without
