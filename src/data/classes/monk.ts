@@ -515,7 +515,14 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
     ],
     // A failed save is rerolled for 1 Focus Point: a free use, paid and logged.
     mechanics: {
-      actions: [{ type: "free", costTracker: "monk-focus", trackerCost: 1 }],
+      actions: [
+        {
+          type: "free",
+          costTracker: "monk-focus",
+          trackerCost: 1,
+          rollEffect: { kind: "reroll", rolls: ["save"], whose: "self" },
+        },
+      ],
     },
     source: "SRD",
   },

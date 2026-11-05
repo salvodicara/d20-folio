@@ -1974,6 +1974,10 @@ export type ActionRollEffect =
       whose: "self" | "other" | "any";
       /** The new roll has Advantage (Countercharm). */
       advantage?: true;
+      /** A bonus to the new roll: a class's level (Indomitable: Fighter level). */
+      bonus?: { classLevel: ClassId };
+      /** Only a save against an effect applying one of these (Countercharm). */
+      against?: ReadonlyArray<ConditionId>;
     };
 
 export interface ActionCheckBonus {
