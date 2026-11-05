@@ -6,8 +6,8 @@
 # the other with a ~25-minute Verify in between, either order leaves main composing a
 # pack and an app that don't match. So the pair is verified together BEFORE anything
 # merges: Verify runs on the app PR's branch composing the pack PR's head commit. Only
-# when that is green, and neither main has moved since, are the pack and then the app
-# merged back to back (seconds apart).
+# when that is green, and neither the pack's main nor either PR moved since, are the
+# pack and then the app merged back to back (seconds apart).
 #
 # The app PR names its pack PR with a line in its body:   Pack: #114
 #
@@ -68,7 +68,6 @@ fi
 # 2. Verify the pair: the app branch composed with the pack PR's head commit.
 appHead="$(gh pr view "$app" --repo "$APP_REPO" --json headRefOid --jq .headRefOid)"
 packHead="$(gh pr view "$pack" --repo "$PACK_REPO" --json headRefOid --jq .headRefOid)"
-mainBefore="$(gh api "repos/$APP_REPO/commits/main" --jq .sha)"
 packMainBefore="$(gh api "repos/$PACK_REPO/commits/main" --jq .sha)"
 since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 gh workflow run verify.yml --repo "$APP_REPO" --ref "$branch" -f pack_sha="$packHead"
@@ -100,12 +99,18 @@ if [ "$composed" != "$packHead" ]; then
   exit 1
 fi
 
-# 3. Nothing may have moved while Verify ran: neither main, nor either PR's head.
-if [ "$(gh api "repos/$APP_REPO/commits/main" --jq .sha)" != "$mainBefore" ] ||
-  [ "$(gh api "repos/$PACK_REPO/commits/main" --jq .sha)" != "$packMainBefore" ] ||
+# 3. The pair may not have moved while Verify ran: neither PR's head, nor the pack's
+#    main (the pack squash-merges onto it, so the verified pack must stay main + PR).
+#    App main may move: merging onto a newer main is what any PR does, and the app
+#    must not be behind main when the pair merges (checked again below).
+if [ "$(gh api "repos/$PACK_REPO/commits/main" --jq .sha)" != "$packMainBefore" ] ||
   [ "$(gh pr view "$app" --repo "$APP_REPO" --json headRefOid --jq .headRefOid)" != "$appHead" ] ||
   [ "$(gh pr view "$pack" --repo "$PACK_REPO" --json headRefOid --jq .headRefOid)" != "$packHead" ]; then
-  echo "✗ main or a PR moved during Verify: rebase and run again (nothing merged)." >&2
+  echo "✗ the pack's main or a PR moved during Verify: rebase and run again (nothing merged)." >&2
+  exit 1
+fi
+if [ "$(gh pr view "$app" --repo "$APP_REPO" --json mergeable --jq .mergeable)" = "CONFLICTING" ]; then
+  echo "✗ #$app now conflicts with main: rebase and run again (nothing merged)." >&2
   exit 1
 fi
 
