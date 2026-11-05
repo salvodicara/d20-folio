@@ -10,6 +10,7 @@
 import { heldSpellCastWith } from "@/lib/play/cast-record";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { totalLevel } from "@/lib/classes";
+import { getSpellById } from "@/data/spells";
 import {
   combatTableEntityRef,
   evaluateEnteredCombatD20Test,
@@ -130,14 +131,43 @@ export function d20RerollFor(
  * Whether damage to `character` queues a Concentration save on the spell it
  * holds. `false` when nothing is held, or when a source makes that spell's
  * Concentration damage-proof (Relentless Hunter: "Taking damage can't break your
- * Concentration on Hunter's Mark"). Dropping to 0 HP still ends Concentration;
+ * Concentration on Hunter's Mark"), or every spell (Boon of the Iron Mind), or a
+ * school's (Focused Conjuration). Dropping to 0 HP still ends Concentration;
  * that rule is the damage seam's, not this one's.
  */
 export function damageQueuesConcentrationSave(character: CharacterDoc): boolean {
+  if (!character.session.concentration) return false;
+  return heldConcentrationClauses(character).length === 0;
+}
+
+/** The damage-proof clauses that cover the spell `character` holds. */
+function heldConcentrationClauses(character: CharacterDoc) {
   const held = character.session.concentration;
-  if (!held) return false;
+  if (!held) return [];
   const aggregate = aggregateCharacterGrants(character.character, character.session);
-  return !aggregate.concentrationDamageProof.some((clause) => clause.spellId === held);
+  const school = getSpellById(held)?.school;
+  return aggregate.concentrationDamageProof.filter(
+    (clause) =>
+      clause.spellId === held ||
+      clause.spells === "any" ||
+      (typeof clause.spells === "object" && clause.spells.school === school)
+  );
+}
+
+/**
+ * Whether gaining `condition` ends the Concentration `character` holds. The
+ * Incapacitated family ends it (SRD 5.2.1); with Boon of the Iron Mind only
+ * Petrified and Unconscious still do ("your Concentration ends only if … you have
+ * the Petrified or Unconscious condition, or you die").
+ */
+export function conditionEndsHeldConcentration(
+  character: CharacterDoc,
+  breaksConcentration: boolean,
+  condition: string
+): boolean {
+  if (!breaksConcentration || !character.session.concentration) return false;
+  if (condition === "petrified" || condition === "unconscious") return true;
+  return !heldConcentrationClauses(character).some((c) => c.alsoWhileIncapacitated);
 }
 
 /** Build a Death Save without smuggling in an ability-scoped CON-save bonus. */

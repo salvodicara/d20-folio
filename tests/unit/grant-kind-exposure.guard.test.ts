@@ -622,8 +622,11 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   // Relentless Hunter: `damageQueuesConcentrationSave` (character-d20-tests) is the
   // core seam; the store's damage seams still queue the save unconditionally.
+  // Relentless Hunter, Boon of the Iron Mind, Focused Conjuration: the damage seam
+  // asks it before queueing a Concentration save.
   "concentration-damage-proof": {
-    open: "core seam damageQueuesConcentrationSave (2026-10-24); the damage seams do not ask it yet",
+    via: "damageQueuesConcentrationSave",
+    consumer: "src/stores/characterStore.ts",
   },
   // Adamantine Armor: the entered hit's crit flag drops in `takeDamage`.
   "critical-hit-immunity": {

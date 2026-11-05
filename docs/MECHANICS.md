@@ -288,6 +288,10 @@ effects (log, undo, persistence, the encounter) stay with the store
 - Damage asks a save, DC `min(30, max(10, floor(damage / 2)))` (`concentrationSaveDc`,
   `compute.ts`); the player rolls. Incapacitating conditions break it
   (`conditionBreaksConcentration`).
+- `concentration-damage-proof` spares the save: on one `spellId` (Relentless Hunter), on
+  `spells: "any"` (Boon of the Iron Mind) or `spells: { school }` (Focused Conjuration)
+  (`damageQueuesConcentrationSave`). With `alsoWhileIncapacitated`, only Petrified and
+  Unconscious still end it (`conditionEndsHeldConcentration`, Iron Mind).
 
 ### Damage, 0 HP and death
 

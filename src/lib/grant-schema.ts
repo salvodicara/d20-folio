@@ -376,14 +376,22 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     }
   ),
   /**
-   * Taking damage can't break your Concentration on `spellId` (Relentless
-   * Hunter on Hunter's Mark): damage queues no Concentration save while that
-   * spell is the one held. Dropping to 0 HP still ends it.
+   * Taking damage can't break your Concentration: on `spellId` (Relentless Hunter
+   * on Hunter's Mark), on any spell (`spells: "any"`, Boon of the Iron Mind), or on
+   * a spell of a school (`spells: { school }`, Focused Conjuration). Damage queues
+   * no Concentration save while such a spell is the one held. Dropping to 0 HP
+   * still ends it.
    */
-  "concentration-damage-proof": objectSchema({
-    spellId: stringSchema,
-    type: literalSchema("concentration-damage-proof"),
-  }),
+  "concentration-damage-proof": objectSchema(
+    { type: literalSchema("concentration-damage-proof") },
+    {
+      spellId: stringSchema,
+      spells: unionSchema([literalSchema("any"), objectSchema({ school: stringSchema })]),
+      /** Nor does Incapacitated, Stunned or Paralyzed end it: only Petrified and
+       *  Unconscious still do (Boon of the Iron Mind). */
+      alsoWhileIncapacitated: literalSchema(true),
+    }
+  ),
   "healing-blocked": objectSchema({
     type: literalSchema("healing-blocked"),
   }),
