@@ -206,6 +206,19 @@ export function LevelUpDialog({
 
       {step === "hp" && (
         <div className="f-ask">
+          {/* The class comes first: another class has another Hit Die. */}
+          <p className="f-help">
+            {owned.length === 1 &&
+              t("levelUp.screen.classLine", {
+                class: `${className(classId, locale)} ${String(plan.newClassLevel)}`,
+              })}
+            {owned.length === 1 && eligibleNewClasses(c).length > 0 && " · "}
+            {eligibleNewClasses(c).length > 0 && (
+              <Link className="f-link" to={classic}>
+                {t("levelUp.screen.otherClass")}
+              </Link>
+            )}
+          </p>
           {owned.length > 1 && (
             <div className="f-ask">
               <span className="f-lbl">{t("levelUp.screen.whichClass")}</span>
@@ -270,11 +283,6 @@ export function LevelUpDialog({
               <span className="f-lbl">{t("levelUp.screen.changes")}</span>
               <Numbers rows={review.numbers} />
             </>
-          )}
-          {eligibleNewClasses(c).length > 0 && (
-            <p className="f-help">
-              <Link to={classic}>{t("levelUp.screen.otherClass")}</Link>
-            </p>
           )}
         </div>
       )}
@@ -349,14 +357,16 @@ function Numbers({ rows }: { rows: readonly ReviewNumber[] }) {
         ? t("levelUp.screen.pb")
         : r.kind === "slot"
           ? t(r.pact ? "levelUp.screen.pactSlot" : "play.slot", { level: r.level })
-          : r.name;
+          : r.kind === "table"
+            ? t(`levelUp.screen.table.${r.key}`)
+            : r.name;
   return (
     <dl className="f-lvl-nums">
       {rows.map((r) => (
-        <div key={r.id} data-same={r.before === r.after || undefined}>
+        <div key={r.id}>
           <dt>{label(r)}</dt>
           <dd>
-            {r.before !== r.after && (
+            {r.before !== null && r.before !== r.after && (
               <>
                 <span>{r.before}</span>
                 <span className="f-lvl-arrow" aria-hidden="true">

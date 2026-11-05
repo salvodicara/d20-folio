@@ -133,7 +133,7 @@
       "hpRolled": "Your d{{die}} roll",
       "less": "Lower",
       "more": "Higher",
-      "otherClass": "Take this level in another class",
+      "otherClass": "Another class",
       "featAbility": "Raise an ability by +{{amount}}",
       "chooseCantrips_one": "Choose {{count}} cantrip",
       "chooseCantrips_other": "Choose {{count}} cantrips",
@@ -149,7 +149,21 @@
       "rest": "Everything else updates by itself: rolls, DCs, spells.",
       "confirm": "Confirm level {{level}}",
       "done": "{{name}} is level {{level}}",
-      "levelUp": "Level up"
+      "levelUp": "Level up",
+      "table": {
+        "bardicInspirationDie": "Bardic Inspiration die",
+        "martialArtsDie": "Martial Arts die",
+        "sneakAttackDice": "Sneak Attack",
+        "rageDamage": "Rage Damage",
+        "extraAttacks": "Extra attacks",
+        "unarmoredMovement": "Unarmored Movement",
+        "wildShapeMaxCR": "Wild Shape, highest CR",
+        "weaponMastery": "Weapon Masteries",
+        "invocationsKnown": "Invocations known",
+        "metamagicKnown": "Metamagic options",
+        "pactSlotLevel": "Pact slot level"
+      },
+      "classLine": "Class: {{class}}"
     }
   }
 }

@@ -4200,10 +4200,6 @@
   font: 600 var(--fs-lg) var(--font-title);
   color: var(--white);
 }
-.fui .f-lvl-nums [data-same] dd b {
-  font-weight: 400;
-  color: var(--text);
-}
 .fui .f-lvl-arrow {
   color: var(--faint);
 }

@@ -133,7 +133,7 @@
       "hpRolled": "Il tuo tiro di d{{die}}",
       "less": "Meno",
       "more": "Più",
-      "otherClass": "Prendi il livello in un'altra classe",
+      "otherClass": "Un'altra classe",
       "featAbility": "Aumenta una caratteristica di +{{amount}}",
       "chooseCantrips_one": "Scegli {{count}} trucchetto",
       "chooseCantrips_other": "Scegli {{count}} trucchetti",
@@ -149,7 +149,21 @@
       "rest": "Tutto il resto si aggiorna da solo: tiri, CD, incantesimi.",
       "confirm": "Conferma il livello {{level}}",
       "done": "{{name}} è al livello {{level}}",
-      "levelUp": "Sali di livello"
+      "levelUp": "Sali di livello",
+      "table": {
+        "bardicInspirationDie": "Dado di Ispirazione Bardica",
+        "martialArtsDie": "Dado delle Arti Marziali",
+        "sneakAttackDice": "Attacco Furtivo",
+        "rageDamage": "Danni dell'Ira",
+        "extraAttacks": "Attacchi extra",
+        "unarmoredMovement": "Movimento Senza Armatura",
+        "wildShapeMaxCR": "Forma Selvatica, GS massimo",
+        "weaponMastery": "Padronanze delle armi",
+        "invocationsKnown": "Suppliche conosciute",
+        "metamagicKnown": "Opzioni di Metamagia",
+        "pactSlotLevel": "Livello degli slot del patto"
+      },
+      "classLine": "Classe: {{class}}"
     }
   }
 }

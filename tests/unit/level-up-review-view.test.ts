@@ -5,7 +5,13 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { levelUpReview } from "@/domains/leveling/level-up-review-view";
+import { classTables } from "@/data/classes";
+
+import {
+  levelUpReview,
+  TABLE_COLUMNS,
+  TABLE_USES,
+} from "@/domains/leveling/level-up-review-view";
 import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
 import { collectChoiceSlots, EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import { emptySwapChoice } from "@/lib/spell-swap";
@@ -54,7 +60,8 @@ describe("levelUpReview", () => {
       after: after.character.hp.max,
     });
     expect(after.character.hp.max).toBeGreaterThan(before.character.hp.max);
-    expect(row("pb")).toMatchObject({ before: 3, after: 3 });
+    // Proficiency stays +3: no row says so.
+    expect(row("pb")).toBeUndefined();
     expect(row("slot:3")).toMatchObject({ kind: "slot", level: 3, before: 2, after: 3 });
     // Unchanged slots are left out.
     expect(row("slot:1")).toBeUndefined();
@@ -88,4 +95,55 @@ describe("levelUpReview", () => {
       ])
     );
   });
+
+  it("a Bard reaching 10: Bardic Inspiration d8 → d10", () => {
+    const before = makeCharacterDoc({ classId: "bard", level: 9 });
+    const review = levelUpReview(before, commitLevelUp(before, picks("bard")), "it");
+    expect(review.numbers).toContainEqual(
+      expect.objectContaining({
+        kind: "table",
+        key: "bardicInspirationDie",
+        before: "d8",
+        after: "d10",
+      })
+    );
+  });
+
+  it("a Barbarian reaching 3: one more Rage, by the tracker's name", () => {
+    const before = makeCharacterDoc({
+      classId: "barbarian",
+      level: 2,
+      features: [{ srdId: "barbarian-rage" }],
+    });
+    const review = levelUpReview(before, commitLevelUp(before, picks("barbarian")), "en");
+    expect(review.numbers).toContainEqual(
+      expect.objectContaining({ kind: "resource", before: 2, after: 3 })
+    );
+  });
+
+  // Every column of every class table that changes at a level shows in the summary,
+  // or is a use a class-resource row shows by name.
+  for (const table of classTables) {
+    it(`${table.id}: every class-table change from 1 to 20 shows`, () => {
+      for (let level = 1; level < 20; level++) {
+        const was = table.levels.find((l) => l.level === level)?.classSpecific ?? {};
+        const now = table.levels.find((l) => l.level === level + 1)?.classSpecific ?? {};
+        const changed = Object.keys(now).filter((k) => now[k] !== was[k]);
+        if (!changed.length) continue;
+        const before = makeCharacterDoc({ classId: table.id, level });
+        const ids = levelUpReview(
+          before,
+          commitLevelUp(before, picks(table.id)),
+          "en"
+        ).numbers.map((r) => r.id);
+        for (const key of changed) {
+          expect(
+            key in TABLE_COLUMNS || TABLE_USES.has(key),
+            `${table.id} ${String(level + 1)} ${key}`
+          ).toBe(true);
+          if (key in TABLE_COLUMNS) expect(ids).toContain(`table:${table.id}:${key}`);
+        }
+      }
+    });
+  }
 });

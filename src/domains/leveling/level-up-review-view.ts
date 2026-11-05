@@ -3,15 +3,19 @@
  * character before with the one the commit would save, so the summary can never
  * disagree with what is stored.
  *
- *   - numbers: Hit Points and the proficiency bonus always; then each spell slot
- *     level and class resource whose maximum moves;
+ *   - numbers: Hit Points; the proficiency bonus when it goes up; each spell
+ *     slot level and class resource whose maximum moves; and every column of the
+ *     class table that changes (Bardic Inspiration d8 → d10, Sneak Attack 2d6 →
+ *     3d6, Rage Damage +2 → +3), read from the table `levelUpPlan` reads;
  *   - gained: every feature, feat, spell, invocation, Metamagic option, maneuver
  *     and mastered weapon the level adds, and the subclass when it is chosen.
  *
  * Pure: SRD names resolve here in the reader's language; numbers stay raw.
  */
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
+import { getClassTable } from "@/data/classes";
 import { totalLevel } from "@/lib/classes";
+import { localeDistance } from "@/lib/utils";
 import { proficiencyBonus } from "@/lib/proficiency";
 import type { Locale } from "@/lib/locale";
 import type { CharacterData, CharacterDoc } from "@/types/character";
@@ -28,7 +32,49 @@ export type ReviewNumber =
       before: number;
       after: number;
     }
-  | { id: string; kind: "resource"; name: string; before: number; after: number };
+  | { id: string; kind: "resource"; name: string; before: number; after: number }
+  | {
+      id: string;
+      kind: "table";
+      /** The class-table column (`TABLE_COLUMNS`). */
+      key: string;
+      /** Formatted: «d8», «3d6», «+2», «9 m»; null for a class's first level. */
+      before: string | null;
+      after: string;
+    };
+
+/**
+ * The class-table columns the summary shows, each with how its value reads.
+ * Uses (Rage, Second Wind, Focus, Sorcery Points, Lay on Hands, Bardic
+ * Inspiration uses) are left out: the class-resource rows show them by name.
+ */
+export const TABLE_COLUMNS: Record<
+  string,
+  (v: number | string, locale: Locale) => string
+> = {
+  bardicInspirationDie: (v) => String(v),
+  martialArtsDie: (v) => String(v),
+  sneakAttackDice: (v) => `${String(v)}d6`,
+  rageDamage: (v) => `+${String(v)}`,
+  extraAttacks: (v) => String(v),
+  unarmoredMovement: (v, locale) => `+${localeDistance(Number(v), locale)}`,
+  wildShapeMaxCR: (v) => String(v),
+  weaponMastery: (v) => String(v),
+  invocationsKnown: (v) => String(v),
+  metamagicKnown: (v) => String(v),
+  pactSlotLevel: (v) => `${String(v)}°`,
+};
+/** Columns a class-resource row already shows, by the tracker's name. */
+export const TABLE_USES = new Set([
+  "rages",
+  "bardicInspirationUses",
+  "secondWindUses",
+  "actionSurgeUses",
+  "indomitableUses",
+  "focusPoints",
+  "layOnHandsPool",
+  "sorceryPoints",
+]);
 
 export type GainedKind =
   | "subclass"
@@ -91,20 +137,21 @@ export function levelUpReview(
   const a = after.character;
   const numbers: ReviewNumber[] = [
     { id: "hp", kind: "hp", before: b.hp.max, after: a.hp.max },
-    {
-      id: "pb",
-      kind: "pb",
-      before: proficiencyBonus(totalLevel(b)),
-      after: proficiencyBonus(totalLevel(a)),
-    },
   ];
+  const prof = [
+    proficiencyBonus(totalLevel(b)),
+    proficiencyBonus(totalLevel(a)),
+  ] as const;
+  if (prof[1] !== prof[0])
+    numbers.push({ id: "pb", kind: "pb", before: prof[0], after: prof[1] });
 
   // Maxima only: what is used tonight is not what the level changes.
   const slots = (c: CharacterData) => {
     const m = new Map<string, { level: number; pact: boolean; total: number }>();
     for (const s of c.spellSlots) {
       const pact = s.pactMagic === true;
-      const id = `slot:${pact ? "pact:" : ""}${s.level}`;
+      // Pact slots are one pool whose level rises: one row, at its new level.
+      const id = pact ? "slot:pact" : `slot:${String(s.level)}`;
       const prev = m.get(id);
       m.set(id, { level: s.level, pact, total: (prev?.total ?? 0) + s.total });
     }
@@ -136,6 +183,28 @@ export function levelUpReview(
         name: r.name,
         before: prev,
         after: r.max,
+      });
+    }
+  }
+
+  // The class table: each advancing class's row before and after.
+  for (const entry of a.classes) {
+    const was = b.classes.find((e) => e.classId === entry.classId)?.level ?? 0;
+    if (was === entry.level) continue;
+    const table = getClassTable(entry.classId);
+    const row = (level: number) =>
+      table?.levels.find((l) => l.level === level)?.classSpecific;
+    const prev = row(was) ?? {};
+    for (const [key, value] of Object.entries(row(entry.level) ?? {})) {
+      const format = TABLE_COLUMNS[key];
+      const old = prev[key];
+      if (!format || old === value) continue;
+      numbers.push({
+        id: `table:${entry.classId}:${key}`,
+        kind: "table",
+        key,
+        before: old === undefined ? null : format(old, locale),
+        after: format(value, locale),
       });
     }
   }
