@@ -189,7 +189,9 @@ export type ReactionTrigger =
   // You fail a saving throw (Symbiotic Being: add a Hit Point Die to it), or a
   // Constitution one (Aberrant Fortitude).
   | "selfFailsSave"
-  | "selfFailsConSave";
+  | "selfFailsConSave"
+  // You succeed on a saving throw (a feat that turns a made save into a riposte).
+  | "selfSucceedsSave";
 
 /** Runtime list of every {@link ReactionTrigger} token (exhaustive by construction). */
 export const ALL_REACTION_TRIGGERS = [
@@ -213,6 +215,7 @@ export const ALL_REACTION_TRIGGERS = [
   "creatureFailsD20Test",
   "selfFailsSave",
   "selfFailsConSave",
+  "selfSucceedsSave",
 ] as const satisfies ExhaustiveTuple<
   ReactionTrigger,
   [
@@ -236,6 +239,7 @@ export const ALL_REACTION_TRIGGERS = [
     "creatureFailsD20Test",
     "selfFailsSave",
     "selfFailsConSave",
+    "selfSucceedsSave",
   ]
 >;
 

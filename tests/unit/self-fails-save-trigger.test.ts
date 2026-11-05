@@ -23,3 +23,15 @@ describe("the self-fail-save reaction triggers", () => {
     );
   });
 });
+
+describe("the self-succeeds-save reaction trigger", () => {
+  it("is a token a reaction can carry, worded in English and Italian", () => {
+    expect(ALL_REACTION_TRIGGERS).toContain("selfSucceedsSave");
+    expect(i18n.getFixedT("en")("combat.reactionTrigger_selfSucceedsSave")).toBe(
+      "you succeed on a saving throw"
+    );
+    expect(i18n.getFixedT("it")("combat.reactionTrigger_selfSucceedsSave")).toBe(
+      "superi un tiro salvezza"
+    );
+  });
+});
