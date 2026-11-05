@@ -1,7 +1,8 @@
 /**
  * «Scelte da completare»: a saved character whose species still owes choices
  * (a lineage, legacy or ancestry; the spellcasting ability its spells use; Keen
- * Senses, Skillful) sees them named in a callout, and «Completa» opens the same
+ * Senses, Skillful; the ability a feat's increase raised, never stored) sees them
+ * named in a callout, and «Completa» opens the same
  * chips creation uses. Nothing is written until «Salva»; each choice made then
  * leaves the list. Hidden on a read-only sheet and when nothing is owed.
  */
@@ -78,6 +79,11 @@ function SpeciesChoicesDialog({
   const [bundlePicks, setBundlePicks] = useState<Record<string, string>>({});
   const [ability, setAbility] = useState<AbilityCode | null>(null);
   const [featId, setFeatId] = useState<string | null>(null);
+  // Each feat's answer: which ability its increase raised.
+  const [featAbilities, setFeatAbilities] = useState<Record<string, AbilityCode>>({});
+  const featItems = pendingSpeciesItems(doc.character, doc.session, locale).flatMap(
+    (item) => (item.kind === "feat-ability" ? [item] : [])
+  );
   // A Human's Versatile: any origin feat but the one its background already grants.
   const feats = pending.feat
     ? originFeatVMs(locale, new Set(doc.character.bgFeat ? [doc.character.bgFeat] : []))
@@ -96,6 +102,7 @@ function SpeciesChoicesDialog({
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
     featId !== null ||
+    Object.keys(featAbilities).length > 0 ||
     rows.some((row) => row.picked.length > 0);
   const save = () => {
     const store = useCharacterStore.getState();
@@ -103,6 +110,8 @@ function SpeciesChoicesDialog({
       store.setGrantBundleChoice(key, optionId);
     if (featId) store.setHumanOriginFeat(featId);
     if (ability) store.setSpeciesSpellAbility(ability);
+    for (const [id, code] of Object.entries(featAbilities))
+      store.setFeatAbility(id, code);
     store.resolveSpeciesChoices(picks);
     onClose();
   };
@@ -173,6 +182,26 @@ function SpeciesChoicesDialog({
             </div>
           </div>
         )}
+        {featItems.map((item) => (
+          <div key={item.featId} className="f-ask">
+            <span className="f-lbl">
+              {t("play.speciesChoices.featAbilityLabel", { feat: item.label })}
+            </span>
+            <div className="f-chips">
+              {item.abilities.map((code) => (
+                <Chip
+                  key={code}
+                  pressed={featAbilities[item.featId] === code}
+                  onClick={() =>
+                    setFeatAbilities({ ...featAbilities, [item.featId]: code })
+                  }
+                >
+                  {t(`abilities.${code}`)}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        ))}
         <ChoiceRowChips
           rows={rows}
           onToggle={(row, id) => setPicks(toggleChoicePick(picks, row, id))}

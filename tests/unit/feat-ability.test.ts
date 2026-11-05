@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import {
   featAbilityMatters,
   featAbilityOf,
+  featsOwingAbility,
   resolveFeatAbilityGrants,
 } from "@/lib/feat-ability";
 import { getAlwaysPreparedFromGrants, injectExpandedSpells } from "@/lib/expanded-spells";
@@ -214,5 +215,35 @@ describe("featAbilityMatters", () => {
         { type: "always-prepared-spell", spellId: "light", spellAbilitySource: "feat" },
       ])
     ).toBe(false);
+  });
+});
+
+describe("featsOwingAbility", () => {
+  const reads: Grant[] = [
+    INCREASE,
+    { type: "always-prepared-spell", spellId: "light", spellAbilitySource: "feat" },
+  ];
+  const catalogue: Record<string, Grant[]> = { reads, plain: [INCREASE] };
+
+  it("names each feat whose answer matters and was never stored, once", () => {
+    expect(
+      featsOwingAbility(
+        {
+          features: [
+            { srdId: "reads" },
+            { srdId: "reads" },
+            { srdId: "plain" },
+            { srdId: "unknown" },
+          ],
+        },
+        (id) => catalogue[id]
+      )
+    ).toEqual(["reads"]);
+    expect(
+      featsOwingAbility(
+        { features: [{ srdId: "reads", featAbility: "CHA" }] },
+        (id) => catalogue[id]
+      )
+    ).toEqual([]);
   });
 });

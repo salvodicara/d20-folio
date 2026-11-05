@@ -665,6 +665,9 @@ interface CharacterState {
   resolveSpeciesChoices: (picks: ChoicePicks) => void;
   /** The INT/WIS/CHA its species spells use (Elf, Gnome, Tiefling). */
   setSpeciesSpellAbility: (ability: AbilityCode) => void;
+  /** Record which ability `featId`'s increase raised (the +1 is already in the
+   *  scores: only the answer is stored, on the feat ref). */
+  setFeatAbility: (featId: string, ability: AbilityCode) => void;
   /**
    * The species' origin feat (a Human's Versatile) chosen on the sheet: the build
    * is reconciled in the same write, so the feat's grants derive at once.
@@ -3290,6 +3293,21 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         ...character,
         character: { ...character.character, speciesSpellAbility: ability },
       },
+    });
+  },
+
+  setFeatAbility: (featId, ability) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character) return;
+    const features = character.character.features;
+    const index = features.findIndex((f) => !("custom" in f) && f.srdId === featId);
+    const feat = features[index];
+    if (!feat || "custom" in feat || feat.featAbility === ability) return;
+    const next = [...features];
+    next[index] = { ...feat, featAbility: ability };
+    set({
+      character: { ...character, character: { ...character.character, features: next } },
     });
   },
 

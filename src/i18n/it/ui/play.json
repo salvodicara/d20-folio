@@ -283,7 +283,9 @@
       "title": "Scelte da completare",
       "body": "La tua specie ti fa scegliere: {{items}}.",
       "open": "Completa",
-      "abilityNote": "Caratteristica per gli incantesimi della specie: oggi usa Carisma. Scegli quella giusta."
+      "abilityNote": "Caratteristica per gli incantesimi della specie: oggi usa Carisma. Scegli quella giusta.",
+      "featAbilityNote": "{{feats}}: quale caratteristica hai aumentato con questo talento? Sceglila una volta.",
+      "featAbilityLabel": "Caratteristica aumentata da {{feat}}"
     }
   }
 }

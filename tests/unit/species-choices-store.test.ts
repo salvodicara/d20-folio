@@ -77,4 +77,22 @@ describe("species choices through the store", () => {
       "alert"
     );
   });
+
+  it("records which ability a feat's increase raised, on the feat ref alone", () => {
+    const doc = makeCharacterDoc();
+    useCharacterStore.getState().setCharacter({
+      ...doc,
+      character: { ...doc.character, features: [{ srdId: "grappler" }] },
+    });
+    const scores = doc.character.abilityScores;
+    useCharacterStore.getState().setFeatAbility("grappler", "DEX");
+    const c = useCharacterStore.getState().character?.character;
+    expect(c?.features).toEqual([{ srdId: "grappler", featAbility: "DEX" }]);
+    // The +1 was applied when the feat was taken: the answer adds nothing.
+    expect(c?.abilityScores).toEqual(scores);
+    useCharacterStore.setState({ readonly: true });
+    const before = useCharacterStore.getState().character;
+    useCharacterStore.getState().setFeatAbility("grappler", "STR");
+    expect(useCharacterStore.getState().character).toBe(before);
+  });
 });

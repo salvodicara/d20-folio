@@ -13,7 +13,9 @@
  * counts as made when one of them is proficient, and a pick "from any skill"
  * (Skillful) cannot be told apart from a class's, so it is never asked again.
  * The Human Versatile feat is not one of these slots: `humanOriginFeat` holds it,
- * and a saved Human without one owes it (`feat`).
+ * and a saved Human without one owes it (`feat`). The same banner also asks a
+ * feat's "ability increased by this feat" when its feat ref never stored it
+ * (`featAbilities`).
  *
  * Pure module — no React, no locale reads.
  */
@@ -26,7 +28,13 @@ import {
 } from "@/lib/feature-choices";
 import type { GrantSource } from "@/lib/grants";
 import { resolveGrantSourcesForRace } from "@/lib/resolve-grant-sources";
-import { unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
+import { FEATS_BY_ID } from "@/data/feats";
+import type { AbilityCode } from "@/data/types";
+import { featChoiceAbilities } from "@/lib/feat-ability";
+import {
+  unresolvedBuildChoices,
+  type BuildForChoices,
+} from "@/lib/unresolved-build-choices";
 import type { CharacterData, SessionState } from "@/types/character";
 
 /** The species' trait sources whose `choice-*` grants it owes (Versatile left out). */
@@ -57,6 +65,9 @@ export interface PendingSpeciesChoices {
   slots: FeatureChoiceSlots;
   /** The species' origin feat (a Human's Versatile) was never chosen. */
   feat: boolean;
+  /** Feats whose chosen increase something reads, never stored: the feat and
+   *  the abilities its increase offered. */
+  featAbilities: { featId: string; abilities: ReadonlyArray<AbilityCode> }[];
   /** Anything at all is owed. */
   any: boolean;
 }
@@ -81,13 +92,20 @@ function filterSlots(
 
 /** The species' own choices a saved character has not made yet. */
 export function pendingSpeciesChoices(
-  character: Pick<
-    CharacterData,
-    "race" | "skills" | "humanOriginFeat" | "speciesSpellAbility"
-  >,
+  character: BuildForChoices,
   session: Pick<SessionState, "grantBundleChoices">
 ): PendingSpeciesChoices {
   const owed = unresolvedBuildChoices(character, session);
+  const featAbilities = owed.flatMap((c) =>
+    c.kind === "feat-ability"
+      ? [
+          {
+            featId: c.featId,
+            abilities: featChoiceAbilities(FEATS_BY_ID.get(c.featId)?.grants) ?? [],
+          },
+        ]
+      : []
+  );
   const bundleKeys = owed.flatMap((c) => (c.kind === "bundle" ? [c.bundleKey] : []));
   const spellAbility = owed.some((c) => c.kind === "species-spell-ability");
   const feat = owed.some((c) => c.kind === "feat");
@@ -106,7 +124,13 @@ export function pendingSpeciesChoices(
     spellAbility,
     slots,
     feat,
-    any: bundleKeys.length > 0 || spellAbility || feat || traits.size > 0,
+    featAbilities,
+    any:
+      bundleKeys.length > 0 ||
+      spellAbility ||
+      feat ||
+      traits.size > 0 ||
+      featAbilities.length > 0,
   };
 }
 
