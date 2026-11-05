@@ -175,6 +175,7 @@ function SpeciesChoicesDialog({
               options={feats.map((f) => ({ id: f.id, label: f.name }))}
               picked={featId ? [featId] : []}
               art="feat"
+              info="feat"
               locale={locale}
               onToggle={setFeatId}
             />

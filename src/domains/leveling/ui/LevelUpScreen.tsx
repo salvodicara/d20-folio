@@ -62,16 +62,31 @@ import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Choice, Room, Stepper, type ArtKind } from "@/ui";
 
+import type { InfoKind } from "@/domains/spells/option-info";
 import { PickGrid } from "@/domains/spells/ui/PickGrid";
 import { tieLast } from "@/lib/text-ties";
 
 import { ClassCrest } from "./ClassCrest";
 
 /** The questions whose options are catalogue entries with painted art. */
+/** What the inspect card reads each question's options as. */
+const ROW_INFO: Partial<Record<string, InfoKind>> = {
+  feat: "feat",
+  fightingStyle: "feat",
+  invocations: "invocation",
+  metamagic: "metamagic",
+  maneuvers: "maneuver",
+  weaponMasteries: "weapon",
+  expertise: "skill",
+  mcSkills: "skill",
+};
+/** Questions whose options are skills: chips, like the sheet's skill list. */
+const SKILL_ROWS = new Set(["expertise", "mcSkills"]);
 const ROW_ART: Partial<Record<string, ArtKind>> = {
   subclass: "subclass",
   feat: "feat",
   fightingStyle: "feat",
+  weaponMasteries: "equipment",
 };
 
 export function LevelUpScreen({
@@ -488,6 +503,8 @@ function Question({
         picked={row.picked}
         spells={row.spell}
         art={ROW_ART[row.key]}
+        info={ROW_INFO[row.key]}
+        chips={SKILL_ROWS.has(row.key)}
         locale={locale}
         onToggle={onToggle}
       />

@@ -3,13 +3,13 @@
  * («Scegli 2 trucchetti da Mago») carries a counter like D&D Beyond's builder
  * («Cantrips: 0/3»), and a tap toggles a pick. Shared by the creation Specie step and
  * the sheet's «Scelte da completare». A spell slot is the level-up's icon grid
- * (painted art, filters, the inspect card); skills, tools and languages stay chips.
+ * (painted art, filters, the inspect card); skills, tools and languages are chips
+ * with the same card.
  */
 import type { ChoiceSlotRow } from "@/domains/creation/creation-view";
 import { PickGrid } from "@/domains/spells/ui/PickGrid";
 import { useLocale } from "@/hooks/useLocale";
 import { asLocale } from "@/lib/locale";
-import { Chip } from "@/ui";
 
 export function ChoiceRowChips({
   rows,
@@ -41,17 +41,15 @@ export function ChoiceRowChips({
           onToggle={(id) => onToggle(row, id)}
         />
       ) : (
-        <div className="f-chips">
-          {row.options.map((o) => (
-            <Chip
-              key={o.id}
-              pressed={row.picked.includes(o.id)}
-              onClick={() => onToggle(row, o.id)}
-            >
-              {o.label}
-            </Chip>
-          ))}
-        </div>
+        <PickGrid
+          label={row.title}
+          options={row.options}
+          picked={row.picked}
+          chips
+          info={row.kind === "skill" || row.kind === "expertise" ? "skill" : undefined}
+          locale={locale}
+          onToggle={(id) => onToggle(row, id)}
+        />
       )}
     </div>
   ));
