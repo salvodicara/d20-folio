@@ -3,6 +3,7 @@
  * DM's Scontro row for a monster, Play for the player's own character. «Riuscito:
  * termina» ends the condition with an undo; «Fallito» keeps it and closes the prompt.
  */
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -30,6 +31,10 @@ import {
 } from "@/lib/condition-ends";
 import { vitalExhaustion } from "@/lib/character-vitals";
 import { failedRepeatSaveEffects } from "@/lib/play/repeat-saves";
+import type { ConditionId } from "@/data/types";
+import { bareActionSpend } from "@/lib/play/cast-payment";
+import { rerollOffers } from "@/lib/play/roll-reactions";
+import { localizeActions } from "@/lib/views/combat-action-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { Button } from "@/ui";
@@ -72,6 +77,47 @@ export function RepeatSavePrompts({
 
 function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: Locale }) {
   const { t } = useTranslation();
+  // The rerolls this device's own character has for this save.
+  const sheet = useCharacterStore((s) => s.character);
+  const rerolls = useMemo(
+    () =>
+      sheet && sheet.id === save.characterId
+        ? rerollOffers(sheet, localizeActions(sheet, locale), {
+            roll: "save",
+            whose: "self",
+            against: save.conditionId as ConditionId,
+          }).filter(({ action }) => (action.summary.uses?.current ?? 1) > 0)
+        : [],
+    [sheet, save.characterId, save.conditionId, locale]
+  );
+  const reroll = (offer: (typeof rerolls)[number]) => {
+    const live = useCharacterStore.getState();
+    const spend = bareActionSpend(
+      live.character?.character.spellSlots ?? [],
+      offer.action
+    );
+    if (spend?.kind !== "tracker") return;
+    live.dispatch({
+      kind: "spend-tracker",
+      trackerId: spend.trackerId,
+      amount: spend.amount,
+    });
+    useToastStore.getState().showToast({
+      message: t(
+        offer.reaction.advantage
+          ? "play.rollReaction.toastRerollAdvantageNoTarget"
+          : "play.rollReaction.toastRerollNoTarget",
+        { name: offer.action.name }
+      ),
+      duration: 6000,
+      onUndo: () =>
+        useCharacterStore.getState().dispatch({
+          kind: "restore-tracker",
+          trackerId: spend.trackerId,
+          amount: spend.amount,
+        }),
+    });
+  };
   const condition = localizeSrd("condition", save.conditionId, "name", locale);
   const store = () => useRepeatSaveStore.getState();
   // A tracked save (Contagion) counts each answer; only the last one decides.
@@ -219,6 +265,19 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
         <Button kind="ghost" onClick={failed}>
           {t("combat.repeatSaveFailed")}
         </Button>
+        {/* A failed save the sheet can take again (Indomitable, Countercharm against
+            Charmed or Frightened): the use is spent, and the prompt waits for the
+            new roll. */}
+        {rerolls.map((offer) => (
+          <Button key={offer.action.id} kind="ghost" onClick={() => reroll(offer)}>
+            {offer.reaction.bonus
+              ? t("combat.rerollOfferBonus", {
+                  name: offer.action.name,
+                  bonus: offer.reaction.bonus,
+                })
+              : t("combat.rerollOffer", { name: offer.action.name })}
+          </Button>
+        ))}
       </div>
     </div>
   );

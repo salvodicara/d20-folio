@@ -648,6 +648,8 @@
     "reactionTrigger_selfFailsSave": "you fail a saving throw",
     "reactionTrigger_selfFailsConSave": "you fail a Constitution saving throw",
     "reactionTrigger_selfSucceedsSave": "you succeed on a saving throw",
-    "useHitPointDice": "{{source}}: you can spend up to {{max}} of your Hit Point Dice."
+    "useHitPointDice": "{{source}}: you can spend up to {{max}} of your Hit Point Dice.",
+    "rerollOffer": "{{name}}: reroll",
+    "rerollOfferBonus": "{{name}}: reroll +{{bonus}}"
   }
 }

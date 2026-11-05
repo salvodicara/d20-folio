@@ -285,3 +285,37 @@ describe("a track settled into another condition", () => {
     });
   });
 });
+
+describe("a reroll on your own failed save", () => {
+  it("Indomitable: the prompt offers it, and the tap spends the use with an undo", async () => {
+    const { makeCharacterDoc } = await import("./_helpers");
+    const fighter = makeCharacterDoc({
+      classes: [{ classId: "fighter", level: 13 }],
+      features: [{ srdId: "fighter-indomitable" }],
+    });
+    useCharacterStore.setState({ character: fighter, readonly: false });
+    useRepeatSaveStore.setState({
+      saves: [
+        { ...save, targetId: "pc-me", targetName: "Brannoc", characterId: fighter.id },
+      ],
+    });
+    render(<RepeatSavePrompts targetIds={["pc-me"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Indomitable: reroll +13" }));
+    expect(
+      useCharacterStore.getState().character?.session.trackers["fighter-indomitable"]
+        ?.used
+    ).toBe(1);
+    const toast = useToastStore.getState().toasts.at(-1);
+    expect(toast?.message).toBe("Indomitable: reroll the save");
+    toast?.onUndo?.();
+    expect(
+      useCharacterStore.getState().character?.session.trackers["fighter-indomitable"]
+        ?.used ?? 0
+    ).toBe(0);
+  });
+
+  it("another creature's save offers none of the sheet's rerolls", () => {
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    expect(screen.queryByRole("button", { name: /reroll/i })).toBeNull();
+  });
+});
