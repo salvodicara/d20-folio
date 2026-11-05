@@ -60,4 +60,14 @@ describe("levelUpPlan", () => {
     expect(at(4)).toMatchObject({ needsInvocations: true, invocationPicksNeeded: 2 });
     expect(at(2).needsInvocations).toBe(false);
   });
+
+  it("a Sorcerer is asked new Metamagic at 2, 10 and 17", () => {
+    // 2024 Sorcerer Features table, Metamagic: 2 at level 2, 4 at 10, 6 at 17.
+    const at = (level: number) =>
+      levelUpPlan(makeCharacterDoc({ classId: "sorcerer", level }), "sorcerer", interim);
+    expect(at(1)).toMatchObject({ needsMetamagic: true, metamagicPicksNeeded: 2 });
+    expect(at(9)).toMatchObject({ needsMetamagic: true, metamagicPicksNeeded: 2 });
+    expect(at(16)).toMatchObject({ needsMetamagic: true, metamagicPicksNeeded: 2 });
+    expect(at(10).needsMetamagic).toBe(false);
+  });
 });

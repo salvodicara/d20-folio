@@ -113,10 +113,12 @@ export function patchClassEntry(
 }
 
 /**
- * The class's own picks (a Fighting Style, Expertise, Weapon Mastery,
- * Eldritch Invocations), applied where they live: a style as a feature,
- * Expertise on the skills, masteries (replaced) and invocations (added) on the
- * class entry. Character creation and level-up both apply them here.
+ * The class's own picks (a Fighting Style, Expertise, Weapon Mastery, Metamagic,
+ * maneuvers, Eldritch Invocations, cantrips), applied where they live: a style as
+ * a feature, Expertise on the skills, masteries (replaced) and Metamagic,
+ * maneuvers and invocations (added) on the class entry, cantrips on the spell
+ * list. Character creation, level-up and the sheet's owed picks
+ * (`applyOwedClassPicks`) all apply them here.
  */
 export function applyClassPicks(
   character: CharacterData,
@@ -125,7 +127,10 @@ export function applyClassPicks(
     fightingStyle?: string | null;
     expertise?: readonly string[];
     weaponMasteries?: readonly string[] | null;
+    metamagic?: readonly string[];
+    maneuvers?: readonly string[];
     invocations?: readonly string[];
+    cantrips?: readonly string[];
   }
 ): CharacterData {
   let updated = character;
@@ -155,12 +160,36 @@ export function applyClassPicks(
     });
   }
 
+  const metamagicPicks = picks.metamagic ?? [];
+  if (metamagicPicks.length > 0) {
+    const current =
+      updated.classes.find((e) => e.classId === classId)?.metamagicChoices ?? [];
+    const next = [...current];
+    for (const id of metamagicPicks) if (!next.includes(id)) next.push(id);
+    updated = patchClassEntry(updated, classId, { metamagicChoices: next });
+  }
+
+  const maneuverPicks = picks.maneuvers ?? [];
+  if (maneuverPicks.length > 0) {
+    const current =
+      updated.classes.find((e) => e.classId === classId)?.maneuverChoices ?? [];
+    const next = [...current];
+    for (const id of maneuverPicks) if (!next.includes(id)) next.push(id);
+    updated = patchClassEntry(updated, classId, { maneuverChoices: next });
+  }
+
   if (invocationPicks.length > 0) {
     const current =
       updated.classes.find((e) => e.classId === classId)?.invocationChoices ?? [];
     const next = [...current];
     for (const id of invocationPicks) if (!next.includes(id)) next.push(id);
     updated = patchClassEntry(updated, classId, { invocationChoices: next });
+  }
+
+  const cantripPicks = picks.cantrips ?? [];
+  if (cantripPicks.length > 0) {
+    const cantripRefs: SrdSpellRef[] = cantripPicks.map((id) => ({ srdId: id }));
+    updated = { ...updated, spells: [...updated.spells, ...cantripRefs] };
   }
   return updated;
 }
@@ -175,8 +204,6 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
   const levelData = getClassTable(classId)?.levels.find((l) => l.level === newClassLevel);
   const asiChoice = picks.asi;
   const subclassChoice = picks.subclassId;
-  const metamagicPicks = picks.metamagic;
-  const maneuverPicks = picks.maneuvers;
   const newCantrips = picks.newCantrips;
   const newSpells = picks.newSpells;
   const choiceSlots = picks.choiceSlots;
@@ -328,29 +355,13 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     weaponMasteries: picks.weaponMasteries,
   });
 
-  if (metamagicPicks.length > 0) {
-    const current =
-      updated.classes.find((e) => e.classId === classId)?.metamagicChoices ?? [];
-    const next = [...current];
-    for (const id of metamagicPicks) if (!next.includes(id)) next.push(id);
-    updated = patchClassEntry(updated, classId, { metamagicChoices: next });
-  }
-
-  if (maneuverPicks.length > 0) {
-    const current =
-      updated.classes.find((e) => e.classId === classId)?.maneuverChoices ?? [];
-    const next = [...current];
-    for (const id of maneuverPicks) if (!next.includes(id)) next.push(id);
-    updated = patchClassEntry(updated, classId, { maneuverChoices: next });
-  }
-
-  updated = applyClassPicks(updated, classId, { invocations: picks.invocations });
-
-  if (newCantrips.length > 0) {
-    handledChecklistKeys.push("levelUp.checklistLearnCantrip");
-    const cantripRefs: SrdSpellRef[] = newCantrips.map((id) => ({ srdId: id }));
-    updated = { ...updated, spells: [...updated.spells, ...cantripRefs] };
-  }
+  updated = applyClassPicks(updated, classId, {
+    metamagic: picks.metamagic,
+    maneuvers: picks.maneuvers,
+    invocations: picks.invocations,
+    cantrips: newCantrips,
+  });
+  if (newCantrips.length > 0) handledChecklistKeys.push("levelUp.checklistLearnCantrip");
 
   updated = applyChoicePicks(updated, choiceSlots, activeChoicePicks);
 

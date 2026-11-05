@@ -4,18 +4,23 @@
  * Senses, Skillful; the ability a feat's increase raised, never stored) sees them
  * named in a callout, and «Completa» opens the same
  * chips creation uses. Nothing is written until «Salva»; each choice made then
- * leaves the list. Hidden on a read-only sheet and when nothing is owed.
+ * leaves the list. The class picks the level table gives and the build lacks
+ * (invocations, cantrips, Metamagic, maneuvers, Weapon Mastery) are asked here
+ * too, as the creation class step's chips. Hidden on a read-only sheet and when
+ * nothing is owed.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { choiceSlotRows, toggleChoicePick } from "@/domains/creation/creation-view";
 import { ChoiceRowChips } from "@/domains/creation/ui/ChoiceRowChips";
+import { togglePick } from "@/lib/creation/picks";
 import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import type { Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
 import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
+import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
 import {
   pendingSpeciesItems,
   speciesChoicesLine,
@@ -98,7 +103,11 @@ function SpeciesChoicesDialog({
     ),
   };
   const rows = choiceSlotRows(pending.slots, picks, owned, locale);
+  // The class picks owed, answered by row key.
+  const classRows = owedClassPickRows(doc.character, locale);
+  const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
   const chosen =
+    Object.values(classPicks).some((ids) => ids.length > 0) ||
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
     featId !== null ||
@@ -113,6 +122,13 @@ function SpeciesChoicesDialog({
     for (const [id, code] of Object.entries(featAbilities))
       store.setFeatAbility(id, code);
     store.resolveSpeciesChoices(picks);
+    store.resolveClassPicks(
+      classRows.map((row) => ({
+        classId: row.classId,
+        pick: row.pick,
+        ids: classPicks[row.key] ?? [],
+      }))
+    );
     onClose();
   };
   return (
@@ -206,6 +222,28 @@ function SpeciesChoicesDialog({
           rows={rows}
           onToggle={(row, id) => setPicks(toggleChoicePick(picks, row, id))}
         />
+        {classRows.map((row) => (
+          <div key={row.key} className="f-ask">
+            <span className="f-lbl">{row.source}</span>
+            <p className="f-help">{row.title}</p>
+            <div className="f-chips">
+              {row.options.map((o) => (
+                <Chip
+                  key={o.id}
+                  pressed={(classPicks[row.key] ?? []).includes(o.id)}
+                  onClick={() =>
+                    setClassPicks({
+                      ...classPicks,
+                      [row.key]: togglePick(classPicks[row.key] ?? [], o.id, row.owed),
+                    })
+                  }
+                >
+                  {o.name}
+                </Chip>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </Dialog>
   );

@@ -13,10 +13,15 @@
  * Beyond the species: a feat whose increase you choose, when something reads the
  * choice ("the ability increased by this feat") and the feat ref never stored it
  * (`featAbility`, written by level-ups since it existed).
+ *
+ * And the class picks its level table gives that the build lacks (`class-pick`,
+ * from `owedClassPicks`): invocations, cantrips, Metamagic, maneuvers, Weapon
+ * Mastery, counted per class at that class's own level.
  */
 import { FEATS_BY_ID } from "@/data/feats";
 import { getRace } from "@/data/races";
 import { featsOwingAbility } from "@/lib/feat-ability";
+import { owedClassPicks, type ClassPickKind } from "@/lib/owed-class-picks";
 import type { CharacterData, SessionState } from "@/types/character";
 
 export type UnresolvedBuildChoice =
@@ -29,13 +34,15 @@ export type UnresolvedBuildChoice =
   /** A skill pick; `verifiable: false` when the sheet can't tell it was made. */
   | { kind: "skill"; traitId: string; verifiable: boolean }
   /** Which ability a feat's increase raised, when something reads it. */
-  | { kind: "feat-ability"; featId: string };
+  | { kind: "feat-ability"; featId: string }
+  /** `owed` more picks of a kind the class's level table gives. */
+  | { kind: "class-pick"; classId: string; pick: ClassPickKind; owed: number };
 
 export type BuildForChoices = Pick<
   CharacterData,
   "race" | "skills" | "humanOriginFeat" | "speciesSpellAbility"
 > &
-  Partial<Pick<CharacterData, "features">>;
+  Partial<Pick<CharacterData, "features" | "classes" | "spells">>;
 
 /** Every pick the character's species and feats ask for that the stored build lacks. */
 export function unresolvedBuildChoices(
@@ -49,6 +56,7 @@ export function unresolvedBuildChoices(
   )) {
     out.push({ kind: "feat-ability", featId });
   }
+  for (const owed of owedClassPicks(character)) out.push({ kind: "class-pick", ...owed });
   return out;
 }
 

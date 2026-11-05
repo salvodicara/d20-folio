@@ -146,9 +146,15 @@ export function levelUpPlan(
   // True when the pool is broader than the class's own list — keys the widened-
   // pool hint (re-derived from the union, not a feature-id check).
   const isSpellPoolWidened = widenedSpellLists.size > 1;
+  // Asked whenever the class HAS Metamagic (granted at any level up to this one)
+  // and the table gives more this level — 2024: 2 at 2, 2 more at 10 and at 17.
+  // Reading only THIS level's features asked them at level 2 alone.
   const needsMetamagic = (() => {
     if (!charData) return false;
-    if (!(levelData?.featureIds ?? []).some(isMetamagicPlaceholder)) return false;
+    const hasMetamagic = (classTable?.levels ?? []).some(
+      (l) => l.level <= newClassLevel && l.featureIds.some(isMetamagicPlaceholder)
+    );
+    if (!hasMetamagic) return false;
     return metamagicPicksAtLevel(newClassLevel) > 0;
   })();
   const metamagicPicksNeeded = metamagicPicksAtLevel(newClassLevel);

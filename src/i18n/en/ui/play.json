@@ -285,7 +285,21 @@
       "open": "Finish",
       "abilityNote": "Species spellcasting ability: it uses Charisma today. Choose the right one.",
       "featAbilityNote": "{{feats}}: which ability did you increase with this feat? Choose it once.",
-      "featAbilityLabel": "Ability increased by {{feat}}"
+      "featAbilityLabel": "Ability increased by {{feat}}",
+      "classBody": "Your class lets you choose more: {{items}}.",
+      "classItem": "{{what}} ({{className}})",
+      "owed": {
+        "invocations_one": "{{count}} Eldritch Invocation",
+        "invocations_other": "{{count}} Eldritch Invocations",
+        "cantrips_one": "{{count}} cantrip",
+        "cantrips_other": "{{count}} cantrips",
+        "metamagic_one": "{{count}} Metamagic option",
+        "metamagic_other": "{{count}} Metamagic options",
+        "maneuvers_one": "{{count}} maneuver",
+        "maneuvers_other": "{{count}} maneuvers",
+        "weaponMasteries_one": "{{count}} Weapon Mastery",
+        "weaponMasteries_other": "{{count}} Weapon Masteries"
+      }
     }
   }
 }

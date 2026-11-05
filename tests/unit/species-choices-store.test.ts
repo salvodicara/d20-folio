@@ -95,4 +95,31 @@ describe("species choices through the store", () => {
     useCharacterStore.getState().setFeatAbility("grappler", "STR");
     expect(useCharacterStore.getState().character).toBe(before);
   });
+
+  it("owed invocations chosen on the sheet land on the Warlock entry; read-only writes nothing", () => {
+    // Warlock Features table, Eldritch Invocations: 3 at L2.
+    const doc = makeCharacterDoc({
+      classes: [{ classId: "warlock", level: 2, invocationChoices: ["agonizing-blast"] }],
+      spells: [{ srdId: "eldritch-blast" }, { srdId: "chill-touch" }],
+    });
+    useCharacterStore.getState().setCharacter(doc);
+    useCharacterStore.setState({ readonly: true });
+    useCharacterStore
+      .getState()
+      .resolveClassPicks([
+        { classId: "warlock", pick: "invocations", ids: ["devils-sight"] },
+      ]);
+    expect(useCharacterStore.getState().character).toBe(doc);
+    useCharacterStore.setState({ readonly: false });
+    useCharacterStore.getState().resolveClassPicks([
+      {
+        classId: "warlock",
+        pick: "invocations",
+        ids: ["devils-sight", "eldritch-mind", "armor-of-shadows"],
+      },
+    ]);
+    expect(
+      useCharacterStore.getState().character?.character.classes[0]?.invocationChoices
+    ).toEqual(["agonizing-blast", "devils-sight", "eldritch-mind"]);
+  });
 });

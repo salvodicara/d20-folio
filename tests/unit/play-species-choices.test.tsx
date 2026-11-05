@@ -12,8 +12,19 @@ import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
+// Every Weapon Mastery the Fighter 5 has, so only the species' choices are owed.
+const MASTERED = {
+  classes: [
+    {
+      classId: "fighter",
+      level: 5,
+      weaponMasteries: ["longsword", "greatsword", "longbow", "handaxe"],
+    },
+  ],
+};
+
 function load(race: string): CharacterDoc {
-  const base = makeCharacterDoc();
+  const base = makeCharacterDoc(MASTERED);
   useCharacterStore.getState().setCharacter({
     ...base,
     character: {
@@ -82,7 +93,7 @@ describe("PlaySpeciesChoices", () => {
   });
 
   it("asks a Human's never-chosen Versatile feat and sets it on Save", () => {
-    const base = makeCharacterDoc();
+    const base = makeCharacterDoc(MASTERED);
     useCharacterStore.getState().setCharacter({
       ...base,
       character: {
@@ -105,4 +116,29 @@ describe("PlaySpeciesChoices", () => {
     );
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   }, 15_000);
+
+  it("asks the cantrips a Wizard 4 owes (4 at L4) and stores them as the level-up does", () => {
+    const base = makeCharacterDoc({
+      race: asRaceId("dwarf"),
+      classes: [{ classId: "wizard", level: 4 }],
+      spells: [{ srdId: "fire-bolt" }, { srdId: "light" }],
+    });
+    useCharacterStore.getState().setCharacter(base);
+    render(<Banner />);
+    expect(
+      screen.getByRole("group", { name: "Choices to finish" }).textContent
+    ).toContain("Your class lets you choose more: 2 cantrips (Wizard).");
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    expect(screen.getByText("Pick 2 Wizard Cantrips")).toBeTruthy();
+    // A cantrip already known isn't offered again.
+    expect(screen.queryByRole("button", { name: "Fire Bolt" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Mage Hand" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ray of Frost" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(useCharacterStore.getState().character?.character.spells.slice(2)).toEqual([
+      { srdId: "mage-hand" },
+      { srdId: "ray-of-frost" },
+    ]);
+    expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+  });
 });

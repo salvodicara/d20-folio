@@ -391,6 +391,11 @@ effects (log, undo, persistence, the encounter) stay with the store
   `concentration-save-bonus` `ability: "feat"` (with `school`); `FEAT` in a `temp-hp` formula.
   Unanswered keeps the old reading (class ability, `spellAbilityFallback: "species"`, the higher
   of two choices, no bonus) and «Scelte da completare» asks (`unresolvedBuildChoices`).
+- **Owed class picks** (`src/lib/owed-class-picks.ts`): per class entry at its own level, the
+  table's count minus the stored picks — invocations, Metamagic, maneuvers (with Combat
+  Superiority), Weapon Mastery, cantrips (plain cantrips only, narrowest list first). Never
+  negative; no "spells known" (2024 tables give prepared spells). «Scelte da completare» asks them
+  (`class-pick` in `unresolvedBuildChoices`); answers go through `applyClassPicks`.
 - Also in `src/lib/play/`: cover, light, surprise, Help, grapple, mounts, swarms, suffocation,
   provisions, terrain, Ready, Counterspell's kept slot, the cast record, Wish, Magic Jar.
 
