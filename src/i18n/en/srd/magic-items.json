@@ -1309,7 +1309,7 @@
   },
   "sovereign-glue": {
     "description": "This viscous, milky-white substance can form a permanent adhesive bond between any two objects. It must be stored in a jar or flask that has been coated inside with Oil of Slipperiness . When found, a container contains 1d6 + 1 ounces. One ounce of the glue can cover a 1-foot square surface. Applying an ounce of Sovereign Glue takes a Utilize action, and the applied glue takes 1 minute to set. Once it has done so, the bond it creates can be broken only by the application of Universal Solvent or Oil of Etherealness , or with a Wish spell.",
-    "gist": "Permanently bonds two objects; only Universal Solvent, Oil of Etherealness or Wish undo it",
+    "gist": "Permanently bonds two objects; only Universal Solvent or Wish undoes it",
     "name": "Sovereign Glue"
   },
   "spell-scroll": {
@@ -1348,7 +1348,7 @@
   "staff-of-frost": {
     "attunementReq": "a Druid, Sorcerer, Warlock, or Wizard",
     "description": "You have Resistance to Cold damage while you hold this staff. Spells. The staff has 10 charges. While holding the staff, you can cast one of the spells on the following table from it, using your spell save DC. The table indicates how many charges you must expend to cast the spell. Spell Charge Cost Cone of Cold 5 Fog Cloud 1 Ice Storm 4 Wall of Ice 4 Regaining Charges. The staff regains 1d6 + 4 expended charges daily at dawn. If you expend the last charge, roll 1d20. On a 1, the staff turns to water and is destroyed.",
-    "gist": "Cold Resistance; 10 charges for Cone of Cold, Fog Cloud, Ice Storm, Wall of Ice",
+    "gist": "Cold Resistance; 10 charges for Cone of Cold, Ice Storm and other spells",
     "name": "Staff of Frost"
   },
   "staff-of-healing": {

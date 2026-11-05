@@ -1477,7 +1477,7 @@
   },
   "universal-solvent": {
     "description": "Questo tubetto contiene un liquido lattiginoso dal forte odore di alcol. Quando viene trovato, un tubetto ne contiene 1d6 + 1 once. Puoi compiere un'azione Utilizzo per versare 1 o più once di solvente dal tubetto su una superficie a portata di mano. Ogni oncia dissolve istantaneamente fino a circa 0,09 metri quadrati di adesivo che tocca, compresa la Colla Meravigliosa.",
-    "gist": "Ogni oncia dissolve circa 30 cm² di adesivo, anche la Colla Sovrana",
+    "gist": "Ogni oncia dissolve circa 30 cm² di adesivo, anche la Colla Meravigliosa",
     "name": "Solvente Universale"
   },
   "vicious-weapon": {
