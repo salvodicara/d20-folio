@@ -56,7 +56,7 @@ import {
 import { formFacts } from "@/lib/polymorph";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import type { BreakdownLine } from "@/lib/value-breakdown";
-import { resolveSpellAbility } from "@/lib/resolve-spell-ability";
+import { resolveSpellAbility, spellAbilityPinned } from "@/lib/resolve-spell-ability";
 import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { canRitualCast } from "@/lib/ritual";
@@ -310,10 +310,9 @@ function buildSrdCardVM(args: {
   const refAbility = resolveSpellAbility(ref, character, data.classes);
   // The owning class id (for class-SCOPED grant bumps — "+1 to your Sorcerer
   // spells"). A literal/species override has no owning class → primary scope.
-  const owningClassId =
-    ref.spellAbilityOverride != null || ref.speciesSpellAbility
-      ? classId
-      : resolveSpellOwningClassId(data.classes, character, classId);
+  const owningClassId = spellAbilityPinned(ref, character)
+    ? classId
+    : resolveSpellOwningClassId(data.classes, character, classId);
   // The per-spell ability differs from the caster's default ⇒ the card advertises
   // its owning ability. `overrideAbility` is non-null ONLY when the ABILITY
   // diverges (a Magic-Initiate pin, a species pick, OR the multiclass owning

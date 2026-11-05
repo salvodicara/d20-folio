@@ -1820,6 +1820,18 @@ export interface AggregatedGrants {
    */
   concentrationSaveBonusFlat: number;
   /**
+   * Concentration-save bonuses that apply only while the spell held is of a
+   * school (Conjuration Adept: the feat's ability modifier while concentrating
+   * on a Conjuration spell). The consumer adds the ones matching the held spell.
+   */
+  concentrationSaveSchoolBonuses: ReadonlyArray<{
+    sourceId: string;
+    school: string;
+    ability?: AbilityCode;
+    min: number;
+    amount: number;
+  }>;
+  /**
    * Scoped ability-check bonuses. Each entry rides a `appliesTo` scope (a skill
    * id, `"<ABILITY>-checks"`, or `"all-checks"`); `value` is `"modifier"` (add
    * `ability`'s modifier, floored at `min`) or a flat number. The Skills
@@ -2354,6 +2366,7 @@ export function emptyAggregate(): AggregatedGrants {
     saveBonusByAbility: [],
     concentrationSaveBonusAbilities: [],
     concentrationSaveBonusFlat: 0,
+    concentrationSaveSchoolBonuses: [],
     abilityCheckBonuses: [],
     skillAbilityOptions: [],
     initiativeBonusAbilities: [],
@@ -2679,6 +2692,9 @@ export function evaluateGrants(
   const rollFloors: RollFloorClause[] = [];
   const d20Rerolls: D20RerollClause[] = [];
   const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
+  const concentrationSaveSchoolBonuses: Array<
+    AggregatedGrants["concentrationSaveSchoolBonuses"][number]
+  > = [];
   const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const incomingAttackAdvantages: IncomingAttackClause[] = [];
   const incomingAttackDisadvantages: IncomingAttackClause[] = [];
@@ -3055,6 +3071,21 @@ export function evaluateGrants(
         rules.push(...(compileGrant(g) ?? []));
         break;
       case "concentration-save-bonus":
+        // "feat" is resolved to the feat's stored answer where its grants are
+        // read; still unresolved means unanswered — no bonus.
+        if (g.ability === "feat") break;
+        if (g.school !== undefined) {
+          concentrationSaveSchoolBonuses.push({
+            sourceId,
+            school: g.school,
+            ...(g.ability ? { ability: g.ability } : {}),
+            min: g.min ?? 0,
+            amount: g.amount ?? 0,
+          });
+          break;
+        }
+        rules.push(...(compileGrant(g) ?? []));
+        break;
       case "initiative-bonus":
       case "spell-save-dc-bonus":
       case "spell-attack-bonus":
@@ -4225,6 +4256,7 @@ export function evaluateGrants(
     saveBonusByAbility: scopedSaveBonuses(values),
     concentrationSaveBonusAbilities: abilityTerms(values, "save:concentration"),
     concentrationSaveBonusFlat: ruleNumber(values, "save:concentration"),
+    concentrationSaveSchoolBonuses,
     abilityCheckBonuses,
     skillAbilityOptions,
     initiativeBonusAbilities: ruleTerms(values, "initiative:bonus").map((t) => t.ability),

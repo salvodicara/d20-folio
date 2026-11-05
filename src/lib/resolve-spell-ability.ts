@@ -17,19 +17,28 @@
  * Resolution order (first match wins):
  *   1. `ref.spellAbilityOverride` — a concrete ability pinned on the ref
  *      (Magic Initiate, heritage feats, manual per-spell edit).
- *   2. `ref.speciesSpellAbility` — a DEFERRED species pick: read the live
+ *   2. the feat's answer — a spell whose casting ability is "the ability
+ *      increased by this feat": the granting feat's live `featAbility`
+ *      (`featAbilityOf`). The feat is named by `ref.featSpellAbility`, or traced
+ *      from the pick's `freeCastSource` for a spell picked through such a feat's
+ *      `choice-spell`. While the feat is unanswered, the chain continues below
+ *      (the species marker its grant may name, then the class) — exactly what
+ *      the spell read before the answer was stored.
+ *   3. `ref.speciesSpellAbility` — a DEFERRED species pick: read the live
  *      `character.speciesSpellAbility`, defaulting to `SPECIES_SPELL_ABILITY_DEFAULT`
  *      when the player hasn't chosen yet. Custom spells can't carry this marker.
- *   3. `ref.viaClass` — the class the spell is prepared through, when the
+ *   4. `ref.viaClass` — the class the spell is prepared through, when the
  *      character casts with that class (two copies, two abilities).
- *   4. the OWNING class's spellcasting ability — the spell's owning caster class
+ *   5. the OWNING class's spellcasting ability — the spell's owning caster class
  *      (multiclass-aware; identical to the single caster's ability for a
  *      single-class character). `spellClasses` (the SRD spell's `classes[]`)
  *      drives the derivation; omitting it falls back to the primary ability.
- *   5. `null` (homebrew custom spell on a non-caster character).
+ *   6. `null` (homebrew custom spell on a non-caster character).
  */
 import type { AbilityCode } from "@/data/types";
 import type { CharacterData, CustomSpell, SrdSpellRef } from "@/types/character";
+import { FEATS_BY_ID } from "@/data/feats";
+import { featAbilityOf } from "@/lib/feat-ability";
 import {
   casterClassAbilities,
   resolveSpellOwningAbility,
@@ -44,9 +53,47 @@ import {
  */
 export const SPECIES_SPELL_ABILITY_DEFAULT: AbilityCode = "CHA";
 
+/**
+ * The feat whose "ability increased by this feat" casts `ref`, if any: its
+ * `featSpellAbility` marker, or — for a spell picked through a feat's
+ * `choice-spell` with `spellAbilitySource: "feat"` — the feat its free-cast
+ * source names (`<featId>` or the per-spell `<featId>:<spellId>`).
+ */
+export function spellAbilityFeat(ref: SrdSpellRef | CustomSpell): string | undefined {
+  if ("custom" in ref) return undefined;
+  if (ref.featSpellAbility) return ref.featSpellAbility;
+  const traced = ref.freeCastSource?.sourceId.split(":")[0];
+  if (!traced) return undefined;
+  const feat = FEATS_BY_ID.get(traced);
+  return feat?.grants?.some(
+    (g) => g.type === "choice-spell" && g.spellAbilitySource === "feat"
+  )
+    ? traced
+    : undefined;
+}
+
+/**
+ * Whether `ref`'s casting ability is pinned away from its class — a concrete
+ * override, the species pick, or an answered feat — so its DC and attack are
+ * the primary caster's, not an owning class's.
+ */
+export function spellAbilityPinned(
+  ref: SrdSpellRef | CustomSpell,
+  character: Pick<CharacterData, "features">
+): boolean {
+  if (ref.spellAbilityOverride != null) return true;
+  if ("custom" in ref) return false;
+  if (ref.speciesSpellAbility) return true;
+  const feat = spellAbilityFeat(ref);
+  return feat !== undefined && featAbilityOf(character, feat) !== null;
+}
+
 export function resolveSpellAbility(
   ref: SrdSpellRef | CustomSpell,
-  character: Pick<CharacterData, "spellcasting" | "speciesSpellAbility" | "classes">,
+  character: Pick<
+    CharacterData,
+    "spellcasting" | "speciesSpellAbility" | "classes" | "features"
+  >,
   /**
    * The SRD spell's `classes[]` list (which classes can learn it) — drives the
    * multiclass owning-class derivation in step 3. Omit (or pass undefined) for a
@@ -56,6 +103,9 @@ export function resolveSpellAbility(
   spellClasses?: ReadonlyArray<string>
 ): AbilityCode | null {
   if (ref.spellAbilityOverride) return ref.spellAbilityOverride;
+  const feat = spellAbilityFeat(ref);
+  const answered = feat ? featAbilityOf(character, feat) : null;
+  if (answered) return answered;
   if (!("custom" in ref) && ref.speciesSpellAbility) {
     return character.speciesSpellAbility ?? SPECIES_SPELL_ABILITY_DEFAULT;
   }
