@@ -1,6 +1,7 @@
 {
   "aboleth": {
-    "name": "Aboleth"
+    "name": "Aboleth",
+    "gist": "Telepathic aquatic aberration: grappling tentacles, Dominate Mind, Consume Memories"
   },
   "aboleth.traits.amphibious": {
     "name": "Amphibious",
@@ -47,7 +48,8 @@
     "text": "If the aboleth has at least one creature Charmed or Grappled, it uses Consume Memories and regains 5 (1d10) Hit Points."
   },
   "adult-black-dragon": {
-    "name": "Adult Black Dragon"
+    "name": "Adult Black Dragon",
+    "gist": "Swamp dragon: Acid Breath line, Cloud of Insects and Frightful Presence"
   },
   "adult-black-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -86,7 +88,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "adult-blue-dragon": {
-    "name": "Adult Blue Dragon"
+    "name": "Adult Blue Dragon",
+    "gist": "Desert dragon: Lightning Breath line, Cloaked Flight and Sonic Boom"
   },
   "adult-blue-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -121,7 +124,8 @@
     "text": "The dragon makes one Rend attack."
   },
   "adult-brass-dragon": {
-    "name": "Adult Brass Dragon"
+    "name": "Adult Brass Dragon",
+    "gist": "Desert dragon: Fire Breath line, Sleep Breath, Scorching Sands"
   },
   "adult-brass-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -160,7 +164,8 @@
     "text": "Dexterity Saving Throw: DC 16, one creature the dragon can see within 120 feet. Failure: 27 (6d8) Fire damage, and the target's Speed is halved until the end of its next turn. Failure or Success: The dragon can't take this action again until the start of its next turn."
   },
   "adult-bronze-dragon": {
-    "name": "Adult Bronze Dragon"
+    "name": "Adult Bronze Dragon",
+    "gist": "Coastal dragon: Lightning Breath, Repulsion Breath and Thunderclap"
   },
   "adult-bronze-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -203,7 +208,8 @@
     "text": "Constitution Saving Throw: DC 17, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 90 feet. Failure: 10 (3d6) Thunder damage, and the target has the Deafened condition until the end of its next turn."
   },
   "adult-copper-dragon": {
-    "name": "Adult Copper Dragon"
+    "name": "Adult Copper Dragon",
+    "gist": "Trickster dragon: Acid Breath, Slowing Breath and Giggling Magic"
   },
   "adult-copper-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -242,7 +248,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "adult-gold-dragon": {
-    "name": "Adult Gold Dragon"
+    "name": "Adult Gold Dragon",
+    "gist": "Metallic dragon: Fire Breath, Weakening Breath and a Banish legendary action"
   },
   "adult-gold-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -285,7 +292,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "adult-green-dragon": {
-    "name": "Adult Green Dragon"
+    "name": "Adult Green Dragon",
+    "gist": "Forest dragon: Poison Breath cone, Mind Invasion and Noxious Miasma"
   },
   "adult-green-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -324,7 +332,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "adult-red-dragon": {
-    "name": "Adult Red Dragon"
+    "name": "Adult Red Dragon",
+    "gist": "Volcanic tyrant dragon: Fire Breath cone, Fiery Rays, Commanding Presence"
   },
   "adult-red-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -359,7 +368,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "adult-silver-dragon": {
-    "name": "Adult Silver Dragon"
+    "name": "Adult Silver Dragon",
+    "gist": "Metallic dragon: Cold Breath, Paralyzing Breath and a Hold Monster Chill"
   },
   "adult-silver-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -398,7 +408,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "adult-white-dragon": {
-    "name": "Adult White Dragon"
+    "name": "Adult White Dragon",
+    "gist": "Arctic dragon: Cold Breath cone, Freezing Burst and Frightful Presence"
   },
   "adult-white-dragon.traits.ice-walk": {
     "name": "Ice Walk",
@@ -433,7 +444,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "air-elemental": {
-    "name": "Air Elemental"
+    "name": "Air Elemental",
+    "gist": "Living gale: Thunderous Slam and a Whirlwind that hurls foes"
   },
   "air-elemental.traits.air-form": {
     "name": "Air Form",
@@ -452,7 +464,8 @@
     "text": "Strength Saving Throw: DC 13, one Medium or smaller creature in the elemental's space. Failure: 24 (4d10 + 2) Thunder damage, and the target is pushed up to 20 feet straight away from the elemental and has the Prone condition. Success: Half damage only."
   },
   "allosaurus": {
-    "name": "Allosaurus"
+    "name": "Allosaurus",
+    "gist": "Charging predator dinosaur: Claws pounce to knock prey Prone, then a heavy Bite"
   },
   "allosaurus.actions.bite": {
     "name": "Bite",
@@ -463,7 +476,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Slashing damage. If the target is a Large or smaller creature and the allosaurus moved 30+ feet straight toward it immediately before the hit, the target has the Prone condition, and the allosaurus can make one Bite attack against it."
   },
   "ancient-black-dragon": {
-    "name": "Ancient Black Dragon"
+    "name": "Ancient Black Dragon",
+    "gist": "Ancient swamp dragon: Acid Breath line, Cloud of Insects and Frightful Presence"
   },
   "ancient-black-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -502,7 +516,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "ancient-blue-dragon": {
-    "name": "Ancient Blue Dragon"
+    "name": "Ancient Blue Dragon",
+    "gist": "Ancient desert dragon: Lightning Breath line, Cloaked Flight and Sonic Boom"
   },
   "ancient-blue-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -537,7 +552,8 @@
     "text": "The dragon makes one Rend attack."
   },
   "ancient-brass-dragon": {
-    "name": "Ancient Brass Dragon"
+    "name": "Ancient Brass Dragon",
+    "gist": "Ancient desert dragon: Fire Breath line, Sleep Breath, Scorching Sands"
   },
   "ancient-brass-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -576,7 +592,8 @@
     "text": "Dexterity Saving Throw: DC 20, one creature the dragon can see within 120 feet. Failure: 36 (8d8) Fire damage, and the target's Speed is halved until the end of its next turn. Failure or Success: The dragon can't take this action again until the start of its next turn."
   },
   "ancient-bronze-dragon": {
-    "name": "Ancient Bronze Dragon"
+    "name": "Ancient Bronze Dragon",
+    "gist": "Ancient coastal dragon: Lightning Breath, Repulsion Breath and Thunderclap"
   },
   "ancient-bronze-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -619,7 +636,8 @@
     "text": "Constitution Saving Throw: DC 22, each creature in a 20-foot-radius Sphere centered on a point the dragon can see within 120 feet. Failure: 13 (3d8) Thunder damage, and the target has the Deafened condition until the end of its next turn."
   },
   "ancient-copper-dragon": {
-    "name": "Ancient Copper Dragon"
+    "name": "Ancient Copper Dragon",
+    "gist": "Ancient trickster dragon: Acid Breath, Slowing Breath and Giggling Magic"
   },
   "ancient-copper-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -658,7 +676,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "ancient-gold-dragon": {
-    "name": "Ancient Gold Dragon"
+    "name": "Ancient Gold Dragon",
+    "gist": "Ancient metallic dragon: Fire Breath, Weakening Breath and a Banish legendary action"
   },
   "ancient-gold-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -701,7 +720,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "ancient-green-dragon": {
-    "name": "Ancient Green Dragon"
+    "name": "Ancient Green Dragon",
+    "gist": "Ancient forest dragon: Poison Breath cone, Mind Invasion and Noxious Miasma"
   },
   "ancient-green-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -740,7 +760,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "ancient-red-dragon": {
-    "name": "Ancient Red Dragon"
+    "name": "Ancient Red Dragon",
+    "gist": "Ancient volcanic tyrant dragon: Fire Breath cone, Fiery Rays, Commanding Presence"
   },
   "ancient-red-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -775,7 +796,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "ancient-silver-dragon": {
-    "name": "Ancient Silver Dragon"
+    "name": "Ancient Silver Dragon",
+    "gist": "Ancient metallic dragon: Cold Breath, Paralyzing Breath and a Hold Monster Chill"
   },
   "ancient-silver-dragon.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -814,7 +836,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "ancient-white-dragon": {
-    "name": "Ancient White Dragon"
+    "name": "Ancient White Dragon",
+    "gist": "Ancient arctic dragon: Cold Breath cone, Freezing Burst and Frightful Presence"
   },
   "ancient-white-dragon.traits.ice-walk": {
     "name": "Ice Walk",
@@ -849,7 +872,8 @@
     "text": "The dragon moves up to half its Speed, and it makes one Rend attack."
   },
   "animated-armor": {
-    "name": "Animated Armor"
+    "name": "Animated Armor",
+    "gist": "Empty suit of armor that pounds foes with two Slam attacks"
   },
   "animated-armor.actions.multiattack": {
     "name": "Multiattack",
@@ -860,21 +884,24 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Bludgeoning damage."
   },
   "animated-flying-sword": {
-    "name": "Animated Flying Sword"
+    "name": "Animated Flying Sword",
+    "gist": "Magic blade that flies and fights alone with Slash"
   },
   "animated-flying-sword.actions.slash": {
     "name": "Slash",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage."
   },
   "animated-rug-of-smothering": {
-    "name": "Animated Rug of Smothering"
+    "name": "Animated Rug of Smothering",
+    "gist": "Rug-shaped construct: Smother grabs and suffocates a foe it wraps up"
   },
   "animated-rug-of-smothering.actions.smother": {
     "name": "Smother",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Bludgeoning damage. If the target is a Medium or smaller creature, the rug can give it the Grappled condition (escape DC 13) instead of dealing damage. Until the grapple ends, the target has the Blinded and Restrained conditions, is suffocating, and takes 10 (2d6 + 3) Bludgeoning damage at the start of each of its turns. The rug can smother only one creature at a time. While grappling the target, the rug can't take this action, the rug halves the damage it takes (round down), and the target takes the same amount of damage."
   },
   "ankheg": {
-    "name": "Ankheg"
+    "name": "Ankheg",
+    "gist": "Burrowing insect: Acid Bite that grabs prey, Acid Spray line"
   },
   "ankheg.traits.tunneler": {
     "name": "Tunneler",
@@ -889,7 +916,8 @@
     "text": "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 14 (4d6) Acid damage. Success: Half damage."
   },
   "ankylosaurus": {
-    "name": "Ankylosaurus"
+    "name": "Ankylosaurus",
+    "gist": "Armoured dinosaur whose Tail knocks even Huge foes Prone"
   },
   "ankylosaurus.actions.multiattack": {
     "name": "Multiattack",
@@ -900,7 +928,8 @@
     "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 9 (1d10 + 4) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition."
   },
   "ape": {
-    "name": "Ape"
+    "name": "Ape",
+    "gist": "Strong primate: two Fist blows or a thrown Rock"
   },
   "ape.actions.multiattack": {
     "name": "Multiattack",
@@ -915,7 +944,8 @@
     "text": "Ranged Attack Roll: +5, range 25/50 ft. Hit: 10 (2d6 + 3) Bludgeoning damage."
   },
   "archelon": {
-    "name": "Archelon"
+    "name": "Archelon",
+    "gist": "Giant amphibious sea turtle with two crushing Bite attacks"
   },
   "archelon.traits.amphibious": {
     "name": "Amphibious",
@@ -930,7 +960,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 14 (3d6 + 4) Piercing damage."
   },
   "archmage": {
-    "name": "Archmage"
+    "name": "Archmage",
+    "gist": "Master wizard: Force Arcane Burst, high-level spells and Protective Magic"
   },
   "archmage.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -957,7 +988,8 @@
     "text": "The archmage casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting."
   },
   "assassin": {
-    "name": "Assassin"
+    "name": "Assassin",
+    "gist": "Deadly killer: Poison-laced Shortsword and Light Crossbow, Cunning Action, Evasion"
   },
   "assassin.traits.evasion": {
     "name": "Evasion",
@@ -980,28 +1012,32 @@
     "text": "The assassin takes the Dash, Disengage, or Hide action."
   },
   "awakened-shrub": {
-    "name": "Awakened Shrub"
+    "name": "Awakened Shrub",
+    "gist": "Shrub given motion by magic: weak Rake that deals Slashing damage"
   },
   "awakened-shrub.actions.rake": {
     "name": "Rake",
     "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 Slashing damage."
   },
   "awakened-tree": {
-    "name": "Awakened Tree"
+    "name": "Awakened Tree",
+    "gist": "Animated tree: slow, tough and hits hard with a long-reach Slam"
   },
   "awakened-tree.actions.slam": {
     "name": "Slam",
     "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 14 (3d6 + 4) Bludgeoning damage."
   },
   "axe-beak": {
-    "name": "Axe Beak"
+    "name": "Axe Beak",
+    "gist": "Fast flightless bird with a cleaving Beak"
   },
   "axe-beak.actions.beak": {
     "name": "Beak",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Slashing damage."
   },
   "azer-sentinel": {
-    "name": "Azer Sentinel"
+    "name": "Azer Sentinel",
+    "gist": "Fiery dwarf-like elemental: Burning Hammer and a Fire Aura that scorches neighbours"
   },
   "azer-sentinel.traits.fire-aura": {
     "name": "Fire Aura",
@@ -1016,7 +1052,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Bludgeoning damage plus 3 (1d6) Fire damage."
   },
   "baboon": {
-    "name": "Baboon"
+    "name": "Baboon",
+    "gist": "Climbing primate that mobs prey with Pack Tactics and a weak Bite"
   },
   "baboon.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -1027,14 +1064,16 @@
     "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 (1d4 - 1) Piercing damage."
   },
   "badger": {
-    "name": "Badger"
+    "name": "Badger",
+    "gist": "Small burrowing beast with a feeble Bite"
   },
   "badger.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage."
   },
   "balor": {
-    "name": "Balor"
+    "name": "Balor",
+    "gist": "Demon lord with a Fire Aura: Flame Whip, Lightning Blade, explosive Death Throes"
   },
   "balor.traits.death-throes": {
     "name": "Death Throes",
@@ -1069,7 +1108,8 @@
     "text": "The balor teleports itself or a willing demon within 10 feet of itself up to 60 feet to an unoccupied space the balor can see."
   },
   "bandit": {
-    "name": "Bandit"
+    "name": "Bandit",
+    "gist": "Outlaw who fights with a Scimitar or a Light Crossbow"
   },
   "bandit.actions.scimitar": {
     "name": "Scimitar",
@@ -1080,7 +1120,8 @@
     "text": "Ranged Attack Roll: +3, range 80/320 ft. Hit: 5 (1d8 + 1) Piercing damage."
   },
   "bandit-captain": {
-    "name": "Bandit Captain"
+    "name": "Bandit Captain",
+    "gist": "Outlaw leader: Scimitar and Pistol attacks, Parry to turn hits into misses"
   },
   "bandit-captain.actions.multiattack": {
     "name": "Multiattack",
@@ -1099,7 +1140,8 @@
     "text": "Trigger: The bandit is hit by a melee attack roll while holding a weapon. Response: The bandit adds 2 to its AC against that attack, possibly causing it to miss."
   },
   "barbed-devil": {
-    "name": "Barbed Devil"
+    "name": "Barbed Devil",
+    "gist": "Spiked fiend: grappling Claws, Barbed Hide, Hurl Flame"
   },
   "barbed-devil.traits.barbed-hide": {
     "name": "Barbed Hide",
@@ -1130,7 +1172,8 @@
     "text": "Ranged Attack Roll: +5, range 150 ft. Hit: 17 (5d6) Fire damage. If the target is a flammable object that isn't being worn or carried, it starts burning."
   },
   "basilisk": {
-    "name": "Basilisk"
+    "name": "Basilisk",
+    "gist": "Reptile whose Petrifying Gaze turns foes Petrified; Poison Bite"
   },
   "basilisk.actions.bite": {
     "name": "Bite",
@@ -1141,14 +1184,16 @@
     "text": "Constitution Saving Throw: DC 12, each creature in a 30-foot Cone. If the basilisk sees its reflection in the Cone, the basilisk must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition instead of the Restrained condition."
   },
   "bat": {
-    "name": "Bat"
+    "name": "Bat",
+    "gist": "Tiny flier with a nibbling Bite"
   },
   "bat.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage."
   },
   "bearded-devil": {
-    "name": "Bearded Devil"
+    "name": "Bearded Devil",
+    "gist": "Fiend with a Beard that Poisons and a reach Infernal Glaive"
   },
   "bearded-devil.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -1167,7 +1212,8 @@
     "text": "Melee Attack Roll: +5, reach 10 ft. Hit: 8 (1d10 + 3) Slashing damage. If the target is a creature and doesn't already have an infernal wound, it is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target receives an infernal wound. While wounded, the target loses 5 (1d10) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by succeeding on a DC 12 Wisdom (Medicine) check."
   },
   "behir": {
-    "name": "Behir"
+    "name": "Behir",
+    "gist": "Serpentine lightning hunter: Constrict, Lightning Breath line, then Swallow"
   },
   "behir.actions.multiattack": {
     "name": "Multiattack",
@@ -1190,7 +1236,8 @@
     "text": "Dexterity Saving Throw: DC 18, one Large or smaller creature Grappled by the behir (the behir can have only one creature swallowed at a time). Failure: The behir swallows the target, which is no longer Grappled. While swallowed, a creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the behir, and takes 21 (6d6) Acid damage at the start of each of the behir's turns. If the behir takes 30 damage or more on a single turn from the swallowed creature, the behir must succeed on a DC 14 Constitution saving throw at the end of that turn or regurgitate the creature, which falls in a space within 10 feet of the behir and has the Prone condition. If the behir dies, a swallowed creature is no longer Restrained and can escape from the corpse by using 15 feet of movement, exiting Prone."
   },
   "berserker": {
-    "name": "Berserker"
+    "name": "Berserker",
+    "gist": "Raging warrior: Greataxe blows, Bloodied Frenzy grants Advantage when hurt"
   },
   "berserker.traits.bloodied-frenzy": {
     "name": "Bloodied Frenzy",
@@ -1201,7 +1248,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 9 (1d12 + 3) Slashing damage."
   },
   "black-bear": {
-    "name": "Black Bear"
+    "name": "Black Bear",
+    "gist": "Climbing, swimming beast that mauls with two Rend attacks"
   },
   "black-bear.actions.multiattack": {
     "name": "Multiattack",
@@ -1212,7 +1260,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Slashing damage."
   },
   "black-dragon-wyrmling": {
-    "name": "Black Dragon Wyrmling"
+    "name": "Black Dragon Wyrmling",
+    "gist": "Young swamp dragon: two Acid Rend attacks and an Acid Breath line"
   },
   "black-dragon-wyrmling.traits.amphibious": {
     "name": "Amphibious",
@@ -1231,7 +1280,8 @@
     "text": "Dexterity Saving Throw: DC 11, each creature in a 15-foot-long, 5-foot-wide Line. Failure: 22 (5d8) Acid damage. Success: Half damage."
   },
   "black-pudding": {
-    "name": "Black Pudding"
+    "name": "Black Pudding",
+    "gist": "Climbing ooze: Acid Dissolving Pseudopod ruins armour; Split"
   },
   "black-pudding.traits.amorphous": {
     "name": "Amorphous",
@@ -1254,7 +1304,8 @@
     "text": "Trigger: While the pudding is Large or Medium and has 10+ Hit Points, it becomes Bloodied or is subjected to Lightning or Slashing damage. Response: The pudding splits into two new Black Puddings. Each new pudding is one size smaller than the original pudding and acts on its Initiative. The original pudding's Hit Points are divided evenly between the new puddings (round down)."
   },
   "blink-dog": {
-    "name": "Blink Dog"
+    "name": "Blink Dog",
+    "gist": "Fey hound that bites, then Teleports out of reach"
   },
   "blink-dog.actions.bite": {
     "name": "Bite",
@@ -1265,7 +1316,8 @@
     "text": "The dog teleports up to 40 feet to an unoccupied space it can see."
   },
   "blood-hawk": {
-    "name": "Blood Hawk"
+    "name": "Blood Hawk",
+    "gist": "Flock hunter: Pack Tactics, Beak hits Bloodied prey harder"
   },
   "blood-hawk.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -1276,7 +1328,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, or 6 (1d8 + 2) Piercing damage if the target is Bloodied."
   },
   "blue-dragon-wyrmling": {
-    "name": "Blue Dragon Wyrmling"
+    "name": "Blue Dragon Wyrmling",
+    "gist": "Young burrowing dragon with a Lightning Breath Line"
   },
   "blue-dragon-wyrmling.actions.multiattack": {
     "name": "Multiattack",
@@ -1291,7 +1344,8 @@
     "text": "Dexterity Saving Throw: DC 12, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 21 (6d6) Lightning damage. Success: Half damage."
   },
   "boar": {
-    "name": "Boar"
+    "name": "Boar",
+    "gist": "Charging beast: Gore knocks foes Prone, Bloodied Fury grants Advantage"
   },
   "boar.traits.bloodied-fury": {
     "name": "Bloodied Fury",
@@ -1302,7 +1356,8 @@
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature and the boar moved 20+ feet straight toward it immediately before the hit, the target takes an extra 3 (1d6) Piercing damage and has the Prone condition."
   },
   "bone-devil": {
-    "name": "Bone Devil"
+    "name": "Bone Devil",
+    "gist": "Skeletal devil: Infernal Sting leaves foes Poisoned, Claws, Magic Resistance"
   },
   "bone-devil.traits.diabolical-restoration": {
     "name": "Diabolical Restoration",
@@ -1325,7 +1380,8 @@
     "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 15 (2d10 + 4) Piercing damage plus 18 (4d8) Poison damage, and the target has the Poisoned condition until the start of the devil's next turn. While Poisoned, the target can't regain Hit Points."
   },
   "brass-dragon-wyrmling": {
-    "name": "Brass Dragon Wyrmling"
+    "name": "Brass Dragon Wyrmling",
+    "gist": "Young dragon: Fire Breath line, Sleep Breath that Incapacitates"
   },
   "brass-dragon-wyrmling.actions.rend": {
     "name": "Rend",
@@ -1340,7 +1396,8 @@
     "text": "Constitution Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: The target has the Incapacitated condition until the end of its next turn, at which point it repeats the save. Second Failure: The target has the Unconscious condition for 1 minute. This effect ends for the target if it takes damage or a creature within 5 feet of it takes an action to wake it."
   },
   "bronze-dragon-wyrmling": {
-    "name": "Bronze Dragon Wyrmling"
+    "name": "Bronze Dragon Wyrmling",
+    "gist": "Young coastal dragon: Lightning Breath line, Repulsion Breath pushes foes Prone"
   },
   "bronze-dragon-wyrmling.traits.amphibious": {
     "name": "Amphibious",
@@ -1363,7 +1420,8 @@
     "text": "Strength Saving Throw: DC 12, each creature in a 30-foot Cone. Failure: The target is pushed up to 30 feet straight away from the dragon and has the Prone condition."
   },
   "brown-bear": {
-    "name": "Brown Bear"
+    "name": "Brown Bear",
+    "gist": "Burly beast: Bite plus a Claw that knocks foes Prone"
   },
   "brown-bear.actions.multiattack": {
     "name": "Multiattack",
@@ -1378,7 +1436,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage. If the target is a Large or smaller creature, it has the Prone condition."
   },
   "bugbear-stalker": {
-    "name": "Bugbear Stalker"
+    "name": "Bugbear Stalker",
+    "gist": "Kidnapper: Quick Grapple, Abduct, Advantage on Grappled targets"
   },
   "bugbear-stalker.traits.abduct": {
     "name": "Abduct",
@@ -1401,7 +1460,8 @@
     "text": "Dexterity Saving Throw: DC 13, one Medium or smaller creature the bugbear can see within 10 feet. Failure: The target has the Grappled condition (escape DC 13)."
   },
   "bugbear-warrior": {
-    "name": "Bugbear Warrior"
+    "name": "Bugbear Warrior",
+    "gist": "Long-armed brute: Grab pins foes Grappled, then Light Hammer pounds them with Advantage"
   },
   "bugbear-warrior.traits.abduct": {
     "name": "Abduct",
@@ -1416,7 +1476,8 @@
     "text": "Melee or Ranged Attack Roll: +4 (with Advantage if the target is Grappled by the bugbear), reach 10 ft. or range 20/60 ft. Hit: 9 (3d4 + 2) Bludgeoning damage."
   },
   "bulette": {
-    "name": "Bulette"
+    "name": "Bulette",
+    "gist": "Burrowing land shark: Deadly Leap onto its prey, savage Bite"
   },
   "bulette.actions.multiattack": {
     "name": "Multiattack",
@@ -1435,14 +1496,16 @@
     "text": "The bulette jumps up to 30 feet by spending 10 feet of movement."
   },
   "camel": {
-    "name": "Camel"
+    "name": "Camel",
+    "gist": "Desert mount and pack animal with a Bite"
   },
   "camel.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Bludgeoning damage."
   },
   "cat": {
-    "name": "Cat"
+    "name": "Cat",
+    "gist": "Nimble climbing pet: Jumper, a light Scratch"
   },
   "cat.traits.jumper": {
     "name": "Jumper",
@@ -1453,7 +1516,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Slashing damage."
   },
   "centaur-trooper": {
-    "name": "Centaur Trooper"
+    "name": "Centaur Trooper",
+    "gist": "Horse-bodied soldier: Pike and Longbow attacks, Trampling Charge through foes"
   },
   "centaur-trooper.actions.multiattack": {
     "name": "Multiattack",
@@ -1472,7 +1536,8 @@
     "text": "The centaur moves up to its Speed without provoking Opportunity Attacks and can move through the spaces of Medium or smaller creatures. Each creature whose space the centaur enters is targeted once by the following effect. Strength Saving Throw: DC 14. Failure: 7 (1d6 + 4) Bludgeoning damage, and the target has the Prone condition."
   },
   "chain-devil": {
-    "name": "Chain Devil"
+    "name": "Chain Devil",
+    "gist": "Chain-wielding devil: Chains grapple, Conjure Infernal Chain, Unnerving Gaze"
   },
   "chain-devil.traits.diabolical-restoration": {
     "name": "Diabolical Restoration",
@@ -1499,7 +1564,8 @@
     "text": "Trigger: A creature the devil can see starts its turn within 30 feet of the devil and can see the devil. Response: Wisdom Saving Throw: DC 15, the triggering creature. Failure: The target has the Frightened condition until the end of its turn. Success: The target is immune to this devil's Unnerving Gaze for 24 hours."
   },
   "chimera": {
-    "name": "Chimera"
+    "name": "Chimera",
+    "gist": "Three-headed flying beast: Fire Breath, Ram knocks Prone, Bite and Claw"
   },
   "chimera.actions.multiattack": {
     "name": "Multiattack",
@@ -1522,7 +1588,8 @@
     "text": "Dexterity Saving Throw: DC 15, each creature in a 15-foot Cone. Failure: 31 (7d8) Fire damage. Success: Half damage."
   },
   "chuul": {
-    "name": "Chuul"
+    "name": "Chuul",
+    "gist": "Amphibious aberration: Pincer Grapples, Paralyzing Tentacles"
   },
   "chuul.traits.amphibious": {
     "name": "Amphibious",
@@ -1545,7 +1612,8 @@
     "text": "Constitution Saving Throw: DC 13, one creature Grappled by the chuul. Failure: The target has the Poisoned condition and repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically. While Poisoned, the target has the Paralyzed condition."
   },
   "clay-golem": {
-    "name": "Clay Golem"
+    "name": "Clay Golem",
+    "gist": "Acid-healed construct: Acid Slams, Hasten for a third Slam, goes Berserk"
   },
   "clay-golem.traits.acid-absorption": {
     "name": "Acid Absorption",
@@ -1576,7 +1644,8 @@
     "text": "The golem takes the Dash and Disengage actions."
   },
   "cloaker": {
-    "name": "Cloaker"
+    "name": "Cloaker",
+    "gist": "Cloak-like ambusher: Attach smothers prey, Moan Frightens, Phantasms"
   },
   "cloaker.traits.light-sensitivity": {
     "name": "Light Sensitivity",
@@ -1603,7 +1672,8 @@
     "text": "The cloaker casts the Mirror Image spell, requiring no spell components and using Wisdom as the spellcasting ability. The spell ends early if the cloaker starts or ends its turn in Bright Light."
   },
   "cloud-giant": {
-    "name": "Cloud Giant"
+    "name": "Cloud Giant",
+    "gist": "Sky giant: Thunderous Mace, Thundercloud Incapacitates, Misty Step"
   },
   "cloud-giant.actions.multiattack": {
     "name": "Multiattack",
@@ -1626,14 +1696,16 @@
     "text": "The giant casts the Misty Step spell, using the same spellcasting ability as Spellcasting."
   },
   "cockatrice": {
-    "name": "Cockatrice"
+    "name": "Cockatrice",
+    "gist": "Monstrous bird whose Petrifying Bite can turn victims Petrified"
   },
   "cockatrice.actions.petrifying-bite": {
     "name": "Petrifying Bite",
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 11. First Failure: The target has the Restrained condition. The target repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition, instead of the Restrained condition, for 24 hours."
   },
   "commoner": {
-    "name": "Commoner"
+    "name": "Commoner",
+    "gist": "Ordinary villager with one trained skill and a Club"
   },
   "commoner.traits.training": {
     "name": "Training",
@@ -1644,7 +1716,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Bludgeoning damage."
   },
   "constrictor-snake": {
-    "name": "Constrictor Snake"
+    "name": "Constrictor Snake",
+    "gist": "Large serpent that bites, then uses Constrict to leave prey Grappled"
   },
   "constrictor-snake.actions.bite": {
     "name": "Bite",
@@ -1655,7 +1728,8 @@
     "text": "Strength Saving Throw: DC 12, one Medium or smaller creature the snake can see within 5 feet. Failure: 7 (3d4) Bludgeoning damage, and the target has the Grappled condition (escape DC 12)."
   },
   "copper-dragon-wyrmling": {
-    "name": "Copper Dragon Wyrmling"
+    "name": "Copper Dragon Wyrmling",
+    "gist": "Young dragon: Acid Breath line and a Slowing Breath cone that halves Speed"
   },
   "copper-dragon-wyrmling.actions.rend": {
     "name": "Rend",
@@ -1670,7 +1744,8 @@
     "text": "Constitution Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: The target can't take Reactions; its Speed is halved; and it can take either an action or a Bonus Action on its turn, not both. This effect lasts until the end of its next turn."
   },
   "couatl": {
-    "name": "Couatl"
+    "name": "Couatl",
+    "gist": "Winged celestial serpent: Poisoning Bite, Constrict, Divine Aid"
   },
   "couatl.traits.shielded-mind": {
     "name": "Shielded Mind",
@@ -1693,7 +1768,8 @@
     "text": "The couatl casts Bless, Lesser Restoration, or Sanctuary, requiring no spell components and using the same spellcasting ability as Spellcasting."
   },
   "crab": {
-    "name": "Crab"
+    "name": "Crab",
+    "gist": "Amphibious shore critter that pinches with its Claw"
   },
   "crab.traits.amphibious": {
     "name": "Amphibious",
@@ -1704,7 +1780,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage."
   },
   "crocodile": {
-    "name": "Crocodile"
+    "name": "Crocodile",
+    "gist": "River ambusher with Hold Breath and a Bite that Grapples"
   },
   "crocodile.traits.hold-breath": {
     "name": "Hold Breath",
@@ -1715,14 +1792,16 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12). While Grappled, the target has the Restrained condition."
   },
   "cultist": {
-    "name": "Cultist"
+    "name": "Cultist",
+    "gist": "Fanatic worshipper whose Ritual Sickle adds Necrotic damage"
   },
   "cultist.actions.ritual-sickle": {
     "name": "Ritual Sickle",
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 3 (1d4 + 1) Slashing damage plus 1 Necrotic damage."
   },
   "cultist-fanatic": {
-    "name": "Cultist Fanatic"
+    "name": "Cultist Fanatic",
+    "gist": "Zealous cult leader: Necrotic Pact Blade, Spellcasting, Spiritual Weapon"
   },
   "cultist-fanatic.actions.pact-blade": {
     "name": "Pact Blade",
@@ -1737,7 +1816,8 @@
     "text": "The cultist casts the Spiritual Weapon spell, using the same spellcasting ability as Spellcasting."
   },
   "darkmantle": {
-    "name": "Darkmantle"
+    "name": "Darkmantle",
+    "gist": "Ceiling ambusher: Crush attaches to prey, Darkness Aura smothers light"
   },
   "darkmantle.actions.crush": {
     "name": "Crush",
@@ -1748,7 +1828,8 @@
     "text": "(1/Day) Magical Darkness fills a 15-foot Emanation originating from the darkmantle. This effect lasts while the darkmantle maintains Concentration on it, up to 10 minutes. Darkvision can't penetrate this area, and no light can illuminate it."
   },
   "death-dog": {
-    "name": "Death Dog"
+    "name": "Death Dog",
+    "gist": "Two-headed hound: twin Bite attacks that can leave prey Poisoned"
   },
   "death-dog.actions.multiattack": {
     "name": "Multiattack",
@@ -1759,7 +1840,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage. If the target is a creature, it is subjected to the following effect. Constitution Saving Throw: DC 12. First Failure: The target has the Poisoned condition. While Poisoned, the target's Hit Point maximum doesn't return to normal when finishing a Long Rest, and it repeats the save every 24 hours that elapse, ending the effect on itself on a success. Subsequent Failures: The Poisoned target's Hit Point maximum decreases by 5 (1d10)."
   },
   "deer": {
-    "name": "Deer"
+    "name": "Deer",
+    "gist": "Fast, Agile grazer that slips away and fights back with a Ram"
   },
   "deer.traits.agile": {
     "name": "Agile",
@@ -1770,7 +1852,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Bludgeoning damage."
   },
   "deva": {
-    "name": "Deva"
+    "name": "Deva",
+    "gist": "Angelic warrior: Radiant Holy Mace, divine spells and healing Divine Aid"
   },
   "deva.traits.exalted-restoration": {
     "name": "Exalted Restoration",
@@ -1797,7 +1880,8 @@
     "text": "The deva casts Cure Wounds, Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting."
   },
   "dire-wolf": {
-    "name": "Dire Wolf"
+    "name": "Dire Wolf",
+    "gist": "Pack hunter: Pack Tactics for Advantage, Bite knocks prey Prone"
   },
   "dire-wolf.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -1808,7 +1892,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 8 (1d10 + 3) Piercing damage. If the target is a Large or smaller creature, it has the Prone condition."
   },
   "djinni": {
-    "name": "Djinni"
+    "name": "Djinni",
+    "gist": "Air genie: Storm Blade, Thunder Storm Bolt, Create Whirlwind and maybe Wishes"
   },
   "djinni.traits.elemental-restoration": {
     "name": "Elemental Restoration",
@@ -1843,7 +1928,8 @@
     "text": "The djinni casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 17): At Will: Detect Evil and Good, Detect Magic. 2/Day Each: Create Food and Water (can create wine instead of water), Tongues, Wind Walk. 1/Day Each: Creation, Gaseous Form, Invisibility, Major Image, Plane Shift."
   },
   "doppelganger": {
-    "name": "Doppelganger"
+    "name": "Doppelganger",
+    "gist": "Shapechanger infiltrator: Shape-Shift, Read Thoughts, Unsettling Visage"
   },
   "doppelganger.actions.multiattack": {
     "name": "Multiattack",
@@ -1866,14 +1952,16 @@
     "text": "The doppelganger shape-shifts into a Medium or Small Humanoid, or it returns to its true form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "draft-horse": {
-    "name": "Draft Horse"
+    "name": "Draft Horse",
+    "gist": "Strong work horse that kicks hard with its Hooves"
   },
   "draft-horse.actions.hooves": {
     "name": "Hooves",
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 6 (1d4 + 4) Bludgeoning damage."
   },
   "dragon-turtle": {
-    "name": "Dragon Turtle"
+    "name": "Dragon Turtle",
+    "gist": "Huge sea dragon: Fire-laced Bites, a Tail that knocks Prone, Steam Breath"
   },
   "dragon-turtle.traits.amphibious": {
     "name": "Amphibious",
@@ -1896,7 +1984,8 @@
     "text": "Constitution Saving Throw: DC 19, each creature in a 60-foot Cone. Failure: 56 (16d6) Fire damage. Success: Half damage. Failure or Success: Being underwater doesn't grant Resistance to this Fire damage."
   },
   "dretch": {
-    "name": "Dretch"
+    "name": "Dretch",
+    "gist": "Lowly demon: Rend, and Fetid Cloud leaves nearby foes Poisoned"
   },
   "dretch.actions.rend": {
     "name": "Rend",
@@ -1907,7 +1996,8 @@
     "text": "Constitution Saving Throw: DC 11, each creature in a 10-foot Emanation originating from the dretch. Failure: The target has the Poisoned condition until the end of its next turn. While Poisoned, the creature can take either an action or a Bonus Action on its turn, not both, and it can't take Reactions."
   },
   "drider": {
-    "name": "Drider"
+    "name": "Drider",
+    "gist": "Spider-bodied drow: Poison Burst, Foreleg, Magic of the Spider Queen"
   },
   "drider.traits.spider-climb": {
     "name": "Spider Climb",
@@ -1938,7 +2028,8 @@
     "text": "The drider casts Darkness, Faerie Fire, or Web, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 14)."
   },
   "druid": {
-    "name": "Druid"
+    "name": "Druid",
+    "gist": "Nature caster: Vine Staff or Radiant Verdant Wisp, plus Spellcasting like Entangle"
   },
   "druid.actions.multiattack": {
     "name": "Multiattack",
@@ -1957,7 +2048,8 @@
     "text": "The druid casts one of the following spells, using Wisdom as the spellcasting ability (spell save DC 13): At Will: Druidcraft, Speak with Animals. 2/Day Each: Entangle, Thunderwave. 1/Day Each: Animal Messenger, Longstrider, Moonbeam."
   },
   "dryad": {
-    "name": "Dryad"
+    "name": "Dryad",
+    "gist": "Tree spirit: Vine Lash or Thorn Burst, charming Spellcasting, Tree Stride between trees"
   },
   "dryad.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -1988,7 +2080,8 @@
     "text": "If within 5 feet of a Large or bigger tree, the dryad teleports to an unoccupied space within 5 feet of a second Large or bigger tree that is within 60 feet of the previous tree."
   },
   "dust-mephit": {
-    "name": "Dust Mephit"
+    "name": "Dust Mephit",
+    "gist": "Elemental imp: Blinding Breath, Sleep, and a Death Burst on dying"
   },
   "dust-mephit.traits.death-burst": {
     "name": "Death Burst",
@@ -2007,14 +2100,16 @@
     "text": "The mephit casts the Sleep spell, requiring no spell components and using Charisma as the spellcasting ability (spell save DC 10)."
   },
   "eagle": {
-    "name": "Eagle"
+    "name": "Eagle",
+    "gist": "Swift bird of prey that dives with slashing Talons"
   },
   "eagle.actions.talons": {
     "name": "Talons",
     "text": "Melee Attack Roll: +4, reach 5 feet. Hit: 4 (1d4 + 2) Slashing damage."
   },
   "earth-elemental": {
-    "name": "Earth Elemental"
+    "name": "Earth Elemental",
+    "gist": "Burrowing living rock: Earth Glide, Siege Monster, Rock Launch knocks Prone"
   },
   "earth-elemental.traits.earth-glide": {
     "name": "Earth Glide",
@@ -2037,7 +2132,8 @@
     "text": "Ranged Attack Roll: +8, range 60 ft. Hit: 8 (1d6 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition."
   },
   "efreeti": {
-    "name": "Efreeti"
+    "name": "Efreeti",
+    "gist": "Fire genie: Heated Blade, ranged Hurl Flame, spells and maybe Wishes"
   },
   "efreeti.traits.elemental-restoration": {
     "name": "Elemental Restoration",
@@ -2068,7 +2164,8 @@
     "text": "The efreeti casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 16): At Will: Detect Magic, Elementalism. 1/Day Each: Gaseous Form, Invisibility, Major Image, Plane Shift, Tongues, Wall of Fire (level 7 version)."
   },
   "elephant": {
-    "name": "Elephant"
+    "name": "Elephant",
+    "gist": "Charging beast: Gore knocks Prone, then Trample crushes"
   },
   "elephant.actions.multiattack": {
     "name": "Multiattack",
@@ -2083,14 +2180,16 @@
     "text": "Dexterity Saving Throw: DC 16, one creature within 5 feet that has the Prone condition. Failure: 17 (2d10 + 6) Bludgeoning damage. Success: Half damage."
   },
   "elk": {
-    "name": "Elk"
+    "name": "Elk",
+    "gist": "Charging beast whose Ram knocks foes Prone after a running start"
   },
   "elk.actions.ram": {
     "name": "Ram",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature and the elk moved 20+ feet straight toward it immediately before the hit, the target takes an extra 3 (1d6) Bludgeoning damage and has the Prone condition."
   },
   "erinyes": {
-    "name": "Erinyes"
+    "name": "Erinyes",
+    "gist": "Avenging devil: Necrotic Withering Sword, Entangling Rope that Restrains, Parry"
   },
   "erinyes.traits.diabolical-restoration": {
     "name": "Diabolical Restoration",
@@ -2121,7 +2220,8 @@
     "text": "Trigger: The erinyes is hit by a melee attack roll while holding a weapon. Response: The erinyes adds 4 to its AC against that attack, possibly causing it to miss."
   },
   "ettercap": {
-    "name": "Ettercap"
+    "name": "Ettercap",
+    "gist": "Spider-keeping hunter: Web Strand leaves prey Restrained, Reel drags it close"
   },
   "ettercap.traits.spider-climb": {
     "name": "Spider Climb",
@@ -2152,7 +2252,8 @@
     "text": "The ettercap pulls one creature within 30 feet of itself that is Restrained by its Web Strand up to 25 feet straight toward itself."
   },
   "ettin": {
-    "name": "Ettin"
+    "name": "Ettin",
+    "gist": "Two-headed giant: Battleaxe knocks Prone, Morningstar hampers"
   },
   "ettin.actions.multiattack": {
     "name": "Multiattack",
@@ -2167,7 +2268,8 @@
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage, and the target has Disadvantage on the next attack roll it makes before the end of its next turn."
   },
   "fire-elemental": {
-    "name": "Fire Elemental"
+    "name": "Fire Elemental",
+    "gist": "Living flame: Fire Aura, Fire Form through foes, Burn sets targets ablaze"
   },
   "fire-elemental.traits.fire-aura": {
     "name": "Fire Aura",
@@ -2194,7 +2296,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 10 (2d6 + 3) Fire damage. If the target is a creature or a flammable object, it starts burning."
   },
   "fire-giant": {
-    "name": "Fire Giant"
+    "name": "Fire Giant",
+    "gist": "Forge giant: Fire-laced Flame Sword, Hammer Throw pushes foes back"
   },
   "fire-giant.actions.multiattack": {
     "name": "Multiattack",
@@ -2209,7 +2312,8 @@
     "text": "Ranged Attack Roll: +11, range 60/240 ft. Hit: 23 (3d10 + 7) Bludgeoning damage plus 4 (1d8) Fire damage, and the target is pushed up to 15 feet straight away from the giant and has Disadvantage on the next attack roll it makes before the end of its next turn."
   },
   "flesh-golem": {
-    "name": "Flesh Golem"
+    "name": "Flesh Golem",
+    "gist": "Stitched construct: Lightning Absorption heals it, Aversion to Fire, goes Berserk"
   },
   "flesh-golem.traits.aversion-to-fire": {
     "name": "Aversion to Fire",
@@ -2240,7 +2344,8 @@
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage plus 4 (1d8) Lightning damage."
   },
   "flying-snake": {
-    "name": "Flying Snake"
+    "name": "Flying Snake",
+    "gist": "Winged serpent: Flyby strikes with a Poison Bite"
   },
   "flying-snake.traits.flyby": {
     "name": "Flyby",
@@ -2251,7 +2356,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 5 (2d4) Poison damage."
   },
   "frog": {
-    "name": "Frog"
+    "name": "Frog",
+    "gist": "Amphibious hopper: Standing Leap and a tiny Bite"
   },
   "frog.traits.amphibious": {
     "name": "Amphibious",
@@ -2266,7 +2372,8 @@
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 1 Piercing damage."
   },
   "frost-giant": {
-    "name": "Frost Giant"
+    "name": "Frost Giant",
+    "gist": "Raider giant: Cold Frost Axe, Great Bow, War Cry grants Temporary Hit Points"
   },
   "frost-giant.actions.multiattack": {
     "name": "Multiattack",
@@ -2285,7 +2392,8 @@
     "text": "The giant or one creature of its choice that can see or hear it gains 16 (2d10 + 5) Temporary Hit Points and has Advantage on attack rolls until the start of the giant's next turn."
   },
   "gargoyle": {
-    "name": "Gargoyle"
+    "name": "Gargoyle",
+    "gist": "Living statue: two Claw attacks and Flyby, easily mistaken for stone"
   },
   "gargoyle.traits.flyby": {
     "name": "Flyby",
@@ -2300,7 +2408,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Slashing damage."
   },
   "gelatinous-cube": {
-    "name": "Gelatinous Cube"
+    "name": "Gelatinous Cube",
+    "gist": "Transparent ooze: Engulf swallows foes and dissolves them with Acid"
   },
   "gelatinous-cube.traits.ooze-cube": {
     "name": "Ooze Cube",
@@ -2319,7 +2428,8 @@
     "text": "The cube moves up to its Speed without provoking Opportunity Attacks. The cube can move through the spaces of Large or smaller creatures if it has room inside itself to contain them (see the Ooze Cube trait). Dexterity Saving Throw: DC 12, each creature whose space the cube enters for the first time during this move. Failure: 10 (3d6) Acid damage, and the target is engulfed. An engulfed target is suffocating, can't cast spells with a Verbal component, has the Restrained condition, and takes 10 (3d6) Acid damage at the start of each of the cube's turns. When the cube moves, the engulfed target moves with it. An engulfed target can try to escape by taking an action to make a DC 12 Strength (Athletics) check. On a successful check, the target escapes and enters the nearest unoccupied space. Success: Half damage, and the target moves to an unoccupied space within 5 feet of the cube. If there is no unoccupied space, the target fails the save instead."
   },
   "ghast": {
-    "name": "Ghast"
+    "name": "Ghast",
+    "gist": "Ghoul lord: Stench leaves foes Poisoned, Claw leaves them Paralyzed, Necrotic Bite"
   },
   "ghast.traits.stench": {
     "name": "Stench",
@@ -2334,7 +2444,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Slashing damage. If the target is a non-Undead creature, it is subjected to the following effect. Constitution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn."
   },
   "ghost": {
-    "name": "Ghost"
+    "name": "Ghost",
+    "gist": "Incorporeal undead: Horrific Visage, Withering Touch, Possession"
   },
   "ghost.traits.ethereal-sight": {
     "name": "Ethereal Sight",
@@ -2365,7 +2476,8 @@
     "text": "Charisma Saving Throw: DC 13, one Humanoid the ghost can see within 5 feet. Failure: The target is possessed by the ghost; the ghost disappears, and the target has the Incapacitated condition and loses control of its body. The ghost now controls the body, but the target retains awareness. The ghost can't be targeted by any attack, spell, or other effect, except ones that specifically target Undead. The ghost's game statistics are the same, except it uses the possessed target's Speed, as well as the target's Strength, Dexterity, and Constitution modifiers. The possession lasts until the body drops to 0 Hit Points or the ghost leaves as a Bonus Action. When the possession ends, the ghost appears in an unoccupied space within 5 feet of the target, and the target is immune to this ghost's Possession for 24 hours. Success: The target is immune to this ghost's Possession for 24 hours."
   },
   "ghoul": {
-    "name": "Ghoul"
+    "name": "Ghoul",
+    "gist": "Corpse-eating undead: Necrotic Bite and a Claw that leaves victims Paralyzed"
   },
   "ghoul.actions.multiattack": {
     "name": "Multiattack",
@@ -2380,7 +2492,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Slashing damage. If the target is a creature that isn't an Undead or elf, it is subjected to the following effect. Constitution Saving Throw: DC 10. Failure: The target has the Paralyzed condition until the end of its next turn."
   },
   "giant-ape": {
-    "name": "Giant Ape"
+    "name": "Giant Ape",
+    "gist": "Massive ape: crushing Fist blows, Boulder Toss, Leap"
   },
   "giant-ape.actions.multiattack": {
     "name": "Multiattack",
@@ -2399,21 +2512,24 @@
     "text": "The ape jumps up to 30 feet by spending 10 feet of movement."
   },
   "giant-badger": {
-    "name": "Giant Badger"
+    "name": "Giant Badger",
+    "gist": "Burrowing beast with a sturdy Piercing Bite"
   },
   "giant-badger.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 6 (2d4 + 1) Piercing damage."
   },
   "giant-bat": {
-    "name": "Giant Bat"
+    "name": "Giant Bat",
+    "gist": "Fast-flying night beast that swoops in with its Bite"
   },
   "giant-bat.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage."
   },
   "giant-boar": {
-    "name": "Giant Boar"
+    "name": "Giant Boar",
+    "gist": "Charging beast: Gore knocks foes Prone after a run, Bloodied Fury grants Advantage"
   },
   "giant-boar.traits.bloodied-fury": {
     "name": "Bloodied Fury",
@@ -2424,14 +2540,16 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 10 (2d6 + 3) Piercing damage. If the target is a Large or smaller creature and the boar moved 20+ feet straight toward it immediately before the hit, the target takes an extra 7 (2d6) Piercing damage and has the Prone condition."
   },
   "giant-centipede": {
-    "name": "Giant Centipede"
+    "name": "Giant Centipede",
+    "gist": "Climbing vermin whose Bite leaves prey Poisoned"
   },
   "giant-centipede.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage, and the target has the Poisoned condition until the start of the centipede's next turn."
   },
   "giant-constrictor-snake": {
-    "name": "Giant Constrictor Snake"
+    "name": "Giant Constrictor Snake",
+    "gist": "Huge serpent: Constrict crushes prey Grappled and Restrained, long-reach Bite"
   },
   "giant-constrictor-snake.actions.multiattack": {
     "name": "Multiattack",
@@ -2446,7 +2564,8 @@
     "text": "Strength Saving Throw: DC 14, one Large or smaller creature the snake can see within 10 feet. Failure: 13 (2d8 + 4) Bludgeoning damage, and the target has the Grappled condition (escape DC 14)."
   },
   "giant-crab": {
-    "name": "Giant Crab"
+    "name": "Giant Crab",
+    "gist": "Amphibious crustacean whose Claw leaves prey Grappled"
   },
   "giant-crab.traits.amphibious": {
     "name": "Amphibious",
@@ -2457,7 +2576,8 @@
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Bludgeoning damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 11) from one of two claws."
   },
   "giant-crocodile": {
-    "name": "Giant Crocodile"
+    "name": "Giant Crocodile",
+    "gist": "Ambush reptile: Bite leaves prey Grappled, Tail knocks foes Prone"
   },
   "giant-crocodile.traits.hold-breath": {
     "name": "Hold Breath",
@@ -2476,7 +2596,8 @@
     "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 18 (3d8 + 5) Bludgeoning damage. If the target is a Large or smaller creature, it has the Prone condition."
   },
   "giant-eagle": {
-    "name": "Giant Eagle"
+    "name": "Giant Eagle",
+    "gist": "Noble celestial bird: two Rend attacks laced with Radiant damage"
   },
   "giant-eagle.actions.multiattack": {
     "name": "Multiattack",
@@ -2487,14 +2608,16 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Slashing damage plus 3 (1d6) Radiant damage."
   },
   "giant-elk": {
-    "name": "Giant Elk"
+    "name": "Giant Elk",
+    "gist": "Celestial elk: charging Ram with Radiant damage that knocks foes Prone"
   },
   "giant-elk.actions.ram": {
     "name": "Ram",
     "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 11 (2d6 + 4) Bludgeoning damage plus 5 (2d4) Radiant damage. If the target is a Huge or smaller creature and the elk moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition."
   },
   "giant-fire-beetle": {
-    "name": "Giant Fire Beetle"
+    "name": "Giant Fire Beetle",
+    "gist": "Glowing beetle used as a light source; its Bite deals Fire damage"
   },
   "giant-fire-beetle.traits.illumination": {
     "name": "Illumination",
@@ -2505,7 +2628,8 @@
     "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 Fire damage."
   },
   "giant-frog": {
-    "name": "Giant Frog"
+    "name": "Giant Frog",
+    "gist": "Amphibious leaper: Bite that Grapples, then Swallow small prey whole"
   },
   "giant-frog.traits.amphibious": {
     "name": "Amphibious",
@@ -2524,14 +2648,16 @@
     "text": "The frog swallows a Small or smaller target it is grappling. While swallowed, the target isn't Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the frog. While swallowing the target, the frog can't use Bite, and if the frog dies, the swallowed target is no longer Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition. At the end of the frog's next turn, the swallowed target takes 5 (2d4) Acid damage. If that damage doesn't kill it, the frog disgorges it, causing it to exit Prone."
   },
   "giant-goat": {
-    "name": "Giant Goat"
+    "name": "Giant Goat",
+    "gist": "Sure-footed climber whose charging Ram knocks foes Prone"
   },
   "giant-goat.actions.ram": {
     "name": "Ram",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage. If the target is a Large or smaller creature and the goat moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition."
   },
   "giant-hyena": {
-    "name": "Giant Hyena"
+    "name": "Giant Hyena",
+    "gist": "Scavenger beast: Rampage lunges for an extra Bite on Bloodied prey"
   },
   "giant-hyena.actions.bite": {
     "name": "Bite",
@@ -2542,7 +2668,8 @@
     "text": "Immediately after dealing damage to a creature that was already Bloodied, the hyena can move up to half its Speed, and it makes one Bite attack."
   },
   "giant-lizard": {
-    "name": "Giant Lizard"
+    "name": "Giant Lizard",
+    "gist": "Wall-crawling reptile with Spider Climb and a solid Bite"
   },
   "giant-lizard.traits.spider-climb": {
     "name": "Spider Climb",
@@ -2553,7 +2680,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Piercing damage."
   },
   "giant-octopus": {
-    "name": "Giant Octopus"
+    "name": "Giant Octopus",
+    "gist": "Sea predator: Tentacles that leave prey Grappled, Ink Cloud to escape"
   },
   "giant-octopus.traits.water-breathing": {
     "name": "Water Breathing",
@@ -2568,7 +2696,8 @@
     "text": "Trigger: The octopus takes damage while underwater. Response: The octopus releases ink that fills a 10-foot Cube centered on itself, and the octopus moves up to its Swim Speed. The Cube is Heavily Obscured for 1 minute or until a strong current or similar effect disperses the ink."
   },
   "giant-owl": {
-    "name": "Giant Owl"
+    "name": "Giant Owl",
+    "gist": "Celestial flier: Flyby strikes with Talons, a few divination Spellcasting tricks"
   },
   "giant-owl.traits.flyby": {
     "name": "Flyby",
@@ -2583,7 +2712,8 @@
     "text": "The owl casts one of the following spells, requiring no spell components and using Wisdom as the spellcasting ability: At Will: Detect Evil and Good, Detect Magic. 1/Day: Clairvoyance."
   },
   "giant-rat": {
-    "name": "Giant Rat"
+    "name": "Giant Rat",
+    "gist": "Oversized vermin that swarms with Pack Tactics and Bite"
   },
   "giant-rat.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -2594,7 +2724,8 @@
     "text": "Melee Attack Roll: +5, reach 5 feet. Hit: 5 (1d4 + 3) Piercing damage."
   },
   "giant-scorpion": {
-    "name": "Giant Scorpion"
+    "name": "Giant Scorpion",
+    "gist": "Arachnid that Grapples with Claws and hits with a Poison Sting"
   },
   "giant-scorpion.actions.multiattack": {
     "name": "Multiattack",
@@ -2609,7 +2740,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage plus 11 (2d10) Poison damage."
   },
   "giant-seahorse": {
-    "name": "Giant Seahorse"
+    "name": "Giant Seahorse",
+    "gist": "Underwater mount: charging Ram and Bubble Dash to slip away"
   },
   "giant-seahorse.traits.water-breathing": {
     "name": "Water Breathing",
@@ -2624,7 +2756,8 @@
     "text": "While underwater, the seahorse moves up to half its Swim Speed without provoking Opportunity Attacks."
   },
   "giant-shark": {
-    "name": "Giant Shark"
+    "name": "Giant Shark",
+    "gist": "Ocean predator whose Bites gain Advantage against wounded prey"
   },
   "giant-shark.traits.water-breathing": {
     "name": "Water Breathing",
@@ -2639,7 +2772,8 @@
     "text": "Melee Attack Roll: +9 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. Hit: 22 (3d10 + 6) Piercing damage."
   },
   "giant-spider": {
-    "name": "Giant Spider"
+    "name": "Giant Spider",
+    "gist": "Web-spinning ambusher: Web leaves prey Restrained, Poison Bite, Spider Climb"
   },
   "giant-spider.traits.spider-climb": {
     "name": "Spider Climb",
@@ -2658,7 +2792,8 @@
     "text": "Dexterity Saving Throw: DC 13, one creature the spider can see within 60 feet. Failure: The target has the Restrained condition until the web is destroyed (AC 10; HP 5; Vulnerability to Fire damage; Immunity to Poison and Psychic damage)."
   },
   "giant-toad": {
-    "name": "Giant Toad"
+    "name": "Giant Toad",
+    "gist": "Amphibious leaper: Poison Bite that grabs, then Swallow leaves prey Blinded and Restrained"
   },
   "giant-toad.traits.amphibious": {
     "name": "Amphibious",
@@ -2677,14 +2812,16 @@
     "text": "The toad swallows a Medium or smaller target it is grappling. While swallowed, the target isn't Grappled but has the Blinded and Restrained conditions, and it has Total Cover against attacks and other effects outside the toad. In addition, the target takes 10 (3d6) Acid damage at the end of each of the toad's turns. The toad can have only one target swallowed at a time, and it can't use Bite while it has a swallowed target. If the toad dies, a swallowed creature is no longer Restrained and can escape from the corpse using 5 feet of movement, exiting with the Prone condition."
   },
   "giant-venomous-snake": {
-    "name": "Giant Venomous Snake"
+    "name": "Giant Venomous Snake",
+    "gist": "Long-reach serpent whose Bite adds Poison damage"
   },
   "giant-venomous-snake.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 6 (1d4 + 4) Piercing damage plus 4 (1d8) Poison damage."
   },
   "giant-vulture": {
-    "name": "Giant Vulture"
+    "name": "Giant Vulture",
+    "gist": "Carrion bird: Pack Tactics and a Gouge that leaves prey Poisoned"
   },
   "giant-vulture.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -2695,7 +2832,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 9 (2d6 + 2) Piercing damage, and the target has the Poisoned condition until the end of its next turn."
   },
   "giant-wasp": {
-    "name": "Giant Wasp"
+    "name": "Giant Wasp",
+    "gist": "Flying insect with a Poison Sting and Flyby hit-and-run"
   },
   "giant-wasp.traits.flyby": {
     "name": "Flyby",
@@ -2706,14 +2844,16 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage plus 5 (2d4) Poison damage."
   },
   "giant-weasel": {
-    "name": "Giant Weasel"
+    "name": "Giant Weasel",
+    "gist": "Agile climbing predator with a strong Bite"
   },
   "giant-weasel.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Piercing damage."
   },
   "giant-wolf-spider": {
-    "name": "Giant Wolf Spider"
+    "name": "Giant Wolf Spider",
+    "gist": "Wall-climbing hunter with a Poison Bite and Spider Climb"
   },
   "giant-wolf-spider.traits.spider-climb": {
     "name": "Spider Climb",
@@ -2724,7 +2864,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 5 (1d4 + 3) Piercing damage plus 5 (2d4) Poison damage."
   },
   "gibbering-mouther": {
-    "name": "Gibbering Mouther"
+    "name": "Gibbering Mouther",
+    "gist": "Mass of mouths: maddening Gibbering, Blinding Spittle, Bite knocks prey Prone"
   },
   "gibbering-mouther.traits.aberrant-ground": {
     "name": "Aberrant Ground",
@@ -2743,7 +2884,8 @@
     "text": "Dexterity Saving Throw: DC 10, each creature in a 10-foot-radius Sphere centered on a point within 30 feet. Failure: 7 (2d6) Radiant damage, and the target has the Blinded condition until the end of the mouther's next turn."
   },
   "glabrezu": {
-    "name": "Glabrezu"
+    "name": "Glabrezu",
+    "gist": "Pincered demon: Pincers grapple, Pummel the held, spells"
   },
   "glabrezu.traits.demonic-restoration": {
     "name": "Demonic Restoration",
@@ -2770,7 +2912,8 @@
     "text": "The glabrezu casts one of the following spells, requiring no Material components and using Intelligence as the spellcasting ability (spell save DC 16): At Will: Darkness, Detect Magic, Dispel Magic. 1/Day Each: Confusion, Fly, Power Word Stun."
   },
   "gladiator": {
-    "name": "Gladiator"
+    "name": "Gladiator",
+    "gist": "Arena champion: three Spear attacks, Shield Bash, Parry"
   },
   "gladiator.actions.multiattack": {
     "name": "Multiattack",
@@ -2789,7 +2932,8 @@
     "text": "Trigger: The gladiator is hit by a melee attack roll while holding a weapon. Response: The gladiator adds 3 to its AC against that attack, possibly causing it to miss."
   },
   "gnoll-warrior": {
-    "name": "Gnoll Warrior"
+    "name": "Gnoll Warrior",
+    "gist": "Fiendish raider: Rend, Bone Bow, Rampage on Bloodied foes"
   },
   "gnoll-warrior.actions.rend": {
     "name": "Rend",
@@ -2804,14 +2948,16 @@
     "text": "Immediately after dealing damage to a creature that is already Bloodied, the gnoll moves up to half its Speed, and it makes one Rend attack."
   },
   "goat": {
-    "name": "Goat"
+    "name": "Goat",
+    "gist": "Sure-footed climber whose charging Ram hits harder"
   },
   "goat.actions.ram": {
     "name": "Ram",
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Bludgeoning damage, or 2 (1d4) Bludgeoning damage if the goat moved 20+ feet straight toward the target immediately before the hit."
   },
   "goblin-boss": {
-    "name": "Goblin Boss"
+    "name": "Goblin Boss",
+    "gist": "Goblin leader: extra damage with Advantage, Nimble Escape, Redirect Attack onto allies"
   },
   "goblin-boss.actions.multiattack": {
     "name": "Multiattack",
@@ -2834,7 +2980,8 @@
     "text": "Trigger: A creature the goblin can see makes an attack roll against it. Response: The goblin chooses a Small or Medium ally within 5 feet of itself. The goblin and that ally swap places, and the ally becomes the target of the attack instead."
   },
   "goblin-minion": {
-    "name": "Goblin Minion"
+    "name": "Goblin Minion",
+    "gist": "Sneaky goblin that throws a Dagger then uses Nimble Escape"
   },
   "goblin-minion.actions.dagger": {
     "name": "Dagger",
@@ -2845,7 +2992,8 @@
     "text": "The goblin takes the Disengage or Hide action."
   },
   "goblin-warrior": {
-    "name": "Goblin Warrior"
+    "name": "Goblin Warrior",
+    "gist": "Sneaky skirmisher: Nimble Escape, extra damage when attacking with Advantage"
   },
   "goblin-warrior.actions.scimitar": {
     "name": "Scimitar",
@@ -2860,7 +3008,8 @@
     "text": "The goblin takes the Disengage or Hide action."
   },
   "gold-dragon-wyrmling": {
-    "name": "Gold Dragon Wyrmling"
+    "name": "Gold Dragon Wyrmling",
+    "gist": "Young dragon: Fire Breath and Weakening Breath in a Cone"
   },
   "gold-dragon-wyrmling.traits.amphibious": {
     "name": "Amphibious",
@@ -2883,7 +3032,8 @@
     "text": "Strength Saving Throw: DC 13, each creature that isn't currently affected by this breath in a 15-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 2 (1d4) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
   },
   "gorgon": {
-    "name": "Gorgon"
+    "name": "Gorgon",
+    "gist": "Bull-like construct: charging Gore, Petrifying Breath, Trample on Prone foes"
   },
   "gorgon.actions.gore": {
     "name": "Gore",
@@ -2898,7 +3048,8 @@
     "text": "Dexterity Saving Throw: DC 16, one creature within 5 feet that has the Prone condition. Failure: 16 (2d10 + 5) Bludgeoning damage. Success: Half damage."
   },
   "gray-ooze": {
-    "name": "Gray Ooze"
+    "name": "Gray Ooze",
+    "gist": "Acid ooze: Corrosive Form ruins weapons, Pseudopod eats armor"
   },
   "gray-ooze.traits.amorphous": {
     "name": "Amorphous",
@@ -2913,7 +3064,8 @@
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 10 (2d8 + 1) Acid damage. Nonmagical armor worn by the target takes a −1 penalty to the AC it offers. The armor is destroyed if the penalty reduces its AC to 10. The penalty can be removed by casting the Mending spell on the armor."
   },
   "green-dragon-wyrmling": {
-    "name": "Green Dragon Wyrmling"
+    "name": "Green Dragon Wyrmling",
+    "gist": "Young forest dragon: two Poison Rend attacks and a Poison Breath cone"
   },
   "green-dragon-wyrmling.traits.amphibious": {
     "name": "Amphibious",
@@ -2932,7 +3084,8 @@
     "text": "Constitution Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: 21 (6d6) Poison damage. Success: Half damage."
   },
   "green-hag": {
-    "name": "Green Hag"
+    "name": "Green Hag",
+    "gist": "Trickster fey: Mimicry, illusion spells, Poison Claws, Coven Magic"
   },
   "green-hag.traits.amphibious": {
     "name": "Amphibious",
@@ -2959,7 +3112,8 @@
     "text": "The hag casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 12, +4 to hit with spell attacks): At Will: Dancing Lights, Disguise Self (24-hour duration), Invisibility (self only, and the hag leaves no tracks while Invisible), Minor Illusion, Ray of Sickness (level 3 version)."
   },
   "grick": {
-    "name": "Grick"
+    "name": "Grick",
+    "gist": "Tentacled cave ambusher: Tentacles grab prey Grappled, then a Beak strike"
   },
   "grick.actions.multiattack": {
     "name": "Multiattack",
@@ -2974,7 +3128,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (1d10 + 2) Slashing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 12) from all four tentacles."
   },
   "griffon": {
-    "name": "Griffon"
+    "name": "Griffon",
+    "gist": "Fierce winged hunter: two Rend attacks that can leave prey Grappled"
   },
   "griffon.actions.multiattack": {
     "name": "Multiattack",
@@ -2985,21 +3140,24 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage. If the target is a Medium or smaller creature, it has the Grappled condition (escape DC 14) from both of the griffon's front claws."
   },
   "grimlock": {
-    "name": "Grimlock"
+    "name": "Grimlock",
+    "gist": "Blind subterranean climber whose Bone Cudgel adds Psychic damage"
   },
   "grimlock.actions.bone-cudgel": {
     "name": "Bone Cudgel",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Bludgeoning damage plus 2 (1d4) Psychic damage."
   },
   "guard": {
-    "name": "Guard"
+    "name": "Guard",
+    "gist": "Watch soldier with a Spear for melee or throwing"
   },
   "guard.actions.spear": {
     "name": "Spear",
     "text": "Melee or Ranged Attack Roll: +3, reach 5 ft. or range 20/60 ft. Hit: 4 (1d6 + 1) Piercing damage."
   },
   "guard-captain": {
-    "name": "Guard Captain"
+    "name": "Guard Captain",
+    "gist": "Veteran guard officer with Longsword and Javelin attacks"
   },
   "guard-captain.actions.multiattack": {
     "name": "Multiattack",
@@ -3014,7 +3172,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Slashing damage."
   },
   "guardian-naga": {
-    "name": "Guardian Naga"
+    "name": "Guardian Naga",
+    "gist": "Celestial serpent guardian: Poison Bite, Poisonous Spittle and divine spells"
   },
   "guardian-naga.traits.celestial-restoration": {
     "name": "Celestial Restoration",
@@ -3037,7 +3196,8 @@
     "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Wisdom as the spellcasting ability (spell save DC 16): At Will: Thaumaturgy. 1/Day Each: Clairvoyance, Cure Wounds (level 6 version), Flame Strike (level 6 version), Geas, True Seeing."
   },
   "half-dragon": {
-    "name": "Half-Dragon"
+    "name": "Half-Dragon",
+    "gist": "Draconic warrior: elemental Claws, Dragon's Breath Cone, Leap"
   },
   "half-dragon.traits.draconic-origin": {
     "name": "Draconic Origin",
@@ -3060,7 +3220,8 @@
     "text": "The half-dragon jumps up to 30 feet by spending 10 feet of movement."
   },
   "harpy": {
-    "name": "Harpy"
+    "name": "Harpy",
+    "gist": "Winged temptress: Luring Song leaves listeners Charmed and drawn toward it"
   },
   "harpy.actions.claw": {
     "name": "Claw",
@@ -3071,14 +3232,16 @@
     "text": "The harpy sings a magical melody, which lasts until the harpy's Concentration ends on it. Wisdom Saving Throw: DC 11, each Humanoid and Giant in a 300-foot Emanation originating from the harpy when the song starts. Failure: The target has the Charmed condition until the song ends and repeats the save at the end of each of its turns. While Charmed, the target has the Incapacitated condition and ignores the Luring Song of other harpies. If the target is more than 5 feet from the harpy, the target moves on its turn toward the harpy by the most direct route, trying to get within 5 feet of the harpy. It doesn't avoid Opportunity Attacks; however, before moving into damaging terrain (such as lava or a pit) and whenever it takes damage from a source other than the harpy, the target repeats the save. Success: The target is immune to this harpy's Luring Song for 24 hours."
   },
   "hawk": {
-    "name": "Hawk"
+    "name": "Hawk",
+    "gist": "Fast hunting bird striking with its Talons"
   },
   "hawk.actions.talons": {
     "name": "Talons",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 1 Slashing damage."
   },
   "hell-hound": {
-    "name": "Hell Hound"
+    "name": "Hell Hound",
+    "gist": "Fiendish pack hound: Fire Breath, burning Bite, Pack Tactics"
   },
   "hell-hound.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -3097,7 +3260,8 @@
     "text": "Dexterity Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 17 (5d6) Fire damage. Success: Half damage."
   },
   "hezrou": {
-    "name": "Hezrou"
+    "name": "Hezrou",
+    "gist": "Toad-like demon: Poisoning Stench aura, Poison Rend, Leap"
   },
   "hezrou.traits.demonic-restoration": {
     "name": "Demonic Restoration",
@@ -3124,7 +3288,8 @@
     "text": "The hezrou jumps up to 30 feet by spending 10 feet of movement."
   },
   "hill-giant": {
-    "name": "Hill Giant"
+    "name": "Hill Giant",
+    "gist": "Brutish giant: Tree Club knocks Prone, Trash Lob leaves foes Poisoned"
   },
   "hill-giant.actions.multiattack": {
     "name": "Multiattack",
@@ -3139,7 +3304,8 @@
     "text": "Ranged Attack Roll: +8, range 60/240 ft. Hit: 16 (2d10 + 5) Bludgeoning damage, and the target has the Poisoned condition until the end of its next turn."
   },
   "hippogriff": {
-    "name": "Hippogriff"
+    "name": "Hippogriff",
+    "gist": "Winged mount: two Rend attacks and Flyby to strike without reprisal"
   },
   "hippogriff.traits.flyby": {
     "name": "Flyby",
@@ -3154,7 +3320,8 @@
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Slashing damage."
   },
   "hippopotamus": {
-    "name": "Hippopotamus"
+    "name": "Hippopotamus",
+    "gist": "River beast with two powerful Bite attacks"
   },
   "hippopotamus.traits.hold-breath": {
     "name": "Hold Breath",
@@ -3169,7 +3336,8 @@
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 16 (2d10 + 5) Piercing damage."
   },
   "hobgoblin-captain": {
-    "name": "Hobgoblin Captain"
+    "name": "Hobgoblin Captain",
+    "gist": "Officer whose Aura of Authority aids allies; Poison-laced weapons"
   },
   "hobgoblin-captain.traits.aura-of-authority": {
     "name": "Aura of Authority",
@@ -3188,7 +3356,8 @@
     "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage plus 5 (2d4) Poison damage."
   },
   "hobgoblin-warrior": {
-    "name": "Hobgoblin Warrior"
+    "name": "Hobgoblin Warrior",
+    "gist": "Disciplined soldier: Pack Tactics, heavy Longsword, Poison Longbow"
   },
   "hobgoblin-warrior.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -3203,7 +3372,8 @@
     "text": "Ranged Attack Roll: +3, range 150/600 ft. Hit: 5 (1d8 + 1) Piercing damage plus 7 (3d4) Poison damage."
   },
   "homunculus": {
-    "name": "Homunculus"
+    "name": "Homunculus",
+    "gist": "Flying familiar with a Telepathic Bond; Bite can leave foes Poisoned or Unconscious"
   },
   "homunculus.traits.telepathic-bond": {
     "name": "Telepathic Bond",
@@ -3214,7 +3384,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage, and the target is subjected to the following effect. Constitution Saving Throw: DC 12. Failure: The target has the Poisoned condition until the end of the homunculus's next turn. Failure by 5 or More: The target has the Poisoned condition for 1 minute. While Poisoned, the target has the Unconscious condition, which ends early if the target takes any damage."
   },
   "horned-devil": {
-    "name": "Horned Devil"
+    "name": "Horned Devil",
+    "gist": "Winged devil: Searing Fork, Hurl Flame and a wounding Infernal Tail"
   },
   "horned-devil.traits.diabolical-restoration": {
     "name": "Diabolical Restoration",
@@ -3241,7 +3412,8 @@
     "text": "Dexterity Saving Throw: DC 17, one creature the devil can see within 10 feet. Failure: 10 (1d8 + 6) Necrotic damage, and the target receives an infernal wound if it doesn't have one. While wounded, the target loses 10 (3d6) Hit Points at the start of each of its turns. The wound closes after 1 minute, after a spell restores Hit Points to the target, or after the target or a creature within 5 feet of it takes an action to stanch the wound, doing so by succeeding on a DC 17 Wisdom (Medicine) check."
   },
   "hunter-shark": {
-    "name": "Hunter Shark"
+    "name": "Hunter Shark",
+    "gist": "Ocean predator: savage Bite with Advantage against wounded prey"
   },
   "hunter-shark.traits.water-breathing": {
     "name": "Water Breathing",
@@ -3252,7 +3424,8 @@
     "text": "Melee Attack Roll: +6 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. Hit: 14 (3d6 + 4) Piercing damage."
   },
   "hydra": {
-    "name": "Hydra"
+    "name": "Hydra",
+    "gist": "Many-headed serpent: a Bite per head, Multiple Heads regrow, Reactive Heads"
   },
   "hydra.traits.hold-breath": {
     "name": "Hold Breath",
@@ -3275,7 +3448,8 @@
     "text": "Melee Attack Roll: +8, reach 10 ft. Hit: 10 (1d10 + 5) Piercing damage."
   },
   "hyena": {
-    "name": "Hyena"
+    "name": "Hyena",
+    "gist": "Scavenger that hunts in packs: Pack Tactics, Bite"
   },
   "hyena.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -3286,7 +3460,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 3 (1d6) Piercing damage."
   },
   "ice-devil": {
-    "name": "Ice Devil"
+    "name": "Ice Devil",
+    "gist": "Insectoid devil: Cold Ice Spear and Tail, plus an Ice Wall to divide foes"
   },
   "ice-devil.traits.diabolical-restoration": {
     "name": "Diabolical Restoration",
@@ -3313,7 +3488,8 @@
     "text": "The devil casts Wall of Ice (level 8 version), requiring no spell components and using Intelligence as the spellcasting ability (spell save DC 17)."
   },
   "ice-mephit": {
-    "name": "Ice Mephit"
+    "name": "Ice Mephit",
+    "gist": "Elemental imp: Cold Frost Breath, Fog Cloud, icy Death Burst"
   },
   "ice-mephit.traits.death-burst": {
     "name": "Death Burst",
@@ -3332,7 +3508,8 @@
     "text": "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 7 (3d4) Cold damage. Success: Half damage."
   },
   "imp": {
-    "name": "Imp"
+    "name": "Imp",
+    "gist": "Devilish familiar: Poison Sting, Invisibility, Shape-Shift, Magic Resistance"
   },
   "imp.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -3351,7 +3528,8 @@
     "text": "The imp shape-shifts to resemble a rat (Speed 20 ft.), a raven (20 ft., Fly 60 ft.), or a spider (20 ft., Climb 20 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn't transformed."
   },
   "incubus": {
-    "name": "Incubus"
+    "name": "Incubus",
+    "gist": "Seductive fiend: cursing Psychic Restless Touch, Nightmare"
   },
   "incubus.traits.succubus-form": {
     "name": "Succubus Form",
@@ -3374,7 +3552,8 @@
     "text": "Wisdom Saving Throw: DC 15, one creature the incubus can see within 60 feet. Failure: If the target has 20 Hit Points or fewer, it has the Unconscious condition for 1 hour, until it takes damage, or until a creature within 5 feet of it takes an action to wake it. Otherwise, the target takes 18 (4d8) Psychic damage."
   },
   "invisible-stalker": {
-    "name": "Invisible Stalker"
+    "name": "Invisible Stalker",
+    "gist": "Invisible air spirit: Force Wind Swipes, Vortex grapples, Air Form"
   },
   "invisible-stalker.traits.air-form": {
     "name": "Air Form",
@@ -3397,7 +3576,8 @@
     "text": "Constitution Saving Throw: DC 14, one Large or smaller creature in the stalker's space. Failure: 7 (1d8 + 3) Thunder damage, and the target has the Grappled condition (escape DC 13). Until the grapple ends, the target can't cast spells with a Verbal component and takes 7 (2d6) Thunder damage at the start of each of the stalker's turns."
   },
   "iron-golem": {
-    "name": "Iron Golem"
+    "name": "Iron Golem",
+    "gist": "Fire-healed construct: Bladed Arm, Fiery Bolt and a Poison Breath cone"
   },
   "iron-golem.traits.fire-absorption": {
     "name": "Fire Absorption",
@@ -3428,14 +3608,16 @@
     "text": "Constitution Saving Throw: DC 18, each creature in a 60-foot Cone. Failure: 55 (10d10) Poison damage. Success: Half damage."
   },
   "jackal": {
-    "name": "Jackal"
+    "name": "Jackal",
+    "gist": "Skittish scavenger with a weak Bite"
   },
   "jackal.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +1, reach 5 ft. Hit: 1 (1d4 - 1) Piercing damage."
   },
   "killer-whale": {
-    "name": "Killer Whale"
+    "name": "Killer Whale",
+    "gist": "Fast ocean predator with a brutal Bite"
   },
   "killer-whale.traits.hold-breath": {
     "name": "Hold Breath",
@@ -3446,7 +3628,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 21 (5d6 + 4) Piercing damage."
   },
   "knight": {
-    "name": "Knight"
+    "name": "Knight",
+    "gist": "Armoured warrior with Radiant-laced attacks and Parry"
   },
   "knight.actions.multiattack": {
     "name": "Multiattack",
@@ -3465,7 +3648,8 @@
     "text": "Trigger: The knight is hit by a melee attack roll while holding a weapon. Response: The knight adds 2 to its AC against that attack, possibly causing it to miss."
   },
   "kobold-warrior": {
-    "name": "Kobold Warrior"
+    "name": "Kobold Warrior",
+    "gist": "Small draconic skirmisher: Pack Tactics, Sunlight Sensitivity"
   },
   "kobold-warrior.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -3480,7 +3664,8 @@
     "text": "Melee or Ranged Attack Roll: +4, reach 5 ft. or range 20/60 ft. Hit: 4 (1d4 + 2) Piercing damage."
   },
   "kraken": {
-    "name": "Kraken"
+    "name": "Kraken",
+    "gist": "Sea titan: grappling Tentacles, Fling, Lightning Strike and Swallow"
   },
   "kraken.traits.amphibious": {
     "name": "Amphibious",
@@ -3523,7 +3708,8 @@
     "text": "Constitution Saving Throw: DC 23, each creature in a 15-foot Emanation originating from the kraken while it is underwater. Failure: The target has the Blinded and Poisoned conditions until the end of the kraken's next turn. The kraken then moves up to its Speed. Failure or Success: The kraken can't take this action again until the start of its next turn."
   },
   "lamia": {
-    "name": "Lamia"
+    "name": "Lamia",
+    "gist": "Desert fiend: Psychic Claws, cursing Corrupting Touch, spells"
   },
   "lamia.actions.multiattack": {
     "name": "Multiattack",
@@ -3546,7 +3732,8 @@
     "text": "The lamia jumps up to 30 feet by spending 10 feet of movement."
   },
   "lemure": {
-    "name": "Lemure"
+    "name": "Lemure",
+    "gist": "Mindless blob of Hell: Vile Slime deals Poison, Hellish Restoration revives it"
   },
   "lemure.traits.hellish-restoration": {
     "name": "Hellish Restoration",
@@ -3557,7 +3744,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Poison damage."
   },
   "lich": {
-    "name": "Lich"
+    "name": "Lich",
+    "gist": "Undead archwizard: Paralyzing Touch, mighty spells, Disrupt Life; Spirit Jar"
   },
   "lich.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -3600,7 +3788,8 @@
     "text": "The lich casts Fear, using the same spellcasting ability as Spellcasting. The lich can't take this action again until the start of its next turn."
   },
   "lion": {
-    "name": "Lion"
+    "name": "Lion",
+    "gist": "Pride hunter: Pack Tactics, two Rend attacks, Roar leaves a foe Frightened"
   },
   "lion.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -3623,7 +3812,8 @@
     "text": "Wisdom Saving Throw: DC 11, one creature within 15 feet. Failure: The target has the Frightened condition until the start of the lion's next turn."
   },
   "lizard": {
-    "name": "Lizard"
+    "name": "Lizard",
+    "gist": "Tiny wall-crawler with Spider Climb and a weak Bite"
   },
   "lizard.traits.spider-climb": {
     "name": "Spider Climb",
@@ -3634,7 +3824,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage."
   },
   "mage": {
-    "name": "Mage"
+    "name": "Mage",
+    "gist": "Arcane caster: Arcane Burst, Spellcasting, Protective Magic, Misty Step"
   },
   "mage.actions.multiattack": {
     "name": "Multiattack",
@@ -3657,7 +3848,8 @@
     "text": "(3/Day) The mage casts Counterspell or Shield in response to the spell's trigger, using the same spellcasting ability as Spellcasting."
   },
   "magma-mephit": {
-    "name": "Magma Mephit"
+    "name": "Magma Mephit",
+    "gist": "Elemental imp: Fire Breath cone and a fiery Death Burst"
   },
   "magma-mephit.traits.death-burst": {
     "name": "Death Burst",
@@ -3672,7 +3864,8 @@
     "text": "Dexterity Saving Throw: DC 11, each creature in a 15-foot Cone. Failure: 7 (2d6) Fire damage. Success: Half damage."
   },
   "magmin": {
-    "name": "Magmin"
+    "name": "Magmin",
+    "gist": "Living flame: Touch sets targets burning, Fire Death Burst"
   },
   "magmin.traits.death-burst": {
     "name": "Death Burst",
@@ -3687,7 +3880,8 @@
     "text": "The magmin sets itself ablaze or extinguishes its flames. While ablaze, the magmin sheds Bright Light in a 10-foot radius and Dim Light for an additional 10 feet."
   },
   "mammoth": {
-    "name": "Mammoth"
+    "name": "Mammoth",
+    "gist": "Huge charging beast: Gore knocks Prone, then Trample"
   },
   "mammoth.actions.multiattack": {
     "name": "Multiattack",
@@ -3702,7 +3896,8 @@
     "text": "Dexterity Saving Throw: DC 18, one creature within 5 feet that has the Prone condition. Failure: 29 (4d10 + 7) Bludgeoning damage. Success: Half damage."
   },
   "manticore": {
-    "name": "Manticore"
+    "name": "Manticore",
+    "gist": "Flying monster that mixes Rend with volleys of Tail Spike"
   },
   "manticore.actions.multiattack": {
     "name": "Multiattack",
@@ -3717,7 +3912,8 @@
     "text": "Ranged Attack Roll: +5, range 100/200 ft. Hit: 7 (1d8 + 3) Piercing damage."
   },
   "marilith": {
-    "name": "Marilith"
+    "name": "Marilith",
+    "gist": "Six-armed serpent demon: six Pact Blade strikes, Constrict, Parry on every turn"
   },
   "marilith.traits.demonic-restoration": {
     "name": "Demonic Restoration",
@@ -3752,14 +3948,16 @@
     "text": "Trigger: The marilith is hit by a melee attack roll while holding a weapon. Response: The marilith adds 5 to its AC against that attack, possibly causing it to miss."
   },
   "mastiff": {
-    "name": "Mastiff"
+    "name": "Mastiff",
+    "gist": "Guard dog whose Bite knocks foes Prone"
   },
   "mastiff.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 4 (1d6 + 1) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition."
   },
   "medusa": {
-    "name": "Medusa"
+    "name": "Medusa",
+    "gist": "Snake-haired monstrosity: Petrifying Gaze, Snake Hair poison, Poison Ray"
   },
   "medusa.actions.multiattack": {
     "name": "Multiattack",
@@ -3782,7 +3980,8 @@
     "text": "Constitution Saving Throw: DC 13, each creature in a 30-foot Cone. If the medusa sees its reflection in the Cone, the medusa must make this save. First Failure: The target has the Restrained condition and repeats the save at the end of its next turn if it is still Restrained, ending the effect on itself on a success. Second Failure: The target has the Petrified condition instead of the Restrained condition."
   },
   "merfolk-skirmisher": {
-    "name": "Merfolk Skirmisher"
+    "name": "Merfolk Skirmisher",
+    "gist": "Amphibious sea warrior who throws or thrusts an Ocean Spear"
   },
   "merfolk-skirmisher.traits.amphibious": {
     "name": "Amphibious",
@@ -3793,7 +3992,8 @@
     "text": "Melee or Ranged Attack Roll: +2, reach 5 ft. or range 20/60 ft. Hit: 3 (1d6) Piercing damage plus 2 (1d4) Cold damage. If the target is a creature, its Speed decreases by 10 feet until the end of its next turn. Hit or Miss: The spear magically returns to the merfolk’s hand immediately after a ranged attack."
   },
   "merrow": {
-    "name": "Merrow"
+    "name": "Merrow",
+    "gist": "Aquatic brute: Harpoon drags foes close, Bite leaves them Poisoned"
   },
   "merrow.traits.amphibious": {
     "name": "Amphibious",
@@ -3816,7 +4016,8 @@
     "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 20/60 ft. Hit: 11 (2d6 + 4) Piercing damage. If the target is a Large or smaller creature, the merrow pulls the target up to 15 feet straight toward itself."
   },
   "mimic": {
-    "name": "Mimic"
+    "name": "Mimic",
+    "gist": "Shape-Shift ambusher posing as an object: Adhesive grabs, then Bite and Acid"
   },
   "mimic.traits.adhesive": {
     "name": "Adhesive (Object Form Only)",
@@ -3835,7 +4036,8 @@
     "text": "The mimic shape-shifts to resemble a Medium or Small object while retaining its game statistics, or it returns to its true blob form. Any equipment it is wearing or carrying isn’t transformed."
   },
   "minotaur-of-baphomet": {
-    "name": "Minotaur of Baphomet"
+    "name": "Minotaur of Baphomet",
+    "gist": "Charging brute: Necrotic Abyssal Glaive and a Gore that knocks Prone"
   },
   "minotaur-of-baphomet.actions.abyssal-glaive": {
     "name": "Abyssal Glaive",
@@ -3846,7 +4048,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 18 (4d6 + 4) Piercing damage. If the target is a Large or smaller creature and the minotaur moved 10+ feet straight toward it immediately before the hit, the target takes an extra 10 (3d6) Piercing damage and has the Prone condition."
   },
   "minotaur-skeleton": {
-    "name": "Minotaur Skeleton"
+    "name": "Minotaur Skeleton",
+    "gist": "Undead bull-warrior: charging Gore knocks foes Prone, heavy Slam"
   },
   "minotaur-skeleton.actions.gore": {
     "name": "Gore",
@@ -3857,7 +4060,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 15 (2d10 + 4) Bludgeoning damage."
   },
   "mule": {
-    "name": "Mule"
+    "name": "Mule",
+    "gist": "Hardy Beast of Burden that kicks with its Hooves"
   },
   "mule.traits.beast-of-burden": {
     "name": "Beast of Burden",
@@ -3868,7 +4072,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Bludgeoning damage."
   },
   "mummy": {
-    "name": "Mummy"
+    "name": "Mummy",
+    "gist": "Cursed undead: Rotting Fist curse, Dreadful Glare Frightens"
   },
   "mummy.actions.multiattack": {
     "name": "Multiattack",
@@ -3883,7 +4088,8 @@
     "text": "Wisdom Saving Throw: DC 11, one creature the mummy can see within 60 feet. Failure: The target has the Frightened condition until the end of the mummy's next turn. Success: The target is immune to this mummy's Dreadful Glare for 24 hours."
   },
   "mummy-lord": {
-    "name": "Mummy Lord"
+    "name": "Mummy Lord",
+    "gist": "Undead priest-king: Rotting Fist, Dreadful Glare that Paralyzes, Whirlwind of Sand"
   },
   "mummy-lord.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -3934,7 +4140,8 @@
     "text": "The mummy makes one Rotting Fist or Channel Negative Energy attack."
   },
   "nalfeshnee": {
-    "name": "Nalfeshnee"
+    "name": "Nalfeshnee",
+    "gist": "Teleporting demon: Force Rend, Psychic Horror Nimbus that Frightens, Pursuit"
   },
   "nalfeshnee.traits.demonic-restoration": {
     "name": "Demonic Restoration",
@@ -3965,7 +4172,8 @@
     "text": "Trigger: Another creature the nalfeshnee can see ends its move within 120 feet of the nalfeshnee. Response: The nalfeshnee uses Teleport, but its destination space must be within 10 feet of the triggering creature."
   },
   "night-hag": {
-    "name": "Night Hag"
+    "name": "Night Hag",
+    "gist": "Shape-shifting fiend: Nightmare Haunting via Soul Bag, spells, Coven Magic"
   },
   "night-hag.traits.coven-magic": {
     "name": "Coven Magic",
@@ -4000,7 +4208,8 @@
     "text": "The hag shape-shifts into a Small or Medium Humanoid, or it returns to its true form. Other than its size, its game statistics are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "nightmare": {
-    "name": "Nightmare"
+    "name": "Nightmare",
+    "gist": "Fiery fiendish steed: Fire Hooves and Ethereal Stride for riders"
   },
   "nightmare.traits.confer-fire-resistance": {
     "name": "Confer Fire Resistance",
@@ -4019,7 +4228,8 @@
     "text": "The nightmare and up to three willing creatures within 5 feet of it teleport to the Ethereal Plane from the Material Plane or vice versa."
   },
   "noble": {
-    "name": "Noble"
+    "name": "Noble",
+    "gist": "Courtly duelist with a Rapier who uses Parry to turn hits into misses"
   },
   "noble.actions.rapier": {
     "name": "Rapier",
@@ -4030,7 +4240,8 @@
     "text": "Trigger: The noble is hit by a melee attack roll while holding a weapon. Response: The noble adds 2 to its AC against that attack, possibly causing it to miss."
   },
   "ochre-jelly": {
-    "name": "Ochre Jelly"
+    "name": "Ochre Jelly",
+    "gist": "Acidic ooze: Acid Pseudopod, Split when cut or struck by Lightning, Spider Climb"
   },
   "ochre-jelly.traits.amorphous": {
     "name": "Amorphous",
@@ -4049,7 +4260,8 @@
     "text": "Trigger: While the jelly is Large or Medium and has 10+ Hit Points, it becomes Bloodied or is subjected to Lightning or Slashing damage. Response: The jelly splits into two new Ochre Jellies. Each new jelly is one size smaller than the original jelly and acts on its Initiative. The original jelly's Hit Points are divided evenly between the new jellies (round down)."
   },
   "octopus": {
-    "name": "Octopus"
+    "name": "Octopus",
+    "gist": "Squeezing sea creature: Compression, Ink Cloud to escape"
   },
   "octopus.traits.compression": {
     "name": "Compression",
@@ -4068,7 +4280,8 @@
     "text": "Trigger: A creature ends its turn within 5 feet of the octopus while underwater. Response: The octopus releases ink that fills a 5-foot Cube centered on itself, and the octopus moves up to its Swim Speed. The Cube is Heavily Obscured for 1 minute or until a strong current or similar effect disperses the ink."
   },
   "ogre": {
-    "name": "Ogre"
+    "name": "Ogre",
+    "gist": "Dim, brutal giant: heavy Greatclub swings and thrown Javelin attacks"
   },
   "ogre.actions.greatclub": {
     "name": "Greatclub",
@@ -4079,7 +4292,8 @@
     "text": "Melee or Ranged Attack Roll: +6, reach 5 ft. or range 30/120 ft. Hit: 11 (2d6 + 4) Piercing damage."
   },
   "ogre-zombie": {
-    "name": "Ogre Zombie"
+    "name": "Ogre Zombie",
+    "gist": "Shambling undead giant: crushing Slam, Undead Fortitude keeps it standing"
   },
   "ogre-zombie.traits.undead-fortitude": {
     "name": "Undead Fortitude",
@@ -4090,7 +4304,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 13 (2d8 + 4) Bludgeoning damage."
   },
   "oni": {
-    "name": "Oni"
+    "name": "Oni",
+    "gist": "Shape-shifting ogre mage: Nightmare Ray Frightens, Invisibility, Regeneration"
   },
   "oni.traits.regeneration": {
     "name": "Regeneration",
@@ -4121,7 +4336,8 @@
     "text": "The oni casts Invisibility on itself, requiring no spell components and using the same spellcasting ability as Spellcasting."
   },
   "otyugh": {
-    "name": "Otyugh"
+    "name": "Otyugh",
+    "gist": "Filth-dwelling aberration: diseased Bite, grappling Tentacles, Tentacle Slam"
   },
   "otyugh.actions.multiattack": {
     "name": "Multiattack",
@@ -4140,7 +4356,8 @@
     "text": "Constitution Saving Throw: DC 14, each creature Grappled by the otyugh. Failure: 16 (3d8 + 3) Bludgeoning damage, and the target has the Stunned condition until the start of the otyugh's next turn. Success: Half damage only."
   },
   "owl": {
-    "name": "Owl"
+    "name": "Owl",
+    "gist": "Night hunter that strikes with Talons and leaves with Flyby"
   },
   "owl.traits.flyby": {
     "name": "Flyby",
@@ -4151,7 +4368,8 @@
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 1 Slashing damage."
   },
   "owlbear": {
-    "name": "Owlbear"
+    "name": "Owlbear",
+    "gist": "Ferocious climbing hybrid that mauls with two Rend attacks"
   },
   "owlbear.actions.multiattack": {
     "name": "Multiattack",
@@ -4162,7 +4380,8 @@
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Slashing damage."
   },
   "panther": {
-    "name": "Panther"
+    "name": "Panther",
+    "gist": "Stalking cat that strikes with Rend and slips away with Nimble Escape"
   },
   "panther.actions.rend": {
     "name": "Rend",
@@ -4173,14 +4392,16 @@
     "text": "The panther takes the Disengage or Hide action."
   },
   "pegasus": {
-    "name": "Pegasus"
+    "name": "Pegasus",
+    "gist": "Winged celestial horse: Hooves strike with Radiant damage"
   },
   "pegasus.actions.hooves": {
     "name": "Hooves",
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 7 (1d6 + 4) Bludgeoning damage plus 5 (2d4) Radiant damage."
   },
   "phase-spider": {
-    "name": "Phase Spider"
+    "name": "Phase Spider",
+    "gist": "Blinking spider: Ethereal Jaunt in and out, Poison Bite"
   },
   "phase-spider.traits.ethereal-sight": {
     "name": "Ethereal Sight",
@@ -4207,7 +4428,8 @@
     "text": "The spider teleports from the Material Plane to the Ethereal Plane or vice versa."
   },
   "piranha": {
-    "name": "Piranha"
+    "name": "Piranha",
+    "gist": "Frenzied fish whose Bite gains Advantage on wounded targets"
   },
   "piranha.traits.water-breathing": {
     "name": "Water Breathing",
@@ -4218,7 +4440,8 @@
     "text": "Melee Attack Roll: +5 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. Hit: 1 Piercing damage."
   },
   "pirate": {
-    "name": "Pirate"
+    "name": "Pirate",
+    "gist": "Dashing raider: twin Dagger attacks, Enthralling Panache leaves a foe Charmed"
   },
   "pirate.actions.multiattack": {
     "name": "Multiattack",
@@ -4233,7 +4456,8 @@
     "text": "Wisdom Saving Throw: DC 12, one creature the pirate can see within 30 feet. Failure: The target has the Charmed condition until the start of the pirate's next turn."
   },
   "pirate-captain": {
-    "name": "Pirate Captain"
+    "name": "Pirate Captain",
+    "gist": "Swashbuckling leader: Rapier and Pistol, Captain's Charm, Riposte"
   },
   "pirate-captain.actions.multiattack": {
     "name": "Multiattack",
@@ -4256,7 +4480,8 @@
     "text": "Trigger: The pirate is hit by a melee attack roll while holding a weapon. Response: The pirate adds 3 to its AC against that attack, possibly causing it to miss. On a miss, the pirate makes one Rapier attack against the triggering creature if within range."
   },
   "pit-fiend": {
-    "name": "Pit Fiend"
+    "name": "Pit Fiend",
+    "gist": "Devil general with a Fear Aura: poisoning Bite, Fiery Mace, twin Fireballs"
   },
   "pit-fiend.traits.diabolical-restoration": {
     "name": "Diabolical Restoration",
@@ -4295,7 +4520,8 @@
     "text": "The pit fiend casts Fireball (level 5 version) twice, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 21). It can replace one Fireball with Hold Monster (level 7 version) or Wall of Fire."
   },
   "planetar": {
-    "name": "Planetar"
+    "name": "Planetar",
+    "gist": "Angelic champion: Radiant Sword, Holy Burst against enemies, Divine Aid"
   },
   "planetar.traits.divine-awareness": {
     "name": "Divine Awareness",
@@ -4330,7 +4556,8 @@
     "text": "The planetar casts Cure Wounds, Invisibility, Lesser Restoration, or Remove Curse, using the same spellcasting ability as Spellcasting."
   },
   "plesiosaurus": {
-    "name": "Plesiosaurus"
+    "name": "Plesiosaurus",
+    "gist": "Long-necked marine reptile that strikes with a far-reaching Bite"
   },
   "plesiosaurus.traits.hold-breath": {
     "name": "Hold Breath",
@@ -4341,7 +4568,8 @@
     "text": "Melee Attack Roll: +6, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage."
   },
   "polar-bear": {
-    "name": "Polar Bear"
+    "name": "Polar Bear",
+    "gist": "Swimming arctic bear that tears foes with two Rend attacks"
   },
   "polar-bear.actions.multiattack": {
     "name": "Multiattack",
@@ -4352,14 +4580,16 @@
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 9 (1d8 + 5) Slashing damage."
   },
   "pony": {
-    "name": "Pony"
+    "name": "Pony",
+    "gist": "Small mount that kicks with its Hooves"
   },
   "pony.actions.hooves": {
     "name": "Hooves",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Bludgeoning damage."
   },
   "priest": {
-    "name": "Priest"
+    "name": "Priest",
+    "gist": "Divine caster: Radiant Flame, spells and Divine Aid for allies"
   },
   "priest.actions.multiattack": {
     "name": "Multiattack",
@@ -4382,7 +4612,8 @@
     "text": "The priest casts Bless, Dispel Magic, Healing Word, or Lesser Restoration, using the same spellcasting ability as Spellcasting."
   },
   "priest-acolyte": {
-    "name": "Priest Acolyte"
+    "name": "Priest Acolyte",
+    "gist": "Temple caster: Radiant Flame, Mace with Radiant damage, Divine Aid support"
   },
   "priest-acolyte.actions.mace": {
     "name": "Mace",
@@ -4401,7 +4632,8 @@
     "text": "The priest casts Bless, Healing Word, or Sanctuary, using the same spellcasting ability as Spellcasting."
   },
   "pseudodragon": {
-    "name": "Pseudodragon"
+    "name": "Pseudodragon",
+    "gist": "Tiny dragon with Magic Resistance and a Sting that leaves foes Poisoned"
   },
   "pseudodragon.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -4420,7 +4652,8 @@
     "text": "Constitution Saving Throw: DC 12, one creature the pseudodragon can see within 5 feet. Failure: 5 (2d4) Poison damage, and the target has the Poisoned condition for 1 hour. Failure by 5 or More: While Poisoned, the target also has the Unconscious condition, which ends early if the target takes damage or a creature within 5 feet of it takes an action to wake it."
   },
   "pteranodon": {
-    "name": "Pteranodon"
+    "name": "Pteranodon",
+    "gist": "Gliding reptile that dives in with its Bite and leaves with Flyby"
   },
   "pteranodon.traits.flyby": {
     "name": "Flyby",
@@ -4431,7 +4664,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 6 (1d8 + 2) Piercing damage."
   },
   "purple-worm": {
-    "name": "Purple Worm"
+    "name": "Purple Worm",
+    "gist": "Tunneling giant worm: grabbing Bite, Poison Tail Stinger and Swallow"
   },
   "purple-worm.traits.tunneler": {
     "name": "Tunneler",
@@ -4454,7 +4688,8 @@
     "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the worm (it can have up to three creatures swallowed at a time). Failure: The target is swallowed by the worm, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, has Total Cover against attacks and other effects outside the worm, and takes 17 (5d6) Acid damage at the start of each of the worm's turns. If the worm takes 30 damage or more on a single turn from a creature inside it, the worm must succeed on a DC 21 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the worm and has the Prone condition. If the worm dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse using 20 feet of movement, exiting Prone."
   },
   "quasit": {
-    "name": "Quasit"
+    "name": "Quasit",
+    "gist": "Demonic trickster: Rend leaves foes Poisoned, Scare, Invisibility, Shape-Shift"
   },
   "quasit.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -4477,7 +4712,8 @@
     "text": "The quasit shape-shifts to resemble a bat (Speed 10 ft., Fly 40 ft.), a centipede (40 ft., Climb 40 ft.), or a toad (40 ft., Swim 40 ft.), or it returns to its true form. Its game statistics are the same in each form, except for its Speed. Any equipment it is wearing or carrying isn't transformed."
   },
   "rakshasa": {
-    "name": "Rakshasa"
+    "name": "Rakshasa",
+    "gist": "Fiendish deceiver immune to most magic: Cursed Touch, Baleful Command, spells"
   },
   "rakshasa.traits.greater-magic-resistance": {
     "name": "Greater Magic Resistance",
@@ -4504,7 +4740,8 @@
     "text": "The rakshasa casts one of the following spells, requiring no Material components and using Charisma as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Detect Thoughts, Disguise Self, Mage Hand, Minor Illusion. 1/Day Each: Fly, Invisibility, Major Image, Plane Shift."
   },
   "rat": {
-    "name": "Rat"
+    "name": "Rat",
+    "gist": "Agile vermin that nips with its Bite"
   },
   "rat.traits.agile": {
     "name": "Agile",
@@ -4515,7 +4752,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage."
   },
   "raven": {
-    "name": "Raven"
+    "name": "Raven",
+    "gist": "Clever bird with Mimicry and a pecking Beak"
   },
   "raven.traits.mimicry": {
     "name": "Mimicry",
@@ -4526,7 +4764,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage."
   },
   "red-dragon-wyrmling": {
-    "name": "Red Dragon Wyrmling"
+    "name": "Red Dragon Wyrmling",
+    "gist": "Young climbing dragon with Fire Breath and Fire-laced Rend"
   },
   "red-dragon-wyrmling.actions.multiattack": {
     "name": "Multiattack",
@@ -4541,7 +4780,8 @@
     "text": "Dexterity Saving Throw: DC 13, each creature in a 15-foot Cone. Failure: 24 (7d6) Fire damage. Success: Half damage."
   },
   "reef-shark": {
-    "name": "Reef Shark"
+    "name": "Reef Shark",
+    "gist": "Aquatic pack hunter: Pack Tactics with a ripping Bite"
   },
   "reef-shark.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -4556,7 +4796,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d4 + 2) Piercing damage."
   },
   "remorhaz": {
-    "name": "Remorhaz"
+    "name": "Remorhaz",
+    "gist": "Burrowing arctic beast with a Heat Aura: Fire Bite that grabs, then Swallow"
   },
   "remorhaz.traits.heat-aura": {
     "name": "Heat Aura",
@@ -4571,21 +4812,24 @@
     "text": "Strength Saving Throw: DC 19, one Large or smaller creature Grappled by the remorhaz (it can have up to two creatures swallowed at a time). Failure: The target is swallowed by the remorhaz, and the Grappled condition ends. A swallowed creature has the Blinded and Restrained conditions, it has Total Cover against attacks and other effects outside the remorhaz, and it takes 10 (3d6) Acid damage plus 10 (3d6) Fire damage at the start of each of the remorhaz's turns. If the remorhaz takes 30 damage or more on a single turn from a creature inside it, the remorhaz must succeed on a DC 15 Constitution saving throw at the end of that turn or regurgitate all swallowed creatures, each of which falls in a space within 5 feet of the remorhaz and has the Prone condition. If the remorhaz dies, any swallowed creature no longer has the Restrained condition and can escape from the corpse by using 15 feet of movement, exiting Prone."
   },
   "rhinoceros": {
-    "name": "Rhinoceros"
+    "name": "Rhinoceros",
+    "gist": "Charging beast whose Gore knocks foes Prone after a run-up"
   },
   "rhinoceros.actions.gore": {
     "name": "Gore",
     "text": "Melee Attack Roll: +7, reach 5 ft. Hit: 14 (2d8 + 5) Piercing damage. If the target is a Large or smaller creature and the rhinoceros moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition."
   },
   "riding-horse": {
-    "name": "Riding Horse"
+    "name": "Riding Horse",
+    "gist": "Swift mount that defends itself with Hooves"
   },
   "riding-horse.actions.hooves": {
     "name": "Hooves",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Bludgeoning damage."
   },
   "roc": {
-    "name": "Roc"
+    "name": "Roc",
+    "gist": "Colossal bird: Beak, grabbing Talons and Swoop to carry prey into the sky"
   },
   "roc.actions.multiattack": {
     "name": "Multiattack",
@@ -4604,7 +4848,8 @@
     "text": "If the roc has a creature Grappled, the roc flies up to half its Fly Speed without provoking Opportunity Attacks and drops that creature."
   },
   "roper": {
-    "name": "Roper"
+    "name": "Roper",
+    "gist": "Stalactite ambusher: 60-ft Tentacles grapple, Reel pulls prey to its Bite"
   },
   "roper.traits.spider-climb": {
     "name": "Spider Climb",
@@ -4627,7 +4872,8 @@
     "text": "The roper pulls each creature Grappled by it up to 30 feet straight toward it."
   },
   "rust-monster": {
-    "name": "Rust Monster"
+    "name": "Rust Monster",
+    "gist": "Metal-eater: Antennae rust armor and weapons, Destroy Metal"
   },
   "rust-monster.traits.iron-scent": {
     "name": "Iron Scent",
@@ -4654,7 +4900,8 @@
     "text": "Trigger: An attack roll hits the rust monster. Response: The rust monster uses Antennae."
   },
   "saber-toothed-tiger": {
-    "name": "Saber-Toothed Tiger"
+    "name": "Saber-Toothed Tiger",
+    "gist": "Ambush cat: Running Leap, two Rend attacks, Nimble Escape"
   },
   "saber-toothed-tiger.traits.running-leap": {
     "name": "Running Leap",
@@ -4673,7 +4920,8 @@
     "text": "The tiger takes the Disengage or Hide action."
   },
   "sahuagin-warrior": {
-    "name": "Sahuagin Warrior"
+    "name": "Sahuagin Warrior",
+    "gist": "Sea raider: Blood Frenzy, Aquatic Charge, Shark Telepathy"
   },
   "sahuagin-warrior.traits.blood-frenzy": {
     "name": "Blood Frenzy",
@@ -4700,7 +4948,8 @@
     "text": "The sahuagin swims up to its Swim Speed straight toward an enemy it can see."
   },
   "salamander": {
-    "name": "Salamander"
+    "name": "Salamander",
+    "gist": "Fiery serpent warrior: Fire Aura, Flame Spear, Constrict"
   },
   "salamander.traits.fire-aura": {
     "name": "Fire Aura",
@@ -4719,7 +4968,8 @@
     "text": "Strength Saving Throw: DC 15, one Large or smaller creature the salamander can see within 10 feet. Failure: 11 (2d6 + 4) Bludgeoning damage plus 7 (2d6) Fire damage. The target has the Grappled condition (escape DC 14), and it has the Restrained condition until the grapple ends."
   },
   "satyr": {
-    "name": "Satyr"
+    "name": "Satyr",
+    "gist": "Fey reveler: Magic Resistance, shoving Hooves, Psychic Mockery"
   },
   "satyr.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -4734,14 +4984,16 @@
     "text": "Wisdom Saving Throw: DC 12, one creature the satyr can see within 90 feet. Failure: 5 (1d6 + 2) Psychic damage."
   },
   "scorpion": {
-    "name": "Scorpion"
+    "name": "Scorpion",
+    "gist": "Small arachnid whose Sting adds Poison damage"
   },
   "scorpion.actions.sting": {
     "name": "Sting",
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 1 Piercing damage plus 3 (1d6) Poison damage."
   },
   "scout": {
-    "name": "Scout"
+    "name": "Scout",
+    "gist": "Ranger-type humanoid trading blows with Shortsword and Longbow"
   },
   "scout.actions.multiattack": {
     "name": "Multiattack",
@@ -4756,7 +5008,8 @@
     "text": "Ranged Attack Roll: +4, range 150/600 ft. Hit: 6 (1d8 + 2) Piercing damage."
   },
   "sea-hag": {
-    "name": "Sea Hag"
+    "name": "Sea Hag",
+    "gist": "Hideous fey: Vile Appearance Frightens, Death Glare drops the scared"
   },
   "sea-hag.traits.amphibious": {
     "name": "Amphibious",
@@ -4783,7 +5036,8 @@
     "text": "The hag casts Disguise Self, using Constitution as the spellcasting ability (spell save DC 13). The spell's duration is 24 hours."
   },
   "seahorse": {
-    "name": "Seahorse"
+    "name": "Seahorse",
+    "gist": "Harmless swimmer that flees with Bubble Dash"
   },
   "seahorse.traits.water-breathing": {
     "name": "Water Breathing",
@@ -4794,7 +5048,8 @@
     "text": "While underwater, the seahorse moves up to its Swim Speed without provoking Opportunity Attacks."
   },
   "shadow": {
-    "name": "Shadow"
+    "name": "Shadow",
+    "gist": "Stealthy undead: Draining Swipe saps Strength, Shadow Stealth in the dark"
   },
   "shadow.traits.amorphous": {
     "name": "Amorphous",
@@ -4813,7 +5068,8 @@
     "text": "While in Dim Light or Darkness, the shadow takes the Hide action."
   },
   "shambling-mound": {
-    "name": "Shambling Mound"
+    "name": "Shambling Mound",
+    "gist": "Rotting plant heap: Charged Tendrils, Engulf, Lightning Absorption"
   },
   "shambling-mound.traits.lightning-absorption": {
     "name": "Lightning Absorption",
@@ -4832,7 +5088,8 @@
     "text": "Strength Saving Throw: DC 15, one Medium or smaller creature within 5 feet. Failure: The target is pulled into the shambling mound’s space and has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Blinded and Restrained conditions, and it takes 10 (3d6) Lightning damage at the start of each of its turns. When the shambling mound moves, the Grappled target moves with it, costing it no extra movement. The shambling mound can have only one creature Grappled by this action at a time."
   },
   "shield-guardian": {
-    "name": "Shield Guardian"
+    "name": "Shield Guardian",
+    "gist": "Amulet-bound bodyguard: Protection reaction, Spell Storing, Regeneration"
   },
   "shield-guardian.traits.bound": {
     "name": "Bound",
@@ -4859,14 +5116,16 @@
     "text": "Trigger: An attack roll hits the wearer of the guardian’s amulet while the wearer is within 5 feet of the guardian. Response: The wearer gains a +5 bonus to AC, including against the triggering attack and possibly causing it to miss, until the start of the guardian’s next turn."
   },
   "shrieker-fungus": {
-    "name": "Shrieker Fungus"
+    "name": "Shrieker Fungus",
+    "gist": "Immobile fungus alarm: Shriek when creatures or Bright Light come near"
   },
   "shrieker-fungus.reactions.shriek": {
     "name": "Shriek",
     "text": "Trigger: A creature or a source of Bright Light moves within 30 feet of the shrieker. Response: The shrieker emits a shriek audible within 300 feet of itself for 1 minute or until the shrieker dies."
   },
   "silver-dragon-wyrmling": {
-    "name": "Silver Dragon Wyrmling"
+    "name": "Silver Dragon Wyrmling",
+    "gist": "Young dragon: Cold Breath and Paralyzing Breath in a Cone"
   },
   "silver-dragon-wyrmling.actions.multiattack": {
     "name": "Multiattack",
@@ -4885,7 +5144,8 @@
     "text": "Constitution Saving Throw: DC 13, each creature in a 15-foot Cone. First Failure: The target has the Incapacitated condition until the end of its next turn, when it repeats the save. Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
   },
   "skeleton": {
-    "name": "Skeleton"
+    "name": "Skeleton",
+    "gist": "Animated undead soldier fighting with Shortsword and Shortbow"
   },
   "skeleton.actions.shortsword": {
     "name": "Shortsword",
@@ -4896,7 +5156,8 @@
     "text": "Ranged Attack Roll: +5, range 80/320 ft. Hit: 6 (1d6 + 3) Piercing damage."
   },
   "solar": {
-    "name": "Solar"
+    "name": "Solar",
+    "gist": "Supreme angel: Flying Sword, Slaying Bow, Blinding Gaze and Radiant Teleport"
   },
   "solar.traits.divine-awareness": {
     "name": "Divine Awareness",
@@ -4943,7 +5204,8 @@
     "text": "The solar teleports up to 60 feet to an unoccupied space it can see. Dexterity Saving Throw: DC 25, each creature in a 10-foot Emanation originating from the solar at its destination space. Failure: 11 (2d10) Radiant damage. Success: Half damage."
   },
   "specter": {
-    "name": "Specter"
+    "name": "Specter",
+    "gist": "Incorporeal undead: Life Drain cuts the Hit Point maximum, passes through walls"
   },
   "specter.traits.incorporeal-movement": {
     "name": "Incorporeal Movement",
@@ -4958,7 +5220,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 7 (2d6) Necrotic damage. If the target is a creature, its Hit Point maximum decreases by an amount equal to the damage taken."
   },
   "sphinx-of-lore": {
-    "name": "Sphinx of Lore"
+    "name": "Sphinx of Lore",
+    "gist": "Inscrutable guardian sphinx: Mind-Rending Roar, potent spells, Weight of Years"
   },
   "sphinx-of-lore.traits.inscrutable": {
     "name": "Inscrutable",
@@ -4993,7 +5256,8 @@
     "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Failure or Success: The sphinx can't take this action again until the start of its next turn."
   },
   "sphinx-of-valor": {
-    "name": "Sphinx of Valor"
+    "name": "Sphinx of Valor",
+    "gist": "Inscrutable guardian sphinx: Claws, shifting magical Roar, Weight of Years"
   },
   "sphinx-of-valor.traits.inscrutable": {
     "name": "Inscrutable",
@@ -5028,7 +5292,8 @@
     "text": "Constitution Saving Throw: DC 16, one creature the sphinx can see within 120 feet. Failure: The target gains 1 Exhaustion level. While the target has any Exhaustion levels, it appears 3d10 years older. Failure or Success: The sphinx can't take this action again until the start of its next turn."
   },
   "sphinx-of-wonder": {
-    "name": "Sphinx of Wonder"
+    "name": "Sphinx of Wonder",
+    "gist": "Small celestial guardian: Radiant Rend, Burst of Ingenuity boosts rolls, Magic Resistance"
   },
   "sphinx-of-wonder.traits.magic-resistance": {
     "name": "Magic Resistance",
@@ -5043,7 +5308,8 @@
     "text": "Trigger: The sphinx or another creature within 30 feet makes an ability check or a saving throw. Response: The sphinx adds 2 to the roll."
   },
   "spider": {
-    "name": "Spider"
+    "name": "Spider",
+    "gist": "Web-dwelling climber: Spider Climb, Web Walker, venomous Bite"
   },
   "spider.traits.spider-climb": {
     "name": "Spider Climb",
@@ -5058,7 +5324,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 1 Piercing damage plus 2 (1d4) Poison damage."
   },
   "spirit-naga": {
-    "name": "Spirit Naga"
+    "name": "Spirit Naga",
+    "gist": "Undying serpent caster: Poison Bite, Necrotic Ray, spells, Fiendish Restoration"
   },
   "spirit-naga.traits.fiendish-restoration": {
     "name": "Fiendish Restoration",
@@ -5081,7 +5348,8 @@
     "text": "The naga casts one of the following spells, requiring no Somatic or Material components and using Intelligence as the spellcasting ability (spell save DC 14): At Will: Detect Magic, Mage Hand, Minor Illusion, Water Breathing. 2/Day Each: Detect Thoughts, Dimension Door, Hold Person (level 3 version), Lightning Bolt (level 4 version)."
   },
   "sprite": {
-    "name": "Sprite"
+    "name": "Sprite",
+    "gist": "Tiny fey: Enchanting Bow that Charms, Heart Sight, Invisibility"
   },
   "sprite.actions.needle-sword": {
     "name": "Needle Sword",
@@ -5100,7 +5368,8 @@
     "text": "The sprite casts Invisibility on itself, requiring no spell components and using Charisma as the spellcasting ability."
   },
   "spy": {
-    "name": "Spy"
+    "name": "Spy",
+    "gist": "Skilled infiltrator: Poison-laced blade and Hand Crossbow, Cunning Action to slip away"
   },
   "spy.actions.shortsword": {
     "name": "Shortsword",
@@ -5115,7 +5384,8 @@
     "text": "The spy takes the Dash, Disengage, or Hide action."
   },
   "steam-mephit": {
-    "name": "Steam Mephit"
+    "name": "Steam Mephit",
+    "gist": "Elemental imp: Steam Breath slows foes, Blurred Form, Fire Death Burst"
   },
   "steam-mephit.traits.blurred-form": {
     "name": "Blurred Form",
@@ -5134,14 +5404,16 @@
     "text": "Constitution Saving Throw: DC 10, each creature in a 15-foot Cone. Failure: 5 (2d4) Fire damage, and the target's Speed decreases by 10 feet until the end of the mephit's next turn. Success: Half damage only. Failure or Success: Being underwater doesn't grant Resistance to this Fire damage."
   },
   "stirge": {
-    "name": "Stirge"
+    "name": "Stirge",
+    "gist": "Blood-drinking flier: Proboscis attaches and drains its victim"
   },
   "stirge.actions.proboscis": {
     "name": "Proboscis",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 6 (1d6 + 3) Piercing damage, and the stirge attaches to the target. While attached, the stirge can't make Proboscis attacks, and the target takes 5 (2d4) Necrotic damage at the start of each of the stirge's turns. The stirge can detach itself by spending 5 feet of its movement. The target or a creature within 5 feet of it can detach the stirge as an action."
   },
   "stone-giant": {
-    "name": "Stone Giant"
+    "name": "Stone Giant",
+    "gist": "Reclusive giant: long-reach Stone Club, Boulder knocks Prone, Deflect Missile"
   },
   "stone-giant.actions.multiattack": {
     "name": "Multiattack",
@@ -5160,7 +5432,8 @@
     "text": "Trigger: The giant is hit by a ranged attack roll and takes Bludgeoning, Piercing, or Slashing damage from it. Response: The giant reduces the damage it takes from the attack by 11 (1d10 + 6), and if that damage is reduced to 0, the giant can redirect some of the attack's force. Dexterity Saving Throw: DC 17, one creature the giant can see within 60 feet. Failure: 11 (1d10 + 6) Force damage."
   },
   "stone-golem": {
-    "name": "Stone Golem"
+    "name": "Stone Golem",
+    "gist": "Magic-resistant construct: Force Slam, Force Bolt and a Slow spell"
   },
   "stone-golem.traits.immutable-form": {
     "name": "Immutable Form",
@@ -5187,7 +5460,8 @@
     "text": "The golem casts the Slow spell, requiring no spell components and using Constitution as the spellcasting ability (spell save DC 17)."
   },
   "storm-giant": {
-    "name": "Storm Giant"
+    "name": "Storm Giant",
+    "gist": "Amphibious sky giant: Storm Sword, Thunderbolt and a Lightning Storm"
   },
   "storm-giant.traits.amphibious": {
     "name": "Amphibious",
@@ -5214,7 +5488,8 @@
     "text": "The giant casts one of the following spells, requiring no Material components and using Wisdom as the spellcasting ability (spell save DC 18): At Will: Detect Magic, Light. 1/Day: Control Weather."
   },
   "succubus": {
-    "name": "Succubus"
+    "name": "Succubus",
+    "gist": "Seductive fiend: Charm to dominate, then Draining Kiss"
   },
   "succubus.traits.incubus-form": {
     "name": "Incubus Form",
@@ -5241,7 +5516,8 @@
     "text": "The succubus shape-shifts into a Medium or Small Humanoid, or it returns to its true form. Its game statistics are the same in each form, except its Fly Speed is available only in its true form. Any equipment it is wearing or carrying isn't transformed."
   },
   "swarm-of-bats": {
-    "name": "Swarm of Bats"
+    "name": "Swarm of Bats",
+    "gist": "Flying cloud of bats that engulfs foes with Bites, weaker when Bloodied"
   },
   "swarm-of-bats.traits.swarm": {
     "name": "Swarm",
@@ -5252,7 +5528,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
   },
   "swarm-of-crawling-claws": {
-    "name": "Swarm of Crawling Claws"
+    "name": "Swarm of Crawling Claws",
+    "gist": "Undead swarm of hands: Swarm of Grasping Hands deals Necrotic damage"
   },
   "swarm-of-crawling-claws.traits.swarm": {
     "name": "Swarm",
@@ -5263,7 +5540,8 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 20 (4d8 + 2) Necrotic damage, or 11 (2d8 + 2) Necrotic damage if the swarm is Bloodied. If the target is a Medium or smaller creature, it has the Prone condition."
   },
   "swarm-of-insects": {
-    "name": "Swarm of Insects"
+    "name": "Swarm of Insects",
+    "gist": "Crawling mass that engulfs foes with Poison Bites"
   },
   "swarm-of-insects.traits.spider-climb": {
     "name": "Spider Climb",
@@ -5278,7 +5556,8 @@
     "text": "Melee Attack Roll: +3, reach 5 ft. Hit: 6 (2d4 + 1) Poison damage, or 3 (1d4 + 1) Poison damage if the swarm is Bloodied."
   },
   "swarm-of-piranhas": {
-    "name": "Swarm of Piranhas"
+    "name": "Swarm of Piranhas",
+    "gist": "Underwater swarm: Bites gain Advantage against anyone already wounded"
   },
   "swarm-of-piranhas.traits.swarm": {
     "name": "Swarm",
@@ -5293,7 +5572,8 @@
     "text": "Melee Attack Roll: +5 (with Advantage if the target doesn't have all its Hit Points), reach 5 ft. Hit: 8 (2d4 + 3) Piercing damage, or 5 (1d4 + 3) Piercing damage if the swarm is Bloodied."
   },
   "swarm-of-rats": {
-    "name": "Swarm of Rats"
+    "name": "Swarm of Rats",
+    "gist": "Teeming horde that floods a foe's space with Bites"
   },
   "swarm-of-rats.traits.swarm": {
     "name": "Swarm",
@@ -5304,7 +5584,8 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 5 (2d4) Piercing damage, or 2 (1d4) Piercing damage if the swarm is Bloodied."
   },
   "swarm-of-ravens": {
-    "name": "Swarm of Ravens"
+    "name": "Swarm of Ravens",
+    "gist": "Flying flock: pecking Beaks and a Cacophony that leaves foes Deafened"
   },
   "swarm-of-ravens.traits.swarm": {
     "name": "Swarm",
@@ -5319,7 +5600,8 @@
     "text": "Wisdom Saving Throw: DC 10, one creature in the swarm's space. Failure: The target has the Deafened condition until the start of the swarm's next turn. While Deafened, the target also has Disadvantage on ability checks and attack rolls."
   },
   "swarm-of-venomous-snakes": {
-    "name": "Swarm of Venomous Snakes"
+    "name": "Swarm of Venomous Snakes",
+    "gist": "Swarm of snakes whose Bites add heavy Poison damage"
   },
   "swarm-of-venomous-snakes.traits.swarm": {
     "name": "Swarm",
@@ -5330,7 +5612,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 8 (1d8 + 4) Piercing damage—or 6 (1d4 + 4) Piercing damage if the swarm is Bloodied—plus 10 (3d6) Poison damage."
   },
   "tarrasque": {
-    "name": "Tarrasque"
+    "name": "Tarrasque",
+    "gist": "Unstoppable siege beast: Bite, Thunderous Bellow, Swallow, Reflective Carapace"
   },
   "tarrasque.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -5381,7 +5664,8 @@
     "text": "The tarrasque moves up to its Speed. At the end of this movement, the tarrasque creates an instantaneous shock wave in a 60-foot Emanation originating from itself. Creatures in that area lose Concentration and, if Medium or smaller, have the Prone condition. The tarrasque can't take this action again until the start of its next turn."
   },
   "tiger": {
-    "name": "Tiger"
+    "name": "Tiger",
+    "gist": "Stalking big cat: Rend knocks prey Prone, Nimble Escape to vanish"
   },
   "tiger.actions.rend": {
     "name": "Rend",
@@ -5392,7 +5676,8 @@
     "text": "The tiger takes the Disengage or Hide action."
   },
   "tough": {
-    "name": "Tough"
+    "name": "Tough",
+    "gist": "Street thug: Pack Tactics, Mace and Heavy Crossbow"
   },
   "tough.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -5407,7 +5692,8 @@
     "text": "Ranged Attack Roll: +3, range 100/400 ft. Hit: 6 (1d10 + 1) Piercing damage."
   },
   "tough-boss": {
-    "name": "Tough Boss"
+    "name": "Tough Boss",
+    "gist": "Thug leader: shoving Warhammer, Heavy Crossbow, Pack Tactics"
   },
   "tough-boss.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -5426,7 +5712,8 @@
     "text": "Ranged Attack Roll: +4, range 100/400 ft. Hit: 13 (2d10 + 2) Piercing damage."
   },
   "treant": {
-    "name": "Treant"
+    "name": "Treant",
+    "gist": "Ancient tree guardian: Hail of Bark, Animate Trees, Siege Monster"
   },
   "treant.traits.siege-monster": {
     "name": "Siege Monster",
@@ -5449,7 +5736,8 @@
     "text": "(1/Day) The treant magically animates up to two trees it can see within 60 feet of itself. Each tree uses the Treant stat block, except it has Intelligence and Charisma scores of 1, it can't speak, and it lacks this action. The tree takes its turn immediately after the treant on the same Initiative count, and it obeys the treant. A tree remains animate for 1 day or until it dies, the treant dies, or it is more than 120 feet from the treant. The tree then takes root if possible."
   },
   "triceratops": {
-    "name": "Triceratops"
+    "name": "Triceratops",
+    "gist": "Horned dinosaur whose charging Gore knocks foes Prone"
   },
   "triceratops.actions.multiattack": {
     "name": "Multiattack",
@@ -5460,7 +5748,8 @@
     "text": "Melee Attack Roll: +9, reach 5 ft. Hit: 19 (2d12 + 6) Piercing damage. If the target is Huge or smaller and the triceratops moved 20+ feet straight toward it immediately before the hit, the target takes an extra 9 (2d8) Piercing damage and has the Prone condition."
   },
   "troll": {
-    "name": "Troll"
+    "name": "Troll",
+    "gist": "Rending brute: Regeneration stopped only by Acid or Fire, Loathsome Limbs"
   },
   "troll.traits.loathsome-limbs": {
     "name": "Loathsome Limbs",
@@ -5483,7 +5772,8 @@
     "text": "The troll moves up to half its Speed straight toward an enemy it can see."
   },
   "troll-limb": {
-    "name": "Troll Limb"
+    "name": "Troll Limb",
+    "gist": "Severed troll part: Regeneration unless burned, Rend, Troll Spawn"
   },
   "troll-limb.traits.regeneration": {
     "name": "Regeneration",
@@ -5498,7 +5788,8 @@
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Slashing damage."
   },
   "tyrannosaurus-rex": {
-    "name": "Tyrannosaurus Rex"
+    "name": "Tyrannosaurus Rex",
+    "gist": "Apex dinosaur: Bite grapples and Restrains prey, sweeping Tail"
   },
   "tyrannosaurus-rex.actions.multiattack": {
     "name": "Multiattack",
@@ -5513,7 +5804,8 @@
     "text": "Melee Attack Roll: +10, reach 15 ft. Hit: 25 (4d8 + 7) Bludgeoning damage. If the target is a Huge or smaller creature, it has the Prone condition."
   },
   "unicorn": {
-    "name": "Unicorn"
+    "name": "Unicorn",
+    "gist": "Holy guardian: Radiant Horn, healing Unicorn's Blessing, Shimmering Shield"
   },
   "unicorn.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -5552,7 +5844,8 @@
     "text": "The unicorn targets itself or one creature it can see within 60 feet of itself. The target gains 10 (3d6) Temporary Hit Points, and its AC increases by 2 until the end of the unicorn's next turn. The unicorn can't take this action again until the start of its next turn."
   },
   "vampire": {
-    "name": "Vampire"
+    "name": "Vampire",
+    "gist": "Shape-shifting undead noble: draining Bite, Charm, Misty Escape; fears sunlight"
   },
   "vampire.traits.legendary-resistance": {
     "name": "Legendary Resistance",
@@ -5615,7 +5908,8 @@
     "text": "The vampire moves up to half its Speed, and it makes one Grave Strike attack."
   },
   "vampire-familiar": {
-    "name": "Vampire Familiar"
+    "name": "Vampire Familiar",
+    "gist": "Vampire's servant: Necrotic Umbral Dagger, Deathless Agility"
   },
   "vampire-familiar.traits.vampiric-connection": {
     "name": "Vampiric Connection",
@@ -5634,7 +5928,8 @@
     "text": "The familiar takes the Dash or Disengage action."
   },
   "vampire-spawn": {
-    "name": "Vampire Spawn"
+    "name": "Vampire Spawn",
+    "gist": "Lesser vampire: grabbing Claws, draining Bite, Spider Climb, Vampire Weakness"
   },
   "vampire-spawn.traits.spider-climb": {
     "name": "Spider Climb",
@@ -5677,14 +5972,16 @@
     "text": "The vampire takes the Dash or Disengage action."
   },
   "venomous-snake": {
-    "name": "Venomous Snake"
+    "name": "Venomous Snake",
+    "gist": "Serpent whose Bite adds Poison damage"
   },
   "venomous-snake.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 4 (1d4 + 2) Piercing damage plus 3 (1d6) Poison damage."
   },
   "violet-fungus": {
-    "name": "Violet Fungus"
+    "name": "Violet Fungus",
+    "gist": "Creeping fungus lashing out twice with Necrotic Rotting Touch"
   },
   "violet-fungus.actions.multiattack": {
     "name": "Multiattack",
@@ -5695,7 +5992,8 @@
     "text": "Melee Attack Roll: +2, reach 10 ft. Hit: 4 (1d8) Necrotic damage."
   },
   "vrock": {
-    "name": "Vrock"
+    "name": "Vrock",
+    "gist": "Vulture demon: Poison Shred, Spores, Stunning Screech leaves foes Stunned"
   },
   "vrock.traits.demonic-restoration": {
     "name": "Demonic Restoration",
@@ -5722,7 +6020,8 @@
     "text": "Constitution Saving Throw: DC 15, each creature in a 20-foot Emanation originating from the vrock (demons succeed automatically). Failure: 10 (3d6) Thunder damage, and the target has the Stunned condition until the end of the vrock's next turn."
   },
   "vulture": {
-    "name": "Vulture"
+    "name": "Vulture",
+    "gist": "Carrion bird that gangs up with Pack Tactics and its Beak"
   },
   "vulture.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -5733,21 +6032,24 @@
     "text": "Melee Attack Roll: +2, reach 5 ft. Hit: 2 (1d4) Piercing damage."
   },
   "warhorse": {
-    "name": "Warhorse"
+    "name": "Warhorse",
+    "gist": "Battle mount whose charging Hooves knock foes Prone"
   },
   "warhorse.actions.hooves": {
     "name": "Hooves",
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 9 (2d4 + 4) Bludgeoning damage. If the target is a Large or smaller creature and the horse moved 20+ feet straight toward it immediately before the hit, the target takes an extra 5 (2d4) Bludgeoning damage and has the Prone condition."
   },
   "warhorse-skeleton": {
-    "name": "Warhorse Skeleton"
+    "name": "Warhorse Skeleton",
+    "gist": "Undead battle mount whose charging Hooves knock foes Prone"
   },
   "warhorse-skeleton.actions.hooves": {
     "name": "Hooves",
     "text": "Melee Attack Roll: +6, reach 5 ft. Hit: 7 (1d6 + 4) Bludgeoning damage. If the target is a Large or smaller creature and the skeleton moved 20+ feet straight toward it immediately before the hit, the target has the Prone condition."
   },
   "warrior-infantry": {
-    "name": "Warrior Infantry"
+    "name": "Warrior Infantry",
+    "gist": "Rank-and-file soldier: Pack Tactics and a Spear"
   },
   "warrior-infantry.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -5758,7 +6060,8 @@
     "text": "Melee or Ranged Attack Roll: +3, reach 5 ft. or range 20/60 ft. Hit: 4 (1d6 + 1) Piercing damage."
   },
   "warrior-veteran": {
-    "name": "Warrior Veteran"
+    "name": "Warrior Veteran",
+    "gist": "Seasoned soldier: Greatsword or Heavy Crossbow, plus Parry"
   },
   "warrior-veteran.actions.multiattack": {
     "name": "Multiattack",
@@ -5777,7 +6080,8 @@
     "text": "Trigger: The warrior is hit by a melee attack roll while holding a weapon. Response: The warrior adds 2 to its AC against that attack, possibly causing it to miss."
   },
   "water-elemental": {
-    "name": "Water Elemental"
+    "name": "Water Elemental",
+    "gist": "Living wave: Water Form, Whelm grapples and batters foes in its space"
   },
   "water-elemental.traits.freeze": {
     "name": "Freeze",
@@ -5800,14 +6104,16 @@
     "text": "Strength Saving Throw: DC 15, each creature in the elemental's space. Failure: 22 (4d8 + 4) Bludgeoning damage. If the target is a Large or smaller creature, it has the Grappled condition (escape DC 14). Until the grapple ends, the target has the Restrained condition, is suffocating unless it can breathe water, and takes 9 (2d8) Bludgeoning damage at the start of each of the elemental's turns. The elemental can grapple one Large creature or up to two Medium or smaller creatures at a time with Whelm. As an action, a creature within 5 feet of the elemental can pull a creature out of it by succeeding on a DC 14 Strength (Athletics) check. Success: Half damage only."
   },
   "weasel": {
-    "name": "Weasel"
+    "name": "Weasel",
+    "gist": "Quick little predator with an accurate Bite"
   },
   "weasel.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 1 Piercing damage."
   },
   "werebear": {
-    "name": "Werebear"
+    "name": "Werebear",
+    "gist": "Bear lycanthrope: Shape-Shift, Rend and Bite in bear form, Handaxe"
   },
   "werebear.actions.multiattack": {
     "name": "Multiattack",
@@ -5830,7 +6136,8 @@
     "text": "The werebear shape-shifts into a Large bear-humanoid hybrid form or a Large bear, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "wereboar": {
-    "name": "Wereboar"
+    "name": "Wereboar",
+    "gist": "Shape-shifting boar lycanthrope: cursed Gore, charging Tusk"
   },
   "wereboar.actions.multiattack": {
     "name": "Multiattack",
@@ -5853,7 +6160,8 @@
     "text": "The wereboar shape-shifts into a Medium boar-humanoid hybrid or a Small boar, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "wererat": {
-    "name": "Wererat"
+    "name": "Wererat",
+    "gist": "Shape-shifting rat lycanthrope whose Bite spreads its curse"
   },
   "wererat.actions.multiattack": {
     "name": "Multiattack",
@@ -5876,7 +6184,8 @@
     "text": "The wererat shape-shifts into a Medium rat-humanoid hybrid or a Small rat, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "weretiger": {
-    "name": "Weretiger"
+    "name": "Weretiger",
+    "gist": "Shape-shifting tiger lycanthrope: cursed Bite, stealthy Prowl"
   },
   "weretiger.actions.multiattack": {
     "name": "Multiattack",
@@ -5903,7 +6212,8 @@
     "text": "The weretiger shape-shifts into a Large tiger-humanoid hybrid or a Large tiger, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "werewolf": {
-    "name": "Werewolf"
+    "name": "Werewolf",
+    "gist": "Shape-shifting wolf lycanthrope: cursed Bite, Pack Tactics"
   },
   "werewolf.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -5930,7 +6240,8 @@
     "text": "The werewolf shape-shifts into a Large wolf-humanoid hybrid or a Medium wolf, or it returns to its true humanoid form. Its game statistics, other than its size, are the same in each form. Any equipment it is wearing or carrying isn't transformed."
   },
   "white-dragon-wyrmling": {
-    "name": "White Dragon Wyrmling"
+    "name": "White Dragon Wyrmling",
+    "gist": "Young icy dragon: Cold Breath, Cold-laced Rend, Ice Walk"
   },
   "white-dragon-wyrmling.traits.ice-walk": {
     "name": "Ice Walk",
@@ -5949,7 +6260,8 @@
     "text": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 22 (5d8) Cold damage. Success: Half damage."
   },
   "wight": {
-    "name": "Wight"
+    "name": "Wight",
+    "gist": "Undead soldier: Necrotic Sword and Bow, Life Drain cuts max Hit Points"
   },
   "wight.traits.sunlight-sensitivity": {
     "name": "Sunlight Sensitivity",
@@ -5972,7 +6284,8 @@
     "text": "Constitution Saving Throw: DC 13, one creature within 5 feet. Failure: 6 (1d8 + 2) Necrotic damage, and the target's Hit Point maximum decreases by an amount equal to the damage taken. A Humanoid slain by this attack rises 24 hours later as a Zombie under the wight's control, unless the Humanoid is restored to life or its body is destroyed. The wight can have no more than twelve zombies under its control at a time."
   },
   "will-o-wisp": {
-    "name": "Will-o'-Wisp"
+    "name": "Will-o'-Wisp",
+    "gist": "Undead light: Lightning Shock, Vanish, Consume Life on the dying"
   },
   "will-o-wisp.traits.ephemeral": {
     "name": "Ephemeral",
@@ -5999,7 +6312,8 @@
     "text": "The wisp and its light have the Invisible condition until the wisp's Concentration ends on this effect, which ends early immediately after the wisp makes an attack roll or uses Consume Life."
   },
   "winter-wolf": {
-    "name": "Winter Wolf"
+    "name": "Winter Wolf",
+    "gist": "Arctic wolf: Cold Breath, Bite that knocks Prone, Pack Tactics"
   },
   "winter-wolf.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -6014,7 +6328,8 @@
     "text": "Constitution Saving Throw: DC 12, each creature in a 15-foot Cone. Failure: 18 (4d8) Cold damage. Success: Half damage."
   },
   "wolf": {
-    "name": "Wolf"
+    "name": "Wolf",
+    "gist": "Pack hunter: Pack Tactics and a Bite that knocks prey Prone"
   },
   "wolf.traits.pack-tactics": {
     "name": "Pack Tactics",
@@ -6025,14 +6340,16 @@
     "text": "Melee Attack Roll: +4, reach 5 ft. Hit: 5 (1d6 + 2) Piercing damage. If the target is a Medium or smaller creature, it has the Prone condition."
   },
   "worg": {
-    "name": "Worg"
+    "name": "Worg",
+    "gist": "Fey wolf whose Bite sets prey up for allies with Advantage"
   },
   "worg.actions.bite": {
     "name": "Bite",
     "text": "Melee Attack Roll: +5, reach 5 ft. Hit: 7 (1d8 + 3) Piercing damage, and the next attack roll made against the target before the start of the worg's next turn has Advantage."
   },
   "wraith": {
-    "name": "Wraith"
+    "name": "Wraith",
+    "gist": "Incorporeal undead: Life Drain cuts max Hit Points, Create Specter"
   },
   "wraith.traits.incorporeal-movement": {
     "name": "Incorporeal Movement",
@@ -6051,7 +6368,8 @@
     "text": "The wraith targets a Humanoid corpse within 10 feet of itself that has been dead for no longer than 1 minute. The target's spirit rises as a Specter in the space of its corpse or in the nearest unoccupied space. The specter is under the wraith's control. The wraith can have no more than seven specters under its control at a time."
   },
   "wyvern": {
-    "name": "Wyvern"
+    "name": "Wyvern",
+    "gist": "Flying drake whose venomous Sting deals Poison and leaves foes Poisoned"
   },
   "wyvern.actions.multiattack": {
     "name": "Multiattack",
@@ -6066,7 +6384,8 @@
     "text": "Melee Attack Roll: +7, reach 10 ft. Hit: 11 (2d6 + 4) Piercing damage plus 24 (7d6) Poison damage, and the target has the Poisoned condition until the start of the wyvern's next turn."
   },
   "xorn": {
-    "name": "Xorn"
+    "name": "Xorn",
+    "gist": "Earth-gliding elemental: Treasure Sense, Bite and three Claws, Charge"
   },
   "xorn.traits.earth-glide": {
     "name": "Earth Glide",
@@ -6093,7 +6412,8 @@
     "text": "The xorn moves up to its Speed or Burrow Speed straight toward an enemy it can sense."
   },
   "young-black-dragon": {
-    "name": "Young Black Dragon"
+    "name": "Young Black Dragon",
+    "gist": "Swamp dragon: Acid Breath Line, Acid-laced Rend, Amphibious"
   },
   "young-black-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -6112,7 +6432,8 @@
     "text": "Dexterity Saving Throw: DC 14, each creature in a 30-foot-long, 5-foot-wide Line. Failure: 49 (14d6) Acid damage. Success: Half damage."
   },
   "young-blue-dragon": {
-    "name": "Young Blue Dragon"
+    "name": "Young Blue Dragon",
+    "gist": "Desert dragon: Lightning-laced Rend and a long Lightning Breath line"
   },
   "young-blue-dragon.actions.multiattack": {
     "name": "Multiattack",
@@ -6127,7 +6448,8 @@
     "text": "Dexterity Saving Throw: DC 16, each creature in a 60-foot-long, 5-foot-wide Line. Failure: 55 (10d10) Lightning damage. Success: Half damage."
   },
   "young-brass-dragon": {
-    "name": "Young Brass Dragon"
+    "name": "Young Brass Dragon",
+    "gist": "Desert dragon: Fire Breath Line, Sleep Breath Incapacitates, Rend"
   },
   "young-brass-dragon.actions.multiattack": {
     "name": "Multiattack",
@@ -6146,7 +6468,8 @@
     "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: The target has the Incapacitated condition until the end of its next turn, at which point it repeats the save. Second Failure: The target has the Unconscious condition for 1 minute. This effect ends for the target if it takes damage or a creature within 5 feet of it takes an action to wake it."
   },
   "young-bronze-dragon": {
-    "name": "Young Bronze Dragon"
+    "name": "Young Bronze Dragon",
+    "gist": "Coastal dragon: Lightning Breath Line, Repulsion Breath knocks Prone, Rend"
   },
   "young-bronze-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -6169,7 +6492,8 @@
     "text": "Strength Saving Throw: DC 15, each creature in a 30-foot Cone. Failure: The target is pushed up to 40 feet straight away from the dragon and has the Prone condition."
   },
   "young-copper-dragon": {
-    "name": "Young Copper Dragon"
+    "name": "Young Copper Dragon",
+    "gist": "Trickster dragon: Acid Breath Line, Slowing Breath, Rend"
   },
   "young-copper-dragon.actions.multiattack": {
     "name": "Multiattack",
@@ -6188,7 +6512,8 @@
     "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: The target can't take Reactions; its Speed is halved; and it can take either an action or a Bonus Action on its turn, not both. This effect lasts until the end of its next turn."
   },
   "young-gold-dragon": {
-    "name": "Young Gold Dragon"
+    "name": "Young Gold Dragon",
+    "gist": "Metallic dragon: Fire Breath cone or Weakening Breath that saps Strength"
   },
   "young-gold-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -6211,7 +6536,8 @@
     "text": "Strength Saving Throw: DC 17, each creature that isn't currently affected by this breath in a 30-foot Cone. Failure: The target has Disadvantage on Strength-based D20 Tests and subtracts 3 (1d6) from its damage rolls. It repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
   },
   "young-green-dragon": {
-    "name": "Young Green Dragon"
+    "name": "Young Green Dragon",
+    "gist": "Forest dragon: Poison Breath Cone, Poison-laced Rend, Amphibious"
   },
   "young-green-dragon.traits.amphibious": {
     "name": "Amphibious",
@@ -6230,7 +6556,8 @@
     "text": "Constitution Saving Throw: DC 14, each creature in a 30-foot Cone. Failure: 42 (12d6) Poison damage. Success: Half damage."
   },
   "young-red-dragon": {
-    "name": "Young Red Dragon"
+    "name": "Young Red Dragon",
+    "gist": "Chromatic dragon: three fiery Rends and a devastating Fire Breath cone"
   },
   "young-red-dragon.actions.multiattack": {
     "name": "Multiattack",
@@ -6245,7 +6572,8 @@
     "text": "Dexterity Saving Throw: DC 17, each creature in a 30-foot Cone. Failure: 56 (16d6) Fire damage. Success: Half damage."
   },
   "young-silver-dragon": {
-    "name": "Young Silver Dragon"
+    "name": "Young Silver Dragon",
+    "gist": "Metallic dragon: Cold Breath cone or a Paralyzing Breath that locks foes"
   },
   "young-silver-dragon.actions.multiattack": {
     "name": "Multiattack",
@@ -6264,7 +6592,8 @@
     "text": "Constitution Saving Throw: DC 17, each creature in a 30-foot Cone. First Failure: The target has the Incapacitated condition until the end of its next turn, when it repeats the save. Second Failure: The target has the Paralyzed condition, and it repeats the save at the end of each of its turns, ending the effect on itself on a success. After 1 minute, it succeeds automatically."
   },
   "young-white-dragon": {
-    "name": "Young White Dragon"
+    "name": "Young White Dragon",
+    "gist": "Arctic dragon: Cold Breath Cone, Cold-edged Rend, Ice Walk"
   },
   "young-white-dragon.traits.ice-walk": {
     "name": "Ice Walk",
@@ -6283,7 +6612,8 @@
     "text": "Constitution Saving Throw: DC 15, each creature in a 30-foot Cone. Failure: 40 (9d8) Cold damage. Success: Half damage."
   },
   "zombie": {
-    "name": "Zombie"
+    "name": "Zombie",
+    "gist": "Shambling undead that shrugs off death with Undead Fortitude"
   },
   "zombie.traits.undead-fortitude": {
     "name": "Undead Fortitude",
