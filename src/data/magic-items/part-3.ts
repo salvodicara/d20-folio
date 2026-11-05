@@ -543,8 +543,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
-    // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 10", "recharge: 1d6+4 / dawn"],
+    // 10 charges, 1d6 + 4 back at dawn; a 1 on the last-charge d20 leaves a
+    // nonmagical Quarterstaff. The extra 1d6 Force per charge spent on a hit
+    // stays with the table.
+    properties: ["charges: 10"],
+    resources: [DAWN_CHARGES(10, { dice: 1, sides: 6, modifier: 4 }, "nonmagical")],
     // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
     // the weapon row it is bound to; other effects stay as noted).
     grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],
