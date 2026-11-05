@@ -397,6 +397,10 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/features/character/center/action-state-commit.ts",
   },
   "manifested-weapon": { via: "manifestedWeapons", consumer: "src/lib/smart-tracker.ts" },
+  "weapon-bonus-attack": {
+    via: "weaponBonusAttacks",
+    consumer: "src/lib/smart-tracker.ts",
+  },
   "form-attack": { via: "formAttacks", consumer: "src/lib/smart-tracker.ts" },
   "pact-weapon": { via: "pactWeapons", consumer: "src/lib/smart-tracker.ts" },
   "pact-weapon-rider": { via: "pactWeaponRiders", consumer: "src/lib/smart-tracker.ts" },

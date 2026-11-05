@@ -81,6 +81,11 @@ function offhandName(name: string, locale: Locale): string {
   return localizeText(uiText("combat.offhandName", { name }), locale);
 }
 
+/** A feature's Bonus Action attack row: the weapon's name plus the attack's. */
+function bonusAttackName(name: string, attack: string, locale: Locale): string {
+  return localizeText(uiText("combat.bonusAttackName", { name, attack }), locale);
+}
+
 /** The Pact-of-the-Blade Prone-rider note, composed around the rider's name. */
 function pactProneNote(rider: string, locale: Locale): string {
   return localizeText(uiText("combat.pactProneNote", { rider }), locale);
@@ -410,7 +415,15 @@ export function localizeAction(action: RawResolvedAction, locale: Locale): Comba
   const baseName = (lang: Locale): string =>
     weaponDisplayName(localizeText(name, lang), summary.weaponParts?.enchantItemId, lang);
   const displayName = (lang: Locale): string =>
-    action.offhand ? offhandName(baseName(lang), lang) : baseName(lang);
+    action.offhand
+      ? offhandName(baseName(lang), lang)
+      : action.bonusAttackName
+        ? bonusAttackName(
+            baseName(lang),
+            localizeText(action.bonusAttackName, lang),
+            lang
+          )
+        : baseName(lang);
   const localizedName = displayName(locale);
   // The unified weapon facts block (the SAME recipe the inventory WeaponCard
   // renders) — built only for weapon rows carrying the structured attack facts.
