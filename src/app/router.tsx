@@ -230,6 +230,13 @@ const router = createBrowserRouter(
               {PlayScreen && (
                 <Route path="/characters/:characterId" element={<PlayScreen />} />
               )}
+              {/* «Sali di livello» opens over the Play screen. */}
+              {PlayScreen && (
+                <Route
+                  path="/characters/:characterId/level-up"
+                  element={<PlayScreen />}
+                />
+              )}
               {RosterScreen && <Route path="/characters" element={<RosterScreen />} />}
               {CreationScreen && (
                 <Route path="/characters/new" element={<CreationScreen />} />
@@ -254,7 +261,18 @@ const router = createBrowserRouter(
             )}
             {/* Level-up — the full-screen wizard-F flow (own route so it gets the
                 useBlocker leave-confirm + beforeunload, like creation). */}
-            <Route path="/characters/:characterId/level-up" element={<LevelUpWizard />} />
+            {PlayScreen ? (
+              // The classic wizard takes the levels the new screen does not draw yet.
+              <Route
+                path="/characters/:characterId/level-up/classic"
+                element={<LevelUpWizard />}
+              />
+            ) : (
+              <Route
+                path="/characters/:characterId/level-up"
+                element={<LevelUpWizard />}
+              />
+            )}
             {/* Campaigns */}
             <Route path="/campaigns" element={<CampaignsListPage />} />
             {!CampaignScreen && (

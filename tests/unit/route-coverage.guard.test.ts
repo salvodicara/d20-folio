@@ -43,6 +43,13 @@ const ROUTER = resolve(here, "../../src/app/router.tsx");
  */
 const EXEMPT_ROUTES: { route: string; reason: string }[] = [
   {
+    route: "/characters/:characterId/level-up/classic",
+    reason:
+      "VITE_NEW_UI only: the classic LevelUpWizard, opened for the levels the new level-up " +
+      "dialog does not draw yet (a new class, Spell Mastery, Signature Spells). It is the " +
+      "same wizard the `level-up` surface covers at /characters/:characterId/level-up.",
+  },
+  {
     route: "/",
     reason:
       'Index route is a redirect (`<Navigate to="/characters">`), not a rendered ' +

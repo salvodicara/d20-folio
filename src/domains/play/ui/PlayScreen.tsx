@@ -6,9 +6,9 @@
  * ring, name and identity line, what is going on, the six abilities, the four header
  * numbers and HP.
  */
-import { useState, type ReactNode } from "react";
+import { lazy, Suspense, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams } from "react-router";
+import { Link, useMatch, useNavigate, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
@@ -36,6 +36,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
+import { totalLevel } from "@/lib/classes";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -56,6 +57,13 @@ import {
 } from "@/ui";
 import type { CampaignDoc } from "@/types/campaign";
 import type { RestKind } from "@/lib/play/rest-preview";
+
+// «Sali di livello» loads only when it opens.
+const LevelUpDialog = lazy(() =>
+  import("@/domains/leveling/ui/LevelUpDialog").then((m) => ({
+    default: m.LevelUpDialog,
+  }))
+);
 
 type Section = "actions" | "resources" | "fight";
 const SECTION_KEY: Record<Section, string> = {
@@ -91,6 +99,8 @@ export function PlayScreen() {
   const [resting, setResting] = useState<RestKind | null>(null);
   const [passing, setPassing] = useState(false);
   const readonly = useSheetReadonly();
+  const navigate = useNavigate();
+  const levelling = useMatch("/characters/:characterId/level-up") !== null;
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -108,6 +118,16 @@ export function PlayScreen() {
       <Button aria-haspopup="dialog" onClick={() => setResting("long")}>
         {t("play.rest.long")}
       </Button>
+      {totalLevel(doc.character) < 20 && (
+        <Link
+          className="f-btn"
+          data-kind="ghost"
+          to={`/characters/${doc.id}/level-up`}
+          aria-haspopup="dialog"
+        >
+          {t("levelUp.screen.levelUp")}
+        </Link>
+      )}
       {/* In a fight the rounds keep the time (prototype: exploration only). */}
       {!fight && (
         <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
@@ -205,6 +225,15 @@ export function PlayScreen() {
           </button>
         ))}
       </Menu>
+      {levelling && !readonly && totalLevel(doc.character) < 20 && (
+        <Suspense fallback={null}>
+          <LevelUpDialog
+            doc={doc}
+            locale={locale}
+            onClose={() => void navigate(`/characters/${doc.id}`, { replace: true })}
+          />
+        </Suspense>
+      )}
       {toast && <Toast>{toast}</Toast>}
     </main>
   );
