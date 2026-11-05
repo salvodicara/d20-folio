@@ -579,6 +579,13 @@ export interface ActionSummary {
     excludeCreatureTypes?: ReadonlyArray<CreatureType>;
     /** Only when the attack's d20 shows a 20: never a hit-time optional part. */
     onRoll20?: true;
+    /** The creature hit saves against the rider (Brew Poison): CON, DC 14. */
+    save?: { ability: AbilityCode; dc: number };
+    /** The conditions a failed save brings, and how long they last. */
+    failedSaveConditions?: ReadonlyArray<ConditionId>;
+    conditionsUntil?: "end-of-your-next-turn";
+    /** The feature the conditions come from, so the fight can name their source. */
+    conditionSourceId?: string;
   }>;
   /**
    * How this weapon's OWN damage dice are manipulated when rolled (Great Weapon
@@ -1299,6 +1306,13 @@ export interface RawActionSummary extends Omit<
     excludeCreatureTypes?: ReadonlyArray<CreatureType>;
     /** Only when the attack's d20 shows a 20 (Sword of Sharpness's extra 14). */
     onRoll20?: true;
+    /** The creature hit saves against the rider (Brew Poison): CON, DC 14. */
+    save?: { ability: AbilityCode; dc: number };
+    /** The conditions a failed save brings, and how long they last. */
+    failedSaveConditions?: ReadonlyArray<ConditionId>;
+    conditionsUntil?: "end-of-your-next-turn";
+    /** The feature the conditions come from, so the fight can name their source. */
+    conditionSourceId?: string;
     /**
      * G14 — an `attack-or-spell` rider is NOT weapon-bound (a celestial-revelation
      * Revelation's +PB): it rides ONE attack OR spell per turn, surfaced as a
@@ -4174,8 +4188,32 @@ export function resolveAttackDamageRiders(
         // conditional, currently-active source ("· active") — same flag the
         // weapon-damage breakdown reads from `whileActiveKey`.
         ...(r.whileActiveKey ? { whileActive: true } : {}),
+        // The creature hit saves against it (Brew Poison): DC 8 + PB + the best
+        // of the rider's DC abilities; a failure brings its conditions.
+        ...(r.save ? { save: riderSave(r.save, character, scores) } : {}),
+        ...(r.save && r.onFailedSave
+          ? {
+              failedSaveConditions: [...r.onFailedSave.conditions],
+              ...(r.onFailedSave.until ? { conditionsUntil: r.onFailedSave.until } : {}),
+              ...(r.sourceId ? { conditionSourceId: r.sourceId } : {}),
+            }
+          : {}),
       };
     });
+}
+
+/** A rider's save: its ability and DC 8 + PB + the best DC-ability modifier. */
+function riderSave(
+  save: NonNullable<AggregatedGrants["damageRiders"][number]["save"]>,
+  character: CharacterDoc,
+  scores: Record<AbilityCode, number>
+): { ability: AbilityCode; dc: number } {
+  const pb = effectiveProficiencyBonus(
+    totalLevel(character.character),
+    character.character.proficiencyBonusOverride
+  );
+  const best = Math.max(...save.dcAbilities.map((a) => abilityModifier(scores[a])));
+  return { ability: save.ability, dc: 8 + pb + best };
 }
 
 /**

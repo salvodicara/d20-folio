@@ -1889,6 +1889,14 @@ export interface AggregatedGrants {
     addAbilityMod?: AbilityCode;
     /** Each use spends one unit of this tracker (Psionic Energy Dice). */
     resourceCost?: { trackerId: string };
+    /** The save the creature hit makes; the DC is 8 + PB + the best `dcAbilities`
+     *  modifier (Brew Poison). */
+    save?: { ability: AbilityCode; dcAbilities: ReadonlyArray<AbilityCode> };
+    /** What a failed save brings: these conditions, for this long. */
+    onFailedSave?: {
+      conditions: ReadonlyArray<ConditionId>;
+      until?: "end-of-your-next-turn";
+    };
     /**
      * Source-feature id (provenance) — the consumer resolves a `diceByLevel`
      * scaling threshold against THIS feature's OWNING class at the character's
@@ -3126,6 +3134,8 @@ export function evaluateGrants(
           oncePerTurn: g.oncePerTurn ?? false,
           ...(g.addAbilityMod ? { addAbilityMod: g.addAbilityMod } : {}),
           ...(g.resourceCost ? { resourceCost: g.resourceCost } : {}),
+          ...(g.save ? { save: g.save } : {}),
+          ...(g.onFailedSave ? { onFailedSave: g.onFailedSave } : {}),
           sourceId,
           // `activeKey` (set when this rider arrived through a `while-active`
           // block) marks the chip as a conditional, currently-active source —
