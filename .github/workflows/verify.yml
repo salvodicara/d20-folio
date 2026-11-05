@@ -23,6 +23,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      pack_sha:
+        description: "Pack commit to compose instead of the pack's main (a pack PR's head, for scripts/lockstep-merge.sh)."
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -45,9 +50,14 @@ jobs:
       - id: pin
         env:
           GH_TOKEN: ${{ secrets.CONTENT_PACK_TOKEN }}
+          REQUESTED: ${{ inputs.pack_sha }}
         run: |
           set -euo pipefail
-          sha="$(gh api repos/salvodicara/d20-folio-content/commits/main --jq .sha)"
+          if [ -n "${REQUESTED:-}" ]; then
+            sha="$(gh api "repos/salvodicara/d20-folio-content/commits/$REQUESTED" --jq .sha)"
+          else
+            sha="$(gh api repos/salvodicara/d20-folio-content/commits/main --jq .sha)"
+          fi
           echo "Composing pack $sha"
           echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "$sha" > verified-pack.txt
