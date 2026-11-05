@@ -717,7 +717,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     customSpells: [
       {
         custom: true,
-        name: { en: "Omen of Twenty", it: "Presagio del Venti" },
+        name: "Omen of Twenty",
         level: 8,
         school: "divination",
         castingTime: "reaction",
@@ -725,10 +725,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
         components: { v: true, s: false, m: false },
         duration: "instantaneous",
         concentration: false,
-        description: {
-          en: "A failed roll becomes a 20.",
-          it: "Un tiro fallito diventa un 20.",
-        },
+        description: "A failed roll becomes a 20.",
         instanceId: "custom-omen-of-twenty",
         mechanics: { failedD20Becomes: 20 },
       },
