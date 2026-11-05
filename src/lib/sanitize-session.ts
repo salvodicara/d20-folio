@@ -207,6 +207,7 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     session.stableSince >= 0
       ? { stableSince: session.stableSince }
       : {}),
+    ...(session.location ? { location: session.location } : {}),
     familiar: session.familiar,
     manifestedWeaponOverrides: session.manifestedWeaponOverrides,
     pactWeaponConfig: session.pactWeaponConfig,

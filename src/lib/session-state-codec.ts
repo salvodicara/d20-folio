@@ -13,7 +13,12 @@ import {
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { CONDITION_IDS } from "@/types/condition";
 import { normalizeStoredConcentration } from "@/lib/concentration";
-import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
+import {
+  FAMILIAR_CREATURE_TYPES,
+  parseCreatureLocation,
+  type CreatureLocation,
+  type FamiliarCreatureType,
+} from "@/lib/familiar-ids";
 import { normalizeItemResources, parseItemResources } from "@/lib/item-resources";
 import { parseReadiedSpell, sanitizeSession } from "@/lib/sanitize-session";
 import { CodecFailureError, fail, leftover } from "@/lib/codec-failure";
@@ -74,6 +79,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   timeOfDay?: number;
   clockSeen?: number;
   stableSince?: number;
+  location?: CreatureLocation;
   familiar?: NonNullable<SessionState["familiar"]>;
   manifestedWeaponOverrides?: NonNullable<SessionState["manifestedWeaponOverrides"]>;
   pactWeaponConfig?: NonNullable<SessionState["pactWeaponConfig"]>;
@@ -145,6 +151,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "timeOfDay",
   "clockSeen",
   "stableSince",
+  "location",
   "familiar",
   "manifestedWeaponOverrides",
   "pactWeaponConfig",
@@ -441,6 +448,7 @@ export function sessionToState(session: SessionState): CompactSessionState {
   if (session.timeOfDay !== undefined) state.timeOfDay = session.timeOfDay;
   if (session.clockSeen !== undefined) state.clockSeen = session.clockSeen;
   if (session.stableSince !== undefined) state.stableSince = session.stableSince;
+  if (session.location) state.location = session.location;
   if (session.familiar) state.familiar = session.familiar;
   if (isNonEmptyRecord(session.manifestedWeaponOverrides)) {
     state.manifestedWeaponOverrides = session.manifestedWeaponOverrides;
@@ -1054,6 +1062,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   ) {
     session.stableSince = state.stableSince;
   }
+  const location = parseCreatureLocation(state.location);
+  if (location) session.location = location;
   const summons = parseSummons(state.summons);
   if (summons) session.summons = summons;
   if (
