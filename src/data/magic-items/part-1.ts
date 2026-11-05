@@ -123,30 +123,21 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     properties: ["duration: 1 minute", "haste"],
     // S9 — 1 minute = 10 combat rounds.
     durationRounds: 10,
-    // Haste's standing package (no Concentration), and Haste's end: Incapacitated
-    // (no actions) with a Speed of 0 until the end of your next turn.
+    // Haste's standing package (no Concentration), without Haste's lethargy when
+    // it ends (the 2024 potion says so).
     grants: [
-      POTION_STATE(
-        "potion-of-speed",
-        1,
-        [
-          { type: "speed-multiplier", factor: 2 },
-          { type: "ac-bonus", amount: 2 },
-          { type: "advantage-on", rollType: "save", vs: "dex-save" },
-          {
-            type: "extra-action",
-            slot: "action",
-            count: 1,
-            allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
-            maxAttacks: 1,
-          },
-        ],
-        undefined,
+      POTION_STATE("potion-of-speed", 1, [
+        { type: "speed-multiplier", factor: 2 },
+        { type: "ac-bonus", amount: 2 },
+        { type: "advantage-on", rollType: "save", vs: "dex-save" },
         {
-          duration: { kind: "target-turn-boundary", turns: 1, phase: "turn-end" },
-          grants: [{ type: "turn-economy-block" }, { type: "speed-cap", maxFt: 0 }],
-        }
-      ),
+          type: "extra-action",
+          slot: "action",
+          count: 1,
+          allowedActions: ["attack", "dash", "disengage", "hide", "utilize"],
+          maxAttacks: 1,
+        },
+      ]),
     ],
     source: "SRD",
   },
@@ -369,10 +360,11 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     type: "weapon",
     attunement: true,
     price: "120000 GP",
-    properties: ["+1 bonus", "+1 saves", "reroll 1/dawn", "wish charges"],
+    properties: ["+1 bonus", "+1 saves", "reroll 1/dawn", "charges: 1d3"],
     // +1 to ALL saving throws while the weapon is on your person (save-bonus
     // flat). The +1 attack/damage rides the weapon-attack pipeline (the item's
-    // `+1 bonus` weapon enchant), and the reroll / Wish charges stay manual.
+    // `+1 bonus` weapon enchant). The reroll and the 1d3 Wish charges (never
+    // regained) stay manual.
     grants: [
       { type: "save-bonus", amount: 1 },
       { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 1 },
@@ -861,8 +853,8 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
     price: "3000 GP",
     properties: ["charges: 1d6+3", "8d6 fire per bead", "DC 15 DEX"],
     // 1d6 + 3 beads, entered once from the table's roll; they never come back. A
-    // thrown bead is a level 3 Fireball (DC 15); each extra bead thrown with it
-    // raises the level by 1 (Fireball tops out at level 9).
+    // thrown bead is a level 3 Fireball (DC 15); each extra bead thrown with it adds
+    // 1d6, Fireball one level higher, up to 12d6 (level 7).
     resources: [FINITE_SUPPLY("beads", { dice: 1, sides: 6, modifier: 3 })],
     grants: [
       { type: "always-prepared-spell", spellId: "fireball" },
@@ -871,7 +863,7 @@ export const MAGIC_ITEMS_PART_1: SrdMagicItemData[] = [
         spellId: "fireball",
         resourceCost: { resourceId: "beads" },
         castOverrides: { saveDC: 15 },
-        castLevels: [3, 4, 5, 6, 7, 8, 9].map((level) => ({ level, cost: level - 2 })),
+        castLevels: [3, 4, 5, 6, 7].map((level) => ({ level, cost: level - 2 })),
       },
     ],
     source: "SRD",

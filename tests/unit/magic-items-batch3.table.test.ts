@@ -171,7 +171,7 @@ describe("Necklace of Fireballs", () => {
   const id = "necklace-of-fireballs";
 
   it("has the bead count the text rolls, and they never come back", () => {
-    const m = /Has (\d+)d(\d+)\+(\d+) beads/.exec(text(id));
+    const m = /has (\d+)d(\d+) \+ (\d+) beads/.exec(text(id));
     expect(m).not.toBeNull();
     expect(item(id).resources).toEqual([
       {
@@ -188,10 +188,9 @@ describe("Necklace of Fireballs", () => {
   });
 
   it("a thrown bead is a Fireball at the text's save DC, paid with one bead", () => {
-    const m = /detonates as a Fireball \(DEX DC (\d+), (\d+d\d+) fire\)/.exec(text(id));
+    const m = /detonates as a level (\d+) Fireball \(save DC (\d+)\)/.exec(text(id));
     expect(m).not.toBeNull();
-    const fireball = getSpellById("fireball");
-    expect(fireball?.damageDice).toBe(m?.[2]);
+    expect(getSpellById("fireball")?.level).toBe(Number(m?.[1]));
     // The table has rolled the necklace's beads (7): the cast is paid from them.
     const instanceId = `${id}-copy`;
     const doc = bearer(worn(id), {
@@ -212,14 +211,24 @@ describe("Necklace of Fireballs", () => {
         source.payment.instanceId === `${id}-copy`
     );
     expect(row).toBeDefined();
-    expect(row?.castOverrides).toEqual({ saveDC: Number(m?.[1]) });
-    // Several beads at once: the Fireball goes up one level per bead past the first.
-    expect(text(id)).toMatch(/throw multiple beads at once for increased damage/);
-    expect(row?.castLevels?.[0]).toEqual({ level: fireball?.level, cost: 1 });
+    expect(row?.castOverrides).toEqual({ saveDC: Number(m?.[2]) });
+    // Several beads at once: +1d6 per bead past the first, which is Fireball one
+    // level higher per bead, up to the text's damage cap.
+    const more =
+      /increase the damage of the Fireball by 1d6 for each bead after the first \(maximum (\d+)d6\)/.exec(
+        text(id)
+      );
+    expect(more).not.toBeNull();
+    const base = Number(m?.[1]);
+    const baseDice = Number(
+      /^(\d+)d6$/.exec(getSpellById("fireball")?.damageDice ?? "")?.[1]
+    );
+    const topLevel = base + Number(more?.[1]) - baseDice;
+    expect(row?.castLevels?.[0]).toEqual({ level: base, cost: 1 });
     for (const [i, step] of (row?.castLevels ?? []).entries()) {
-      expect(step).toEqual({ level: (fireball?.level ?? 0) + i, cost: i + 1 });
+      expect(step).toEqual({ level: base + i, cost: i + 1 });
     }
-    expect(row?.castLevels?.at(-1)?.level).toBe(9);
+    expect(row?.castLevels?.at(-1)?.level).toBe(topLevel);
   });
 
   const necklaceOwner = (charges: { current: number; max: number }) =>
