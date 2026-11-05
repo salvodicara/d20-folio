@@ -4577,6 +4577,9 @@
     position: sticky;
     top: 24px;
     flex-direction: column;
+    /* the full text scrolls inside the card, the grid stays in place */
+    max-height: calc(100vh - 48px);
+    overflow: auto;
   }
 }
 .fui .f-lvl-inspect {

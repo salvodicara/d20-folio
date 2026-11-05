@@ -201,6 +201,7 @@ export function SpeciesStep({
             options={feats.map((f) => ({ id: f.id, label: f.name }))}
             picked={draft.humanFeat ? [draft.humanFeat] : []}
             art="feat"
+            info="feat"
             locale={locale}
             onToggle={(featId) => dispatch({ type: "setHumanFeat", featId })}
           />

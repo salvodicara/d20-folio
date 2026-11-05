@@ -178,7 +178,9 @@
       "cantripsKnown": "Cantrips · {{count}}",
       "spellsKnown": "Spells · {{count}}",
       "gist": "In short",
-      "readAll": "Read the full text"
+      "readAll": "Read the full text",
+      "invocation": "Eldritch Invocation",
+      "maneuver": "Maneuver"
     }
   }
 }
