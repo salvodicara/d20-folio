@@ -27,16 +27,16 @@ describe("a failed repeat save's effects", () => {
   });
 
   it("counts from the level the sheet shows, sources' levels included", () => {
-    const waves: ActiveCombatEffect = {
+    const spell: ActiveCombatEffect = {
       id: "w",
       actor: { kind: "monster", combatantId: "lich" },
       target: { kind: "pc", combatantId: "pc-me", memberUid: "me", characterId: "c" },
-      source: { kind: "spell", id: "waves-of-exhaustion", actionId: "cast" },
+      source: { kind: "spell", id: "a-spell", actionId: "cast" },
       payload: { kind: "condition", conditionId: "exhaustion" },
       duration: { kind: "encounter" },
     };
     expect(
-      failedRepeatSaveEffects(sheet(1, { encounterEffects: [waves] }), eons)?.exhaustion
+      failedRepeatSaveEffects(sheet(1, { encounterEffects: [spell] }), eons)?.exhaustion
     ).toBe(3);
   });
 

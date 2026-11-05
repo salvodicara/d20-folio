@@ -31,7 +31,7 @@ export function isExhaustionEffect(effect: ActiveCombatEffect): boolean {
 
 /** The catalogue's rule for one source's Exhaustion: its own effect entry, or one
  *  level a failed save when it names none. */
-function ruleOf(sourceId: string): ExhaustionRule {
+export function catalogueExhaustionRule(sourceId: string): ExhaustionRule {
   const spell = getSpellById(sourceId);
   const effect = [...(spell?.followUp?.effects ?? []), ...(spell?.effects ?? [])].find(
     (e) => e.kind === "exhaustion"
@@ -47,9 +47,13 @@ type ExhaustionSession = Pick<SessionState, "exhaustion" | "tableRules"> & {
   readonly encounterEffects?: SessionState["encounterEffects"];
 };
 
+/** Each source's rule (the catalogue's unless given). */
+export type ExhaustionRuleOf = (sourceId: string) => ExhaustionRule;
+
 /** Each source's rule with its count of applications, in a stable order. */
 function sourcesOf(
-  session: ExhaustionSession
+  session: ExhaustionSession,
+  ruleOf: ExhaustionRuleOf
 ): Array<ExhaustionRule & { count: number }> {
   const counts = new Map<string, number>();
   for (const effect of session.encounterEffects ?? []) {
@@ -82,16 +86,23 @@ const maxOf = (session: ExhaustionSession) =>
   session.tableRules?.exhaustion.maxLevel ?? 6;
 
 /** The Exhaustion level in effect: the sheet's own plus what sources give. */
-export function effectiveExhaustion(session: ExhaustionSession): number {
-  const sources = sourcesOf(session);
+export function effectiveExhaustion(
+  session: ExhaustionSession,
+  ruleOf: ExhaustionRuleOf = catalogueExhaustionRule
+): number {
+  const sources = sourcesOf(session, ruleOf);
   if (sources.length === 0) return session.exhaustion;
   return withSources(session.exhaustion, sources, maxOf(session));
 }
 
 /** The sheet's own level that shows `target` with the sources' levels: what the
  *  stepper stores. Below what the sources hold, the sheet's own are cleared. */
-export function storedExhaustionFor(session: ExhaustionSession, target: number): number {
-  const sources = sourcesOf(session);
+export function storedExhaustionFor(
+  session: ExhaustionSession,
+  target: number,
+  ruleOf: ExhaustionRuleOf = catalogueExhaustionRule
+): number {
+  const sources = sourcesOf(session, ruleOf);
   if (sources.length === 0) return target;
   const max = maxOf(session);
   for (let stored = 0; stored <= max; stored++)
