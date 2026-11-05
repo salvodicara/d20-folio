@@ -36,6 +36,8 @@ async function castAgain(page: Page) {
     .click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
+  // A Sorcerer with Metamagic is asked the slot (and any Metamagic) first.
+  await dialog.getByRole("button", { name: /^Slot di livello 2/ }).click();
   await dialog.getByRole("button", { name: /^Io\b/ }).first().click();
   await expect(dialog).toBeHidden();
 }

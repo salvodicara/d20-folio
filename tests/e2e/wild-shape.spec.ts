@@ -55,7 +55,8 @@ test("Wild Shape: pick a Wolf on the Play tab, then revert (en, dark, desktop)",
   }, DOC_KEY);
   expect(temp).toBe(7);
   // No spellcasting in beast form (no Beast Spells at level 7): the card says why.
-  await expect(page.getByText("In beast form")).toHaveCount(2);
+  // Produce Flame and the Druid's other cantrips (its table gives 3 at level 7).
+  await expect(page.getByText("In beast form")).toHaveCount(4);
   await expect(page.getByText("No uses left")).toHaveCount(0);
   await shot(page, "wild-shape-play");
 
