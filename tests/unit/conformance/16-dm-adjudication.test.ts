@@ -274,6 +274,11 @@ describe("conformance · 16. DM adjudication", () => {
       // "same plane" check must know where each creature is.
       const familiar: Record<string, unknown> = await import("@/lib/familiar");
       expect(familiar.sharesPlane).toBeTypeOf("function");
+      // Engine-ready, needs a caller: the case works once a creature's location is
+      // stored (the session, the roster, a summon) and the familiar's link reads it.
+      const id = "@/lib/play/creature-location";
+      const location = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(location.locationOf).toBeTypeOf("function");
     }
   );
 
