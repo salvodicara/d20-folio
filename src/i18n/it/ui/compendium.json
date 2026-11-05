@@ -7,6 +7,25 @@
     "emptyTitle": "Nessuna voce su questa pagina",
     "emptyHint": "Nessun elemento corrisponde alla ricerca e ai filtri.",
     "emptyReset": "Azzera ricerca e filtri",
-    "frontisHint": "Scegli una voce dall'indice per leggerla su questa pagina."
+    "frontisHint": "Scegli una voce dall'indice per leggerla su questa pagina.",
+    "screen": {
+      "subtitle": "Incantesimi, oggetti e talenti del D&D 2024",
+      "clear": "Azzera",
+      "results": "Risultati",
+      "results_one": "{{count}} risultato",
+      "results_other": "{{count}} risultati",
+      "detail": "Dettaglio",
+      "effect": "Cosa fa",
+      "castingTime": "Tempo di lancio",
+      "kind_spell": "Incantesimo",
+      "kind_item": "Oggetto",
+      "kind_feat": "Talento",
+      "noMatch": "Nessun risultato per «{{query}}»",
+      "noMatchFilters": "Nessun risultato con questi filtri",
+      "noMatchHint": "Prova a togliere un filtro o a cercare una parte del nome.",
+      "clearFilters": "Togli i filtri",
+      "pick": "Scegli una voce per leggerla qui.",
+      "doneFilters": "Mostra i risultati"
+    }
   }
 }

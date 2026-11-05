@@ -4245,3 +4245,205 @@
   background: var(--hover);
   color: var(--text);
 }
+
+/* ---------- compendium (approved prototypes comp, comp-detail, comp-empty) ---------- */
+.fui .f-comp {
+  --frame: #6a5130;
+  --r-slot: 2px;
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+@media (min-width: 641px) {
+  .fui .f-comp .f-ph-acts {
+    display: none;
+  }
+}
+.fui .f-comp-detail .f-prose {
+  text-wrap: pretty;
+}
+.fui .f-comp-srch {
+  width: 100%;
+  height: 48px;
+  margin: 24px 0;
+  font-size: var(--fs-md);
+}
+.fui .f-comp-srch input {
+  font-size: var(--fs-md);
+}
+.fui .f-comp-grid {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr) 424px;
+  gap: 24px;
+  align-items: start;
+}
+.fui .f-comp-detail {
+  position: sticky;
+  top: 24px;
+}
+.fui .f-comp-filters {
+  display: grid;
+  gap: 16px;
+}
+.fui .f-comp-group {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.fui .f-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  cursor: pointer;
+  color: var(--text);
+}
+.fui .f-check > input {
+  appearance: none;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.fui .f-check:hover > input {
+  border-color: var(--gold-line);
+}
+.fui .f-check > input:checked {
+  border-color: var(--text);
+  background: var(--text);
+}
+.fui .f-check > input:checked::after {
+  content: "";
+  width: 6px;
+  height: 11px;
+  margin-top: -2px;
+  border: solid var(--panel);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.fui .f-check > input:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 2px;
+}
+.fui .f-comp-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.fui .f-comp-list > li:last-child > .f-row {
+  border-bottom: 0;
+}
+.fui .f-comp-row {
+  flex-wrap: nowrap;
+}
+.fui .f-comp-row:hover {
+  background: var(--hover);
+}
+.fui .f-comp-row[aria-current="true"] {
+  margin: 0 -24px;
+  padding: 8px 24px;
+  background: var(--hover);
+  box-shadow: inset 3px 0 0 var(--c, var(--gold));
+}
+.fui .f-comp-row:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: -2px;
+}
+.fui .f-comp-aside {
+  flex: none;
+  width: 104px;
+  text-align: right;
+  white-space: nowrap;
+}
+.fui .f-comp-none {
+  max-width: 560px;
+  margin: 24px auto;
+  text-align: center;
+}
+.fui .f-comp-none h3 {
+  margin: 0 0 8px;
+  font: 600 var(--fs-xl) / 1.15 var(--font-title);
+  text-wrap: balance;
+  color: var(--strong);
+}
+.fui .f-comp-none p {
+  margin: 0;
+  color: var(--muted);
+  text-wrap: balance;
+}
+.fui .f-comp-none .f-hero-acts {
+  justify-content: center;
+  margin-top: 24px;
+}
+.fui .f-comp-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.fui .f-comp-head h3 {
+  margin: 0;
+  font: 600 var(--fs-xl) / 1.15 var(--font-title);
+  text-wrap: balance;
+  color: var(--strong);
+}
+.fui .f-comp-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(144px, 1fr));
+  gap: 16px;
+  margin: 24px 0;
+}
+.fui .f-comp-kv dd {
+  margin: 0;
+  color: var(--strong);
+}
+.fui .f-comp-detail .f-note {
+  margin-bottom: 16px;
+}
+.fui .f-comp-detail .f-note p {
+  margin: 4px 0 0;
+}
+.fui .f-comp-more {
+  margin-top: 16px;
+}
+.fui .f-comp-reading {
+  display: grid;
+  justify-items: start;
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.fui .f-comp-reading > .f-comp-detail {
+  position: static;
+  width: 100%;
+}
+@media (max-width: 1100px) {
+  .fui .f-comp-grid {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .fui .f-comp-aside {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .fui .f-comp-srch {
+    margin: 16px 0;
+  }
+  .fui .f-comp-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .fui .f-comp-head h3 {
+    font-size: var(--fs-lg);
+  }
+  .fui .f-comp-row[aria-current="true"] {
+    margin: 0 -16px;
+    padding: 8px 16px;
+  }
+}

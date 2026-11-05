@@ -136,6 +136,15 @@ const CreationScreen = NEW_UI
     )
   : null;
 
+// The new compendium replaces the codex in the same build.
+const CompendiumScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/compendium/ui/CompendiumScreen").then((m) => ({
+        default: m.CompendiumScreen,
+      }))
+    )
+  : null;
+
 // The new UI's frame, mounted only around the screens already rebuilt (same flag).
 const NewAppShell = NEW_UI
   ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
@@ -241,6 +250,9 @@ const router = createBrowserRouter(
               {CreationScreen && (
                 <Route path="/characters/new" element={<CreationScreen />} />
               )}
+              {CompendiumScreen && (
+                <Route path="/compendium" element={<CompendiumScreen />} />
+              )}
             </Route>
           </Route>
         )}
@@ -286,7 +298,9 @@ const router = createBrowserRouter(
             {/* Shareable invite link (#33) — auto-joins, then redirects to the hub. */}
             <Route path="/join/:code" element={<JoinCampaignRoute />} />
             {/* Compendium */}
-            <Route path="/compendium" element={<CompendiumPage />} />
+            {!CompendiumScreen && (
+              <Route path="/compendium" element={<CompendiumPage />} />
+            )}
             {/* Settings */}
             <Route path="/settings" element={<SettingsPage />} />
             {/* Admin — role-gated console, lazy + admin-only. */}

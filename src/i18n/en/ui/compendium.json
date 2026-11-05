@@ -7,6 +7,25 @@
     "emptyTitle": "Nothing on this leaf",
     "emptyHint": "No entries match your search and filters.",
     "emptyReset": "Clear search & filters",
-    "frontisHint": "Choose an entry from the index to read it on this page."
+    "frontisHint": "Choose an entry from the index to read it on this page.",
+    "screen": {
+      "subtitle": "Spells, items and feats of D&D 2024",
+      "clear": "Clear",
+      "results": "Results",
+      "results_one": "{{count}} result",
+      "results_other": "{{count}} results",
+      "detail": "Detail",
+      "effect": "What it does",
+      "castingTime": "Casting time",
+      "kind_spell": "Spell",
+      "kind_item": "Item",
+      "kind_feat": "Feat",
+      "noMatch": "Nothing matches «{{query}}»",
+      "noMatchFilters": "Nothing matches these filters",
+      "noMatchHint": "Try removing a filter or searching for part of the name.",
+      "clearFilters": "Remove the filters",
+      "pick": "Choose an entry to read it here.",
+      "doneFilters": "Show results"
+    }
   }
 }

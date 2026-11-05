@@ -41,7 +41,7 @@ export interface SpellPickRow {
 const BY_ID = new Map(allSpells.map((s) => [s.id, s]));
 
 /** What the spell does, as the sheet writes it: damage, healing, or a condition. */
-function effectOf(spell: SrdSpellData, locale: Locale): string | null {
+export function spellEffect(spell: SrdSpellData, locale: Locale): string | null {
   const t = i18n.getFixedT(locale);
   if (spell.damageDice) {
     return [
@@ -78,7 +78,7 @@ export function spellPickRows(ids: readonly string[], locale: Locale): SpellPick
         range: vm.range,
         concentration: vm.concentration,
         ritual: vm.ritual,
-        effect: effectOf(spell, locale),
+        effect: spellEffect(spell, locale),
         description: vm.description,
         searchText: vm.searchText,
         get searchDesc() {
