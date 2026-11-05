@@ -1153,6 +1153,30 @@ service cloud.firestore {
       allow write: if itemDocId(itemId) && (isAdmin() || itemDm(campId));
     }
 
+    // M19 (docs/architecture/2026-11-dm-state-and-roster.md): the creatures the DM
+    // keeps between fights. `roster` is what the party knows (members read, the DM
+    // writes); `dmRoster` is what only the DM knows (path-gated, like dmItems). Both
+    // are excluded from the member wildcard below. An entry is bounded: a plain id,
+    // at most 24 fields, notes up to 20000 characters.
+    function rosterEntry() {
+      let data = request.resource.data;
+      return data.keys().size() <= 24
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 20000))
+        && (!('name' in data) || (data.name is string && data.name.size() <= 200));
+    }
+    match /campaigns/{campId}/roster/{entryId} {
+      allow read: if isAdmin() || itemDm(campId)
+        || (isNotBlocked()
+            && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members);
+      allow create, update: if itemDocId(entryId) && rosterEntry() && (isAdmin() || itemDm(campId));
+      allow delete: if isAdmin() || itemDm(campId);
+    }
+    match /campaigns/{campId}/dmRoster/{entryId} {
+      allow read: if isAdmin() || itemDm(campId);
+      allow create, update: if itemDocId(entryId) && rosterEntry() && (isAdmin() || itemDm(campId));
+      allow delete: if isAdmin() || itemDm(campId);
+    }
+
     // Campaign subcollections (chronicle, sessions, the REVEALED `notes`) — members
     // of the parent only. (The DM "View Sheet" feature reads the member's real
     // character doc through the live campaign-membership read grant on
@@ -1380,7 +1404,8 @@ service cloud.firestore {
     match /campaigns/{campId}/{subcol}/{docId} {
       allow read, write: if subcol != 'dmNotes' && subcol != 'sessionLogs' && subcol != 'combat'
         && subcol != 'chest' && subcol != 'pickups' && subcol != 'chestLog'
-        && subcol != 'dmItems' && subcol != 'itemReveals' && subcol != 'effects' && isNotBlocked()
+        && subcol != 'dmItems' && subcol != 'itemReveals' && subcol != 'effects'
+        && subcol != 'roster' && subcol != 'dmRoster' && isNotBlocked()
         && request.auth.uid in get(/databases/$(database)/documents/campaigns/$(campId)).data.members;
     }
 
