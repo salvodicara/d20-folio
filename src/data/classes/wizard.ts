@@ -77,6 +77,7 @@ export const WIZARD_TABLE: SrdClassTable = {
     { label: "B", items: [], gold: 55 },
   ],
   spellcasting: { ability: "INT", preparedCaster: true },
+  longRestSpellChange: "any",
   subclassLevel: 3,
   subclasses: [
     {

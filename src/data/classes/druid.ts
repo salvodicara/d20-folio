@@ -72,6 +72,7 @@ export const DRUID_TABLE: SrdClassTable = {
     { label: "B", items: [], gold: 50 },
   ],
   spellcasting: { ability: "WIS", preparedCaster: true },
+  longRestSpellChange: "any",
   subclassLevel: 3,
   subclassSpellLevels: [3, 5, 7, 9],
   subclasses: [
