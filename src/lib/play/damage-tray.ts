@@ -62,6 +62,9 @@ export interface DamageTrayPlan {
   /** A willing target takes the spell without a save (Enlarge/Reduce): its row may
    *  say «Consenziente». */
   willing?: true;
+  /** The use leaves its state on a target that fails its save or is hit (Bane, Ray
+   *  of Frost): `name` is the use's own, for the row's outcome. */
+  leavesState?: { on: "failed-save" | "hit"; name: string };
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
    *  `optIn` when a hit-gated rider (Topple) offers it with the chip off; `save`
@@ -247,6 +250,11 @@ export function damageTrayPlan(
           },
         }
       : {}),
+    ...(standsOnSave
+      ? { leavesState: { on: "failed-save" as const, name: action.name } }
+      : attacks && spec.standingEffect !== undefined
+        ? { leavesState: { on: "hit" as const, name: action.name } }
+        : {}),
     ...(standsOnSave && action.spellId && getSpellById(action.spellId)?.saveIfUnwilling
       ? { willing: true as const }
       : {}),
@@ -742,6 +750,14 @@ export function trayOutcomeReceipts(
 export function toggleSaved(row: TrayRow, plan: DamageTrayPlan): TrayRow {
   const next = { ...row, saved: !row.saved, willing: false };
   return { ...next, multiplier: factsMultiplier(next, plan) };
+}
+
+/** Whether this row takes the use's state: it failed its save (or is willing), or it
+ *  was hit. */
+export function rowTakesState(plan: DamageTrayPlan, row: TrayRow): boolean {
+  if (!plan.leavesState) return false;
+  if (plan.leavesState.on === "failed-save") return !row.saved;
+  return row.attack === "hit" || row.attack === "critical";
 }
 
 /** Whether a target may be willing (an ally: a player character, or a creature on

@@ -41,6 +41,7 @@ import {
   toggleSaved,
   toggleWilling,
   offersWilling,
+  rowTakesState,
   knockOutOffer,
   type DamageTrayPlan,
   type TrayMultiplier,
@@ -314,6 +315,7 @@ function TrayTargetRow({
           hp={target.hp}
           conditions={conditions}
           knockOut={row.knockOut === true}
+          takesState={rowTakesState(plan, row)}
         />
       </div>
       {outcome?.kind === "threshold" && (
@@ -518,6 +520,7 @@ function Preview({
   hp,
   conditions,
   knockOut = false,
+  takesState = false,
 }: {
   plan: DamageTrayPlan;
   amount: number | null;
@@ -525,9 +528,15 @@ function Preview({
   conditions: string[];
   /** Knocked out: it stops at 1 Hit Point instead of 0. */
   knockOut?: boolean;
+  /** The row takes the use's state (a failed save, a willing ally, a hit). */
+  takesState?: boolean;
 }) {
   const { t } = useTranslation();
   const { effect } = plan;
+  const stateLabel =
+    takesState && plan.leavesState
+      ? t("combat.damageTray.stateLands", { name: plan.leavesState.name })
+      : null;
   // A revival: the Hit Points it comes back with, as a heal reads.
   if (effect === null && plan.revive && hp && hp.current === 0) {
     const back =
@@ -541,11 +550,13 @@ function Preview({
   }
   if (effect === null)
     return conditions.length > 0 ? null : (
-      <span className="f-tray-amt">{t("combat.damageTray.noEffect")}</span>
+      <span className="f-tray-amt">{stateLabel ?? t("combat.damageTray.noEffect")}</span>
     );
   if (amount === null) return <span className="f-tray-amt">—</span>;
   if (amount === 0 && conditions.length === 0)
-    return <span className="f-tray-amt">{t("combat.damageTray.noEffect")}</span>;
+    return (
+      <span className="f-tray-amt">{stateLabel ?? t("combat.damageTray.noEffect")}</span>
+    );
   const dropped = hp && effect !== "temp-hp" ? previewHp(effect, amount, hp) : null;
   const after =
     dropped && knockOut && dropped.current === 0 ? { ...dropped, current: 1 } : dropped;

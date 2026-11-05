@@ -10,6 +10,7 @@ import {
   damageTrayPlan,
   initialTrayRow,
   offersWilling,
+  rowTakesState,
   toggleSaved,
   toggleWilling,
 } from "@/lib/play/damage-tray";
@@ -51,5 +52,23 @@ describe("a willing target", () => {
     const willing = toggleWilling(saved, plan);
     expect(willing).toMatchObject({ willing: true, saved: false });
     expect(toggleSaved(willing, plan)).toMatchObject({ willing: false, saved: true });
+  });
+});
+
+describe("a row's outcome when the use leaves a state", () => {
+  it("names the state on a failed or willing row, not on a saved one", () => {
+    const plan = damageTrayPlan(enlarge(), ["pc-ally"], "pc-me");
+    if (!plan) throw new Error("no tray");
+    expect(plan.leavesState).toEqual({ on: "failed-save", name: "Enlarge/Reduce" });
+    const row = initialTrayRow(plan, "pc-ally");
+    expect(rowTakesState(plan, row)).toBe(true);
+    expect(rowTakesState(plan, toggleWilling(row, plan))).toBe(true);
+    expect(rowTakesState(plan, toggleSaved(row, plan))).toBe(false);
+  });
+
+  it("names it on a hit row, not on a miss", () => {
+    const plan = { leavesState: { on: "hit", name: "Ray of Frost" } } as never;
+    expect(rowTakesState(plan, { attack: "hit" } as never)).toBe(true);
+    expect(rowTakesState(plan, { attack: "miss" } as never)).toBe(false);
   });
 });

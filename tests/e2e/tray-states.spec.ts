@@ -113,6 +113,8 @@ for (const size of ["desktop", "mobile"] as const) {
     const willing = tray.getByRole("button", { name: "Bren è consenziente: nessun TS" });
     await willing.click();
     await expect(willing).toHaveAttribute("aria-pressed", "true");
+    // The row names the state it takes, not «Nessun effetto».
+    await expect(tray).toContainText("Sotto Ingrandire/Ridurre");
     await expect(
       tray.getByRole("button", { name: /Bren ha superato il TS/ })
     ).toBeDisabled();
