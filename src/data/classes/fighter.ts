@@ -269,7 +269,18 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
     // A failed save is rerolled with + Fighter level: a free use of the tracker,
     // paid and logged; the player enters the new roll (the app never rolls).
     mechanics: {
-      actions: [{ type: "free", costTracker: "fighter-indomitable" }],
+      actions: [
+        {
+          type: "free",
+          costTracker: "fighter-indomitable",
+          rollEffect: {
+            kind: "reroll",
+            rolls: ["save"],
+            whose: "self",
+            bonus: { classLevel: "fighter" },
+          },
+        },
+      ],
       tracker: {
         total: "1",
         recovery: "long-rest",

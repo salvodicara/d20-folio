@@ -268,6 +268,15 @@ export const BARD_FEATURES: SrdClassFeatureData[] = [
         {
           type: "reaction",
           trigger: "allyFailsSave",
+          // You or a creature within 30 ft rerolls a failed save against Charmed or
+          // Frightened, with Advantage.
+          rollEffect: {
+            kind: "reroll",
+            rolls: ["save"],
+            whose: "any",
+            advantage: true,
+            against: ["charmed", "frightened"],
+          },
         },
       ],
     },

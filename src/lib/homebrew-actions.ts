@@ -322,7 +322,11 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
         rolls: arraySchema(REACTABLE_ROLL),
         whose: literals(["self", "other", "any"]),
       },
-      { advantage: TRUE }
+      {
+        advantage: TRUE,
+        bonus: objectSchema({ classLevel: literals(ALL_CLASS_IDS) }),
+        against: arraySchema(CONDITION_ID_SCHEMA),
+      }
     ),
   ]),
   cureConditions: arraySchema(
