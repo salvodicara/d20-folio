@@ -37,6 +37,7 @@ export function ChoiceRowChips({
           options={row.options}
           picked={row.picked}
           spells
+          count={row.amount}
           locale={locale}
           onToggle={(id) => onToggle(row, id)}
         />

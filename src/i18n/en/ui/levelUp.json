@@ -180,7 +180,8 @@
       "gist": "In short",
       "readAll": "Read the full text",
       "invocation": "Eldritch Invocation",
-      "maneuver": "Maneuver"
+      "maneuver": "Maneuver",
+      "hoverHint": "Point at an option to read what it does."
     }
   }
 }

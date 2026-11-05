@@ -505,6 +505,7 @@ function Question({
         art={ROW_ART[row.key]}
         info={ROW_INFO[row.key]}
         chips={SKILL_ROWS.has(row.key)}
+        count={row.count}
         locale={locale}
         onToggle={onToggle}
       />
@@ -527,10 +528,14 @@ function KnownRow({
     <div className="f-lvl-known">
       <span className="f-lbl">{label}</span>
       <div>
+        {/* BG3 names every icon on hover; a tap names it on a phone. */}
         {known.map((s) => (
-          <span key={s.id} title={s.name}>
+          <button key={s.id} type="button" className="f-known" aria-label={s.name}>
             <SpellArt id={s.id} school={s.school} size="sm" />
-          </span>
+            <span className="f-slot-tip" aria-hidden="true">
+              <b>{s.name}</b>
+            </span>
+          </button>
         ))}
         {owed && (
           <span className="f-lvl-missing" aria-hidden="true">

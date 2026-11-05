@@ -176,6 +176,7 @@ function SpeciesChoicesDialog({
               picked={featId ? [featId] : []}
               art="feat"
               info="feat"
+              count={1}
               locale={locale}
               onToggle={setFeatId}
             />

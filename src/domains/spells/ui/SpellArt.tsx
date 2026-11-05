@@ -36,7 +36,7 @@ export function SpellArt({
 }: {
   id: string;
   school: SpellSchool;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "fill";
 }) {
   return (
     <span
