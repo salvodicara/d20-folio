@@ -541,6 +541,7 @@
     "targetStepHintOne": "Optional · tap the target",
     "targetStepHintMany": "Optional · up to {{count}}",
     "targetAllies": "Allies",
+    "targetParty": "The party",
     "targetEnemies": "Enemies",
     "targetMe": "Me ({{name}})",
     "targetSkipNone": "Skip · no target",

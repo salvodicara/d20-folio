@@ -47,6 +47,13 @@ const FIGHT: TargetRoster = {
     { id: "m-zomb", kind: "monster", side: "enemy", name: "Zombie" },
   ],
 };
+// Out of a fight in a campaign: the party, for the «Il gruppo» group.
+const PARTY: TargetRoster = {
+  selfId: "pc-me",
+  selfName: "Mirovel",
+  party: true,
+  rows: [{ id: "pc-bren", kind: "pc", side: "ally", name: "Bren" }],
+};
 const ids = (action: ResolvedAction, roster: TargetRoster) =>
   targetStepFor(action, roster)?.candidates.map((c) => c.id);
 
@@ -179,5 +186,22 @@ describe("targetStepFor — the dead", () => {
 
   it("Revivify offers the dead ally too", () => {
     expect(ids(spellAction("revivify"), WAKE)).toContain("pc-bren");
+  });
+});
+
+describe("out of a fight: the party («Il gruppo»)", () => {
+  it("Mage Armor offers me and Bren, as the party", () => {
+    const step = targetStepFor(spellAction("mage-armor"), PARTY);
+    expect(step?.party).toBe(true);
+    expect(step?.candidates.map((c) => c.id)).toEqual(["pc-me", "pc-bren"]);
+  });
+
+  it("a spell that leaves nothing standing does not ask (Fireball, Cure Wounds)", () => {
+    expect(targetStepFor(spellAction("fireball"), PARTY)).toBeNull();
+    expect(targetStepFor(spellAction("cure-wounds"), PARTY)).toBeNull();
+  });
+
+  it("in a fight the groups stay allies and enemies", () => {
+    expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });
 });

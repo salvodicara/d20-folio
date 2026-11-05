@@ -112,7 +112,13 @@ function TargetPickerContent({
         {groups.map((group) => (
           <section key={group.side} className="cl-group">
             <h3 className="cl-group-label">
-              {t(group.side === "ally" ? "combat.targetAllies" : "combat.targetEnemies")}
+              {t(
+                step.party
+                  ? "combat.targetParty"
+                  : group.side === "ally"
+                    ? "combat.targetAllies"
+                    : "combat.targetEnemies"
+              )}
             </h3>
             <div className="cl-opts">{group.rows.map(row)}</div>
           </section>

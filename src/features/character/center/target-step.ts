@@ -33,6 +33,9 @@ export interface TargetRoster {
   selfName: string;
   /** The live encounter's visible rows; empty when no encounter is running. */
   rows: ReadonlyArray<TargetRosterRow>;
+  /** Out of a fight in a campaign, the rows are the party («Il gruppo»): only a state
+   *  the use leaves on its recipient reaches them (on the campaign clock). */
+  party?: boolean;
 }
 
 export interface TargetCandidate {
@@ -46,6 +49,8 @@ export interface TargetStep {
   /** How many may be picked: 1 = a tap commits; more = tick then confirm. */
   max: number;
   candidates: TargetCandidate[];
+  /** Out of a fight: the candidates are the party, one group («Il gruppo»). */
+  party?: true;
 }
 
 /** A standing state the cast leaves on its chosen recipient (Mage Armor, Bless). */
@@ -58,6 +63,8 @@ export function targetStepFor(
   action: ResolvedAction,
   roster: TargetRoster
 ): TargetStep | null {
+  // Out of a fight, the party is offered only for a state left on its recipient.
+  if (roster.party && !recipientStateKey(action)) return null;
   // Help names a creature with nothing to resolve: the pick only tags the log line.
   if (!shouldResolveCombatAction(action) && !action.namesTarget) return null;
   const spec = combatResolutionSpec(action);
@@ -96,6 +103,7 @@ export function targetStepFor(
   return {
     max: Math.max(1, Math.min(spec.targetCap, candidates.length)),
     candidates,
+    ...(roster.party ? { party: true as const } : {}),
   };
 }
 
