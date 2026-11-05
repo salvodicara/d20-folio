@@ -12,6 +12,7 @@ import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_FEATS } from "@/data/feats";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { MONSTERS } from "@/data/monsters";
+import { SRD_RACES } from "@/data/races";
 import { spells } from "@/data/spells";
 
 const ROOT = resolve(__dirname, "../../public/assets/art");
@@ -27,6 +28,7 @@ const CATALOGUE: Record<string, ReadonlySet<string>> = {
   equipment: new Set(SRD_EQUIPMENT.map((e) => e.id)),
   monster: new Set(MONSTERS.map((m) => m.id)),
   feature: new Set(classFeatures.map((f) => f.id)),
+  species: new Set(SRD_RACES.map((r) => r.id)),
 };
 
 describe("painted icons", () => {
