@@ -136,7 +136,10 @@ export function surveySpeciesPicks(
     }
     const character = parsed.character as unknown as { race: string };
     const session = play?.ok ? play.session : {};
-    const choices = engine.unresolvedBuildChoices(character, session);
+    // A feat's answer is not a species pick: survey-missing-feat-abilities counts it.
+    const choices = engine
+      .unresolvedBuildChoices(character, session)
+      .filter((c) => c.kind !== "feat-ability");
     const species = character.race || "(none)";
     const row = (survey.bySpecies[species] ??= { characters: 0, missing: {} });
     survey.characters += 1;
