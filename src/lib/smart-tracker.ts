@@ -5215,10 +5215,12 @@ function spellSaveDcWithParts(
  * `summary.damage`/`damageType`(`/damageTypes`) a damage spell uses — so the
  * existing chip + facts recipe renders "2d10 Fire · DC N DEX" with no view code.
  */
-/** A condition that can end early names its catalogue source, so the fight can
- *  keep it as a sourced effect (`conditionEndsOf`). */
+/** A condition that can end early, or that lasts while its source does (Web), names
+ *  its catalogue source, so the fight keeps it as a sourced effect (`conditionEndsOf`)
+ *  and ends it with the source (its caster's Concentration ending revokes it). */
 function stampConditionSource(summary: RawActionSummary, activity: Activity): void {
-  if (!summary.conditionApplication?.ends?.length) return;
+  const application = summary.conditionApplication;
+  if (!application?.ends?.length && application?.lifetime?.kind !== "source") return;
   const source = activity.source;
   if (source.kind === "spell")
     summary.conditionSource = { kind: "spell", id: source.spellId };

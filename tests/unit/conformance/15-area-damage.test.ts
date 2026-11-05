@@ -443,6 +443,11 @@ describe("conformance · 15. multi-target and area damage", () => {
       expect(intake.OBJECT_DEFENSES).toMatchObject({
         immunities: new Set(["poison", "psychic"]),
       });
+      // Engine-ready, needs a caller: the case works once the tray can name an
+      // object in the area as a target, resolved by OBJECT_DEFENSES.
+      const id = "@/lib/play/object-targets";
+      const tray = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(tray.objectTrayTarget).toBeTypeOf("function");
     }
   );
 });

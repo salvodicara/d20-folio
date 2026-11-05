@@ -13,6 +13,7 @@ import {
   characterConditionImmunities,
   effectiveMaxHp,
 } from "@/lib/aggregate-character";
+import { storedExhaustionFor } from "@/lib/play/exhaustion";
 import { slotUsageKey } from "@/lib/cast-options";
 import { applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
 import { deathSaveLimits, isCharacterAlive } from "@/lib/character-status";
@@ -340,7 +341,11 @@ export function setExhaustion(doc: CharacterDoc, level: number): SessionState | 
   if (!Number.isFinite(level)) return null;
   // Never past the table's maximum (RAW 6, where the creature dies).
   const max = doc.session.tableRules?.exhaustion.maxLevel ?? 6;
-  const target = Math.max(0, Math.min(max, Math.round(level)));
+  // The level asked for is the one the sheet shows, sources' levels included.
+  const target = storedExhaustionFor(
+    doc.session,
+    Math.max(0, Math.min(max, Math.round(level)))
+  );
   if (doc.session.exhaustion === target) return null;
   // An immune creature gains no level; it can still lose the ones it has.
   if (target > doc.session.exhaustion && isImmuneTo(doc, "exhaustion")) return null;

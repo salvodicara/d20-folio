@@ -1,6 +1,7 @@
 /**
  * A condition that can end early lands in the fight as a sourced effect, so the
- * fight can end it (edge-case M3): Abjure Foes' Frightened.
+ * fight can end it (edge-case M3): Abjure Foes' Frightened, and one that lasts while
+ * its spell does (Web's Restrained).
  */
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
@@ -50,6 +51,19 @@ describe("sourced conditions from the tray", () => {
       kind: "feature",
       id: "paladin-abjure-foes",
     });
+  });
+
+  it("a condition that lasts while the spell does names its spell (Web)", () => {
+    // Web: Restrained for as long as the spell lasts, so the fight ends it with the
+    // spell (its caster's Concentration ending revokes the spell's effects).
+    const wizard = makeCharacterDoc({
+      classId: "wizard",
+      level: 5,
+      spells: [{ srdId: "web", prepared: true }],
+      spellSlots: [{ level: 2, total: 2 }],
+    });
+    const web = resolveActions(wizard, "combat").find((a) => a.spellId === "web");
+    expect(web?.summary.conditionSource).toEqual({ kind: "spell", id: "web" });
   });
 
   it("its Frightened is written to the fight on the monster", async () => {

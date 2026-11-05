@@ -268,6 +268,10 @@ describe("conformance · 13. items", () => {
           charisma: 16,
         })
       ).toBe(15);
+      // Engine-ready, needs a caller: the case works once a sentient item's card
+      // offers the conflict save (its catalogue stat block, M20 order step 2).
+      const view = await future("@/lib/views/sentient-item-view");
+      expect(view.sentientConflictOffer).toBeTypeOf("function");
     }
   );
 
@@ -288,6 +292,10 @@ describe("conformance · 13. items", () => {
       ) => number;
       expect(damageToItem("cloak-of-protection", 10)).toBe(5);
       expect(damageToItem("potion-of-healing", 10)).toBe(10);
+      // Engine-ready, needs a caller: the case works once the tray can name an item
+      // as a target (as for objects in the area).
+      const tray = await future("@/lib/play/object-targets");
+      expect(tray.objectTrayTarget).toBeTypeOf("function");
     }
   );
 

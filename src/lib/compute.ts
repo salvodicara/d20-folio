@@ -6,6 +6,8 @@
  */
 
 import { RAW_TABLE_RULES, type TableRules } from "@/lib/table-rules";
+import { effectiveExhaustion } from "@/lib/play/exhaustion";
+import type { SessionState } from "@/types/character";
 import type {
   AbilityCode,
   ClassId,
@@ -69,10 +71,11 @@ export type Exhaustion = number | { readonly level: number; readonly rules: Tabl
 export function exhaustionOf(session: {
   exhaustion: number;
   tableRules?: TableRules;
+  encounterEffects?: SessionState["encounterEffects"];
 }): Exhaustion {
-  return session.tableRules
-    ? { level: session.exhaustion, rules: session.tableRules }
-    : session.exhaustion;
+  // The sheet's own level plus what sources give (Waves of Exhaustion).
+  const level = effectiveExhaustion(session);
+  return session.tableRules ? { level, rules: session.tableRules } : level;
 }
 
 export function exhaustionParts(exhaustion: Exhaustion): {

@@ -28,6 +28,8 @@ import {
   failedSaveExhaustion,
   type SaveTally,
 } from "@/lib/condition-ends";
+import { vitalExhaustion } from "@/lib/character-vitals";
+import { failedRepeatSaveEffects } from "@/lib/play/repeat-saves";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { Button } from "@/ui";
@@ -161,7 +163,7 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
     if (levels === 0) return;
     const sheet = useCharacterStore.getState();
     const own = sheet.character && sheet.character.id === save.characterId;
-    if (!own) {
+    if (!own || !sheet.character) {
       useToastStore.getState().showToast({
         message: t("combat.repeatSaveExhaustionMonster", {
           target: save.targetName,
@@ -171,8 +173,10 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
       });
       return;
     }
-    const before = sheet.character?.session.exhaustion ?? 0;
-    sheet.setExhaustion(before + levels);
+    const failure = failedRepeatSaveEffects(sheet.character, save);
+    if (!failure) return;
+    const before = vitalExhaustion(sheet.character.session);
+    sheet.setExhaustion(failure.exhaustion);
     useToastStore.getState().showToast({
       message: t("combat.repeatSaveExhaustion", {
         target: save.targetName,

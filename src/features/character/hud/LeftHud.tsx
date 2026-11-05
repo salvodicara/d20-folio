@@ -255,7 +255,7 @@ export function LeftHud() {
   const { senses, speeds, airAndWaterBreathing } = deriveSensesAndSpeeds(
     fullAggregate,
     walkingSpeedFt,
-    characterDoc?.session.exhaustion ?? 0
+    characterDoc ? vitalExhaustion(characterDoc.session) : 0
   );
   // Jump distances (SRD 5.2.1 Long / High Jump, running start) with their parts:
   // the Strength score (or Dexterity through Second-Story Work), and the separate
