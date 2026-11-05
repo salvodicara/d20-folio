@@ -175,7 +175,7 @@ peer-damage.ts`; plus the `combat/spends` append when the ledger flag is on), so
   lives in the private `content-pack/` (a gitignored symlink to the separate
   `d20-folio-content` repo; `.gitignore`).
 - Code reads private content only through `@pack` (and the lazy sub-entries `@pack/monsters`,
-  `@pack/monster-art`, `@pack/item-art`, `@pack/i18n-en-prose`). One function decides what the
+  `@pack/monster-art`, `@pack/item-art`, `@pack/icon-art`, `@pack/i18n-en-prose`). One function decides what the
   alias means, shared by Vite, both Vitest configs and the Node script loader
   (`scripts/content-pack-mode.ts` → `packAliases()`):
   - `content-pack/index.ts` present and `VITE_CONTENT_PACK` unset: the pack is bundled

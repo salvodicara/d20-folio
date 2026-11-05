@@ -7,6 +7,7 @@ import * as composedPack from "@pack";
 import { packMonsters } from "@pack/monsters";
 import { packMonsterArt } from "@pack/monster-art";
 import { packItemArt } from "@pack/item-art";
+import { packIconArt } from "@pack/icon-art";
 import { packSrdEnProse } from "@pack/i18n-en-prose";
 import type { PackSource } from "@/data/pack-wire";
 import { LOCALES } from "@/lib/locale";
@@ -23,7 +24,7 @@ export async function collectPackSource(): Promise<PackSource> {
     }
   }
   return {
-    exports: { ...composedPack, packMonsters, packMonsterArt, packItemArt },
+    exports: { ...composedPack, packMonsters, packMonsterArt, packItemArt, packIconArt },
     enProse: packSrdEnProse,
     srd,
     lazySrd,
