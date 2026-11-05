@@ -1893,20 +1893,11 @@ The pieces and their ONE home (`src/styles/folio.css`; the metal tokens in `src/
   registers wear it (Constitution §4.16):
   the framed realm masthead (`.page-head.framed::before`), the gilt-framed hero band
   (`.folio-panel.gilt-frame::after` — cockpit identity), and dialog HEAD BANDS (`.modal-head::after`, scaled to 32px — the bound-cover ruling, owner 2026-08-01: the fittings frame the head like the page mastheads frame theirs; the modal body stays clean and rounds at its foot, `0 0 radius-lg radius-lg`).
-  The owner-approved current+B+BG3 refinement (2026-08-04) preserves the silhouette and registration
-  but strikes it with a restrained warm gold→bronze ramp (never selection silver), so the existing
-  pennacchio gains material depth without becoming a new ornament. Mechanism: the binding-corner spandrel silhouette (CC0-derived,
-  `public/assets/ornaments/corner-*.svg`) rendered as four CSS mask layers painted with the
-  shared warm gold→bronze ramp, on an overlay pseudo at `inset: -1px` — the tile origin
-  is the fitting's outer-rule outer edge, so its rules lie pixel-coincident on the host's
-  1px border; hosts keep SQUARE corners beneath the fitting (a rounded line would curve out
-  from under it). One definition; every hero frame (framed mastheads, gilt bands, dialogs)
-  consumes it.
-- **Hero-seat weave (owner-approved 2026-08-04).** Top-level framed mastheads and dialog head bands
-  seat the already-ratified CC0 centre-loop ricalco on the lower frame rule: 72×25px for mastheads,
-  56×20px for dialogs. This is B's open negative space translated through BG3's quiet line grammar,
-  not a second separator. The cockpit identity band keeps only the shared binding corners because
-  its dense live-stat deck already occupies the seat's visual field. Ordinary sections remain nodeless.
+  **Superseded by «Lume» (owner, 2026-11-03): no corners, no filigree anywhere.** The binding-corner
+  fittings (`public/assets/ornaments/corner-*.svg`, now deleted) and the hero-seat weave are gone
+  from every register, the classic sheet included: a framed masthead, gilt band or dialog head keeps
+  its gilt border and glow only. Pinned by `tests/unit/ornament-vocabulary.guard.test.ts` and the
+  `ornament` design rule (`tests/e2e/ui-rules/checks.browser.js`).
 
 ### Surface hierarchy (never skip the ramp)
 
@@ -2823,9 +2814,7 @@ Dividers and frames are never decorated — the LINE ITSELF performs:
 - A divider is a hairline that SWELLS toward the centre and WEAVES — two strands crossing in an
   interlaced knot (measured centre motif: strand width ~3× the hairline, total motif ≤120px wide,
   the strands taper to points) — then dies back to a hairline and TAPERS at both ends.
-- The hero-seat form spends that same traced weave once on the lower rule of a framed realm
-  masthead (72×25px) or dialog head (56×20px). It never repeats on the cockpit identity band or
-  ordinary section dividers; density earns silence.
+- The hero-seat weave is retired («Lume», owner 2026-11-03): no knot on any head, dialog or rubric.
 - Terminals may CURL into a small hook/finial (the measured capsule-end flourish) — one curl,
   ≤12px, never a compound flourish.
 - The ONLY detached ornament in the language: the ceremony register's four corner THORNS —

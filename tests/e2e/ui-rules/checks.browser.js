@@ -538,6 +538,16 @@ window.__audit = (opts) => {
       }
     }
   }
+  // ornament: «Lume» (owner, 2026-11-03) — no corner fitting and no filigree on
+  // any surface. Any painted mask or background drawn from an ornament asset fails.
+  for (const e of document.querySelectorAll("body *")) {
+    for (const pe of [null, "::before", "::after"]) {
+      const cs = getComputedStyle(e, pe);
+      const paint = [cs.maskImage, cs.webkitMaskImage, cs.backgroundImage].join(" ");
+      if (/ornaments\/|corner-(tl|tr|bl|br)\.svg|filigree/i.test(paint))
+        add("ornament", label(e) + (pe ?? ""));
+    }
+  }
   // crushed: text squeezed into a column narrower than one character (a grid cell
   // collapsed to 0 by a neighbour), so its letters stack one per line. `vis`
   // skips a 0-wide box, which is exactly how this hid, so it is checked apart.
