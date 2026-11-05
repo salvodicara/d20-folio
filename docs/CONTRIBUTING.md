@@ -226,6 +226,13 @@ through the root-anchored `@tests/*` / `@scripts/*` aliases (never physical
 dev server allows the pack's real directory (`fsAllowRoots()`,
 `scripts/content-pack-mode.ts`).
 
+**An app PR that needs a pack PR (lockstep).** Name the pack PR in the app PR's
+description with a line `Pack: #<number>`, and merge the pair with
+`scripts/lockstep-merge.sh <app PR>`: it waits for the app's checks, merges the pack
+first (a pack merge triggers no app Verify), dispatches Verify on the app branch, checks
+that it composed a pack containing that merge, and only then merges the app. Merging the
+app first lets main's Verify compose the old pack and go red.
+
 ## Reading order (especially for AI agents)
 
 1. **`CLAUDE.md` / `AGENTS.md`** — the short shared router, authority model, invariants, and tool
