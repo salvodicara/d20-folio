@@ -66,6 +66,17 @@
   --hero-end: #0f0b08;
   --hover: #ffffff08;
   --divider: #ffffff10;
+  --ok-bg: #2f5a2a;
+  --ok-text: #d9f5cc;
+  /* spell schools (the codex's enamel set), so a spell list reads by school at a glance */
+  --school-abjuration: #6f9ed6;
+  --school-conjuration: #dcb84e;
+  --school-divination: #c9cfe0;
+  --school-enchantment: #e079b0;
+  --school-evocation: #e0604c;
+  --school-illusion: #a884e0;
+  --school-necromancy: #7fb069;
+  --school-transmutation: #c07f52;
   --coin-gp: #e9c55a;
   --coin-sp: #c9ccd2;
   --coin-cp: #c47a45;
@@ -4174,34 +4185,558 @@
   }
 }
 
-/* ---------- level up (prototype level-1/2/3): before → after, and spells by level ---------- */
-.fui .f-lvl-nums {
+/* ---------- painted art: a catalogue icon, else its glyph (owner 2026-11-05) ---------- */
+.fui .f-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+.fui .f-spellart {
+  --sz: 64px;
   display: grid;
-  margin: 0;
+  place-items: center;
+  flex: none;
+  width: var(--sz);
+  height: var(--sz);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--sc) 55%, var(--shade));
+  border-radius: var(--r-sm);
+  background: radial-gradient(
+    circle at 50% 40%,
+    color-mix(in srgb, var(--sc) 28%, var(--panel-2)),
+    var(--bg) 72%
+  );
+  color: var(--sc);
 }
-.fui .f-lvl-nums > div {
+.fui .f-spellart[data-size="sm"] {
+  --sz: 34px;
+}
+.fui .f-spellart[data-size="lg"] {
+  --sz: 88px;
+}
+.fui .f-spellart-glyph > svg {
+  width: calc(var(--sz) * 0.62);
+  height: calc(var(--sz) * 0.62);
+}
+.fui .f-crest-art {
+  --sz: 112px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--sz);
+  height: var(--sz);
+  overflow: hidden;
+  border: 2px solid var(--gold-line);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--raised), var(--bg) 70%);
+  box-shadow:
+    0 0 0 6px var(--shade-80),
+    0 0 40px color-mix(in srgb, var(--gold) 20%, transparent);
+  color: var(--gold-hi);
+}
+.fui .f-crest-art[data-size="sm"] {
+  --sz: 52px;
+  box-shadow: none;
+}
+.fui .f-crest-glyph > svg {
+  width: calc(var(--sz) * 0.55);
+  height: calc(var(--sz) * 0.55);
+}
+
+/* ---------- level up: the moment (owner's pick 2026-11-05, mockup A «Momento BG3») ---------- */
+.fui .f-lvl {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 320px;
+  gap: 24px;
+  align-items: start;
+}
+.fui .f-lvl-rail {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 4px;
+}
+.fui .f-lvl-step {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: flex-start;
   gap: 12px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line-soft);
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  color: var(--strong);
+  text-decoration: none;
 }
-.fui .f-lvl-nums dd {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin: 0;
+.fui .f-lvl-step:hover {
+  border-color: var(--line);
+  background: var(--hover);
+}
+.fui .f-lvl-step[data-state="owed"] {
+  border-color: var(--danger-line);
+  background: color-mix(in srgb, var(--danger-bg) 60%, transparent);
+}
+.fui .f-lvl-step small {
+  display: block;
+  font-size: var(--fs-sm);
   color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  text-wrap: balance;
 }
-.fui .f-lvl-nums dd b {
-  font: 600 var(--fs-lg) var(--font-title);
+.fui .f-lvl-mark {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font: 700 13px/1 var(--font-title);
+  background: var(--panel-2);
+  color: var(--muted);
+}
+.fui .f-lvl-mark[data-state="done"] {
+  background: var(--ok-bg);
+  color: var(--ok-text);
+}
+.fui .f-lvl-mark[data-state="owed"] {
+  background: var(--danger-line);
   color: var(--white);
 }
+.fui .f-lvl-main {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.fui .f-lvl-hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.fui .f-lvl-hero > div {
+  flex: 1;
+  min-width: 0;
+}
+.fui .f-lvl-hero h1 {
+  margin: 0;
+  font: 700 44px/1.05 var(--font-title);
+  color: var(--strong);
+  text-shadow: 0 2px 12px var(--shade);
+}
+.fui .f-lvl-from {
+  color: var(--muted);
+}
 .fui .f-lvl-arrow {
-  color: var(--faint);
+  margin: 0 8px;
+  color: var(--muted);
+  font-weight: 400;
+}
+.fui .f-lvl-hero p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: var(--fs-lg);
+}
+.fui .f-lvl-gains {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.fui .f-lvl-gains > li {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: linear-gradient(180deg, var(--panel-2), var(--panel));
+  text-align: center;
+}
+.fui .f-lvl-gains .f-lbl {
+  margin: 0;
+  text-wrap: balance;
+}
+.fui .f-lvl-ic {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--gold);
+}
+.fui .f-lvl-ic > svg {
+  width: 26px;
+  height: 26px;
+}
+.fui .f-lvl-ic[data-tone="hp"] {
+  color: var(--hp-r);
+}
+.fui .f-lvl-ic-v {
+  font: 700 var(--fs-lg) var(--font-title);
+  color: var(--gold-hi);
+}
+.fui .f-lvl-pip {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--temp);
+  box-shadow: 0 0 10px var(--temp);
+}
+.fui .f-lvl-gain-v {
+  display: flex;
+  align-items: baseline;
+  white-space: nowrap;
+  font: 700 26px/1.1 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-lvl-gain-v s {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: var(--fs-lg);
+}
+.fui .f-lvl-gain-v .f-lvl-arrow {
+  margin: 0 6px;
+  font-size: var(--fs-md);
+}
+.fui .f-lvl-new {
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  background: var(--ok-bg);
+  color: var(--ok-text);
+  font: 600 var(--fs-xs, 12px) var(--font-title);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.fui .f-lvl-sec {
+  display: grid;
+  gap: 12px;
+  padding: 16px 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: var(--panel);
+  scroll-margin-top: 24px;
+}
+.fui .f-lvl-sec h2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  font: 700 var(--fs-lg) / 1.2 var(--font-title);
+  color: var(--strong);
+  text-wrap: balance;
+}
+.fui .f-lvl-sec h2 > svg {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  color: var(--gold);
+}
+.fui .f-lvl-count {
+  margin-left: auto;
+  font: 700 var(--fs-md) var(--font-title);
+  color: var(--danger);
+}
+.fui .f-lvl-count[data-state="done"] {
+  color: var(--ok-text);
+}
+.fui .f-lvl-hp-n {
+  font: 700 var(--fs-xl) var(--font-title);
+}
+.fui .f-lvl-roll {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fui .f-lvl-tools {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-lvl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 12px;
+}
+.fui .f-lvl-opt {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  padding: 12px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--sunk);
+  color: var(--strong);
+  font: 600 var(--fs-sm) / 1.2 var(--font-text);
+  text-align: center;
+  cursor: pointer;
+}
+.fui .f-lvl-opt:hover {
+  border-color: var(--gold-line);
+}
+.fui .f-lvl-opt:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 2px;
+}
+.fui .f-lvl-opt[aria-pressed="true"] {
+  border-color: var(--gold-hi);
+  background: var(--raised);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--gold-hi) 35%, transparent),
+    0 0 24px color-mix(in srgb, var(--gold-hi) 14%, transparent);
+}
+.fui .f-lvl-opt-art {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--gold);
+}
+.fui .f-lvl-opt-art > svg {
+  width: 38px;
+  height: 38px;
+}
+.fui .f-lvl-opt-lv {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  min-width: 20px;
+  padding: 0 4px;
+  border-radius: var(--r-frame);
+  background: var(--shade-80);
+  color: var(--gold-hi);
+  font: 700 12px/20px var(--font-title);
+}
+.fui .f-lvl-tick {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--gold-hi);
+  color: var(--raised);
+  font: 800 13px/1 var(--font-title);
+}
+.fui .f-lvl-opt-n {
+  text-wrap: balance;
+}
+.fui .f-lvl-inspect {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r);
+  background: linear-gradient(180deg, var(--panel-2), var(--sunk));
+}
+.fui .f-lvl-inspect > div {
+  min-width: 0;
+}
+.fui .f-lvl-inspect h3 {
+  margin: 0;
+  font: 700 var(--fs-xl) / 1.15 var(--font-title);
+  color: var(--strong);
+  text-wrap: balance;
+}
+.fui .f-lvl-effect {
+  margin: 8px 0;
+  font: 700 var(--fs-lg) var(--font-title);
+  color: var(--gold-hi);
+}
+.fui .f-lvl-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+.fui .f-lvl-facts > span {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.fui .f-lvl-sum {
+  position: sticky;
+  top: 24px;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--panel-2), var(--sunk));
+}
+.fui .f-lvl-sum-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fui .f-lvl-sum-h b {
+  display: block;
+  font: 700 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-lvl-sum-h span {
+  color: var(--muted);
+}
+.fui .f-lvl-abil {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin: 0;
+  text-align: center;
+}
+.fui .f-lvl-abil > div {
+  padding: 8px 0;
+  border-radius: var(--r-sm);
+  background: var(--bg);
+}
+.fui .f-lvl-abil dt {
+  font: 600 11px var(--font-title);
+  color: var(--muted);
+}
+.fui .f-lvl-abil dd {
+  margin: 0;
+  font: 700 var(--fs-lg) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-lvl-badges {
+  display: flex;
+  gap: 8px;
+}
+.fui .f-lvl-badges > span {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.fui .f-lvl-badges b {
+  font: 700 var(--fs-xl) var(--font-title);
+  color: var(--strong);
+}
+.fui .f-lvl-badges svg {
+  width: 20px;
+  height: 20px;
+  color: var(--hp-r);
+}
+.fui .f-lvl-known {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-lvl-known > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fui .f-lvl-missing {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px dashed var(--danger);
+  border-radius: var(--r-sm);
+  color: var(--danger);
+  font: 700 var(--fs-md) var(--font-title);
+}
+.fui .f-lvl-owed {
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--danger-line);
+  border-radius: var(--r-pill);
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  font: 700 var(--fs-sm) var(--font-title);
+  text-align: center;
+}
+.fui .f-lvl-bar {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .fui .f-lvl {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+  .fui .f-lvl-rail {
+    display: none;
+  }
+}
+@media (max-width: 760px) {
+  .fui .f-lvl {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+    padding-bottom: 88px;
+  }
+  .fui .f-lvl-sum {
+    display: none;
+  }
+  .fui .f-lvl-hero {
+    gap: 16px;
+  }
+  .fui .f-lvl-gain-v {
+    font-size: var(--fs-xl);
+  }
+  .fui .f-lvl-hero .f-crest-art {
+    --sz: 72px;
+  }
+  .fui .f-lvl-hero h1 {
+    font-size: var(--fs-xl);
+  }
+  .fui .f-lvl-hero p {
+    font-size: var(--fs-md);
+  }
+  .fui .f-lvl-gains {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .fui .f-lvl-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .fui .f-lvl-sec {
+    padding: 16px;
+  }
+  .fui .f-lvl-inspect {
+    flex-direction: column;
+  }
+  .fui .f-lvl-bar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--panel) 94%, transparent);
+    backdrop-filter: blur(6px);
+  }
+  .fui .f-lvl-bar > span {
+    flex: 1;
+    min-width: 0;
+  }
+  .fui .f-lvl-bar b {
+    display: block;
+    font: 700 var(--fs-md) var(--font-title);
+  }
+  .fui .f-lvl-bar small {
+    color: var(--danger);
+    font-size: var(--fs-sm);
+  }
 }
 
 /* ---------- spells to pick: rows that say what each spell is (D&D Beyond's list) ---------- */

@@ -208,6 +208,9 @@ export default defineConfig({
           // Item plates follow the bestiary rule: only an opened leaf pays for
           // its illustration; the visited object then remains available offline.
           "**/assets/items/**/*.webp",
+          // The painted icons (spells, classes, items, feats, monsters): ~1100 small
+          // WebP files. Each is cached the first time a screen shows it, never at install.
+          "**/assets/art/**",
           // One language's text and the bestiary (see `chunkFileNames`): cached on
           // first use by the "lazy-data" route, so an Italian player's first visit
           // caches the Italian shards it loads at startup.
@@ -240,6 +243,20 @@ export default defineConfig({
               cacheName: "monster-art-cache",
               expiration: {
                 maxEntries: 600,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+                purgeOnQuotaError: true,
+              },
+            },
+          },
+          {
+            // The painted icons: cache-first on first view, capped so a long session
+            // through the compendium never grows the cache past a few hundred files.
+            urlPattern: /\/assets\/art\/.*\.webp$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "icon-art-cache",
+              expiration: {
+                maxEntries: 400,
                 maxAgeSeconds: 60 * 60 * 24 * 365,
                 purgeOnQuotaError: true,
               },

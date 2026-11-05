@@ -167,7 +167,16 @@
         "preparedSpells": "Spells you can prepare"
       },
       "classLine": "Class: {{class}}",
-      "cantripForget": "Swap a cantrip you know (optional)"
+      "cantripForget": "Swap a cantrip you know (optional)",
+      "steps": "Steps",
+      "summary": "Your character at the new level",
+      "optional": "optional",
+      "optionalHint": "Optional: leave it as it is if you like your choices.",
+      "owed_one": "{{count}} choice still to make",
+      "owed_other": "{{count}} choices still to make",
+      "new": "New",
+      "cantripsKnown": "Cantrips · {{count}}",
+      "spellsKnown": "Spells · {{count}}"
     }
   }
 }

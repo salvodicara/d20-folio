@@ -714,6 +714,16 @@ describe("bundle budget — eager entry + precache ceilings (P3)", () => {
     expect(twice, "a file is listed twice in the precache manifest").toEqual([]);
   });
 
+  // 2026-11-05: the painted icons (~1100 files) stay out of the install and update;
+  // the SW caches each one the first time a screen shows it.
+  it("keeps the painted icons out of the precache, cached on first use", () => {
+    if (!haveDist) return;
+    const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
+    const urls = [...sw.matchAll(/\burl:\s*"([^"]+)"/g)].map((m) => m[1] ?? "");
+    expect(urls.filter((u) => u.includes("assets/art/"))).toEqual([]);
+    expect(sw, "the painted icons need a runtime-cache route").toMatch(/icon-art-cache/);
+  });
+
   it("keeps the bug-report screenshot library out of the precache, cached on first use", () => {
     if (!haveDist) return;
     const sw = readFileSync(resolve(DIST, "sw.js"), "utf8");
