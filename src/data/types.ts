@@ -2076,6 +2076,12 @@ export interface SrdClassFeatureData {
   subclass?: string;
   /** Level at which this feature is gained */
   level: number;
+  /**
+   * A change of prepared spells the feature allows after a rest, on top of the
+   * class's {@link SrdClassTable.longRestSpellChange} (Memorize Spell: one spell
+   * after a Short Rest).
+   */
+  restSpellChange?: { rest: "short" | "long"; count: "one" | "any" };
   /** The feature transforms the character (Wild Shape): how the form works. */
   formRule?: SelfFormRule;
   /** States the feature's actions put on a TARGET (Stunning Strike's Speed halved):

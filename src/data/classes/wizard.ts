@@ -175,6 +175,9 @@ export const WIZARD_FEATURES: SrdClassFeatureData[] = [
     id: "wizard-memorize-spell",
     class: "wizard",
     level: 5,
+    // After a Short Rest, one prepared level 1+ Wizard spell can be swapped for
+    // another from the spellbook.
+    restSpellChange: { rest: "short", count: "one" },
     source: "SRD",
   },
   {
