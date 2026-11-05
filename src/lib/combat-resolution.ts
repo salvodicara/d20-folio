@@ -171,7 +171,51 @@ function actionHasDamage(action: ResolvedAction): boolean {
 /** Stable CONDITION ids this action can apply. The register grows through modeled
  * capabilities, never through spell-name checks or prose parsing. */
 export function actionRiderConditions(action: ResolvedAction): string[] {
-  return action.summary.masteryDetail?.toppleDc !== undefined ? ["prone"] : [];
+  return [
+    ...new Set([
+      ...(action.summary.masteryDetail?.toppleDc !== undefined ? ["prone"] : []),
+      ...(action.summary.extraDamage ?? []).flatMap((r) =>
+        r.save ? (r.failedSaveConditions ?? []) : []
+      ),
+    ]),
+  ];
+}
+
+/** "Until the end of your next turn": the attacker's next turn end. */
+const UNTIL_END_OF_YOUR_NEXT_TURN: CombatConditionLifetime = {
+  kind: "turn-boundary",
+  phase: "turn-end",
+  turns: 1,
+};
+
+/** How long each rider condition lasts, when its rider says (Brew Poison's
+ *  Poisoned: until the end of the attacker's next turn). */
+function riderConditionLifetimes(
+  action: ResolvedAction
+): Partial<Record<string, CombatConditionLifetime>> | undefined {
+  const entries = (action.summary.extraDamage ?? []).flatMap((r) =>
+    r.save && r.conditionsUntil === "end-of-your-next-turn"
+      ? (r.failedSaveConditions ?? []).map(
+          (c) => [c, UNTIL_END_OF_YOUR_NEXT_TURN] as const
+        )
+      : []
+  );
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
+}
+
+/** The save a rider condition rides (Topple: CON vs its DC; Brew Poison: the
+ *  rider's own), for the condition `id`. */
+export function riderConditionSave(
+  action: ResolvedAction,
+  id: string
+): { ability: string; dc: number } | undefined {
+  const toppleDc = action.summary.masteryDetail?.toppleDc;
+  // SRD 5.2.1 Topple: a Constitution save, DC 8 + the attack's ability modifier + PB.
+  if (id === "prone" && toppleDc !== undefined) return { ability: "CON", dc: toppleDc };
+  const rider = (action.summary.extraDamage ?? []).find(
+    (r) => r.save && r.failedSaveConditions?.some((c) => c === id)
+  );
+  return rider?.save;
 }
 
 function actionHasHealing(action: ResolvedAction): boolean {
@@ -226,10 +270,15 @@ export function combatResolutionSpec(action: ResolvedAction): CombatResolutionSp
         }
       : undefined;
   const masteryRiders = actionRiderConditions(action);
+  const riderLifetimes = riderConditionLifetimes(action);
   const conditionApplication =
     s.conditionApplication ??
     (masteryRiders.length > 0
-      ? { options: masteryRiders, on: "hit" as const }
+      ? {
+          options: masteryRiders,
+          on: "hit" as const,
+          ...(riderLifetimes ? { lifetimes: riderLifetimes } : {}),
+        }
       : undefined);
   const conditionRemoval =
     s.conditionRemoval ??

@@ -122,6 +122,22 @@ const CASTING_ABILITY_SCHEMA = unionSchema([
   literalSchema("CHA"),
 ]);
 
+/**
+ * A damage rider the creature hit saves against (Brew Poison): `save` names the
+ * save and the abilities whose best modifier sets the DC (8 + PB + it);
+ * `onFailedSave` the conditions a failure brings, and how long they last.
+ */
+const RIDER_SAVE_FIELDS = {
+  save: objectSchema({
+    ability: CASTING_ABILITY_SCHEMA,
+    dcAbilities: arraySchema(CASTING_ABILITY_SCHEMA, 1),
+  }),
+  onFailedSave: objectSchema(
+    { conditions: arraySchema(CONDITION_ID_SCHEMA, 1) },
+    { until: literalSchema("end-of-your-next-turn") }
+  ),
+} as const;
+
 /** When a target repeats its save (`RepeatSaveMoment`, data/types). */
 const REPEAT_SAVE_MOMENT_SCHEMA = unionSchema([
   literalSchema("target-turn-end"),
@@ -1636,6 +1652,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         }),
         round1: literalSchema(true),
         vsMarkedTarget: unionSchema([literalSchema("marked"), literalSchema("cursed")]),
+        ...RIDER_SAVE_FIELDS,
       }
     ),
     objectSchema(
@@ -1692,6 +1709,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         }),
         round1: literalSchema(true),
         vsMarkedTarget: unionSchema([literalSchema("marked"), literalSchema("cursed")]),
+        ...RIDER_SAVE_FIELDS,
       }
     ),
   ]),
