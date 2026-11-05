@@ -39,7 +39,7 @@ describe("conformance · 16. DM adjudication", () => {
     expect(checkSucceeded({ skill: "persuasion", total: 18 })).toBeUndefined();
   });
 
-  rule({ category: 16, case: "Help", source: "GLOSS; SAC #21", status: "M17" }, () => {
+  rule({ category: 16, case: "Help", source: "GLOSS; SAC #21", status: "works" }, () => {
     // Helping an ally lands one Advantage on their next check, until used or the
     // start of the helper's next turn.
     const benefit = helpBenefit(

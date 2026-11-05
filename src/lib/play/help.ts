@@ -17,9 +17,24 @@ export interface HelpRosterRow {
   name: string;
 }
 
+/** How long a Help lasts: one use (the check, or one ally's attack), and never past
+ *  the start of the helper's next turn. The fight's effect keeps both
+ *  (`helpEffect`: a turn-boundary end, spent by the roll). */
+export interface HelpDuration {
+  kind: "until-used";
+  uses: 1;
+  until: "helper-turn-start";
+}
+
+const HELP_DURATION: HelpDuration = {
+  kind: "until-used",
+  uses: 1,
+  until: "helper-turn-start",
+};
+
 export type HelpBenefit =
-  | { kind: "check"; name: string }
-  | { kind: "attack"; name: string };
+  | { kind: "check"; name: string; duration: HelpDuration }
+  | { kind: "attack"; name: string; duration: HelpDuration };
 
 /** Which Help option the pick is, and who it names; null when nobody is named. */
 export function helpBenefit(
@@ -29,5 +44,9 @@ export function helpBenefit(
   const row = rows.find((candidate) => candidate.id === targets[0]);
   if (!row) return null;
   const side = row.side ?? (row.kind === "pc" ? "ally" : "enemy");
-  return { kind: side === "ally" ? "check" : "attack", name: row.name };
+  return {
+    kind: side === "ally" ? "check" : "attack",
+    name: row.name,
+    duration: HELP_DURATION,
+  };
 }

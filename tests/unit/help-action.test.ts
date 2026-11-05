@@ -82,18 +82,26 @@ describe("Help names who it helps", () => {
 
 describe("helpBenefit", () => {
   it("an ally gets Advantage on their next ability check", () => {
+    // Spent by that one check, or gone at the start of the helper's next turn.
     expect(helpBenefit(["pc-cora"], FIGHT.rows)).toEqual({
       kind: "check",
       name: "Coralino",
+      duration: { kind: "until-used", uses: 1, until: "helper-turn-start" },
     });
   });
 
   it("an enemy gives the allies Advantage on their next attack against it", () => {
-    expect(helpBenefit(["m-ogre"], FIGHT.rows)).toEqual({ kind: "attack", name: "Ogre" });
+    expect(helpBenefit(["m-ogre"], FIGHT.rows)).toEqual({
+      kind: "attack",
+      name: "Ogre",
+      duration: { kind: "until-used", uses: 1, until: "helper-turn-start" },
+    });
   });
 
   it("a row without a side follows its kind (a PC is an ally)", () => {
-    expect(helpBenefit(["pc-x"], [{ id: "pc-x", kind: "pc", name: "Dana" }])).toEqual({
+    expect(
+      helpBenefit(["pc-x"], [{ id: "pc-x", kind: "pc", name: "Dana" }])
+    ).toMatchObject({
       kind: "check",
       name: "Dana",
     });
