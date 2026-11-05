@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 import { JSDOM_TS_TESTS, PACK_JSDOM_TS_TESTS } from "./tests/lanes";
 import { contentPackEnabled, packAliases } from "./scripts/content-pack-mode";
+import { localWorkers } from "./scripts/local-workers";
 
 // Mirror the vite `define` so components reading the build-time version (the
 // footer colophon) and the bug-report debug context don't hit a ReferenceError
@@ -47,6 +48,8 @@ export default defineConfig({
   // vite.config.ts serves the pack's real directory via `server.fs.allow`.
   resolve: { alias, preserveSymlinks: true },
   test: {
+    // Locally at most `FOLIO_LOCAL_WORKERS` (default 3) workers; CI unchanged.
+    maxWorkers: localWorkers(),
     // A composed run refuses a pack checkout behind its origin/main (scripts/pack/pack-freshness.ts).
     globalSetup: ["./scripts/pack/pack-freshness-setup.ts"],
     // ── Fast / slow lanes (docs/ARCHITECTURE.md) ──────────────────────────
