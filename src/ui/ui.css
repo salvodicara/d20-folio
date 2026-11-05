@@ -226,13 +226,13 @@
 }
 .fui .f-room.f-band {
   height: 120px;
-  margin-bottom: -56px;
+  margin-bottom: -16px;
   mask: linear-gradient(var(--shade) 40%, transparent 100%);
 }
 @media (max-width: 640px) {
   .fui .f-room.f-band {
     height: 80px;
-    margin-bottom: -40px;
+    margin-bottom: -8px;
   }
 }
 
@@ -4261,6 +4261,8 @@
 
 /* ---------- level up: the moment (owner's pick 2026-11-05, mockup A «Momento BG3») ---------- */
 .fui .f-lvl {
+  /* the crest overlaps the room band's lower edge (BG3's level-up crest on the scene) */
+  margin-top: -40px;
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 320px;
   gap: 24px;
@@ -4562,6 +4564,21 @@
 .fui .f-lvl-opt-n {
   text-wrap: balance;
 }
+.fui .f-pick {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 1101px) {
+  .fui .f-pick[data-inspect] {
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+  }
+  .fui .f-pick > .f-lvl-inspect {
+    position: sticky;
+    top: 24px;
+    flex-direction: column;
+  }
+}
 .fui .f-lvl-inspect {
   display: flex;
   gap: 16px;
@@ -4718,6 +4735,7 @@
 }
 @media (max-width: 760px) {
   .fui .f-lvl {
+    margin-top: -24px;
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     padding-bottom: 88px;

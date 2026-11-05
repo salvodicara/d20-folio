@@ -103,49 +103,54 @@ export function PickGrid({
           )}
         </div>
       )}
-      <div className="f-lvl-grid" role="group" aria-label={label}>
-        {shown.map((o) => {
-          const on = picked.includes(o.id);
-          const spell = byId.get(o.id);
-          const school = SCHOOL.get(o.id);
-          return (
-            <button
-              key={o.id}
-              type="button"
-              className="f-lvl-opt"
-              aria-pressed={on}
-              onClick={() => {
-                onToggle(o.id);
-                if (spell) setFocus(o.id);
-              }}
-            >
-              {spell && school ? (
-                <SpellArt id={o.id} school={school} />
-              ) : art ? (
-                <span className="f-lvl-opt-art">
-                  <Art
-                    kind={art}
-                    id={o.id}
-                    fallback={createElement(FolioFeatIcon, { "aria-hidden": true })}
-                  />
+      {/* BG3 shows the inspect card beside the list: a side column on a wide screen. */}
+      <div className="f-pick" data-inspect={inspected ? "" : undefined}>
+        <div className="f-lvl-grid" role="group" aria-label={label}>
+          {shown.map((o) => {
+            const on = picked.includes(o.id);
+            const spell = byId.get(o.id);
+            const school = SCHOOL.get(o.id);
+            return (
+              <button
+                key={o.id}
+                type="button"
+                className="f-lvl-opt"
+                aria-pressed={on}
+                onClick={() => {
+                  onToggle(o.id);
+                  if (spell) setFocus(o.id);
+                }}
+              >
+                {spell && school ? (
+                  <SpellArt id={o.id} school={school} />
+                ) : art ? (
+                  <span className="f-lvl-opt-art">
+                    <Art
+                      kind={art}
+                      id={o.id}
+                      fallback={createElement(FolioFeatIcon, { "aria-hidden": true })}
+                    />
+                  </span>
+                ) : null}
+                {spell && (
+                  <span className="f-lvl-opt-lv">
+                    {spell.level === 0 ? "T" : spell.level}
+                  </span>
+                )}
+                {on && (
+                  <span className="f-lvl-tick" aria-hidden="true">
+                    ✓
+                  </span>
+                )}
+                <span className="f-lvl-opt-n">
+                  {tieLast(o.label).replace(/\//g, "/​")}
                 </span>
-              ) : null}
-              {spell && (
-                <span className="f-lvl-opt-lv">
-                  {spell.level === 0 ? "T" : spell.level}
-                </span>
-              )}
-              {on && (
-                <span className="f-lvl-tick" aria-hidden="true">
-                  ✓
-                </span>
-              )}
-              <span className="f-lvl-opt-n">{tieLast(o.label).replace(/\//g, "/​")}</span>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
+        </div>
+        {inspected && <Inspect key={inspected.id} spell={inspected} />}
       </div>
-      {inspected && <Inspect key={inspected.id} spell={inspected} />}
     </>
   );
 }
