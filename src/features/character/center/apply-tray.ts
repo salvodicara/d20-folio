@@ -35,6 +35,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { effectIdsConsumedByAttack, foldCombatEffectOps } from "@/lib/combat-effects";
 import { budgetSpent } from "@/lib/zones";
+import { concentrationBreaks } from "@/lib/play/concentration-ends";
 
 import type { DamageTrayOffer } from "./damage-tray-store";
 
@@ -437,6 +438,7 @@ export function applyTray(
               for (const added of effects)
                 writeFightEffect(campaignId, { revoke: added.id }, t);
             });
+            reversals.push(endConcentrationOf(campaignId, effects, t));
           }
         }
         for (const { target, amount, conditions, outcome, knockOut } of peers) {
@@ -463,6 +465,60 @@ export function applyTray(
   } else {
     useToastStore.getState().showToast({ ...label, duration: 4000 });
   }
+}
+
+/**
+ * The states a use wrote that end their target's Concentration (`ends-concentration`):
+ * mine ends on this sheet, another PC's through its spends ledger, a monster's
+ * Concentration effects are revoked. Returns the undo: each comes back.
+ */
+function endConcentrationOf(
+  campaignId: string,
+  written: ReadonlyArray<ActiveCombatEffect>,
+  t: T
+): () => void {
+  const status = useCombatStatusStore.getState().status;
+  if (!status) return () => {};
+  const breaks = concentrationBreaks(written, status.encounter.effectOps, status.myId);
+  const store = useCharacterStore.getState();
+  const held = breaks.self ? (store.character?.session.concentration ?? "") : "";
+  if (held) store.setConcentration("", { undoable: false });
+  for (const id of breaks.monsterEffectIds)
+    writeFightEffect(campaignId, { revoke: id }, t);
+  const failed = () =>
+    useToastStore
+      .getState()
+      .showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+  const ledgers = breaks.pcs.flatMap((pc) =>
+    pc.kind === "pc"
+      ? [
+          {
+            pc,
+            spends: campaignIo()
+              .then((io) => io.endPeerConcentration(pc.memberUid, pc.characterId))
+              .catch(() => {
+                failed();
+                return [];
+              }),
+          },
+        ]
+      : []
+  );
+  return () => {
+    const live = useCharacterStore.getState();
+    if (held && !live.character?.session.concentration)
+      live.setConcentration(held, { undoable: false });
+    for (const id of breaks.monsterEffectIds)
+      writeFightEffect(campaignId, { reinstate: id }, t);
+    for (const { pc, spends } of ledgers)
+      void spends
+        .then((written) =>
+          campaignIo().then((io) =>
+            io.appendPeerSpendsInverse(pc.memberUid, pc.characterId, written)
+          )
+        )
+        .catch(failed);
+  };
 }
 
 /** Me: the store's own heal / temp-HP / damage seams, the line they log tagged. */
