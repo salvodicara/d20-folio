@@ -866,5 +866,80 @@ window.__audit = (opts) => {
       }
     }
   }
+  // icon-inset / icon-align (owner, 2026-11-05): a glyph or small icon sits inside its
+  // box's content area, clear of the frame, and a row's leading icon is centred on the
+  // first item beside it. Spacing sits on the 4px scale.
+  {
+    const SCALE = new Set([0, 1, 2, 4, 6, 8, 12, 16, 20, 24, 28, 32, 36, 40, 48, 56, 64]);
+    const frameOf = (e) => {
+      for (let a = e.parentElement; a && a !== document.body; a = a.parentElement) {
+        const cs = getComputedStyle(a);
+        if (parseFloat(cs.borderTopWidth) > 0 && parseFloat(cs.borderLeftWidth) > 0)
+          return a;
+        if (["absolute", "fixed"].includes(cs.position)) return null;
+      }
+      return null;
+    };
+    for (const e of document.querySelectorAll(".fui svg, .fui img")) {
+      if (e.parentElement?.closest("svg") || !vis(e)) continue;
+      const r = e.getBoundingClientRect();
+      if (r.width > 40 || r.height > 40 || r.width < 8) continue;
+      const f = frameOf(e);
+      if (f) {
+        const b = f.getBoundingClientRect();
+        const cs = getComputedStyle(f);
+        // an icon that fills its frame (a slot's art, a framed glyph) is the frame's content
+        if (r.width < b.width * 0.75 && r.height < b.height * 0.75) {
+          const gap = Math.min(
+            r.left - b.left - parseFloat(cs.borderLeftWidth),
+            b.right - r.right - parseFloat(cs.borderRightWidth),
+            r.top - b.top - parseFloat(cs.borderTopWidth),
+            b.bottom - r.bottom - parseFloat(cs.borderBottomWidth)
+          );
+          if (gap < 3.5)
+            add("icon-inset", gap.toFixed(1) + "px from the frame " + label(f));
+        }
+      }
+      // a row's leading cell holding only this icon: centred on the first item beside it
+      const cell = e.parentElement;
+      const row = cell?.parentElement;
+      if (
+        !cell ||
+        !row ||
+        cell.children.length !== 1 ||
+        cell.textContent.trim() ||
+        row.firstElementChild !== cell
+      )
+        continue;
+      const d = getComputedStyle(row).display;
+      if (!/grid|flex/.test(d)) continue;
+      const next = cell.nextElementSibling;
+      const item = next && (next.firstElementChild || next);
+      // only a framed item (a slot, a tile): a text block beside an icon aligns to its first line
+      if (!item || !vis(item) || !(isBox(item) || item.matches("button,img,svg")))
+        continue;
+      const ir = item.getBoundingClientRect();
+      if (ir.height < r.height || ir.height > 80) continue;
+      const dy = Math.abs((r.top + r.bottom) / 2 - (ir.top + ir.bottom) / 2);
+      if (dy > 1.5) add("icon-align", dy.toFixed(1) + "px off " + label(row));
+    }
+    for (const e of document.querySelectorAll(".fui *")) {
+      // a page's bottom padding clears the phone's fixed bar: not layout spacing
+      if (e.closest("svg") || e.matches("main") || !vis(e)) continue;
+      const cs = getComputedStyle(e);
+      const vals = [
+        cs.paddingTop,
+        cs.paddingRight,
+        cs.paddingBottom,
+        cs.paddingLeft,
+        cs.rowGap,
+        cs.columnGap,
+      ];
+      const off = vals
+        .map((v) => parseFloat(v))
+        .filter((v) => Number.isFinite(v) && !SCALE.has(Math.round(v * 2) / 2));
+      if (off.length) add("spacing", off.join(",") + " " + label(e));
+    }
+  }
   return R;
 };

@@ -584,6 +584,8 @@ export interface ActionSummary {
     /** The conditions a failed save brings, and how long they last. */
     failedSaveConditions?: ReadonlyArray<ConditionId>;
     conditionsUntil?: "end-of-your-next-turn";
+    /** The feature the conditions come from, so the fight can name their source. */
+    conditionSourceId?: string;
   }>;
   /**
    * How this weapon's OWN damage dice are manipulated when rolled (Great Weapon
@@ -1309,6 +1311,8 @@ export interface RawActionSummary extends Omit<
     /** The conditions a failed save brings, and how long they last. */
     failedSaveConditions?: ReadonlyArray<ConditionId>;
     conditionsUntil?: "end-of-your-next-turn";
+    /** The feature the conditions come from, so the fight can name their source. */
+    conditionSourceId?: string;
     /**
      * G14 — an `attack-or-spell` rider is NOT weapon-bound (a celestial-revelation
      * Revelation's +PB): it rides ONE attack OR spell per turn, surfaced as a
@@ -4191,6 +4195,7 @@ export function resolveAttackDamageRiders(
           ? {
               failedSaveConditions: [...r.onFailedSave.conditions],
               ...(r.onFailedSave.until ? { conditionsUntil: r.onFailedSave.until } : {}),
+              ...(r.sourceId ? { conditionSourceId: r.sourceId } : {}),
             }
           : {}),
       };

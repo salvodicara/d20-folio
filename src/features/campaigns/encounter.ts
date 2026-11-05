@@ -42,6 +42,7 @@ import {
 } from "@/lib/play/extra-turns";
 import { clampMonsterSpeedFt, isMonsterSpeedFt } from "@/lib/monster-speed";
 import type { PortraitCrop } from "@/types/character";
+import type { RosterEntry } from "@/lib/play/campaign-roster";
 import type { CombatDefenseSnapshot } from "@/types/campaign";
 
 // ─── Seeding from member references ─────────────────────────────────────────
@@ -85,6 +86,7 @@ const MONSTER_COMBATANT_KEYS = new Set([
   "name",
   "srdId",
   "homebrewId",
+  "rosterId",
   "ac",
   "speed",
   "initiative",
@@ -171,6 +173,7 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
     (value.side !== undefined && value.side !== "ally" && value.side !== "enemy") ||
     (value.srdId !== undefined && !nonEmptyString(value.srdId)) ||
     (value.homebrewId !== undefined && !nonEmptyString(value.homebrewId)) ||
+    (value.rosterId !== undefined && !nonEmptyString(value.rosterId)) ||
     (value.speed !== undefined && !isMonsterSpeedFt(value.speed)) ||
     (value.revealed !== undefined && typeof value.revealed !== "boolean") ||
     (value.notes !== undefined && !nonEmptyString(value.notes)) ||
@@ -544,6 +547,82 @@ export function addMonster(state: EncounterState, input: MonsterInput): Encounte
     };
   }
   return { ...state, combatants, nextMonsterOrdinal: firstOrdinal + count };
+}
+
+/** A creature from the campaign roster joining the fight (edge-case M19). */
+export interface RosterCombatantInput {
+  rosterId: string;
+  entry: RosterEntry;
+  ac: number;
+  /** Its full Hit Points when the entry has none yet (the stat block's). */
+  maxHp?: number;
+  side?: "ally" | "enemy";
+  initiative?: number | null;
+  defenses?: CombatDefenseSnapshot;
+}
+
+/**
+ * A roster creature joins by its id, never as a copy: with the Hit Points it has
+ * now, so damage from the last fight still shows. An entry already in the fight
+ * isn't added again. Writes `rosterId`: call it only once a deploy carrying the
+ * reader is live (older clients reject unknown monster keys).
+ */
+export function addRosterCombatant(
+  state: EncounterState,
+  input: RosterCombatantInput
+): EncounterState {
+  if (state.combatants.some((c) => c.kind === "monster" && c.rosterId === input.rosterId))
+    return state;
+  const { entry } = input;
+  const max = entry.hp?.max ?? input.maxHp ?? 0;
+  const added = addMonster(state, {
+    name: entry.name,
+    ac: input.ac,
+    maxHp: max,
+    count: 1,
+    initiative: input.initiative ?? null,
+    ...(input.side ? { side: input.side } : {}),
+    ...(entry.monsterId ? { srdId: entry.monsterId } : {}),
+    ...(entry.creatureType ? { creatureType: entry.creatureType } : {}),
+    ...(input.defenses ? { defenses: input.defenses } : {}),
+  });
+  if (added === state) return state;
+  const id = `monster-${state.nextMonsterOrdinal}`;
+  return mapCombatant(added, id, (c) =>
+    c.kind === "pc"
+      ? c
+      : {
+          ...c,
+          rosterId: input.rosterId,
+          hp: {
+            current: Math.min(entry.hp?.current ?? max, max),
+            temp: entry.hp?.temp ?? 0,
+            max,
+          },
+        }
+  );
+}
+
+/** The roster entries whose Hit Points the fight changed, with their new Hit Points
+ *  (written back to the roster when the fight ends). */
+export function rosterHpWriteBack(
+  state: EncounterState,
+  roster: Readonly<Record<string, RosterEntry>>
+): Array<{ rosterId: string; hp: NonNullable<RosterEntry["hp"]> }> {
+  return state.combatants.flatMap((c) => {
+    if (c.kind !== "monster" || !c.rosterId) return [];
+    const before = roster[c.rosterId]?.hp;
+    const hp = {
+      current: c.hp.current,
+      max: c.hp.max,
+      ...(c.hp.temp > 0 ? { temp: c.hp.temp } : {}),
+    };
+    const same =
+      before?.current === hp.current &&
+      before.max === hp.max &&
+      (before.temp ?? 0) === (hp.temp ?? 0);
+    return same ? [] : [{ rosterId: c.rosterId, hp }];
+  });
 }
 
 /**
