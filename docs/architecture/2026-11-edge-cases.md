@@ -98,6 +98,12 @@ rows it covers, and retires the special cases it lists. Shape changes go through
   is the read for rules; an immune creature gains no Exhaustion. Still open in M3: end rules
   (Hide's acts, on damage, repeat saves, the grappler incapacitated), Knock Out and Abjure Foes
   data, unseen sources.
+- **M3, sourced Exhaustion** done: a condition that lasts while its source does names it, so the
+  fight ends it with the spell; a spell's Exhaustion is a level on the sheet, capped by its `upTo`
+  (`src/lib/play/exhaustion.ts`), and a failed repeat save's comes from `failedRepeatSaveEffects`.
+- **Engine-ready, needs a caller** (the conformance case stays pending until a player reaches it):
+  `OBJECT_DEFENSES` and `damageToItem` wait for the tray to name an object or an item as a target;
+  `sentientConflictDc` waits for a sentient item's card.
 - **Hits from another device** (the shared root of the M1, M4 and M7 limits): the spends ledger,
   [design](2026-11-cross-device-hits.md). Reader, fold and rules are in; the writer switches on
   with `VITE_PEER_SPENDS_LEDGER` after the rules deploy.
