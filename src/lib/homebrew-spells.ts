@@ -254,6 +254,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   damageTypes: DAMAGE_TYPES,
   damageChoice: DAMAGE_TYPES,
   saveIfUnwilling: literalSchema(true),
+  appliesOnSuccess: literalSchema(true),
   saveAbility: ABILITY,
   attackType: literals(["melee", "ranged"]),
   weaponAttackCantrip: objectSchema({

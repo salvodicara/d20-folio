@@ -264,7 +264,7 @@ function TrayTargetRow({
     plan.effect && (total !== null || !rowNeedsTotal(row, plan))
       ? rowAmount(total ?? 0, row, plan)
       : null;
-  const conditions = rowConditions(row);
+  const conditions = rowConditions(row, plan);
   const hpLabel = t("character.health.hpAbbr");
 
   return (
@@ -367,16 +367,21 @@ function TrayTargetRow({
             aria-label={t("combat.damageTray.multiplier", { name: target.name })}
           />
         )}
-        {plan.save && (
+        {(plan.save || plan.gate) && (
           <button
             type="button"
             className="fchip"
             aria-pressed={row.saved}
-            aria-label={t("combat.damageTray.savedAria", { name: target.name })}
+            aria-label={t(
+              plan.gate
+                ? "combat.damageTray.succeededAria"
+                : "combat.damageTray.savedAria",
+              { name: target.name }
+            )}
             disabled={row.willing === true}
             onClick={() => onChange(toggleSaved(row, plan))}
           >
-            {t("combat.damageTray.saved")}
+            {t(plan.gate ? "combat.damageTray.succeeded" : "combat.damageTray.saved")}
           </button>
         )}
         {offersWilling(plan, target) && (

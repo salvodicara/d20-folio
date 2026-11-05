@@ -284,7 +284,7 @@ function TrayTargetRow({
   };
 }) {
   const { t } = useTranslation();
-  const conditions = rowConditions(row);
+  const conditions = rowConditions(row, plan);
   const selfDoc = useCharacterStore((st) => st.character);
   const knockOut =
     amount !== null && target.kind !== "self"
@@ -459,15 +459,15 @@ function TrayTargetRow({
           ))}
         </div>
       )}
-      {(plan.save || row.defense || row.partDefense || plan.conditions) && (
+      {(plan.save || plan.gate || row.defense || row.partDefense || plan.conditions) && (
         <div className="f-chips">
-          {plan.save && (
+          {(plan.save || plan.gate) && (
             <Chip
               pressed={row.saved}
               disabled={row.willing === true}
               onClick={() => onChange(toggleSaved(row, plan))}
             >
-              {t("combat.damageTray.saved")}
+              {t(plan.gate ? "combat.damageTray.succeeded" : "combat.damageTray.saved")}
             </Chip>
           )}
           {offersWilling(plan, target) && (

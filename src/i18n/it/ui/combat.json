@@ -569,6 +569,8 @@
       "rowTotal": "Totale tirato per {{name}}",
       "saved": "Salvato",
       "savedAria": "{{name}} ha superato il TS",
+      "succeeded": "Successo",
+      "succeededAria": "{{name}}: tiro riuscito",
       "conditionSave": "{{condition}} · TS {{ability}} CD {{dc}}",
       "multiplier": "Moltiplicatore per {{name}}",
       "resistant": "Resistente",
