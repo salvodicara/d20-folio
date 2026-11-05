@@ -87,8 +87,11 @@ describe("ornament vocabulary (T5)", () => {
     );
     // No centre node on the rule anymore.
     expect(folioCss).not.toMatch(/\.sec-rule::after/);
-    // The section rubric's leading diamond is the divider's marker.
-    expect(folioCss).toMatch(/\.sec-diamond\s*\{/);
+    // No marker before a label or rubric («Lume», owner 2026-11-03): the
+    // section, rail and action-group diamonds and the dialog/popover eyebrow
+    // diamonds are gone, as in the new UI's labels.
+    expect(folioCss).not.toMatch(/\.(sec|rh|ag)-diamond\b/);
+    expect(folioCss).not.toMatch(/\.(modal|pop)-rubric::before/);
     // Variants only re-tint the parameter — never re-declare the gradient.
     expect(folioCss).toMatch(
       /\.sec-head\[data-econ\] \.sec-rule\s*\{\s*--rule-c:[^{}]*\}/
