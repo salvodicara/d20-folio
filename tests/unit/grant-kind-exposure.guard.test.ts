@@ -645,6 +645,11 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/lib/smart-tracker.ts",
   },
   // Periapt of Wound Closure: a hit that leaves you dying leaves you Stable.
+  // A state that ends Concentration where it lands: the tray's apply reads it.
+  "ends-concentration": {
+    via: "effectEndsConcentration",
+    consumer: "src/lib/play/concentration-ends.ts",
+  },
   "auto-stabilize": {
     via: "stabilizedDeathSaves",
     consumer: "src/lib/play/damage.ts",
