@@ -6,12 +6,9 @@
 import { describe, expect, it } from "vitest";
 
 import { classTables } from "@/data/classes";
+import i18n from "@/i18n";
 
-import {
-  levelUpReview,
-  TABLE_COLUMNS,
-  TABLE_USES,
-} from "@/domains/leveling/level-up-review-view";
+import { levelUpReview, TABLE_USES } from "@/domains/leveling/level-up-review-view";
 import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
 import { collectChoiceSlots, EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import { emptySwapChoice } from "@/lib/spell-swap";
@@ -122,7 +119,7 @@ describe("levelUpReview", () => {
   });
 
   // Every column of every class table that changes at a level shows in the summary,
-  // or is a use a class-resource row shows by name.
+  // or is a use a class-resource row shows by name; each has its label in both languages.
   for (const table of classTables) {
     it(`${table.id}: every class-table change from 1 to 20 shows`, () => {
       for (let level = 1; level < 20; level++) {
@@ -137,11 +134,16 @@ describe("levelUpReview", () => {
           "en"
         ).numbers.map((r) => r.id);
         for (const key of changed) {
-          expect(
-            key in TABLE_COLUMNS || TABLE_USES.has(key),
-            `${table.id} ${String(level + 1)} ${key}`
-          ).toBe(true);
-          if (key in TABLE_COLUMNS) expect(ids).toContain(`table:${table.id}:${key}`);
+          if (TABLE_USES.has(key)) continue;
+          expect(ids, `${table.id} ${String(level + 1)} ${key}`).toContain(
+            `table:${table.id}:${key}`
+          );
+          for (const lng of ["en", "it"]) {
+            expect(
+              i18n.exists(`levelUp.screen.table.${key}`, { lng }),
+              `${lng} label for ${key}`
+            ).toBe(true);
+          }
         }
       }
     });
