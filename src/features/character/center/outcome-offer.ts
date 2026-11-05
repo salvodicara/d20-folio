@@ -1,14 +1,19 @@
 /**
  * The tray's state writers for a used action: what each target that made its save
- * still gets (Stunning Strike), and what a hit puts on its target (Guiding Bolt), as
- * persistent combat effects in the live fight. Absent outside a fight or when the
- * action has none.
+ * still gets (Stunning Strike), what a failed save leaves beyond the action's
+ * condition, and what a hit puts on its target (Guiding Bolt), as persistent combat
+ * effects in the live fight, with what the user's other features add to them
+ * (`outcomeRiders`). Absent outside a fight or when the action has none.
  */
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
 import { hitPointDiceContext } from "@/lib/play/hit-point-dice";
-import { outcomeEffects } from "@/lib/play/outcome-effects";
+import {
+  outcomeEffects,
+  stateEffectsFor,
+  type UseOutcome,
+} from "@/lib/play/outcome-effects";
 import { standingEffectsForTargets } from "@/lib/play/standing-effects";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
@@ -18,7 +23,11 @@ import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
 
 type StateSummary = Pick<
   ActionSummary,
-  "saveSuccessEffects" | "hitEffects" | "targetStateSource"
+  | "saveSuccessEffects"
+  | "saveFailedEffects"
+  | "hitEffects"
+  | "targetStateSource"
+  | "outcomeRiders"
 >;
 
 /** What a target's successful save still gets (Stunning Strike). */
@@ -27,6 +36,15 @@ export function saveSuccessWriter(
   characterId: string
 ): ((targetId: string) => ActiveCombatEffect[]) | undefined {
   return stateWriter(action, characterId, "save-success");
+}
+
+/** What a target's failed save leaves beyond the action's condition: the states
+ *  that hold whatever the save (a rider's on Stunning Strike). */
+export function saveFailedWriter(
+  action: { id: string; summary: StateSummary },
+  characterId: string
+): ((targetId: string) => ActiveCombatEffect[]) | undefined {
+  return stateWriter(action, characterId, "save-failed");
 }
 
 /** What a hit puts on its target (Guiding Bolt). */
@@ -40,16 +58,30 @@ export function hitStateWriter(
 function stateWriter(
   action: { id: string; summary: StateSummary },
   characterId: string,
-  outcome: "hit" | "save-success"
+  outcome: UseOutcome
 ): ((targetId: string) => ActiveCombatEffect[]) | undefined {
-  const effects =
-    outcome === "hit" ? action.summary.hitEffects : action.summary.saveSuccessEffects;
-  const source = action.summary.targetStateSource;
+  const { summary } = action;
+  const own =
+    outcome === "hit"
+      ? summary.hitEffects
+      : outcome === "save-success"
+        ? summary.saveSuccessEffects
+        : summary.saveFailedEffects;
+  const groups = [
+    ...(own?.length && summary.targetStateSource
+      ? [{ source: summary.targetStateSource, effects: own }]
+      : []),
+    ...(summary.outcomeRiders ?? []).flatMap((rider) => {
+      const effects = stateEffectsFor(rider.effects, outcome);
+      return effects.length > 0 ? [{ source: rider.source, effects }] : [];
+    }),
+  ].filter(
+    // A feature's state on its target needs the v0.26.0 rules (deployed-rules); a
+    // spell's is accepted today.
+    (group) => group.source.kind !== "feature" || combatEffectsV26On()
+  );
   const status = useCombatStatusStore.getState().status;
-  // A feature's state on its target needs the v0.26.0 rules (deployed-rules); a
-  // spell's is accepted today.
-  if (!effects?.length || !source || !status) return undefined;
-  if (source.kind === "feature" && !combatEffectsV26On()) return undefined;
+  if (groups.length === 0 || !status) return undefined;
   const uid = useAuthStore.getState().user?.uid ?? "";
   const actor: CombatantRef = {
     kind: "pc",
@@ -68,15 +100,17 @@ function stateWriter(
             characterId: row.characterId,
           }
         : { kind: "monster", combatantId: targetId };
-    return outcomeEffects({
-      source: { kind: source.kind, id: source.id, actionId: action.id },
-      effects,
-      outcome,
-      actor,
-      target,
-      round: status.round,
-      effectId: () => crypto.randomUUID(),
-    });
+    return groups.flatMap(({ source, effects }) =>
+      outcomeEffects({
+        source: { kind: source.kind, id: source.id, actionId: action.id },
+        effects,
+        outcome,
+        actor,
+        target,
+        round: status.round,
+        effectId: () => crypto.randomUUID(),
+      })
+    );
   };
 }
 

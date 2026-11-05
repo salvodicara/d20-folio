@@ -48,6 +48,7 @@ import { combatEffectsV26On } from "@/lib/deployed-rules";
 import {
   combineWriters,
   hitStateWriter,
+  saveFailedWriter,
   saveSuccessWriter,
   standingOutcomeWriter,
   targetRef,
@@ -1015,9 +1016,12 @@ export function TurnEconomyProvider({
     if (!plan) return;
     const onSaved = saveSuccessWriter(action, characterId);
     const doc = useCharacterStore.getState().character;
-    // A failed save's state (Bane) and a hit's: the action's own (Guiding Bolt, Ray
-    // of Frost's), and its weapon's Vex.
-    const onFailed = doc ? standingOutcomeWriter(action, doc, "failed-save") : undefined;
+    // A failed save's state (Bane, and one that holds whatever the save) and a hit's:
+    // the action's own (Guiding Bolt, Ray of Frost's), and its weapon's Vex.
+    const onFailed = combineWriters(
+      saveFailedWriter(action, characterId),
+      doc ? standingOutcomeWriter(action, doc, "failed-save") : undefined
+    );
     const onHit = combineWriters(
       hitStateWriter(action, characterId),
       vexWriter(action, characterId),

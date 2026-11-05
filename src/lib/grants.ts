@@ -1268,6 +1268,11 @@ export interface IncomingAttackClause {
 /** A change to a creature a spell of yours summons (`companion-mod`), with the
  *  feature it comes from. */
 export type CompanionMod = Omit<GrantOf<"companion-mod">, "type"> & { sourceId: string };
+/** What a feature adds to another feature's action outcome (`action-outcome-rider`),
+ *  with the feature it comes from, whose `targetStates` hold its states. */
+export type ActionOutcomeRider = Omit<GrantOf<"action-outcome-rider">, "type"> & {
+  sourceId: string;
+};
 
 export type TriggerRule = Pick<GrantOf<"trigger">, "on" | "if" | "do" | "limit"> & {
   sourceId: string;
@@ -2027,6 +2032,8 @@ export interface AggregatedGrants {
   weaponAttackBonuses: ReadonlyArray<WeaponAttackBonusEntry>;
   /** Changes to the creatures your spells summon (`companion-mod`). */
   companionMods: ReadonlyArray<CompanionMod>;
+  /** What your features add to another feature's action outcome (`action-outcome-rider`). */
+  actionOutcomeRiders: ReadonlyArray<ActionOutcomeRider>;
   /**
    * Manipulations of a weapon's OWN damage dice (Great Weapon Fighting floor,
    * Savage Attacker reroll-keep-higher, Two-Weapon Fighting off-hand modifier,
@@ -2376,6 +2383,7 @@ export function emptyAggregate(): AggregatedGrants {
     weaponAttackAbilities: [],
     weaponAttackBonuses: [],
     companionMods: [],
+    actionOutcomeRiders: [],
     damageDieModifiers: [],
     spellResistancePenetration: new Set(),
     alwaysPrepared: [],
@@ -2641,6 +2649,7 @@ export function evaluateGrants(
   }[] = [];
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
   const companionMods: CompanionMod[] = [];
+  const actionOutcomeRiders: ActionOutcomeRider[] = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
   const spellResistancePenetration = new Set<DamageType>();
 
@@ -3260,6 +3269,9 @@ export function evaluateGrants(
         break;
       case "companion-mod":
         companionMods.push({ sourceId, ...g });
+        break;
+      case "action-outcome-rider":
+        actionOutcomeRiders.push({ sourceId, actionOf: g.actionOf, effects: g.effects });
         break;
       case "weapon-attack-bonus":
         // To-hit bonus on weapon attacks (Archery → +2 ranged; Sacred Weapon →
@@ -4246,6 +4258,7 @@ export function evaluateGrants(
     weaponAttackAbilities,
     weaponAttackBonuses,
     companionMods,
+    actionOutcomeRiders,
     damageDieModifiers,
     spellResistancePenetration,
     alwaysPrepared,

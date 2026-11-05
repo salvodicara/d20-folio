@@ -48,7 +48,12 @@ import {
 } from "@/lib/play/damage-tray";
 import { conditionLabel } from "@/lib/views/tracker-view";
 
-import { incomingAttackLabel, trayRubric, type TrayTarget } from "./damage-tray-target";
+import {
+  incomingAttackLabel,
+  incomingSaveLabel,
+  trayRubric,
+  type TrayTarget,
+} from "./damage-tray-target";
 import { combatTermName } from "./combat-glossary";
 import { GlossaryTip } from "./GlossaryTip";
 
@@ -404,6 +409,17 @@ function TrayTargetRow({
               data-incoming={chip.mode}
             >
               {incomingAttackLabel(chip, t, locale)}
+            </span>
+          ))}
+        {/* A spell's save, changed by a state on the target (against my spells). */}
+        {plan.save?.bySpell &&
+          target.incomingSave?.map((chip) => (
+            <span
+              key={`save-${chip.sourceId}-${chip.mode}`}
+              className="fchip"
+              data-incoming-save={chip.mode}
+            >
+              {incomingSaveLabel(chip, t, locale)}
             </span>
           ))}
         {plan.conditions?.options.map((id) => (

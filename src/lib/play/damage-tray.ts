@@ -58,14 +58,16 @@ export interface DamageTrayPlan {
   };
   /** Damage types whose Resistance the source ignores (Elemental Adept). */
   ignoresResistance?: DamageType[];
-  /** The save the targets make. `onSave` is what a success leaves of the damage. */
   /** A willing target takes the spell without a save (Enlarge/Reduce): its row may
    *  say «Consenziente». */
   willing?: true;
   /** The use leaves its state on a target that fails its save or is hit (Bane, Ray
    *  of Frost): `name` is the use's own, for the row's outcome. */
   leavesState?: { on: "failed-save" | "hit"; name: string };
-  save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
+  /** The save the targets make. `onSave` is what a success leaves of the damage;
+   *  `bySpell` when it is a save against the user's spell (a state on a target may
+   *  change it: `incomingSaveModes`). */
+  save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome; bySpell?: true };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
    *  `optIn` when a hit-gated rider (Topple) offers it with the chip off; `save`
    *  when the condition rides its own save, not the action's (Topple: CON). */
@@ -222,6 +224,7 @@ export function damageTrayPlan(
             ...(s.saveAbility ? { ability: s.saveAbility } : {}),
             ...(s.saveDC !== undefined ? { dc: s.saveDC } : {}),
             onSave: saveGovernsDamage ? spec.damageOnSave : "none",
+            ...(action.spellId ? { bySpell: true as const } : {}),
           },
         }
       : {}),

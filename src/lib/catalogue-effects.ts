@@ -34,6 +34,7 @@ export type CatalogueEffect = Extract<
       | "speed-halved"
       | "speed-zero"
       | "next-attack-advantage"
+      | "save-disadvantage"
       | "recover-slots"
       | "exhaustion"
       | "damage-roll-penalty"
@@ -53,7 +54,7 @@ const CREATURE_TYPES = arraySchema(literals(ALL_CREATURE_TYPES));
 /** The fields every effect may carry. */
 const BASE = {
   fromLevel: numberSchema,
-  saveOutcome: literalSchema("success"),
+  saveOutcome: unionSchema([literalSchema("success"), literalSchema("any")]),
   vsCreatureTypes: CREATURE_TYPES,
   notVsCreatureTypes: CREATURE_TYPES,
 } as const;
@@ -114,6 +115,10 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   "next-attack-advantage": objectSchema(
     { kind: literalSchema("next-attack-advantage") },
     { ...BASE, against: literalSchema("target"), until: UNTIL, activeKey: stringSchema }
+  ),
+  "save-disadvantage": objectSchema(
+    { kind: literalSchema("save-disadvantage"), against: literalSchema("actor-spells") },
+    { ...BASE, until: UNTIL, activeKey: stringSchema }
   ),
   exhaustion: objectSchema(
     { kind: literalSchema("exhaustion"), levels: numberSchema },

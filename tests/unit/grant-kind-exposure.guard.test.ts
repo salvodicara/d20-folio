@@ -96,6 +96,12 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "damageImmunities",
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
+  // A feature's addition to another feature's action outcome: the damage tray's
+  // writers put its states on the target (`outcomeRiders`).
+  "action-outcome-rider": {
+    via: "outcomeRiders",
+    consumer: "src/features/character/center/outcome-offer.ts",
+  },
   "companion-mod": {
     via: "summonMaxHp",
     consumer: "src/features/character/companions/FamiliarPanel.tsx",

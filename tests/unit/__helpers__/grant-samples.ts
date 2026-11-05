@@ -50,6 +50,8 @@ export function sample(schema: ExactSchema): unknown {
           return 1;
         case "dice-scalar":
           return "1d6";
+        case "catalogue-effects":
+          return [];
         case "resource-selector":
           return { kind: "pool", owner: "owner", resourceId: "x" };
         case "resource-spec":
