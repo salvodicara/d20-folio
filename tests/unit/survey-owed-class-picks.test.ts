@@ -66,15 +66,19 @@ describe("surveyOwedClassPicks", () => {
     // document: the survey reports the path (never the values), so a reader that
     // misses it can be fixed before anyone is asked to re-pick.
     const rogue = makeCharacterDoc({ classes: [{ classId: "rogue", level: 1 }] });
-    const [parent, child] = family(rogue, "users/u1/characters/a");
-    const legacy = {
-      ...parent,
-      data: {
-        ...parent.data,
-        build: { ...(parent.data.build as RawMap), masteries: ["dagger"] },
-      },
-    };
-    const survey = surveyOwedClassPicks([legacy, child]);
+    // The parent document gains an older (hypothetical) home of the picks.
+    const docs = family(rogue, "users/u1/characters/a").map((doc) =>
+      doc.path.endsWith("/combat/state")
+        ? doc
+        : {
+            ...doc,
+            data: {
+              ...doc.data,
+              build: { ...(doc.data.build as RawMap), masteries: ["dagger"] },
+            },
+          }
+    );
+    const survey = surveyOwedClassPicks(docs);
     expect(survey.byClass).toEqual({
       rogue: { weaponMasteries: { characters: 1, picks: 2 } },
     });
