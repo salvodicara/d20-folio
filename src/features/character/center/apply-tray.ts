@@ -9,6 +9,7 @@
  * An attack's shared result goes onto the use's own log line, and the turn keeps one
  * outcome receipt per target.
  */
+import type { DamageInstance } from "@/lib/damage-intake";
 import { fightSideOf } from "./outcome-offer";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import type { TFunction } from "i18next";
@@ -71,6 +72,8 @@ interface AppliedRow {
   saved?: true;
   /** The target failed a save whose state the use leaves (Bane). */
   failed?: true;
+  /** The damage before defenses, for another PC's write to resolve (`rowDamageParts`). */
+  parts?: ReadonlyArray<DamageInstance>;
 }
 
 /** Write the attack's one shared result onto the use's own log line; the returned
@@ -203,7 +206,10 @@ export function applyTray(
   rows: ReadonlyArray<TrayRow>,
   /** What each row applies, worked out by the tray (`rowAmount` / `rowAmountByType`). */
   amounts: ReadonlyArray<number>,
-  t: T
+  t: T,
+  /** Each row's damage before defenses (`rowDamageParts`): another PC's write resolves
+   *  them from its sheet as it stands then; the row's amount is the preview. */
+  parts: ReadonlyArray<ReadonlyArray<DamageInstance> | null> = []
 ): void {
   const { plan, source } = offer;
   const effect = plan.effect;
@@ -213,6 +219,7 @@ export function applyTray(
       return {
         target,
         amount: effect && row ? (amounts[index] ?? 0) : 0,
+        ...(effect === "damage" && parts[index] ? { parts: parts[index] } : {}),
         conditions: row ? rowConditions(row) : [],
         ...(row?.attack ? { outcome: row.attack } : {}),
         ...(row?.knockOut ? { knockOut: true as const } : {}),
@@ -226,6 +233,7 @@ export function applyTray(
     .filter(
       (row) =>
         row.amount > 0 ||
+        row.parts !== undefined ||
         row.conditions.length > 0 ||
         row.saved ||
         row.failed ||
@@ -441,10 +449,20 @@ export function applyTray(
             reversals.push(endConcentrationOf(campaignId, effects, t));
           }
         }
-        for (const { target, amount, conditions, outcome, knockOut } of peers) {
-          if (effect && amount > 0)
+        for (const { target, amount, conditions, outcome, knockOut, parts } of peers) {
+          if (effect && (amount > 0 || parts))
             peerUndos.push(
-              givePeer(target, effect, amount, undefined, source, t, outcome, knockOut)
+              givePeer(
+                target,
+                effect,
+                amount,
+                undefined,
+                source,
+                t,
+                outcome,
+                knockOut,
+                parts
+              )
             );
           // A sourced condition reaches them as a fight effect instead (above).
           if (sourced.length === 0)
@@ -562,7 +580,8 @@ function givePeer(
   source: LocText,
   t: T,
   outcome?: AttackOutcome,
-  knockOut?: true
+  knockOut?: true,
+  parts?: ReadonlyArray<DamageInstance>
 ): Promise<() => void> {
   const row = target.row;
   const memberUid = row?.memberUid;
@@ -607,6 +626,7 @@ function givePeer(
                   kind: effect === "heal" ? ("heal" as const) : ("damage" as const),
                   amount,
                   ...(knockOut && effect === "damage" ? { knockOut } : {}),
+                  ...(parts && effect === "damage" ? { parts } : {}),
                 },
               };
   const failed = (error: unknown): void => {

@@ -25,7 +25,7 @@ import { useTranslation } from "react-i18next";
 
 import { DamageTrayPanel } from "@/components/shared/DamageTrayPanel";
 import { Dialog } from "@/components/ui/dialog";
-import { rowAmount } from "@/lib/play/damage-tray";
+import { rowAmount, rowDamageParts } from "@/lib/play/damage-tray";
 import { useCharacterStore } from "@/stores/characterStore";
 
 import { applyTray } from "./apply-tray";
@@ -67,7 +67,8 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
           targets,
           rows,
           rows.map((row, i) => (plan.effect ? rowAmount(totals[i] ?? 0, row, plan) : 0)),
-          t
+          t,
+          rows.map((row, i) => rowDamageParts(row, plan, { total: totals[i] ?? null }))
         );
         useDamageTrayStore.getState().close();
       }}
