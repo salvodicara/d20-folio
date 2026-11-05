@@ -228,10 +228,11 @@ dev server allows the pack's real directory (`fsAllowRoots()`,
 
 **An app PR that needs a pack PR (lockstep).** Name the pack PR in the app PR's
 description with a line `Pack: #<number>`, and merge the pair with
-`scripts/lockstep-merge.sh <app PR>`: it waits for the app's checks, merges the pack
-first (a pack merge triggers no app Verify), dispatches Verify on the app branch, checks
-that it composed a pack containing that merge, and only then merges the app. Merging the
-app first lets main's Verify compose the old pack and go red.
+`scripts/lockstep-merge.sh <app PR>`. Both branches must be current with their main. It
+waits for the app's checks, runs Verify on the app branch composing the pack PR's head
+commit (`verify.yml` input `pack_sha`), and only when that is green and nothing moved
+meanwhile merges the pack and then the app, seconds apart. Merging either one first and
+verifying after leaves main composing a pack and an app that don't match.
 
 ## Reading order (especially for AI agents)
 
