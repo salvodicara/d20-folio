@@ -279,6 +279,7 @@ const SPELL_NOT_ROUND_TRIPPED = new Set([
   "effects", // authored effects, appended to the Activity's own (checked below)
   "perTargetChoice", // carried as the Activity's own field (checked below)
   "targetStates", // the state an effect's `activeKey` leaves on the target (Ray of Enfeeblement)
+  "saveIfUnwilling", // read by the tray plan from the catalogue («Consenziente»)
 ]);
 
 function spellMechanics(

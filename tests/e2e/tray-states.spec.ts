@@ -6,17 +6,23 @@
  * operation on `window.__d20DevEffectOps`.
  */
 import { test, expect, type Page } from "@playwright/test";
-import { DESKTOP, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
 
 test.describe.configure({ timeout: 90_000 });
 
-async function openEvoker(page: Page) {
-  await page.setViewportSize(DESKTOP);
+function shotPath(name: string): string {
+  const dir = process.env.REVIEW_SHOTS;
+  return dir ? `${dir}/${name}` : test.info().outputPath(name);
+}
+
+async function openEvoker(page: Page, size: "desktop" | "mobile" = "desktop") {
+  await page.setViewportSize(size === "desktop" ? DESKTOP : MOBILE);
   await seedLang(page, "it");
   await seedUI(page, "dark", "play");
   await page.addInitScript(() => {
     window.localStorage.setItem("d20-dev-combat-chronicle", "1");
     window.localStorage.setItem("d20-dev-effects-v26", "1");
+    window.localStorage.setItem("d20-dev-combat-ally", "1");
   });
   await page.goto("/characters/scn-evoker-wizard?tab=play");
   await expect(page.locator('.turn[data-phase="my-turn"]')).toBeVisible({
@@ -89,3 +95,32 @@ test("Ray of Frost's hit lands its state on the Goblin", async ({ page }) => {
   await expect(tray).toBeHidden();
   await expect.poll(() => writtenOn(page, "monster-1", "ray-of-frost")).toBe(true);
 });
+
+for (const size of ["desktop", "mobile"] as const) {
+  test(`Enlarge/Reduce on a willing ally: no save, the state lands (${size})`, async ({
+    page,
+  }) => {
+    await openEvoker(page, size);
+    await page
+      .getByRole("button", { name: /^Lancia: Ingrandire\/Ridurre/ })
+      .first()
+      .click();
+    await page.getByRole("button", { name: /^Slot di livello 2/ }).click();
+    const picker = page.getByRole("dialog", { name: /su chi\?/i });
+    await picker.locator(".cl-target").filter({ hasText: /Bren/ }).first().click();
+    const tray = page.getByTestId("damage-tray");
+    await expect(tray).toBeVisible();
+    const willing = tray.getByRole("button", { name: "Bren è consenziente: nessun TS" });
+    await willing.click();
+    await expect(willing).toHaveAttribute("aria-pressed", "true");
+    // The row names the state it takes, not «Nessun effetto».
+    await expect(tray).toContainText("Sotto Ingrandire/Ridurre");
+    await expect(
+      tray.getByRole("button", { name: /Bren ha superato il TS/ })
+    ).toBeDisabled();
+    await page.screenshot({ path: shotPath(`willing-ally-${size}.png`) });
+    await tray.getByRole("button", { name: "Applica" }).click();
+    await expect(tray).toBeHidden();
+    await expect.poll(() => writtenOn(page, "pc-mock-ally", "enlarge-reduce")).toBe(true);
+  });
+}

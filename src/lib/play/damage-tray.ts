@@ -10,6 +10,7 @@
  * the "On whom?" step picked (through {@link castFollowUps}); what each row applies is
  * plain arithmetic over the rolled total. The app never rolls.
  */
+import { getSpellById } from "@/data/spells";
 import {
   combatDamageParts,
   combatResolutionSpec,
@@ -58,6 +59,12 @@ export interface DamageTrayPlan {
   /** Damage types whose Resistance the source ignores (Elemental Adept). */
   ignoresResistance?: DamageType[];
   /** The save the targets make. `onSave` is what a success leaves of the damage. */
+  /** A willing target takes the spell without a save (Enlarge/Reduce): its row may
+   *  say «Consenziente». */
+  willing?: true;
+  /** The use leaves its state on a target that fails its save or is hit (Bane, Ray
+   *  of Frost): `name` is the use's own, for the row's outcome. */
+  leavesState?: { on: "failed-save" | "hit"; name: string };
   save?: { ability?: string; dc?: number; onSave: SaveDamageOutcome };
   /** The conditions a failed save imposes; `pickOne` when the caster picks one;
    *  `optIn` when a hit-gated rider (Topple) offers it with the chip off; `save`
@@ -243,6 +250,14 @@ export function damageTrayPlan(
           },
         }
       : {}),
+    ...(standsOnSave
+      ? { leavesState: { on: "failed-save" as const, name: action.name } }
+      : attacks && spec.standingEffect !== undefined
+        ? { leavesState: { on: "hit" as const, name: action.name } }
+        : {}),
+    ...(standsOnSave && action.spellId && getSpellById(action.spellId)?.saveIfUnwilling
+      ? { willing: true as const }
+      : {}),
     ...(spec.revives ? { revive: { ...spec.revives } } : {}),
     ...(spec.onZeroHp ? { onZeroHp: spec.onZeroHp } : {}),
     ...(spec.hitPointThreshold
@@ -333,6 +348,8 @@ export interface TrayRow {
    *  and the defense chip only set it; a hand-picked segment wins. */
   multiplier: TrayMultiplier;
   saved: boolean;
+  /** The target is willing: it makes no save and the state lands (`plan.willing`). */
+  willing?: boolean;
   /** The known defense that pre-set the multiplier, shown as a chip. */
   defense: TargetDefense | null;
   /** Whether the defense chip is on (it counts in the multiplier it sets). */
@@ -731,7 +748,30 @@ export function trayOutcomeReceipts(
 
 /** Toggle "Saved": it selects the multiplier its facts give (½, 0, ¼…). */
 export function toggleSaved(row: TrayRow, plan: DamageTrayPlan): TrayRow {
-  const next = { ...row, saved: !row.saved };
+  const next = { ...row, saved: !row.saved, willing: false };
+  return { ...next, multiplier: factsMultiplier(next, plan) };
+}
+
+/** Whether this row takes the use's state: it failed its save (or is willing), or it
+ *  was hit. */
+export function rowTakesState(plan: DamageTrayPlan, row: TrayRow): boolean {
+  if (!plan.leavesState) return false;
+  if (plan.leavesState.on === "failed-save") return !row.saved;
+  return row.attack === "hit" || row.attack === "critical";
+}
+
+/** Whether a target may be willing (an ally: a player character, or a creature on
+ *  the party's side) on a spell whose save is only for the unwilling. */
+export function offersWilling(
+  plan: DamageTrayPlan,
+  target: { kind: "self" | "pc" | "monster"; row?: { side?: "ally" | "enemy" } }
+): boolean {
+  return plan.willing === true && (target.kind === "pc" || target.row?.side === "ally");
+}
+
+/** Toggle «Consenziente»: a willing target makes no save, so it is never Saved. */
+export function toggleWilling(row: TrayRow, plan: DamageTrayPlan): TrayRow {
+  const next = { ...row, willing: !row.willing, saved: false };
   return { ...next, multiplier: factsMultiplier(next, plan) };
 }
 

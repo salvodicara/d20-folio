@@ -350,6 +350,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
+    saveIfUnwilling: true,
     saveAbility: "CON",
     targeting: { affinity: "ally", maxTargets: 1 },
     grants: [
@@ -593,6 +594,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "minutes", amount: 10 },
+    saveIfUnwilling: true,
     saveAbility: "CON",
     source: "SRD",
   },

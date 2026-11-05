@@ -485,6 +485,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     },
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
+    saveIfUnwilling: true,
     saveAbility: "DEX",
     source: "SRD",
   },

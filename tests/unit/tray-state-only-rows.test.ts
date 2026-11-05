@@ -121,4 +121,31 @@ describe("a tray whose outcome is only a state", () => {
     );
     expect(targets).toEqual(["m-1"]);
   });
+
+  it("a willing ally makes no save and takes the state", async () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+    const plan = {
+      effect: null,
+      willing: true,
+      save: { ability: "CON", dc: 13, onSave: "none" },
+      targets: ["m-1"],
+    } as DamageTrayPlan;
+    applyTray(
+      {
+        characterId: cleric.id,
+        actionName: "Enlarge",
+        source: { custom: "Enlarge" },
+        castLogId: null,
+        actionId: "cast",
+        plan,
+        onFailed: stateOn,
+      },
+      [{ id: "m-1", name: "Wolf", kind: "monster" }],
+      [{ ...initialTrayRow(plan, "m-1"), willing: true }],
+      [0],
+      ((key: string) => key) as never
+    );
+    await writesSettled();
+    expect(io.appendPersistentCombatEffect).toHaveBeenCalledTimes(1);
+  });
 });

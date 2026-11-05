@@ -37,6 +37,9 @@ import {
   toggleCondition,
   toggleDefense,
   toggleSaved,
+  toggleWilling,
+  offersWilling,
+  rowTakesState,
   type AttackOutcome,
   type DamageTrayPlan,
   type TrayEffect,
@@ -290,6 +293,11 @@ function TrayTargetRow({
             amount={amount}
             hp={target.hp}
             conditions={conditions}
+            stateLabel={
+              rowTakesState(plan, row) && plan.leavesState
+                ? t("combat.damageTray.stateLands", { name: plan.leavesState.name })
+                : null
+            }
           />
         </span>
       </div>
@@ -360,9 +368,21 @@ function TrayTargetRow({
             className="fchip"
             aria-pressed={row.saved}
             aria-label={t("combat.damageTray.savedAria", { name: target.name })}
+            disabled={row.willing === true}
             onClick={() => onChange(toggleSaved(row, plan))}
           >
             {t("combat.damageTray.saved")}
+          </button>
+        )}
+        {offersWilling(plan, target) && (
+          <button
+            type="button"
+            className="fchip"
+            aria-pressed={row.willing === true}
+            aria-label={t("combat.damageTray.willingAria", { name: target.name })}
+            onClick={() => onChange(toggleWilling(row, plan))}
+          >
+            {t("combat.damageTray.willing")}
           </button>
         )}
         {row.defense && (
@@ -414,20 +434,29 @@ function Preview({
   amount,
   hp,
   conditions,
+  stateLabel = null,
 }: {
   effect: TrayEffect | null;
   amount: number | null;
   hp?: { current: number; max: number; temp: number };
   conditions: string[];
+  /** The use's state this row takes (a failed save, a willing ally, a hit). */
+  stateLabel?: string | null;
 }) {
   const { t } = useTranslation();
   if (effect === null)
     return conditions.length > 0 ? null : (
-      <span className="text-text-muted">{t("combat.damageTray.noEffect")}</span>
+      <span className="text-text-muted">
+        {stateLabel ?? t("combat.damageTray.noEffect")}
+      </span>
     );
   if (amount === null) return <span className="text-text-muted">—</span>;
   if (amount === 0 && conditions.length === 0)
-    return <span className="text-text-muted">{t("combat.damageTray.noEffect")}</span>;
+    return (
+      <span className="text-text-muted">
+        {stateLabel ?? t("combat.damageTray.noEffect")}
+      </span>
+    );
   const sign = effect === "damage" ? "−" : "+";
   const tone = effect === "damage" ? "text-danger" : "text-success";
   const after = hp && effect !== "temp-hp" ? previewHp(effect, amount, hp) : null;

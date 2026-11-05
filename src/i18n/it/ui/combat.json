@@ -583,7 +583,10 @@
       "outcomeGroup": "Esito dell'attacco su {{name}}",
       "critHint": "dadi raddoppiati",
       "incoming": "{{mode}} ({{source}})",
-      "incomingConsumed": "{{mode}} ({{source}}, si consuma)"
+      "incomingConsumed": "{{mode}} ({{source}}, si consuma)",
+      "willing": "Consenziente",
+      "willingAria": "{{name}} è consenziente: nessun TS",
+      "stateLands": "Sotto {{name}}"
     },
     "unarmedUnburdenedDie": "{{die}} se non impugni armi o Scudo",
     "gainTempHp": "Ottieni {{amount}} PF temporanei",

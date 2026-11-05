@@ -439,6 +439,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     components: { v: true, s: true, m: false },
     concentration: false,
     duration: { kind: "hours", amount: 8 },
+    saveIfUnwilling: true,
     saveAbility: "CHA",
     source: "SRD",
   },

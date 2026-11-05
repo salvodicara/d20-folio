@@ -1444,6 +1444,33 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
       },
     ],
   };
+  // Opt-in (`d20-dev-combat-ally`): a second PC on the evoker's side, for the tray's
+  // willing-ally review; the specs that count the three monsters keep them alone.
+  if (window.localStorage.getItem("d20-dev-combat-ally") === "1") {
+    const ally = "pc-mock-ally";
+    rows.push({
+      id: ally,
+      kind: "pc",
+      name: "Bren",
+      ac: 18,
+      initiative: 9,
+      conditions: [],
+      currentHp: 52,
+      maxHp: 52,
+      tempHp: 0,
+      down: false,
+      hidden: false,
+      memberUid: "mock-ally",
+      characterId: "scn-champion-6",
+    });
+    turnOrderIds.push(ally);
+    encounter.combatants.push({
+      kind: "pc",
+      id: ally,
+      memberUid: "mock-ally",
+      characterId: "scn-champion-6",
+    });
+  }
   return {
     campaignId: "mock-1",
     encounter,
