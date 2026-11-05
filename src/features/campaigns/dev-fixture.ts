@@ -28,6 +28,7 @@ import { assertNonEmptyString } from "@/lib/non-empty-string";
 import type { PartyRoster } from "@/features/campaigns/party-roster";
 import { sortByInitiative } from "@/features/campaigns/encounter";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { asRaceId } from "@/data/srd-names";
 
 /** The id `makeDevCampaign` seeds by default (also a sample invite code). */
@@ -1340,6 +1341,19 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
  * The evoker (`scn-evoker-wizard`) carries a Quarterstaff + Magic Missile + Fireball
  * (see `dev-scenarios.ts`), so all three action shapes are commit-able on that one sheet.
  */
+/** The `d20-dev-combat-effects` seed (a JSON array of active combat effects), or none
+ *  when unset or unreadable. Dev-bypass only (its caller is). */
+function readDevCombatEffects(): ActiveCombatEffect[] {
+  const raw = window.localStorage.getItem("d20-dev-combat-effects");
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as ActiveCombatEffect[]) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function makeDevChronicleCombat(): GlobalCombat | null {
   if (typeof window === "undefined") return null;
   if (window.localStorage.getItem("d20-dev-combat-chronicle") !== "1") return null;
@@ -1472,6 +1486,16 @@ export function makeDevChronicleCombat(): GlobalCombat | null {
       characterId: "scn-champion-6",
     });
   }
+  // Opt-in (`d20-dev-combat-effects`): active combat effects already in the fight, as a
+  // JSON array, so a spec can put a state (a feature's mark on a monster) in place
+  // without playing the turn that writes it.
+  const seededEffects = readDevCombatEffects();
+  if (seededEffects.length > 0)
+    encounter.effectOps = seededEffects.map((effect, i) => ({
+      id: `dev-effect-op-${i}`,
+      kind: "apply" as const,
+      effect,
+    }));
   return {
     campaignId: "mock-1",
     encounter,

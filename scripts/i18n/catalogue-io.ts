@@ -93,7 +93,12 @@ export function mergedUi(locale: Locale): Json {
  * plain assign composes them (the runtime merge is the strict collision gate).
  */
 export function srdCatalogue(locale: Locale, file: string): Json {
-  const base = readShard(locale, "srd", file);
+  // The public lazily-loaded prose (`src/i18n/<locale>/srd-prose/<file>.json`, the
+  // English `gist` fields the runtime loads after first paint) joins first.
+  const base = withProse(
+    readShard(locale, "srd", file),
+    join(I18N_ROOT, locale, "srd-prose", `${file}.json`)
+  );
   if (!contentPackEnabled()) return base;
   const merged: Json = { ...base };
   // A pack shard is either a single `srd/<file>.json` OR a `srd/<file>/` directory of
@@ -114,18 +119,24 @@ export function srdCatalogue(locale: Locale, file: string): Json {
     }
   }
   // The pack's lazily-loaded prose (`srd-prose/<file>.json`, the `description`
-  // fields the runtime loads after first paint) joins its entries field by field,
-  // so every check sees the same composed entry the runtime ends up with.
-  const proseFile = join(PACK_I18N_ROOT, locale, "srd-prose", `${file}.json`);
-  if (existsSync(proseFile)) {
-    const prose = JSON.parse(readFileSync(proseFile, "utf-8")) as Record<string, Json>;
-    for (const [id, fields] of Object.entries(prose)) {
-      const entry = merged[id];
-      merged[id] =
-        entry && typeof entry === "object" && !Array.isArray(entry)
-          ? { ...entry, ...fields }
-          : fields;
-    }
+  // and `gist` fields the runtime loads after first paint).
+  return withProse(merged, join(PACK_I18N_ROOT, locale, "srd-prose", `${file}.json`));
+}
+
+/**
+ * Join a lazily-loaded prose file into its catalogue entries field by field, so
+ * every check sees the same composed entry the runtime ends up with.
+ */
+function withProse(catalogue: Json, proseFile: string): Json {
+  if (!existsSync(proseFile)) return catalogue;
+  const merged: Json = { ...catalogue };
+  const prose = JSON.parse(readFileSync(proseFile, "utf-8")) as Record<string, Json>;
+  for (const [id, fields] of Object.entries(prose)) {
+    const entry = merged[id];
+    merged[id] =
+      entry && typeof entry === "object" && !Array.isArray(entry)
+        ? { ...entry, ...fields }
+        : fields;
   }
   return merged;
 }

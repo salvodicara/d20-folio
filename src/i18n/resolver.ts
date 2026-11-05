@@ -63,6 +63,9 @@ function missing(
   throw new Error(`[localizeSrd] missing SRD string "${path}"`);
 }
 
+/** Display-only English fields that arrive after first paint (`ensureEnProse`). */
+const EN_PROSE_FIELDS: ReadonlySet<string> = new Set(["description", "gist"]);
+
 /**
  * Resolve a single localized SRD string. Throws (dev/test) / returns the `⟦…⟧`
  * sentinel (prod) on any missing kind/key/field — or an un-loaded locale.
@@ -78,10 +81,10 @@ export function localizeSrd(
   if (entry === undefined) return missing(kind, key, field, locale);
   const value = entry[field];
   if (value === undefined) {
-    // The pack's English descriptions arrive lazily (`@pack/i18n-en-prose`): until
-    // then a description is a quiet blank, the load is asked for, and the app
+    // The English prose (descriptions, gists) arrives lazily (`ensureEnProse`): until
+    // then it is a quiet blank, the load is asked for, and the app
     // re-renders when it lands. Never a crash.
-    if (field === "description" && locale === SOURCE_LOCALE && !hasEnProse()) {
+    if (EN_PROSE_FIELDS.has(field) && locale === SOURCE_LOCALE && !hasEnProse()) {
       diagnosticsLog("info", "srd.prose-not-loaded", { kind, key });
       requestEnProse();
       return "";
