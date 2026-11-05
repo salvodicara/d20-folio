@@ -30,7 +30,21 @@ fi
 branch="$(gh pr view "$app" --repo "$APP_REPO" --json headRefName --jq .headRefName)"
 echo "App #$app (branch $branch) ↔ pack #$pack"
 
-# 1. The app PR's own checks (the SRD-only CI) must be green.
+# 0. The app branch must contain main's head: a branch cut before an engine change the
+#    pack already uses fails its composed typecheck AFTER the pack has merged.
+mainHead="$(gh api "repos/$APP_REPO/commits/main" --jq .sha)"
+behind="$(gh api "repos/$APP_REPO/compare/$mainHead...$branch" --jq .behind_by)"
+if [ "$behind" != "0" ]; then
+  echo "✗ $branch is $behind commit(s) behind main: rebase it first (nothing merged)." >&2
+  exit 1
+fi
+
+# 1. The app PR's own checks (the SRD-only CI) must be green; right after a push
+#    they take a moment to register.
+for _ in $(seq 1 40); do
+  [ "$(gh pr checks "$app" --repo "$APP_REPO" --json name --jq length 2>/dev/null || echo 0)" -gt 0 ] && break
+  sleep 15
+done
 gh pr checks "$app" --repo "$APP_REPO" --watch --interval 60 >/dev/null || true
 bad="$(gh pr checks "$app" --repo "$APP_REPO" --json name,state \
   --jq '.[]|select(.state!="SUCCESS" and .state!="SKIPPED")|.name')"
