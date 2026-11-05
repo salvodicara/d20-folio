@@ -79,7 +79,7 @@ describe("a damage rider with a save and a condition", () => {
   });
 
   it("the tray offers it behind the hit, against the rider's own save", () => {
-    expect(damageTrayPlan(sword(), ["monster-1"], "pc-me")?.conditions).toEqual({
+    expect(damageTrayPlan(sword(), ["monster-1"], "pc-me")?.conditions).toMatchObject({
       options: ["poisoned"],
       pickOne: false,
       optIn: true,
@@ -95,5 +95,15 @@ describe("a damage rider with a save and a condition", () => {
       damageType: "poison",
     };
     expect(combatResolutionSpec(sword([plain])).conditionApplication).toBeUndefined();
+  });
+});
+
+describe("the tray writes the rider's condition with its duration", () => {
+  it("names the rider's feature and the condition's lifetime on the plan", () => {
+    const conditions = damageTrayPlan(sword(), ["monster-1"], "pc-me")?.conditions;
+    expect(conditions?.source).toEqual({ kind: "feature", id: "custom-venom-coat" });
+    expect(conditions?.lifetimes).toEqual({
+      poisoned: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
+    });
   });
 });

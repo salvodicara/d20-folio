@@ -203,6 +203,20 @@ function riderConditionLifetimes(
   return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
+/** The feature a rider condition comes from (Brew Poison's Poisoned: Poisoner),
+ *  so the fight writes it as a sourced effect with its own end. */
+export function riderConditionSource(
+  action: ResolvedAction,
+  id: string
+): { kind: "feature"; id: string } | undefined {
+  const rider = (action.summary.extraDamage ?? []).find(
+    (r) => r.save && r.failedSaveConditions?.some((c) => c === id)
+  );
+  return rider?.conditionSourceId
+    ? { kind: "feature", id: rider.conditionSourceId }
+    : undefined;
+}
+
 /** The save a rider condition rides (Topple: CON vs its DC; Brew Poison: the
  *  rider's own), for the condition `id`. */
 export function riderConditionSave(
