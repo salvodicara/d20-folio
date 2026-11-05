@@ -1,32 +1,26 @@
 {
   "acid": {
     "description": "When you take the Attack action, you can replace one of your attacks with throwing a vial of Acid. Target one creature or object you can see within 20 feet of yourself. The target must succeed on a Dexterity saving throw (DC 8 + your Dexterity modifier + Proficiency Bonus) or take 2d6 Acid damage.",
-    "gist": "Thrown within 20 ft: Dex save or 2d6 Acid damage",
     "name": "Acid"
   },
   "alchemists-fire": {
     "description": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Alchemist's Fire. Target one creature or object you can see within 20 feet. The target must succeed on a Dexterity saving throw (DC 8 + DEX mod + PB) or take 1d4 Fire damage and start burning.",
-    "gist": "Thrown within 20 ft: Dex save or 1d4 Fire damage and the target starts burning",
     "name": "Alchemist's Fire"
   },
   "alchemists-supplies": {
     "description": "Alchemist's Supplies let you produce useful concoctions, such as Acid or Alchemist's Fire.",
-    "gist": "Make useful concoctions such as Acid or Alchemist's Fire",
     "name": "Alchemist's Supplies"
   },
   "antitoxin": {
     "description": "As a Bonus Action, you can drink a vial of Antitoxin to gain Advantage on saving throws to avoid or end the Poisoned condition for 1 hour.",
-    "gist": "Bonus Action: Advantage on saves against Poisoned for 1 hour",
     "name": "Antitoxin"
   },
   "arcane-focus": {
     "description": "A crystal, orb, rod, staff, or wand that channels arcane magic, usable as a spellcasting focus.",
-    "gist": "A crystal, orb, rod, staff or wand used as a spellcasting focus",
     "name": "Arcane Focus"
   },
   "arrows": {
     "description": "Ammunition for bows. Sold in bundles of 20.",
-    "gist": "Ammunition for bows, in bundles of 20",
     "name": "Arrows"
   },
   "artisans-tools": {
@@ -34,247 +28,198 @@
   },
   "backpack": {
     "description": "A Backpack holds up to 30 pounds within 1 cubic foot. It can also serve as a saddlebag.",
-    "gist": "Holds up to 30 pounds; can serve as a saddlebag",
     "name": "Backpack"
   },
   "bagpipes": {
     "description": "Bagpipes are a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play them.",
-    "gist": "Wind instrument; proficiency adds your bonus to play it",
     "name": "Bagpipes"
   },
   "ball-bearings": {
     "description": "As a Utilize action, you can spill Ball Bearings to cover a level, 10-foot-square area within 10 feet of yourself. A creature that enters this area for the first time on a turn must succeed on a DC 10 Dexterity saving throw or have the Prone condition.",
-    "gist": "Cover a 10-ft square: DC 10 Dex save or fall Prone",
     "name": "Ball Bearings"
   },
   "basket": {
     "name": "Basket",
-    "description": "A Basket holds up to 40 pounds within 2 cubic feet.",
-    "gist": "Holds up to 40 pounds"
+    "description": "A Basket holds up to 40 pounds within 2 cubic feet."
   },
   "battleaxe": {
     "name": "Battleaxe",
-    "description": "A broad-headed martial axe balanced for one- or two-handed blows.",
-    "gist": "Martial axe for one- or two-handed blows"
+    "description": "A broad-headed martial axe balanced for one- or two-handed blows."
   },
   "bedroll": {
     "description": "A Bedroll sleeps one Small or Medium creature. While in a Bedroll, you automatically succeed on saving throws against extreme cold.",
-    "gist": "Sleeps one creature; automatic success on saves against extreme cold",
     "name": "Bedroll"
   },
   "bell": {
     "description": "When rung as a Utilize action, a Bell produces a sound that can be heard up to 60 feet away.",
-    "gist": "Rings out a sound heard up to 60 ft away",
     "name": "Bell"
   },
   "blanket": {
     "description": "While wrapped in a blanket, you have Advantage on saving throws against extreme cold.",
-    "gist": "Advantage on saves against extreme cold",
     "name": "Blanket"
   },
   "block-and-tackle": {
     "name": "Block and Tackle",
-    "description": "A Block and Tackle lets you hoist up to four times the weight you can normally lift.",
-    "gist": "Hoist up to four times the weight you can normally lift"
+    "description": "A Block and Tackle lets you hoist up to four times the weight you can normally lift."
   },
   "blowgun": {
     "name": "Blowgun",
-    "description": "A quiet tube that propels small needles with a controlled breath.",
-    "gist": "Quiet tube that shoots small needles"
+    "description": "A quiet tube that propels small needles with a controlled breath."
   },
   "blowgun-needles": {
     "description": "Ammunition for blowguns. Sold in bundles of 50.",
-    "gist": "Ammunition for blowguns, in bundles of 50",
     "name": "Blowgun Needles"
   },
   "book": {
     "description": "A Book might contain poetry, historical accounts, scientific theories, or information on almost any subject. A Warlock's Book holds occult lore.",
-    "gist": "Holds poetry, history, science or lore on almost any subject",
     "name": "Book"
   },
   "breastplate": {
     "name": "Breastplate",
-    "description": "A fitted metal cuirass that protects the torso while leaving the limbs relatively free.",
-    "gist": "Fitted metal cuirass that guards the torso and leaves the limbs free"
+    "description": "A fitted metal cuirass that protects the torso while leaving the limbs relatively free."
   },
   "brewers-supplies": {
     "description": "Brewer's Supplies are used to ferment beverages and purify water.",
-    "gist": "Ferment beverages and purify water",
     "name": "Brewer's Supplies"
   },
   "bucket": {
     "name": "Bucket",
-    "description": "A Bucket holds up to half a cubic foot of contents.",
-    "gist": "Holds up to half a cubic foot"
+    "description": "A Bucket holds up to half a cubic foot of contents."
   },
   "burglars-pack": {
     "description": "Contains: Backpack, Ball Bearings, Bell, 10 Candles, Crowbar, Hooded Lantern, 7 flasks of Oil, 5 days of Rations, Rope, Tinderbox, and Waterskin.",
-    "gist": "Backpack, ball bearings, crowbar, hooded lantern, oil, rations, rope and more",
     "name": "Burglar's Pack"
   },
   "calligraphers-supplies": {
     "description": "Calligrapher's Supplies are used to write with elegant, precise lettering.",
-    "gist": "Write with elegant, precise lettering",
     "name": "Calligrapher's Supplies"
   },
   "caltrops": {
     "description": "As a Utilize action, you can spread Caltrops to cover a 5-foot-square area within 5 feet of yourself. A creature that enters this area must succeed on a DC 15 Dexterity saving throw or take 1 Piercing damage and have its Speed reduced to 0 until the start of its next turn.",
-    "gist": "Cover a 5-ft square: DC 15 Dex save or 1 Piercing damage and Speed 0",
     "name": "Caltrops"
   },
   "candle": {
     "description": "For 1 hour, a lit Candle sheds Bright Light in a 5-foot radius and Dim Light for an additional 5 feet.",
-    "gist": "Burns 1 hour: Bright Light 5 ft, Dim Light 5 ft more",
     "name": "Candle"
   },
   "carpenters-tools": {
     "description": "Carpenter's Tools are used to build and repair wooden structures and objects.",
-    "gist": "Build and repair wooden structures and objects",
     "name": "Carpenter's Tools"
   },
   "cartographers-tools": {
     "description": "Cartographer's Tools are used to create and read maps.",
-    "gist": "Draw and read maps",
     "name": "Cartographer's Tools"
   },
   "chain": {
     "description": "As a Utilize action, you can wrap a Chain around an unwilling creature within 5 feet that has the Grappled, Incapacitated, or Restrained condition (DC 13 Strength Athletics check). Escaping requires DC 18 Dexterity (Acrobatics), bursting requires DC 20 Strength (Athletics).",
-    "gist": "Bind a Grappled, Incapacitated or Restrained creature; DC 18 to escape",
     "name": "Chain"
   },
   "chain-mail": {
     "name": "Chain Mail",
-    "description": "Interlocking metal rings worn over padding form this heavy, reliable suit of armor.",
-    "gist": "Heavy armor of interlocking metal rings over padding"
+    "description": "Interlocking metal rings worn over padding form this heavy, reliable suit of armor."
   },
   "chain-shirt": {
     "name": "Chain Shirt",
-    "description": "A shirt of interlocking metal rings worn beneath outer clothing for discreet protection.",
-    "gist": "Shirt of metal rings worn under clothing for discreet protection"
+    "description": "A shirt of interlocking metal rings worn beneath outer clothing for discreet protection."
   },
   "climbers-kit": {
     "description": "Includes boot tips, gloves, pitons, and a harness. As a Utilize action, you can anchor yourself; you can't fall more than 25 feet from the anchor point.",
-    "gist": "Anchor yourself so you can't fall more than 25 ft",
     "name": "Climber's Kit"
   },
   "clothes-fine": {
     "description": "Fine Clothes are made of expensive fabrics. Some events and locations admit only people wearing these clothes.",
-    "gist": "Expensive clothes; some events and places admit only those wearing them",
     "name": "Clothes, Fine"
   },
   "clothes-travelers": {
     "description": "Traveler's Clothes are resilient garments designed for travel in various environments.",
-    "gist": "Resilient clothes for travel in various environments",
     "name": "Clothes, Traveler's"
   },
   "club": {
     "name": "Club",
-    "description": "A compact wooden bludgeon, easy to handle in close quarters or beside another light weapon.",
-    "gist": "Compact wooden bludgeon, handy at close quarters or with another light weapon"
+    "description": "A compact wooden bludgeon, easy to handle in close quarters or beside another light weapon."
   },
   "cobblers-tools": {
     "description": "Cobbler's Tools are used to make and repair footwear.",
-    "gist": "Make and repair footwear",
     "name": "Cobbler's Tools"
   },
   "component-pouch": {
     "description": "A Component Pouch is watertight and filled with compartments that hold all the free Material components of your spells.",
-    "gist": "Watertight pouch holding all your spells' free Material components",
     "name": "Component Pouch"
   },
   "cooks-utensils": {
     "description": "Cook's Utensils are used to prepare meals.",
-    "gist": "Prepare meals",
     "name": "Cook's Utensils"
   },
   "costume": {
     "description": "An elaborate outfit worn as a disguise or for a performance.",
-    "gist": "Elaborate outfit for a disguise or a performance",
     "name": "Costume"
   },
   "crossbow-bolts": {
     "description": "Ammunition for crossbows. Sold in bundles of 20.",
-    "gist": "Ammunition for crossbows, in bundles of 20",
     "name": "Crossbow Bolts"
   },
   "crowbar": {
     "description": "Using a Crowbar gives you Advantage on Strength checks where the Crowbar's leverage can be applied.",
-    "gist": "Advantage on Strength checks where leverage helps",
     "name": "Crowbar"
   },
   "dagger": {
     "name": "Dagger",
-    "description": "A small, balanced blade suited to precise strikes, close fighting, or throwing.",
-    "gist": "Small balanced blade for precise strikes, close fighting or throwing"
+    "description": "A small, balanced blade suited to precise strikes, close fighting, or throwing."
   },
   "dart": {
     "name": "Dart",
-    "description": "A weighted throwing point designed for quick, accurate casts at short range.",
-    "gist": "Weighted throwing point for quick, accurate short-range throws"
+    "description": "A weighted throwing point designed for quick, accurate casts at short range."
   },
   "dice-set": {
     "description": "A Dice Set is a gaming set. Proficiency lets you add your Proficiency Bonus to ability checks you make to play a game that uses it.",
-    "gist": "Gaming set; proficiency adds your bonus to play games with it",
     "name": "Dice Set"
   },
   "diplomats-pack": {
     "description": "Contains: Chest, Fine Clothes, Ink, 5 Ink Pens, Lamp, 2 Map or Scroll Cases, 4 flasks of Oil, 5 sheets of Paper, 5 sheets of Parchment, Perfume, and Tinderbox.",
-    "gist": "Chest, fine clothes, ink, pens, lamp, oil, paper, parchment, perfume and more",
     "name": "Diplomat's Pack"
   },
   "disguise-kit": {
     "description": "A Disguise Kit contains cosmetics, hair dye, small props, and a few pieces of clothing. Proficiency with it lets you add your Proficiency Bonus to Charisma (Deception) checks made to create visual disguises.",
-    "gist": "Proficiency adds your bonus to Deception checks for visual disguises",
     "name": "Disguise Kit"
   },
   "druidic-focus": {
     "description": "A sprig of mistletoe, a totem, a wooden staff, or a yew wand, usable as a spellcasting focus for druid spells.",
-    "gist": "Mistletoe, totem, staff or yew wand used as a focus for druid spells",
     "name": "Druidic Focus"
   },
   "drum": {
     "description": "A Drum is a percussion instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Percussion instrument; proficiency adds your bonus to play it",
     "name": "Drum"
   },
   "dulcimer": {
     "description": "A Dulcimer is a stringed instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Stringed instrument; proficiency adds your bonus to play it",
     "name": "Dulcimer"
   },
   "dungeoneers-pack": {
     "description": "Contains: Backpack, Caltrops, Crowbar, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.",
-    "gist": "Backpack, caltrops, crowbar, oil, 10 days of rations, rope, 10 torches and more",
     "name": "Dungeoneer's Pack"
   },
   "entertainers-pack": {
     "description": "Contains: Backpack, Bedroll, Bell, Bullseye Lantern, 3 Costumes, Mirror, 8 flasks of Oil, 9 days of Rations, Tinderbox, and Waterskin.",
-    "gist": "Backpack, bedroll, bell, lantern, 3 costumes, mirror, oil, rations and more",
     "name": "Entertainer's Pack"
   },
   "explorers-pack": {
     "description": "Contains: Backpack, Bedroll, 2 flasks of Oil, 10 days of Rations, Rope, Tinderbox, 10 Torches, and Waterskin.",
-    "gist": "Backpack, bedroll, oil, 10 days of rations, rope, 10 torches and more",
     "name": "Explorer's Pack"
   },
   "firearm-bullets": {
     "description": "Ammunition for firearms. Sold in bundles of 10.",
-    "gist": "Ammunition for firearms, in bundles of 10",
     "name": "Firearm Bullets"
   },
   "flail": {
     "name": "Flail",
-    "description": "A spiked or weighted head joined to a handle by chain, delivering heavy swinging blows.",
-    "gist": "Weighted head on a chain for heavy swinging blows"
+    "description": "A spiked or weighted head joined to a handle by chain, delivering heavy swinging blows."
   },
   "flute": {
     "description": "A Flute is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it",
     "name": "Flute"
   },
   "forgery-kit": {
     "description": "A Forgery Kit is used to create convincing fakes of documents and other physical items.",
-    "gist": "Create convincing fakes of documents and other physical items",
     "name": "Forgery Kit"
   },
   "gaming-set": {
@@ -282,542 +227,434 @@
   },
   "glaive": {
     "name": "Glaive",
-    "description": "A long polearm tipped with a single-edged blade, built to cut from beyond ordinary melee reach.",
-    "gist": "Two-handed polearm with a single-edged blade that cuts beyond normal reach"
+    "description": "A long polearm tipped with a single-edged blade, built to cut from beyond ordinary melee reach."
   },
   "glass-bottle": {
     "name": "Glass Bottle",
-    "description": "A Glass Bottle holds up to 1½ pints.",
-    "gist": "Holds up to 1½ pints"
+    "description": "A Glass Bottle holds up to 1½ pints."
   },
   "glassblowers-tools": {
     "description": "Glassblower's Tools are used to shape glass.",
-    "gist": "Shape glass",
     "name": "Glassblower's Tools"
   },
   "grappling-hook": {
     "description": "As a Utilize action, you can throw the Grappling Hook at a railing, ledge, or other catch within 50 feet (DC 13 Dexterity Acrobatics check). If you tied a Rope to the hook, you can then climb it.",
-    "gist": "Utilize: hook a catch within 50 ft (DC 13 Acrobatics); climb it with a Rope",
     "name": "Grappling Hook"
   },
   "greataxe": {
     "name": "Greataxe",
-    "description": "A massive two-handed axe that commits its full weight to powerful sweeping cuts.",
-    "gist": "Massive two-handed axe for powerful sweeping cuts"
+    "description": "A massive two-handed axe that commits its full weight to powerful sweeping cuts."
   },
   "greatclub": {
     "name": "Greatclub",
-    "description": "A heavy two-handed cudgel that turns simple leverage into crushing force.",
-    "gist": "Heavy two-handed cudgel for crushing blows"
+    "description": "A heavy two-handed cudgel that turns simple leverage into crushing force."
   },
   "greatsword": {
     "name": "Greatsword",
-    "description": "A long, heavy blade wielded with both hands for broad, forceful cuts.",
-    "gist": "Long, heavy two-handed blade for broad, forceful cuts"
+    "description": "A long, heavy blade wielded with both hands for broad, forceful cuts."
   },
   "halberd": {
     "name": "Halberd",
-    "description": "A long polearm combining an axe blade, spear point, and hook for versatile reach.",
-    "gist": "Long polearm with axe blade, spear point and hook"
+    "description": "A long polearm combining an axe blade, spear point, and hook for versatile reach."
   },
   "half-plate-armor": {
     "name": "Half Plate Armor",
-    "description": "Shaped metal plates protect the torso and vital areas while leaving more mobility than a full suit.",
-    "gist": "Metal plates guard torso and vitals, with more mobility than full plate"
+    "description": "Shaped metal plates protect the torso and vital areas while leaving more mobility than a full suit."
   },
   "hand-crossbow": {
     "name": "Hand Crossbow",
-    "description": "A compact crossbow that trades power and range for one-handed handling.",
-    "gist": "Compact crossbow used in one hand, with less power and range"
+    "description": "A compact crossbow that trades power and range for one-handed handling."
   },
   "handaxe": {
     "name": "Handaxe",
-    "description": "A light, balanced axe effective in the hand and designed to be thrown when needed.",
-    "gist": "Light, balanced axe for melee or throwing"
+    "description": "A light, balanced axe effective in the hand and designed to be thrown when needed."
   },
   "healers-kit": {
     "description": "Has ten uses. As a Utilize action, you can expend one use to stabilize an Unconscious creature at 0 Hit Points without needing a Wisdom (Medicine) check.",
-    "gist": "10 uses; Utilize: stabilize a creature at 0 HP without a Medicine check",
     "name": "Healer's Kit"
   },
   "heavy-crossbow": {
     "name": "Heavy Crossbow",
-    "description": "A powerful two-handed crossbow whose heavy draw sends bolts across long distances.",
-    "gist": "Powerful two-handed crossbow that shoots bolts over long distances"
+    "description": "A powerful two-handed crossbow whose heavy draw sends bolts across long distances."
   },
   "herbalism-kit": {
     "description": "An Herbalism Kit includes pouches to store herbs, clippers and leather gloves for collecting plants, a mortar and pestle, and several vials. Proficiency with it lets you add your Proficiency Bonus to checks made to identify or apply herbs and other natural remedies, and to craft antitoxin and healing potions.",
-    "gist": "Identify and apply herbs; craft antitoxin and healing potions",
     "name": "Herbalism Kit"
   },
   "hide-armor": {
     "name": "Hide Armor",
-    "description": "Layers of thick hide and fur provide rugged protection with limited flexibility.",
-    "gist": "Thick hide and fur: rugged protection, little flexibility"
+    "description": "Layers of thick hide and fur provide rugged protection with limited flexibility."
   },
   "holy-symbol": {
     "description": "An amulet, emblem, or reliquary bearing a deity's symbol, usable as a spellcasting focus for cleric and paladin spells.",
-    "gist": "Spellcasting focus for Cleric and Paladin spells",
     "name": "Holy Symbol"
   },
   "holy-water": {
     "description": "When you take the Attack action, you can replace one of your attacks with throwing a flask of Holy Water at a creature within 20 feet. The target must succeed on a Dexterity saving throw (DC 8 + DEX mod + PB) or take 2d8 Radiant damage if it is a Fiend or Undead.",
-    "gist": "Thrown 20 ft: Dex save or 2d8 Radiant damage to a Fiend or Undead",
     "name": "Holy Water"
   },
   "horn": {
     "description": "A Horn is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it",
     "name": "Horn"
   },
   "hunting-trap": {
     "description": "As a Utilize action, set the trap. A creature that steps on it must succeed on a DC 13 Dexterity saving throw or take 1d4 Piercing damage and have Speed reduced to 0. Escaping requires a DC 13 Strength (Athletics) check.",
-    "gist": "Stepping on it: DC 13 Dex save or 1d4 Piercing damage and Speed 0",
     "name": "Hunting Trap"
   },
   "ink": {
     "description": "Ink comes in a 1-ounce bottle, which provides enough ink to write about 500 pages.",
-    "gist": "1-ounce bottle, enough to write about 500 pages",
     "name": "Ink"
   },
   "ink-pen": {
     "name": "Ink Pen",
-    "description": "Using Ink, an Ink Pen is used to write or draw.",
-    "gist": "Write or draw, using Ink"
+    "description": "Using Ink, an Ink Pen is used to write or draw."
   },
   "iron-pot": {
     "name": "Iron Pot",
-    "description": "An Iron Pot holds up to 1 gallon.",
-    "gist": "Holds up to 1 gallon"
+    "description": "An Iron Pot holds up to 1 gallon."
   },
   "iron-spikes": {
     "name": "Iron Spikes",
-    "description": "Iron Spikes come in bundles of ten. You can hammer one in to jam a door shut or to tie off a Rope or Chain.",
-    "gist": "Bundle of ten; hammer one in to jam a door or tie off a Rope or Chain"
+    "description": "Iron Spikes come in bundles of ten. You can hammer one in to jam a door shut or to tie off a Rope or Chain."
   },
   "javelin": {
     "name": "Javelin",
-    "description": "A light spear balanced to serve both as a thrusting weapon and a long-range throw.",
-    "gist": "Light spear for thrusting or long-range throwing"
+    "description": "A light spear balanced to serve both as a thrusting weapon and a long-range throw."
   },
   "jewelers-tools": {
     "description": "Jeweler's Tools are used to cut and set gemstones.",
-    "gist": "Cut and set gemstones",
     "name": "Jeweler's Tools"
   },
   "ladder": {
     "name": "Ladder",
-    "description": "A Ladder is 10 feet tall. You must climb to move up or down it.",
-    "gist": "10 feet tall; you must climb to move up or down it"
+    "description": "A Ladder is 10 feet tall. You must climb to move up or down it."
   },
   "lamp": {
     "description": "A Lamp burns Oil as fuel to cast Bright Light in a 15-foot radius and Dim Light for an additional 30 feet.",
-    "gist": "Burns Oil: Bright Light 15 ft, Dim Light 30 ft more",
     "name": "Lamp"
   },
   "lance": {
     "name": "Lance",
-    "description": "A long cavalry spear built to concentrate a mounted charge into a piercing strike.",
-    "gist": "Long cavalry spear that turns a mounted charge into a piercing strike"
+    "description": "A long cavalry spear built to concentrate a mounted charge into a piercing strike."
   },
   "lantern-bullseye": {
     "description": "Burns Oil to cast Bright Light in a 60-foot Cone and Dim Light for an additional 60 feet.",
-    "gist": "Burns Oil: Bright Light in a 60-ft Cone, Dim Light 60 ft more",
     "name": "Lantern, Bullseye"
   },
   "lantern-hooded": {
     "description": "Burns Oil to cast Bright Light in a 30-foot radius and Dim Light for an additional 30 feet. As a Bonus Action, lower the hood to reduce to Dim Light in a 5-foot radius, or raise it again.",
-    "gist": "Bright Light 30 ft, Dim 30 ft more; Bonus Action hood: Dim Light 5 ft",
     "name": "Lantern, Hooded"
   },
   "leather-armor": {
     "name": "Leather Armor",
-    "description": "Hardened leather pieces protect the body without restricting agile movement.",
-    "gist": "Hardened leather that protects without hindering agile movement"
+    "description": "Hardened leather pieces protect the body without restricting agile movement."
   },
   "leatherworkers-tools": {
     "description": "Leatherworker's Tools are used to make and repair leather goods.",
-    "gist": "Make and repair leather goods",
     "name": "Leatherworker's Tools"
   },
   "light-crossbow": {
     "name": "Light Crossbow",
-    "description": "A two-handed crossbow with a manageable draw and dependable reach.",
-    "gist": "Two-handed crossbow with a manageable draw and dependable reach"
+    "description": "A two-handed crossbow with a manageable draw and dependable reach."
   },
   "light-hammer": {
     "name": "Light Hammer",
-    "description": "A compact war hammer balanced for quick blows or short throws.",
-    "gist": "Compact war hammer for quick blows or short throws"
+    "description": "A compact war hammer balanced for quick blows or short throws."
   },
   "lock": {
     "description": "A Lock comes with a key. Without the key, a creature can pick it with Thieves' Tools (DC 15 Dexterity Sleight of Hand check).",
-    "gist": "Comes with a key; without it, picked with Thieves' Tools (DC 15 Sleight of Hand)",
     "name": "Lock"
   },
   "longbow": {
     "name": "Longbow",
-    "description": "A tall, powerful bow that rewards a full two-handed draw with exceptional range.",
-    "gist": "Tall two-handed bow with exceptional range"
+    "description": "A tall, powerful bow that rewards a full two-handed draw with exceptional range."
   },
   "longsword": {
     "name": "Longsword",
-    "description": "A balanced martial blade equally at home in one hand or driven with both.",
-    "gist": "Martial blade used in one hand or with both"
+    "description": "A balanced martial blade equally at home in one hand or driven with both."
   },
   "lute": {
     "description": "A Lute is a stringed musical instrument. Proficiency with it lets you add your Proficiency Bonus to Charisma (Performance) checks that rely on the lute.",
-    "gist": "Stringed instrument; proficiency adds your PB to Performance checks with it",
     "name": "Lute"
   },
   "lyre": {
     "description": "A Lyre is a stringed instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Stringed instrument; proficiency adds your Proficiency Bonus to checks to play it",
     "name": "Lyre"
   },
   "mace": {
     "name": "Mace",
-    "description": "A solid metal-headed bludgeon made to deliver concentrated, punishing impacts.",
-    "gist": "Metal-headed bludgeon for concentrated impacts"
+    "description": "A solid metal-headed bludgeon made to deliver concentrated, punishing impacts."
   },
   "manacles": {
     "description": "As a Utilize action, bind an unwilling creature that has the Grappled, Incapacitated, or Restrained condition (DC 13 Dexterity Sleight of Hand). Escaping requires DC 20 Dexterity (Sleight of Hand); bursting requires DC 25 Strength (Athletics).",
-    "gist": "Bind a Grappled, Incapacitated or Restrained foe; escape DC 20, burst DC 25",
     "name": "Manacles"
   },
   "map": {
     "name": "Map",
-    "description": "Consulting an accurate Map gives a +5 bonus to Wisdom (Survival) checks to find your way in the place it depicts.",
-    "gist": "+5 to Survival checks to find your way in the place it depicts"
+    "description": "Consulting an accurate Map gives a +5 bonus to Wisdom (Survival) checks to find your way in the place it depicts."
   },
   "map-or-scroll-case": {
     "name": "Map or Scroll Case",
-    "description": "A Map or Scroll Case holds up to 10 sheets of paper or 5 sheets of parchment.",
-    "gist": "Holds up to 10 sheets of paper or 5 of parchment"
+    "description": "A Map or Scroll Case holds up to 10 sheets of paper or 5 sheets of parchment."
   },
   "masons-tools": {
     "description": "Mason's Tools are used to build with stone.",
-    "gist": "Build with stone",
     "name": "Mason's Tools"
   },
   "maul": {
     "name": "Maul",
-    "description": "An oversized two-handed hammer that brings crushing weight down on its target.",
-    "gist": "Oversized two-handed hammer with crushing weight"
+    "description": "An oversized two-handed hammer that brings crushing weight down on its target."
   },
   "mirror": {
     "description": "A handheld steel Mirror useful for personal cosmetics, peeking around corners, and reflecting light as a signal.",
-    "gist": "Handheld steel mirror for grooming, peeking around corners or signalling",
     "name": "Mirror"
   },
   "morningstar": {
     "name": "Morningstar",
-    "description": "A one-handed haft topped by a spiked metal head for forceful piercing blows.",
-    "gist": "One-handed haft with a spiked head for piercing blows"
+    "description": "A one-handed haft topped by a spiked metal head for forceful piercing blows."
   },
   "musical-instrument": {
     "description": "A lute, flute, drum, or other instrument. A bard can use it as a spellcasting focus.",
-    "gist": "Lute, flute, drum or other instrument; a Bard's spellcasting focus",
     "name": "Musical Instrument"
   },
   "musket": {
     "name": "Musket",
-    "description": "A long two-handed firearm that delivers a powerful shot before it must be reloaded.",
-    "gist": "Long two-handed firearm with a powerful shot, then reload"
+    "description": "A long two-handed firearm that delivers a powerful shot before it must be reloaded."
   },
   "navigators-tools": {
     "description": "Navigator's Tools are used to chart a course and follow navigation charts.",
-    "gist": "Chart a course and follow navigation charts",
     "name": "Navigator's Tools"
   },
   "net": {
     "description": "When you take the Attack action, you can replace one attack with throwing a Net at a creature within 15 feet. Target must succeed on a Dexterity saving throw (DC 8 + DEX mod + PB) or have the Restrained condition. Target succeeds automatically if Huge or larger. Escaping: DC 10 Strength (Athletics) check. Net: AC 10, 5 HP.",
-    "gist": "Thrown 15 ft: Dex save or Restrained; escape DC 10 Athletics",
     "name": "Net"
   },
   "oil": {
     "description": "Douse a creature within 20 feet (Dexterity save, DC 8 + DEX mod + PB). If target takes Fire damage within 1 minute, it takes extra 5 Fire damage. Also serves as fuel for Lamps and Lanterns (burns 6 hours).",
-    "gist": "Douse a creature (Dex save): +5 Fire damage if it burns within 1 min; fuel",
     "name": "Oil"
   },
   "padded-armor": {
     "name": "Padded Armor",
-    "description": "Quilted layers of cloth and batting soften impacts, though the bulky folds hinder stealth.",
-    "gist": "Quilted cloth that softens impacts but hinders stealth"
+    "description": "Quilted layers of cloth and batting soften impacts, though the bulky folds hinder stealth."
   },
   "painters-supplies": {
     "description": "Painter's Supplies are used to create paintings.",
-    "gist": "Create paintings",
     "name": "Painter's Supplies"
   },
   "pan-flute": {
     "description": "A Pan Flute is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it",
     "name": "Pan Flute"
   },
   "paper": {
     "name": "Paper",
-    "description": "One sheet of Paper can hold about 250 handwritten words.",
-    "gist": "One sheet holds about 250 handwritten words"
+    "description": "One sheet of Paper can hold about 250 handwritten words."
   },
   "parchment": {
     "name": "Parchment",
-    "description": "One sheet of Parchment can hold about 250 handwritten words.",
-    "gist": "One sheet holds about 250 handwritten words"
+    "description": "One sheet of Parchment can hold about 250 handwritten words."
   },
   "perfume": {
     "description": "A small vial of pleasant-smelling perfume.",
-    "gist": "Small vial of pleasant-smelling perfume",
     "name": "Perfume"
   },
   "pike": {
     "name": "Pike",
-    "description": "An exceptionally long two-handed spear used to threaten foes well beyond arm's reach.",
-    "gist": "Very long two-handed spear that threatens foes well beyond arm's reach"
+    "description": "An exceptionally long two-handed spear used to threaten foes well beyond arm's reach."
   },
   "pistol": {
     "name": "Pistol",
-    "description": "A compact firearm that delivers a powerful one-handed shot at close range.",
-    "gist": "Compact one-handed firearm with a powerful close-range shot"
+    "description": "A compact firearm that delivers a powerful one-handed shot at close range."
   },
   "plate-armor": {
     "name": "Plate Armor",
-    "description": "Interlocking shaped plates cover the entire body, offering exceptional protection at the cost of weight and noise.",
-    "gist": "Plates cover the whole body: exceptional protection, but heavy and noisy"
+    "description": "Interlocking shaped plates cover the entire body, offering exceptional protection at the cost of weight and noise."
   },
   "playing-card-set": {
     "description": "A Playing Card Set is a gaming set. Proficiency lets you add your Proficiency Bonus to ability checks you make to play a game that uses it.",
-    "gist": "Gaming set; proficiency adds your Proficiency Bonus to checks to play",
     "name": "Playing Card Set"
   },
   "poison-basic": {
     "description": "As a Bonus Action, coat one weapon or up to three pieces of ammunition. A creature that takes Piercing or Slashing damage from the poisoned weapon/ammo takes an extra 1d4 Poison damage. Lasts 1 minute or until damage is dealt.",
-    "gist": "Bonus Action: coat a weapon or 3 ammo; a hit deals +1d4 Poison damage",
     "name": "Poison, Basic"
   },
   "poisoners-kit": {
     "description": "A Poisoner's Kit includes the vials, chemicals, and other equipment necessary for the creation of poisons. Proficiency with it lets you add your Proficiency Bonus to the checks you make to craft poisons.",
-    "gist": "Proficiency adds your Proficiency Bonus to checks to craft poisons",
     "name": "Poisoner's Kit"
   },
   "pole": {
     "name": "Pole",
-    "description": "A Pole is 10 feet long. You can use it to touch something up to 10 feet away or to vault with Advantage on a jump check.",
-    "gist": "10 feet long; touch things 10 ft away or vault with Advantage on a jump"
+    "description": "A Pole is 10 feet long. You can use it to touch something up to 10 feet away or to vault with Advantage on a jump check."
   },
   "portable-ram": {
     "name": "Portable Ram",
-    "description": "A Portable Ram grants a +4 bonus to Strength checks made to break down a door; a helper grants Advantage.",
-    "gist": "+4 to Strength checks to break down a door; a helper grants Advantage"
+    "description": "A Portable Ram grants a +4 bonus to Strength checks made to break down a door; a helper grants Advantage."
   },
   "potters-tools": {
     "description": "Potter's Tools are used to shape and fire clay.",
-    "gist": "Shape and fire clay",
     "name": "Potter's Tools"
   },
   "pouch": {
     "name": "Pouch",
-    "description": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot.",
-    "gist": "Holds up to 6 pounds"
+    "description": "A Pouch holds up to 6 pounds within one-fifth of a cubic foot."
   },
   "priests-pack": {
     "description": "Contains: Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, and Tinderbox.",
-    "gist": "Backpack, Blanket, Holy Water, Lamp, 7 days of Rations, Robe, Tinderbox",
     "name": "Priest's Pack"
   },
   "quarterstaff": {
     "name": "Quarterstaff",
-    "description": "A sturdy wooden staff that can strike quickly in one hand or with greater force in two.",
-    "gist": "Sturdy wooden staff used in one hand or, with more force, in two"
+    "description": "A sturdy wooden staff that can strike quickly in one hand or with greater force in two."
   },
   "quiver": {
     "description": "A case that holds up to 20 arrows.",
-    "gist": "Holds up to 20 arrows",
     "name": "Quiver"
   },
   "rapier": {
     "name": "Rapier",
-    "description": "A slender thrusting sword designed for precise footwork and agile point control.",
-    "gist": "Slender thrusting sword for precise, agile point work"
+    "description": "A slender thrusting sword designed for precise footwork and agile point control."
   },
   "rations": {
     "description": "Rations consist of travel-ready food for one day, including jerky, dried fruit, hardtack, and nuts.",
-    "gist": "Travel-ready food for one day",
     "name": "Rations"
   },
   "ring-mail": {
     "name": "Ring Mail",
-    "description": "Heavy rings sewn onto a leather coat provide straightforward protection but little freedom of movement.",
-    "gist": "Rings sewn on leather: plain protection, little freedom of movement"
+    "description": "Heavy rings sewn onto a leather coat provide straightforward protection but little freedom of movement."
   },
   "robe": {
     "description": "A loose, flowing outer garment, often worn by spellcasters.",
-    "gist": "Loose, flowing outer garment, often worn by spellcasters",
     "name": "Robe"
   },
   "rope": {
     "description": "50 feet of rope. As a Utilize action, tie a knot (DC 10 Dexterity Sleight of Hand). Can be burst (DC 20 Strength Athletics). Can bind creatures that are Grappled, Incapacitated, or Restrained (DC 15 Dexterity Acrobatics to escape).",
-    "gist": "50 feet; tie knots (DC 10) and bind Grappled or Restrained foes (escape DC 15)",
     "name": "Rope"
   },
   "scale-mail": {
     "name": "Scale Mail",
-    "description": "Overlapping metal scales cover a leather coat, balancing solid protection against weight and noise.",
-    "gist": "Metal scales over leather: solid protection, but heavy and noisy"
+    "description": "Overlapping metal scales cover a leather coat, balancing solid protection against weight and noise."
   },
   "scholars-pack": {
     "description": "Contains: Backpack, Book, Ink, Ink Pen, Lamp, 10 flasks of Oil, 10 sheets of Parchment, and Tinderbox.",
-    "gist": "Backpack, Book, Ink, Ink Pen, Lamp, 10 Oil, 10 Parchment, Tinderbox",
     "name": "Scholar's Pack"
   },
   "scimitar": {
     "name": "Scimitar",
-    "description": "A light, curved blade shaped for fast, flowing cuts and agile handling.",
-    "gist": "Light, curved blade for fast, flowing cuts"
+    "description": "A light, curved blade shaped for fast, flowing cuts and agile handling."
   },
   "shawm": {
     "description": "A Shawm is a wind instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Wind instrument; proficiency adds your Proficiency Bonus to checks to play it",
     "name": "Shawm"
   },
   "shield": {
     "name": "Shield",
-    "description": "A handheld barrier of wood or metal used to turn aside attacks and reinforce a wielder's defense.",
-    "gist": "Handheld wood or metal barrier that turns aside attacks"
+    "description": "A handheld barrier of wood or metal used to turn aside attacks and reinforce a wielder's defense."
   },
   "shortbow": {
     "name": "Shortbow",
-    "description": "A compact two-handed bow that is easy to carry and effective at practical battlefield ranges.",
-    "gist": "Compact two-handed bow, easy to carry, effective at battlefield range"
+    "description": "A compact two-handed bow that is easy to carry and effective at practical battlefield ranges."
   },
   "shortsword": {
     "name": "Shortsword",
-    "description": "A light, straight blade suited to quick thrusts and close-quarters precision.",
-    "gist": "Light, straight blade for quick, precise close-quarters thrusts"
+    "description": "A light, straight blade suited to quick thrusts and close-quarters precision."
   },
   "shovel": {
     "description": "Working for 1 hour, you can dig a hole that is 5 feet on each side in soil or similar material.",
-    "gist": "In 1 hour, dig a 5-foot-cube hole in soil or similar",
     "name": "Shovel"
   },
   "sickle": {
     "name": "Sickle",
-    "description": "A light hooked blade adapted from a harvesting tool for swift close-range cuts.",
-    "gist": "Light hooked blade for swift close-range cuts"
+    "description": "A light hooked blade adapted from a harvesting tool for swift close-range cuts."
   },
   "signal-whistle": {
     "name": "Signal Whistle",
-    "description": "When blown as a Utilize action, a Signal Whistle produces a sound heard up to 600 feet away.",
-    "gist": "Utilize: a sound heard up to 600 feet away"
+    "description": "When blown as a Utilize action, a Signal Whistle produces a sound heard up to 600 feet away."
   },
   "sling": {
     "name": "Sling",
-    "description": "A simple leather cradle and cord that hurls stones or bullets with surprising force.",
-    "gist": "Leather cradle and cord that hurls stones or bullets"
+    "description": "A simple leather cradle and cord that hurls stones or bullets with surprising force."
   },
   "sling-bullets": {
     "description": "Ammunition for slings. Sold in bundles of 20.",
-    "gist": "Ammunition for slings, in bundles of 20",
     "name": "Sling Bullets"
   },
   "smiths-tools": {
     "description": "Smith's Tools are used to forge and repair metal items.",
-    "gist": "Forge and repair metal items",
     "name": "Smith's Tools"
   },
   "spear": {
     "name": "Spear",
-    "description": "A versatile pointed shaft that can be thrust with one or two hands or cast at a distant foe.",
-    "gist": "Pointed shaft for one- or two-handed thrusts or throwing"
+    "description": "A versatile pointed shaft that can be thrust with one or two hands or cast at a distant foe."
   },
   "spellbook": {
     "description": "Essential for Wizards, a Spellbook is a leather-bound tome with 100 blank vellum pages suitable for recording spells.",
-    "gist": "Leather tome with 100 blank pages for a Wizard to record spells",
     "name": "Spellbook"
   },
   "splint-armor": {
     "name": "Splint Armor",
-    "description": "Narrow vertical strips of metal fixed over padding form a rigid, heavily protective suit.",
-    "gist": "Metal strips over padding form a rigid, highly protective suit"
+    "description": "Narrow vertical strips of metal fixed over padding form a rigid, heavily protective suit."
   },
   "string": {
     "name": "String",
-    "description": "String is 10 feet long. You can tie a knot in it as a Utilize action.",
-    "gist": "10 feet long; tie a knot in it as a Utilize action"
+    "description": "String is 10 feet long. You can tie a knot in it as a Utilize action."
   },
   "studded-leather-armor": {
     "name": "Studded Leather Armor",
-    "description": "Supple leather reinforced with close-set metal fittings improves protection without sacrificing mobility.",
-    "gist": "Leather reinforced with metal studs: better protection, still mobile"
+    "description": "Supple leather reinforced with close-set metal fittings improves protection without sacrificing mobility."
   },
   "tent": {
     "description": "A Tent sleeps up to two Small or Medium creatures.",
-    "gist": "Sleeps up to two Small or Medium creatures",
     "name": "Tent"
   },
   "thieves-tools": {
     "description": "Thieves' Tools include a small file, a set of lock picks, a small mirror mounted on a metal handle, a set of narrow-bladed scissors, and a pair of pliers. Proficiency with them lets you add your Proficiency Bonus to Dexterity checks made to pick locks or disarm traps.",
-    "gist": "Proficiency adds your Proficiency Bonus to pick locks and disarm traps",
     "name": "Thieves' Tools"
   },
   "tinderbox": {
     "description": "Holds flint, fire steel, and tinder. Lighting a Candle, Lamp, Lantern, or Torch takes a Bonus Action. Lighting any other fire takes 1 minute.",
-    "gist": "Light a Candle, Lamp, Lantern or Torch as a Bonus Action; other fires in 1 min",
     "name": "Tinderbox"
   },
   "tinkers-tools": {
     "description": "A set of tools for making and repairing small objects and mechanisms.",
-    "gist": "Make and repair small objects and mechanisms",
     "name": "Tinker's Tools"
   },
   "torch": {
     "description": "Burns for 1 hour, casting Bright Light in a 20-foot radius and Dim Light for an additional 20 feet. Can be used as a Simple Melee weapon dealing 1 Fire damage on a hit.",
-    "gist": "1 hour: Bright Light 20 ft, Dim 20 ft more; as a weapon deals 1 Fire damage",
     "name": "Torch"
   },
   "trident": {
     "name": "Trident",
-    "description": "A three-pronged spear suited to thrusting, throwing, and powerful two-handed attacks.",
-    "gist": "Three-pronged spear for thrusting, throwing or two-handed attacks"
+    "description": "A three-pronged spear suited to thrusting, throwing, and powerful two-handed attacks."
   },
   "vial": {
     "name": "Vial",
-    "description": "A Vial holds up to 4 ounces.",
-    "gist": "Holds up to 4 ounces"
+    "description": "A Vial holds up to 4 ounces."
   },
   "viol": {
     "description": "A Viol is a stringed instrument. Proficiency lets you add your Proficiency Bonus to ability checks you make to play it.",
-    "gist": "Stringed instrument; proficiency adds your Proficiency Bonus to checks to play it",
     "name": "Viol"
   },
   "war-pick": {
     "name": "War Pick",
-    "description": "A narrow, reinforced pick concentrates a wielder's force into a single piercing point.",
-    "gist": "Reinforced pick that focuses force into a single piercing point"
+    "description": "A narrow, reinforced pick concentrates a wielder's force into a single piercing point."
   },
   "warhammer": {
     "name": "Warhammer",
-    "description": "A martial hammer balanced for one-handed control or heavier two-handed impacts.",
-    "gist": "Martial hammer used in one hand or for heavier two-handed blows"
+    "description": "A martial hammer balanced for one-handed control or heavier two-handed impacts."
   },
   "waterskin": {
     "description": "A Waterskin holds up to 4 pints of water.",
-    "gist": "Holds up to 4 pints of water",
     "name": "Waterskin"
   },
   "weavers-tools": {
     "description": "Weaver's Tools are used to make cloth.",
-    "gist": "Make cloth",
     "name": "Weaver's Tools"
   },
   "whip": {
     "name": "Whip",
-    "description": "A flexible lash that trades raw power for finesse and reach.",
-    "gist": "Flexible lash that trades raw power for finesse and reach"
+    "description": "A flexible lash that trades raw power for finesse and reach."
   },
   "woodcarvers-tools": {
     "description": "Woodcarver's Tools consist of a knife, a gouge, and a small saw. Proficiency with them lets you add your Proficiency Bonus to checks made to carve objects from wood.",
-    "gist": "Knife, gouge and saw; proficiency adds your PB to checks to carve wood",
     "name": "Woodcarver's Tools"
   }
 }
