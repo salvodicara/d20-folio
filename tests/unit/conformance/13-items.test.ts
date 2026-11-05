@@ -130,6 +130,10 @@ describe("conformance · 13. items", () => {
       const id = "@/lib/item-overlays";
       const overlays = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
       expect(typeof overlays.revealCurse).toBe("function");
+      // Engine-ready, needs a caller: the case works once the DM's item panel
+      // (mocked and approved first) reveals it.
+      const panel = await future("@/domains/campaign/dm-item-panel-view");
+      expect(panel.dmItemPanelView).toBeTypeOf("function");
     }
   );
 
@@ -279,6 +283,10 @@ describe("conformance · 13. items", () => {
     // An artifact's random properties are rolled per instance and kept.
     const overlays = await future("@/lib/item-overlays");
     expect(overlays.rolledProperties).toBeTypeOf("function");
+    // Engine-ready, needs a caller: the case works once the DM's item panel
+    // (mocked and approved first) reveals it.
+    const panel = await future("@/domains/campaign/dm-item-panel-view");
+    expect(panel.dmItemPanelView).toBeTypeOf("function");
   });
 
   rule(
@@ -395,6 +403,10 @@ describe("conformance · 13. items", () => {
       // An evolving item unlocks properties per instance as its owner progresses.
       const overlays = await future("@/lib/item-overlays");
       expect(overlays.unlockedProperties).toBeTypeOf("function");
+      // Engine-ready, needs a caller: the case works once the item's card shows the
+      // unlocked properties on a table that plays the rule.
+      const card = await future("@/lib/views/evolving-item-view");
+      expect(card.evolvingItemView).toBeTypeOf("function");
     }
   );
 });
