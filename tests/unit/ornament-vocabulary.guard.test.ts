@@ -92,6 +92,11 @@ describe("ornament vocabulary (T5)", () => {
     // diamonds are gone, as in the new UI's labels.
     expect(folioCss).not.toMatch(/\.(sec|rh|ag)-diamond\b/);
     expect(folioCss).not.toMatch(/\.(modal|pop)-rubric::before/);
+    // …and no diamond on a divider line either: the footer, the legal chapter
+    // head and the markdown scene break are plain fading hairlines.
+    expect(folioCss).not.toMatch(/\.site-footer-diamond\b/);
+    expect(folioCss).not.toMatch(/\.colophon-hero-rule::after/);
+    expect(folioCss).not.toMatch(/\.bm-rule::after/);
     // Variants only re-tint the parameter — never re-declare the gradient.
     expect(folioCss).toMatch(
       /\.sec-head\[data-econ\] \.sec-rule\s*\{\s*--rule-c:[^{}]*\}/
