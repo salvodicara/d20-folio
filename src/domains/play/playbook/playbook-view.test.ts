@@ -9,7 +9,7 @@
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { ensureLocale } from "@/i18n";
-import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
+import { DEV_SCENARIOS, buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "../../../../tests/unit/_helpers";
 import { playbookView, type PlaybookLine } from "./playbook-view";
@@ -145,8 +145,10 @@ describe("playbookView", () => {
   });
 
   it("English: Sneak Attack's condition rides the attack's why", () => {
-    const doc = buildDevScenario("scn-thief-reflexes");
-    if (!doc) throw new Error("scenario missing");
+    // Without its Weapon Masteries: a mastery would be the why's second reason.
+    const spec = DEV_SCENARIOS["thief-reflexes"];
+    if (!spec) throw new Error("scenario missing");
+    const doc = buildScenario({ ...spec, owesClassPicks: true });
     const line = find(playbookView(doc, "en").plan, "default-attack");
     expect(line?.after).toBe(" on the nearest enemy.");
     expect(line?.why).toMatch(

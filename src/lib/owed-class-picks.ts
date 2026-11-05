@@ -22,12 +22,20 @@
  * Pure module — no React, no store.
  */
 import { getClassTable } from "@/data/classes";
-import { getSpellById } from "@/data/spells";
-import { invocationsKnownAt } from "@/lib/invocation-pick";
+import { getSpellById, spells as allSpells } from "@/data/spells";
+import { isWeaponProficient } from "@/lib/compute";
+import { eligibleInvocations, invocationsKnownAt } from "@/lib/invocation-pick";
 import { applyClassPicks } from "@/lib/level-up-commit";
-import { isManeuverPlaceholder, maneuversKnownAt } from "@/lib/maneuver-pick";
-import { metamagicKnownAt } from "@/lib/metamagic-pick";
-import { weaponMasteryCountForClass } from "@/lib/weapon-mastery-pick";
+import {
+  eligibleManeuvers,
+  isManeuverPlaceholder,
+  maneuversKnownAt,
+} from "@/lib/maneuver-pick";
+import { listMetamagicOptions, metamagicKnownAt } from "@/lib/metamagic-pick";
+import {
+  listMasterableWeapons,
+  weaponMasteryCountForClass,
+} from "@/lib/weapon-mastery-pick";
 import type { CharacterData, ClassEntry } from "@/types/character";
 
 export type ClassPickKind =
@@ -182,4 +190,82 @@ export function applyOwedClassPicks(
     });
   }
   return next;
+}
+
+/**
+ * The ids an owed pick may be answered with, in the level-up picker's order: the
+ * pools «Scelte da completare» localizes (`owedClassPickRows`) — the invocations
+ * eligible at the Warlock's level, the unknown Metamagic and maneuvers, the
+ * masterable weapons not yet mastered, the class's cantrips not yet known.
+ */
+export function classPickPool(
+  build: BuildForClassPicks,
+  classId: string,
+  pick: ClassPickKind
+): string[] {
+  const entry = build.classes?.find((e) => e.classId === classId);
+  const level = entry ? levelOf(entry) : 1;
+  const ids = (list: ReadonlyArray<{ id: string }>) => list.map((x) => x.id);
+  switch (pick) {
+    case "invocations":
+      return ids(eligibleInvocations(level, entry?.invocationChoices ?? []));
+    case "metamagic": {
+      const known = new Set(entry?.metamagicChoices ?? []);
+      return ids(listMetamagicOptions().filter((o) => !known.has(o.id)));
+    }
+    case "maneuvers":
+      return ids(eligibleManeuvers(level, entry?.maneuverChoices ?? []));
+    case "weaponMasteries": {
+      const mastered = new Set(entry?.weaponMasteries ?? []);
+      return ids(listMasterableWeapons().filter((w) => !mastered.has(w.id)));
+    }
+    case "cantrips": {
+      const known = new Set(
+        (build.spells ?? []).flatMap((s) => ("custom" in s ? [] : [s.srdId]))
+      );
+      return ids(
+        allSpells.filter(
+          (s) => s.level === 0 && s.classes.includes(classId) && !known.has(s.id)
+        )
+      );
+    }
+  }
+}
+
+/**
+ * Weapon Mastery picks a player would make: the weapons the class is proficient
+ * with, the ones the character carries first.
+ */
+function masteryPreference(character: CharacterData, classId: string, pool: string[]) {
+  const profs = getClassTable(classId)?.weaponProficiencies ?? [];
+  const weapons = new Map(listMasterableWeapons().map((w) => [w.id, w]));
+  const proficient = pool.filter((id) => {
+    const w = weapons.get(id);
+    return (
+      w !== undefined &&
+      isWeaponProficient(w.weaponCategory, w.id, w.weaponType, w.properties ?? [], profs)
+    );
+  });
+  const carried = new Set(
+    character.weapons.flatMap((w) => ("custom" in w ? [] : [w.srdId]))
+  );
+  return [
+    ...proficient.filter((id) => carried.has(id)),
+    ...proficient.filter((id) => !carried.has(id)),
+  ];
+}
+
+/**
+ * The character with every owed class pick filled by the first legal options of
+ * its pool (Weapon Mastery: proficient weapons, carried ones first), stored like
+ * the banner's answers. Picks the character holds are kept; only the gap is filled.
+ */
+export function fillOwedClassPicks(character: CharacterData): CharacterData {
+  const answers = owedClassPicks(character).map(({ classId, pick, owed }) => {
+    const pool = classPickPool(character, classId, pick);
+    const ordered =
+      pick === "weaponMasteries" ? masteryPreference(character, classId, pool) : pool;
+    return { classId, pick, ids: ordered.slice(0, owed) };
+  });
+  return applyOwedClassPicks(character, answers);
 }
