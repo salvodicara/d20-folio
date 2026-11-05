@@ -12,6 +12,7 @@ export { Field } from "./Field";
 export { HpRing } from "./HpRing";
 export { Icon } from "./Icon";
 export { initialOf } from "./initial";
+export { Medallion } from "./Medallion";
 export { Menu } from "./Menu";
 export { ICON_NAMES, type IconName } from "./icon-names";
 export { Panel, PanelHeader, type PanelColor } from "./Panel";

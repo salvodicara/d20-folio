@@ -60,7 +60,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Choice, Room, Stepper, type ArtKind } from "@/ui";
+import { Button, Chip, Choice, Medallion, Room, Stepper, type ArtKind } from "@/ui";
 
 import type { InfoKind } from "@/domains/spells/option-info";
 import { PickGrid } from "@/domains/spells/ui/PickGrid";
@@ -376,9 +376,9 @@ export function LevelUpScreen({
             </p>
           )}
           {owed > 0 && <p className="f-lvl-owed">{owedLabel}</p>}
-          <Button kind="primary" disabled={!canConfirm} onClick={() => void confirm()}>
+          <Medallion disabled={!canConfirm} onClick={() => void confirm()}>
             {confirmLabel}
-          </Button>
+          </Medallion>
         </aside>
 
         <div className="f-lvl-bar">

@@ -81,6 +81,11 @@
   --coin-sp: #c9ccd2;
   --coin-cp: #c47a45;
   --toast-bg: rgb(26 22 17 / 0.95);
+  /* BG3 panel material (BG3-STYLE §1) */
+  --panel-top: rgb(33 26 19 / 0.97);
+  --panel-bottom: rgb(17 13 10 / 0.97);
+  --frame: #6a5130;
+  --fs-panel-title: 22px;
 
   --fs-xs: 12px;
   --fs-sm: 14px;
@@ -93,9 +98,9 @@
   --fs-xl: 28px;
   --fs-hp: 56px;
 
-  --r-sm: 6px;
-  --r: 8px;
-  --r-lg: 12px;
+  --r-sm: 2px;
+  --r: 4px;
+  --r-lg: 6px;
   --r-pill: 20px;
   /* «Lume» (owner, 2026-11-03): one faint gold hairline, a lit top edge that fades at
      both ends, a warm light from above, a soft vignette below. No corners anywhere. */
@@ -238,43 +243,43 @@
 
 /* ---------- panel: one box, one header ---------- */
 .fui .f-pn {
+  position: relative;
   min-width: 0;
-  background: var(--toast-bg);
-  border: 1px solid var(--orn-line);
+  /* BG3's panel: one warm near-black material, lighter at the top (BG3-STYLE §1, §9) */
+  background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+  border: 1px solid var(--frame);
   border-radius: var(--r-frame);
   overflow: clip;
   overflow-clip-margin: border-box;
 }
 .fui .f-pnh {
+  position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 4px 12px;
   min-height: 56px;
   margin: 0 -1px;
-  padding: 4px 24px 8px;
-  /* the category colour as the light: a fading rule on top and a low tint («Lume») */
-  border-top: 0;
-  background:
-    linear-gradient(90deg, transparent, var(--c, var(--c-act)) 30%, transparent) top /
-      100% 1px no-repeat,
-    radial-gradient(
-      70% 140% at 30% 0,
-      color-mix(in srgb, var(--c, var(--c-act)) 30%, transparent),
-      transparent 75%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
+  padding: 8px 24px;
+  /* a centred title-case serif title over a thin bronze rule that fades at both ends */
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--frame) 20%,
+      var(--frame) 80%,
       transparent
-    );
-  font: 700 18px/1.2 var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--white);
+    )
+    bottom / 100% 1px no-repeat;
+  font: 600 var(--fs-panel-title) / 1.2 var(--font-title);
+  text-align: center;
+  color: var(--strong);
 }
 .fui .f-pnh > .f-x {
-  margin-left: auto;
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -296,9 +301,8 @@
 }
 @media (max-width: 640px) {
   .fui .f-pnh {
-    padding: 4px 16px 8px;
-    font-size: var(--fs-md);
-    letter-spacing: 0.04em;
+    padding: 8px 16px;
+    font-size: var(--fs-lg);
   }
   .fui .f-pnb {
     padding: 16px;
@@ -481,9 +485,8 @@
   gap: 8px;
 }
 .fui .f-lbl {
-  font: 700 12px var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  /* title-case serif labels, as BG3 (§8); small caps only for ability abbreviations */
+  font: 600 var(--fs-sm) / 1.3 var(--font-text);
   color: var(--muted);
 }
 .fui .f-in {
@@ -2840,7 +2843,8 @@
   }
   .fui .f-sheet .f-ability dt {
     order: 2;
-    font-weight: 700;
+    /* ability abbreviations stay small caps (BG3-STYLE §8) */
+    font: 700 var(--fs-xs) / 1.2 var(--font-label);
     color: var(--phone-label);
   }
   .fui .f-sheet .f-ability b {
@@ -5104,4 +5108,45 @@
   .fui .f-lvl-hero h1 {
     font-size: var(--fs-lg);
   }
+}
+
+/* ---------- the decisive action as a medallion (BG3's End Turn, BG3-STYLE §4) ---------- */
+.fui .f-medallion {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 112px;
+  height: 112px;
+  padding: 8px;
+  border: 2px solid var(--gold-line);
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, var(--panel-2), var(--bg) 75%);
+  box-shadow:
+    inset 0 0 0 4px var(--bg),
+    inset 0 0 0 6px color-mix(in srgb, var(--gold) 45%, transparent),
+    0 4px 16px var(--shade-80);
+  color: var(--strong);
+  font: 700 var(--fs-sm) / 1.2 var(--font-text);
+  text-align: center;
+  cursor: pointer;
+}
+.fui .f-medallion > span {
+  max-width: 80px;
+  text-wrap: balance;
+}
+.fui .f-medallion:hover:not(:disabled) {
+  border-color: var(--gold-hi);
+  box-shadow:
+    inset 0 0 0 4px var(--bg),
+    inset 0 0 0 6px var(--gold-hi),
+    0 0 20px color-mix(in srgb, var(--gold-hi) 35%, transparent);
+}
+.fui .f-medallion:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 4px;
+}
+.fui .f-medallion:disabled {
+  border-color: var(--line-strong);
+  color: var(--muted);
+  cursor: default;
 }

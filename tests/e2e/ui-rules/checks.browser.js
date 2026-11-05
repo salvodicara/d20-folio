@@ -408,7 +408,7 @@ window.__audit = (opts) => {
     return tops.length;
   };
   const ONE =
-    ".btn,.f-btn,button:not(.choice):not(.f-choice):not(.f-lvl-opt):not(.f-slot):not(.cc):not(.f-cc):not(.row):not(.arow__name):not(.tip__head):not(.abil):not(.badge):not(.plate):not(.f-char-hp-open),.chip,.f-chip,.pill,.tabs>*,.f-tabs>*,.boxtabs span,nav a,.label,.atable__head *,.stats .lbl,.num .lbl,.f-num .f-lbl,.ini .tag,.sg,.plate small,.tg,th,.grp .lbl,.f-grp .f-lbl";
+    ".btn,.f-btn,button:not(.choice):not(.f-choice):not(.f-lvl-opt):not(.f-slot):not(.f-medallion):not(.cc):not(.f-cc):not(.row):not(.arow__name):not(.tip__head):not(.abil):not(.badge):not(.plate):not(.f-char-hp-open),.chip,.f-chip,.pill,.tabs>*,.f-tabs>*,.boxtabs span,nav a,.label,.atable__head *,.stats .lbl,.num .lbl,.f-num .f-lbl,.ini .tag,.sg,.plate small,.tg,th,.grp .lbl,.f-grp .f-lbl";
   for (const e of document.querySelectorAll(ONE)) {
     if (!vis(e) || !(e.innerText || "").trim()) continue;
     if (lines(e) > 1) add("wrap", lines(e) + " lines " + label(e));
@@ -811,7 +811,8 @@ window.__audit = (opts) => {
     )
       bad.push("height " + Math.round(r.height));
     const fs = parseFloat(cs.fontSize);
-    if (![15, 16, 18].includes(Math.round(fs))) bad.push("font " + fs);
+    // 22: BG3's centred panel title (BG3-STYLE §1, owner 2026-11-05)
+    if (![15, 16, 18, 22].includes(Math.round(fs))) bad.push("font " + fs);
     {
       const p = h.parentElement;
       const q = p.getBoundingClientRect();
