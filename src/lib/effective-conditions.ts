@@ -9,7 +9,10 @@ export function projectedEncounterConditions(
   effects: ReadonlyArray<ActiveCombatEffect> | undefined
 ): string[] {
   return (effects ?? []).flatMap((effect) =>
-    effect.payload.kind === "condition" ? [effect.payload.conditionId] : []
+    // A source's Exhaustion is a level (`effectiveExhaustion`), not a chip.
+    effect.payload.kind === "condition" && effect.payload.conditionId !== "exhaustion"
+      ? [effect.payload.conditionId]
+      : []
   );
 }
 

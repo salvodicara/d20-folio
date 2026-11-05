@@ -18,6 +18,7 @@
  * Pure module (types only) — safe for CI-pure unit tests; no Firebase, no UI.
  */
 
+import { effectiveExhaustion } from "@/lib/play/exhaustion";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
 /** PHB 2024: three failed death saving throws and the character dies. */
@@ -51,10 +52,12 @@ export function diedInPlay(
 /** Died of Exhaustion — level 6 in the live session (SRD "Exhaustion"), or the
  *  campaign's own maximum when its table rules set one (M16). */
 export function diedOfExhaustion(
-  session: Pick<SessionState, "exhaustion" | "tableRules">
+  session: Pick<SessionState, "exhaustion" | "tableRules"> & {
+    encounterEffects?: SessionState["encounterEffects"];
+  }
 ): boolean {
   return (
-    session.exhaustion >=
+    effectiveExhaustion(session) >=
     (session.tableRules?.exhaustion.maxLevel ?? EXHAUSTION_DEATH_LEVEL)
   );
 }

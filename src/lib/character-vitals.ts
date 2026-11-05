@@ -11,6 +11,7 @@
  */
 
 import { slotUsageKey } from "@/lib/cast-options";
+import { effectiveExhaustion } from "@/lib/play/exhaustion";
 import type { SessionState } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 
@@ -31,8 +32,11 @@ export function vitalDeathSaves(session: Pick<SessionState, "deathSucc" | "death
 }
 
 /** The exhaustion level (0–6). */
-export function vitalExhaustion(session: Pick<SessionState, "exhaustion">): number {
-  return session.exhaustion;
+export function vitalExhaustion(
+  session: Pick<SessionState, "exhaustion" | "tableRules" | "encounterEffects">
+): number {
+  // The sheet's own level plus what sources give (Waves of Exhaustion).
+  return effectiveExhaustion(session);
 }
 
 /** The held concentration (stored value: id / `custom:` / ""). */
@@ -69,7 +73,14 @@ export function vitalTrackerUsed(
 export function characterVitals(
   session: Pick<
     SessionState,
-    "hp" | "deathSucc" | "deathFail" | "exhaustion" | "concentration" | "conditions"
+    | "hp"
+    | "deathSucc"
+    | "deathFail"
+    | "exhaustion"
+    | "tableRules"
+    | "encounterEffects"
+    | "concentration"
+    | "conditions"
   >
 ): {
   hp: { current: number; temp: number };

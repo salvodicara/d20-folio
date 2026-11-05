@@ -152,6 +152,7 @@ import {
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
+import { vitalExhaustion } from "@/lib/character-vitals";
 import { useTurnEconomy } from "../useTurnEconomy";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
@@ -466,7 +467,7 @@ export function PlayTab() {
     () =>
       character
         ? deriveSavesAndChecks(character.character, {
-            exhaustion: character.session.exhaustion,
+            exhaustion: vitalExhaustion(character.session),
             ...(character.session.tableRules
               ? { tableRules: character.session.tableRules }
               : {}),
