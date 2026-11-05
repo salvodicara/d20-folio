@@ -555,6 +555,19 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
   "check-bonus": { action: { ...base, checkBonus: { dice: "1d4" } } },
   "next-attack-advantage": { action: { ...base, grantsNextAttackAdvantage: true } },
   "speed-halved": { action: { ...base, effects: [{ kind: "speed-halved" }] } },
+  "save-disadvantage": {
+    action: {
+      ...base,
+      effects: [
+        {
+          kind: "save-disadvantage",
+          against: "actor-spells",
+          saveOutcome: "any",
+          until: { anchor: "actor", phase: "turn-start" },
+        },
+      ],
+    },
+  },
   "speed-bonus": { action: { ...base, effects: [{ kind: "speed-bonus", feet: 20 }] } },
   "fall-if-aloft": { action: { ...base, effects: [{ kind: "fall-if-aloft" }] } },
   "recover-slots": {

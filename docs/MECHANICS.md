@@ -36,12 +36,15 @@ throws at init).
 - **Authored effects** (`CatalogueEffect`, `src/lib/catalogue-effects.ts`) are the few effects no
   flat field states. They are a subset of `ActivityEffect` with one exact schema:
   `damage`, `temp-hp`, `speed-bonus`, `fall-if-aloft`, `speed-halved`, `speed-zero`,
-  `next-attack-advantage`, `recover-slots`, `exhaustion`, `damage-roll-penalty`,
-  `hit-point-dice`, `dispel`, `self-move`. Every effect may carry `fromLevel`,
-  `saveOutcome: "success"`, `vsCreatureTypes`, `notVsCreatureTypes`.
+  `next-attack-advantage`, `save-disadvantage` (`against: "actor-spells"`), `recover-slots`,
+  `exhaustion`, `damage-roll-penalty`, `hit-point-dice`, `dispel`, `self-move`. Every effect
+  may carry `fromLevel`, `saveOutcome` (`"success"`, or `"any"`: made or failed),
+  `vsCreatureTypes`, `notVsCreatureTypes`.
 - Where they appear: a spell's `effects`, `onEnd` (Fly: a target still aloft falls),
   `perTargetChoice` (the caster picks one list per target); a feature action's `effects`;
-  a `granted-action` grant's `effects`; a repeat save's `onFailedRepeatSave`.
+  a `granted-action` grant's `effects`; a repeat save's `onFailedRepeatSave`; an
+  `action-outcome-rider` grant's `effects` (`actionOf`: another feature whose action outcome it
+  adds to, stamped as `summary.outcomeRiders`; its states sit in the rider's own `targetStates`).
 - Other spell facts: `counter: { slot: "kept" }` (Counterspell), `budget` (below), `zone`
   (below), `formRule` (forms), `companion` / `summonedMonsters` / `bestiaryPick` /
   `summonTurn` (summons), `suppressesMagic` (Antimagic Field), `followUp` (an action the
@@ -83,7 +86,9 @@ grants apply only while its `activeKey` is lit.
 - `targetScope` (`marked` / `cursed`), `minLevel`, `label`, and `activation` (an item's action,
   tracker or `resourceCost`, `reuseSave`).
 - A feature's `targetStates` are states its actions put on a target (Stunning Strike's half
-  Speed); they never light on the owner.
+  Speed); they never light on the owner. `onlyAgainstCreator: true` makes the grants count only
+  against the creature that put the state there: a `disadvantage-on` save `vs: "spells"` shows
+  on that caster's spell tray row (`incomingSaveModes`), never another caster's.
 - Other lit-key families feed the same fold: base actions (Dodge), cover, light, situations,
   surprise, Wish stress, drunk potions (`potion:<itemId>`), fading penalties
   (`aggregateWithConditions`, `src/lib/aggregate-character.ts`).

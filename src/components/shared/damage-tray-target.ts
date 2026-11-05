@@ -34,6 +34,9 @@ export interface TrayTarget {
   /** What the fight's effects on this creature do to an attack against it (Guiding
    *  Bolt's Advantage), and whether this attack spends them. */
   incoming?: ReadonlyArray<IncomingAttackChip>;
+  /** What the fight's effects on this creature do to its save against the caster's
+   *  spell (Disadvantage against that caster's spells). */
+  incomingSave?: ReadonlyArray<IncomingAttackChip>;
 }
 
 /** One incoming attack-roll mode as the tray shows it. */
@@ -117,6 +120,27 @@ export function incomingAttackLabel(
   t: ReturnType<typeof useTranslation>["t"],
   locale: Locale
 ): string {
+  const { mode, source } = chipParts(chip, t, locale);
+  return chip.consumed
+    ? t("combat.damageTray.incomingConsumed", { mode, source })
+    : t("combat.damageTray.incoming", { mode, source });
+}
+
+/** «TS con Svantaggio (<feature>)»: the target's save against this spell, changed
+ *  by a state on it. */
+export function incomingSaveLabel(
+  chip: IncomingAttackChip,
+  t: ReturnType<typeof useTranslation>["t"],
+  locale: Locale
+): string {
+  return t("combat.damageTray.incomingSave", chipParts(chip, t, locale));
+}
+
+function chipParts(
+  chip: IncomingAttackChip,
+  t: ReturnType<typeof useTranslation>["t"],
+  locale: Locale
+): { mode: string; source: string } {
   const source = localizeSrd(
     chip.sourceKind === "spell" ? "spell" : "class-feature",
     chip.sourceId,
@@ -124,7 +148,5 @@ export function incomingAttackLabel(
     locale
   );
   const mode = t(chip.mode === "advantage" ? "common.advantage" : "common.disadvantage");
-  return chip.consumed
-    ? t("combat.damageTray.incomingConsumed", { mode, source })
-    : t("combat.damageTray.incoming", { mode, source });
+  return { mode, source };
 }

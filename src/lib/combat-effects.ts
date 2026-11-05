@@ -315,6 +315,45 @@ export function incomingAttackModes(
     });
 }
 
+/** One effect on a target that changes its save against a caster's spell. */
+export interface IncomingSaveMode {
+  effect: ActiveCombatEffect;
+  sourceId: string;
+  mode: "advantage" | "disadvantage";
+}
+
+/**
+ * The save modes the effects on `targetId` give it against a spell `casterId`
+ * casts: a save against spells (`vs: "spells"`), and, for a state that counts only
+ * against its creator (`onlyAgainstCreator`), only when that creator casts it. The
+ * tray shows them on the target's row, since a monster's save is rolled at the table.
+ */
+export function incomingSaveModes(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  casterId: string
+): IncomingSaveMode[] {
+  return foldCombatEffectOps(operations)
+    .filter((effect) => effect.target.combatantId === targetId)
+    .flatMap((effect) => {
+      const group = resolveCombatEffectGrantGroup(effect);
+      if (group?.onlyAgainstCreator && effect.actor.combatantId !== casterId) return [];
+      return resolveCombatEffectGrants(effect).flatMap((grant): IncomingSaveMode[] =>
+        (grant.type === "advantage-on" || grant.type === "disadvantage-on") &&
+        grant.rollType === "save" &&
+        grant.vs === "spells"
+          ? [
+              {
+                effect,
+                sourceId: effect.source.id,
+                mode: grant.type === "advantage-on" ? "advantage" : "disadvantage",
+              },
+            ]
+          : []
+      );
+    });
+}
+
 /** A combatant's side by its id: a PC is the party's, anything else the enemy's. */
 function defaultSide(combatantId: string): "party" | "enemy" {
   return combatantId.startsWith("pc-") ? "party" : "enemy";

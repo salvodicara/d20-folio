@@ -273,8 +273,9 @@ interface EffectBase {
   /** The owner's class level from which this effect is available. */
   fromLevel?: number;
   /** Applies only when the target SUCCEEDS on the save (Stunning Strike's half
-   *  Speed). Absent: it applies on a failed save, as before. */
-  saveOutcome?: "success";
+   *  Speed), or whatever the save's result (`any`: "whether or not it succeeds").
+   *  Absent: it applies on a failed save, as before. */
+  saveOutcome?: "success" | "any";
   /** Only against creatures of these types (Divine Smite vs Fiends). */
   vsCreatureTypes?: ReadonlyArray<CreatureType>;
   /** Never against creatures of these types (an area that spares Undead). */
@@ -392,6 +393,15 @@ export type ActivityEffect =
   | (EffectBase & {
       kind: "next-attack-advantage";
       against?: "target";
+      until?: EffectUntil;
+      /** The catalogue state that holds it on the target (`targetStates`). */
+      activeKey?: string;
+    })
+  /** The target has Disadvantage on saving throws against the user's spells until
+   *  `until` (a subclass feature's rider on Stunning Strike). */
+  | (EffectBase & {
+      kind: "save-disadvantage";
+      against: "actor-spells";
       until?: EffectUntil;
       /** The catalogue state that holds it on the target (`targetStates`). */
       activeKey?: string;

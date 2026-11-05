@@ -586,7 +586,8 @@
       "incomingConsumed": "{{mode}} ({{source}}, spent by this attack)",
       "willing": "Willing",
       "willingAria": "{{name}} is willing: no save",
-      "stateLands": "Under {{name}}"
+      "stateLands": "Under {{name}}",
+      "incomingSave": "Save with {{mode}} ({{source}})"
     },
     "unarmedUnburdenedDie": "{{die}} if not holding a weapon or Shield",
     "gainTempHp": "Gain {{amount}} temporary HP",

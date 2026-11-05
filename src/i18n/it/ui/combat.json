@@ -586,7 +586,8 @@
       "incomingConsumed": "{{mode}} ({{source}}, si consuma)",
       "willing": "Consenziente",
       "willingAria": "{{name}} è consenziente: nessun TS",
-      "stateLands": "Sotto {{name}}"
+      "stateLands": "Sotto {{name}}",
+      "incomingSave": "TS con {{mode}} ({{source}})"
     },
     "unarmedUnburdenedDie": "{{die}} se non impugni armi o Scudo",
     "gainTempHp": "Ottieni {{amount}} PF temporanei",

@@ -141,6 +141,7 @@ import {
   type FreeCastEntry,
   type GrantedAction,
   type TriggerRule,
+  type ActionOutcomeRider,
   whileActiveDurationAtCastLevel,
   resolveGrantActiveKey,
   grantField,
@@ -406,6 +407,16 @@ export interface ActionSummary {
   /** What a target's successful save still puts on it, as catalogue states
    *  (Stunning Strike): the damage tray applies them to a row marked Saved. */
   saveSuccessEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
+  /** What a target's failed save puts on it as catalogue states, beyond the action's
+   *  condition: the ones that hold whatever the save (`saveOutcome: "any"`). */
+  saveFailedEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
+  /** What another feature of the user adds to this action's outcomes (a subclass
+   *  feature on Stunning Strike, `action-outcome-rider`): its states, each held by
+   *  that feature's `targetStates`. */
+  outcomeRiders?: ReadonlyArray<{
+    source: { kind: "feature"; id: string };
+    effects: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
+  }>;
   /** What a hit puts on its target, as catalogue states (Guiding Bolt): the damage
    *  tray applies them to a row marked Hit or Critical. */
   hitEffects?: ReadonlyArray<CatalogueEffect & { activeKey: string }>;
@@ -5022,6 +5033,9 @@ interface ActionResolveCtx {
   /** Combat omits non-turn casts and unprepared spellbook rows; the spellbook
    * scope retains them so its Cast CTA resolves through this same action model. */
   scope: ActionResolveScope;
+  /** What the character's features add to another feature's action outcome, read
+   *  once per resolution when an action asks (`action-outcome-rider`). */
+  actionOutcomeRiders: () => ReadonlyArray<ActionOutcomeRider>;
 }
 
 export type ActionResolveScope = "combat" | "spellbook";
@@ -5042,6 +5056,7 @@ export function resolveActions(
 ): RawResolvedAction[] {
   const { character: charData, session } = character;
   const level = totalLevel(charData);
+  let riders: ReadonlyArray<ActionOutcomeRider> | undefined;
   const ctx: ActionResolveCtx = {
     charData,
     session,
@@ -5056,6 +5071,8 @@ export function resolveActions(
     pinnedSet: new Set(session.pinnedActions),
     unpinnedSet: new Set(session.unpinnedActions ?? []),
     scope,
+    actionOutcomeRiders: () =>
+      (riders ??= aggregateCharacterGrants(charData, session).actionOutcomeRiders),
   };
   // Dedup by STABLE action id (golden rule 7 — never by display string). An
   // action id (`<featureId>-<type>` / `spell-<id>` / `weapon-<id>` …) uniquely
@@ -5464,10 +5481,35 @@ function stampTargetStates(summary: RawActionSummary, activity: Activity): void 
         : undefined;
   if (!kind) return;
   const onSave = stateEffectsFor(states, "save-success");
+  const onFailed = stateEffectsFor(states, "save-failed");
   const onHit = stateEffectsFor(states, "hit");
   if (onSave.length > 0) summary.saveSuccessEffects = onSave;
+  if (onFailed.length > 0) summary.saveFailedEffects = onFailed;
   if (onHit.length > 0) summary.hitEffects = onHit;
-  if (onSave.length > 0 || onHit.length > 0) summary.targetStateSource = kind;
+  if (onSave.length > 0 || onHit.length > 0 || onFailed.length > 0)
+    summary.targetStateSource = kind;
+}
+
+/** What the user's other features add to a class feature's action outcome
+ *  (`action-outcome-rider`), each with the feature that holds its states. */
+function stampOutcomeRiders(
+  summary: RawActionSummary,
+  activity: Activity,
+  ctx: ActionResolveCtx
+): void {
+  const source = activity.source;
+  if (source.kind !== "feature" || source.owner !== "class-feature") return;
+  const riders = ctx.actionOutcomeRiders().flatMap((rider) => {
+    if (rider.actionOf !== source.ownerId) return [];
+    const effects = rider.effects.filter(isCatalogueStateEffect).flatMap((effect) => {
+      const activeKey = "activeKey" in effect ? effect.activeKey : undefined;
+      return activeKey ? [{ ...effect, activeKey }] : [];
+    });
+    return effects.length > 0
+      ? [{ source: { kind: "feature" as const, id: rider.sourceId }, effects }]
+      : [];
+  });
+  if (riders.length > 0) summary.outcomeRiders = riders;
 }
 
 /** A `hit-point-dice` effect's spend, without the effect's own gating fields. */
@@ -5489,7 +5531,8 @@ function isCatalogueStateEffect(effect: ActivityEffect): effect is CatalogueEffe
   return (
     effect.kind === "speed-zero" ||
     effect.kind === "speed-halved" ||
-    effect.kind === "next-attack-advantage"
+    effect.kind === "next-attack-advantage" ||
+    effect.kind === "save-disadvantage"
   );
 }
 
@@ -5551,6 +5594,7 @@ function applyActionEffectSummary(
   const riders = activity.effects.filter(isRiderEffect);
   if (riders.length > 0) summary.effectRiders = riders;
   stampTargetStates(summary, activity);
+  stampOutcomeRiders(summary, activity, ctx);
   if (heals.some((effect) => effect.fromPool)) summary.poolSpendEffect = "healing";
   if (activity.skill) summary.skillCheck = activity.skill;
   const removals = effectsOfKind(activity, "end-condition");

@@ -262,6 +262,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     damageType: DAMAGE_TYPE_SCHEMA,
     type: literalSchema("damage-retaliation"),
   }),
+  /** What another feature's action puts on its target, added by this one (a
+   *  subclass feature that adds to Stunning Strike). `actionOf` is the id of the
+   *  feature whose actions it rides; each effect names a state of THIS feature's
+   *  `targetStates`. */
+  "action-outcome-rider": objectSchema({
+    actionOf: stringSchema,
+    effects: CATALOGUE_EFFECTS,
+    type: literalSchema("action-outcome-rider"),
+  }),
   /** A change to a creature a spell of yours summons (Familiar Friend: the
    *  familiar's Hit Point maximum gains twice your character level). `companion` is
    *  the summoning spell's id. */
@@ -2224,6 +2233,11 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("next-attack-by"),
         literalSchema("next-attack-by-ally"),
       ]),
+      /**
+       * A state on a target whose grants count only for rolls against the creature
+       * that put it there: saves against ITS spells (`incomingSaveModes`).
+       */
+      onlyAgainstCreator: literalSchema(true),
       /**
        * An equipped magic item's explicit activation contract. Magic items do
        * not own `mechanics.actions`, so this is the one declarative bridge that

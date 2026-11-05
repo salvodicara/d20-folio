@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 
 import {
   incomingAttackLabel,
+  incomingSaveLabel,
   trayRubric,
   type TrayTarget,
 } from "@/components/shared/damage-tray-target";
@@ -427,6 +428,13 @@ function TrayTargetRow({
         <p className="f-help">
           {target.incoming
             .map((chip) => incomingAttackLabel(chip, t, locale))
+            .join(" · ")}
+        </p>
+      )}
+      {plan.save?.bySpell && target.incomingSave && target.incomingSave.length > 0 && (
+        <p className="f-help">
+          {target.incomingSave
+            .map((chip) => incomingSaveLabel(chip, t, locale))
             .join(" · ")}
         </p>
       )}
