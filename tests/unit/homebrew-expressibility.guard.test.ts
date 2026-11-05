@@ -284,6 +284,7 @@ function spellThroughLibraryCodec(spell: CustomSpell): CustomSpell {
 const PACK_ONLY_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
   tempHpPool: 120,
   appliesOnSuccess: true,
+  failedD20Becomes: 20,
   targetStates: [
     {
       type: "while-active",
