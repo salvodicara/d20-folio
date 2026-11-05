@@ -142,6 +142,8 @@ export interface ScenarioSpec {
   sessionTrackers?: Record<string, { used: number }>;
   /** Session spell-slot SPEND state (keyed by slot level), e.g. `{ "2": { used: 2 } }`. */
   sessionSpellSlots?: Record<string, { used: number }>;
+  /** A spell the character starts concentrating on (a Concentration save scenario). */
+  sessionConcentration?: string;
   /**
    * Starting CURRENT HP (default = full = the rolled max). Set BELOW half-max to
    * start the scenario Bloodied — for HP-band surfaces (the S5 Bloodied mark, the
@@ -352,7 +354,9 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     hitDice: { used: 0 },
     trackers: { ...(spec.sessionTrackers ?? {}) },
     spellSlots: sessionSlots,
-    concentration: "",
+    concentration: spec.sessionConcentration
+      ? concentrationValue(spec.sessionConcentration)
+      : "",
     initiative: "",
     conditions: spec.conditions ?? [],
     deathSucc: 0,
@@ -1420,6 +1424,23 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     ],
     exercises:
       "AX resource-conversion affordance: Font of Magic Create-spell-slot / Convert-slot-into-points pickers in the rail Resources section (options pre-validated against pool + slots). S6 per-cast Metamagic: casting Fireball OR the Fire Bolt cantrip (G6/W3 — Metamagic now applies to cantrips, spending SP but no slot) opens the cast modal with the amethyst chips + the one-primary rule (BUG-6: a second primary swaps the first; Empowered stacks on top); selecting debits the Sorcery-Point pool (undoable).",
+  },
+  // Indomitable on a failed Concentration save: a Fighter 13 / Cleric 1 holds Bless;
+  // damage asks the CON save, a fail offers «Indomito: ritira +13», and the new
+  // roll (with the Fighter level) stands.
+  "indomitable-fighter": {
+    name: "Brannoc, Fighter",
+    raceId: "human",
+    classId: "fighter",
+    subclassId: "champion",
+    level: 13,
+    secondaryClasses: [{ classId: "cleric", level: 1 }],
+    background: "soldier",
+    abilityScores: { STR: 18, DEX: 12, CON: 14, INT: 10, WIS: 14, CHA: 8 },
+    spells: [{ srdId: "bless", prepared: true }],
+    sessionConcentration: "bless",
+    exercises:
+      "A failed Concentration save offers Indomitable's reroll (+ Fighter level), spent with the new roll in one undo.",
   },
   "superior-bard-18": {
     name: "Talliel, Lore Bard",
