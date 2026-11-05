@@ -153,9 +153,16 @@ export function levelUpPlan(
   })();
   const metamagicPicksNeeded = metamagicPicksAtLevel(newClassLevel);
   const alreadyKnownMetamagic = new Set(charMetamagicChoices ?? []);
+  // Asked whenever the class HAS Eldritch Invocations (granted at any level up to
+  // this one) and the table's known count grows this level — 2024: 1 → 3 at 2,
+  // then 5, 6, 7, 8, 9, 10 at 5/7/9/12/15/18 — like Weapon Mastery's delta.
+  // Reading only THIS level's features asked them at level 1 alone.
   const needsInvocations = (() => {
     if (!charData) return false;
-    if (!(levelData?.featureIds ?? []).some(isInvocationPlaceholder)) return false;
+    const hasInvocations = (classTable?.levels ?? []).some(
+      (l) => l.level <= newClassLevel && l.featureIds.some(isInvocationPlaceholder)
+    );
+    if (!hasInvocations) return false;
     return newInvocationsAtLevel(newClassLevel) > 0;
   })();
   const invocationPicksNeeded = newInvocationsAtLevel(newClassLevel);
