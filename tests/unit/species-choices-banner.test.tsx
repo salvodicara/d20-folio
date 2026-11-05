@@ -11,8 +11,19 @@ import { SpeciesChoicesBanner } from "@/features/character/SpeciesChoicesBanner"
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";
 
+// Every Weapon Mastery the Fighter 5 has, so only the species' choices are owed.
+const MASTERED = {
+  classes: [
+    {
+      classId: "fighter",
+      level: 5,
+      weaponMasteries: ["longsword", "greatsword", "longbow", "handaxe"],
+    },
+  ],
+};
+
 function loadElf() {
-  const base = makeCharacterDoc();
+  const base = makeCharacterDoc(MASTERED);
   useCharacterStore.getState().setCharacter({
     ...base,
     character: {
@@ -86,7 +97,7 @@ describe("SpeciesChoicesBanner", () => {
   });
 
   it("asks a Human's never-chosen Versatile feat and sets it on Save", () => {
-    const base = makeCharacterDoc();
+    const base = makeCharacterDoc(MASTERED);
     useCharacterStore.getState().setCharacter({
       ...base,
       character: {
@@ -109,4 +120,41 @@ describe("SpeciesChoicesBanner", () => {
     );
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   }, 15_000);
+
+  it(
+    "asks the invocations a Warlock 2 owes (3 at L2) with the level-up's pick list",
+    () => {
+      const base = makeCharacterDoc({
+        race: asRaceId("dwarf"),
+        classes: [
+          { classId: "warlock", level: 2, invocationChoices: ["agonizing-blast"] },
+        ],
+        spells: [{ srdId: "eldritch-blast" }, { srdId: "chill-touch" }],
+      });
+      useCharacterStore.getState().setCharacter(base);
+      render(<SpeciesChoicesBanner />);
+      expect(
+        screen.getByRole("group", { name: "Choices to finish" }).textContent
+      ).toContain("Your class lets you choose more: 2 Eldritch Invocations (Warlock).");
+      fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+      expect(screen.getByText("Choose 2 Eldritch Invocations")).toBeTruthy();
+      for (const name of [/^Devil.s Sight$/, /^Eldritch Mind$/]) {
+        fireEvent.click(screen.getByTitle(name));
+        fireEvent.click(
+          screen.getByRole("button", {
+            name: new RegExp(`^Choose ${name.source.slice(1)}`),
+          })
+        );
+      }
+      expect(
+        useCharacterStore.getState().character?.character.classes[0]?.invocationChoices
+      ).toEqual(["agonizing-blast"]);
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      expect(
+        useCharacterStore.getState().character?.character.classes[0]?.invocationChoices
+      ).toEqual(["agonizing-blast", "devils-sight", "eldritch-mind"]);
+      expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+    },
+    SUITE_TIMEOUT
+  );
 });

@@ -10,6 +10,7 @@ import { docAtClock } from "@/lib/play/campaign-clock";
 import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock";
 import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
+import { applyOwedClassPicks, type ClassPickAnswer } from "@/lib/owed-class-picks";
 import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import type { ChoicePicks } from "@/lib/feature-choices";
 import type { AbilityCode } from "@/types/ability";
@@ -667,6 +668,12 @@ interface CharacterState {
    * a pick that is not one of the species' pending slots.
    */
   resolveSpeciesChoices: (picks: ChoicePicks) => void;
+  /**
+   * The class picks the level table gives and the build lacks (invocations,
+   * cantrips, Metamagic, maneuvers, Weapon Mastery), stored as a level-up stores
+   * them, each cut to what is owed. Writes nothing for a pick that isn't owed.
+   */
+  resolveClassPicks: (answers: readonly ClassPickAnswer[]) => void;
   /** The INT/WIS/CHA its species spells use (Elf, Gnome, Tiefling). */
   setSpeciesSpellAbility: (ability: AbilityCode) => void;
   /** Record which ability `featId`'s increase raised (the +1 is already in the
@@ -3299,6 +3306,16 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const charData = character.character;
     const { slots } = pendingSpeciesChoices(charData, character.session);
     const next = applySpeciesChoices(charData, slots, picks);
+    if (next === charData) return;
+    set({ character: { ...character, character: next } });
+  },
+
+  resolveClassPicks: (answers) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character) return;
+    const charData = character.character;
+    const next = applyOwedClassPicks(charData, answers);
     if (next === charData) return;
     set({ character: { ...character, character: next } });
   },

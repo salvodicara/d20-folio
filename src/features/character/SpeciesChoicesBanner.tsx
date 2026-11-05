@@ -4,7 +4,9 @@
  * species spells use; Keen Senses, Skillful) and the ability a feat's increase
  * raised when the feat never stored it, named in a banner whose «Completa»
  * opens them with the sheet's own pickers. Nothing is written until «Salva»; each
- * choice made then leaves the list. The new UI's twin is `PlaySpeciesChoices`;
+ * choice made then leaves the list. The class picks the level table gives and the
+ * build lacks (invocations, cantrips, Metamagic, maneuvers, Weapon Mastery) are
+ * asked here too, with the level-up wizard's own pick list. The new UI's twin is `PlaySpeciesChoices`;
  * both read `pendingSpeciesItems` and write through the same store actions.
  */
 import { useState } from "react";
@@ -14,12 +16,15 @@ import { FeatureChoicesSection } from "@/components/sheet/FeatureChoicesSection"
 import { ModalShell } from "@/components/shared/ModalShell";
 import { Button } from "@/components/ui/button";
 import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
+import { WizardPickList } from "@/features/wizard/pick-list";
 import { useLocale } from "@/hooks/useLocale";
+import { togglePick } from "@/lib/creation/picks";
 import { EMPTY_CHOICE_PICKS, type ChoicePicks } from "@/lib/feature-choices";
 import { asLocale, type Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
 import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs, raceName } from "@/lib/views/creation-view";
+import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
 import {
   pendingSpeciesItems,
   speciesChoicesLine,
@@ -90,7 +95,11 @@ function SpeciesChoicesModal({
     ? originFeatVMs(locale, new Set(doc.character.bgFeat ? [doc.character.bgFeat] : []))
     : [];
   const [picks, setPicks] = useState<ChoicePicks>(EMPTY_CHOICE_PICKS);
+  // The class picks owed, each with the level-up's pick list, answered by row key.
+  const classRows = owedClassPickRows(doc.character, locale);
+  const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
   const chosen =
+    Object.values(classPicks).some((ids) => ids.length > 0) ||
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
     featId !== null ||
@@ -107,14 +116,26 @@ function SpeciesChoicesModal({
     for (const [id, code] of Object.entries(featAbilities))
       store.setFeatAbility(id, code);
     store.resolveSpeciesChoices(picks);
+    store.resolveClassPicks(
+      classRows.map((row) => ({
+        classId: row.classId,
+        pick: row.pick,
+        ids: classPicks[row.key] ?? [],
+      }))
+    );
     onClose();
   };
   return (
     <ModalShell
       open
       onClose={onClose}
-      // The species these choices belong to, never the add-modals' «Aggiungi».
-      rubric={raceName(doc.character.race, locale)}
+      // The species these choices belong to (or, when only class picks are owed,
+      // the classes), never the add-modals' «Aggiungi».
+      rubric={
+        pending.any || classRows.length === 0
+          ? raceName(doc.character.race, locale)
+          : [...new Set(classRows.map((row) => row.source))].join(" · ")
+      }
       title={t("play.speciesChoices.title")}
       compact
     >
@@ -201,6 +222,22 @@ function SpeciesChoicesModal({
             existingSpellIds={NONE}
             proficientSkillIds={NONE}
           />
+          {classRows.map((row) => (
+            <WizardPickList
+              key={row.key}
+              label={classRows.length > 1 ? `${row.source} · ${row.title}` : row.title}
+              options={row.options}
+              selected={classPicks[row.key] ?? []}
+              total={row.owed}
+              onToggle={(id) =>
+                setClassPicks({
+                  ...classPicks,
+                  [row.key]: togglePick(classPicks[row.key] ?? [], id, row.owed),
+                })
+              }
+              searchPlaceholder={row.searchPlaceholder}
+            />
+          ))}
         </div>
       </ModalBody>
       <ModalFoot>

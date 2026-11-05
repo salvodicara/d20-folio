@@ -23,6 +23,8 @@ const as = (race: string, extra: Partial<CharacterData> = {}): CharacterData => 
   speciesSpellAbility: undefined,
   skills: {},
   spells: [],
+  // A class whose table gives no picks, so only the species' choices are owed.
+  classes: [{ classId: "monk", level: 9 }],
   ...extra,
 });
 

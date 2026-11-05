@@ -285,7 +285,21 @@
       "open": "Completa",
       "abilityNote": "Caratteristica per gli incantesimi della specie: oggi usa Carisma. Scegli quella giusta.",
       "featAbilityNote": "{{feats}}: quale caratteristica hai aumentato con questo talento? Sceglila una volta.",
-      "featAbilityLabel": "Caratteristica aumentata da {{feat}}"
+      "featAbilityLabel": "Caratteristica aumentata da {{feat}}",
+      "classBody": "La tua classe ti fa scegliere ancora: {{items}}.",
+      "classItem": "{{what}} ({{className}})",
+      "owed": {
+        "invocations_one": "{{count}} Supplica Occulta",
+        "invocations_other": "{{count}} Suppliche Occulte",
+        "cantrips_one": "{{count}} trucchetto",
+        "cantrips_other": "{{count}} trucchetti",
+        "metamagic_one": "{{count}} opzione di Metamagia",
+        "metamagic_other": "{{count}} opzioni di Metamagia",
+        "maneuvers_one": "{{count}} manovra",
+        "maneuvers_other": "{{count}} manovre",
+        "weaponMasteries_one": "{{count}} Padronanza d'Armi",
+        "weaponMasteries_other": "{{count}} Padronanze d'Armi"
+      }
     }
   }
 }
