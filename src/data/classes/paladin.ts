@@ -74,6 +74,7 @@ export const PALADIN_TABLE: SrdClassTable = {
     { label: "B", items: [], gold: 150 },
   ],
   spellcasting: { ability: "CHA", preparedCaster: true },
+  longRestSpellChange: "one",
   subclassLevel: 3,
   subclassSpellLevels: [3, 5, 9, 13, 17],
   subclasses: [

@@ -86,7 +86,8 @@ export const RANGER_TABLE: SrdClassTable = {
     { label: "B", items: [], gold: 150 },
   ],
   spellcasting: { ability: "WIS", preparedCaster: true },
-  canSwapSpell: true,
+  // SRD 5.2.1: one spell after each Long Rest, not at level-up.
+  longRestSpellChange: "one",
   subclassLevel: 3,
   // 2024 Ranger subclass spells are PER-SUBCLASS, not class-wide: Fey Wanderer,
   // Gloom Stalker, and Winter Walker grant always-prepared spells at

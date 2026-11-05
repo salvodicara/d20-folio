@@ -67,6 +67,7 @@ export const CLERIC_TABLE: SrdClassTable = {
     { label: "B", items: [], gold: 110 },
   ],
   spellcasting: { ability: "WIS", preparedCaster: true },
+  longRestSpellChange: "any",
   subclassLevel: 3,
   subclassSpellLevels: [3, 5, 7, 9],
   subclasses: [

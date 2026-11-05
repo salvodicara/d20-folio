@@ -3209,10 +3209,16 @@ export interface SrdClassTable {
   /** Available SRD subclasses */
   subclasses: SrdSubclassInfo[];
   /**
-   * True for known-casters (Bard, Sorcerer, Ranger, Warlock) who may
-   * replace exactly one known spell whenever they gain a level in this class.
+   * True for the classes that may replace one spell on their list whenever they
+   * gain a level in the class (SRD 5.2.1: Bard, Sorcerer, Warlock).
    */
   canSwapSpell?: boolean;
+  /**
+   * What the class may change after a Long Rest (SRD 5.2.1 "Changing Your Prepared
+   * Spells"): `"one"` spell (Paladin, Ranger) or `"any"` of them (Cleric, Druid;
+   * Wizard from its spellbook). Absent: no Long Rest change.
+   */
+  longRestSpellChange?: "one" | "any";
   /**
    * Levels at which most subclasses grant bonus always-prepared spells.
    * Used for checklist reminders on level-up.

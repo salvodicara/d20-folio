@@ -613,30 +613,55 @@ describe("isSwapIncomplete", () => {
   });
 });
 
-// ─── canSwapSpell Class Table Flags ──────────────────────────────────────────
+// ─── When each class changes its spells (SRD 5.2.1 class texts) ─────────────
+//
+// Each class's Spellcasting feature says when its list changes:
+//   Bard, Sorcerer, Warlock: "Whenever you gain a [class] level, you can replace one
+//     spell on your list with another [class] spell…" → `canSwapSpell` (level-up).
+//   Paladin, Ranger: "Whenever you finish a Long Rest, you can replace one spell on
+//     your list with another [class] spell…" → `longRestSpellChange: "one"`.
+//   Cleric, Druid: "Whenever you finish a Long Rest, you can change your list of
+//     prepared spells, replacing any of the spells…"; Wizard: "…replacing any of the
+//     spells there with spells from your spellbook" → `longRestSpellChange: "any"`.
 
-describe("canSwapSpell class table flags", () => {
-  const knownCasters = ["bard", "sorcerer", "warlock", "ranger"];
-  const nonSwapCasters = [
-    "wizard",
+describe("when each class changes its spells", () => {
+  const levelUpSwap = ["bard", "sorcerer", "warlock"];
+  const noLevelUpSwap = [
+    "ranger",
+    "paladin",
     "cleric",
     "druid",
-    "paladin",
+    "wizard",
     "fighter",
     "barbarian",
     "monk",
     "rogue",
   ];
 
-  it.each(knownCasters)("%s has canSwapSpell: true", (classId) => {
-    const table = getClassTable(classId);
-    expect(table?.canSwapSpell).toBe(true);
+  it.each(levelUpSwap)("%s replaces one spell when it gains a level", (classId) => {
+    expect(getClassTable(classId)?.canSwapSpell).toBe(true);
   });
 
-  it.each(nonSwapCasters)("%s does NOT have canSwapSpell", (classId) => {
-    const table = getClassTable(classId);
-    expect(table?.canSwapSpell).toBeFalsy();
+  it.each(noLevelUpSwap)("%s has no level-up swap", (classId) => {
+    expect(getClassTable(classId)?.canSwapSpell).toBeFalsy();
   });
+
+  it.each([
+    ["paladin", "one"],
+    ["ranger", "one"],
+    ["cleric", "any"],
+    ["druid", "any"],
+    ["wizard", "any"],
+  ] as const)("%s changes %s spell(s) after a Long Rest", (classId, change) => {
+    expect(getClassTable(classId)?.longRestSpellChange).toBe(change);
+  });
+
+  it.each(["bard", "sorcerer", "warlock", "fighter", "monk"])(
+    "%s has no Long Rest change",
+    (classId) => {
+      expect(getClassTable(classId)?.longRestSpellChange).toBeUndefined();
+    }
+  );
 });
 
 // ─── Spell Swap Apply Logic ───────────────────────────────────────────────────
