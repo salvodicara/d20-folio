@@ -1,0 +1,86 @@
+{
+  "common": {
+    "gist": "The common tongue of the planes, spoken by most humanoids"
+  },
+  "common-sign-language": {
+    "gist": "A language of hand signs, understood across the Common-speaking world"
+  },
+  "draconic": {
+    "gist": "The language of dragons and dragonborn"
+  },
+  "dwarvish": {
+    "gist": "The language of dwarves"
+  },
+  "elvish": {
+    "gist": "The language of elves"
+  },
+  "giant": {
+    "gist": "The language of giants"
+  },
+  "gnomish": {
+    "gist": "The language of gnomes"
+  },
+  "goblin": {
+    "gist": "The language of goblinoids: goblins, hobgoblins and bugbears"
+  },
+  "halfling": {
+    "gist": "The language of halflings"
+  },
+  "orc": {
+    "gist": "The language of orcs"
+  },
+  "abyssal": {
+    "gist": "A rare language, spoken by demons"
+  },
+  "celestial": {
+    "gist": "A rare language, spoken by celestials"
+  },
+  "deep-speech": {
+    "gist": "A rare language, spoken by aberrations"
+  },
+  "druidic": {
+    "gist": "The secret language of druids"
+  },
+  "infernal": {
+    "gist": "A rare language, spoken by devils"
+  },
+  "primordial": {
+    "gist": "A rare language, spoken by elementals; it has four dialects"
+  },
+  "aquan": {
+    "gist": "The Primordial dialect of water elementals"
+  },
+  "auran": {
+    "gist": "The Primordial dialect of air elementals"
+  },
+  "ignan": {
+    "gist": "The Primordial dialect of fire elementals"
+  },
+  "terran": {
+    "gist": "The Primordial dialect of earth elementals"
+  },
+  "sylvan": {
+    "gist": "A rare language, spoken by fey"
+  },
+  "thieves-cant": {
+    "gist": "The secret code of rogues and thieves"
+  },
+  "undercommon": {
+    "gist": "A rare language, the trade tongue of the Underdark"
+  },
+  "blink-dog": {
+    "gist": "The language of blink dogs"
+  },
+  "gnoll": {
+    "gist": "The language of gnolls"
+  },
+  "otyugh": {
+    "gist": "The language of otyughs"
+  },
+  "sahuagin": {
+    "gist": "The language of sahuagin"
+  },
+  "worg": {
+    "gist": "The language of worgs"
+  }
+}

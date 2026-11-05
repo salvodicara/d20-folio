@@ -216,5 +216,59 @@
   "potion.lethargy": {
     "name": "Spossatezza",
     "summary": "Quando l'effetto di Velocità termina, sei Incapacitato e hai Velocità 0 fino al termine del tuo turno successivo."
+  },
+  "skill.acrobatics": {
+    "gist": "Restare in piedi in una situazione difficile o eseguire un'acrobazia"
+  },
+  "skill.animal-handling": {
+    "gist": "Calmare o addestrare un animale, o fargli tenere un certo comportamento"
+  },
+  "skill.arcana": {
+    "gist": "Ricordare nozioni su incantesimi, oggetti magici e piani di esistenza"
+  },
+  "skill.athletics": {
+    "gist": "Saltare più lontano, restare a galla in acque agitate o rompere qualcosa"
+  },
+  "skill.deception": {
+    "gist": "Raccontare una bugia convincente o indossare un travestimento credibile"
+  },
+  "skill.history": {
+    "gist": "Ricordare nozioni su eventi passati, persone, nazioni e culture"
+  },
+  "skill.insight": {
+    "gist": "Capire l'umore e le intenzioni di una persona"
+  },
+  "skill.intimidation": {
+    "gist": "Impressionare o minacciare qualcuno perché faccia ciò che vuoi"
+  },
+  "skill.investigation": {
+    "gist": "Trovare informazioni oscure nei libri o dedurre come funziona qualcosa"
+  },
+  "skill.medicine": {
+    "gist": "Diagnosticare una malattia o capire cosa ha ucciso un morto recente"
+  },
+  "skill.nature": {
+    "gist": "Ricordare nozioni su terreni, piante, animali e clima"
+  },
+  "skill.perception": {
+    "gist": "Notare qualcosa che sfugge facilmente, usando tutti i sensi"
+  },
+  "skill.performance": {
+    "gist": "Recitare, raccontare una storia, suonare o danzare"
+  },
+  "skill.persuasion": {
+    "gist": "Convincere qualcuno in modo onesto e cortese"
+  },
+  "skill.religion": {
+    "gist": "Ricordare nozioni su divinità, riti e simboli sacri"
+  },
+  "skill.sleight-of-hand": {
+    "gist": "Borseggiare, nascondere un piccolo oggetto o fare un gioco di prestigio"
+  },
+  "skill.stealth": {
+    "gist": "Muoversi in silenzio e nascondersi per non farsi notare"
+  },
+  "skill.survival": {
+    "gist": "Seguire tracce, procacciare cibo, trovare un sentiero o evitare pericoli naturali"
   }
 }
