@@ -3379,6 +3379,9 @@ export function TurnEconomyProvider({
       ...hitDiceOffer,
       sizes: hitDiceLabel(pool).sizes,
       range: (count) => hitDiceTotalRange(pool, count),
+      ...((floor) => (floor ? { floor } : {}))(
+        aggregateCharacterGrants(character.character, character.session).hitDieFloor
+      ),
       onCancel: next,
       onConfirm: (count, rolled) => {
         next();
