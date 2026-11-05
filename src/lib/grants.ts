@@ -2057,6 +2057,8 @@ export interface AggregatedGrants {
   damageDieModifiers: ReadonlyArray<DamageDieModifierEntry>;
   /** Damage types whose Resistance the character's spells ignore (Elemental Adept). */
   spellResistancePenetration: ReadonlySet<DamageType>;
+  /** Damage types whose every damage roll ignores Resistance (Potent Poison). */
+  resistancePenetration: ReadonlySet<DamageType>;
 
   // Spell grants
   /** Always-prepared spell IDs (Domain spells, Magic Initiate, …). */
@@ -2399,6 +2401,7 @@ export function emptyAggregate(): AggregatedGrants {
     actionOutcomeRiders: [],
     damageDieModifiers: [],
     spellResistancePenetration: new Set(),
+    resistancePenetration: new Set(),
     alwaysPrepared: [],
     ritualSpells: new Set(),
     ritualAnyClasses: new Set(),
@@ -2665,6 +2668,7 @@ export function evaluateGrants(
   const actionOutcomeRiders: ActionOutcomeRider[] = [];
   const damageDieModifiers: DamageDieModifierEntry[] = [];
   const spellResistancePenetration = new Set<DamageType>();
+  const resistancePenetration = new Set<DamageType>();
 
   // Spell grants
   const alwaysPrepared: string[] = [];
@@ -3321,7 +3325,10 @@ export function evaluateGrants(
         });
         break;
       case "damage-penetration":
-        for (const type of g.damageTypes) spellResistancePenetration.add(type);
+        for (const type of g.damageTypes) {
+          spellResistancePenetration.add(type);
+          if (g.appliesTo === "any") resistancePenetration.add(type);
+        }
         break;
       case "damage-die-modifier":
         // Manipulation of a weapon's own damage dice (Great Weapon Fighting
@@ -4297,6 +4304,7 @@ export function evaluateGrants(
     actionOutcomeRiders,
     damageDieModifiers,
     spellResistancePenetration,
+    resistancePenetration,
     alwaysPrepared,
     ritualSpells,
     ritualAnyClasses,
