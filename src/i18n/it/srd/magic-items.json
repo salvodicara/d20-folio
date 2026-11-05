@@ -634,7 +634,7 @@
     "name": "Corno della Distruzione"
   },
   "horn-of-valhalla": {
-    "description": "(Bronzo) o Leggendario (Ferro) Puoi compiere un'azione Magia per suonare questo corno. In risposta, spiriti guerrieri dal piano di Ysgard appaiono in spazi liberi entro 18 metri da te. Ogni spirito usa il blocco delle statistiche del Berserker e torna a Ysgard dopo 1 ora o quando scende a 0 Punti Ferita. Gli spiriti sembrano guerrieri vivi e vegeti, e hanno Immunità alle condizioni Affascinato e Spaventato. Una volta usato il corno, non può essere usato di nuovo finché non sono trascorsi 7 giorni. Si sa che esistono quattro tipi di Corno di Valhalla, ciascuno fatto di un metallo diverso. Il tipo del corno determina quanti spiriti evoca, nonché il requisito per il suo utilizzo. Il DM sceglie il tipo del corno o lo determina casualmente tirando sulla tabella seguente. Se suoni il corno senza soddisfarne il requisito, gli spiriti evocati ti attaccano. Se soddisfi il requisito, sono Amichevoli verso di te e i tuoi alleati e seguono i tuoi comandi. 1d100 Tipo di Corno Spiriti Requisito 01-40 Argento 2 Nessuno 41-75 Ottone 3 Competenza con tutte le armi Semplici 76-90 Bronzo 4 Addestramento con tutte le armature Medie 91-00 Ferro 5 Competenza con tutte le armi da Guerra",
+    "description": "Raro (Argento o Ottone), Molto Raro (Bronzo) o Leggendario (Ferro). Puoi compiere un'azione Magia per suonare questo corno. In risposta, spiriti guerrieri dal piano di Ysgard appaiono in spazi liberi entro 18 metri da te. Ogni spirito usa il blocco delle statistiche del Berserker e torna a Ysgard dopo 1 ora o quando scende a 0 Punti Ferita. Gli spiriti sembrano guerrieri vivi e vegeti, e hanno Immunità alle condizioni Affascinato e Spaventato. Una volta usato il corno, non può essere usato di nuovo finché non sono trascorsi 7 giorni. Si sa che esistono quattro tipi di Corno del Valhalla, ciascuno fatto di un metallo diverso. Il tipo del corno determina quanti spiriti evoca, nonché il requisito per il suo utilizzo. Il DM sceglie il tipo del corno o lo determina casualmente tirando sulla tabella seguente. Se suoni il corno senza soddisfarne il requisito, gli spiriti evocati ti attaccano. Se soddisfi il requisito, sono Amichevoli verso di te e i tuoi alleati e seguono i tuoi comandi. 1d100 Tipo di Corno Spiriti Requisito 01-40 Argento 2 Nessuno 41-75 Ottone 3 Competenza con tutte le armi Semplici 76-90 Bronzo 4 Addestramento con tutte le armature Medie 91-00 Ferro 5 Competenza con tutte le armi da Guerra",
     "gist": "Evoca da 2 a 5 spiriti Berserker entro 18 m; una volta ogni 7 giorni",
     "name": "Corno del Valhalla"
   },
@@ -667,7 +667,7 @@
     "label": "Lanterna accesa (rivela gli Invisibili)"
   },
   "luck-blade": {
-    "description": "+1 ai tiri per colpire e danni. +1 ai tiri salvezza mentre impugnata. Una volta per alba, ritira un attacco, prova o tiro salvezza. Può contenere 1d4-1 cariche di Desiderio (consumate permanentemente).",
+    "description": "Ottieni un bonus di +1 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. Mentre hai l'arma con te, ottieni anche un bonus di +1 ai tiri salvezza. Fortuna. Se hai l'arma con te, puoi invocarne la fortuna (non è richiesta alcuna azione) per ripetere un Test del d20 fallito se non hai la condizione Incapacitato. Devi usare il secondo risultato. Una volta usata, questa proprietà non può essere usata di nuovo fino alla prossima alba. Desiderio. L'arma ha 1d3 cariche. Mentre la impugni, puoi spendere 1 carica e lanciare Desiderio da essa. Una volta usata, questa proprietà non può essere usata di nuovo fino alla prossima alba. L'arma perde questa proprietà se non ha più cariche.",
     "gist": "+1 a colpire, danni e TS; ritiri un d20 1/alba; può contenere cariche di Desiderio",
     "name": "Lama della Fortuna"
   },
@@ -738,7 +738,7 @@
     "description": "Tiri salvezza per evitare o terminare la condizione Avvelenato"
   },
   "necklace-of-fireballs": {
-    "description": "Ha 1d6+3 perle. Come Azione, stacca e lancia una perla fino a 18 metri — detona come Palla di Fuoco (DES CD 15, 8d6 fuoco). Puoi lanciare più perle insieme per danni aumentati.",
+    "description": "Questa collana ha 1d6 + 3 perle appese. Puoi compiere un'azione Magia per staccare una perla e lanciarla fino a 18 metri di distanza. Quando giunge al termine della sua traiettoria, la perla detona come una Palla di Fuoco di livello 3 (CD del tiro salvezza 15). Puoi scagliare più perle, o anche l'intera collana, in una sola volta. Quando lo fai, i danni della Palla di Fuoco aumentano di 1d6 per ogni perla oltre la prima (massimo 12d6).",
     "gist": "1d6+3 perle da lanciare a 18 m come Palla di Fuoco (8d6 danni da Fuoco, TS su DES CD 15)",
     "name": "Collana delle Palle di Fuoco"
   },
@@ -749,7 +749,7 @@
     "name": "Collana del Rosario"
   },
   "nine-lives-stealer": {
-    "description": "+2 ai tiri per colpire e danni. Ha 1d8+1 cariche. Con un critico contro una creatura con meno di 100 PF, deve superare un tiro salvezza COS CD 15 o morire. Usa una carica.",
+    "description": "Ottieni un bonus di +2 ai tiri per colpire e ai tiri per i danni effettuati con quest'arma magica. Furto Vitale. L'arma ha 1d8 + 1 cariche. Quando attacchi con quest'arma una creatura che ha meno di 100 Punti Ferita e ottieni 20 al d20 del tiro per colpire, la creatura deve riuscire in un tiro salvezza su Costituzione con CD 15 o essere uccisa all'istante, mentre la lama le strappa la forza vitale dal corpo. I Costrutti e i Non Morti superano automaticamente il tiro salvezza. L'arma perde 1 carica se la creatura viene uccisa. Quando l'arma non ha più cariche, perde questa proprietà.",
     "gist": "+2 a colpire e danni; critico sotto i 100 PF: TS su COS CD 15 o muore (1d8+1 cariche)",
     "name": "Ruba Nove Vite"
   },
@@ -775,7 +775,7 @@
   },
   "pearl-of-power": {
     "attunementReq": "da un incantatore",
-    "description": "Come Azione, recuperi uno slot incantesimo speso di 3° livello o inferiore. Una volta usata, non può essere riutilizzata fino alla prossima alba.",
+    "description": "Mentre hai questa perla con te, puoi compiere un'azione Magia per recuperare uno slot incantesimo speso di livello 3 o inferiore. Una volta usata, la perla non può essere usata di nuovo fino alla prossima alba.",
     "gist": "1/alba recuperi uno slot incantesimo speso di livello 3 o inferiore",
     "name": "Perla del Potere"
   },
@@ -914,7 +914,7 @@
     "description": "Pozione di Crescita: la taglia aumenta di una categoria (per esempio da Media a Grande)"
   },
   "potion-of-healing": {
-    "description": "Ripristina punti ferita quando consumata. Guarigione (2d4+2), Superiore (4d4+4), Eccezionale (8d4+8), Suprema (10d4+20). Bere o somministrare richiede un'Azione Bonus.",
+    "description": "Recuperi Punti Ferita quando bevi questa pozione. Come Azione Bonus, puoi berla o somministrarla a un'altra creatura entro 1,5 metri da te. Il numero di Punti Ferita dipende dalla rarità della pozione, come indicato nella tabella seguente. Qualunque sia la sua potenza, il liquido rosso della pozione luccica quando viene agitato. Pozione PF Recuperati Rarità Pozione di Guarigione 2d4 + 2 Comune Pozione di Guarigione (superiore) 4d4 + 4 Non Comune Pozione di Guarigione (eccezionale) 8d4 + 8 Rara Pozione di Guarigione (suprema) 10d4 + 20 Molto Rara",
     "gist": "Ripristina 2d4+2 PF, fino a 10d4+20 per la Suprema; si beve con un'Azione Bonus",
     "name": "Pozione di Guarigione"
   },
@@ -1006,7 +1006,7 @@
     "label": "Tuono"
   },
   "potion-of-speed": {
-    "description": "Ottieni gli effetti di Velocità per 1 minuto (senza concentrazione). La velocità raddoppia, +2 CA, Vantaggio ai tiri salvezza di DES, e un'Azione aggiuntiva ogni turno.",
+    "description": "Quando bevi questa pozione, ottieni l'effetto dell'incantesimo Velocità per 1 minuto (senza bisogno di Concentrazione) senza subire l'ondata di letargia che di solito sopraggiunge al termine dell'effetto. Il fluido giallo di questa pozione è striato di nero e vortica da solo.",
     "gist": "Velocità per 1 minuto senza Concentrazione: Velocità doppia, +2 CA, un'azione extra",
     "name": "Pozione di Velocità",
     "summary": "Effetto Velocità 1 min: +2 CA, azione extra"
@@ -1100,12 +1100,12 @@
     "name": "Anello di Rigenerazione"
   },
   "ring-of-shooting-stars": {
-    "description": "Puoi lanciare Luci Danzanti o Luce dall'anello. L'anello ha 6 cariche e recupera 1d6 cariche spese ogni giorno all'alba. Puoi spendere le sue cariche per usare le proprietà seguenti. Luminescenza. Puoi spendere 1 carica per lanciare Luminescenza dall'anello. Sfere di Fulmine. Puoi spendere 2 cariche come un'azione Magia per creare fino a quattro sfere di fulmine del diametro di circa 90 centimetri. Ciascuna sfera appare in uno spazio libero che puoi vedere entro 36 metri da te. Le sfere durano finché mantieni la Concentrazione, fino a 1 minuto. Ciascuna sfera emana Luce Fioca entro un raggio di 9 metri. Come un'Azione Bonus, puoi muovere ciascuna sfera fino a 9 metri, ma non più lontano di 36 metri da te. La prima volta che la sfera giunge entro 1,5 metri da una creatura diversa da te che non è dietro Copertura Totale, la sfera scarica un fulmine contro quella creatura e scompare. Quella creatura effettua un tiro salvezza su Destrezza con CD 15. Se fallisce, la creatura subisce danni da Fulmine in base al numero di sfere che hai creato, come indicato nella tabella seguente. Se riesce, la creatura subisce la metà di quei danni. Numero di Sfere Danni da Fulmine 1 4d12 2 5d4 3 2d6 4 2d4 Stelle Cadenti. Puoi spendere da 1 a 3 cariche come un'azione Magia. Per ogni carica che spendi, lanci una scintilla di luce splendente dall'anello verso un punto che puoi vedere entro 18 metri da te.",
+    "description": "Puoi lanciare Luci Danzanti o Luce dall'anello. L'anello ha 6 cariche e recupera 1d6 cariche spese ogni giorno all'alba. Puoi spendere le sue cariche per usare le proprietà seguenti. Luminescenza. Puoi spendere 1 carica per lanciare Luminescenza dall'anello. Sfere di Fulmine. Puoi spendere 2 cariche come un'azione Magia per creare fino a quattro sfere di fulmine del diametro di circa 90 centimetri. Ciascuna sfera appare in uno spazio libero che puoi vedere entro 36 metri da te. Le sfere durano finché mantieni la Concentrazione, fino a 1 minuto. Ciascuna sfera emana Luce Fioca entro un raggio di 9 metri. Come un'Azione Bonus, puoi muovere ciascuna sfera fino a 9 metri, ma non più lontano di 36 metri da te. La prima volta che la sfera giunge entro 1,5 metri da una creatura diversa da te che non è dietro Copertura Totale, la sfera scarica un fulmine contro quella creatura e scompare. Quella creatura effettua un tiro salvezza su Destrezza con CD 15. Se fallisce, la creatura subisce danni da Fulmine in base al numero di sfere che hai creato, come indicato nella tabella seguente. Se riesce, la creatura subisce la metà di quei danni. Numero di Sfere Danni da Fulmine 1 4d12 2 5d4 3 2d6 4 2d4 Stelle Cadenti. Puoi spendere da 1 a 3 cariche come un'azione Magia. Per ogni carica che spendi, lanci una scintilla di luce splendente dall'anello verso un punto che puoi vedere entro 18 metri da te. Ogni creatura in un Cubo di 4,5 metri che si origina da quel punto viene investita da una pioggia di scintille ed effettua un tiro salvezza su Destrezza con CD 15, subendo 5d4 danni Radiosi se fallisce o la metà di quei danni se riesce.",
     "gist": "Lanci Luce e Luci Danzanti; 6 cariche per Luminescenza, sfere di fulmine e stelle",
     "name": "Anello di Stelle Cadenti"
   },
   "ring-of-spell-storing": {
-    "description": "Può immagazzinare fino a 5 livelli di incantesimi. Qualsiasi creatura può lanciare un incantesimo immagazzinato usando il bonus di attacco e la CD dell'incantatore originale.",
+    "description": "Questo anello immagazzina gli incantesimi lanciati al suo interno, conservandoli finché chi lo indossa ed è in sintonia con esso non li usa. L'anello può immagazzinare fino a 5 livelli di incantesimi alla volta. Quando viene trovato, contiene 1d6 − 1 livelli di incantesimi immagazzinati scelti dal DM. Qualsiasi creatura può lanciare un incantesimo di livello da 1 a 5 nell'anello toccandolo mentre lancia l'incantesimo. L'incantesimo non ha altro effetto se non quello di essere immagazzinato nell'anello. Se l'anello non può contenere l'incantesimo, l'incantesimo viene speso senza effetto. Il livello dello slot usato per lanciare l'incantesimo determina quanto spazio occupa. Mentre indossi questo anello, puoi lanciare qualsiasi incantesimo immagazzinato in esso. L'incantesimo usa il livello dello slot, la CD del tiro salvezza degli incantesimi, il bonus di attacco degli incantesimi e la caratteristica da incantatore dell'incantatore originale, ma per il resto è trattato come se lo lanciassi tu. L'incantesimo lanciato dall'anello non è più immagazzinato in esso, liberando spazio.",
     "gist": "Immagazzina fino a 5 livelli di incantesimi che chiunque lo indossi può lanciare",
     "name": "Anello Accumula Incantesimi"
   },

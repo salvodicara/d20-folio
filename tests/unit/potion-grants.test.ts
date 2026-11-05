@@ -8,7 +8,6 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { SRD_MAGIC_ITEMS, getMagicItem } from "@/data/magic-items";
 import magicItemsEn from "@/i18n/en/srd/magic-items.json";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import spellsEn from "@/i18n/en/srd/spells.json";
 import { ruleFlag } from "@/lib/rules";
 import {
   POTION_TIMER_PREFIX,
@@ -29,7 +28,7 @@ const text = (id: string): string =>
 
 /** A standing effect the existing grant kinds can state, named in the text. */
 const STANDING_EFFECT =
-  /\b(climbing speed|flying speed|speed doubles|breathe underwater|resistance|strength score)\b/i;
+  /\b(climbing speed|flying speed|speed doubles|Haste spell|breathe underwater|resistance|strength score)\b/i;
 
 function potionStateGrant(itemId: string) {
   return getMagicItem(itemId)?.grants?.find(
@@ -228,11 +227,7 @@ describe("Potion of Heroism: 10 Temporary Hit Points when drunk", () => {
   });
 });
 
-describe("Potion of Speed: Haste's lethargy when it ends", () => {
-  const hasteText = (spellsEn as unknown as Record<string, { description?: string }>)[
-    "haste"
-  ]?.description;
-
+describe("Potion of Speed: Haste without its lethargy", () => {
   beforeEach(() => {
     useCharacterStore
       .getState()
@@ -245,60 +240,25 @@ describe("Potion of Speed: Haste's lethargy when it ends", () => {
   const blocked = (doc: CharacterDoc) =>
     ruleFlag(view(doc).aggregate.values, "block:turn-economy");
 
-  it("the potion is Haste, and Haste ends in a turn of lethargy", () => {
-    expect(text("potion-of-speed")).toMatch(/effects of Haste/);
-    expect(hasteText).toMatch(
-      /When the spell ends, the target is Incapacitated and has a Speed of 0 until the end of its next turn/
-    );
+  it("the potion is Haste, without the wave of lethargy when it ends", () => {
+    expect(text("potion-of-speed")).toMatch(/effect of the Haste spell/);
+    expect(text("potion-of-speed")).toMatch(/without suffering the wave of lethargy/);
   });
 
-  it("when the minute runs out: no actions and Speed 0 until the end of the next turn", () => {
+  it("when the minute runs out the haste ends and nothing follows", () => {
     useCharacterStore.getState().consumePotionBuff("potion-of-speed");
     for (let round = 1; round <= 9; round++) {
       useCharacterStore.getState().advanceEffectTimers(round);
     }
     expect(current().session.activeFeatures).toContain("potion:potion-of-speed");
-    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
-    expect(blocked(current())).toBe(false);
 
-    // The tenth End Turn ends the potion and starts the lethargy.
-    const step = useCharacterStore.getState().advanceEffectTimers(10);
+    // The tenth End Turn ends the potion; you act and move normally next turn.
+    useCharacterStore.getState().advanceEffectTimers(10);
     const ended = current();
     expect(ended.session.activeFeatures ?? []).not.toContain("potion:potion-of-speed");
-    expect(ended.session.activeFeatures).toContain(lethargyKey);
-    expect(ended.session.effectBoundaries?.[lethargyKey]).toEqual({
-      round: 11,
-      phase: "turn-end",
-    });
-    expect(blocked(ended)).toBe(true);
-    expect(effectiveWalkingSpeedFt(ended)).toBe(0);
-
-    // Your next turn starts still lethargic; its end clears it.
-    useCharacterStore
-      .getState()
-      .expireEffectBoundaries({ round: 11, phase: "turn-start" });
-    expect(current().session.activeFeatures).toContain(lethargyKey);
-    useCharacterStore.getState().expireEffectBoundaries({ round: 11, phase: "turn-end" });
-    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
-    expect(blocked(current())).toBe(false);
-    expect(effectiveWalkingSpeedFt(current())).toBe(30);
-
-    // Undoing the End Turn that ended the potion takes the lethargy back too.
-    useCharacterStore.getState().setCharacter(ended);
-    step.restore();
-    expect(current().session.activeFeatures).toContain("potion:potion-of-speed");
-    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
-    expect(current().session.effectBoundaries?.[lethargyKey]).toBeUndefined();
-  });
-
-  it("a minute passing out of combat leaves no lethargy turn behind", () => {
-    useCharacterStore.getState().consumePotionBuff("potion-of-speed");
-    for (let round = 0; round < 10; round++) {
-      useCharacterStore.getState().advanceEffectTimers();
-    }
-    expect(current().session.activeFeatures ?? []).not.toContain(
-      "potion:potion-of-speed"
-    );
-    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
+    expect(ended.session.activeFeatures ?? []).not.toContain(lethargyKey);
+    expect(ended.session.effectBoundaries?.[lethargyKey]).toBeUndefined();
+    expect(blocked(ended)).toBe(false);
+    expect(effectiveWalkingSpeedFt(ended)).toBe(30);
   });
 });

@@ -538,7 +538,7 @@
     "name": "Horn of Blasting"
   },
   "horn-of-valhalla": {
-    "description": "(Bronze), or Legendary (Iron) You can take a Magic action to blow this horn. In response, warrior spirits from the plane of Ysgard appear in unoccupied spaces within 60 feet of you. Each spirit uses the Berserker stat block and returns to Ysgard after 1 hour or when it drops to 0 Hit Points. The spirits look like living, breathing warriors, and they have Immunity to the Charmed and Frightened conditions. Once you use the horn, it can’t be used again until 7 days have passed. Four types of Horn of Valhalla are known to exist, each made of a different metal. The horn’s type determines how many spirits it summons, as well as the requirement for its use. The DM chooses the horn’s type or determines it randomly by rolling on the following table. If you blow the horn without meeting its requirement, the summoned spirits attack you. If you meet the requirement, they are Friendly to you and your allies and follow your commands. 1d100 Horn Type Spirits Requirement 01-40 Silver 2 None 41-75 Brass 3 Proficiency with all Simple weapons 76-90 Bronze 4 Training with all Medium armor 91-00 Iron 5 Proficiency with all Martial weapons",
+    "description": "Rare (Silver or Brass), Very Rare (Bronze), or Legendary (Iron). You can take a Magic action to blow this horn. In response, warrior spirits from the plane of Ysgard appear in unoccupied spaces within 60 feet of you. Each spirit uses the Berserker stat block and returns to Ysgard after 1 hour or when it drops to 0 Hit Points. The spirits look like living, breathing warriors, and they have Immunity to the Charmed and Frightened conditions. Once you use the horn, it can’t be used again until 7 days have passed. Four types of Horn of Valhalla are known to exist, each made of a different metal. The horn’s type determines how many spirits it summons, as well as the requirement for its use. The DM chooses the horn’s type or determines it randomly by rolling on the following table. If you blow the horn without meeting its requirement, the summoned spirits attack you. If you meet the requirement, they are Friendly to you and your allies and follow your commands. 1d100 Horn Type Spirits Requirement 01-40 Silver 2 None 41-75 Brass 3 Proficiency with all Simple weapons 76-90 Bronze 4 Training with all Medium armor 91-00 Iron 5 Proficiency with all Martial weapons",
     "name": "Horn of Valhalla"
   },
   "horseshoes-of-a-zephyr": {
@@ -565,7 +565,7 @@
     "label": "Lantern lit (reveals the Invisible)"
   },
   "luck-blade": {
-    "description": "+1 bonus to attack and damage. +1 to saving throws while held. Once per dawn, reroll one attack, check, or save. May contain 1d4-1 charges of Wish (consumed permanently).",
+    "description": "You gain a +1 bonus to attack rolls and damage rolls made with this magic weapon. While the weapon is on your person, you also gain a +1 bonus to saving throws. Luck. If the weapon is on your person, you can call on its luck (no action required) to reroll one failed D20 Test if you don’t have the Incapacitated condition. You must use the second roll. Once used, this property can’t be used again until the next dawn. Wish. The weapon has 1d3 charges. While holding it, you can expend 1 charge and cast Wish from it. Once used, this property can’t be used again until the next dawn. The weapon loses this property if it has no charges.",
     "name": "Luck Blade"
   },
   "mace-of-disruption": {
@@ -623,7 +623,7 @@
     "description": "Saving throws to avoid or end the Poisoned condition"
   },
   "necklace-of-fireballs": {
-    "description": "Has 1d6+3 beads. As an Action, detach and throw a bead up to 60 feet — it detonates as a Fireball (DEX DC 15, 8d6 fire). You can throw multiple beads at once for increased damage.",
+    "description": "This necklace has 1d6 + 3 beads hanging from it. You can take a Magic action to detach a bead and throw it up to 60 feet away. When it reaches the end of its trajectory, the bead detonates as a level 3 Fireball (save DC 15). You can hurl multiple beads, or even the whole necklace, at one time. When you do so, increase the damage of the Fireball by 1d6 for each bead after the first (maximum 12d6).",
     "name": "Necklace of Fireballs"
   },
   "necklace-of-prayer-beads": {
@@ -632,7 +632,7 @@
     "name": "Necklace of Prayer Beads"
   },
   "nine-lives-stealer": {
-    "description": "+2 bonus to attack and damage. Has 1d8+1 charges. On a critical hit against a creature with fewer than 100 HP, it must succeed on a DC 15 CON save or die. Uses one charge.",
+    "description": "You gain a +2 bonus to attack rolls and damage rolls made with this magic weapon. Life Stealing. The weapon has 1d8 + 1 charges. When you attack a creature that has fewer than 100 Hit Points with this weapon and roll a 20 on the d20 for the attack roll, the creature must succeed on a DC 15 Constitution saving throw or be slain instantly as the sword tears its life force from its body. Constructs and Undead succeed on the save automatically. The weapon loses 1 charge if the creature is slain. When the weapon has no charges remaining, it loses this property.",
     "name": "Nine Lives Stealer"
   },
   "oathbow": {
@@ -654,7 +654,7 @@
   },
   "pearl-of-power": {
     "attunementReq": "by a spellcaster",
-    "description": "As an Action, recover one expended spell slot of 3rd level or lower. Once used, can't be used again until the next dawn.",
+    "description": "While this pearl is on your person, you can take a Magic action to regain one expended spell slot of level 3 or lower. Once you use the pearl, it can’t be used again until the next dawn.",
     "name": "Pearl of Power"
   },
   "periapt-of-health": {
@@ -778,7 +778,7 @@
     "description": "Potion of Growth: size increases by one category (Medium to Large, for example)"
   },
   "potion-of-healing": {
-    "description": "Restores hit points when consumed. Healing (2d4+2), Greater (4d4+4), Superior (8d4+8), Supreme (10d4+20). Drinking or administering requires a Bonus Action.",
+    "description": "You regain Hit Points when you drink this potion. As a Bonus Action, you can drink it or administer it to another creature within 5 feet of yourself. The number of Hit Points depends on the potion’s rarity, as shown in the table below. Whatever its potency, the potion’s red liquid glimmers when agitated. Potion HP Regained Rarity Potion of Healing 2d4 + 2 Common Potion of Healing (greater) 4d4 + 4 Uncommon Potion of Healing (superior) 8d4 + 8 Rare Potion of Healing (supreme) 10d4 + 20 Very Rare",
     "name": "Potion of Healing"
   },
   "potion-of-heroism": {
@@ -862,7 +862,7 @@
     "label": "Thunder"
   },
   "potion-of-speed": {
-    "description": "You gain the effects of Haste for 1 minute (no concentration). Your speed doubles, you gain +2 AC, Advantage on DEX saves, and an additional Action each turn.",
+    "description": "When you drink this potion, you gain the effect of the Haste spell for 1 minute (no Concentration required) without suffering the wave of lethargy that typically occurs when the effect ends. This potion’s yellow fluid is streaked with black and swirls on its own.",
     "name": "Potion of Speed",
     "summary": "Haste effect 1 min: 2 × Speed, +2 AC, extra action"
   },
@@ -942,11 +942,11 @@
     "name": "Ring of Regeneration"
   },
   "ring-of-shooting-stars": {
-    "description": "You can cast Dancing Lights or Light from the ring. The ring has 6 charges and regains 1d6 expended charges daily at dawn. You can expend its charges to use the properties below. Faerie Fire. You can expend 1 charge to cast Faerie Fire from the ring. Lightning Spheres. You can expend 2 charges as a Magic action to create up to four 3-foot-diameter spheres of lightning. Each sphere appears in an unoccupied space you can see within 120 feet of yourself. The spheres last as long as you maintain Concentration, up to 1 minute. Each sphere sheds Dim Light in a 30-foot radius. As a Bonus Action, you can move each sphere up to 30 feet, but no farther than 120 feet away from yourself. The first time the sphere comes within 5 feet of a creature other than you that isn’t behind Total Cover, the sphere discharges lightning at that creature and disappears. That creature makes a DC 15 Dexterity saving throw. On a failed save, the creature takes Lightning damage based on the number of spheres you created, as shown in the following table. On a successful save, the creature takes half as much damage. Number of Spheres Lightning Damage 1 4d12 2 5d4 3 2d6 4 2d4 Shooting Stars. You can expend 1 to 3 charges as a Magic action. For every charge you expend, you launch a glowing mote of light from the ring at a point you can see within 60 feet of yourself.",
+    "description": "You can cast Dancing Lights or Light from the ring. The ring has 6 charges and regains 1d6 expended charges daily at dawn. You can expend its charges to use the properties below. Faerie Fire. You can expend 1 charge to cast Faerie Fire from the ring. Lightning Spheres. You can expend 2 charges as a Magic action to create up to four 3-foot-diameter spheres of lightning. Each sphere appears in an unoccupied space you can see within 120 feet of yourself. The spheres last as long as you maintain Concentration, up to 1 minute. Each sphere sheds Dim Light in a 30-foot radius. As a Bonus Action, you can move each sphere up to 30 feet, but no farther than 120 feet away from yourself. The first time the sphere comes within 5 feet of a creature other than you that isn’t behind Total Cover, the sphere discharges lightning at that creature and disappears. That creature makes a DC 15 Dexterity saving throw. On a failed save, the creature takes Lightning damage based on the number of spheres you created, as shown in the following table. On a successful save, the creature takes half as much damage. Number of Spheres Lightning Damage 1 4d12 2 5d4 3 2d6 4 2d4 Shooting Stars. You can expend 1 to 3 charges as a Magic action. For every charge you expend, you launch a glowing mote of light from the ring at a point you can see within 60 feet of yourself. Each creature in a 15-foot Cube originating from that point is showered in sparks and makes a DC 15 Dexterity saving throw, taking 5d4 Radiant damage on a failed save or half as much damage on a successful one.",
     "name": "Ring of Shooting Stars"
   },
   "ring-of-spell-storing": {
-    "description": "Can store up to 5 levels worth of spells. Any creature can cast a stored spell using the original caster's spell attack bonus and save DC.",
+    "description": "This ring stores spells cast into it, holding them until the attuned wearer uses them. The ring can store up to 5 levels worth of spells at a time. When found, it contains 1d6 − 1 levels of stored spells chosen by the DM. Any creature can cast a spell of level 1 through 5 into the ring by touching the ring as the spell is cast. The spell has no effect other than to be stored in the ring. If the ring can’t hold the spell, the spell is expended without effect. The level of the slot used to cast the spell determines how much space it uses. While wearing this ring, you can cast any spell stored in it. The spell uses the slot level, spell save DC, spell attack bonus, and spellcasting ability of the original caster but is otherwise treated as if you cast the spell. The spell cast from the ring is no longer stored in it, freeing up space.",
     "name": "Ring of Spell Storing"
   },
   "ring-of-spell-turning": {
@@ -1312,7 +1312,7 @@
   },
   "wand-of-the-war-mage-1-2-or-3": {
     "attunementReq": "a Spellcaster",
-    "description": "(+1), Rare (+2), or Very Rare (+3) While holding this wand, you gain a bonus to spell attack rolls determined by the wand’s rarity. In addition, you ignore Half Cover when making a spell attack roll.",
+    "description": "Uncommon (+1), Rare (+2), or Very Rare (+3). While holding this wand, you gain a bonus to spell attack rolls determined by the wand’s rarity. In addition, you ignore Half Cover when making a spell attack roll.",
     "name": "Wand of the War Mage, +1, +2 or +3"
   },
   "wand-of-the-war-mage-plus-2": {
