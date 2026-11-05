@@ -1873,6 +1873,9 @@ export interface SrdActionDef extends EffectRiders {
    * Omitted for non-check actions.
    */
   checkBonus?: ActionCheckBonus;
+  /** What this use does to a roll already rolled (Cutting Words: subtract the
+   *  Bardic Inspiration die from another creature's attack, check or damage). */
+  rollEffect?: ActionRollEffect;
   /**
    * G19 — conditions this action can NEUTRALIZE by spending HP FROM ITS OWN POOL
    * (Paladin **Lay On Hands**: expend 5 HP to end the Poisoned condition; at L14
@@ -1944,6 +1947,35 @@ export interface ActionTempHpRoll {
  * RAW that the resource is NOT expended if the check still fails ("If the check
  * still fails, this use of Second Wind isn't expended").
  */
+/** A roll a use can change once it is rolled: a d20 Test's kind, or damage. */
+export type ReactableRoll = "attack" | "check" | "save" | "damage" | "initiative";
+
+/**
+ * What a use does to a roll already rolled (Cutting Words, Indomitable): a die or a
+ * flat amount on it, or a reroll. The app never rolls; the sheet names the die and
+ * spends the cost. `whose`: the roller (`other`: another creature you can see).
+ * `timing`: `before-outcome` (rolled, not yet resolved), `after-fail`, or
+ * `after-outcome` (either result known).
+ */
+export type ActionRollEffect =
+  | {
+      kind: "die";
+      /** The die: the cost tracker's own (Bardic Inspiration by level), or fixed. */
+      die: { tracker: true } | { dice: string };
+      /** `choice`: the user adds or subtracts it (Bend Luck). */
+      operation: "add" | "subtract" | "choice";
+      rolls: ReadonlyArray<ReactableRoll>;
+      whose: "self" | "other" | "any";
+      timing: "before-outcome" | "after-fail" | "after-outcome";
+    }
+  | {
+      kind: "reroll";
+      rolls: ReadonlyArray<ReactableRoll>;
+      whose: "self" | "other" | "any";
+      /** The new roll has Advantage (Countercharm). */
+      advantage?: true;
+    };
+
 export interface ActionCheckBonus {
   /** The die added to the failed check, rolled externally ("1d10"). */
   dice: string;

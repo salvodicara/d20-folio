@@ -338,6 +338,16 @@ export const BARD_FEATURES: SrdClassFeatureData[] = [
           type: "reaction",
           costTracker: "bard-bardic-inspiration",
           trigger: "creatureSucceedsRollOrDealsDamage",
+          // Subtract the Bardic Inspiration die from the creature's roll, after it
+          // is rolled and before its effects.
+          rollEffect: {
+            kind: "die",
+            die: { tracker: true },
+            operation: "subtract",
+            rolls: ["attack", "check", "damage"],
+            whose: "other",
+            timing: "before-outcome",
+          },
         },
       ],
     },

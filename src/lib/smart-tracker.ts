@@ -188,7 +188,12 @@ import {
 } from "@/lib/cast-options";
 import { scaleCombatSummaryAtCastLevel } from "@/lib/cast-resolution";
 import { getRace, rawRaceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
-import type { CreatureSize, SrdMagicItemData, SrdRaceTrait } from "@/data/types";
+import type {
+  ActionRollEffect,
+  CreatureSize,
+  SrdMagicItemData,
+  SrdRaceTrait,
+} from "@/data/types";
 import type { CustomWeapon, ZeroHpConsequence } from "@/types/character";
 import { SRD_INVOCATIONS, invocationTrackerId } from "@/data/invocations";
 import { SRD_MANEUVERS, type ManeuverDieTarget } from "@/data/maneuvers";
@@ -721,6 +726,9 @@ export interface ActionSummary {
    * a fail)" line from it. Omitted for non-check actions.
    */
   checkBonus?: { dice: string; refundOnFail: boolean };
+  /** What the use does to a roll already rolled (Cutting Words), carried verbatim
+   *  from the catalogue; `roll-reactions.ts` reads it with the resolved `die`. */
+  rollEffect?: ActionRollEffect;
   /**
    * RA-12 — a flat-DC SKILL CHECK this action resolves through (the 2024 Hide
    * action: DC 15 Dexterity (Stealth); success = the Invisible condition +
@@ -6018,6 +6026,7 @@ function resolveFeatureActions(
       // composes the localized "spend → +1d10 to a failed check (refunded on a
       // fail)" line. The Second Wind uses + the d10 show via the `costTracker`
       // pool block below.
+      if (action.rollEffect) summary.rollEffect = action.rollEffect;
       if (action.checkBonus) {
         summary.checkBonus = {
           dice: action.checkBonus.dice,
