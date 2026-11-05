@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 
 import { filterSpellRows, spellPickRows } from "@/domains/spells/spell-pick-rows";
+import { localizeSrd } from "@/i18n/resolver";
 
 const row = (id: string, locale: "it" | "en" = "it") => spellPickRows([id], locale)[0];
 
@@ -20,6 +21,12 @@ describe("spellPickRows", () => {
       concentration: false,
       effect: "8d6\u00a0Fuoco",
     });
+  });
+
+  it("carries the spell's one-line gist, the catalogue's own words", () => {
+    const fireball = row("fireball");
+    expect(fireball?.gist).toBe(localizeSrd("spell", "fireball", "gist", "it"));
+    expect(fireball?.gist?.length).toBeGreaterThan(10);
   });
 
   it("Cure Wounds: the Hit Points it heals, as the sheet writes it", () => {

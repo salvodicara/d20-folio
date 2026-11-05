@@ -59,9 +59,9 @@ import type { CampaignDoc } from "@/types/campaign";
 import type { RestKind } from "@/lib/play/rest-preview";
 
 // «Sali di livello» loads only when it opens.
-const LevelUpDialog = lazy(() =>
-  import("@/domains/leveling/ui/LevelUpDialog").then((m) => ({
-    default: m.LevelUpDialog,
+const LevelUpScreen = lazy(() =>
+  import("@/domains/leveling/ui/LevelUpScreen").then((m) => ({
+    default: m.LevelUpScreen,
   }))
 );
 
@@ -109,6 +109,18 @@ export function PlayScreen() {
       </main>
     );
   }
+  // «Sali di livello» takes the whole page (the moment, not a dialog over the sheet).
+  if (levelling && !readonly && totalLevel(doc.character) < 20) {
+    return (
+      <Suspense fallback={null}>
+        <LevelUpScreen
+          doc={doc}
+          locale={locale}
+          onClose={() => void navigate(`/characters/${doc.id}`, { replace: true })}
+        />
+      </Suspense>
+    );
+  }
   const view = playHeaderView(doc, locale);
   const rests = (
     <>
@@ -119,12 +131,7 @@ export function PlayScreen() {
         {t("play.rest.long")}
       </Button>
       {totalLevel(doc.character) < 20 && (
-        <Link
-          className="f-btn"
-          data-kind="ghost"
-          to={`/characters/${doc.id}/level-up`}
-          aria-haspopup="dialog"
-        >
+        <Link className="f-btn" data-kind="ghost" to={`/characters/${doc.id}/level-up`}>
           {t("levelUp.screen.levelUp")}
         </Link>
       )}
@@ -225,15 +232,6 @@ export function PlayScreen() {
           </button>
         ))}
       </Menu>
-      {levelling && !readonly && totalLevel(doc.character) < 20 && (
-        <Suspense fallback={null}>
-          <LevelUpDialog
-            doc={doc}
-            locale={locale}
-            onClose={() => void navigate(`/characters/${doc.id}`, { replace: true })}
-          />
-        </Suspense>
-      )}
       {toast && <Toast>{toast}</Toast>}
     </main>
   );

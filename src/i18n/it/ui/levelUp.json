@@ -167,7 +167,18 @@
         "preparedSpells": "Incantesimi preparabili"
       },
       "classLine": "Classe: {{class}}",
-      "cantripForget": "Cambia un trucchetto che conosci (facoltativo)"
+      "cantripForget": "Cambia un trucchetto che conosci (facoltativo)",
+      "steps": "Passi",
+      "summary": "Il tuo personaggio al nuovo livello",
+      "optional": "facoltativo",
+      "optionalHint": "Facoltativo: lascia tutto com'è se le tue scelte ti piacciono.",
+      "owed_one": "Manca {{count}} scelta",
+      "owed_other": "Mancano {{count}} scelte",
+      "new": "Nuovo",
+      "cantripsKnown": "Trucchetti · {{count}}",
+      "spellsKnown": "Incantesimi · {{count}}",
+      "gist": "In breve",
+      "readAll": "Leggi tutto"
     }
   }
 }
