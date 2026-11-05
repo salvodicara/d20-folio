@@ -101,6 +101,7 @@ import {
 } from "@/lib/combat-effects";
 import {
   defaultCombatState,
+  grantInspiration,
   reduceCondition,
   reduceDeathSave,
   reduceKill,
@@ -984,6 +985,11 @@ export type CampaignCombatMutation =
     }
   | { kind: "condition"; operation: { kind: "add" | "remove"; conditionId: string } }
   | { kind: "temp-hp"; value: number }
+  /** Inspiration given by another PC (Musician, Bardic Inspiration). */
+  | {
+      kind: "inspiration";
+      grant: { kind: "heroic" } | { kind: "bardic-die"; die: string };
+    }
   | { kind: "death-save"; outcome: "success" | "failure" }
   /** Killed outright (Power Word Kill at 100 HP or fewer). */
   | { kind: "die" }
@@ -1025,6 +1031,18 @@ export function revertPeerEffect(
     hp: back(current.hp, written.hp, previous.hp),
     conditions: back(current.conditions, written.conditions, previous.conditions),
     deathSaves: back(current.deathSaves, written.deathSaves, previous.deathSaves),
+    // Raw values: a root the write never set stays absent, so an undo never writes
+    // an inspiration field the owner's sheet would then read over its own.
+    heroicInspiration: back(
+      current.heroicInspiration,
+      written.heroicInspiration,
+      previous.heroicInspiration
+    ),
+    bardicInspirationDie: back(
+      current.bardicInspirationDie,
+      written.bardicInspirationDie,
+      previous.bardicInspirationDie
+    ),
     pendingConcentrationSaves: back(
       current.pendingConcentrationSaves ?? [],
       written.pendingConcentrationSaves ?? [],
@@ -1045,6 +1063,7 @@ function reduceCampaignCombatMutation(
   if (mutation.kind === "temp-hp") {
     return setTempAbsolute(current, mutation.value);
   }
+  if (mutation.kind === "inspiration") return grantInspiration(current, mutation.grant);
   if (mutation.kind === "death-save") {
     return reduceDeathSave(current, mutation.outcome);
   }

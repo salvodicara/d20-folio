@@ -105,6 +105,7 @@ import {
   type TargetStep,
 } from "@/features/character/center/target-step";
 import { HELP_ACTION_ID, helpBenefit } from "@/lib/play/help";
+import { giveInspiration } from "./give-inspiration";
 import { checkSucceeded, type CheckResult } from "@/lib/play/checks";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
@@ -1555,7 +1556,27 @@ export function TurnEconomyProvider({
    * caster's own state is lit on the sheet (`withSelfRecipient`), never written here.
    * Returns the undo that takes them back; null when there is nothing to leave.
    */
+  /** What a use leaves on the PCs it named: its standing states (Bless) and the
+   *  inspiration it gives (Musician, Bardic Inspiration), with one undo. */
   function leaveStandings(
+    action: ResolvedAction,
+    castLevel: number | undefined,
+    targets: ReadonlyArray<string>
+  ): (() => void) | null {
+    const undoStates = leaveStandingStates(action, castLevel, targets);
+    const undoInspiration = giveInspiration(
+      action,
+      targets,
+      t("campaignHub.combatWriteFailed")
+    );
+    if (!undoStates && !undoInspiration) return null;
+    return () => {
+      undoStates?.();
+      undoInspiration?.();
+    };
+  }
+
+  function leaveStandingStates(
     action: ResolvedAction,
     castLevel: number | undefined,
     targets: ReadonlyArray<string>

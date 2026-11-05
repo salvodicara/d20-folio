@@ -425,3 +425,18 @@ export function setTempAbsolute(s: CombatState, temp: number): CombatState {
 export function setInitiativeAbsolute(s: CombatState, roll: number | null): CombatState {
   return { ...s, initiativeRoll: roll };
 }
+
+/** Inspiration another PC gives this one (Musician, Bardic Inspiration): Heroic
+ *  Inspiration doesn't stack; a creature holds one Bardic Inspiration die at a time.
+ *  Unchanged (the same object) when the grant changes nothing. */
+export function grantInspiration(
+  state: CombatState,
+  grant: { kind: "heroic" } | { kind: "bardic-die"; die: string }
+): CombatState {
+  if (grant.kind === "heroic") {
+    return state.heroicInspiration ? state : { ...state, heroicInspiration: true };
+  }
+  return state.bardicInspirationDie
+    ? state
+    : { ...state, bardicInspirationDie: grant.die };
+}

@@ -188,3 +188,37 @@ describe("a hit from another device reads the effects others left on its target"
     expect(before.hp.current - after.hp.current).toBe(7);
   });
 });
+
+describe("inspiration given from another device", () => {
+  it("Mara's Musician gives Bren Heroic Inspiration, and the undo takes it back", async () => {
+    await campaign({});
+    as("b");
+    const { before, after } = await writeCampaignCombatEffect("a", brenId, null, 30, {
+      kind: "inspiration",
+      grant: { kind: "heroic" },
+    });
+    expect(after.heroicInspiration).toBe(true);
+    const { after: reverted } = await writeCampaignCombatEffect("a", brenId, null, 30, {
+      kind: "revert",
+      written: after,
+      previous: before,
+      spends: [],
+    });
+    expect(reverted.heroicInspiration ?? false).toBe(false);
+  });
+
+  it("a Bardic Inspiration die lands once: a second waits until the first is spent", async () => {
+    await campaign({});
+    as("b");
+    const first = await writeCampaignCombatEffect("a", brenId, null, 30, {
+      kind: "inspiration",
+      grant: { kind: "bardic-die", die: "d8" },
+    });
+    expect(first.after.bardicInspirationDie).toBe("d8");
+    const second = await writeCampaignCombatEffect("a", brenId, null, 30, {
+      kind: "inspiration",
+      grant: { kind: "bardic-die", die: "d10" },
+    });
+    expect(second.after.bardicInspirationDie).toBe("d8");
+  });
+});
