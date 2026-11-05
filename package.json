@@ -41,7 +41,8 @@
     "typecheck": "tsc -b",
     "changeset": "changeset",
     "changeset:status": "changeset status",
-    "changeset:version": "changeset version && pnpm install --lockfile-only"
+    "changeset:version": "changeset version && pnpm install --lockfile-only",
+    "art:coverage": "node --import ./scripts/alias-loader.mjs scripts/art/coverage.ts"
   },
   "dependencies": {
     "@fontsource-variable/alegreya": "^5.2.8",
