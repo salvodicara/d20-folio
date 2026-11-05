@@ -210,6 +210,13 @@ describe("conformance · 17. at-the-table gaps", () => {
       const id = "@/features/campaigns/roster-io";
       const roster = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
       expect(roster.subscribeRoster).toBeTypeOf("function");
+      // …and the encounter takes a roster entry by id (the DM's roster screen).
+      const encounterId = "@/features/campaigns/encounter-roster";
+      const encounter = (await import(/* @vite-ignore */ encounterId)) as Record<
+        string,
+        unknown
+      >;
+      expect(encounter.addRosterCombatant).toBeTypeOf("function");
     }
   );
 

@@ -2842,6 +2842,65 @@ describe("firestore.rules — /campaigns dmItems (hidden) + itemReveals (reveale
   });
 });
 
+// M19 (docs/architecture/2026-11-dm-state-and-roster.md): the creatures the DM keeps
+// between fights. `roster` is what the party knows (members read, the DM writes);
+// `dmRoster` is what only the DM knows. Both are excluded from the member wildcard.
+describe("firestore.rules — /campaigns roster (members read) + dmRoster (DM only)", () => {
+  const known = (id: string) => ["campaigns", "camp1", "roster", id] as const;
+  const secret = (id: string) => ["campaigns", "camp1", "dmRoster", id] as const;
+  const entry = { name: "Sildar", monsterId: "veteran", hp: { current: 20, max: 58 } };
+
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, ...known("sildar")), entry);
+      await setDoc(doc(db, ...secret("sildar")), {
+        notes: "Works for the Lords' Alliance",
+      });
+    });
+  });
+
+  it("a member reads the roster but cannot write it", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(getDoc(doc(member, ...known("sildar"))));
+    await assertSucceeds(getDocs(collection(member, "campaigns", "camp1", "roster")));
+    await assertFails(setDoc(doc(member, ...known("glasstaff")), entry));
+    await assertFails(updateDoc(doc(member, ...known("sildar")), { name: "X" }));
+    await assertFails(deleteDoc(doc(member, ...known("sildar"))));
+  });
+
+  it("a member can never reach dmRoster, doc or LIST (the wildcard can't open it)", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    await assertFails(getDoc(doc(member, ...secret("sildar"))));
+    await assertFails(getDocs(collection(member, "campaigns", "camp1", "dmRoster")));
+    await assertFails(setDoc(doc(member, ...secret("x")), { notes: "x" }));
+  });
+
+  it("the DM and the admin read and write both", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(setDoc(doc(dm, ...known("glasstaff")), entry));
+    await assertSucceeds(setDoc(doc(dm, ...secret("glasstaff")), { notes: "Iarno" }));
+    await assertSucceeds(getDocs(collection(dm, "campaigns", "camp1", "dmRoster")));
+    await assertSucceeds(deleteDoc(doc(dm, ...known("glasstaff"))));
+    const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
+    await assertSucceeds(getDoc(doc(admin, ...secret("sildar"))));
+  });
+
+  it("an outsider and a blocked user reach neither", async () => {
+    for (const uid of ["outsider", "blocked"]) {
+      const db = testEnv.authenticatedContext(uid).firestore();
+      await assertFails(getDoc(doc(db, ...known("sildar"))));
+      await assertFails(getDoc(doc(db, ...secret("sildar"))));
+    }
+  });
+
+  it("an entry id is plain, and a document is bounded", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertFails(setDoc(doc(dm, ...known("bad id!")), entry));
+    await assertFails(setDoc(doc(dm, ...secret("big")), { notes: "x".repeat(20001) }));
+  });
+});
+
 /** A well-formed bug-report document for the given reporter (OWN-37). */
 function reportDoc(reporterUid: string, overrides: Record<string, unknown> = {}) {
   return {
