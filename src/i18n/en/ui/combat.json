@@ -165,6 +165,8 @@
     "hpHealToast": "+{{val}} HP ({{prev}}→{{next}})",
     "concentrationSaveToast": "Concentration on \"{{spell}}\": CON save DC {{dc}} (your save {{save}})",
     "concentrationSaveAdvantageToast": "Concentration on \"{{spell}}\": CON save DC {{dc}} (your save {{save}}, Advantage)",
+    "failedD20Use": "{{spell}}: the d20 becomes {{face}}",
+    "failedD20UsedToast": "{{spell}}: the save succeeds ({{total}})",
     "concentrationSavePrompt": "Maintain “{{spell}}” · CON save DC {{dc}}",
     "concentrationSaveQueue": "{{count}} saves queued",
     "concentrationSaveRollAria": "Your Concentration-save d20 result",

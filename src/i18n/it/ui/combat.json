@@ -165,6 +165,8 @@
     "hpHealToast": "+{{val}} PF ({{prev}}→{{next}})",
     "concentrationSaveToast": "Concentrazione su \"{{spell}}\": TS COS CD {{dc}} (il tuo TS {{save}})",
     "concentrationSaveAdvantageToast": "Concentrazione su \"{{spell}}\": TS COS CD {{dc}} (il tuo TS {{save}}, Vantaggio)",
+    "failedD20Use": "{{spell}}: il d20 diventa {{face}}",
+    "failedD20UsedToast": "{{spell}}: il TS riesce ({{total}})",
     "concentrationSavePrompt": "Mantieni “{{spell}}” · TS COS CD {{dc}}",
     "concentrationSaveQueue": "{{count}} TS in coda",
     "concentrationSaveRollAria": "Il risultato del tuo d20 per il TS di Concentrazione",
