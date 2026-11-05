@@ -14,6 +14,9 @@
  */
 import type { MonsterStatBlock } from "@/data/types";
 import { filterMonsters, getMonster } from "@/data/monsters";
+import type { CreatureLocation } from "@/lib/familiar-ids";
+
+export type { CreatureLocation };
 
 /**
  * The 2024 Find Familiar eligible-form pool: every CR-0 Beast, plus the special
@@ -32,13 +35,6 @@ export function resolveFamiliarForms(
     .map((id) => getMonster(id))
     .filter((m): m is MonsterStatBlock => m !== undefined);
   return [...base, ...special];
-}
-
-/** Where a creature is (edge-case M19): a plane, or inside an extradimensional space
- *  (a container's instanceId: a Bag of Holding, a Rope Trick), which is on no plane. */
-export interface CreatureLocation {
-  plane?: string;
-  inside?: string;
 }
 
 /**

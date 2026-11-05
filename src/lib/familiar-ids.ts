@@ -29,3 +29,10 @@ export const FAMILIAR_CREATURE_TYPES: readonly FamiliarCreatureType[] = [
   "fey",
   "fiend",
 ];
+
+/** Where a creature is (edge-case M19): a plane, or inside an extradimensional space
+ *  (a container's instanceId: a Bag of Holding, a Rope Trick), which is on no plane. */
+export interface CreatureLocation {
+  plane?: string;
+  inside?: string;
+}

@@ -7,7 +7,7 @@
  * after it. Pure: the entry shapes and their bounded parsers.
  */
 import type { CreatureType } from "@/data/types";
-import type { CreatureLocation } from "@/lib/familiar";
+import type { CreatureLocation } from "@/lib/familiar-ids";
 
 /** What the party knows of a creature the DM keeps. */
 export interface RosterEntry {
