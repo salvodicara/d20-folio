@@ -758,8 +758,12 @@ function ActionLine({
             .filter(Boolean)
             .join(" ")
         : "";
+  // a dice expression never breaks at its minus («1d6‑1» keeps a non-breaking hyphen)
   const effect = row.damage
-    ? [row.damage, row.damageType ? t(`srd.damage_${row.damageType}`) : null]
+    ? [
+        row.damage.replace(/-/g, "\u2011"),
+        row.damageType ? t(`srd.damage_${row.damageType}`) : null,
+      ]
         .filter(Boolean)
         .join(" ")
     : row.healing
@@ -871,7 +875,8 @@ function RangeCell({ range }: { range: string | undefined }) {
   const compact = range ? compactRange(range) : "";
   return (
     <span className="f-act-c" title={range && compact !== range ? range : undefined}>
-      {compact}
+      {/* a short range («1,5 m / 6/18 m») is one unit: it never wraps mid-way */}
+      {compact.length <= 18 ? compact.replace(/ /g, "\u00a0") : compact}
     </span>
   );
 }
