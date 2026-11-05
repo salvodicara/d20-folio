@@ -157,6 +157,10 @@ import {
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { useTurnEconomy } from "../useTurnEconomy";
+import { RollReactionDialog } from "../RollReactionDialog";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { rollReactionView, type RollReactionView } from "../roll-reaction-view";
+import { rollReactionOf } from "@/lib/play/roll-reactions";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -361,6 +365,7 @@ export function PlayTab() {
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
   const {
     executeAction: commitAction,
+    commitRollReaction,
     spendRider,
     applyCunningStrike,
     releaseReadiedSpell,
@@ -467,6 +472,21 @@ export function PlayTab() {
   );
 
   const dispatchAction = commitAction;
+  // A reaction on another creature's roll (Cutting Words): its «Su chi? / Su quale
+  // tiro?» dialog, with the fight's roster when this sheet is in one.
+  const [rolling, setRolling] = useState<{
+    action: ResolvedAction;
+    view: RollReactionView;
+  } | null>(null);
+  const rollViewFor = (action: ResolvedAction): RollReactionView | null => {
+    const reaction = rollReactionOf(action);
+    if (!reaction) return null;
+    const status = useCombatStatusStore.getState().status;
+    return rollReactionView(
+      reaction,
+      status ? { myId: status.myId, rows: status.view.rows } : null
+    );
+  };
 
   // Inline-modifier state — the engine-derived advantage / disadvantage on the
   // character's ATTACK rolls right now, netted (RAW): grant clauses
@@ -1064,9 +1084,26 @@ export function PlayTab() {
                   higherLevelsFor={higherLevelsFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                  onUse={() => dispatchAction(action)}
+                  onUse={() => {
+                    // A use on another creature's roll (Cutting Words) asks on
+                    // whom and which roll first.
+                    const view = rollViewFor(action);
+                    if (view) setRolling({ action, view });
+                    else dispatchAction(action);
+                  }}
                 />
               ))}
+              {rolling && (
+                <RollReactionDialog
+                  name={rolling.action.name}
+                  view={rolling.view}
+                  onClose={() => setRolling(null)}
+                  onUse={(plan) => {
+                    setRolling(null);
+                    commitRollReaction(rolling.action, plan);
+                  }}
+                />
+              )}
               {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
                 reaction resolved verbally at the table (an opportunity attack,
                 a readied action). Commits through the SAME handleUseReaction
