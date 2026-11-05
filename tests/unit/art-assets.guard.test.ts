@@ -7,7 +7,7 @@ import { existsSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { classTables } from "@/data/classes";
+import { classFeatures, classTables } from "@/data/classes";
 import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_FEATS } from "@/data/feats";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
@@ -26,6 +26,7 @@ const CATALOGUE: Record<string, ReadonlySet<string>> = {
   item: new Set(SRD_MAGIC_ITEMS.map((m) => m.id)),
   equipment: new Set(SRD_EQUIPMENT.map((e) => e.id)),
   monster: new Set(MONSTERS.map((m) => m.id)),
+  feature: new Set(classFeatures.map((f) => f.id)),
 };
 
 describe("painted icons", () => {
