@@ -370,6 +370,13 @@ effects (log, undo, persistence, the encounter) stay with the store
   (`src/lib/play/item-held-states.ts`).
 - **Potions**: drinking lights `potion:<itemId>` (`src/lib/potion-states.ts`); mixing offers
   the DM's d100 table (`src/lib/play/potion-mixing.ts`).
+- **The ability a feat raised** (`src/lib/feat-ability.ts`): a feat whose increase you choose
+  stores the answer on its ref (`featAbility`, written by `commitLevelUp`). Its readers:
+  `spellAbilitySource: "feat"` on `always-prepared-spell` (the `featSpellAbility` marker) and
+  `choice-spell` (traced by the pick's free cast), read live by `resolveSpellAbility`;
+  `concentration-save-bonus` `ability: "feat"` (with `school`); `FEAT` in a `temp-hp` formula.
+  Unanswered keeps the old reading (class ability, `spellAbilityFallback: "species"`, the higher
+  of two choices, no bonus) and «Scelte da completare» asks (`unresolvedBuildChoices`).
 - Also in `src/lib/play/`: cover, light, surprise, Help, grapple, mounts, swarms, suffocation,
   provisions, terrain, Ready, Counterspell's kept slot, the cast record, Wish, Magic Jar.
 
