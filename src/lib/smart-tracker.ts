@@ -8101,6 +8101,10 @@ function resolveWeaponActions(
       ...(onCritMoveFt > 0 ? { onCritMoveFt } : {}),
       ...(extraDamage.length > 0 ? { extraDamage } : {}),
       ...(dieModifiers.length > 0 ? { dieModifiers } : {}),
+      // Potent Poison: this weapon's Poison damage ignores Resistance.
+      ...(grantAgg.resistancePenetration.has(damageType)
+        ? { ignoresResistance: [damageType] }
+        : {}),
       // Extra masteries a reach-bonus rider activates on this weapon (Battering
       // Roots → Push/Topple). Surfaced only when a matching rider applied.
       ...(reachMasteries.length > 0 ? { extraMasteries: reachMasteries } : {}),

@@ -1964,7 +1964,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
    * Resistance (immunity still applies). Elemental Adept: spells you cast.
    */
   "damage-penetration": objectSchema({
-    appliesTo: literalSchema("spell"),
+    /** `spell`: spells you cast (Elemental Adept); `any`: every damage roll you make
+     *  (Poisoner's Potent Poison). */
+    appliesTo: unionSchema([literalSchema("spell"), literalSchema("any")]),
     damageTypes: arraySchema(DAMAGE_TYPE_SCHEMA, 1),
     ignores: literalSchema("resistance"),
     type: literalSchema("damage-penetration"),
