@@ -21,6 +21,9 @@ import { MOCK_CHARACTER } from "@/lib/mock";
 import { ALL_ABILITIES } from "@/lib/compute";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import type { CombatState } from "@/types/combat-state";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
+import { resolveDamagePart } from "@/lib/damage-intake";
+import { sessionToCombatState } from "@/lib/combat-state";
 
 describe("derivePartyMemberStats", () => {
   it("computes the full glance statblock from the live character doc", () => {
@@ -98,7 +101,7 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
   });
 
   it("derives the total (raw roll + engine bonus) from the passed encounterInit roll", () => {
-    const live = derivePcLive(MOCK_CHARACTER, combat({}), 15);
+    const live = derivePcLive(MOCK_CHARACTER, combat({}), 15, []);
     if (!live) throw new Error("expected live PC facts");
     expect(live.initiative).toBe(15 + bonus); // never the stored value alone
     // The pip surfaces the bonus + the RAW roll separately.
@@ -110,7 +113,7 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
     // A lingering solo roll on the subdoc must never leak into the encounter view:
     // the table says un-rolled, so the PC reads un-rolled (the old cross-fight-stale
     // -roll disease is structurally impossible).
-    const live = derivePcLive(MOCK_CHARACTER, combat({ initiativeRoll: 15 }), null);
+    const live = derivePcLive(MOCK_CHARACTER, combat({ initiativeRoll: 15 }), null, []);
     if (!live) throw new Error("expected live PC facts");
     expect(live.initiativeRoll).toBeNull();
     expect(live.initiative).toBeNull();
@@ -118,11 +121,51 @@ describe("derivePcLive — initiative TOTAL = roll + bonus (the encounterInit ta
   });
 
   it("is null when there is no roll at all", () => {
-    expect(derivePcLive(MOCK_CHARACTER, combat({}), null)?.initiative).toBeNull();
-    expect(derivePcLive(MOCK_CHARACTER, null, null)?.initiative).toBeNull();
+    expect(derivePcLive(MOCK_CHARACTER, combat({}), null, [])?.initiative).toBeNull();
+    expect(derivePcLive(MOCK_CHARACTER, null, null, [])?.initiative).toBeNull();
   });
 
   it("does not fabricate facts while the play document is still loading", () => {
-    expect(derivePcLive(MOCK_CHARACTER, undefined, null)).toBeNull();
+    expect(derivePcLive(MOCK_CHARACTER, undefined, null, [])).toBeNull();
+  });
+});
+
+describe("the DM's row reads the effects others left on the PC (effectiveDoc)", () => {
+  const combat = () =>
+    sessionToCombatState({ ...MOCK_CHARACTER.session, hp: { current: 20, temp: 0 } });
+  const bond = (duration: ActiveCombatEffect["duration"]): ActiveCombatEffect => ({
+    id: "fx-bond",
+    actor: { kind: "pc", combatantId: "pc-b", memberUid: "b", characterId: "char-b" },
+    target: {
+      kind: "pc",
+      combatantId: "pc-a",
+      memberUid: "a",
+      characterId: MOCK_CHARACTER.id,
+    },
+    source: { kind: "spell", id: "warding-bond", actionId: "spell-warding-bond" },
+    payload: { kind: "grant-group", activeKey: "spell-warding-bond" },
+    duration,
+  });
+
+  it("Warding Bond, from the fight or the campaign: Resistance to all damage", () => {
+    const plain = derivePcLive(MOCK_CHARACTER, combat(), null, []);
+    for (const effect of [
+      bond({ kind: "encounter" }),
+      bond({ kind: "game-clock", untilMinute: 60 }),
+    ]) {
+      const bonded = derivePcLive(MOCK_CHARACTER, combat(), null, [effect]);
+      expect(bonded?.defenses?.allDamageResistance).toBe(true);
+    }
+    expect(plain?.defenses?.allDamageResistance).toBe(false);
+  });
+
+  it("the DM's hit of 10 on that row resolves to 5", () => {
+    const bonded = derivePcLive(MOCK_CHARACTER, combat(), null, [
+      bond({ kind: "encounter" }),
+    ]);
+    if (!bonded?.defenses) throw new Error("no defenses");
+    expect(resolveDamagePart({ amount: 10, type: "slashing" }, bonded.defenses).net).toBe(
+      5
+    );
   });
 });

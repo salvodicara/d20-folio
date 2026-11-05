@@ -24,8 +24,10 @@
  * UI gate is a UX nicety, not the security boundary.
  */
 
+import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
 import { useTranslation } from "react-i18next";
 import { Navigate, useNavigate, useParams } from "react-router";
+import { useEffect } from "react";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -91,6 +93,14 @@ function MemberSheet({
 
   // Read at the campaign's clock: a countdown the clock has passed shows over.
   useCampaignClockProjection(canView ? characterId : undefined, campaign);
+  // The effects others left on the member's PC, as every reader projects them.
+  const effectsOn = useEffectsOnParty(campaign);
+  const setEncounterEffects = useCharacterStore((s) => s.setEncounterEffects);
+  const loadedId = useCharacterStore((s) => s.character?.id);
+  useEffect(() => {
+    if (!canView || !characterId || loadedId !== characterId) return;
+    setEncounterEffects(characterId, effectsOn(memberUid));
+  }, [canView, characterId, loadedId, memberUid, effectsOn, setEncounterEffects]);
 
   const character = useCharacterStore((s) => s.character);
   const loading = useCharacterStore((s) => s.loading);

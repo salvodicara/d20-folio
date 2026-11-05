@@ -6,6 +6,7 @@
  * once turns begin), and what has happened so far. Otherwise: how a fight starts, the
  * last fight to reopen, and the past fights from the play logs.
  */
+import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -327,6 +328,7 @@ function useParty(
   const docs = useMemberCharacterDocs(refs);
   const states = usePartyCombatStates(refs);
   const encounterInit = campaign.encounterInit;
+  const effectsOn = useEffectsOnParty(campaign);
   return useMemo(() => {
     const pcs: Record<string, PcLive> = {};
     const concentration: Record<string, PartyChip[]> = {};
@@ -336,7 +338,8 @@ function useParty(
       const pc = derivePcLive(
         st.doc,
         states[ref.uid],
-        encounterRollFor(encounterInit, ref.uid)
+        encounterRollFor(encounterInit, ref.uid),
+        effectsOn(ref.uid)
       );
       if (pc) pcs[`pc-${ref.uid}`] = pc;
       // The same live doc the Gruppo panel reads (its combat state folded in).
@@ -347,7 +350,7 @@ function useParty(
         ];
     }
     return { pcs, concentration };
-  }, [refs, docs, states, encounterInit, locale]);
+  }, [refs, docs, states, encounterInit, locale, effectsOn]);
 }
 
 /** What has happened in this fight, newest first: the same feed every member reads. */
