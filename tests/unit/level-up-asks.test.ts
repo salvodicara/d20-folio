@@ -13,6 +13,7 @@ import {
   toggleAnswer,
   type LevelUpAnswers,
 } from "@/domains/leveling/level-up-asks";
+import { spellPickRows } from "@/domains/spells/spell-pick-rows";
 import { totalLevel } from "@/lib/classes";
 import { commitLevelUp } from "@/lib/level-up-commit";
 import { makeCharacterDoc } from "./_helpers";
@@ -120,5 +121,30 @@ describe("levelUpAsks", () => {
     if (!forget) return;
     a = toggleAnswer(a, forget, "charm-person");
     expect(levelUpAsks(doc, "bard", a, "en").complete).toBe(false);
+  });
+
+  it("a swap forgets a levelled spell, for another of the same level", () => {
+    const doc = makeCharacterDoc({
+      classId: "bard",
+      level: 4,
+      spells: [
+        { srdId: "vicious-mockery" },
+        { srdId: "healing-word" },
+        { srdId: "shatter" },
+      ],
+    });
+    const forget = levelUpAsks(doc, "bard", NO_ANSWERS, "en").rows.find(
+      (r) => r.key === "swapRemove"
+    );
+    expect(forget?.options.map((o) => o.id)).toEqual(["healing-word", "shatter"]);
+    if (!forget) return;
+    const a = toggleAnswer(NO_ANSWERS, forget, "shatter");
+    const learn = levelUpAsks(doc, "bard", a, "en").rows.find(
+      (r) => r.key === "swapReplace"
+    );
+    const levels = new Set(
+      spellPickRows(learn?.options.map((o) => o.id) ?? [], "en").map((r) => r.level)
+    );
+    expect([...levels]).toEqual([2]);
   });
 });

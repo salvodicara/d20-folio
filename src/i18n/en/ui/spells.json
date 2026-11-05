@@ -71,6 +71,13 @@
     "prepareToCast": "Prepare to cast",
     "filterByLevel": "Filter by spell level",
     "filterConcentration": "Only concentration spells",
-    "preparedMax": "Prepared max"
+    "preparedMax": "Prepared max",
+    "pick": {
+      "search": "Search spells",
+      "byLevel": "Spell level",
+      "details": "About {{name}}",
+      "none": "No spell matches.",
+      "unpick": "Remove"
+    }
   }
 }

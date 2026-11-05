@@ -14,6 +14,7 @@
  * Mastery, Signature Spells): the classic wizard takes those levels.
  */
 import { SRD_FEATS } from "@/data/feats";
+import { spells as allSpells } from "@/data/spells";
 import type { AbilityCode } from "@/data/types";
 import { localizeSrd } from "@/i18n/resolver";
 import i18n from "@/i18n";
@@ -51,6 +52,7 @@ import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
 import { choiceSlotRows, toggleCount } from "@/domains/creation/creation-view";
 import type { CharacterData, CharacterDoc } from "@/types/character";
 
+const SPELL_LEVEL = new Map(allSpells.map((sp) => [sp.id, sp.level]));
 const ABILITIES: readonly AbilityCode[] = ["STR", "DEX", "CON", "INT", "WIS", "CHA"];
 
 /** What the player has answered so far. */
@@ -121,8 +123,9 @@ export interface AskRow {
   /** How many to take (0 for an optional row: the swap). */
   count: number;
   picked: readonly string[];
-  /** `group`: a spell's level, so a long list reads by level. */
-  options: ReadonlyArray<{ id: string; label: string; group?: number }>;
+  options: ReadonlyArray<{ id: string; label: string }>;
+  /** The options are spells: drawn as rows that say what each one is. */
+  spell?: boolean;
   /** Set on `slot:` rows: what `toggleAnswer` needs to write the pick. */
   slotRow?: ReturnType<typeof choiceSlotRows>[number];
 }
@@ -345,12 +348,14 @@ export function levelUpAsks(
       picked: slotRow.picked,
       options: slotRow.options,
       slotRow,
+      spell: slotRow.kind === "spell",
     });
   }
 
   if (plan.cantripsKnownDiff > 0) {
     rows.push({
       key: "newCantrips",
+      spell: true,
       title: t("levelUp.screen.chooseCantrips", { count: plan.cantripsKnownDiff }),
       count: plan.cantripsKnownDiff,
       picked: a.newCantrips,
@@ -363,6 +368,7 @@ export function levelUpAsks(
   if (plan.spellsKnownDiff > 0) {
     rows.push({
       key: "newSpells",
+      spell: true,
       title: t("levelUp.screen.chooseSpells", { count: plan.spellsKnownDiff }),
       count: plan.spellsKnownDiff,
       picked: a.newSpells,
@@ -375,7 +381,7 @@ export function levelUpAsks(
           exclude: new Set([...plan.existingSpellIds, ...a.newCantrips]),
         },
         locale
-      ).map((s) => ({ id: s.id, label: s.name, group: s.level })),
+      ).map((s) => ({ id: s.id, label: s.name })),
     });
   }
   if (plan.mcSkillNeeded > 0) {
@@ -393,17 +399,22 @@ export function levelUpAsks(
   if (plan.canSwapSpell && plan.knownNonCantripRefs.length > 0) {
     rows.push({
       key: "swapRemove",
+      spell: true,
       title: t("levelUp.screen.swapForget"),
       count: 0,
       picked: one(a.swap.removeId),
-      options: plan.knownNonCantripRefs.map((s) => ({
-        id: s.srdId,
-        label: localizeSrd("spell", s.srdId, "name", locale),
-      })),
+      // A cantrip is not swapped this way: only a levelled spell, as the classic wizard does.
+      options: plan.knownNonCantripRefs
+        .filter((s) => (SPELL_LEVEL.get(s.srdId) ?? 0) > 0)
+        .map((s) => ({
+          id: s.srdId,
+          label: localizeSrd("spell", s.srdId, "name", locale),
+        })),
     });
     if (a.swap.removeId) {
       rows.push({
         key: "swapReplace",
+        spell: true,
         title: t("levelUp.screen.swapLearn"),
         count: 1,
         picked: one(a.swap.replaceId),
@@ -416,7 +427,10 @@ export function levelUpAsks(
             exclude: new Set([...plan.existingSpellIds, ...a.newSpells]),
           },
           locale
-        ).map((s) => ({ id: s.id, label: s.name, group: s.level })),
+        )
+          // 2024: the new spell is of the same level as the one it replaces.
+          .filter((s) => s.level === SPELL_LEVEL.get(a.swap.removeId ?? ""))
+          .map((s) => ({ id: s.id, label: s.name })),
       });
     }
   }

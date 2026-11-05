@@ -4207,3 +4207,40 @@
   display: grid;
   gap: 8px;
 }
+
+/* ---------- spells to pick: rows that say what each spell is (D&D Beyond's list) ---------- */
+.fui .f-spellpick {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-spellpick-tools {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-spellpick-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+}
+.fui .f-spellpick-row .f-row-t {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.fui .f-spellpick-effect {
+  color: var(--strong);
+}
+.fui .f-spellpick-more {
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.fui .f-spellpick-more:hover {
+  border-color: var(--line-strong);
+  color: var(--text);
+}
