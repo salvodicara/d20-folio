@@ -37,6 +37,8 @@ import {
   toggleCondition,
   toggleDefense,
   toggleSaved,
+  toggleWilling,
+  offersWilling,
   type AttackOutcome,
   type DamageTrayPlan,
   type TrayEffect,
@@ -360,9 +362,21 @@ function TrayTargetRow({
             className="fchip"
             aria-pressed={row.saved}
             aria-label={t("combat.damageTray.savedAria", { name: target.name })}
+            disabled={row.willing === true}
             onClick={() => onChange(toggleSaved(row, plan))}
           >
             {t("combat.damageTray.saved")}
+          </button>
+        )}
+        {offersWilling(plan, target) && (
+          <button
+            type="button"
+            className="fchip"
+            aria-pressed={row.willing === true}
+            aria-label={t("combat.damageTray.willingAria", { name: target.name })}
+            onClick={() => onChange(toggleWilling(row, plan))}
+          >
+            {t("combat.damageTray.willing")}
           </button>
         )}
         {row.defense && (

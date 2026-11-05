@@ -719,6 +719,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       // A failed save's state (Slow) and a hit's (Ray of Frost) for the tray e2e.
       { srdId: "slow", prepared: true },
       { srdId: "ray-of-frost" },
+      // An ally-or-enemy save state with a willing ally (Enlarge/Reduce).
+      { srdId: "enlarge-reduce", prepared: true },
     ],
     exercises:
       "spell-damage-bonus schools filter (Empowered Evocation → +INT to Evocation spell damage); also the combat-chronicle sheet-banner hero (weapon + Magic Missile + Fireball + Hold Person).",

@@ -1446,6 +1446,9 @@ export interface SrdSpellData {
    */
   damageChoice?: DamageType[];
   /** Saving throw ability (if spell forces a save) */
+  /** Only an unwilling target makes the save; a willing one takes the spell
+   *  (Enlarge/Reduce, Teleport): the tray offers «Consenziente». */
+  saveIfUnwilling?: true;
   saveAbility?: AbilityCode;
   /** Attack type (if spell requires an attack roll) */
   attackType?: "melee" | "ranged";

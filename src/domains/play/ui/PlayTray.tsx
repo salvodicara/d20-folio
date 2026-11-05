@@ -39,6 +39,8 @@ import {
   toggleCondition,
   toggleDefense,
   toggleSaved,
+  toggleWilling,
+  offersWilling,
   knockOutOffer,
   type DamageTrayPlan,
   type TrayMultiplier,
@@ -449,8 +451,20 @@ function TrayTargetRow({
       {(plan.save || row.defense || row.partDefense || plan.conditions) && (
         <div className="f-chips">
           {plan.save && (
-            <Chip pressed={row.saved} onClick={() => onChange(toggleSaved(row, plan))}>
+            <Chip
+              pressed={row.saved}
+              disabled={row.willing === true}
+              onClick={() => onChange(toggleSaved(row, plan))}
+            >
               {t("combat.damageTray.saved")}
+            </Chip>
+          )}
+          {offersWilling(plan, target) && (
+            <Chip
+              pressed={row.willing === true}
+              onClick={() => onChange(toggleWilling(row, plan))}
+            >
+              {t("combat.damageTray.willing")}
             </Chip>
           )}
           {row.defense && (

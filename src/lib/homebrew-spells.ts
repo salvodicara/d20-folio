@@ -253,6 +253,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   effectTag: literals(["advantage", "control", "heal", "buff", "debuff", "utility"]),
   damageTypes: DAMAGE_TYPES,
   damageChoice: DAMAGE_TYPES,
+  saveIfUnwilling: literalSchema(true),
   saveAbility: ABILITY,
   attackType: literals(["melee", "ranged"]),
   weaponAttackCantrip: objectSchema({
