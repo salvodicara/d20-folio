@@ -187,9 +187,13 @@ export function LevelUpScreen({
 
   return (
     <>
-      <Room room="study" />
+      <Room room="study" small />
       <main id="main" className="f-page f-lvl">
-        <nav className="f-lvl-rail" aria-label={t("levelUp.screen.steps")}>
+        <div
+          className="f-lvl-rail"
+          role="navigation"
+          aria-label={t("levelUp.screen.steps")}
+        >
           {steps.map((s) => (
             <a
               key={s.key}
@@ -199,7 +203,7 @@ export function LevelUpScreen({
             >
               <StepMark state={s.state} />
               <span>
-                {s.key === "hp" ? t("roster.hp") : s.title}
+                {tieLast(s.key === "hp" ? t("roster.hp") : s.title)}
                 <small>
                   {s.key === "hp"
                     ? answers.rolled === null
@@ -212,7 +216,7 @@ export function LevelUpScreen({
               </span>
             </a>
           ))}
-        </nav>
+        </div>
 
         <div className="f-lvl-main">
           <header className="f-lvl-hero" data-identity>
@@ -222,8 +226,8 @@ export function LevelUpScreen({
                 <span className="f-lvl-from">{plan.newLevel - 1}</span>
                 <span className="f-lvl-arrow" aria-hidden="true">
                   →
-                </span>{" "}
-                {t("spells.level", { level: plan.newLevel })}
+                </span>
+                {tieLast(t("spells.level", { level: plan.newLevel }))}
               </h1>
               <p>
                 {c.name} · {classLine}
@@ -343,7 +347,7 @@ export function LevelUpScreen({
             <span>
               {createElement(FolioSupportIcon, { "aria-hidden": true })}
               <b>{summary.hp}</b>
-              {t("roster.hp")}
+              {t("units.hp")}
             </span>
             <span>
               <b>{summary.ac}</b>
@@ -375,7 +379,8 @@ export function LevelUpScreen({
           <ClassCrest classId={classId} size="sm" />
           <span>
             <b>
-              ♥ {summary.hp} · {t("spells.level", { level: plan.newLevel })}
+              {createElement(FolioSupportIcon, { "aria-hidden": true })}
+              {summary.hp}
             </b>
             {owed > 0 && <small>{owedLabel}</small>}
           </span>
@@ -407,7 +412,7 @@ function Gains({
   const { t } = useTranslation();
   const label = (r: ReviewNumber) =>
     r.kind === "hp"
-      ? t("levelUp.screen.hp")
+      ? t("roster.hp")
       : r.kind === "pb"
         ? t("levelUp.screen.pb")
         : r.kind === "slot"
@@ -435,7 +440,7 @@ function Gains({
       {numbers.map((r) => (
         <li key={r.id}>
           {icon(r)}
-          <span className="f-lbl">{label(r)}</span>
+          <span className="f-lvl-gain-l">{tieLast(label(r))}</span>
           <span className="f-lvl-gain-v">
             {r.before !== null && r.before !== r.after && (
               <>
@@ -452,7 +457,7 @@ function Gains({
       {features.map((g) => (
         <li key={`${g.kind}:${g.id}`}>
           <span className="f-lvl-ic">{createElement(FolioBookIcon)}</span>
-          <span className="f-lbl">{g.name}</span>
+          <span className="f-lvl-gain-l">{tieLast(g.name)}</span>
           <span className="f-lvl-new">{t("levelUp.screen.new")}</span>
         </li>
       ))}
@@ -578,7 +583,9 @@ function Question({
                   ✓
                 </span>
               )}
-              <span className="f-lvl-opt-n">{o.label}</span>
+              <span className="f-lvl-opt-n">
+                {tieLast(o.label).replace(/\//g, "/\u200b")}
+              </span>
             </button>
           );
         })}
@@ -612,7 +619,7 @@ function Inspect({ spell }: { spell: SpellPickRow }) {
           {spell.concentration && <span>{t("play.concentration")}</span>}
           {spell.ritual && <span>{t("spells.pick.ritual")}</span>}
         </p>
-        <BlockMarkdown className="f-prose" text={spell.description} />
+        <BlockMarkdown className="f-prose" text={tieTails(spell.description)} />
       </div>
     </article>
   );
@@ -646,3 +653,13 @@ function KnownRow({
     </div>
   );
 }
+
+/** A name wraps without leaving its last word alone. */
+const tieLast = (text: string) => text.replace(/ (\S+)$/, "\u00a0$1");
+
+/** Each line of prose ends on its last two words together, never on a lone word. */
+const tieTails = (md: string) =>
+  md
+    .split("\n")
+    .map((line) => (line.startsWith("|") ? line : line.replace(/ (\S+)$/, "\u00a0$1")))
+    .join("\n");

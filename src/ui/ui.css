@@ -4289,7 +4289,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  font: 700 13px/1 var(--font-title);
+  font: 700 var(--fs-sm) / 1 var(--font-title);
   background: var(--panel-2);
   color: var(--muted);
 }
@@ -4303,6 +4303,7 @@
 }
 .fui .f-lvl-main {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   min-width: 0;
 }
@@ -4336,7 +4337,7 @@
 }
 .fui .f-lvl-gains {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 12px;
   margin: 0;
   padding: 0;
@@ -4353,8 +4354,9 @@
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   text-align: center;
 }
-.fui .f-lvl-gains .f-lbl {
-  margin: 0;
+.fui .f-lvl-gain-l {
+  font-size: var(--fs-sm);
+  color: var(--muted);
   text-wrap: balance;
 }
 .fui .f-lvl-ic {
@@ -4406,7 +4408,7 @@
   border-radius: var(--r-pill);
   background: var(--ok-bg);
   color: var(--ok-text);
-  font: 600 var(--fs-xs, 12px) var(--font-title);
+  font: 700 var(--fs-sm) var(--font-label);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -4456,7 +4458,7 @@
 }
 .fui .f-lvl-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
   gap: 12px;
 }
 .fui .f-lvl-opt {
@@ -4512,7 +4514,7 @@
   border-radius: var(--r-frame);
   background: var(--shade-80);
   color: var(--gold-hi);
-  font: 700 12px/20px var(--font-title);
+  font: 700 var(--fs-sm) / 20px var(--font-label);
 }
 .fui .f-lvl-tick {
   position: absolute;
@@ -4525,7 +4527,7 @@
   border-radius: 50%;
   background: var(--gold-hi);
   color: var(--raised);
-  font: 800 13px/1 var(--font-title);
+  font: 800 var(--fs-sm) / 1 var(--font-title);
 }
 .fui .f-lvl-opt-n {
   text-wrap: balance;
@@ -4601,7 +4603,7 @@
   background: var(--bg);
 }
 .fui .f-lvl-abil dt {
-  font: 600 11px var(--font-title);
+  font: 700 var(--fs-xs) var(--font-label);
   color: var(--muted);
 }
 .fui .f-lvl-abil dd {
@@ -4660,7 +4662,7 @@
   border-radius: var(--r-pill);
   background: var(--danger-bg);
   color: var(--danger-text);
-  font: 700 var(--fs-sm) var(--font-title);
+  font: 700 var(--fs-md) var(--font-text);
   text-align: center;
 }
 .fui .f-lvl-bar {
@@ -4699,11 +4701,49 @@
     font-size: var(--fs-md);
   }
   .fui .f-lvl-gains {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
   }
+  .fui .f-lvl-gains > li {
+    grid-template-columns: 46px minmax(0, 1fr) auto;
+    align-items: center;
+    justify-items: start;
+    padding: 8px 12px;
+    text-align: left;
+  }
+  .fui .f-lvl-hero h1 {
+    white-space: nowrap;
+  }
+  .fui .f-lvl-sec .f-slots {
+    grid-template-columns: minmax(0, 1fr);
+  }
   .fui .f-lvl-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .fui .f-lvl-opt {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-items: start;
+    gap: 12px;
+    padding: 8px 40px 8px 8px;
+    text-align: left;
+  }
+  .fui .f-lvl-opt .f-spellart,
+  .fui .f-lvl-opt-art {
+    --sz: 48px;
+    width: 48px;
+    height: 48px;
+  }
+  .fui .f-lvl-opt-lv {
+    top: auto;
+    bottom: 4px;
+    left: 4px;
+  }
+  .fui .f-lvl-tick {
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
   }
   .fui .f-lvl-sec {
     padding: 16px;
@@ -4730,12 +4770,37 @@
     min-width: 0;
   }
   .fui .f-lvl-bar b {
-    display: block;
-    font: 700 var(--fs-md) var(--font-title);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font: 700 var(--fs-md) var(--font-text);
+  }
+  .fui .f-lvl-bar b > svg {
+    width: 18px;
+    height: 18px;
+    color: var(--hp-r);
   }
   .fui .f-lvl-bar small {
     color: var(--danger);
     font-size: var(--fs-sm);
+  }
+}
+
+@media (max-width: 400px) {
+  .fui .f-lvl-hero .f-crest-art {
+    --sz: 56px;
+  }
+  .fui .f-lvl-hero h1 {
+    font-size: var(--fs-lg);
+  }
+  .fui .f-lvl-hero .f-btn-lab {
+    display: none;
+  }
+  .fui .f-lvl-bar > .f-crest-art {
+    display: none;
+  }
+  .fui .f-lvl-bar small {
+    white-space: nowrap;
   }
 }
 

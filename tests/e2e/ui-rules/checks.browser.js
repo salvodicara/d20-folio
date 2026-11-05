@@ -321,10 +321,10 @@ window.__audit = (opts) => {
         pb = getComputedStyle(b).position;
       if (
         a.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.pills,.f-filters"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.f-lvl-bar,.pills,.f-filters"
         ) !==
         b.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.pills,.f-filters"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.f-lvl-bar,.pills,.f-filters"
         )
       )
         continue;
@@ -403,7 +403,7 @@ window.__audit = (opts) => {
     return tops.length;
   };
   const ONE =
-    ".btn,.f-btn,button:not(.choice):not(.f-choice):not(.cc):not(.f-cc):not(.row):not(.arow__name):not(.tip__head):not(.abil):not(.badge):not(.plate):not(.f-char-hp-open),.chip,.f-chip,.pill,.tabs>*,.f-tabs>*,.boxtabs span,nav a,.label,.atable__head *,.stats .lbl,.num .lbl,.f-num .f-lbl,.ini .tag,.sg,.plate small,.tg,th,.grp .lbl,.f-grp .f-lbl";
+    ".btn,.f-btn,button:not(.choice):not(.f-choice):not(.f-lvl-opt):not(.cc):not(.f-cc):not(.row):not(.arow__name):not(.tip__head):not(.abil):not(.badge):not(.plate):not(.f-char-hp-open),.chip,.f-chip,.pill,.tabs>*,.f-tabs>*,.boxtabs span,nav a,.label,.atable__head *,.stats .lbl,.num .lbl,.f-num .f-lbl,.ini .tag,.sg,.plate small,.tg,th,.grp .lbl,.f-grp .f-lbl";
   for (const e of document.querySelectorAll(ONE)) {
     if (!vis(e) || !(e.innerText || "").trim()) continue;
     if (lines(e) > 1) add("wrap", lines(e) + " lines " + label(e));
