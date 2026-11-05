@@ -159,6 +159,12 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * carrying the reader is live (older clients reject unknown monster keys).
    */
   homebrewId?: string;
+  /**
+   * The campaign roster entry this creature is (edge-case M19): it joined by id, so
+   * its Hit Points go back to the entry after the fight. READER FIRST: parsed now;
+   * nothing writes it until a deploy carrying the reader is live.
+   */
+  rosterId?: string;
   /** Armor Class (informational; the DM may edit). */
   ac: number;
   /** The DM's walking-speed override in feet (e.g. after the Slow weapon mastery).
