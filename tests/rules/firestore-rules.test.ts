@@ -1333,6 +1333,129 @@ describe("firestore.rules — the campaign clock (gameClock)", () => {
   });
 });
 
+describe("firestore.rules — the campaign's effects out of a fight (effects)", () => {
+  const pc = (uid: string) => ({
+    kind: "pc",
+    combatantId: `pc-${uid}`,
+    memberUid: uid,
+    characterId: `char-${uid}`,
+  });
+  const effect = (
+    id: string,
+    actor = "member",
+    overrides: Record<string, unknown> = {}
+  ) => ({
+    id,
+    actor: pc(actor),
+    target: pc("peer"),
+    source: {
+      kind: "spell",
+      id: "mage-armor",
+      actionId: "spell-mage-armor",
+      castLevel: 1,
+    },
+    payload: { kind: "grant-group", activeKey: "spell-mage-armor" },
+    bindings: { spellcastingModifier: 4 },
+    duration: { kind: "game-clock", untilMinute: 480 },
+    ...overrides,
+  });
+  const ref = (uid: string, id: string) =>
+    doc(
+      testEnv.authenticatedContext(uid).firestore(),
+      "campaigns",
+      "camp1",
+      "effects",
+      id
+    );
+  beforeEach(async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), "campaigns", "camp1"),
+        campaignDoc(["dm", "member", "peer"])
+      );
+    });
+  });
+
+  it("a member writes the effect they cast, and every member reads it", async () => {
+    await assertSucceeds(setDoc(ref("member", "e1"), effect("e1")));
+    await assertSucceeds(getDoc(ref("peer", "e1")));
+    await assertSucceeds(
+      setDoc(
+        ref("member", "e2"),
+        effect("e2", "member", {
+          duration: {
+            kind: "game-clock",
+            untilMinute: 60,
+            concentration: { actorId: "pc-member", sourceId: "bless" },
+          },
+        })
+      )
+    );
+  });
+
+  it("a non-member can neither read nor write", async () => {
+    await assertFails(setDoc(ref("outsider", "e1"), effect("e1", "outsider")));
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), "campaigns", "camp1", "effects", "e1"),
+        effect("e1")
+      );
+    });
+    await assertFails(getDoc(ref("outsider", "e1")));
+  });
+
+  it("a member can't write an effect in another's name; the DM can", async () => {
+    await assertFails(setDoc(ref("member", "e1"), effect("e1", "peer")));
+    await assertSucceeds(setDoc(ref("dm", "e1"), effect("e1", "peer")));
+  });
+
+  it("a malformed effect is refused", async () => {
+    const bad: Array<Record<string, unknown>> = [
+      effect("e1", "member", { duration: { kind: "encounter" } }),
+      effect("e1", "member", { duration: { kind: "game-clock", untilMinute: 1.5 } }),
+      effect("e1", "member", {
+        duration: {
+          kind: "game-clock",
+          untilMinute: 60,
+          concentration: { actorId: "pc-peer", sourceId: "bless" },
+        },
+      }),
+      effect("e1", "member", { payload: { kind: "zone", spellId: "moonbeam" } }),
+      effect("e1", "member", { applied: { currentHpDelta: 5 } }),
+      effect("other-id"),
+    ];
+    for (const value of bad) {
+      await assertFails(setDoc(ref("member", "e1"), value));
+    }
+  });
+
+  it("only `ended` changes, by the actor or the DM; an undo clears it", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), "campaigns", "camp1", "effects", "e1"),
+        effect("e1")
+      );
+    });
+    await assertFails(updateDoc(ref("peer", "e1"), { ended: "revoked" }));
+    await assertFails(updateDoc(ref("member", "e1"), { "duration.untilMinute": 9999 }));
+    await assertFails(updateDoc(ref("member", "e1"), { ended: "forever" }));
+    await assertSucceeds(updateDoc(ref("member", "e1"), { ended: "concentration" }));
+    await assertSucceeds(updateDoc(ref("member", "e1"), { ended: deleteField() }));
+    await assertSucceeds(updateDoc(ref("dm", "e1"), { ended: "revoked" }));
+  });
+
+  it("the member wildcard does not open it", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), "campaigns", "camp1", "effects", "e1"),
+        effect("e1")
+      );
+    });
+    await assertFails(deleteDoc(ref("peer", "e1")));
+    await assertSucceeds(deleteDoc(ref("member", "e1")));
+  });
+});
+
 describe("firestore.rules — character parents: access matrix, revision CAS, DM detach", () => {
   // Cross-user access is DERIVED LIVE: the char doc carries only the
   // `attachedCampaignId` pointer (written atomically with the roster by the attach

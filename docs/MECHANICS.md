@@ -278,6 +278,12 @@ effects (log, undo, persistence, the encounter) stay with the store
   «Passa il tempo» or rest steps the clock forward (at most 1440 minutes, recorded as theirs);
   the undo steps back, by the writer or the DM only (firestore.rules `gameClockWrite`). Behind
   `VITE_COMBAT_EFFECTS_V26`.
+- Effects out of a fight (`src/lib/play/campaign-effects.ts`, `campaigns/{id}/effects`): a
+  state one creature left on another with a `game-clock` duration (until a campaign minute,
+  optionally held by its caster's Concentration). The target's sheet projects the live ones
+  alongside the fight's, one identity (a fight reads the store, never copies it). At a fight's
+  end the actor's effects that outlast it move there, same id, whole minutes left. Out of a
+  fight, the caster's Concentration ending sets `ended` on what it held; its undo clears it.
 - Stable at 0 HP is tracked (`stableMinutes`); the 1d4-hour wake is the table's roll.
 
 ### Conditions
