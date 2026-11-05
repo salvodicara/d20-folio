@@ -103,7 +103,12 @@ rows it covers, and retires the special cases it lists. Shape changes go through
   (`src/lib/play/exhaustion.ts`), and a failed repeat save's comes from `failedRepeatSaveEffects`.
 - **Engine-ready, needs a caller** (the conformance case stays pending until a player reaches it):
   `OBJECT_DEFENSES` and `damageToItem` wait for the tray to name an object or an item as a target;
-  `sentientConflictDc` waits for a sentient item's card.
+  `sentientConflictDc` waits for a sentient item's card. M20's DM side
+  (`revealCurse`, `identifyReveal`, `curseBinds`, `rolledProperties`, `unlockedProperties`,
+  and `dmItems` / `itemReveals` read and written behind the v0.26 rules) waits for the DM's
+  item panel, mocked and approved first. M19's roster (`campaigns/{c}/roster` members read,
+  `dmRoster` DM only; rules and emulator tests in, read and written behind the v0.26 rules)
+  waits for the encounter to take an entry by id and for the DM's roster screen.
 - **Hits from another device** (the shared root of the M1, M4 and M7 limits): the spends ledger,
   [design](2026-11-cross-device-hits.md). Reader, fold and rules are in; the writer switches on
   with `VITE_PEER_SPENDS_LEDGER` after the rules deploy.

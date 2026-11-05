@@ -2345,11 +2345,25 @@ const BASE_UNARMED_DAMAGE = "1";
  * Returns `[]` for a plain 1 + STR strike (no upgrade): a flat total has no
  * composition to decompose, so no tip renders at all (rule 19).
  */
+/** A damage formula with a flat bonus folded in: `"5"` + 2 → `"7"`, `"1d8+3"` + 2 →
+ *  `"1d8+5"`, `"1d6"` + 2 → `"1d6+2"`. */
+function withFlatDamage(formula: string, bonus: number): string {
+  if (bonus === 0) return formula;
+  if (/^-?\d+$/.test(formula)) return String(Number(formula) + bonus);
+  const match = /^(.*?)([+-]\d+)$/.exec(formula);
+  const base = match ? match[1] : formula;
+  const flat = (match ? Number(match[2]) : 0) + bonus;
+  return flat === 0
+    ? (base ?? formula)
+    : `${base ?? formula}${flat > 0 ? "+" : ""}${flat}`;
+}
+
 function buildUnarmedDamageBreakdown(
   profile: UnarmedStrikeProfile,
   name: LocText,
   scores: Record<AbilityCode, number>,
-  character: CharacterDoc
+  character: CharacterDoc,
+  featureBonuses: ReadonlyArray<ResolvedWeaponDamageBonus> = []
 ): RawBreakdownPart[] {
   const { die, damageAbility, dieSourceId } = profile;
   if (!die || !damageAbility || !dieSourceId) return [];
@@ -2383,6 +2397,7 @@ function buildUnarmedDamageBreakdown(
     attackStat: damageAbility,
     abilityMod: abilityModifier(scores[damageAbility]),
     ...(abilityWhy ? { abilityWhy } : {}),
+    ...(featureBonuses.length > 0 ? { featureBonuses } : {}),
   });
 }
 
@@ -5399,15 +5414,27 @@ function resolveUnarmedAttackSummary(
   );
   const { reachBonusFt } = resolveMeleeReachBonus(aggregate.weaponReachBonuses, false);
   const name = UNARMED_STRIKE_NAME;
+  // Flat damage bonuses on an attack using Strength (Rage Damage: "with either a
+  // weapon or an Unarmed Strike"), scope-matched as on a weapon row.
+  const featureBonuses = resolveWeaponDamageBonuses(
+    aggregate.weaponDamageBonuses,
+    character,
+    {
+      attackStat: profile.attackAbility,
+      isRanged: false,
+    }
+  );
+  const flatBonus = featureBonuses.reduce((sum, b) => sum + b.amount, 0);
   const damageBreakdown = buildUnarmedDamageBreakdown(
     profile,
     name,
     ctx.abilityScores,
-    character
+    character,
+    featureBonuses
   );
   return {
     attackBonus: profile.attackBonus + ctx.exPenalty,
-    damage: profile.damage,
+    damage: withFlatDamage(profile.damage, flatBonus),
     ...(damageBreakdown.length > 0 ? { damageBreakdown } : {}),
     damageType: profile.damageType,
     weaponRange: { kind: "melee", reachFt: 5 + reachBonusFt },

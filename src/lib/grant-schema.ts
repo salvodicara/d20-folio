@@ -1105,6 +1105,11 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         literalSchema("warlock"),
         literalSchema("wizard"),
       ]),
+      /** Only spells of a level the character has slots for (Magical
+       *  Discoveries): the picker caps `maxLevel` at the highest slot it knows. */
+      castableOnly: booleanSchema,
+      /** A cantrip is a valid pick too (Magical Discoveries). */
+      includeCantrips: booleanSchema,
       ritualOnly: booleanSchema,
       spellAbility: unionSchema([
         literalSchema("STR"),

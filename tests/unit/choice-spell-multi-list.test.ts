@@ -34,6 +34,7 @@ import {
 } from "@/lib/feat-spell-choices";
 import { evaluateGrants, type Grant, type GrantSource } from "@/lib/grants";
 import { BARD_FEATURES } from "@/data/classes/bard";
+import { getClassTable } from "@/data/classes";
 
 // ── Test anchors (verified single-/multi-list spells from src/data/spells) ──
 //   entangle           → druid, ranger      (druid in both bard unions)
@@ -231,5 +232,23 @@ describe("choice-spell-multi-list — bard data is wired", () => {
     expect(ids.has("magic-missile")).toBe(true); // wizard
     expect(ids.has("bless")).toBe(true); // cleric
     expect(ids.has("dissonant-whispers")).toBe(false); // bard-only
+  });
+
+  it("each pick is a cantrip or a spell of a level the Bard has slots for", () => {
+    // SRD 5.2.1 Magical Discoveries: "each spell you choose must be a cantrip or a
+    // spell for which you have spell slots". Bard 6: slots up to level 3.
+    const f = byId.get("bard-lore-additional-magical-secrets");
+    const bard6 = getClassTable("bard")?.levels.find((l) => l.level === 6)?.spellSlots;
+    const slots = pendingSpellChoicesForFeat(f ?? { grants: [] }, {
+      spellSlotsByClass: { bard: bard6 ?? [] },
+    });
+    const spell = slots.find((s) => s.kind === "spell");
+    expect(spell?.maxLevel).toBe(3);
+    const ids = new Set(
+      listAvailableForSlot(spell ?? ({} as SpellChoiceSlot), new Set()).map((o) => o.id)
+    );
+    expect(ids.has("fireball")).toBe(true); // level 3, wizard
+    expect(ids.has("wish")).toBe(false); // level 9
+    expect(ids.has("sacred-flame")).toBe(true); // a cleric cantrip
   });
 });

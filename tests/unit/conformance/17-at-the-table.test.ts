@@ -204,6 +204,19 @@ describe("conformance · 17. at-the-table gaps", () => {
       // …but its own initiative (familiar) or the caster's (summon) needs a roster.
       const companions: Record<string, unknown> = await import("@/lib/play/companions");
       expect(companions.companionInitiative).toBeTypeOf("function");
+      // Engine-ready, needs a caller: the case works once the encounter takes the
+      // companion's Initiative row and the campaign keeps creatures between fights
+      // (the roster).
+      const id = "@/features/campaigns/roster-io";
+      const roster = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
+      expect(roster.subscribeRoster).toBeTypeOf("function");
+      // …and the encounter takes a roster entry by id (the DM's roster screen).
+      const encounterId = "@/features/campaigns/encounter-roster";
+      const encounter = (await import(/* @vite-ignore */ encounterId)) as Record<
+        string,
+        unknown
+      >;
+      expect(encounter.addRosterCombatant).toBeTypeOf("function");
     }
   );
 
@@ -280,6 +293,11 @@ describe("conformance · 17. at-the-table gaps", () => {
       const id = "@/lib/item-overlays";
       const overlays = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
       expect(typeof overlays.revealCurse).toBe("function");
+      // Engine-ready, needs a caller: the case works once the DM's item panel
+      // (mocked and approved first) reveals it.
+      const panelId = "@/domains/campaign/dm-item-panel-view";
+      const panel = (await import(/* @vite-ignore */ panelId)) as Record<string, unknown>;
+      expect(typeof panel.dmItemPanelView).toBe("function");
     }
   );
 

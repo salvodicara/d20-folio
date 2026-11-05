@@ -1,30 +1,114 @@
 {
-  "common": { "name": "Comune" },
-  "common-sign-language": { "name": "Lingua dei Segni Comune" },
-  "draconic": { "name": "Draconico" },
-  "dwarvish": { "name": "Nanico" },
-  "elvish": { "name": "Elfico" },
-  "giant": { "name": "Gigante" },
-  "gnomish": { "name": "Gnomesco" },
-  "goblin": { "name": "Goblin" },
-  "halfling": { "name": "Halfling" },
-  "orc": { "name": "Orchesco" },
-  "abyssal": { "name": "Abissale" },
-  "celestial": { "name": "Celestiale" },
-  "deep-speech": { "name": "Gergo delle Profondità" },
-  "druidic": { "name": "Druidico" },
-  "infernal": { "name": "Infernale" },
-  "primordial": { "name": "Primordiale" },
-  "aquan": { "name": "Primordiale (Aquan)" },
-  "auran": { "name": "Primordiale (Auran)" },
-  "ignan": { "name": "Primordiale (Ignan)" },
-  "terran": { "name": "Primordiale (Terran)" },
-  "sylvan": { "name": "Silvano" },
-  "thieves-cant": { "name": "Gergo Ladresco" },
-  "undercommon": { "name": "Sottocomune" },
-  "blink-dog": { "name": "Cane intermittente" },
-  "gnoll": { "name": "Gnoll" },
-  "otyugh": { "name": "Otyugh" },
-  "sahuagin": { "name": "Sahuagin" },
-  "worg": { "name": "Worg" }
+  "common": {
+    "name": "Comune",
+    "gist": "La lingua comune dei piani, parlata dalla maggior parte degli umanoidi"
+  },
+  "common-sign-language": {
+    "name": "Lingua dei Segni Comune",
+    "gist": "Una lingua di segni con le mani, compresa ovunque si parli il Comune"
+  },
+  "draconic": {
+    "name": "Draconico",
+    "gist": "La lingua dei draghi e dei dragonidi"
+  },
+  "dwarvish": {
+    "name": "Nanico",
+    "gist": "La lingua dei nani"
+  },
+  "elvish": {
+    "name": "Elfico",
+    "gist": "La lingua degli elfi"
+  },
+  "giant": {
+    "name": "Gigante",
+    "gist": "La lingua dei giganti"
+  },
+  "gnomish": {
+    "name": "Gnomesco",
+    "gist": "La lingua degli gnomi"
+  },
+  "goblin": {
+    "name": "Goblin",
+    "gist": "La lingua dei goblinoidi: goblin, hobgoblin e bugbear"
+  },
+  "halfling": {
+    "name": "Halfling",
+    "gist": "La lingua degli halfling"
+  },
+  "orc": {
+    "name": "Orchesco",
+    "gist": "La lingua degli orchi"
+  },
+  "abyssal": {
+    "name": "Abissale",
+    "gist": "Una lingua rara, parlata dai demoni"
+  },
+  "celestial": {
+    "name": "Celestiale",
+    "gist": "Una lingua rara, parlata dai celestiali"
+  },
+  "deep-speech": {
+    "name": "Gergo delle Profondità",
+    "gist": "Una lingua rara, parlata dalle aberrazioni"
+  },
+  "druidic": {
+    "name": "Druidico",
+    "gist": "La lingua segreta dei druidi"
+  },
+  "infernal": {
+    "name": "Infernale",
+    "gist": "Una lingua rara, parlata dai diavoli"
+  },
+  "primordial": {
+    "name": "Primordiale",
+    "gist": "Una lingua rara, parlata dagli elementali; ha quattro dialetti"
+  },
+  "aquan": {
+    "name": "Primordiale (Aquan)",
+    "gist": "Il dialetto Primordiale degli elementali dell'acqua"
+  },
+  "auran": {
+    "name": "Primordiale (Auran)",
+    "gist": "Il dialetto Primordiale degli elementali dell'aria"
+  },
+  "ignan": {
+    "name": "Primordiale (Ignan)",
+    "gist": "Il dialetto Primordiale degli elementali del fuoco"
+  },
+  "terran": {
+    "name": "Primordiale (Terran)",
+    "gist": "Il dialetto Primordiale degli elementali della terra"
+  },
+  "sylvan": {
+    "name": "Silvano",
+    "gist": "Una lingua rara, parlata dai folletti"
+  },
+  "thieves-cant": {
+    "name": "Gergo Ladresco",
+    "gist": "Il codice segreto dei ladri e dei furfanti"
+  },
+  "undercommon": {
+    "name": "Sottocomune",
+    "gist": "Una lingua rara, la lingua dei commerci del Sottosuolo"
+  },
+  "blink-dog": {
+    "name": "Cane intermittente",
+    "gist": "La lingua dei cani intermittenti"
+  },
+  "gnoll": {
+    "name": "Gnoll",
+    "gist": "La lingua degli gnoll"
+  },
+  "otyugh": {
+    "name": "Otyugh",
+    "gist": "La lingua degli otyugh"
+  },
+  "sahuagin": {
+    "name": "Sahuagin",
+    "gist": "La lingua dei sahuagin"
+  },
+  "worg": {
+    "name": "Worg",
+    "gist": "La lingua dei worg"
+  }
 }

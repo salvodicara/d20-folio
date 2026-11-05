@@ -1,0 +1,56 @@
+{
+  "skill.acrobatics": {
+    "gist": "Stay on your feet in a tricky spot, or pull off an acrobatic stunt"
+  },
+  "skill.animal-handling": {
+    "gist": "Calm or train an animal, or get it to behave a certain way"
+  },
+  "skill.arcana": {
+    "gist": "Recall lore about spells, magic items and the planes of existence"
+  },
+  "skill.athletics": {
+    "gist": "Jump farther, stay afloat in rough water, or break something"
+  },
+  "skill.deception": {
+    "gist": "Tell a convincing lie, or wear a disguise convincingly"
+  },
+  "skill.history": {
+    "gist": "Recall lore about past events, people, nations and cultures"
+  },
+  "skill.insight": {
+    "gist": "Read a person's mood and intentions"
+  },
+  "skill.intimidation": {
+    "gist": "Awe or threaten someone into doing what you want"
+  },
+  "skill.investigation": {
+    "gist": "Find obscure facts in books, or work out how something works"
+  },
+  "skill.medicine": {
+    "gist": "Diagnose an illness, or tell what killed the recently slain"
+  },
+  "skill.nature": {
+    "gist": "Recall lore about terrain, plants, animals and weather"
+  },
+  "skill.perception": {
+    "gist": "Notice something easy to miss, using all your senses"
+  },
+  "skill.performance": {
+    "gist": "Act, tell a story, play music or dance"
+  },
+  "skill.persuasion": {
+    "gist": "Convince someone honestly and graciously"
+  },
+  "skill.religion": {
+    "gist": "Recall lore about gods, rituals and holy symbols"
+  },
+  "skill.sleight-of-hand": {
+    "gist": "Pick a pocket, hide a small object, or do a trick of the hand"
+  },
+  "skill.stealth": {
+    "gist": "Move quietly and hide to escape notice"
+  },
+  "skill.survival": {
+    "gist": "Follow tracks, forage, find a trail or avoid natural hazards"
+  }
+}

@@ -14,6 +14,9 @@
  */
 import type { MonsterStatBlock } from "@/data/types";
 import { filterMonsters, getMonster } from "@/data/monsters";
+import type { CreatureLocation } from "@/lib/familiar-ids";
+
+export type { CreatureLocation };
 
 /**
  * The 2024 Find Familiar eligible-form pool: every CR-0 Beast, plus the special
@@ -32,4 +35,18 @@ export function resolveFamiliarForms(
     .map((id) => getMonster(id))
     .filter((m): m is MonsterStatBlock => m !== undefined);
   return [...base, ...special];
+}
+
+/**
+ * Whether two creatures share a plane (the familiar's link, a planar check). Inside
+ * an extradimensional space, only with one in the same space; an untagged creature
+ * shares the other's plane (today's behaviour, where nothing is tagged).
+ */
+export function sharesPlane(
+  a: CreatureLocation | undefined,
+  b: CreatureLocation | undefined
+): boolean {
+  if (a?.inside || b?.inside) return a?.inside !== undefined && a.inside === b?.inside;
+  if (!a?.plane || !b?.plane) return true;
+  return a.plane === b.plane;
 }
