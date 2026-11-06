@@ -49,13 +49,26 @@ test("Mandorlino levels 3 → 5 and prepares Warding Bond", async ({ page }) => 
   await signInAs(page, email);
   await page.goto(`/characters/${characterId}`);
   await expect(page.locator(".f-char")).toBeVisible({ timeout: 60_000 });
+  const hp = async () => {
+    const label = await page
+      .getByRole("button", { name: /Damage and healing: \d+ \/ \d+/ })
+      .getAttribute("aria-label");
+    const [, cur, max] = label?.match(/(\d+) \/ (\d+)/) ?? [];
+    return { cur: Number(cur), max: Number(max) };
+  };
   for (let level = (await classLevel(page, "Paladin")) + 1; level <= 5; level++) {
     await test.step(`level ${level}`, async () => {
+      const before = await hp();
       await levelUp(page, characterId, {
         level,
         className: "Paladin",
         prefer: ["Warding Bond"],
       });
+      // A level raises current HP with the maximum, and it stays (rehearsal finding 7:
+      // the clock projection's write loop put the old HP back on a campaign sheet).
+      await page.waitForTimeout(3000);
+      const after = await hp();
+      expect(after.cur - before.cur).toBe(after.max - before.max);
     });
   }
   await expect(page.getByText(/Paladin 5/).first()).toBeVisible();
