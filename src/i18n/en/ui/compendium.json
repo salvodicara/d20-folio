@@ -15,6 +15,7 @@
     "showResults_other": "Show {{count}} results",
     "count_one": "{{count}} entry",
     "count_other": "{{count}} entries",
-    "cr": "CR {{cr}}"
+    "cr": "CR {{cr}}",
+    "gist": "In short"
   }
 }

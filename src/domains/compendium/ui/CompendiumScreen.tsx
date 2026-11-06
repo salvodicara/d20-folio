@@ -25,9 +25,11 @@ import {
 } from "@/features/compendium/picker/useCompendiumPicker";
 import type { PickerCtx } from "@/features/compendium/picker/types";
 import { compendiumArt } from "@/domains/compendium/compendium-art";
+import { compendiumGist } from "@/domains/compendium/compendium-gist";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
+import { tieLast } from "@/lib/text-ties";
 import { formatCr } from "@/lib/utils";
 import { Art, Button, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
 
@@ -315,6 +317,7 @@ function EntryPanel({
 }) {
   const { t } = useTranslation();
   const view = spec.detail(entry, ctx, { added: false });
+  const gist = compendiumGist(spec.id, entry, ctx.locale);
   return (
     <Panel color="cmp" title={spec.label(t)} className="f-cmp-detail">
       {onBack && (
@@ -331,6 +334,12 @@ function EntryPanel({
           {view.eyebrow && <div className="f-row-s">{view.eyebrow}</div>}
         </div>
       </div>
+      {gist && (
+        <p className="f-cmp-gist">
+          <span className="f-lbl">{t("compendium.gist")}</span>
+          {tieLast(gist)}
+        </p>
+      )}
       {view.warning && (
         <p className="f-note" data-c="cond">
           {view.warning}

@@ -48,6 +48,20 @@ describe("CompendiumScreen", () => {
     expect(container.querySelector('a.f-cmp-row[aria-current="true"]')).not.toBeNull();
   });
 
+  it("an open entry leads with its gist, «In breve», above the facts", () => {
+    const { container } = open("/compendium?type=monster&sel=goblin-warrior");
+    const gist = container.querySelector(".f-cmp-detail .f-cmp-gist");
+    expect(gist?.textContent).toMatch(/skirmisher/i);
+    const facts = container.querySelector(
+      ".f-cmp-detail .f-cmp-facts, .f-cmp-detail .f-cmp-extras"
+    );
+    expect(
+      gist &&
+        facts &&
+        gist.compareDocumentPosition(facts) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it("a monster row leads with its challenge rating", () => {
     const { container } = open("/compendium?type=monster");
     const first = container.querySelector(".f-cmp-row .f-row-s");

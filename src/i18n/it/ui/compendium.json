@@ -15,6 +15,7 @@
     "showResults_other": "Mostra {{count}} risultati",
     "count_one": "{{count}} voce",
     "count_other": "{{count}} voci",
-    "cr": "GS {{cr}}"
+    "cr": "GS {{cr}}",
+    "gist": "In breve"
   }
 }
