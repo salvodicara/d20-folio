@@ -182,6 +182,7 @@ export function PlayScreen() {
             <PlayCentre
               doc={doc}
               locale={locale}
+              campaign={campaign}
               onShortRest={readonly ? undefined : () => setResting("short")}
             />
             <PlayRight campaign={campaign} locale={locale} onToast={setToast} />
