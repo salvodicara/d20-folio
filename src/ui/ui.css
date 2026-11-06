@@ -5296,6 +5296,13 @@
     width: min(77vw, 100%);
   }
 }
+/* the kind line (rarity · type, level · school): its pieces never touch */
+.fui .f-cmp-eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
 .fui .f-cmp-name {
   margin: 0;
   font: 600 var(--fs-xl, 28px) / 1.1 var(--font-title);
@@ -5342,6 +5349,13 @@
 }
 .fui .f-cmp-extras .uc-tag {
   padding: 4px 8px;
+}
+/* the entry's art already leads the card: the stat block's own portrait would repeat it */
+.fui .f-cmp-extras .mon-top--art {
+  display: block;
+}
+.fui .f-cmp-extras .mon-portrait-slot {
+  display: none;
 }
 /* the codex's stat block and tags, read at the new UI's body size */
 .fui

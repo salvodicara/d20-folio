@@ -330,7 +330,7 @@ function EntryPanel({
         </span>
         <div>
           <h2 className="f-cmp-name">{spec.getName(entry, ctx)}</h2>
-          {view.eyebrow && <div className="f-row-s">{view.eyebrow}</div>}
+          {view.eyebrow && <div className="f-row-s f-cmp-eyebrow">{view.eyebrow}</div>}
         </div>
       </div>
       {gist && (
