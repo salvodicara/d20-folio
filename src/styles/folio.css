@@ -12114,7 +12114,9 @@ button.uc-chevron::before {
   grid-template-rows: 1fr;
 }
 .uc-detail {
-  overflow: hidden;
+  /* clip, not hidden: never scrollable, so a click mid-reveal lands (.section-detail). */
+  overflow: clip;
+  display: flow-root;
   /* min-height:0 lets the 0fr grid track clip the content so the height
      transition runs both ways (no display:none snapping). padding/background
      transition alongside height — both are 0/transparent when collapsed and
@@ -12831,7 +12833,9 @@ h6.bm-heading {
 }
 .sess-body {
   min-height: 0;
-  overflow: hidden;
+  /* clip, not hidden: never scrollable, so a click mid-reveal lands (.section-detail). */
+  overflow: clip;
+  display: flow-root;
   padding-left: 28px;
 }
 .sess-item[data-open] .sess-body {
@@ -12941,7 +12945,13 @@ textarea.input.sess-notes-edit {
 }
 .section-detail {
   min-height: 0;
-  overflow: hidden;
+  /* clip, not hidden: a hidden box can be scrolled, so a press that focuses a
+     control inside a still-opening detail scrolled it into view, the growing box
+     pulled that scroll back, and the control slid away before the release (the
+     click was lost). A clip box never scrolls. flow-root keeps the margin
+     containment that hidden gave. */
+  overflow: clip;
+  display: flow-root;
 }
 /* The reveal gap exists only when OPEN — a padding on the collapsed child
    resists the 0fr compression and left every closed section ~12px of ghost
@@ -20321,7 +20331,9 @@ button.econ-tok-filter:active .econ-disc {
 }
 .wiz-fold > * {
   min-height: 0;
-  overflow: hidden;
+  /* clip, not hidden: never scrollable, so a click mid-reveal lands (.section-detail). */
+  overflow: clip;
+  display: flow-root;
 }
 
 /* ── The reading body (spell rows) ─────────────────────────────────────────── */

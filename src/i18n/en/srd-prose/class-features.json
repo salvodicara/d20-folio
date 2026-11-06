@@ -1,0 +1,656 @@
+{
+  "barbarian-berserker-frenzy": {
+    "gist": "Reckless Attack while raging: first Strength hit adds d6s equal to your Rage Damage bonus"
+  },
+  "barbarian-berserker-intimidating-presence": {
+    "gist": "Bonus Action: chosen creatures in 30 ft make a Wisdom save or are Frightened for 1 minute"
+  },
+  "barbarian-berserker-mindless-rage": {
+    "gist": "Immune to charmed and frightened while raging; existing effects are suspended"
+  },
+  "barbarian-berserker-retaliation": {
+    "gist": "Reaction: when a creature within 5 ft damages you, make a melee weapon attack against it"
+  },
+  "barbarian-brutal-strike": {
+    "gist": "Forgo Reckless Attack's Advantage on one hit: +1d10 damage and a push or slow effect"
+  },
+  "barbarian-danger-sense": {
+    "gist": "Advantage on Dexterity saving throws unless Incapacitated"
+  },
+  "barbarian-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "barbarian-extra-attack": {
+    "gist": "Attack twice when you take the Attack action"
+  },
+  "barbarian-fast-movement": {
+    "gist": "+10 ft Speed while not wearing heavy armor"
+  },
+  "barbarian-feral-instinct": {
+    "gist": "Advantage on Initiative rolls"
+  },
+  "barbarian-greater-brutal-strike": {
+    "gist": "Brutal Strike deals 2d10 and applies two different effects"
+  },
+  "barbarian-improved-brutal-strike": {
+    "gist": "New Brutal Strike options: Disadvantage on next save, or +5 to the next ally's attack"
+  },
+  "barbarian-indomitable-might": {
+    "gist": "Use your Strength score if a Strength check or saving throw totals less"
+  },
+  "barbarian-instinctive-pounce": {
+    "gist": "Move up to half your Speed as part of the Bonus Action to enter Rage"
+  },
+  "barbarian-persistent-rage": {
+    "gist": "Regain all Rage uses on Initiative once per Long Rest; Rage lasts 10 minutes unextended"
+  },
+  "barbarian-primal-champion": {
+    "gist": "+4 Strength and Constitution, maximum 25"
+  },
+  "barbarian-primal-knowledge": {
+    "gist": "One extra Barbarian skill; while raging, some skill checks can use Strength"
+  },
+  "barbarian-rage": {
+    "gist": "Bonus Action: Resistance to Bludgeoning, Piercing, Slashing; Rage Damage; Advantage"
+  },
+  "barbarian-reckless-attack": {
+    "gist": "Advantage on Strength attacks this turn; attacks against you have Advantage too"
+  },
+  "barbarian-relentless-rage": {
+    "gist": "At 0 Hit Points while raging, DC 10 Con save to stay up with twice your level in HP"
+  },
+  "barbarian-unarmored-defense": {
+    "gist": "Without armor, AC = 10 + Dexterity mod + Constitution mod; shield allowed"
+  },
+  "barbarian-weapon-mastery": {
+    "gist": "Use the mastery properties of two Melee weapon kinds; swap them on a Long Rest"
+  },
+  "bard-asi": {
+    "gist": "+2 to one ability score or +1 to two (max 20), or take a feat"
+  },
+  "bard-bardic-inspiration": {
+    "gist": "Bonus Action: give a creature in 60 ft a die to add to a failed D20 Test; Cha mod uses"
+  },
+  "bard-countercharm": {
+    "gist": "Reaction: reroll a failed save against Charmed or Frightened within 30 ft, with Advantage"
+  },
+  "bard-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "bard-expertise": {
+    "gist": "Double your proficiency bonus with two skills; two more at level 9"
+  },
+  "bard-font-of-inspiration": {
+    "gist": "Regain Bardic Inspiration on a Short or Long Rest; spend a spell slot to regain one"
+  },
+  "bard-jack-of-all-trades": {
+    "gist": "Add half your proficiency bonus to ability checks that lack it"
+  },
+  "bard-lore-additional-magical-secrets": {
+    "gist": "Learn two always-prepared spells from the Cleric, Druid or Wizard lists"
+  },
+  "bard-lore-bonus-proficiencies": {
+    "gist": "Gain proficiency in three skills of your choice"
+  },
+  "bard-lore-cutting-words": {
+    "gist": "Reaction: spend a Bardic Inspiration die to subtract it from a roll within 60 ft"
+  },
+  "bard-lore-peerless-skill": {
+    "gist": "Add Bardic Inspiration to a failed check or attack; not spent if it still fails"
+  },
+  "bard-magical-secrets": {
+    "gist": "Prepare new spells from the Bard, Cleric, Druid and Wizard lists"
+  },
+  "bard-spellcasting": {
+    "gist": "Cast Bard spells with Charisma; prepare Cha mod + Bard level spells"
+  },
+  "bard-superior-inspiration": {
+    "gist": "On Initiative, regain Bardic Inspiration up to two uses"
+  },
+  "bard-words-of-creation": {
+    "gist": "Power Word Heal and Kill always prepared; each can hit a second target within 10 ft"
+  },
+  "cleric-blessed-strikes": {
+    "gist": "Choose +1d8 Necrotic/Radiant on a weapon hit once a turn, or Wis mod to cantrip damage"
+  },
+  "cleric-channel-divinity": {
+    "gist": "Turn Undead plus a domain effect; uses return on a Short or Long Rest"
+  },
+  "cleric-divine-intervention": {
+    "gist": "Magic action: cast any Cleric spell of level 5 or lower free, once per Long Rest"
+  },
+  "cleric-divine-order": {
+    "gist": "Protector: Martial weapons, Heavy armor; or Thaumaturge: extra cantrip, Wis to Arcana"
+  },
+  "cleric-divine-spark": {
+    "gist": "Magic action, 30 ft: heal 1d8 + Wis mod, or deal that as Necrotic/Radiant (Con save half)"
+  },
+  "cleric-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "cleric-improved-blessed-strikes": {
+    "gist": "Divine Strike rises to 2d8, or cantrip damage grants Temporary Hit Points (2× Wis)"
+  },
+  "cleric-improved-divine-intervention": {
+    "gist": "Divine Intervention can cast Wish; then it recharges after 2d4 Long Rests"
+  },
+  "cleric-life-blessed-healer": {
+    "gist": "Healing another creature with a spell heals you 2 + the spell's level"
+  },
+  "cleric-life-disciple-of-life": {
+    "gist": "Healing spells restore an extra 2 + the spell's level Hit Points"
+  },
+  "cleric-life-preserve-life": {
+    "gist": "Channel Divinity: split 5× Cleric level Hit Points among creatures within 30 ft"
+  },
+  "cleric-life-supreme-healing": {
+    "gist": "Healing dice from spells always roll their maximum"
+  },
+  "cleric-sear-undead": {
+    "gist": "Turn Undead also deals Wis mod d8 Radiant damage to undead that fail the save"
+  },
+  "cleric-spellcasting": {
+    "gist": "Cast Cleric spells with Wisdom; prepare from the full list after a Long Rest"
+  },
+  "cleric-turn-undead": {
+    "gist": "Action: undead within 30 ft make a Wisdom save or are turned for 1 minute"
+  },
+  "druid-archdruid": {
+    "gist": "Regain a Wild Shape on Initiative if out; convert Wild Shape uses into a spell slot"
+  },
+  "druid-beast-spells": {
+    "gist": "Concentrate and cast Somatic/Verbal Druid spells while in Wild Shape"
+  },
+  "druid-druidic": {
+    "gist": "Know the secret Druidic language; Speak with Animals always prepared"
+  },
+  "druid-elemental-fury": {
+    "gist": "Choose: Wisdom mod to Druid cantrip damage, or +1d8 elemental damage once per turn"
+  },
+  "druid-epic-boon": {
+    "gist": "Take an Epic Boon feat, or any other feat you qualify for"
+  },
+  "druid-improved-elemental-fury": {
+    "gist": "Potent Spellcasting: +300 ft range on Druid cantrips; Primal Strike: extra damage is 2d8"
+  },
+  "druid-land-circle-spells": {
+    "gist": "After each Long Rest pick a land; its Circle Spells are always prepared for free"
+  },
+  "druid-land-lands-aid": {
+    "gist": "Magic action, 1 Wild Shape use: 2d6 Necrotic in a 10-ft Sphere (Con save) and heal 2d6"
+  },
+  "druid-land-natural-recovery": {
+    "gist": "Cast one Circle Spell without a slot; on a Short Rest recover slots up to half Druid level"
+  },
+  "druid-land-natures-sanctuary": {
+    "gist": "Magic action, 1 Wild Shape use: 15-ft Cube giving allies Half Cover and Resistance"
+  },
+  "druid-land-natures-ward": {
+    "gist": "Immune to Poisoned; Resistance to Fire, Cold, Lightning or Poison based on your land"
+  },
+  "druid-primal-order": {
+    "gist": "Magician: extra cantrip, Wisdom to Arcana/Nature; Warden: Martial weapons, Medium armor"
+  },
+  "druid-spellcasting": {
+    "gist": "Cast Druid spells with Wisdom; change your prepared spells after each Long Rest"
+  },
+  "druid-wild-companion": {
+    "gist": "Spend a Wild Shape use to cast Find Familiar; the familiar is a Fey"
+  },
+  "druid-wild-resurgence": {
+    "gist": "Spell slot for a Wild Shape use when out; once per Long Rest, a use for a level 1 slot"
+  },
+  "druid-wild-shape": {
+    "gist": "Bonus Action: turn into a beast; 2 uses, one back on a Short Rest, all on a Long Rest"
+  },
+  "fighter-action-surge": {
+    "gist": "Take one extra action on your turn; once per Short or Long Rest (twice from level 17)"
+  },
+  "fighter-champion-additional-fighting-style": {
+    "gist": "Pick a second Fighting Style feat"
+  },
+  "fighter-champion-heroic-warrior": {
+    "gist": "In combat, gain Heroic Inspiration whenever you start your turn without it"
+  },
+  "fighter-champion-improved-critical": {
+    "gist": "Weapon attacks score a critical hit on a 19 or 20"
+  },
+  "fighter-champion-remarkable-athlete": {
+    "gist": "Advantage on Initiative and Athletics; after a Critical Hit, move half Speed safely"
+  },
+  "fighter-champion-superior-critical": {
+    "gist": "Weapon attacks score a critical hit on an 18, 19 or 20"
+  },
+  "fighter-champion-survivor": {
+    "gist": "Advantage on Death Saving Throws; Bloodied: regain 5 + Con mod Hit Points each turn"
+  },
+  "fighter-epic-boon": {
+    "gist": "Take an Epic Boon feat, or any other feat you qualify for"
+  },
+  "fighter-extra-attack": {
+    "gist": "Attack twice when you take the Attack action"
+  },
+  "fighter-extra-attack-2": {
+    "gist": "Attack three times when you take the Attack action"
+  },
+  "fighter-extra-attack-3": {
+    "gist": "Attack four times when you take the Attack action"
+  },
+  "fighter-fighting-style": {
+    "gist": "Choose a Fighting Style feat; you can't take the same one twice"
+  },
+  "fighter-indomitable": {
+    "gist": "Reroll a failed saving throw adding your Fighter level; once per Long Rest (more later)"
+  },
+  "fighter-second-wind": {
+    "gist": "Bonus Action: regain 1d10 + Fighter level Hit Points; 2 uses, one back on a Short Rest"
+  },
+  "fighter-studied-attacks": {
+    "gist": "Miss a creature and gain Advantage on your next attack roll against it"
+  },
+  "fighter-tactical-master": {
+    "gist": "Swap a weapon's mastery property for Push, Sap or Slow on an attack"
+  },
+  "fighter-tactical-mind": {
+    "gist": "Failed ability check: spend a Second Wind use to add 1d10 (not spent if it still fails)"
+  },
+  "fighter-tactical-shift": {
+    "gist": "When you use Second Wind, move half your Speed without provoking Opportunity Attacks"
+  },
+  "fighter-weapon-mastery": {
+    "gist": "Use the mastery property of 3 weapon kinds (up to 6); swap them after a Long Rest"
+  },
+  "monk-acrobatic-movement": {
+    "gist": "Without armor or shield, move along walls and across liquids on your turn"
+  },
+  "monk-body-and-mind": {
+    "gist": "+4 Dexterity and Wisdom, maximum 25"
+  },
+  "monk-deflect-attacks": {
+    "gist": "Reaction: cut Bludgeoning, Piercing or Slashing damage by 1d10 + Dex + Monk level"
+  },
+  "monk-deflect-energy": {
+    "gist": "Deflect Attacks now works against any damage type"
+  },
+  "monk-disciplined-survivor": {
+    "gist": "Proficiency in all saving throws; spend 1 Focus Point to reroll a failed one"
+  },
+  "monk-empowered-strikes": {
+    "gist": "Unarmed Strikes can deal Force damage instead of their normal type"
+  },
+  "monk-epic-boon": {
+    "gist": "Take an Epic Boon feat, or any other feat you qualify for"
+  },
+  "monk-evasion": {
+    "gist": "Dexterity saves for half damage: no damage on a success, half on a failure"
+  },
+  "monk-extra-attack": {
+    "gist": "Attack twice when you take the Attack action"
+  },
+  "monk-flurry-of-blows": {
+    "gist": "After the Attack action, 1 Focus Point: two Unarmed Strikes as a Bonus Action"
+  },
+  "monk-focus": {
+    "gist": "Focus Points equal to your Monk level fuel Monk features; all back on a Short Rest"
+  },
+  "monk-heightened-focus": {
+    "gist": "Flurry makes 3 strikes; Patient Defense grants Temporary Hit Points; Step triples jump"
+  },
+  "monk-martial-arts": {
+    "gist": "Unarmored: Dexterity and Martial Arts die for unarmed strikes; one as a Bonus Action"
+  },
+  "monk-open-hand-fleet-step": {
+    "gist": "Use Step of the Wind right after any other Bonus Action"
+  },
+  "monk-open-hand-quivering-palm": {
+    "gist": "4 Focus Points on an Unarmed Strike: later end it for 10d12 Force (Con save, half)"
+  },
+  "monk-open-hand-technique": {
+    "gist": "Flurry of Blows hits can stop Opportunity Attacks, push 15 ft, or knock Prone"
+  },
+  "monk-open-hand-wholeness-of-body": {
+    "gist": "Bonus Action: regain Martial Arts die + Wisdom mod Hit Points; uses = Wisdom mod"
+  },
+  "monk-patient-defense": {
+    "gist": "Bonus Action Disengage; spend 1 Focus Point to also Dodge"
+  },
+  "monk-perfect-focus": {
+    "gist": "Start your turn with fewer than 4 Focus Points and refill to 4"
+  },
+  "monk-self-restoration": {
+    "gist": "End of each turn: remove Charmed, Frightened or Poisoned; no Exhaustion from hunger"
+  },
+  "monk-slow-fall": {
+    "gist": "Reaction: reduce Falling damage by five times your Monk level"
+  },
+  "monk-step-of-the-wind": {
+    "gist": "Bonus Action Dash; spend 1 Focus Point to also Disengage and double your jump"
+  },
+  "monk-stunning-strike": {
+    "gist": "1 Focus Point on a hit, once per turn: Con save or Stunned; on a success, Speed halved"
+  },
+  "monk-superior-defense": {
+    "gist": "Spend 3 Focus Points: Resistance to all damage except Force for 1 minute"
+  },
+  "monk-unarmored-defense": {
+    "gist": "Without armor or shield, AC = 10 + Dexterity modifier + Wisdom modifier"
+  },
+  "monk-unarmored-movement": {
+    "gist": "+10 ft Speed without armor or shield, rising to +30 ft at level 18"
+  },
+  "monk-uncanny-metabolism": {
+    "gist": "On Initiative, regain all Focus Points and heal Martial Arts die + Monk level; 1/Long Rest"
+  },
+  "paladin-abjure-foes": {
+    "gist": "Magic action, 1 Channel Divinity: enemies within 60 ft save (Wis) or are Frightened 1 min"
+  },
+  "paladin-aura-expansion": {
+    "gist": "Aura of Protection and Aura of Courage now reach 30 ft"
+  },
+  "paladin-aura-of-courage": {
+    "gist": "You and allies within 10 ft can't be Frightened while you're conscious"
+  },
+  "paladin-aura-of-protection": {
+    "gist": "You and allies within 10 ft add your Charisma modifier (min +1) to saving throws"
+  },
+  "paladin-channel-divinity": {
+    "gist": "2 uses of divine effects, starting with Divine Sense; regain 1 on Short Rest, all on Long"
+  },
+  "paladin-devotion-aura-of-devotion": {
+    "gist": "You and allies within 10 ft can't be Charmed while you're conscious"
+  },
+  "paladin-devotion-holy-nimbus": {
+    "gist": "Bonus Action, 10 min: enemies in 30 ft take Radiant damage = Cha mod + Proficiency Bonus"
+  },
+  "paladin-devotion-sacred-weapon": {
+    "gist": "1 Channel Divinity on Attack: add Charisma to weapon attack rolls, Radiant damage, 10 min"
+  },
+  "paladin-devotion-smite-of-protection": {
+    "gist": "When you cast Divine Smite, allies in your Aura of Protection get Half Cover"
+  },
+  "paladin-divine-smite": {
+    "gist": "Divine Smite always prepared; cast it free once per Long Rest"
+  },
+  "paladin-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "paladin-extra-attack": {
+    "gist": "Attack twice when you take the Attack action"
+  },
+  "paladin-faithful-steed": {
+    "gist": "Find Steed always prepared; cast it free once per Long Rest"
+  },
+  "paladin-fighting-style": {
+    "gist": "Choose a Fighting Style feat"
+  },
+  "paladin-fighting-style-defense": {
+    "gist": "+1 to AC while wearing armor"
+  },
+  "paladin-lay-on-hands": {
+    "gist": "Bonus Action: heal from a pool of 5 × Paladin level HP, or spend 5 to end Poisoned"
+  },
+  "paladin-radiant-strikes": {
+    "gist": "+1d8 Radiant damage on hits with Melee weapons and Unarmed Strikes"
+  },
+  "paladin-restoring-touch": {
+    "gist": "Lay on Hands can also end Blinded, Charmed, Deafened, Frightened, Paralyzed or Stunned"
+  },
+  "paladin-spellcasting": {
+    "gist": "Cast Paladin spells with Charisma; change prepared spells after a Long Rest"
+  },
+  "paladin-weapon-mastery": {
+    "gist": "Use the mastery properties of 2 weapon kinds; swap them on a Long Rest"
+  },
+  "ranger-deft-explorer": {
+    "gist": "Expertise in one skill; learn two languages"
+  },
+  "ranger-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "ranger-expertise": {
+    "gist": "Expertise in two more skills"
+  },
+  "ranger-extra-attack": {
+    "gist": "Attack twice when you take the Attack action"
+  },
+  "ranger-favored-enemy": {
+    "gist": "Hunter's Mark always prepared; cast it free a few times per Long Rest"
+  },
+  "ranger-feral-senses": {
+    "gist": "Blindsight 30 ft"
+  },
+  "ranger-fighting-style": {
+    "gist": "Choose a Fighting Style feat"
+  },
+  "ranger-foe-slayer": {
+    "gist": "Hunter's Mark deals d10 instead of d6 and needs no Concentration"
+  },
+  "ranger-hunter-defensive-tactics": {
+    "gist": "Opportunity Attacks against you have Disadvantage, or blunt follow-up attacks"
+  },
+  "ranger-hunter-hunters-lore": {
+    "gist": "Know the Immunities, Resistances and Vulnerabilities of your Hunter's Mark target"
+  },
+  "ranger-hunter-hunters-prey": {
+    "gist": "+1d8 damage once per turn to a wounded target, or an extra attack on an adjacent foe"
+  },
+  "ranger-hunter-superior-hunters-defense": {
+    "gist": "Reaction when hit: Resistance to that damage type until end of turn"
+  },
+  "ranger-hunter-superior-hunters-prey": {
+    "gist": "Once per turn, Hunter's Mark damage also hits another creature within 30 ft"
+  },
+  "ranger-natures-veil": {
+    "gist": "Bonus Action: Invisible until end of next turn; Wisdom modifier uses per Long Rest"
+  },
+  "ranger-precise-hunter": {
+    "gist": "Advantage on attack rolls against your Hunter's Mark target"
+  },
+  "ranger-relentless-hunter": {
+    "gist": "Damage can't break your Concentration on Hunter's Mark"
+  },
+  "ranger-roving": {
+    "gist": "+10 ft Speed without Heavy Armor; Climb and Swim Speed equal to your Speed"
+  },
+  "ranger-spellcasting": {
+    "gist": "Cast Ranger spells with Wisdom; change prepared spells after a Long Rest"
+  },
+  "ranger-tireless": {
+    "gist": "Magic action: 1d8 + Wis Temporary Hit Points; Short Rest removes 1 Exhaustion level"
+  },
+  "ranger-weapon-mastery": {
+    "gist": "Use the mastery properties of 2 weapon kinds; swap them on a Long Rest"
+  },
+  "rogue-cunning-action": {
+    "gist": "Bonus Action each turn: Dash, Disengage or Hide"
+  },
+  "rogue-cunning-strike": {
+    "gist": "Trade Sneak Attack dice for effects: Poisoned, Prone or Disengage"
+  },
+  "rogue-devious-strikes": {
+    "gist": "New Cunning Strike effects: Daze, Knock Out (Unconscious), Obscure (Blinded)"
+  },
+  "rogue-elusive": {
+    "gist": "No attack roll has Advantage against you unless you're Incapacitated"
+  },
+  "rogue-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "rogue-evasion": {
+    "gist": "Dexterity saves for half damage: no damage on a success, half on a failure"
+  },
+  "rogue-expertise": {
+    "gist": "Double Proficiency Bonus on two skills or Thieves' Tools; two more at level 6"
+  },
+  "rogue-improved-cunning-strike": {
+    "gist": "Apply up to two Cunning Strike effects per Sneak Attack"
+  },
+  "rogue-reliable-talent": {
+    "gist": "Proficient ability checks treat a d20 roll of 9 or lower as 10"
+  },
+  "rogue-slippery-mind": {
+    "gist": "Proficiency in Wisdom and Charisma saving throws"
+  },
+  "rogue-sneak-attack": {
+    "gist": "Once per turn, extra d6s (half Rogue level) with Advantage or an ally next to the target"
+  },
+  "rogue-steady-aim": {
+    "gist": "Bonus Action: Advantage on your next attack this turn if you haven't moved; Speed 0"
+  },
+  "rogue-stroke-of-luck": {
+    "gist": "Turn a missed attack into a hit, or treat a failed ability check's d20 as 20; 1/Short Rest"
+  },
+  "rogue-thief-fast-hands": {
+    "gist": "Cunning Action's Bonus Action can Sleight of Hand, use Thieves' Tools or Use an Object"
+  },
+  "rogue-thief-reflexes": {
+    "gist": "Take two turns in the first round of combat: at your Initiative and at Initiative −10"
+  },
+  "rogue-thief-second-story-work": {
+    "gist": "Climb Speed equal to your Speed; jump distance uses Dexterity instead of Strength"
+  },
+  "rogue-thief-supreme-sneak": {
+    "gist": "Stealth Attack Cunning Strike (1d6): attacking doesn't end Invisible if you end in cover"
+  },
+  "rogue-thief-use-magic-device": {
+    "gist": "Attune to 4 items; 1d6 roll of 6 saves charges; use any Spell Scroll with Intelligence"
+  },
+  "rogue-thieves-cant": {
+    "gist": "You know Thieves' Cant and one other language of your choice"
+  },
+  "rogue-uncanny-dodge": {
+    "gist": "Reaction: halve the damage of an attack that hits you from an attacker you can see"
+  },
+  "rogue-weapon-mastery": {
+    "gist": "Use the mastery property of two weapon kinds; swap them on a Long Rest"
+  },
+  "sorcerer-arcane-apotheosis": {
+    "gist": "While Innate Sorcery is active, one free Metamagic option per turn (no Sorcery Points)"
+  },
+  "sorcerer-asi": {
+    "gist": "+2 to one ability score or +1 to two (max 20), or a feat"
+  },
+  "sorcerer-draconic-sorcery-dragon-companion": {
+    "gist": "Cast Summon Dragon with no Material component, once free per Long Rest, no Concentration"
+  },
+  "sorcerer-draconic-sorcery-dragon-wings": {
+    "gist": "Bonus Action: Fly Speed 60 ft for 1 hour; 1/Long Rest or 3 Sorcery Points"
+  },
+  "sorcerer-draconic-sorcery-elemental-affinity": {
+    "gist": "Resistance to Acid, Cold, Fire, Lightning or Poison; add Charisma to that spell damage"
+  },
+  "sorcerer-draconic-sorcery-resilience": {
+    "gist": "+3 Hit Point maximum, +1 per Sorcerer level; unarmored AC 10 + Dexterity + Charisma"
+  },
+  "sorcerer-draconic-sorcery-spells": {
+    "gist": "Always prepared dragon spells: Chromatic Orb, Fly, Summon Dragon and more by level"
+  },
+  "sorcerer-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "sorcerer-font-of-magic": {
+    "gist": "Sorcery Points equal to Sorcerer level; Bonus Action: convert them to or from spell slots"
+  },
+  "sorcerer-innate-sorcery": {
+    "gist": "Bonus Action, 1 min: Advantage on spell attacks and +1 spell save DC; 2/Long Rest"
+  },
+  "sorcerer-metamagic": {
+    "gist": "Learn two Metamagic options to alter your spells; one per spell, more at higher levels"
+  },
+  "sorcerer-sorcerous-restoration": {
+    "gist": "On a Short Rest, regain Sorcery Points up to half your Sorcerer level; 1/Long Rest"
+  },
+  "sorcerer-sorcery-incarnate": {
+    "gist": "Activate Innate Sorcery for 2 Sorcery Points; while active, two Metamagic options a spell"
+  },
+  "sorcerer-spellcasting": {
+    "gist": "Cast Sorcerer spells with Charisma using spell slots; learn more spells as you level"
+  },
+  "warlock-asi": {
+    "gist": "+2 to one ability score or +1 to two (max 20), or a feat"
+  },
+  "warlock-contact-patron": {
+    "gist": "Contact Other Plane always prepared; once per Long Rest free, auto-succeeding its save"
+  },
+  "warlock-eldritch-invocations": {
+    "gist": "Gain an Eldritch Invocation, more at higher levels; swap one when you level up"
+  },
+  "warlock-eldritch-master": {
+    "gist": "Once per Long Rest, regain all expended Pact Magic spell slots"
+  },
+  "warlock-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "warlock-fiend-patron-dark-ones-blessing": {
+    "gist": "Enemy dropped to 0 HP near you (10 ft): Temporary Hit Points = Charisma + Warlock level"
+  },
+  "warlock-fiend-patron-dark-ones-own-luck": {
+    "gist": "Add 1d10 to an ability check or saving throw after rolling; Charisma uses per Long Rest"
+  },
+  "warlock-fiend-patron-fiendish-resilience": {
+    "gist": "Resistance to one damage type (not Force), chosen on each Short or Long Rest"
+  },
+  "warlock-fiend-patron-hurl-through-hell": {
+    "gist": "On a hit, Charisma save or 8d10 Psychic and Incapacitated; 1/Long Rest or a Pact slot"
+  },
+  "warlock-magical-cunning": {
+    "gist": "With all Pact Magic slots spent, a 1-minute ritual regains half; 1/Long Rest"
+  },
+  "warlock-mystic-arcanum-6th": {
+    "gist": "Pick a level 6 Warlock spell to cast once per Long Rest without a spell slot"
+  },
+  "warlock-mystic-arcanum-7th": {
+    "gist": "Pick a level 7 Warlock spell to cast once per Long Rest without a spell slot"
+  },
+  "warlock-mystic-arcanum-8th": {
+    "gist": "Pick a level 8 Warlock spell to cast once per Long Rest without a spell slot"
+  },
+  "warlock-mystic-arcanum-9th": {
+    "gist": "Pick a level 9 Warlock spell to cast once per Long Rest without a spell slot"
+  },
+  "warlock-pact-magic": {
+    "gist": "Cast Warlock spells with Charisma; Pact Magic slots return on a Short or Long Rest"
+  },
+  "wizard-arcane-recovery": {
+    "gist": "On a Short Rest, recover slots totalling half your Wizard level (none 6+); 1/Long Rest"
+  },
+  "wizard-asi": {
+    "gist": "+2 to one ability score or +1 to two (max 20), or a feat"
+  },
+  "wizard-epic-boon": {
+    "gist": "Gain an Epic Boon feat or another feat you qualify for"
+  },
+  "wizard-evoker-empowered-evocation": {
+    "gist": "Add your Intelligence modifier to one damage roll of your Wizard Evocation spells"
+  },
+  "wizard-evoker-evocation-savant": {
+    "gist": "Two free level ≤2 Evocation spells in your spellbook, plus one per new slot level"
+  },
+  "wizard-evoker-overchannel": {
+    "gist": "Max damage with a level 1–5 Wizard spell; reuse before a Long Rest: 2d12+ Necrotic/level"
+  },
+  "wizard-evoker-potent-cantrip": {
+    "gist": "Cantrips that miss or are saved against still deal half damage"
+  },
+  "wizard-evoker-sculpt-spells": {
+    "gist": "Evocation spells: 1 + spell level chosen creatures auto-succeed saves and take no damage"
+  },
+  "wizard-memorize-spell": {
+    "gist": "On a Short Rest, swap one prepared level 1+ Wizard spell for another in your spellbook"
+  },
+  "wizard-ritual-adept": {
+    "gist": "Cast any Ritual spell in your spellbook as a Ritual without preparing it, book in hand"
+  },
+  "wizard-scholar": {
+    "gist": "Expertise in Arcana, History, Investigation, Medicine, Nature or Religion (if proficient)"
+  },
+  "wizard-signature-spells": {
+    "gist": "Two level 3 Wizard spells always prepared; cast each once free per Short or Long Rest"
+  },
+  "wizard-spell-mastery": {
+    "gist": "Cast a chosen level 1 and level 2 spell at will, no slot; swap them with 8 hours' study"
+  },
+  "wizard-spellcasting": {
+    "gist": "Wizard spells with Intelligence; prepare Intelligence mod + Wizard level from your book"
+  }
+}
