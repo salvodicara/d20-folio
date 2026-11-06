@@ -888,8 +888,11 @@ window.__audit = (opts) => {
       if (f) {
         const b = f.getBoundingClientRect();
         const cs = getComputedStyle(f);
-        // an icon that fills its frame (a slot's art, a framed glyph) is the frame's content
-        if (r.width < b.width * 0.75 && r.height < b.height * 0.75) {
+        // an icon that fills its frame (a slot's art, a framed glyph) is the frame's content;
+        // one scrolled out of its frame's view is clipped, not misplaced
+        const inside =
+          r.right > b.left && r.left < b.right && r.bottom > b.top && r.top < b.bottom;
+        if (inside && r.width < b.width * 0.75 && r.height < b.height * 0.75) {
           const gap = Math.min(
             r.left - b.left - parseFloat(cs.borderLeftWidth),
             b.right - r.right - parseFloat(cs.borderRightWidth),

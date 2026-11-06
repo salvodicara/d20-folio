@@ -4,7 +4,7 @@
  * spell the support mark, a class feature its class, a base action its own sign.
  */
 import { describe, expect, it } from "vitest";
-import { actionIcon } from "@/domains/play/action-icon";
+import { actionArt, actionIcon } from "@/domains/play/action-icon";
 import { playActionsView } from "@/domains/play/play-actions-view";
 import { buildDevScenario } from "@/lib/dev-scenarios";
 
@@ -58,5 +58,40 @@ describe("actionIcon", () => {
     const heal = druid.find((r) => r.id === "spell-speak-with-animals");
     if (!heal) throw new Error("no row");
     expect(actionIcon({ ...heal, healing: "1d8+4" })).toEqual({ kind: "heal" });
+  });
+});
+
+/** The painted icon an action row shows in its slot (BG3's hotbar art), when one exists. */
+describe("actionArt", () => {
+  const row = (id: string) => {
+    const r = druid.find((x) => x.id === id);
+    if (!r) throw new Error(`no ${id} row`);
+    return r;
+  };
+
+  it("a weapon shows its equipment art", () => {
+    const sword = {
+      ...row("unarmed-strike"),
+      action: { ...row("unarmed-strike").action, weaponId: "longsword" },
+    };
+    expect(actionArt(sword)).toEqual({ kind: "equipment", id: "longsword" });
+  });
+
+  it("a class feature shows its own feature art", () => {
+    expect(actionArt(row("druid-wild-shape-bonus"))).toEqual({
+      kind: "feature",
+      id: "druid-wild-shape",
+    });
+  });
+
+  it("a usable magic item shows its item art", () => {
+    const potion = { ...row("base-dash"), id: "item-potion-of-healing" };
+    expect(actionArt(potion)).toEqual({ kind: "item", id: "potion-of-healing" });
+  });
+
+  it("a spell, a base action and the unarmed strike have none here", () => {
+    expect(actionArt(row("spell-produce-flame"))).toBeNull();
+    expect(actionArt(row("base-dash"))).toBeNull();
+    expect(actionArt(row("unarmed-strike"))).toBeNull();
   });
 });

@@ -2,7 +2,7 @@
  * An action row's framed slot (approved prototype x-play `.slot`): the glyph
  * `actionIcon` picks from the data, drawn from the attributed Game Icons set.
  */
-import { createElement, type ComponentType, type SVGProps } from "react";
+import { createElement, type ComponentType, type ReactNode, type SVGProps } from "react";
 
 import {
   CompassIcon,
@@ -153,10 +153,28 @@ function glyphOf(key: ActionIconKey): Glyph {
   }
 }
 
-export function ActionIcon({ icon }: { icon: ActionIconKey }) {
+/** The glyph alone, as a painted icon's fallback. */
+export function ActionGlyph({ icon }: { icon: ActionIconKey }) {
+  return createElement(glyphOf(icon));
+}
+
+/**
+ * The row's square slot: the painted `art` when there is one (BG3's hotbar art), else the
+ * glyph; `tip` is the BG3 tooltip shown on hover.
+ */
+export function ActionIcon({
+  icon,
+  art,
+  tip,
+}: {
+  icon: ActionIconKey;
+  art?: ReactNode;
+  tip?: ReactNode;
+}) {
   return (
-    <span className="f-act-slot" aria-hidden="true">
-      {createElement(glyphOf(icon))}
+    <span className="f-act-slot" data-painted={art ? "" : undefined} aria-hidden="true">
+      {art ?? createElement(glyphOf(icon))}
+      {tip}
     </span>
   );
 }

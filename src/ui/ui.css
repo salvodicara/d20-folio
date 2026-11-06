@@ -81,6 +81,10 @@
   --coin-sp: #c9ccd2;
   --coin-cp: #c47a45;
   --toast-bg: rgb(26 22 17 / 0.95);
+  /* BG3 panel material (BG3-STYLE §1) */
+  --panel-top: rgb(33 26 19 / 0.97);
+  --panel-bottom: rgb(17 13 10 / 0.97);
+  --frame: #6a5130;
 
   --fs-xs: 12px;
   --fs-sm: 14px;
@@ -93,9 +97,9 @@
   --fs-xl: 28px;
   --fs-hp: 56px;
 
-  --r-sm: 6px;
-  --r: 8px;
-  --r-lg: 12px;
+  --r-sm: 2px;
+  --r: 4px;
+  --r-lg: 6px;
   --r-pill: 20px;
   /* «Lume» (owner, 2026-11-03): one faint gold hairline, a lit top edge that fades at
      both ends, a warm light from above, a soft vignette below. No corners anywhere. */
@@ -239,8 +243,9 @@
 /* ---------- panel: one box, one header ---------- */
 .fui .f-pn {
   min-width: 0;
-  background: var(--toast-bg);
-  border: 1px solid var(--orn-line);
+  /* BG3's panel: one warm near-black material, lighter at the top, a bronze frame */
+  background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
+  border: 1px solid var(--frame);
   border-radius: var(--r-frame);
   overflow: clip;
   overflow-clip-margin: border-box;
@@ -2186,7 +2191,7 @@
 }
 /* panels: one opaque box with depth */
 .fui .f-sheet .f-pn {
-  background: var(--panel);
+  background: linear-gradient(180deg, var(--panel-top), var(--panel-bottom));
   box-shadow: 0 8px 20px var(--sh-panel-c);
 }
 .fui .f-sheet .f-pnh {
@@ -2379,21 +2384,16 @@
   min-height: 56px;
   margin: 0 -1px;
   padding: 0 20px;
-  border-bottom: 1px solid var(--line-soft);
   border-top: 0;
-  background:
-    linear-gradient(90deg, transparent, var(--c, var(--c-act)) 30%, transparent) top /
-      100% 1px no-repeat,
-    radial-gradient(
-      70% 140% at 30% 0,
-      color-mix(in srgb, var(--c, var(--c-act)) 30%, transparent),
-      transparent 75%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
+  /* no sheen: the tabs sit on the plain panel over a thin bronze rule fading at both ends */
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--frame) 20%,
+      var(--frame) 80%,
       transparent
-    );
+    )
+    bottom / 100% 1px no-repeat;
 }
 .fui .f-sheet .f-centre > .f-tabs > button {
   gap: 8px;
@@ -3199,6 +3199,39 @@
 .fui .f-act-slot > svg {
   width: 30px;
   height: 30px;
+}
+/* a painted icon fills the slot edge to edge, BG3's hotbar art; the tooltip opens on hover */
+.fui .f-act-slot {
+  position: relative;
+}
+.fui .f-act-slot[data-painted] {
+  overflow: visible;
+  background: var(--slot-bg);
+}
+.fui .f-act-slot[data-painted] > :is(.f-art, .f-spellart) {
+  border-radius: inherit;
+}
+.fui .f-act-slot:hover {
+  border-color: var(--gold-hi);
+}
+.fui .f-act-slot:hover > .f-slot-tip {
+  display: block;
+}
+/* in a row the tooltip opens below the slot, from its left edge, inside the panel */
+.fui .f-act-slot > .f-slot-tip {
+  top: calc(100% + 8px);
+  bottom: auto;
+  left: 0;
+  transform: none;
+}
+.fui .f-act[data-blocked] .f-act-slot[data-painted] > :is(.f-art, .f-spellart) {
+  filter: grayscale(0.85) brightness(0.55);
+}
+/* «Elenco | Icone»: the hotbar is a veteran's choice, rows stay the default */
+.fui .f-view {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: auto;
 }
 .fui .f-act-head > span:first-child {
   min-width: 0;
@@ -4101,6 +4134,10 @@
   }
   .fui .f-steps .f-step-of {
     display: inline-flex;
+  }
+  /* one line of step: the page's own gap is room enough above and below it */
+  .fui .f-steps {
+    margin: 0;
   }
 }
 
@@ -5128,4 +5165,24 @@
   .fui .f-lvl-hero h1 {
     font-size: var(--fs-lg);
   }
+}
+
+/* ---------- Play actions as BG3's hotbar (BG3-STYLE §2; bg3-ui/z-hotbar) ---------- */
+.fui .f-hotbar {
+  margin: 4px 0 12px;
+}
+.fui .f-hotslot > .f-slot-art > .f-act-slot {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+.fui .f-hotslot[data-dim] > .f-slot-art {
+  filter: grayscale(0.85) brightness(0.55);
+}
+.fui .f-hotslot[data-live] {
+  border-color: var(--gold-hi);
+}
+.fui .f-hotslot:disabled {
+  cursor: default;
 }
