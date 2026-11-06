@@ -8,6 +8,8 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { getSpellById } from "@/data/spells";
+
 import {
   addMonster,
   beginEncounterTurns,
@@ -46,17 +48,23 @@ const warlock = () => effectiveDoc(structuredClone(MOCK_CHARACTER), [agathys]);
 const shielded = { ...defaultCombatState(62), hp: { current: 40, temp: 5 } };
 const goblin = { kind: "monster" as const, combatantId: "monster-1" };
 
-describe("Armor of Agathys strikes back", () => {
-  it("a melee hit while the Temporary Hit Points hold returns 5 Cold to the attacker", () => {
-    const hit = peerHit(warlock(), shielded, [], 3, {
-      hit: { attacker: goblin, attackMode: "melee" },
-    });
-    expect(hit.retaliations).toEqual([
-      expect.objectContaining({ target: goblin, amount: 5, damageType: "cold" }),
-    ]);
-  });
+// Armor of Agathys is pack content: the hit's own stages run in the composed suite.
+const withAgathys = it.skipIf(!getSpellById("armor-of-agathys"));
 
-  it("a ranged hit returns nothing", () => {
+describe("Armor of Agathys strikes back", () => {
+  withAgathys(
+    "a melee hit while the Temporary Hit Points hold returns 5 Cold to the attacker",
+    () => {
+      const hit = peerHit(warlock(), shielded, [], 3, {
+        hit: { attacker: goblin, attackMode: "melee" },
+      });
+      expect(hit.retaliations).toEqual([
+        expect.objectContaining({ target: goblin, amount: 5, damageType: "cold" }),
+      ]);
+    }
+  );
+
+  withAgathys("a ranged hit returns nothing", () => {
     const hit = peerHit(warlock(), shielded, [], 3, {
       hit: { attacker: goblin, attackMode: "ranged" },
     });
