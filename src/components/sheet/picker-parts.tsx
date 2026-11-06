@@ -9,10 +9,12 @@
  *   <FilterChip label={…} active={…} onClick={…} />              // folio .fchip
  *   <PickerRow leading={…} name={…} meta={…} trailing={…} />     // folio .pick-row
  */
-import type { ReactNode } from "react";
+import { useContext, type ReactNode } from "react";
+import { NewUiFilterChips } from "./filter-chip-look";
 import { Coins, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
+import { Chip } from "@/ui/Chip";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { NumberStepper } from "@/components/ui/input";
@@ -68,6 +70,14 @@ export function FilterChip({
    *  numeral chip announces "Level 3"; the "C" seal announces "Cantrip"). */
   ariaLabel?: string;
 }) {
+  const newUi = useContext(NewUiFilterChips);
+  if (newUi)
+    return (
+      <Chip pressed={active} onClick={onClick} ariaLabel={ariaLabel}>
+        {label}
+        {count != null && <span className="f-chip-n">{count}</span>}
+      </Chip>
+    );
   return (
     <button
       type="button"

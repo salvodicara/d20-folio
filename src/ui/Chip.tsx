@@ -6,6 +6,7 @@ export function Chip({
   kind,
   disabled,
   title,
+  ariaLabel,
   onClick,
   children,
 }: {
@@ -14,6 +15,8 @@ export function Chip({
   /** A choice that cannot be taken now (it stays visible, with `title` saying why). */
   disabled?: boolean;
   title?: string;
+  /** The full name when the visible label is short (a bare level numeral). */
+  ariaLabel?: string;
   onClick?: () => void;
   children: ReactNode;
 }) {
@@ -31,6 +34,7 @@ export function Chip({
       className="f-chip"
       data-kind={kind}
       aria-pressed={pressed}
+      aria-label={ariaLabel}
       aria-disabled={disabled || undefined}
       title={title}
       onClick={disabled ? undefined : onClick}

@@ -552,6 +552,7 @@
   background: none;
   color: var(--text);
   text-align: left;
+  text-decoration: none;
   cursor: pointer;
 }
 .fui .f-choice:hover {
@@ -5145,5 +5146,173 @@
 @media (max-width: 360px) {
   .fui .f-lvl-hero h1 {
     font-size: var(--fs-lg);
+  }
+}
+
+/* The Compendium (prototypes comp, comp-detail, comp-filters): the filters, the results
+   and the open entry side by side on a wide screen; the filters in a sheet below 1281 px;
+   on a phone the entry replaces the list. */
+.fui .f-cmp {
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+.fui .f-cmp-bar {
+  display: flex;
+  gap: 12px;
+}
+.fui .f-cmp-bar > .f-btn {
+  height: 48px;
+}
+.fui .f-cmp-srch {
+  flex: 1;
+  width: auto;
+  height: 48px;
+}
+.fui .f-cmp-srch input {
+  font-size: var(--fs-md);
+}
+.fui .f-cmp-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 440px);
+  align-items: start;
+  gap: 24px;
+}
+@media (min-width: 1281px) {
+  .fui .f-cmp-grid {
+    grid-template-columns: 264px minmax(0, 1fr) 440px;
+  }
+}
+@media (max-width: 960px) {
+  .fui .f-cmp-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* the open entry stays in view while the list scrolls */
+@media (min-width: 961px) {
+  .fui .f-cmp-detail,
+  .fui .f-cmp-filters {
+    position: sticky;
+    top: 88px;
+    max-height: calc(100vh - 112px);
+    overflow-y: auto;
+  }
+}
+.fui .f-cmp-facets {
+  display: grid;
+  gap: 16px;
+}
+.fui .f-cmp-facets > .f-field > .f-lbl {
+  margin-bottom: 8px;
+}
+.fui .f-cmp-results .f-tabs {
+  margin-bottom: 8px;
+}
+/* a result row: the painted slot, the name over its line, the school or type on the right */
+.fui .f-cmp-row {
+  width: 100%;
+  grid-template-columns: 46px minmax(0, 1fr) max-content;
+  column-gap: 12px;
+  padding: 8px;
+  border: 0;
+  border-bottom: 1px solid var(--row-rule, var(--divider));
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fui .f-cmp-row:hover {
+  background: var(--hover, rgb(255 255 255 / 0.04));
+}
+.fui .f-cmp-row[aria-current] {
+  background: rgb(95 179 138 / 0.08);
+  box-shadow: inset 2px 0 0 var(--c-cmp);
+}
+.fui .f-cmp-row:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: -2px;
+}
+.fui .f-cmp-row .f-row-main > span {
+  display: block;
+}
+.fui .f-cmp-row .f-row-t {
+  font-weight: 700;
+  color: var(--white);
+}
+.fui .f-cmp-row .f-row-s {
+  font-size: var(--fs-sm);
+  color: var(--row-meta, var(--muted));
+}
+/* the school or type in its hue, lifted toward white so it reads on the panel */
+.fui .f-cmp-verdict {
+  font-size: var(--fs-sm);
+  color: color-mix(in oklab, var(--v, var(--muted)) 65%, var(--white));
+}
+.fui .f-cmp-empty {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 16px 0;
+}
+/* the open entry: the big slot, the name, the facts, the prose */
+.fui .f-act-slot.f-slot-big {
+  width: 64px;
+  height: 64px;
+}
+.fui .f-cmp-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.fui .f-cmp-name {
+  margin: 0;
+  font: 600 var(--fs-xl, 28px) / 1.1 var(--font-title);
+  color: var(--strong);
+}
+.fui .f-cmp-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 16px;
+  margin: 0 0 16px;
+}
+.fui .f-cmp-facts dd {
+  margin: 0;
+  color: var(--white);
+}
+.fui .f-cmp-prose {
+  color: var(--text);
+  line-height: 1.6;
+}
+/* a paragraph never ends on a word or two alone */
+.fui :is(.f-cmp-prose, .f-cmp-extras) :is(p, div) {
+  text-wrap: pretty;
+}
+.fui .f-cmp-extras {
+  margin-top: 16px;
+}
+.fui .f-cmp-extras .uc-tags {
+  gap: 4px;
+}
+.fui .f-cmp-extras .uc-tag {
+  padding: 4px 8px;
+}
+/* the codex's stat block and tags, read at the new UI's body size */
+.fui
+  .f-cmp-extras
+  :is(dt, th, .uc-tag, .beast-ref-label, [class*="text-micro"], .text-xs) {
+  font-size: var(--fs-xs, 12px);
+}
+@media (max-width: 640px) {
+  .fui .f-cmp-row {
+    grid-template-columns: 40px minmax(0, 1fr);
+    padding: 8px 0;
+  }
+  .fui .f-cmp-row .f-act-slot {
+    width: 40px;
+    height: 40px;
+  }
+  .fui .f-cmp-verdict {
+    display: none;
   }
 }

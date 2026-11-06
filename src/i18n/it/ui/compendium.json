@@ -7,6 +7,14 @@
     "emptyTitle": "Nessuna voce su questa pagina",
     "emptyHint": "Nessun elemento corrisponde alla ricerca e ai filtri.",
     "emptyReset": "Azzera ricerca e filtri",
-    "frontisHint": "Scegli una voce dall'indice per leggerla su questa pagina."
+    "frontisHint": "Scegli una voce dall'indice per leggerla su questa pagina.",
+    "results": "Risultati",
+    "detail": "Dettaglio",
+    "reset": "Azzera",
+    "showResults_one": "Mostra {{count}} risultato",
+    "showResults_other": "Mostra {{count}} risultati",
+    "count_one": "{{count}} voce",
+    "count_other": "{{count}} voci",
+    "cr": "GS {{cr}}"
   }
 }
