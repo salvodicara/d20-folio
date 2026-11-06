@@ -3211,27 +3211,8 @@
 .fui .f-act-slot[data-painted] > :is(.f-art, .f-spellart) {
   border-radius: inherit;
 }
-.fui .f-act-slot:hover {
-  border-color: var(--gold-hi);
-}
-.fui .f-act-slot:hover > .f-slot-tip {
-  display: block;
-}
-/* in a row the tooltip opens below the slot, from its left edge, inside the panel */
-.fui .f-act-slot > .f-slot-tip {
-  top: calc(100% + 8px);
-  bottom: auto;
-  left: 0;
-  transform: none;
-}
 .fui .f-act[data-blocked] .f-act-slot[data-painted] > :is(.f-art, .f-spellart) {
   filter: grayscale(0.85) brightness(0.55);
-}
-/* «Elenco | Icone»: the hotbar is a veteran's choice, rows stay the default */
-.fui .f-view {
-  display: inline-flex;
-  gap: 4px;
-  margin-left: auto;
 }
 .fui .f-act-head > span:first-child {
   min-width: 0;
@@ -5165,24 +5146,4 @@
   .fui .f-lvl-hero h1 {
     font-size: var(--fs-lg);
   }
-}
-
-/* ---------- Play actions as BG3's hotbar (BG3-STYLE §2; bg3-ui/z-hotbar) ---------- */
-.fui .f-hotbar {
-  margin: 4px 0 12px;
-}
-.fui .f-hotslot > .f-slot-art > .f-act-slot {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  border-radius: 0;
-}
-.fui .f-hotslot[data-dim] > .f-slot-art {
-  filter: grayscale(0.85) brightness(0.55);
-}
-.fui .f-hotslot[data-live] {
-  border-color: var(--gold-hi);
-}
-.fui .f-hotslot:disabled {
-  cursor: default;
 }

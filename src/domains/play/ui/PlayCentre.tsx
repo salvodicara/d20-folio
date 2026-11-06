@@ -53,7 +53,6 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Art, Button, Chip, Icon, Tabs } from "@/ui";
-import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 
@@ -182,17 +181,7 @@ export function PlayCentre({
 
 const SPELL_SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
 
-type ActionsView = "rows" | "icons";
-const VIEW_KEY = "folio.play.actionsView";
-function readActionsView(): ActionsView {
-  try {
-    return localStorage.getItem(VIEW_KEY) === "icons" ? "icons" : "rows";
-  } catch {
-    return "rows";
-  }
-}
-
-/** A row's painted icon: a spell through its school's art, a weapon, item or feature its own art. */
+/** A row's painted icon: a spell through its school's art, anything else its own art. */
 function rowArt(row: PlayActionRow) {
   const school = row.spellId ? SPELL_SCHOOL.get(row.spellId) : undefined;
   if (school && row.spellId)
@@ -221,19 +210,6 @@ function ActionsPane({
   const { t } = useTranslation();
   const [filter, setFilter] = useState<Filter>("all");
   const actions = playActionsView(doc, locale, turn);
-  // Rows by default (the overview a new player needs); on a wide screen a veteran can
-  // switch to BG3's hotbar, each group a run of square action slots (BG3-STYLE §2).
-  const wide = useMediaQuery("(min-width: 1101px)");
-  const [view, setView] = useState<ActionsView>(readActionsView);
-  const hotbar = wide && view === "icons";
-  const pickView = (next: ActionsView) => {
-    setView(next);
-    try {
-      localStorage.setItem(VIEW_KEY, next);
-    } catch {
-      /* a private window keeps the choice for this visit only */
-    }
-  };
   const keep = (group: ActionGroup, row: PlayActionRow) =>
     filter === "all" ||
     (filter === "attacks" && row.attack) ||
@@ -251,18 +227,8 @@ function ActionsPane({
             {t(FILTER_KEY[f])}
           </Chip>
         ))}
-        {wide && (
-          <span className="f-view" role="group" aria-label={t("play.view.label")}>
-            {(["rows", "icons"] as const).map((v) => (
-              <Chip key={v} pressed={view === v} onClick={() => pickView(v)}>
-                <Icon name={v === "rows" ? "u-menu" : "u-sections"} />
-                {t(`play.view.${v}`)}
-              </Chip>
-            ))}
-          </span>
-        )}
       </div>
-      {!hotbar && <TableHead />}
+      <TableHead />
       {actions.groups.map(({ group, rows }) => {
         const kept = rows.filter((r) => keep(group, r));
         if (kept.length === 0) return null;
@@ -274,15 +240,9 @@ function ActionsPane({
               )}
               {t(GROUP_KEY[group])}
             </h3>
-            {hotbar ? (
-              <div className="f-slots-run f-hotbar">
-                {kept.map((row) => (
-                  <ActionLine key={row.id} row={row} locale={locale} slot />
-                ))}
-              </div>
-            ) : (
-              kept.map((row) => <ActionLine key={row.id} row={row} locale={locale} />)
-            )}
+            {kept.map((row) => (
+              <ActionLine key={row.id} row={row} locale={locale} />
+            ))}
           </section>
         );
       })}
@@ -748,14 +708,11 @@ function ActionLine({
   row,
   locale,
   spell,
-  slot,
 }: {
   row: PlayActionRow;
   locale: Locale;
   /** On the Spells tab: an unprepared spell is not cast, or is cast as a Ritual. */
   spell?: { prepared: boolean; ritual: boolean };
-  /** Drawn as a BG3 hotbar slot: the art, a tooltip at the icon, a click to use it. */
-  slot?: boolean;
 }) {
   const { t } = useTranslation();
   const { executeAction } = useTurnEconomy();
@@ -831,96 +788,9 @@ function ActionLine({
     : row.healing
       ? t("play.healing", { amount: row.healing })
       : "";
-  const dialogs = (
-    <>
-      {helping && doc && (
-        <PlayHelp
-          view={helping}
-          onClose={() => setHelping(null)}
-          onHelp={(targetId) => {
-            setHelping(null);
-            executeAction(row.action);
-            const undo = giveHelp(targetId, doc.id);
-            const ally = helping.allies.find((a) => a.id === targetId);
-            const name =
-              ally?.name ?? helping.enemies.find((e) => e.id === targetId)?.name ?? "";
-            if (undo) {
-              useToastStore.getState().showToast({
-                message: t(ally ? "play.help.givenAlly" : "play.help.given", { name }),
-                duration: 6000,
-                onUndo: undo,
-              });
-            }
-          }}
-        />
-      )}
-      {sparing && (
-        <PlaySpare
-          spellName={row.name}
-          view={sparing}
-          onClose={() => setSparing(null)}
-          onCast={(spared) => {
-            setSparing(null);
-            executeAction(row.action, { spared });
-          }}
-        />
-      )}
-      {picking && (
-        <PlayWeaponPick
-          spellName={row.name}
-          choices={picking}
-          onClose={() => setPicking(null)}
-          onCast={(pick, damageType) => {
-            setPicking(null);
-            executeAction(row.action, {
-              weapon: pick.address,
-              ...(damageType ? { damageType } : {}),
-            });
-          }}
-        />
-      )}
-    </>
-  );
-  // BG3's tooltip at the icon: name, kind, hit and effect, range, why it is blocked.
-  const tip = (
-    <span className="f-slot-tip" aria-hidden="true">
-      <b>{row.name}</b>
-      {sub.length > 0 && <small>{sub.join(" · ")}</small>}
-      {(hit || effect) && <em>{[hit, effect].filter(Boolean).join("\u00a0· ")}</em>}
-      {row.range && <small>{row.range}</small>}
-      {reason && !cta.state.spent && <small>{reason}</small>}
-    </span>
-  );
-  if (slot) {
-    const label = cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb]);
-    return (
-      <>
-        <button
-          type="button"
-          className="f-slot f-hotslot"
-          data-dim={cta.state.disabled || cta.state.spent || undefined}
-          data-live={cta.state.emphasis || undefined}
-          aria-label={`${label}: ${row.name}`}
-          disabled={readonly || cta.state.disabled}
-          onClick={cast}
-        >
-          <span className="f-slot-art" aria-hidden="true">
-            <ActionIcon icon={actionIcon(row)} art={rowArt(row)} />
-          </span>
-          {row.uses && (
-            <span className="f-slot-lv" aria-hidden="true">
-              {row.uses.current}
-            </span>
-          )}
-          {tip}
-        </button>
-        {dialogs}
-      </>
-    );
-  }
   return (
     <div className="f-act" data-blocked={row.blocked || undefined}>
-      <ActionIcon icon={actionIcon(row)} art={rowArt(row)} tip={tip} />
+      <ActionIcon icon={actionIcon(row)} art={rowArt(row)} />
       <div className="f-row-main">
         <div className="f-row-t">{row.name}</div>
         {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
@@ -968,7 +838,52 @@ function ActionLine({
           </Button>
         )
       )}
-      {dialogs}
+      {helping && doc && (
+        <PlayHelp
+          view={helping}
+          onClose={() => setHelping(null)}
+          onHelp={(targetId) => {
+            setHelping(null);
+            executeAction(row.action);
+            const undo = giveHelp(targetId, doc.id);
+            const ally = helping.allies.find((a) => a.id === targetId);
+            const name =
+              ally?.name ?? helping.enemies.find((e) => e.id === targetId)?.name ?? "";
+            if (undo) {
+              useToastStore.getState().showToast({
+                message: t(ally ? "play.help.givenAlly" : "play.help.given", { name }),
+                duration: 6000,
+                onUndo: undo,
+              });
+            }
+          }}
+        />
+      )}
+      {sparing && (
+        <PlaySpare
+          spellName={row.name}
+          view={sparing}
+          onClose={() => setSparing(null)}
+          onCast={(spared) => {
+            setSparing(null);
+            executeAction(row.action, { spared });
+          }}
+        />
+      )}
+      {picking && (
+        <PlayWeaponPick
+          spellName={row.name}
+          choices={picking}
+          onClose={() => setPicking(null)}
+          onCast={(pick, damageType) => {
+            setPicking(null);
+            executeAction(row.action, {
+              weapon: pick.address,
+              ...(damageType ? { damageType } : {}),
+            });
+          }}
+        />
+      )}
     </div>
   );
 }

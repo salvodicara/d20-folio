@@ -10,11 +10,6 @@
     "allSkills": "Tutte le {{count}} abilità",
     "fewerSkills": "Solo le principali",
     "filterLabel": "Filtra le azioni",
-    "view": {
-      "label": "Vista delle azioni",
-      "rows": "Elenco",
-      "icons": "Icone"
-    },
     "filter": {
       "all": "Tutto",
       "limited": "Uso limitato"

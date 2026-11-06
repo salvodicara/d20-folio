@@ -10,11 +10,6 @@
     "allSkills": "All {{count}} skills",
     "fewerSkills": "Just the main ones",
     "filterLabel": "Filter the actions",
-    "view": {
-      "label": "Actions view",
-      "rows": "List",
-      "icons": "Icons"
-    },
     "filter": {
       "all": "All",
       "limited": "Limited use"

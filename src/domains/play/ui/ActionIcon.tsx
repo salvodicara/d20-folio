@@ -159,22 +159,13 @@ export function ActionGlyph({ icon }: { icon: ActionIconKey }) {
 }
 
 /**
- * The row's square slot: the painted `art` when there is one (BG3's hotbar art), else the
- * glyph; `tip` is the BG3 tooltip shown on hover.
+ * The row's square slot: the painted `art` when there is one (BG3's slot art), else the
+ * glyph. A full row needs no tooltip: the row already says everything.
  */
-export function ActionIcon({
-  icon,
-  art,
-  tip,
-}: {
-  icon: ActionIconKey;
-  art?: ReactNode;
-  tip?: ReactNode;
-}) {
+export function ActionIcon({ icon, art }: { icon: ActionIconKey; art?: ReactNode }) {
   return (
     <span className="f-act-slot" data-painted={art ? "" : undefined} aria-hidden="true">
       {art ?? createElement(glyphOf(icon))}
-      {tip}
     </span>
   );
 }
