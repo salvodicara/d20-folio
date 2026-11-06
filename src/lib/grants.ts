@@ -998,6 +998,20 @@ export interface ManifestedWeapon {
   };
 }
 
+/** A Bonus Action attack a feature adds after an attack with a qualifying weapon
+ *  (`weapon-bonus-attack`, Pole Strike). */
+export interface WeaponBonusAttack {
+  sourceId: string;
+  id: string;
+  name: LocText;
+  weapons: ReadonlyArray<{
+    ids?: ReadonlyArray<string>;
+    properties?: ReadonlyArray<string>;
+  }>;
+  damageDie: string;
+  damageType: DamageType;
+}
+
 /**
  * A natural-weapon attack row a TRANSFORMATION form grants while active (Wild
  * Shape beast bite, Starry Form Archer attack, Armorer Thunder Pulse). The
@@ -2198,6 +2212,10 @@ export interface AggregatedGrants {
    */
   manifestedWeapons: ReadonlyArray<ManifestedWeapon>;
 
+  /** Bonus Action attacks after an attack with a qualifying weapon (Pole Strike),
+   *  deduped by id; the carried-weapon rows read them. */
+  weaponBonusAttacks: ReadonlyArray<WeaponBonusAttack>;
+
   /**
    * Form-swap natural-weapon attack rows from the character's ACTIVE
    * transformation forms (Druid Wild Shape beast bite, Stars Druid Starry Form
@@ -2435,6 +2453,7 @@ export function emptyAggregate(): AggregatedGrants {
     choiceResistances: [],
     grantedActions: [],
     manifestedWeapons: [],
+    weaponBonusAttacks: [],
     formAttacks: [],
     pactWeapons: [],
     pactWeaponRiders: [],
@@ -2732,6 +2751,7 @@ export function evaluateGrants(
 
   // Manifested weapons (Soulknife Psychic Blades) — deduped by id.
   const manifestedWeapons: ManifestedWeapon[] = [];
+  const weaponBonusAttacks: WeaponBonusAttack[] = [];
 
   // Form-swap attack rows (Wild Shape / Arcane Armor / Starry Form) — only the
   // rows from ACTIVE forms land here (collected inside the active `while-active`
@@ -3889,6 +3909,19 @@ export function evaluateGrants(
         });
         break;
 
+      case "weapon-bonus-attack":
+        if (!weaponBonusAttacks.some((w) => w.id === g.id)) {
+          weaponBonusAttacks.push({
+            sourceId,
+            id: g.id,
+            name: grantField(gref, "name", g.name),
+            weapons: g.weapons,
+            damageDie: g.damageDie,
+            damageType: g.damageType,
+          });
+        }
+        break;
+
       // ── Manifested weapon (Soulknife Psychic Blades) ──────────────────
       case "manifested-weapon":
         // Dedupe by id — the same feature can't usefully manifest the same
@@ -4340,6 +4373,7 @@ export function evaluateGrants(
     choiceResistances,
     grantedActions,
     manifestedWeapons,
+    weaponBonusAttacks,
     formAttacks,
     pactWeapons,
     pactWeaponRiders,

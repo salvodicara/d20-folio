@@ -598,6 +598,7 @@
     "reactionTrigger_meleeAttackMissesYou": "a creature misses you with a melee attack roll",
     "nextAttack": "Next attack",
     "extraDamage": "Extra damage",
+    "bonusAttackName": "{{name}} ({{attack}})",
     "offhandName": "{{name}} (off-hand)",
     "pactProneNote": "{{rider}}: spend a Pact Magic slot; target Prone (Huge or smaller)",
     "shortfall": {

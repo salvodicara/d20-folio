@@ -16,6 +16,6 @@
 
 **Files.**
 
-- `<kind>/<id>.webp` with `kind` one of spell, class, subclass, feat, item, equipment, monster and `id` the catalogue id (`tests/unit/art-assets.guard.test.ts` checks every file names an entry).
+- `<kind>/<id>.webp` with `kind` one of spell, class, subclass, feat, item, equipment, monster, feature, species, action and `id` the catalogue id (`tests/unit/art-assets.guard.test.ts` checks every file names an entry).
 - WebP q80, 192 × 192 (256 × 256 for class and subclass crests), from 1024 × 1024 PNG masters kept in the owner's archive (`~/Workspace/Codex/folio-icone-2026-11-05/`, with every prompt and a manifest), never in the repo.
 - Never precached: the service worker caches each icon on first view (`icon-art-cache`, 400 entries).

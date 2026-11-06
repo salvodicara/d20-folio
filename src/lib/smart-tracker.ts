@@ -880,6 +880,11 @@ export interface ResolvedAction {
   /** True for a Light melee weapon's MAIN attack row — committing it as the
    *  Attack action is what unlocks the {@link offhand} bonus attack. */
   lightWeapon?: boolean;
+  /** A feature's Bonus Action attack with this weapon (`weapon-bonus-attack`, Pole
+   *  Strike): the id of the weapon's main row, whose committed attack unlocks it. */
+  bonusAttackAfter?: string;
+  /** That feature attack's name; the view adds it to the weapon's name. */
+  bonusAttackName?: LocText;
   /** True for a natural-weapon attack a FORM grants (Wild Shape beast bite,
    *  Starry Form attack, Armorer Thunder Pulse / Lightning Launcher). Present
    *  ONLY while the form toggle is lit (the row retracts when toggled off); lets
@@ -8218,6 +8223,52 @@ function resolveWeaponActions(
       pinned: !unpinnedSet.has(weaponId),
       defaultPinned: true,
     });
+
+    // A feature's Bonus Action attack with this same weapon (Pole Strike): the
+    // weapon's to-hit and modifier, the feature's die and damage type.
+    if (!isRangedWeapon) {
+      const has = (prop: string) =>
+        properties.some((q) => q.toLowerCase().startsWith(prop.toLowerCase()));
+      for (const extra of grantAgg.weaponBonusAttacks) {
+        const qualifies = extra.weapons.some(
+          (w) =>
+            (w.ids?.includes(srdWeaponId ?? "") ?? false) ||
+            (w.properties !== undefined &&
+              w.properties.length > 0 &&
+              w.properties.every(has))
+        );
+        if (!qualifies) continue;
+        const id = `${weaponId}-${extra.id}`;
+        actions.push({
+          id,
+          ...(srdWeaponId ? { weaponId: srdWeaponId } : {}),
+          name,
+          bonusAttackAfter: weaponId,
+          bonusAttackName: extra.name,
+          type: "bonus",
+          source: "weapon",
+          spellLevel: null,
+          concentration: false,
+          summary: {
+            attackBonus: weaponAtkBonus,
+            ...(attackBreakdown.length > 0 ? { attackBreakdown } : {}),
+            damage: appendAbilityModToDice(extra.damageDie, damageMod),
+            damageType: extra.damageType,
+            weaponRange: range,
+            properties: [...properties],
+            ...(srdWeapon?.weaponCategory
+              ? { weaponCategory: srdWeapon.weaponCategory }
+              : {}),
+            ...(ownedMastery ? { weaponMastery: ownedMastery } : {}),
+            ...(Object.keys(masteryDetail).length > 0 ? { masteryDetail } : {}),
+            ...(extraDamage.length > 0 ? { extraDamage } : {}),
+          },
+          costsSlot: false,
+          pinned: !unpinnedSet.has(id),
+          defaultPinned: true,
+        });
+      }
+    }
   }
 
   // 3b. Manifested weapons (Soulknife Psychic Blades): feature-created weapons
