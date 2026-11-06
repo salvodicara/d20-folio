@@ -13,6 +13,7 @@
  */
 import { concentrationSaveDc } from "@/lib/compute";
 import { damageQueuesConcentrationSave } from "@/lib/character-d20-tests";
+import type { DamageRetaliation, DamageTransfer } from "@/lib/combat-transition";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState, PendingConcentrationSave } from "@/types/combat-state";
 
@@ -24,6 +25,10 @@ import { foldPeerSpends, PEER_SPENDS_CAP, type PeerSpend } from "./peer-spends";
 export interface PeerHit {
   state: CombatState;
   spends: PeerSpend[];
+  /** The hit's shared damage (Warding Bond), for the writer to hand on. */
+  transfers: DamageTransfer[];
+  /** What the hit sends back to its attacker (Armor of Agathys). */
+  retaliations: DamageRetaliation[];
 }
 
 /**
@@ -49,7 +54,8 @@ export function peerHit(
     { ...opts, fromPeer: ledgerFull },
     newId
   );
-  if (!resolved) return { state: current, spends: [], ledgerFull };
+  if (!resolved)
+    return { state: current, spends: [], transfers: [], retaliations: [], ledgerFull };
   const spends: PeerSpend[] = [
     ...Object.entries(resolved.taken.spent.pools).map(
       ([trackerId, absorbed]): PeerSpend => ({
@@ -63,7 +69,13 @@ export function peerHit(
       (key): PeerSpend => ({ id: newId(), kind: "state-end", key })
     ),
   ];
-  return { state: resolved.state, spends, ledgerFull };
+  return {
+    state: resolved.state,
+    spends,
+    transfers: [...resolved.taken.transition.transfers],
+    retaliations: [...resolved.taken.transition.retaliations],
+    ledgerFull,
+  };
 }
 
 /** A hit from another device without the ledger: the stages that would spend
@@ -75,10 +87,32 @@ export function peerDamageState(
   opts: DamageOptions = {},
   newId: () => string = () => crypto.randomUUID()
 ): CombatState {
-  return (
-    resolvePeerHit(doc, current, amount, { ...opts, fromPeer: true }, newId)?.state ??
-    current
+  return peerDamageHit(doc, current, amount, opts, newId).state;
+}
+
+/** {@link peerDamageState} with what the hit owes others (Warding Bond's share, Armor of
+ *  Agathys' cold). */
+export function peerDamageHit(
+  doc: CharacterDoc,
+  current: CombatState,
+  amount: number,
+  opts: DamageOptions = {},
+  newId: () => string = () => crypto.randomUUID()
+): Pick<PeerHit, "state" | "transfers" | "retaliations"> {
+  const resolved = resolvePeerHit(
+    doc,
+    current,
+    amount,
+    { ...opts, fromPeer: true },
+    newId
   );
+  return resolved
+    ? {
+        state: resolved.state,
+        transfers: [...resolved.taken.transition.transfers],
+        retaliations: [...resolved.taken.transition.retaliations],
+      }
+    : { state: current, transfers: [], retaliations: [] };
 }
 
 function resolvePeerHit(

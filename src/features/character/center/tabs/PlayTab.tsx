@@ -148,10 +148,10 @@ import {
 } from "@/lib/play/escape-grapple";
 import {
   actionHigherLevels,
-  concentrationLabel,
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { vitalExhaustion } from "@/lib/character-vitals";
 import { useTurnEconomy } from "../useTurnEconomy";
 // The verdict composers live in the sibling helpers module (the same pattern as

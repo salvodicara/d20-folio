@@ -252,16 +252,24 @@ export function initAuthListener(): () => void {
   // exercises Firebase tokens, Firestore rules and listeners without a Google popup
   // (which cannot complete reliably in embedded browsers). Production cannot enter
   // this branch because both flags are compile-time false there.
-  if (EMULATOR_SANDBOX && !auth.currentUser) {
-    void signInWithEmailAndPassword(auth, SANDBOX_EMAIL, SANDBOX_PASSWORD).catch(
-      (error: unknown) => {
+  // It waits for the saved session first: a sandbox player signed in on purpose (by
+  // hand, or by the rehearsal suite) stays that player across reloads; only a browser
+  // with no session gets the DM account.
+  if (EMULATOR_SANDBOX) {
+    void auth
+      .authStateReady()
+      .then(() =>
+        auth.currentUser
+          ? undefined
+          : signInWithEmailAndPassword(auth, SANDBOX_EMAIL, SANDBOX_PASSWORD)
+      )
+      .catch((error: unknown) => {
         const store = useAuthStore.getState();
         const message = error instanceof Error ? error.message : "Sandbox sign-in failed";
         console.error("Failed to sign into the local Firebase sandbox:", error);
         store.setError(message);
         store.setInitialized(true);
-      }
-    );
+      });
   }
 
   const unsubscribe = onAuthStateChanged(auth, (user) => {

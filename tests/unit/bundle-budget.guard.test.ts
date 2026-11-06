@@ -164,6 +164,15 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // to 858.1 KB gz with the same chunk families, `cockpit-engine` the bulk (no lazy chunk
 // became eager). The prod client configuration adds ~1.7 KB, so 864 keeps ~4 KB
 // never-exact-fit headroom over production. Shaving cockpit-engine stays frontier #1.
+// 2026-11-06: measured 820.0 KB gz (JS 741.1 + CSS 78.9, 50 chunks), down from 864.4 on
+// the same machine: the undo toasts no longer import the tracker presenters (their
+// concentration label has its own module) and the `cockpit-engine` manualChunks bucket is
+// gone, so the combat engine and its views ship in lazy chunks (eager-graph.guard.test.ts
+// pins them out). The ceiling stays at 864: the ~44 KB under it is headroom.
+// 2026-11-06 (later): 799.7 KB gz (JS 720.8 + CSS 78.9, 46 chunks), −20.3: the roster
+// cache's WRITE side (`buildCharacterCache`, the grant-aware AC/HP engine) moved to
+// `character-cache-build.ts`, loaded on demand, so the eager persistence layer no longer
+// drags aggregate-character, conditions, vitals and polymorph. ~64 KB headroom.
 const EAGER_CEILING_KB = 864; // baseline 727.1 → ~+18% (over budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only
@@ -563,15 +572,19 @@ const EAGER_ALLOWLIST: { chunk: string; reason: string }[] = [
       "engine-layer SRD-lazy finding.",
   },
   {
-    chunk: "cockpit-engine",
+    chunk: "srd-class-options",
     reason:
-      "The cockpit combat ENGINE itself (smart-tracker + the combat/level-up/inventory view-models " +
-      "+ the per-step pick resolvers), pinned to one cacheable chunk via manualChunks so it never " +
-      "inlines into the ENTRY script — a graph-shape change from the id-storage refactor had " +
-      "ballooned the entry past its ceiling. Eager-reachable through the always-eager character " +
-      "store's combat-state actions (timers/potions/trackers); making it lazy-per-route is the SAME " +
-      "deferred engine-layer P3 finding as the SRD corpus chunks above. Consolidates previously-" +
-      "distributed eager engine modules (no new eager bytes — the eager-closure budget still holds).",
+      "The composed SRD + pack data the always-eager character store reads synchronously (class " +
+      "options, the pack corpora and EN facts, and the grant helpers the bundler groups with " +
+      "them). Before 2026-11-06 the same bytes rode the `cockpit-engine` bucket; that bucket is " +
+      "gone so the combat engine falls to a lazy chunk (eager-graph.guard). Deferred to the same " +
+      "engine-layer SRD-lazy finding.",
+  },
+  {
+    chunk: "srd-content",
+    reason:
+      "SRD spells, magic items and equipment — same synchronous character-store reachability " +
+      "as srd-class-options; deferred to the engine-layer SRD-lazy finding.",
   },
 ];
 

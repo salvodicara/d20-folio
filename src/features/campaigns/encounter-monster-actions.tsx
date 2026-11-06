@@ -36,6 +36,7 @@ import {
   monsterActionDamageTypes,
   monsterActionDice,
   monsterActions,
+  monsterLandingHit,
   monsterTrayLandings,
   monsterTrayPlan,
   type MonsterAction,
@@ -47,7 +48,7 @@ import { writeCampaignCombatEffect } from "./campaign-io";
 import { recordCondition, recordPcHp } from "./combat-chronicle";
 import { setMonsterCondition } from "./encounter";
 import type { EncounterCombatantView } from "./encounter-view";
-import { applyAdversaryDamage } from "./encounter-world-command";
+import { applyAdversaryDamage, landRetaliations } from "./encounter-world-command";
 import type { ApplyFn, MonsterActionsContext } from "./party-encounter";
 
 type T = ReturnType<typeof useTranslation>["t"];
@@ -357,7 +358,8 @@ function applyMonsterAction({
     );
   }
 
-  for (const { targetId, amount, conditions } of landings) {
+  for (const landing of landings) {
+    const { targetId, amount, conditions } = landing;
     const row = byId.get(targetId);
     if (row?.kind !== "pc" || !row.memberUid || !row.characterId) continue;
     const { memberUid, characterId, maxHp } = row;
@@ -367,24 +369,31 @@ function applyMonsterAction({
         .getState()
         .showToast({ message: t("campaignHub.combatWriteFailed"), duration: 6000 });
     };
+    // The hit's own stages run on the PC's sheet (Armor of Agathys answers a melee
+    // hit), and what it sends back lands on this monster here, where the DM writes it.
+    const hit = monsterLandingHit(plan, actorId, landing);
     if (amount > 0)
       void writeCampaignCombatEffect(memberUid, characterId, null, maxHp, {
         kind: "hp",
-        operation: { kind: "damage", amount },
+        operation: { kind: "damage", amount, ...(hit ? { hit } : {}) },
       })
-        .then(({ before, after }) =>
+        .then(({ before, after, retaliations }) =>
           apply((encounter) =>
-            recordPcHp(encounter, {
-              targetId,
-              kind: "damage",
-              amount,
-              preCurrent: before.hp.current,
-              postCurrent: after.hp.current,
-              max: maxHp,
-              attackerId: actorId,
-              action: source,
-              tempAbsorbed: Math.max(0, before.hp.temp - after.hp.temp),
-            })
+            landRetaliations(
+              recordPcHp(encounter, {
+                targetId,
+                kind: "damage",
+                amount,
+                preCurrent: before.hp.current,
+                postCurrent: after.hp.current,
+                max: maxHp,
+                attackerId: actorId,
+                action: source,
+                tempAbsorbed: Math.max(0, before.hp.temp - after.hp.temp),
+              }),
+              campaignId,
+              retaliations
+            )
           )
         )
         .catch(failed);

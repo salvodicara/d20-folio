@@ -185,6 +185,25 @@ export interface MonsterTrayLanding {
   outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
 }
 
+/**
+ * The hit a monster's landing is, for the damage rule's hit stages (Armor of Agathys
+ * answers a melee hit): the monster as attacker, melee when its plan is a melee
+ * attack. None for a miss or a save, which are no hit.
+ */
+export function monsterLandingHit(
+  plan: Pick<DamageTrayPlan, "melee">,
+  monsterId: string,
+  landing: Pick<MonsterTrayLanding, "outcome">
+):
+  | { attacker: { kind: "monster"; combatantId: string }; attackMode: "melee" | "ranged" }
+  | undefined {
+  if (landing.outcome !== "hit" && landing.outcome !== "critical") return undefined;
+  return {
+    attacker: { kind: "monster", combatantId: monsterId },
+    attackMode: plan.melee ? "melee" : "ranged",
+  };
+}
+
 export function monsterTrayLandings(
   plan: DamageTrayPlan,
   rows: ReadonlyArray<TrayRow>,

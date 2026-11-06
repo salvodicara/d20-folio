@@ -86,6 +86,16 @@ export interface PcDamageTransitionResult {
   changed: boolean;
 }
 
+/** One share of a hit's damage another creature takes (Warding Bond: the caster takes
+ *  the same amount, after the target's Resistance). Every entry point that commits a
+ *  hit hands these on (tests/unit/damage-transfer.test.ts). */
+export type DamageTransfer = PcDamageTransitionResult["transfers"][number];
+
+/** Damage a hit sends back to its attacker (Armor of Agathys: 5 Cold to a creature that
+ *  hits you in melee while its Temporary Hit Points hold). The DM's monster actions,
+ *  which know the attacker, hand the hit in and land these on it. */
+export type DamageRetaliation = PcDamageTransitionResult["retaliations"][number];
+
 /** Reduce one entered hit without IO, localization, source-id branches, or dice. */
 export function reducePcDamage(input: PcDamageTransitionInput): PcDamageTransitionResult {
   const max = Math.max(0, Math.round(input.state.hp.max));

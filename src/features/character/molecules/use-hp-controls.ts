@@ -202,9 +202,12 @@ export function useHpControls(): HpControls {
   // while-active ones — a RAGING Barbarian's B/P/S resistance rides
   // `activeFeatures`) and the death-save crit threshold (Champion Survivor).
   // Memoized on the same narrow slices every aggregate consumer keys on.
-  const charData = character?.character;
-  const session = character?.session;
+  // Keyed on the whole sheet: an ally's effect (Warding Bond's Resistance) lands as a
+  // projection attached to the SAME session object on a new sheet, so a memo keyed on
+  // the session kept the defenses from before it landed.
   const defenses = useMemo(() => {
+    const charData = character?.character;
+    const session = character?.session;
     if (!charData || !session) {
       return NO_DEFENSES;
     }
@@ -221,7 +224,7 @@ export function useHpControls(): HpControls {
       isHeavyArmorEquipped(charData.equipment, getEquipment),
       effectiveSessionConditions(session)
     );
-  }, [charData, session]);
+  }, [character]);
 
   const defended = useMemo(() => defendedDamageTypes(defenses), [defenses]);
   const resistedSources = useMemo(

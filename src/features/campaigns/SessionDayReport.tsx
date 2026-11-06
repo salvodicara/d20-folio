@@ -18,7 +18,8 @@ import {
   renderSessionReport,
   type SessionReportNames,
 } from "@/lib/views/session-report-view";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
 

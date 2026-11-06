@@ -14,7 +14,7 @@ import {
   holdsCustomSpellConcentration,
   normalizeStoredConcentration,
 } from "@/lib/concentration";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { applyActionConcentration } from "@/features/character/center/action-state-commit";
 import { resolveActions, type ResolvedAction } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";

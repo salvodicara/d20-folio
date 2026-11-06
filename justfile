@@ -73,6 +73,11 @@ ci-srd-only:
 e2e-pack:
     bash scripts/pack/e2e-pack.sh
 
+# The release rehearsal: a player's whole journey on the new-UI build (VITE_NEW_UI +
+# the v0.26 combat effects) against the seeded emulators. Run it under the heavy lock.
+e2e-rehearsal *args:
+    bash scripts/e2e-rehearsal.sh {{args}}
+
 # ─── Build ────────────────────────────────────────────────
 
 # Production build
@@ -91,7 +96,7 @@ pack-fresh:
 # The bundle budget on the COMPOSED build, the one `deploy.yml` ships. CI's `build +
 # budget` job builds SRD-only, so the private pack's growth (its EN text rides the
 # eager closure) is measured here, in CI's `build + budget (composed)` PR job, in
-# Verify's `unit + budget (composed)` job and at deploy time. Needs `content-pack` linked to the pack's origin/main.
+# Verify's `conformance + budget (composed)` job and at deploy time. Needs `content-pack` linked to the pack's origin/main.
 budget-pack: pack-fresh
     @test -e content-pack/index.ts || { echo "✗ content-pack is not linked: link the pack (its origin/main) first."; exit 1; }
     pnpm build

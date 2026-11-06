@@ -6,6 +6,7 @@
  * allies and enemies. One target: a tap commits. Several: tick up to `max`, then
  * confirm. "Skip" always commits without a target; closing cancels (nothing spent).
  */
+import { useLiveTargetName } from "@/features/character/center/use-live-target-name";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogBody, DialogFooter } from "@/components/ui/dialog";
@@ -59,6 +60,7 @@ function TargetPickerContent({
   const { step } = request;
   const many = step.max > 1;
   const [picked, setPicked] = useState<string[]>([]);
+  const nameOf = useLiveTargetName();
   const hint = many
     ? t("combat.targetStepHintMany", { count: step.max })
     : t("combat.targetStepHintOne");
@@ -75,8 +77,8 @@ function TargetPickerContent({
   const row = (candidate: TargetCandidate) => {
     const on = picked.includes(candidate.id);
     const name = candidate.self
-      ? t("combat.targetMe", { name: candidate.name })
-      : candidate.name;
+      ? t("combat.targetMe", { name: nameOf(candidate) })
+      : nameOf(candidate);
     return (
       <button
         key={candidate.id}
@@ -91,7 +93,7 @@ function TargetPickerContent({
           <Portrait
             src={candidate.portraitUrl ?? null}
             crop={candidate.portraitCrop ?? null}
-            name={candidate.name}
+            name={nameOf(candidate)}
             seed={candidate.id}
           />
         </span>

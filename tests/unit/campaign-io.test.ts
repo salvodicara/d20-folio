@@ -154,6 +154,7 @@ import {
   undoTreasuryEntry,
   updateCampaign,
   writeCampaignCombatEffect,
+  deliverDamageTransfers,
   removeMember,
   revokePersistentCombatEffect,
   revokePersistentCombatEffectsBySource,
@@ -254,6 +255,60 @@ describe("campaign-io — reviewed combat effects", () => {
     expect(set.mock.calls[0]?.[1]).not.toHaveProperty("playState");
     expect(JSON.stringify(playState)).toBe(
       JSON.stringify({ version: 1, state: { exhaustion: 2 } })
+    );
+  });
+
+  it("lands a Warding Bond share on the caster, once, as a hit that is not an attack", async () => {
+    const set = vi.fn();
+    const paths: string[] = [];
+    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
+      fn({
+        get: (ref: { __doc?: unknown[] }) => {
+          const path = ref.__doc?.slice(1).join("/") ?? "";
+          paths.push(path);
+          if (path === "users/pal/characters/char-pal") {
+            return Promise.resolve({
+              exists: () => true,
+              data: () => ({ status: "active", playStateVersion: 1 }),
+            });
+          }
+          return Promise.resolve({
+            exists: () => true,
+            data: () => ({
+              actionRevision: 1,
+              actionHead: null,
+              hp: { current: 30, temp: 0 },
+              conditions: [],
+              initiativeRoll: null,
+              deathSaves: { successes: 0, failures: 0 },
+              round: 1,
+              playState: { version: 1, state: {} },
+            }),
+          });
+        },
+        set,
+      })
+    );
+
+    await deliverDamageTransfers([
+      {
+        target: {
+          kind: "pc",
+          combatantId: "pc-pal",
+          memberUid: "pal",
+          characterId: "char-pal",
+        },
+        amount: 7,
+        effectId: "wb-1",
+      },
+    ]);
+
+    expect(runTransactionMock).toHaveBeenCalledTimes(1);
+    expect(paths).toContain("users/pal/characters/char-pal/combat/state");
+    expect(set).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ hp: { current: 23, temp: 0 } }),
+      { merge: true }
     );
   });
 

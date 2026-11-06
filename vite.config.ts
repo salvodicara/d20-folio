@@ -481,27 +481,6 @@ export default defineConfig({
             /[\\/]src[\\/]components[\\/]ui[\\/]modal-head\.tsx$/.test(id)
           )
             return "modal-shell";
-          // The cockpit COMBAT ENGINE + its presenters (smart-tracker, the combat /
-          // level-up / inventory view-models, the per-step pick resolvers). It is
-          // eager-REACHABLE only through cockpit-only store actions (e.g.
-          // `recoverTrackerByAltCost` → `resolveTrackers`), so — exactly like
-          // `modal-shell` above — it must NOT inline into the ENTRY chunk: the id-storage
-          // refactor changed the module graph and the rolldown heuristic pulled this
-          // ~230 KB engine into the entry script, ballooning it past its ceiling. Pin it
-          // to its own cacheable, parallel-fetched chunk so the roster landing's entry
-          // script never carries the cockpit engine. `srd-i18n` is deliberately NOT here
-          // (the roster needs its class/race name resolvers eagerly). See
-          // bundle-budget.guard.test.ts.
-          if (
-            /[\\/]src[\\/]lib[\\/]smart-tracker\.ts$/.test(id) ||
-            /[\\/]src[\\/]lib[\\/]views[\\/](combat-action-view|tracker-view|rider-view|weapon-facts-view|cunning-strike-view|inventory-view|level-up-view)\.ts$/.test(
-              id
-            ) ||
-            /[\\/]src[\\/]lib[\\/](invocation-pick|maneuver-pick|metamagic-pick|weapon-mastery-pick|signature-spells-pick|spell-mastery-pick|subclass-spellcasting|fighting-style|spell-combat-castable)\.ts$/.test(
-              id
-            )
-          )
-            return "cockpit-engine";
           // Content-pack data rides the SAME domain chunks as its public
           // counterpart (below), so the composed build's chunk shape mirrors
           // the pre-split one. Pack i18n/fixtures stay on the default

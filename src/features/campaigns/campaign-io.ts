@@ -58,7 +58,8 @@ import { removeCombatant, parseEncounterState } from "@/features/campaigns/encou
 import { passTurn, turnBack } from "@/features/campaigns/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
-import { peerDamageState, peerHit } from "@/lib/play/peer-damage";
+import { peerDamageHit, peerHit } from "@/lib/play/peer-damage";
+import type { DamageRetaliation, DamageTransfer } from "@/lib/combat-transition";
 import {
   invertPeerSpends,
   PEER_SPENDS_CAP,
@@ -977,6 +978,11 @@ export type CampaignCombatMutation =
         amount: number;
         /** A melee hit the attacker chose to knock out with (1 HP, Unconscious). */
         knockOut?: true;
+        /** Damage that is not an attack's hit (a Warding Bond share): no Uncanny Dodge. */
+        notAnAttack?: true;
+        /** The attack hit that dealt it (a monster's attack the DM landed): the hit's own
+         *  stages run, and what it sends back comes out as `retaliations`. */
+        hit?: { attacker: CombatantRef; attackMode: "melee" | "ranged" };
         /** The hit's damage before defenses, by type (`rowDamageParts`): the write
          *  resolves Resistance, Immunity and Vulnerability from the target's sheet as
          *  it stands then, and `amount` is only the hitter's preview. */
@@ -1093,8 +1099,73 @@ export async function writeCampaignCombatEffect(
   characterId: string,
   preview: CombatState | null,
   maxHp: number,
+  mutation: CampaignCombatMutation,
+  options: { shareDamage?: boolean } = {}
+): Promise<{
+  before: CombatState;
+  after: CombatState;
+  spends: PeerSpend[];
+  /** What the hit sends back to its attacker, for the caller that can land it (the
+   *  DM's monster actions write monster Hit Points). */
+  retaliations: DamageRetaliation[];
+}> {
+  const written = await writeCombatEffectOnce(uid, characterId, preview, maxHp, mutation);
+  // Warding Bond: the hit's share lands on the caster once the hit has (a share is
+  // itself never shared again, so two bonds can't bounce damage forever).
+  if (options.shareDamage !== false && written.transfers.length > 0) {
+    void deliverDamageTransfers(written.transfers);
+  }
+  return {
+    before: written.before,
+    after: written.after,
+    spends: written.spends,
+    retaliations: written.retaliations,
+  };
+}
+
+/**
+ * A hit's shared damage, landed on each sharer's sheet (Warding Bond: "each time it
+ * takes damage, you take the same amount"): a peer hit through the caster's own damage
+ * rule, not an attack, passed on no further. A share that fails to land is reported;
+ * the hit itself has already landed.
+ */
+export async function deliverDamageTransfers(
+  transfers: ReadonlyArray<DamageTransfer>
+): Promise<void> {
+  await Promise.all(
+    transfers.map(async ({ target, amount }) => {
+      if (target.kind !== "pc" || amount <= 0) return;
+      try {
+        await writeCampaignCombatEffect(
+          target.memberUid,
+          target.characterId,
+          null,
+          0,
+          { kind: "hp", operation: { kind: "damage", amount, notAnAttack: true } },
+          { shareDamage: false }
+        );
+      } catch (error) {
+        diagnosticsLog("error", "combat.damage-transfer-failed", {
+          message: String(error),
+        });
+      }
+    })
+  );
+}
+
+async function writeCombatEffectOnce(
+  uid: string,
+  characterId: string,
+  preview: CombatState | null,
+  maxHp: number,
   mutation: CampaignCombatMutation
-): Promise<{ before: CombatState; after: CombatState; spends: PeerSpend[] }> {
+): Promise<{
+  before: CombatState;
+  after: CombatState;
+  spends: PeerSpend[];
+  transfers: DamageTransfer[];
+  retaliations: DamageRetaliation[];
+}> {
   const fallback = preview ?? defaultCombatState(maxHp);
   if (import.meta.env.DEV && DEV_BYPASS) {
     // The same target rule as the app, on the dev replica's sheet.
@@ -1105,18 +1176,26 @@ export async function writeCampaignCombatEffect(
           )
         : null;
     let before = fallback;
+    let transfers: DamageTransfer[] = [];
+    let retaliations: DamageRetaliation[] = [];
     const after = updateDevCombatState(uid, characterId, fallback, (current) => {
       before = current;
-      return target && mutation.kind === "hp"
-        ? peerDamageState(
-            target,
-            current,
-            mutation.operation.amount,
-            knockOutOptions(mutation.operation)
-          )
-        : reduceCampaignCombatMutation(current, mutation, maxHp, { status: "active" });
+      if (!target || mutation.kind !== "hp") {
+        return reduceCampaignCombatMutation(current, mutation, maxHp, {
+          status: "active",
+        });
+      }
+      const hit = peerDamageHit(
+        target,
+        current,
+        mutation.operation.amount,
+        knockOutOptions(mutation.operation)
+      );
+      transfers = hit.transfers;
+      retaliations = hit.retaliations;
+      return hit.state;
     });
-    return { before, after, spends: [] };
+    return { before, after, spends: [], transfers, retaliations };
   }
   const combatRef = combatStateRef(uid, characterId);
   const parentRef = memberCharacterDoc(uid, characterId);
@@ -1164,6 +1243,8 @@ export async function writeCampaignCombatEffect(
           : 0;
     let next: CombatState;
     let spends: PeerSpend[] = [];
+    let transfers: DamageTransfer[] = [];
+    let retaliations: DamageRetaliation[] = [];
     if (target && mutation.kind === "hp" && ledgerOn) {
       // Every stage runs; what the hit spends on the target's sheet is appended to its
       // ledger in this same transaction.
@@ -1180,8 +1261,18 @@ export async function writeCampaignCombatEffect(
       }
       next = hit.state;
       spends = hit.spends;
+      transfers = hit.transfers;
+      retaliations = hit.retaliations;
     } else if (target && mutation.kind === "hp") {
-      next = peerDamageState(target, current, dealt, knockOutOptions(mutation.operation));
+      const hit = peerDamageHit(
+        target,
+        current,
+        dealt,
+        knockOutOptions(mutation.operation)
+      );
+      next = hit.state;
+      transfers = hit.transfers;
+      retaliations = hit.retaliations;
     } else {
       next = reduceCampaignCombatMutation(current, mutation, maxHp, parentData);
     }
@@ -1192,7 +1283,7 @@ export async function writeCampaignCombatEffect(
         : spends;
     writePeerCombatEffect(txn, combatRef, current, next);
     if (appended.length > 0) txn.set(spendsRef, { entries: [...ledger, ...appended] });
-    return { before: current, after: next, spends };
+    return { before: current, after: next, spends, transfers, retaliations };
   });
 }
 
@@ -2793,8 +2884,17 @@ export async function createSession(
 }
 
 /** A knock-out is only ever chosen on a melee hit: the target's rule needs both. */
-function knockOutOptions(operation: { knockOut?: true }): DamageOptions {
-  return operation.knockOut
-    ? { knockOut: true, hit: { attacker: null, attackMode: "melee" } }
-    : {};
+function knockOutOptions(operation: {
+  knockOut?: true;
+  notAnAttack?: true;
+  hit?: { attacker: CombatantRef; attackMode: "melee" | "ranged" };
+}): DamageOptions {
+  if (operation.notAnAttack) return { notAnAttack: true };
+  if (operation.knockOut) {
+    return {
+      knockOut: true,
+      hit: { attacker: operation.hit?.attacker ?? null, attackMode: "melee" },
+    };
+  }
+  return operation.hit ? { hit: operation.hit } : {};
 }

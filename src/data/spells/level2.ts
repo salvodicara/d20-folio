@@ -544,7 +544,12 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
       {
         type: "while-active",
         activeKey: "spell-invisibility",
-        duration: timedSpellDuration(60),
+        // "The spell ends early immediately after the target makes an attack roll,
+        // deals damage, or casts a spell."
+        duration: {
+          ...timedSpellDuration(60),
+          endsEarlyOn: ["attack-roll", "deal-damage", "cast-spell"],
+        },
         grants: [],
       },
     ],

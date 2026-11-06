@@ -27,7 +27,8 @@ import {
   playEventLogStyle,
   type CombatLogRow,
 } from "@/lib/views/combat-log-view";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Icon } from "@/components/ui/icon";
 import { ScrollText, Trash2 } from "lucide-react";

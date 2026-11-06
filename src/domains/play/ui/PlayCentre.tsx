@@ -5,6 +5,11 @@
  * Lancia, Usa, Reagisci) commits through the engine's one turn flow (`executeAction`);
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
+import { RollDialog } from "@/domains/combat/ui/FightActions";
+import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
+import { playRollOffer } from "@/domains/play/play-roll-offer";
+import { useAuthStore } from "@/stores/authStore";
+import type { CampaignDoc } from "@/types/campaign";
 import { turnMovementBudgetFt } from "@/lib/play/self-move";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -142,10 +147,13 @@ function usePlayTurn(doc: CharacterDoc): ActionTurnState {
 export function PlayCentre({
   doc,
   locale,
+  campaign = null,
   onShortRest,
 }: {
   doc: CharacterDoc;
   locale: Locale;
+  /** The campaign the character plays in, for «Tira l'iniziativa». */
+  campaign?: CampaignDoc | null;
   /** Opens the Short Rest (the advice line's «riposo breve»); absent read-only. */
   onShortRest?: () => void;
 }) {
@@ -166,7 +174,7 @@ export function PlayCentre({
     <section className="f-pn f-centre" data-c="act" aria-label={t("combat.actions")}>
       <Tabs label={t("combat.actions")} items={items} value={shown} onChange={setTab} />
       <div className="f-pnb f-stack">
-        <TurnStrip doc={doc} locale={locale} />
+        <TurnStrip doc={doc} locale={locale} campaign={campaign} />
         {shown === "actions" ? (
           <ActionsPane doc={doc} locale={locale} turn={turn} onShortRest={onShortRest} />
         ) : shown === "spells" ? (
@@ -569,14 +577,39 @@ function SpellsPane({
   );
 }
 
-function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
+function TurnStrip({
+  doc,
+  locale,
+  campaign,
+}: {
+  doc: CharacterDoc;
+  locale: Locale;
+  campaign: CampaignDoc | null;
+}) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
+  const uid = useAuthStore((st) => st.user?.uid) ?? "";
+  const [rolling, setRolling] = useState(false);
+  const move = useFightMove((message, undo) =>
+    useToastStore
+      .getState()
+      .showToast({ message, duration: 5000, ...(undo ? { onUndo: undo } : {}) })
+  );
   const markCountered = useMarkCountered(locale);
   const counterable = readonly ? [] : counterableCasts(doc.session.logEntries);
   const fight = useSheetCombat();
   const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
+  // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
+  const rollOffer = readonly
+    ? null
+    : playRollOffer(
+        campaign,
+        uid,
+        doc.id,
+        sheetNumbers(doc).initiative.total,
+        fight?.view.rows ?? []
+      );
   const selected = useCombatStore((s) => s.selected);
   const budget = useCombatStore((s) => s.budget);
   const reactionUsed = useCombatStore((s) => s.reactionUsed);
@@ -630,7 +663,28 @@ function TurnStrip({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
             {t("play.endTurn")}
           </Button>
         )}
+        {rollOffer && campaign && (
+          <Button
+            kind={fight ? "primary" : "ghost"}
+            aria-haspopup="dialog"
+            onClick={() => setRolling(true)}
+          >
+            {t("campaignHub.encounterRollInitiative")}
+          </Button>
+        )}
       </div>
+      {rolling && rollOffer && campaign && (
+        <RollDialog
+          bonus={rollOffer.bonus}
+          onClose={() => setRolling(false)}
+          onRoll={(d20) =>
+            move(
+              moves.roll(campaign.id, uid, d20, rollOffer.bonuses),
+              t("fight.rollDone", { total: d20 + rollOffer.bonus })
+            )
+          }
+        />
+      )}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
       {counterable.map((cast) => {
         const name = localizeText(cast.action, locale);

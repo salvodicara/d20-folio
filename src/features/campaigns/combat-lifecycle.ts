@@ -190,14 +190,16 @@ export interface MissingRollPlan {
   epoch: number;
 }
 
-/** Whose initiative is missing: every PC in the fight (or, with no fight yet, every
- *  member with an attached character) without a roll. */
-function missingRollers(campaign: CombatFields): string[] {
+/** Whose initiative is missing: every PC in the fight without a roll, or, with no fight
+ *  running, every member with an attached character. The rolls an ended fight leaves
+ *  behind are kept for its reopen; they are not rolls for the next fight (a roll that
+ *  starts one also ignores them). */
+export function missingRollers(campaign: CombatFields): string[] {
+  if (!campaign.encounter) return attached(campaign).uids;
   const rolled = campaign.encounterInit ?? {};
-  const uids = campaign.encounter
-    ? campaign.encounter.combatants.flatMap((c) => (c.kind === "pc" ? [c.memberUid] : []))
-    : attached(campaign).uids;
-  return uids.filter((uid) => rolled[uid] === undefined);
+  return campaign.encounter.combatants
+    .flatMap((c) => (c.kind === "pc" ? [c.memberUid] : []))
+    .filter((uid) => rolled[uid] === undefined);
 }
 
 /**

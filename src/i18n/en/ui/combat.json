@@ -651,6 +651,7 @@
     "reactionTrigger_selfSucceedsSave": "you succeed on a saving throw",
     "useHitPointDice": "{{source}}: you can spend up to {{max}} of your Hit Point Dice.",
     "rerollOffer": "{{name}}: reroll",
-    "rerollOfferBonus": "{{name}}: reroll +{{bonus}}"
+    "rerollOfferBonus": "{{name}}: reroll +{{bonus}}",
+    "oncePerTurnTaken": "{{name}}: already used this turn"
   }
 }

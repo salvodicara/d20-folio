@@ -20,7 +20,7 @@ import {
   localizeRaceName,
   localizeSubclassName,
 } from "@/lib/views/srd-i18n";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { ABILITY_CODES, type AbilityCode } from "@/types/ability";
 import type { CharacterDoc } from "@/types/character";
 
