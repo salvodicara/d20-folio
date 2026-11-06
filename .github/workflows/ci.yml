@@ -74,10 +74,16 @@ jobs:
         run: pnpm lint --max-warnings 0
 
   unit:
-    name: unit (SRD-only)
+    name: unit (SRD-only, shard ${{ matrix.shard }}/2)
     # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
+    # One runner took up to 11 min of its 15 (2026-11-06); two shards keep the margin
+    # as the suite grows (verify.yml splits its composed twin the same way).
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -87,10 +93,11 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - name: Unit tests
-        run: pnpm test
+        run: pnpm test --shard=${{ matrix.shard }}/2
       # The rules conformance count (docs/architecture/2026-11-edge-cases.md):
-      # one test per corpus case; a "works" case that fails turns this red.
+      # one test per corpus case; a "works" case that fails turns this red. Once.
       - name: Rules conformance count
+        if: matrix.shard == 1
         run: |
           pnpm exec vitest run --project fast tests/unit/conformance content-pack/tests/unit/conformance \
             --reporter=json --outputFile=conformance.json > /dev/null || true

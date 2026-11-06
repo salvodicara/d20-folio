@@ -67,15 +67,22 @@ jobs:
           path: verified-pack.txt
           retention-days: 90
 
+  # The composed checks run as three jobs side by side, never one long one: on
+  # 2026-11-06 the single "unit + budget" job grew past its 25-minute cap (lint 8 min,
+  # unit 14 min on ~34k tests) and three main runs in a row were cut off before the
+  # budget step. Each job now has about twice its measured time as its cap, and the
+  # unit suite is split into shards so it grows across runners, not into the cap.
+  #
   # No Firebase env here ON PURPOSE: the unit suite must pass with
   # VITE_FIREBASE_API_KEY unset (docs/CONTRIBUTING.md — unit tests never reach
   # Firebase), and an ambient env would silently mask a test that starts to.
-  unit:
-    name: unit + budget (composed)
+  static:
+    name: typecheck + lint (composed)
     needs: pack
     # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # Measured 6–9 min (2026-11-06).
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - uses: ./.github/actions/compose-pack
@@ -94,8 +101,50 @@ jobs:
         run: pnpm typecheck
       - name: Lint (composed)
         run: pnpm lint --max-warnings 0
+
+  unit:
+    name: unit (composed, shard ${{ matrix.shard }}/3)
+    needs: pack
+    runs-on: ubuntu-24.04
+    # The whole suite took 14 min on one runner (2026-11-06): about 5 a shard.
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
+        with:
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+          ref: ${{ needs.pack.outputs.sha }}
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
       - name: Unit tests (composed — pack suites included)
-        run: pnpm test
+        run: pnpm test --shard=${{ matrix.shard }}/3
+
+  budget:
+    name: conformance + budget (composed)
+    needs: pack
+    runs-on: ubuntu-24.04
+    # Measured 2 min (2026-11-06).
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
+        with:
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+          ref: ${{ needs.pack.outputs.sha }}
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
       # The rules conformance count (docs/architecture/2026-11-edge-cases.md):
       # one test per corpus case; a "works" case that fails turns this red.
       - name: Rules conformance count
@@ -106,14 +155,11 @@ jobs:
       # The composed bundle budget. ci.yml measures the SRD-only build; only this
       # job and deploy.yml measure what actually ships (app + pack). Without it,
       # three release reviews in a row met an over-budget precache on deploy day,
-      # long after the PR that grew it (2026-10-13 and 2026-10-16). It runs even
-      # when the unit step fails, so both verdicts always report. The same build
+      # long after the PR that grew it (2026-10-13 and 2026-10-16). The same build
       # command deploy.yml runs before its own budget gate.
       - name: Build (composed)
-        if: ${{ !cancelled() }}
         run: pnpm build
       - name: Bundle budget (composed)
-        if: ${{ !cancelled() }}
         run: pnpm test:budget
 
   e2e:
