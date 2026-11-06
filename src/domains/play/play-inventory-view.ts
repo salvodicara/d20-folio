@@ -52,6 +52,8 @@ export interface PlayItem {
   attune?: PlayAttune;
   /** A Spell Scroll: its row in the equipment and the spell on it, once set. */
   scroll?: { index: number; spellId: string | null; spellName: string | null };
+  /** The catalogue entry's painted icon; a homebrew item has none. */
+  art: { kind: "equipment" | "item"; id: string } | null;
 }
 
 export interface PlayAttune {
@@ -142,6 +144,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
       type: w.damageType,
     },
     stealthDisadvantage: false,
+    art: w.isCustom ? null : { kind: "equipment", id: w.id },
     ...attuneOf(weaponKey(w.idx)),
     useActionId: null,
     ...formGear(doc.character.weapons[w.idx]),
@@ -180,6 +183,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
           ? { kind: "charges", current: i.charges.current, max: i.charges.max }
           : null,
     stealthDisadvantage: i.stealthDisadvantage,
+    art: i.isCustom ? null : { kind: i.magicItemType ? "item" : "equipment", id: i.id },
     ...attuneOf(equipmentKey(i.idx)),
     useActionId: uses.get(i.isCustom ? `custom-${i.id}` : i.id) ?? null,
     // Only what is worn or bonded merges; the pack gives nothing in any form.

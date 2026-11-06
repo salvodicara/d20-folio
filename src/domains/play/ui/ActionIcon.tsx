@@ -150,6 +150,8 @@ function glyphOf(key: ActionIconKey): Glyph {
       return FolioSpellIcon;
     case "feature":
       return FolioFeatIcon;
+    case "item":
+      return key.magic ? FolioMagicItemIcon : FolioInventoryIcon;
   }
 }
 
