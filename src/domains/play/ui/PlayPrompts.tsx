@@ -7,6 +7,7 @@
  * `PlayTray`. The shape-change form picker is still the sheet's own until its new
  * version lands.
  */
+import { readHitDiceRoll } from "@/lib/play/hit-dice";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { lazy, Suspense, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -672,9 +673,18 @@ function HitDiceStep({
   const [typed, setTyped] = useState("");
   const skip = useOnce(prompt.onCancel);
   const range = prompt.range(count);
-  const rolled = /^\d{1,3}$/.test(typed.trim()) ? Number(typed.trim()) : null;
+  // A floor on the faces (Powerful Recovery) takes them one per die, floored.
+  const { floor } = prompt;
+  const read = floor ? readHitDiceRoll(typed, count, floor) : null;
+  const rolled = floor
+    ? (read?.total ?? null)
+    : /^\d{1,3}$/.test(typed.trim())
+      ? Number(typed.trim())
+      : null;
   const valid =
-    count === 0 || (rolled !== null && rolled >= range.min && rolled <= range.max);
+    count === 0 ||
+    (rolled !== null &&
+      (floor !== undefined || (rolled >= range.min && rolled <= range.max)));
   const gain = rolled === null ? null : hitPointDiceGain(offer, count, rolled);
   const amount = gain?.amount ?? null;
   const dice = count > 0 ? `${String(count)}×${prompt.sizes}` : prompt.sizes;
@@ -720,13 +730,28 @@ function HitDiceStep({
       </div>
       {count > 0 && (
         <Field
-          label={t("play.hitDice.rolled", { dice })}
-          inputMode="numeric"
+          label={floor ? t("rest.diceFaces") : t("play.hitDice.rolled", { dice })}
+          inputMode={floor ? "text" : "numeric"}
           autoComplete="off"
           className="f-in f-in-big f-in-short"
           value={typed}
+          {...(floor
+            ? {
+                help: t("rest.diceFacesHint", {
+                  dice,
+                  count,
+                  below: floor.floorBelow,
+                  to: floor.floorTo,
+                }),
+              }
+            : {})}
           onChange={(e) => setTyped(e.target.value)}
         />
+      )}
+      {read?.faces && (
+        <p className="f-help" role="status">
+          {t("rest.diceFacesSum", { faces: read.faces.join(" + "), total: read.total })}
+        </p>
       )}
       {count > 0 && valid && amount !== null && (
         <p className="f-help">

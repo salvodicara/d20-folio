@@ -78,6 +78,8 @@ export interface PlayPrompts {
     sizes: string;
     /** The lowest and highest total `count` of them can roll. */
     range: (count: number) => { min: number; max: number };
+    /** A floor on the faces (Powerful Recovery): the faces are typed one per die. */
+    floor?: { floorBelow: number; floorTo: number };
     onConfirm: (count: number, rolled: number) => void;
     onCancel: () => void;
   };
