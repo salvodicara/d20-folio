@@ -2261,7 +2261,7 @@
   .fui .f-sheet .f-act {
     /* the name keeps 160 px: a long value (a range in words) wraps in its own cell */
     grid-template-columns:
-      46px minmax(160px, 1fr) repeat(3, minmax(min-content, max-content))
+      var(--slot-size) minmax(160px, 1fr) repeat(3, minmax(min-content, max-content))
       96px;
     column-gap: 12px;
   }
@@ -3187,19 +3187,30 @@
   --slot-ink: #dfc495;
   --slot-bg: #120e0a;
 }
+/* one slot size for every row list (Play, inventory, compendium): 46 px, 40 on a phone */
+.fui {
+  --slot-size: 46px;
+  --slot-glyph: 30px;
+}
+@media (max-width: 640px) {
+  .fui {
+    --slot-size: 40px;
+    --slot-glyph: 26px;
+  }
+}
 .fui .f-act-slot {
   display: grid;
   place-items: center;
-  width: 46px;
-  height: 46px;
+  width: var(--slot-size);
+  height: var(--slot-size);
   border: 1px solid var(--frame);
   border-radius: var(--r-slot);
   background: radial-gradient(circle at 50% 35%, var(--panel-2), var(--slot-bg));
   color: var(--slot-ink);
 }
 .fui .f-act-slot > svg {
-  width: 30px;
-  height: 30px;
+  width: var(--slot-glyph);
+  height: var(--slot-glyph);
 }
 /* a painted icon fills the slot edge to edge, BG3's hotbar art; the tooltip opens on hover */
 .fui .f-act-slot {
@@ -3220,20 +3231,12 @@
 }
 @media (max-width: 640px) {
   .fui .f-sheet .f-act {
-    grid-template-columns: 40px minmax(0, 1fr) 96px;
-  }
-  .fui .f-act-slot {
-    width: 40px;
-    height: 40px;
-  }
-  .fui .f-act-slot > svg {
-    width: 26px;
-    height: 26px;
+    grid-template-columns: var(--slot-size) minmax(0, 1fr) 96px;
   }
 }
 @media (max-width: 359px) {
   .fui .f-sheet .f-act {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: var(--slot-size) minmax(0, 1fr);
   }
   .fui .f-sheet .f-act > .f-btn {
     grid-column: 2;
@@ -3337,11 +3340,11 @@
   color: var(--white);
 }
 .fui .f-sheet .f-act.f-item {
-  grid-template-columns: 46px minmax(0, 1fr) max-content 96px;
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content 96px;
 }
 @media (max-width: 640px) {
   .fui .f-sheet .f-act.f-item {
-    grid-template-columns: 40px minmax(0, 1fr) 96px;
+    grid-template-columns: var(--slot-size) minmax(0, 1fr) 96px;
   }
 }
 .fui .f-spell-sum[data-over] {
@@ -5210,7 +5213,7 @@
 /* a result row: the painted slot, the name over its line, the school or type on the right */
 .fui .f-cmp-row {
   width: 100%;
-  grid-template-columns: 46px minmax(0, 1fr) max-content;
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
   column-gap: 12px;
   padding: 8px;
   border: 0;
@@ -5255,15 +5258,43 @@
   padding: 16px 0;
 }
 /* the open entry: the big slot, the name, the facts, the prose */
-.fui .f-act-slot.f-slot-big {
-  width: 64px;
-  height: 64px;
-}
+/* the entry's art, sized from the reference apps (PR #888): ~21% of the viewport on a
+   computer (bg3.wiki 17%, D&D Beyond 21–24%), capped to the card; ~77% of a phone's width
+   (D&D Beyond 77%). Too wide to sit beside the name in our narrow card: it leads it. */
 .fui .f-cmp-head {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   gap: 16px;
   margin-bottom: 16px;
+}
+.fui .f-cmp-art {
+  flex: none;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: min(21vw, 76%);
+  aspect-ratio: 1;
+  border: 1px solid var(--frame);
+  border-radius: var(--r);
+  background: radial-gradient(circle at 50% 40%, var(--panel-2), var(--slot-bg));
+  overflow: hidden;
+  color: var(--slot-ink);
+}
+.fui .f-cmp-art-img {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.fui .f-cmp-art-img > svg {
+  width: 56%;
+  height: 56%;
+}
+@media (max-width: 960px) {
+  .fui .f-cmp-art {
+    width: min(77vw, 100%);
+  }
 }
 .fui .f-cmp-name {
   margin: 0;
@@ -5320,12 +5351,8 @@
 }
 @media (max-width: 640px) {
   .fui .f-cmp-row {
-    grid-template-columns: 40px minmax(0, 1fr);
+    grid-template-columns: var(--slot-size) minmax(0, 1fr);
     padding: 8px 0;
-  }
-  .fui .f-cmp-row .f-act-slot {
-    width: 40px;
-    height: 40px;
   }
   .fui .f-cmp-verdict {
     display: none;

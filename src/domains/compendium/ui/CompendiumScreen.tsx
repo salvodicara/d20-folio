@@ -223,13 +223,9 @@ function Glyph({ as: G }: { as: NonNullable<AnyCompendiumSpec["icon"]> }) {
   return <G aria-hidden="true" />;
 }
 
-function Slot({ children, big }: { children: ReactNode; big?: boolean }) {
+function Slot({ children }: { children: ReactNode }) {
   return (
-    <span
-      className={big ? "f-act-slot f-slot-big" : "f-act-slot"}
-      data-painted=""
-      aria-hidden="true"
-    >
+    <span className="f-act-slot" data-painted="" aria-hidden="true">
       {children}
     </span>
   );
@@ -326,9 +322,12 @@ function EntryPanel({
         </Button>
       )}
       <div className="f-cmp-head">
-        <Slot big>
-          <EntryArt spec={spec} entry={entry} />
-        </Slot>
+        {/* the entry's art large, as BG3's wiki shows it: beside the name, a banner on a phone */}
+        <span className="f-cmp-art" aria-hidden="true">
+          <span className="f-cmp-art-img">
+            <EntryArt spec={spec} entry={entry} />
+          </span>
+        </span>
         <div>
           <h2 className="f-cmp-name">{spec.getName(entry, ctx)}</h2>
           {view.eyebrow && <div className="f-row-s">{view.eyebrow}</div>}
