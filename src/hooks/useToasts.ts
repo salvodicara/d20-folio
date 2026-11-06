@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { localizeToastIntent } from "@/lib/views/toast-intent";
 import type { UndoToast } from "@/stores/toastStore";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { useLocale } from "@/hooks/useLocale";
 
 export function useToasts() {

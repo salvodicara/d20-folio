@@ -4,7 +4,8 @@ import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import type { SessionReportNames } from "@/lib/views/session-report-view";
 import { localizeText } from "@/lib/views/srd-i18n";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { CampaignDoc } from "@/types/campaign";
 
 /** How the report names people, conditions, spells and sources, in the reader's language. */

@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { hpEntryNote } from "@/domains/play/hp-entry-view";
 import { useHpControls } from "@/features/character/molecules/use-hp-controls";
 import type { Locale } from "@/lib/locale";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { CharacterDoc } from "@/types/character";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { Button, Chip, Dialog, Field } from "@/ui";

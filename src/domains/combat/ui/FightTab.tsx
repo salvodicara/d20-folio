@@ -45,7 +45,7 @@ import {
   hideCombatants,
 } from "@/lib/session-log";
 import { localizePlayEvent } from "@/lib/views/session-report-view";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import { Button, Panel } from "@/ui";

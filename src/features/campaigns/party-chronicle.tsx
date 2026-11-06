@@ -34,7 +34,8 @@ import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { useLocale } from "@/hooks/useLocale";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { localizeText } from "@/lib/views/srd-i18n";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import {
   buildEncounterChapter,
   localizeFeedEvent,

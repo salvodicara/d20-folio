@@ -20,7 +20,6 @@ import {
   activatableToggles,
   advantageChipVMs,
   auraVMs,
-  concentrationLabel,
   conditionChips,
   conditionLabel,
   conditionOptions,
@@ -31,6 +30,7 @@ import {
   rollFloorVMs,
   trackerRecoveryBadgeBucket,
 } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { AuraClause } from "@/lib/grants";
 import { customConcentrationValue } from "@/lib/concentration";
 import { resolveActions } from "@/lib/smart-tracker";

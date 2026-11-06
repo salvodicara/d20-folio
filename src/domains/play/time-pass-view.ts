@@ -17,7 +17,8 @@ import {
   type TableClockBoundary,
 } from "@/lib/views/item-resource-boundary-view";
 import { deriveStatuses } from "@/lib/status";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { CharacterDoc } from "@/types/character";
 
 /** The prototype's steps, in minutes: 1 minute, 10 minutes, 1 hour, 8 hours. */

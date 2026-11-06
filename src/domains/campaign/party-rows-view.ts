@@ -14,7 +14,8 @@ import { memberCardView } from "@/features/campaigns/member-card-view";
 import { localizeSrd } from "@/i18n/resolver";
 import { getClasses } from "@/lib/classes";
 import type { Locale } from "@/lib/locale";
-import { concentrationLabel, conditionLabel } from "@/lib/views/tracker-view";
+import { conditionLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { CampaignDoc } from "@/types/campaign";
 import type { CharacterDoc } from "@/types/character";
 

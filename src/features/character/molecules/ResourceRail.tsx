@@ -65,7 +65,6 @@ import {
   activatableToggles,
   advantageChipVMs,
   auraVMs,
-  concentrationLabel,
   conditionLabel,
   conditionOptions,
   incomingAttackAdvantageVMs,
@@ -77,6 +76,7 @@ import {
   trackerRecoveryBadgeBucket,
   type AuraVM,
 } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { patchCharacter } from "../patch-character";
 import { OverrideChipSet, type OverrideChipOption } from "./OverrideChipSet";
 import {

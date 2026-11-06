@@ -10,7 +10,8 @@
 import type { Locale } from "@/lib/locale";
 import { deriveStatuses, statusRoundsLeft } from "@/lib/status";
 import type { CharacterDoc } from "@/types/character";
-import { concentrationLabel, conditionChips, grantSourceLabel } from "./tracker-view";
+import { conditionChips, grantSourceLabel } from "./tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 
 const ROUNDS_PER_MINUTE = 10;
 

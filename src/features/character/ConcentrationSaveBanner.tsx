@@ -10,7 +10,7 @@ import {
   concentrationSaveD20Context,
   enteredD20FaceCount,
 } from "@/lib/character-d20-tests";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
 import { Button } from "@/components/ui/button";

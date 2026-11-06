@@ -139,7 +139,8 @@ import {
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
-import { concentrationLabel, grantSourceLabel } from "@/lib/views/tracker-view";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { confirmConcentrationSwap } from "@/features/character/confirm-concentration";
 import { isCharacterAlive } from "@/lib/character-status";
 import { observedOwnerBoundary } from "./turn-state";
