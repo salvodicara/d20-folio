@@ -19,6 +19,8 @@ import {
   type ResolvedAction,
 } from "@/lib/smart-tracker";
 import type { CharacterDoc, SessionState, TrackerState } from "@/types/character";
+import { concentrationValue } from "@/lib/concentration";
+import { changeConcentration } from "./concentration";
 import { restoreTrackerEntry } from "./recoveries";
 import { countActivationUse } from "./reuse-save";
 
@@ -138,7 +140,7 @@ export function endStatesOnAct(
   const states = potionStatesEndingOn(doc.session.activeFeatures ?? [], act);
   const hide = doc.session.hiddenDc !== undefined && HIDE_ENDING_ACTS.has(act);
   if (states.length === 0 && !hide) return null;
-  const session = endStateKeys(doc.session, states);
+  const session = endSpellsOf(doc, states, endStateKeys(doc.session, states));
   return {
     session: hide
       ? {
@@ -150,6 +152,44 @@ export function endStatesOnAct(
     ended: hide ? [...states, "hide"] : states,
   };
 }
+
+/**
+ * A spell whose state an act ended ends whole (Invisibility: "the spell ends early"):
+ * the conditions it holds for as long as it lasts go, and so does its Concentration.
+ */
+function endSpellsOf(
+  doc: CharacterDoc,
+  keys: ReadonlyArray<string>,
+  session: SessionState
+): SessionState {
+  let next = session;
+  for (const key of keys) {
+    if (!key.startsWith(SPELL_STATE_PREFIX)) continue;
+    const spellId = key.slice(SPELL_STATE_PREFIX.length);
+    const spell = getSpellById(spellId);
+    if (!spell) continue;
+    const held: ReadonlyArray<string> =
+      spell.conditionApplication?.lifetime?.kind === "source"
+        ? spell.conditionApplication.options
+        : [];
+    if (held.length > 0) {
+      next = {
+        ...next,
+        conditions: next.conditions.filter((c) => !held.includes(c)),
+        concentrationConditions: next.concentrationConditions?.filter(
+          (c) => !held.includes(c)
+        ),
+      };
+    }
+    if (spell.concentration && next.concentration === concentrationValue(spellId)) {
+      next = changeConcentration({ ...doc, session: next }, "").doc.session;
+    }
+  }
+  return next;
+}
+
+/** The prefix of a spell's lit state key (`spell-invisibility`). */
+const SPELL_STATE_PREFIX = "spell-";
 
 /** Record (or clear, with no level) the slot level an active spell state was cast at. */
 export function setActiveSpellCastLevel(

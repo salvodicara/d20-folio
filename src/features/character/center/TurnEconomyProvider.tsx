@@ -63,6 +63,7 @@ import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
 import { customText, srdText, type LocText } from "@/lib/loc-text";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { runEndTurn } from "@/lib/play/end-turn";
+import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { actsOfUse } from "@/lib/play/states";
 import {
   lazy,
@@ -972,12 +973,18 @@ export function TurnEconomyProvider({
     // What the use does ends what those acts end: an attack roll or a Verbal spell
     // ends a Hide, a potion's Invisibility ends on an attack or a spell. Inside the
     // use's own undo, so undoing the use brings them back.
+    // Each condition an act took away (a Hide's or Invisibility's Invisible) is logged.
     for (const act of actsOfUse(action)) {
-      const ended = useCharacterStore.getState().performAct(act)?.ended ?? [];
-      if (ended.includes("hide")) {
-        useCharacterStore
-          .getState()
-          .logEvent({ kind: "condition-loss", conditionId: "invisible" });
+      const held = (): string[] => {
+        const session = useCharacterStore.getState().character?.session;
+        return session ? effectiveSessionConditions(session) : [];
+      };
+      const before = held();
+      if (!useCharacterStore.getState().performAct(act)) continue;
+      const after = new Set(held());
+      for (const conditionId of before) {
+        if (after.has(conditionId)) continue;
+        useCharacterStore.getState().logEvent({ kind: "condition-loss", conditionId });
       }
     }
     // A STRUCTURED action-use line (no localized text): effect → glyph, slot → colour.
