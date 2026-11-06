@@ -1,8 +1,17 @@
 import { FREEDOM_OF_MOVEMENT_GRANTS } from "../freedom-of-movement-effect";
+import type { Grant } from "@/lib/grants";
 import type { SrdMagicItemData } from "../types";
 import { POTION_STATE } from "./_potion";
 import { DAWN_CHARGES, DAWN_USES, FINITE_SUPPLY } from "./_resource";
 import { RESISTANCE_TYPE_BUNDLE } from "./_resistance";
+
+/** The Helm of Brilliance's spells, each paid with one gem of its type. */
+const HELM_OF_BRILLIANCE_SPELLS = [
+  ["daylight", "opals"],
+  ["fireball", "fire-opals"],
+  ["prismatic-spray", "diamonds"],
+  ["wall-of-fire", "rubies"],
+] as const;
 
 export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
   {
@@ -71,10 +80,28 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "wondrous",
     attunement: true,
-    // Ruby Resistance: Fire Resistance while the helm keeps a ruby (2d10 to
-    // start; the Defenses override covers the last one spent). Gem spells,
-    // Fire Opal flames and the Diamond emanation stay manual.
-    grants: [{ type: "damage-resistance", damageType: "fire" }],
+    // Its gems are four stocks the table rolls once; each spell (DC 18) spends one
+    // gem of its type. Ruby Resistance: Fire Resistance while the helm keeps a ruby
+    // (the Defenses override covers the last one spent). The Fire Opal flames and
+    // the Diamond emanation stay manual.
+    resources: [
+      { ...FINITE_SUPPLY("uses", { dice: 1, sides: 10 }), id: "diamonds" },
+      { ...FINITE_SUPPLY("uses", { dice: 2, sides: 10 }), id: "rubies" },
+      { ...FINITE_SUPPLY("uses", { dice: 3, sides: 10 }), id: "fire-opals" },
+      { ...FINITE_SUPPLY("uses", { dice: 4, sides: 10 }), id: "opals" },
+    ],
+    grants: [
+      { type: "damage-resistance", damageType: "fire" },
+      ...HELM_OF_BRILLIANCE_SPELLS.flatMap(([spellId, resourceId]): Grant[] => [
+        { type: "always-prepared-spell", spellId },
+        {
+          type: "free-cast-spell",
+          spellId,
+          resourceCost: { resourceId },
+          castOverrides: { saveDC: 18 },
+        },
+      ]),
+    ],
     source: "SRD",
   },
   {
@@ -516,8 +543,11 @@ export const MAGIC_ITEMS_PART_3: SrdMagicItemData[] = [
     rarity: "very-rare",
     type: "staff",
     attunement: true,
-    // PROSE-SWEPT 2026-06-10 — the charge counter was hidden in prose.
-    properties: ["charges: 10", "recharge: 1d6+4 / dawn"],
+    // 10 charges, 1d6 + 4 back at dawn; a 1 on the last-charge d20 leaves a
+    // nonmagical Quarterstaff. The extra 1d6 Force per charge spent on a hit
+    // stays with the table.
+    properties: ["charges: 10"],
+    resources: [DAWN_CHARGES(10, { dice: 1, sides: 6, modifier: 4 }, "nonmagical")],
     // PRIM-item-bound-bonus — the printed +3 weapon enchant (rides only
     // the weapon row it is bound to; other effects stay as noted).
     grants: [{ type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 3 }],

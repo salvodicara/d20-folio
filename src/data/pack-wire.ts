@@ -38,6 +38,7 @@ export const CORE_KEYS = [
   "packMonsters",
   "packMonsterArt",
   "packItemArt",
+  "packIconArt",
   "packClassTables",
   "packClassFeatures",
   "packSubclasses",

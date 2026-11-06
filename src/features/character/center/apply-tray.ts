@@ -31,10 +31,19 @@ import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import type { CombatEvent } from "@/types/combat-log";
-import type { ActiveCombatEffect, CombatantRef } from "@/types/combat-effect";
+import type {
+  ActiveCombatEffect,
+  CombatantRef,
+  EncounterPosition,
+} from "@/types/combat-effect";
+import type { CombatConditionLifetime } from "@/data/types";
 import { useAuthStore } from "@/stores/authStore";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
-import { effectIdsConsumedByAttack, foldCombatEffectOps } from "@/lib/combat-effects";
+import {
+  effectIdsConsumedByAttack,
+  foldCombatEffectOps,
+  turnBoundaryAfter,
+} from "@/lib/combat-effects";
 import { budgetSpent } from "@/lib/zones";
 import { concentrationBreaks } from "@/lib/play/concentration-ends";
 
@@ -164,9 +173,17 @@ function sourcedConditionEffects(
   applied: ReadonlyArray<AppliedRow>
 ): ActiveCombatEffect[] {
   const status = useCombatStatusStore.getState().status;
-  const source = offer.conditionSource;
+  // A hit-gated rider's condition names its feature (Brew Poison's Poisoned).
+  const source = offer.conditionSource ?? offer.plan.conditions?.source;
   if (!status || !source) return [];
   const dc = offer.plan.conditions?.save?.dc ?? offer.plan.save?.dc;
+  const lifetimes = offer.plan.conditions?.lifetimes;
+  const position: EncounterPosition = {
+    round: status.round,
+    currentCombatantId: status.encounter.currentCombatantId,
+    phase: "turn-start",
+    order: status.encounter.order ?? status.view.turnOrderIds,
+  };
   const actor: CombatantRef = {
     kind: "pc",
     combatantId: status.myId,
@@ -194,10 +211,30 @@ function sourcedConditionEffects(
         payload: { kind: "condition", conditionId },
         // The repeat save's DC, once the deployed rules accept it.
         ...(dc !== undefined && combatEffectsV26On() ? { bindings: { saveDc: dc } } : {}),
-        duration: { kind: "encounter" },
+        duration: conditionDuration(lifetimes?.[conditionId], status.myId, position),
       })
     );
   });
+}
+
+/**
+ * The fight duration of a condition with a turn-edge lifetime, counted on the
+ * attacker's turns. "Your next turn" is never the one under way: on the attacker's
+ * own turn, the end of the next turn is the following round's.
+ */
+function conditionDuration(
+  lifetime: CombatConditionLifetime | undefined,
+  actorId: string,
+  position: EncounterPosition
+): ActiveCombatEffect["duration"] {
+  if (lifetime?.kind !== "turn-boundary") return { kind: "encounter" };
+  const boundary = turnBoundaryAfter(actorId, lifetime.turns, lifetime.phase, position);
+  if (!boundary) return { kind: "encounter" };
+  const underWay =
+    position.currentCombatantId === actorId &&
+    lifetime.phase === "turn-end" &&
+    boundary.round === position.round;
+  return underWay ? { ...boundary, round: boundary.round + 1 } : boundary;
 }
 
 export function applyTray(

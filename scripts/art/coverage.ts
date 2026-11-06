@@ -16,6 +16,7 @@ import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_FEATS } from "@/data/feats";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { MONSTERS } from "@/data/monsters";
+import { SRD_RACES } from "@/data/races";
 import { spells } from "@/data/spells";
 
 const ROOT = path.resolve(import.meta.dirname, "../..");
@@ -35,6 +36,7 @@ export const CATALOGUES: Record<string, readonly string[]> = {
   item: SRD_MAGIC_ITEMS.map((m) => m.id),
   equipment: SRD_EQUIPMENT.map((e) => e.id),
   monster: MONSTERS.map((m) => m.id),
+  species: SRD_RACES.map((r) => r.id),
 };
 
 /** Catalogue kind → the ids with no painted icon yet. */

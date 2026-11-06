@@ -2258,7 +2258,7 @@
   .fui .f-sheet .f-act {
     /* the name keeps 160 px: a long value (a range in words) wraps in its own cell */
     grid-template-columns:
-      46px minmax(160px, 1fr) repeat(3, minmax(72px, max-content))
+      46px minmax(160px, 1fr) repeat(3, minmax(min-content, max-content))
       96px;
     column-gap: 12px;
   }
@@ -4576,6 +4576,17 @@
   border: 0;
   border-radius: 0;
 }
+/* a glyph in a slot: centred, 62% of the slot (a % --sz would size it against its own box) */
+.fui .f-spellart[data-size="fill"] > .f-spellart-glyph {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+}
+.fui .f-spellart[data-size="fill"] .f-spellart-glyph > svg {
+  width: 62%;
+  height: 62%;
+}
 .fui .f-slotbook {
   display: grid;
   gap: 8px;
@@ -4599,8 +4610,17 @@
   width: 20px;
   height: 20px;
 }
+/* the book centred on the first line of slots, clear of the strip's frame */
+.fui .f-slotrow-picked > .f-slotrow-l {
+  display: grid;
+  place-items: center;
+  height: 56px;
+  padding: 0;
+}
 .fui .f-slotrow-picked {
-  padding: 8px 8px 8px 0;
+  /* 8 + a 20px label column keep the slots in line with the rows below (28px + 8px gap) */
+  grid-template-columns: 20px minmax(0, 1fr);
+  padding: 8px;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-frame);
   background: color-mix(in srgb, var(--gold) 6%, var(--sunk));
@@ -4751,12 +4771,16 @@
     height: 52px;
     border: 1px dashed var(--line);
   }
+  .fui .f-slotrow-picked > .f-slotrow-l {
+    height: 52px;
+  }
   .fui .f-slot-art {
     position: relative;
     inset: auto;
     flex: none;
     width: 48px;
     height: 48px;
+    text-align: center;
     border: 1px solid var(--line-strong);
     border-radius: var(--r-frame);
   }

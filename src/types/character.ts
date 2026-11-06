@@ -1337,6 +1337,9 @@ export interface SessionState {
    * (`stableMinutes`). ADDITIVE.
    */
   stableSince?: number;
+  /** Where the character is (edge-case M19): a plane, or inside an extradimensional
+   *  space. Absent: untagged, and every plane check says "same plane". ADDITIVE. */
+  location?: import("@/lib/familiar-ids").CreatureLocation;
   /**
    * The active Find Familiar summon. Present ⇔ a familiar exists. `monsterId` is
    * the chosen form's {@link import("@/data/types").MonsterStatBlock} id (a CR-0

@@ -51,6 +51,14 @@ export const CONTENT_PACK_MONSTERS_ENTRY = path.join(
   "index.ts"
 );
 
+/** Absolute path of the pack's painted-icon module (may not exist). */
+export const CONTENT_PACK_ICON_ART_ENTRY = path.join(
+  ROOT,
+  "content-pack",
+  "data",
+  "icon-art.ts"
+);
+
 /** Absolute path of the pack's lazy canonical-monster-art module (may not exist). */
 export const CONTENT_PACK_MONSTER_ART_ENTRY = path.join(
   ROOT,
@@ -114,6 +122,7 @@ export function packAliases(): Record<string, string> {
   return {
     "@pack/item-art": entry(CONTENT_PACK_ITEM_ART_ENTRY),
     "@pack/monster-art": entry(CONTENT_PACK_MONSTER_ART_ENTRY),
+    "@pack/icon-art": entry(CONTENT_PACK_ICON_ART_ENTRY),
     "@pack/monsters": entry(CONTENT_PACK_MONSTERS_ENTRY),
     "@pack/i18n-en-prose": runtime
       ? PACK_RUNTIME_PROSE_ENTRY
