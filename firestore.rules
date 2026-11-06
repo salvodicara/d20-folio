@@ -1098,16 +1098,22 @@ service cloud.firestore {
       // own member entry; the DM manages the roster + the encounter tracker; the
       // admin may write any DM-tool field; a non-member may self-join. Only the DM
       // may delete the campaign.
-      // The members' combat-effect write comes first and alone: its effect-op batch check is
-      // the costliest member path, and the per-request expression budget is shared by every
-      // check evaluated on the way to it (measured 2026-11-02: with the effect path first and
-      // the slim bulk-revoke validator, a batch of 8 revokes keeps a margin of about 30 trivial
-      // checks; before, under 5). Keep new member checks OFF this path; see
-      // docs/architecture/2026-11-simplify-core.md for the per-operation-document follow-up.
-      allow update: if isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && combatEffectFieldsOnlyChanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && gameClockUnchanged();
-      allow update: if (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && sharedNotesUnchanged() && gameClockWrite())
+      // ONE statement, read left to right: `||` stops at the first true branch, and the
+      // per-request budget of 1000 expressions is shared by every branch evaluated on the
+      // way. The DM's branch comes first behind a two-expression guard (a member pays only
+      // that before the effect path): the DM is also a member, so with the effect path
+      // first a DM's effect write ran the members' costly validation, spent the budget and
+      // was denied before its own branch was reached (rehearsal, 2026-11-06). Then the
+      // members' combat-effect write, which still gets almost the whole budget (measured
+      // 2026-11-02: with the effect path first and the slim bulk-revoke validator, a batch
+      // of 8 revokes keeps a margin of about 30 trivial checks; before, under 5). Keep new
+      // member checks OFF this path; see docs/architecture/2026-11-simplify-core.md for the
+      // per-operation-document follow-up. Same branches as before, only their order changed.
+      allow update: if (request.auth != null && request.auth.uid == resource.data.dmUid
+            && isDm() && sharedNotesUnchanged() && gameClockWrite())
+        || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && combatEffectFieldsOnlyChanged() && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && gameClockUnchanged())
+        || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && (encounterUnchanged() || turnFieldsOnlyChanged() || memberJoinsOrResorts() || memberCancelsFight() || memberEndsFight() || memberReopensFight()) && encounterInitOwnEntryOnly() && encounterSkippedOwnEntryOnly() && joinsLockedUnchanged() && sharedNotesUnchanged() && gameClockWrite())
         || (isMember() && rosterAndOwnerUnchanged() && memberEditsOnlyOwnEntry() && joinsLockedUnchanged() && memberStartsFight() && sharedNotesUnchanged() && gameClockUnchanged())
-        || (isDm() && sharedNotesUnchanged() && gameClockWrite())
         || isAdmin()
         || isSelfJoin();
       allow delete: if isDm();
