@@ -46,7 +46,13 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["Hit Points", ".f-char-hp-v b", "text-shadow", "rgba(70, 240, 74, 0.53) 0px 0px 14px"],
   // panels: opaque with depth, the header band's padding
   ["panel", ".f-play .f-pn", "box-shadow", "rgba(0, 0, 0, 0.45) 0px 8px 20px 0px"],
-  ["panel", ".f-play .f-pn", "background-color", "rgb(26, 22, 17)"],
+  // the owner's panel material (2026-11-06): a lit top fading down, in place of the flat fill
+  [
+    "panel",
+    ".f-play .f-pn",
+    "background-image",
+    "linear-gradient(rgba(33, 26, 19, 0.97), rgba(17, 13, 10, 0.97))",
+  ],
   ["panel title", ".f-play .f-pnh", "padding-top", "12px"],
   ["resource name", ".f-res-t", "font-weight", "700"],
   ["resource name", ".f-res-t", "color", "rgb(255, 255, 255)"],
