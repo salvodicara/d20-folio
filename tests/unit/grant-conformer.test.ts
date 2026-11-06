@@ -45,8 +45,8 @@ function currentCorpusGrants(roots: readonly unknown[]): GrantCandidate[] {
 describe("exact Grant conformer", () => {
   it("accepts every structural branch and rejects branch-local mutations", () => {
     const branches = schemaBranches();
-    expect(Object.keys(GRANT_SCHEMA.variants)).toHaveLength(158);
-    expect(branches).toHaveLength(161);
+    expect(Object.keys(GRANT_SCHEMA.variants)).toHaveLength(159);
+    expect(branches).toHaveLength(162);
 
     for (const branch of branches) {
       const value = sample(branch.schema);

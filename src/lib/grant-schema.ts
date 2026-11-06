@@ -2472,6 +2472,25 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       ),
     }
   ),
+  /** A Bonus Action attack with a qualifying carried weapon, right after an attack
+   *  with it (Polearm Master's Pole Strike): its damage die and type replace the
+   *  weapon's own. A weapon qualifies when its id is listed, or it has every listed
+   *  property, in any one entry of `weapons`. */
+  "weapon-bonus-attack": objectSchema(
+    {
+      damageDie: stringSchema,
+      damageType: DAMAGE_TYPE_SCHEMA,
+      id: stringSchema,
+      type: literalSchema("weapon-bonus-attack"),
+      weapons: arraySchema(
+        objectSchema(
+          {},
+          { ids: arraySchema(stringSchema), properties: arraySchema(stringSchema) }
+        )
+      ),
+    },
+    { name: LOCALE_TEXT_SCHEMA }
+  ),
   "manifested-weapon": objectSchema(
     {
       category: unionSchema([literalSchema("simple"), literalSchema("martial")]),

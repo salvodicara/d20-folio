@@ -259,6 +259,11 @@ export function actionCtaView(
   const lightAttackCommitted =
     turn.selected.action.some((s) => isLightMain(s.id)) ||
     turn.attackSwingIds.some(isLightMain);
+  // A feature's Bonus Action attack (Pole Strike) follows an attack with its weapon.
+  const attackedWith = new Set([
+    ...turn.selected.action.map((s) => s.id),
+    ...turn.attackSwingIds,
+  ]);
   const offHand = committedOffHandId(
     actions,
     new Set([...turn.selected.free, ...turn.selected.bonus].map((s) => s.id))
@@ -310,7 +315,10 @@ export function actionCtaView(
       attacksLeft != null;
     const reason = actionBlockReason(doc, action, turn, conditions, depleted);
     out.set(action.id, {
-      hidden: action.offhand === true && !lightAttackCommitted,
+      hidden:
+        (action.offhand === true && !lightAttackCommitted) ||
+        (action.bonusAttackAfter !== undefined &&
+          !attackedWith.has(action.bonusAttackAfter)),
       verb: spell ? "cast" : action.source === "weapon" ? "attack" : "use",
       committed,
       slotFull,
