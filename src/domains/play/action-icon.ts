@@ -21,7 +21,8 @@ export type ActionIconKey =
   | { kind: "base"; id: string }
   | { kind: "school"; id: SpellSchool }
   | { kind: "spell" }
-  | { kind: "feature" };
+  | { kind: "feature" }
+  | { kind: "item"; magic: boolean };
 
 const isDamageType = (value: string | undefined): value is DamageType =>
   (DAMAGE_TYPES as readonly string[]).includes(value ?? "");

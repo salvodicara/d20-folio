@@ -42,7 +42,7 @@ import type { Locale } from "@/lib/locale";
 import { formatWeight, localeDistance } from "@/lib/utils";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
-import { actionArt, actionIcon } from "@/domains/play/action-icon";
+import { actionArt, actionIcon, type ActionIconKey } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { giveHelp } from "@/features/character/center/outcome-offer";
@@ -347,6 +347,7 @@ function InventoryPane({
             ].filter(Boolean);
             return (
               <div key={i.key} className="f-act f-item">
+                <ItemIcon item={i} />
                 <div className="f-row-main">
                   <div className="f-row-t">
                     {/* the last two words together: a long name never ends on one alone */}
@@ -429,6 +430,18 @@ function InventoryPane({
       )}
     </>
   );
+}
+
+/** An inventory row's slot: the item's painted icon, or its glyph (homebrew, not painted yet). */
+function ItemIcon({ item }: { item: PlayItem }) {
+  const icon: ActionIconKey =
+    item.line?.kind === "damage" && item.art
+      ? { kind: "weapon", id: item.art.id }
+      : { kind: "item", magic: item.art?.kind === "item" };
+  const art = item.art ? (
+    <Art kind={item.art.kind} id={item.art.id} fallback={<ActionGlyph icon={icon} />} />
+  ) : undefined;
+  return <ActionIcon icon={icon} art={art} />;
 }
 
 function TableHead() {

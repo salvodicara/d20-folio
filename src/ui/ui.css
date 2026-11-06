@@ -3336,11 +3336,11 @@
   color: var(--white);
 }
 .fui .f-sheet .f-act.f-item {
-  grid-template-columns: minmax(0, 1fr) max-content 96px;
+  grid-template-columns: 46px minmax(0, 1fr) max-content 96px;
 }
 @media (max-width: 640px) {
   .fui .f-sheet .f-act.f-item {
-    grid-template-columns: minmax(0, 1fr) 96px;
+    grid-template-columns: 40px minmax(0, 1fr) 96px;
   }
 }
 .fui .f-spell-sum[data-over] {

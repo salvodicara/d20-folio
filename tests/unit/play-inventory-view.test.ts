@@ -51,6 +51,21 @@ describe("playInventoryView", () => {
     expect(potion?.useActionId).toBeTruthy();
   });
 
+  it("names each catalogue item's painted icon; a homebrew item has none", () => {
+    const art = new Map(view.groups.flatMap((g) => g.items).map((i) => [i.name, i.art]));
+    expect(art.get("Stocco")).toEqual({ kind: "equipment", id: "rapier" });
+    expect(art.get("Piede di Porco")).toEqual({ kind: "equipment", id: "crowbar" });
+    expect(art.get("Pozione di Guarigione")).toEqual({
+      kind: "item",
+      id: "potion-of-healing",
+    });
+    expect(art.get("Fermaglio dello Scudo")).toEqual({
+      kind: "item",
+      id: "brooch-of-shielding",
+    });
+    expect(art.get("Cael's Antidote Vial")).toBeNull();
+  });
+
   it("has no attuned group while nothing is attuned", () => {
     expect(view.groups.map((g) => g.kind)).not.toContain("attuned");
   });
