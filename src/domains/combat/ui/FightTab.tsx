@@ -30,6 +30,7 @@ import {
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
+import { missingRollers } from "@/features/campaigns/combat-lifecycle";
 import { encounterRollFor } from "@/features/campaigns/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
@@ -80,7 +81,7 @@ export function FightTab({
       isDm,
       hasCharacter: Boolean(campaign.memberDetails[uid]?.characterId),
       rolled: campaign.encounterInit?.[uid] != null,
-      missing: missingRolls(campaign, encounter),
+      missing: missingRollers({ ...campaign, encounter }).length,
     },
     now
   );
@@ -147,16 +148,6 @@ function useMinute(): number {
     return () => window.clearInterval(id);
   }, []);
   return now;
-}
-
-/** How many characters haven't rolled: the fight's while one runs, else the party's. */
-function missingRolls(campaign: CampaignDoc, encounter: EncounterState | null): number {
-  const uids = encounter
-    ? encounter.combatants.flatMap((c) => (c.kind === "pc" ? [c.memberUid] : []))
-    : Object.entries(campaign.memberDetails).flatMap(([uid, m]) =>
-        m.characterId ? [uid] : []
-      );
-  return uids.filter((uid) => campaign.encounterInit?.[uid] == null).length;
 }
 
 interface Actions {
