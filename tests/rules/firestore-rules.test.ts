@@ -919,6 +919,41 @@ describe("firestore.rules — /campaigns access", () => {
       );
     });
 
+    it("the DM may write a player's spell effect (Bless) without running out of rule budget", async () => {
+      // The 2026-11-06 rehearsal: Bless written with the DM's token was denied with
+      // "the maximum of 1000 expressions … has been reached". The DM is also a member,
+      // so the members' effect-op validation ran first, tried every shape on an op whose
+      // actor is not the writer, and spent the request's budget before the DM's own
+      // branch was read. The op below is the one the app wrote, on this fixture's ids.
+      const dm = testEnv.authenticatedContext("dm").firestore();
+      const bless = {
+        id: "apply:bless:1",
+        kind: "apply",
+        effect: {
+          id: "bless:1",
+          actor: {
+            kind: "pc",
+            combatantId: "pc-member",
+            memberUid: "member",
+            characterId: "char-member",
+          },
+          target: {
+            kind: "pc",
+            combatantId: "pc-member",
+            memberUid: "member",
+            characterId: "char-member",
+          },
+          source: { kind: "spell", id: "bless", actionId: "spell-bless", castLevel: 1 },
+          payload: { kind: "grant-group", activeKey: "spell-bless" },
+          bindings: { spellcastingModifier: 3 },
+          duration: { kind: "concentration", actorId: "pc-member", sourceId: "bless" },
+        },
+      };
+      await assertSucceeds(
+        updateDoc(doc(dm, "campaigns", "camp1"), { "encounter.effectOps": [bless] })
+      );
+    });
+
     it("the ledger accepts every caster/feature-owned payload with bounded deltas", async () => {
       const db = testEnv.authenticatedContext("member").firestore();
       const aid = {
