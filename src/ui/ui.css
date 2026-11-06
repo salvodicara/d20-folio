@@ -2414,10 +2414,9 @@
   color: var(--white);
 }
 .fui .f-sheet .f-turn-t {
-  font: 900 18px var(--font-label);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--white);
+  /* a section title in title-case serif, as BG3 (§8) */
+  font: 600 var(--fs-panel-title) var(--font-title);
+  color: var(--strong);
 }
 .fui .f-sheet .f-turn-slots {
   gap: 12px;
@@ -4096,6 +4095,10 @@
   }
   .fui .f-steps .f-step-of {
     display: inline-flex;
+  }
+  /* one line of step: the page's own gap is room enough above and below it */
+  .fui .f-steps {
+    margin: 0;
   }
 }
 
