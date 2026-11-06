@@ -365,6 +365,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         unsubscribeCombat();
         useCharacterStore.getState().setCombatPersistence(null);
         useCharacterStore.getState().setParentPersistenceFlush(null);
+        useCharacterStore.getState().setDamageTransferSink(null);
         setCharacter(null);
         setDiagnosticsContext({ characterId: undefined });
       };
@@ -442,6 +443,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     useCharacterStore
       .getState()
       .setParentPersistenceFlush(() => void debouncedSaveRef.current?.flush());
+    // Warding Bond: a hit's share lands on the caster's sheet (loaded on demand, so the
+    // campaign writer stays off first paint).
+    useCharacterStore.getState().setDamageTransferSink((transfers) => {
+      void import("@/features/campaigns/campaign-io").then(({ deliverDamageTransfers }) =>
+        deliverDamageTransfers(transfers)
+      );
+    });
     // The combat-mutable slice persists to its own `combat/state` subdoc (not the
     // parent char doc), through the injected persistence seam below.
     const uid = user.uid;

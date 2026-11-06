@@ -13,6 +13,7 @@
  */
 import { concentrationSaveDc } from "@/lib/compute";
 import { damageQueuesConcentrationSave } from "@/lib/character-d20-tests";
+import type { DamageTransfer } from "@/lib/combat-transition";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState, PendingConcentrationSave } from "@/types/combat-state";
 
@@ -24,6 +25,8 @@ import { foldPeerSpends, PEER_SPENDS_CAP, type PeerSpend } from "./peer-spends";
 export interface PeerHit {
   state: CombatState;
   spends: PeerSpend[];
+  /** The hit's shared damage (Warding Bond), for the writer to hand on. */
+  transfers: DamageTransfer[];
 }
 
 /**
@@ -49,7 +52,7 @@ export function peerHit(
     { ...opts, fromPeer: ledgerFull },
     newId
   );
-  if (!resolved) return { state: current, spends: [], ledgerFull };
+  if (!resolved) return { state: current, spends: [], transfers: [], ledgerFull };
   const spends: PeerSpend[] = [
     ...Object.entries(resolved.taken.spent.pools).map(
       ([trackerId, absorbed]): PeerSpend => ({
@@ -63,7 +66,12 @@ export function peerHit(
       (key): PeerSpend => ({ id: newId(), kind: "state-end", key })
     ),
   ];
-  return { state: resolved.state, spends, ledgerFull };
+  return {
+    state: resolved.state,
+    spends,
+    transfers: [...resolved.taken.transition.transfers],
+    ledgerFull,
+  };
 }
 
 /** A hit from another device without the ledger: the stages that would spend
@@ -75,10 +83,27 @@ export function peerDamageState(
   opts: DamageOptions = {},
   newId: () => string = () => crypto.randomUUID()
 ): CombatState {
-  return (
-    resolvePeerHit(doc, current, amount, { ...opts, fromPeer: true }, newId)?.state ??
-    current
+  return peerDamageHit(doc, current, amount, opts, newId).state;
+}
+
+/** {@link peerDamageState} with the hit's shared damage (Warding Bond). */
+export function peerDamageHit(
+  doc: CharacterDoc,
+  current: CombatState,
+  amount: number,
+  opts: DamageOptions = {},
+  newId: () => string = () => crypto.randomUUID()
+): { state: CombatState; transfers: DamageTransfer[] } {
+  const resolved = resolvePeerHit(
+    doc,
+    current,
+    amount,
+    { ...opts, fromPeer: true },
+    newId
   );
+  return resolved
+    ? { state: resolved.state, transfers: [...resolved.taken.transition.transfers] }
+    : { state: current, transfers: [] };
 }
 
 function resolvePeerHit(

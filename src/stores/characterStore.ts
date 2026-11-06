@@ -50,6 +50,7 @@ import {
   removeLogEntry as removeLogEntryById,
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
+import type { DamageTransfer } from "@/lib/combat-transition";
 import { spendZeroHpSaver, type ZeroHpSaveResult } from "@/lib/play/zero-hp-savers";
 import {
   foldPeerSpends as foldPeerSpendsInto,
@@ -251,6 +252,10 @@ interface CharacterState {
   /** Flush the already-scheduled parent-character save after a play-resource mutation.
    * Injected by the subscription so this store remains Firebase-free. */
   parentPersistenceFlush: (() => void) | null;
+  /** Where a hit's shared damage goes (Warding Bond: the caster takes the same amount).
+   * Injected by the campaign layer, which lands each share on the caster's sheet; with
+   * none (no campaign) a share has nowhere to go. */
+  damageTransferSink: ((transfers: DamageTransfer[]) => void) | null;
   /**
    * The SOLO combat `round` hydrated from the `combat/state` subdoc — the round's
    * in-store mirror (the parallel of {@link combatEpoch}). The SESSION no longer carries
@@ -304,6 +309,7 @@ interface CharacterState {
   /** Persist the current complete play owner through the injected seam. */
   persistPlayState: () => void;
   setParentPersistenceFlush: (flush: (() => void) | null) => void;
+  setDamageTransferSink: (sink: ((transfers: DamageTransfer[]) => void) | null) => void;
   /** T4 — load a sheet in read-only mode (DM viewing a member's character). */
   loadReadonly: (doc: CharacterDoc | null) => void;
   /** Atomically publish one parent + play-state pair. Marked v1 parents are never
@@ -1344,6 +1350,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   readonly: false,
   combatPersistence: null,
   parentPersistenceFlush: null,
+  damageTransferSink: null,
   combatRound: 1,
   combatActiveEffects: [],
   combatLegacyActiveEffects: [],
@@ -1472,6 +1479,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   setCombatPersistence: (persistence) => set({ combatPersistence: persistence }),
   persistPlayState: () => persistCombat(get),
   setParentPersistenceFlush: (flush) => set({ parentPersistenceFlush: flush }),
+  setDamageTransferSink: (sink) => set({ damageTransferSink: sink }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
@@ -1624,6 +1632,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
     const taken = takeDamage(character, amount, opts);
     if (!taken) return null;
+    // Warding Bond's share leaves with the hit (the caster takes the same amount).
+    if (taken.transition.transfers.length > 0) {
+      get().damageTransferSink?.([...taken.transition.transfers]);
+    }
     // What the hit brings with it: a pending zero-HP consequence (Disintegrate), and
     // the end of attunement if it kills (the same law as a sheet event).
     const damaged = withEventConsequences(character, {
