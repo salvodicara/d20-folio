@@ -2373,42 +2373,33 @@
   transform: rotate(45deg) scale(0.85);
 }
 /* the centre's tab band (prototype .boxtabs): the panel's head, its tabs in Cinzel */
-.fui .f-sheet .f-centre {
-  --c: #c9d1dc;
-}
 .fui .f-sheet .f-centre > .f-tabs {
+  /* BG3 tabs sit on the panel's plain material: no colour cap, no sheen (§1, §4, §9) */
   gap: 4px;
   align-items: stretch;
   min-height: 56px;
   margin: 0 -1px;
   padding: 0 20px;
-  border-bottom: 1px solid var(--line-soft);
   border-top: 0;
-  background:
-    linear-gradient(90deg, transparent, var(--c, var(--c-act)) 30%, transparent) top /
-      100% 1px no-repeat,
-    radial-gradient(
-      70% 140% at 30% 0,
-      color-mix(in srgb, var(--c, var(--c-act)) 30%, transparent),
-      transparent 75%
-    ),
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
+  /* the same thin bronze rule fading at both ends as a panel title (.f-pnh) */
+  background: linear-gradient(
+      90deg,
+      transparent,
+      var(--frame) 20%,
+      var(--frame) 80%,
       transparent
-    );
+    )
+    bottom / 100% 1px no-repeat;
 }
 .fui .f-sheet .f-centre > .f-tabs > button {
   gap: 8px;
   padding: 16px 16px 12px;
-  font: 700 14px var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-md) var(--font-text);
   color: var(--muted);
 }
 .fui .f-sheet .f-centre > .f-tabs > button[aria-selected="true"] {
-  color: var(--white);
-  box-shadow: inset 0 -3px 0 var(--c);
+  color: var(--strong);
+  box-shadow: inset 0 -2px 0 var(--gold-hi);
 }
 /* the turn strip (prototype .bn): a quiet band, the round in Cinzel, «Fine turno» lit */
 .fui .f-sheet .f-turn {
