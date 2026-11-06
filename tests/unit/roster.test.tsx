@@ -60,11 +60,8 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { RosterPage } from "@/features/roster/RosterPage";
 import { CharacterCard } from "@/features/roster/CharacterCard";
-import {
-  rosterProjectionFromDoc,
-  cacheToRosterDoc,
-  applyCombatToRosterDoc,
-} from "@/lib/character-cache";
+import { cacheToRosterDoc, applyCombatToRosterDoc } from "@/lib/character-cache";
+import { rosterProjectionFromDoc } from "@/lib/character-cache-build";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { sanitizeSession } from "@/lib/sanitize-session";
 import { isCharacterDead } from "@/lib/character-status";

@@ -292,7 +292,7 @@ export async function buildPublicCharacterProjection(
   if (!isStatus(source.status)) throw new TypeError("Invalid character status");
   const [{ serializeCharacterEnvelope }, { buildCharacterCache }] = await Promise.all([
     import("@/lib/character-codec"),
-    import("@/lib/character-cache"),
+    import("@/lib/character-cache-build"),
   ]);
   const envelope = serializeCharacterEnvelope(source);
   // This is the same live derivation `toStoredPayload` stamps on the private parent.

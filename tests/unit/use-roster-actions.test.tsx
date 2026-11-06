@@ -70,7 +70,7 @@ vi.mock("@/stores/authStore", () => ({
 
 import { useLoadExample } from "@/features/account/use-load-example";
 import { useRosterActions } from "@/features/roster/use-roster-actions";
-import { rosterProjectionFromDoc } from "@/lib/character-cache";
+import { rosterProjectionFromDoc } from "@/lib/character-cache-build";
 
 /** The roster card receives the SRD-free PROJECTION (Layer 2). Export/clone re-read
  *  the full doc via the mocked `getFullCharacter` (seeded to {@link fullDoc}). */

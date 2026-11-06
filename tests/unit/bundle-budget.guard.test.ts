@@ -169,6 +169,10 @@ const ENTRY_CEILING_KB = 65; // baseline 53.7 → +17% (2026-07-10: +1 for the g
 // concentration label has its own module) and the `cockpit-engine` manualChunks bucket is
 // gone, so the combat engine and its views ship in lazy chunks (eager-graph.guard.test.ts
 // pins them out). The ceiling stays at 864: the ~44 KB under it is headroom.
+// 2026-11-06 (later): 799.7 KB gz (JS 720.8 + CSS 78.9, 46 chunks), −20.3: the roster
+// cache's WRITE side (`buildCharacterCache`, the grant-aware AC/HP engine) moved to
+// `character-cache-build.ts`, loaded on demand, so the eager persistence layer no longer
+// drags aggregate-character, conditions, vitals and polymorph. ~64 KB headroom.
 const EAGER_CEILING_KB = 864; // baseline 727.1 → ~+18% (over budget — see ARCHITECTURE P3 frontier #1)
 // 2026-06-11: raised from 6480 → 7150 for the lazy PDF-export renderer chunk
 // (character-pdf-*.js, ~428 KB raw / ~178 KB gz). The chunk is LAZY (loaded only

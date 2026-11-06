@@ -64,7 +64,7 @@ vi.mock("@/lib/firestore", () => ({ getFullCharacter: getFullMock }));
 vi.mock("@/lib/character-io", () => ({ downloadCharactersZip: downloadZipMock }));
 
 import { RosterPage } from "@/features/roster/RosterPage";
-import { rosterProjectionFromDoc } from "@/lib/character-cache";
+import { rosterProjectionFromDoc } from "@/lib/character-cache-build";
 
 /** The roster list item — the SRD-free PROJECTION the real subscription streams. */
 function doc(

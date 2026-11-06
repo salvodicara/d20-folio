@@ -6,7 +6,7 @@ import {
   rehydrateCharacter,
   type MinimalCharacter,
 } from "@/lib/character-minimal";
-import { buildCharacterCache } from "@/lib/character-cache";
+import { buildCharacterCache } from "@/lib/character-cache-build";
 import { sanitizeCharacter } from "@/lib/sanitize-character";
 import { primaryClassEntry } from "@/lib/classes";
 import { subclassNameById } from "@/data/srd-names";
