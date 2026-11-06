@@ -13,6 +13,7 @@ import enMagicItems from "./en/srd-prose/magic-items.json";
 import enEquipment from "./en/srd-prose/equipment.json";
 import enLanguages from "./en/srd-prose/languages.json";
 import enRules from "./en/srd-prose/rules.json";
+import enClassFeatures from "./en/srd-prose/class-features.json";
 
 export const publicSrdEnProse: Partial<Record<SrdKind, SrdCatalogue>> = {
   spell: enSpells,
@@ -21,4 +22,5 @@ export const publicSrdEnProse: Partial<Record<SrdKind, SrdCatalogue>> = {
   equipment: enEquipment,
   language: enLanguages,
   rule: enRules,
+  "class-feature": enClassFeatures,
 };

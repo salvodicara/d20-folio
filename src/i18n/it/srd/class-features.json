@@ -1,14 +1,16 @@
 {
   "barbarian-berserker-frenzy": {
     "description": "Se usi Attacco Irruento mentre la tua Ira è attiva, infliggi danni extra al primo bersaglio che colpisci nel tuo turno con un attacco basato sulla Forza: tira un numero di d6 pari al tuo bonus di Danni da Ira (+2, +3 al livello 9, +4 al livello 16) e sommali. Il tipo di danno corrisponde all'arma o al Colpo Senz'armi usato.",
-    "name": "Frenesia"
+    "name": "Frenesia",
+    "gist": "Attacco Irruento in Ira: il primo colpo di Forza aggiunge d6 pari al bonus di Danni da Ira"
   },
   "barbarian-berserker-frenzy.grants.0": {
     "label": "Frenesia"
   },
   "barbarian-berserker-intimidating-presence": {
     "description": "Come Azione Bonus, incuti terrore negli altri con la tua presenza minacciosa e la tua potenza primordiale. Ogni creatura a tua scelta in un'Emanazione di 9 metri che origina da te deve superare un tiro salvezza su Saggezza (CD = 8 + il tuo modificatore di Forza + il tuo bonus di competenza) o subire la condizione Spaventato per 1 minuto. Alla fine di ogni turno della creatura Spaventata, essa ripete il tiro salvezza, terminando l'effetto su di sé con un successo. Una volta usata questa caratteristica, non puoi riusarla fino a un Riposo Lungo, a meno che tu non spenda un uso della tua Ira (nessuna azione richiesta) per ripristinarla.",
-    "name": "Presenza Intimidatoria"
+    "name": "Presenza Intimidatoria",
+    "gist": "Azione Bonus: creature scelte entro 9 m, TS su Saggezza o Spaventate per 1 minuto"
   },
   "barbarian-berserker-intimidating-presence.mechanics.actions.0": {
     "description": "Ogni nemico in un'Emanazione di 9 metri fa un TS Saggezza (CD 8 + mod For + bonus di competenza) o è Spaventato per 1 min (ritira il TS alla fine di ogni suo turno).",
@@ -16,63 +18,75 @@
   },
   "barbarian-berserker-mindless-rage": {
     "description": "Non puoi essere affascinato o spaventato mentre sei in ira. Se sei affascinato o spaventato quando entri in ira, l'effetto è sospeso per la durata dell'ira.",
-    "name": "Ira Incontenibile"
+    "name": "Ira Incontenibile",
+    "gist": "Non puoi essere affascinato o spaventato in ira; gli effetti in corso sono sospesi"
   },
   "barbarian-berserker-mindless-rage.grants.0": {
     "label": "Ira Incontenibile"
   },
   "barbarian-berserker-retaliation": {
     "description": "Quando subisci danni da una creatura entro 1,5 metri da te, puoi usare la tua reazione per effettuare un attacco con arma in mischia contro quella creatura.",
-    "name": "Ritorsione"
+    "name": "Ritorsione",
+    "gist": "Reazione: se una creatura entro 1,5 m ti danneggia, la attacchi con un'arma in mischia"
   },
   "barbarian-berserker-retaliation.mechanics.actions.0": {
     "description": "Effettua un attacco in mischia contro una creatura che ti ha danneggiato entro 1,5 metri."
   },
   "barbarian-brutal-strike": {
     "description": "Se usi Attacco Irruento, puoi rinunciare al Vantaggio su un tiro per colpire basato sulla Forza nel tuo turno. Se l'attacco scelto colpisce, il bersaglio subisce 1d10 danni extra e puoi causare un effetto: Colpo Possente (spingi di 4,5 m, poi muoviti fino a metà velocità verso il bersaglio) o Colpo al Tendine (riduci la velocità di 4,5 m fino all'inizio del tuo turno successivo).",
-    "name": "Colpo Brutale"
+    "name": "Colpo Brutale",
+    "gist": "Rinunci al Vantaggio di Attacco Irruento: +1d10 danni e un effetto (spinta o rallento)"
   },
   "barbarian-danger-sense": {
     "description": "Acquisisci un senso soprannaturale di quando le cose non sono come dovrebbero, dandoti un vantaggio quando schivi i pericoli. Hai Vantaggio ai tiri salvezza su Destrezza a meno che tu non abbia la condizione Incapacitato.",
-    "name": "Percezione del Pericolo"
+    "name": "Percezione del Pericolo",
+    "gist": "Vantaggio ai tiri salvezza su Destrezza, se non sei Incapacitato"
   },
   "barbarian-danger-sense.grants.0": {
     "description": "Tiri salvezza su Destrezza"
   },
   "barbarian-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "barbarian-extra-attack": {
     "description": "Puoi attaccare due volte, anziché una, ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra"
+    "name": "Attacco Extra",
+    "gist": "Attacchi due volte quando effettui l'azione di Attacco"
   },
   "barbarian-fast-movement": {
     "description": "La tua velocità aumenta di 3 metri mentre non indossi armatura pesante.",
-    "name": "Movimento Veloce"
+    "name": "Movimento Veloce",
+    "gist": "+3 m di velocità se non indossi armatura pesante"
   },
   "barbarian-feral-instinct": {
     "description": "I tuoi istinti sono così affinati che hai Vantaggio ai tiri di Iniziativa.",
-    "name": "Istinto Ferino"
+    "name": "Istinto Ferino",
+    "gist": "Vantaggio ai tiri di Iniziativa"
   },
   "barbarian-feral-instinct.grants.0": {
     "description": "Tiri di Iniziativa"
   },
   "barbarian-greater-brutal-strike": {
     "description": "Il danno del tuo Colpo Brutale aumenta a 2d10 e puoi applicare due effetti diversi quando lo usi.",
-    "name": "Colpo Brutale Migliorato"
+    "name": "Colpo Brutale Migliorato",
+    "gist": "Colpo Brutale infligge 2d10 e applica due effetti diversi"
   },
   "barbarian-improved-brutal-strike": {
     "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5).",
-    "name": "Colpo Brutale Migliorato"
+    "name": "Colpo Brutale Migliorato",
+    "gist": "Nuove opzioni di Colpo Brutale: Svantaggio al prossimo TS, o +5 al prossimo attacco altrui"
   },
   "barbarian-indomitable-might": {
     "description": "Se il totale di una prova di Forza o di un tiro salvezza su Forza è inferiore al tuo punteggio di Forza, puoi usare il tuo punteggio di Forza al posto del totale.",
-    "name": "Potenza Indomabile"
+    "name": "Potenza Indomabile",
+    "gist": "Usi il punteggio di Forza se una prova o un tiro salvezza su Forza dà meno"
   },
   "barbarian-instinctive-pounce": {
     "description": "Come parte dell'Azione Bonus che usi per entrare in Ira, puoi muoverti fino a metà della tua Velocità.",
-    "name": "Balzo Istintivo"
+    "name": "Balzo Istintivo",
+    "gist": "Ti muovi fino a metà Velocità con l'Azione Bonus per entrare in Ira"
   },
   "barbarian-instinctive-pounce.grants.instinctive-pounce": {
     "description": "Muoviti fino a metà della tua Velocità.",
@@ -81,22 +95,26 @@
   },
   "barbarian-persistent-rage": {
     "description": "Quando tiri Iniziativa, puoi recuperare tutti gli usi di Ira spesi. Dopo aver recuperato usi in questo modo, non puoi farlo di nuovo fino a un Riposo Lungo. Inoltre, la tua Ira ora dura 10 minuti senza doverla estendere. Termina anticipatamente solo se hai la condizione Privo di Sensi o indossi un'armatura pesante.",
-    "name": "Ira Persistente"
+    "name": "Ira Persistente",
+    "gist": "Recuperi tutta l'Ira all'Iniziativa, 1/Riposo Lungo; l'Ira dura 10 minuti senza estenderla"
   },
   "barbarian-primal-champion": {
     "description": "I tuoi punteggi di Forza e Costituzione aumentano di 4. Il tuo massimo per questi punteggi è ora 25.",
-    "name": "Campione Primordiale"
+    "name": "Campione Primordiale",
+    "gist": "+4 a Forza e Costituzione, massimo 25"
   },
   "barbarian-primal-knowledge": {
     "description": "Ottieni competenza in un'abilità a tua scelta tra quelle disponibili ai Barbari al 1° livello. Inoltre, mentre la tua Ira è attiva, puoi incanalare il potere primordiale: ogni volta che effettui una prova di abilità con Acrobazia, Intimidire, Percezione, Furtività o Sopravvivenza, puoi effettuarla come prova di Forza anche se normalmente usa una caratteristica diversa.",
-    "name": "Conoscenza Primordiale"
+    "name": "Conoscenza Primordiale",
+    "gist": "Una competenza extra da Barbaro; in Ira alcune prove di abilità possono usare la Forza"
   },
   "barbarian-primal-knowledge.grants.1": {
     "label": "Conoscenza Primordiale"
   },
   "barbarian-rage": {
     "description": "Nel tuo turno, puoi entrare in Ira come Azione Bonus. Mentre sei in preda all'Ira, ottieni i seguenti benefici: hai Vantaggio alle prove e ai tiri salvezza di Forza, quando effettui un attacco basato sulla Forza infliggi danni bonus pari al tuo danno dell'Ira, e hai Resistenza ai danni Contundenti, Perforanti e Taglienti. La tua Ira dura fino alla fine del tuo turno successivo e puoi estenderla round dopo round (fino a un massimo di 10 minuti) effettuando un tiro per colpire contro un nemico, costringendo un nemico a effettuare un tiro salvezza o usando un'Azione Bonus per mantenerla. Recuperi un uso speso di Ira con un Riposo Breve e tutti con un Riposo Lungo.",
-    "name": "Ira"
+    "name": "Ira",
+    "gist": "Azione Bonus: Resistenza a danni Contundenti, Perforanti, Taglienti; danni d'Ira"
   },
   "barbarian-rage.grants.0": {
     "label": "Ira"
@@ -122,7 +140,8 @@
   },
   "barbarian-reckless-attack": {
     "description": "Puoi abbandonare ogni cautela difensiva per attaccare con maggiore ferocia. Quando effettui il tuo primo tiro per colpire nel turno, puoi decidere di attaccare spericolatamente, ottenendo Vantaggio ai tiri per colpire con Forza fino all'inizio del tuo prossimo turno, ma i tiri per colpire contro di te hanno Vantaggio per la stessa durata.",
-    "name": "Attacco Irruento"
+    "name": "Attacco Irruento",
+    "gist": "Vantaggio ai tiri per colpire con Forza; anche chi ti attacca ha Vantaggio"
   },
   "barbarian-reckless-attack.mechanics.actions.0": {
     "description": "Dichiara Attacco Irruento per i tuoi attacchi con Forza fino all'inizio del tuo prossimo turno.",
@@ -140,91 +159,110 @@
   },
   "barbarian-relentless-rage": {
     "description": "La tua Ira può mantenerti in combattimento nonostante ferite gravi. Se scendi a 0 Punti Ferita mentre la tua Ira è attiva e non muori sul colpo, puoi effettuare un TS di Costituzione con CD 10. Se riesci, i tuoi Punti Ferita diventano un numero pari al doppio del tuo livello da Barbaro. Ogni volta che usi questo privilegio dopo la prima, la CD aumenta di 5. La CD si resetta a 10 dopo un Riposo Breve o Lungo.",
-    "name": "Ira Implacabile"
+    "name": "Ira Implacabile",
+    "gist": "A 0 Punti Ferita in Ira, TS di Costituzione CD 10 per tornare al doppio del tuo livello"
   },
   "barbarian-unarmored-defense": {
     "description": "Mentre non indossi alcuna armatura, la tua Classe Armatura è pari a 10 + il tuo modificatore di Destrezza + il tuo modificatore di Costituzione. Puoi usare uno scudo e beneficiare comunque di questa capacità.",
-    "name": "Difesa Senza Armatura"
+    "name": "Difesa Senza Armatura",
+    "gist": "Senza armatura, CA = 10 + mod. Destrezza + mod. Costituzione; scudo permesso"
   },
   "barbarian-weapon-mastery": {
     "description": "Il tuo addestramento con le armi ti permette di usare le proprietà di padronanza di due tipi di armi da mischia semplici o marziali di tua scelta con cui hai competenza. Ogni volta che completi un Riposo Lungo, puoi cambiare i tipi di arma scelti.",
-    "name": "Padronanza d'Armi"
+    "name": "Padronanza d'Armi",
+    "gist": "Proprietà di padronanza di due tipi di armi da mischia; cambiale a ogni Riposo Lungo"
   },
   "bard-asi": {
     "description": "Puoi aumentare un punteggio di caratteristica di 2, o due punteggi di caratteristica di 1 ciascuno. In alternativa, puoi scegliere un talento. Non puoi aumentare un punteggio oltre 20 con questo privilegio.",
-    "name": "Aumento dei Punteggi di Caratteristica"
+    "name": "Aumento dei Punteggi di Caratteristica",
+    "gist": "+2 a un punteggio o +1 a due (massimo 20), oppure un talento"
   },
   "bard-bardic-inspiration": {
     "description": "Come Azione Bonus, ispiri un'altra creatura entro 18 metri che possa vederti o sentirti. La creatura conserva un dado di Ispirazione Bardica per un massimo di 1 ora. Dopo aver fallito un Test del d20, può tirare il dado e sommarlo al d20, trasformando potenzialmente il fallimento in successo. Una creatura può conservare un solo dado alla volta. Puoi usare questo privilegio un numero di volte pari al tuo modificatore di Carisma (minimo 1).",
-    "name": "Ispirazione Bardica"
+    "name": "Ispirazione Bardica",
+    "gist": "Azione Bonus: dai a una creatura entro 18 m un dado da sommare a un Test del d20 fallito"
   },
   "bard-bardic-inspiration.mechanics.actions.0": {
     "description": "Concedi Ispirazione Bardica a una creatura entro 18 metri."
   },
   "bard-countercharm": {
     "description": "Come Reazione quando tu o una creatura entro 9 m da te fallisce un tiro salvezza contro un effetto che impone la condizione Affascinato o Spaventato, puoi far ripetere quel tiro salvezza, e il nuovo tiro ha Vantaggio. Non costa nulla.",
-    "name": "Controfascino"
+    "name": "Controfascino",
+    "gist": "Reazione: ripeti con Vantaggio un TS fallito contro Affascinato o Spaventato entro 9 m"
   },
   "bard-countercharm.mechanics.actions.0": {
     "description": "Ripeti un tiro salvezza fallito contro la condizione Affascinato o Spaventato; il nuovo tiro ha Vantaggio."
   },
   "bard-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "bard-expertise": {
     "description": "Scegli due delle tue competenze nelle abilità. Il tuo bonus di competenza è raddoppiato per qualsiasi prova di caratteristica che usa una delle competenze scelte. Al 9° livello, puoi scegliere altre due competenze per ottenere questo beneficio.",
-    "name": "Maestria"
+    "name": "Maestria",
+    "gist": "Raddoppi il Bonus di Competenza in due abilità; altre due al 9° livello"
   },
   "bard-font-of-inspiration": {
     "description": "Ora recuperi tutti gli usi spesi di Ispirazione Bardica quando completi un riposo breve o lungo, anziché solo con un riposo lungo. Inoltre, puoi consumare uno slot incantesimo (nessuna azione richiesta) per recuperare un uso speso di Ispirazione Bardica.",
-    "name": "Fonte di Ispirazione"
+    "name": "Fonte di Ispirazione",
+    "gist": "Ispirazione Bardica torna con un Riposo Breve o Lungo; uno slot incantesimo ne ridà una"
   },
   "bard-jack-of-all-trades": {
     "description": "Puoi aggiungere metà del tuo bonus di competenza, arrotondato per difetto, a qualsiasi prova di caratteristica che non includa già il tuo bonus di competenza. Questo rappresenta la tua ampia ma superficiale esperienza in molte abilità.",
-    "name": "Factotum"
+    "name": "Factotum",
+    "gist": "Metà del Bonus di Competenza alle prove di caratteristica che non lo includono"
   },
   "bard-lore-additional-magical-secrets": {
     "description": "Apprendi due incantesimi a tua scelta. Possono provenire dalla lista di Chierico, Druido o Mago, in qualsiasi combinazione. Ognuno deve essere un trucchetto o un incantesimo per cui possiedi slot incantesimo. Hai sempre preparati gli incantesimi scelti e, ogni volta che ottieni un livello da Bardo, puoi sostituirne uno con un altro che soddisfi questi requisiti.",
-    "name": "Scoperte Magiche"
+    "name": "Scoperte Magiche",
+    "gist": "Apprendi due incantesimi sempre preparati dalle liste di Chierico, Druido o Mago"
   },
   "bard-lore-bonus-proficiencies": {
     "description": "Quando entri nel Collegio della Sapienza, ottieni competenza in tre abilità a tua scelta. Questo rappresenta l'ampiezza di conoscenza accumulata attraverso i tuoi studi e viaggi.",
-    "name": "Competenze Bonus"
+    "name": "Competenze Bonus",
+    "gist": "Ottieni competenza in tre abilità a tua scelta"
   },
   "bard-lore-cutting-words": {
     "description": "Quando una creatura che puoi vedere entro 18 metri effettua un tiro per colpire, prova di caratteristica o tiro per i danni, puoi usare la tua reazione per spendere un dado di Ispirazione Bardica e sottrarre il risultato dal tiro della creatura. Puoi farlo dopo il tiro ma prima che gli effetti vengano applicati.",
-    "name": "Parole Taglienti"
+    "name": "Parole Taglienti",
+    "gist": "Reazione: spendi un dado di Ispirazione Bardica e sottrailo a un tiro entro 18 m"
   },
   "bard-lore-cutting-words.mechanics.actions.0": {
     "description": "Sottrai dado di Ispirazione Bardica dal tiro del nemico."
   },
   "bard-lore-peerless-skill": {
     "description": "Quando fallisci una prova di caratteristica o un tiro per colpire, puoi spendere un uso di Ispirazione Bardica, tirare il dado di Ispirazione Bardica e aggiungerlo al tiro, potenzialmente trasformando il fallimento in un successo. Se il tiro fallisce comunque, quell'uso di Ispirazione Bardica non viene speso.",
-    "name": "Abilità Impareggiabile"
+    "name": "Abilità Impareggiabile",
+    "gist": "Aggiungi Ispirazione Bardica a una prova o attacco fallito; non spesa se fallisce comunque"
   },
   "bard-lore-peerless-skill.mechanics.actions.0": {
     "description": "Aggiungi il dado di Ispirazione Bardica alla tua prova di caratteristica."
   },
   "bard-magical-secrets": {
     "description": "Ogni volta che raggiungi un livello da Bardo (compreso questo) e il tuo numero di Incantesimi Preparati aumenta, puoi scegliere uno qualsiasi dei tuoi nuovi incantesimi preparati dalle liste di Bardo, Chierico, Druido e Mago. Gli incantesimi scelti contano come incantesimi da Bardo per te. Puoi anche sostituire un incantesimo preparato con uno di quelle liste.",
-    "name": "Segreti Magici"
+    "name": "Segreti Magici",
+    "gist": "Prepari nuovi incantesimi dalle liste di Bardo, Chierico, Druido e Mago"
   },
   "bard-spellcasting": {
     "description": "Hai imparato a lanciare incantesimi attraverso la musica e l'oratoria. Carisma è la tua caratteristica da incantatore. Prepari un numero di incantesimi da bardo pari al tuo modificatore di Carisma + il tuo livello da bardo. Puoi usare uno strumento musicale come focus da incantatore.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Lanci incantesimi da bardo con Carisma; ne prepari mod. Carisma + livello da bardo"
   },
   "bard-superior-inspiration": {
     "description": "Quando tiri l'Iniziativa, recuperi gli usi spesi di Ispirazione Bardica finché non ne hai due (se ne hai meno). Questo assicura che tu entri nella maggior parte dei combattimenti con almeno due dadi di ispirazione pronti.",
-    "name": "Ispirazione Superiore"
+    "name": "Ispirazione Superiore",
+    "gist": "All'Iniziativa recuperi Ispirazione Bardica fino ad averne due"
   },
   "bard-words-of-creation": {
     "description": "Hai padroneggiato due delle Parole della Creazione: le parole della vita e della morte. Hai quindi sempre preparati gli incantesimi Parola del Potere Guarire e Parola del Potere Uccidere. Quando lanci uno dei due incantesimi, puoi prendere di mira una seconda creatura se si trova entro 3 metri dal primo bersaglio.",
-    "name": "Parole della Creazione"
+    "name": "Parole della Creazione",
+    "gist": "Parola del Potere Guarire e Uccidere sempre preparati; un secondo bersaglio entro 3 m"
   },
   "cleric-blessed-strikes": {
     "description": "Il potere divino ti infonde in battaglia. Ottieni una delle seguenti opzioni a tua scelta. Colpo Divino: una volta in ciascuno dei tuoi turni quando colpisci una creatura con un attacco con arma, puoi infliggere 1d8 danni Necrotici o Radiosi extra (a tua scelta; aumenta a 2d8 con Colpi Benedetti Migliorati). Incantesimo Potente: aggiungi il tuo modificatore di Saggezza ai danni che infliggi con qualsiasi trucchetto da Chierico.",
-    "name": "Colpi Benedetti"
+    "name": "Colpi Benedetti",
+    "gist": "+1d8 Necrotici/Radiosi a un colpo d'arma per turno, o Saggezza ai danni dei trucchetti"
   },
   "cleric-blessed-strikes.grants.0": {
     "label": "Colpi Benedetti"
@@ -237,7 +275,8 @@
   },
   "cleric-channel-divinity": {
     "description": "Ottieni la capacità di canalizzare energia divina direttamente dalla tua divinità, usando quell'energia per alimentare effetti magici. Inizi con Scacciare Non Morti e un effetto determinato dal tuo dominio. Recuperi gli usi spesi dopo un riposo breve o lungo.",
-    "name": "Incanalare Divinità"
+    "name": "Incanalare Divinità",
+    "gist": "Scacciare Non Morti più un effetto del dominio; usi recuperati con Riposo Breve o lungo"
   },
   "cleric-channel-divinity.mechanics.actions.0": {
     "description": "Usa una delle opzioni di Incanalare Divinità.",
@@ -245,7 +284,8 @@
   },
   "cleric-divine-intervention": {
     "description": "Puoi invocare la tua divinità o il tuo pantheon affinché intervenga per tuo conto. Come azione Magica, scegli un qualsiasi incantesimo da Chierico di livello 5 o inferiore che non richieda una Reazione per essere lanciato. Come parte della stessa azione, lanci quell'incantesimo senza spendere uno slot incantesimo né necessitare di componenti Materiali. Non puoi riusare questo privilegio finché non completi un Riposo Lungo.",
-    "name": "Intervento Divino"
+    "name": "Intervento Divino",
+    "gist": "Azione Magica: lanci gratis un incantesimo da Chierico fino al 5° livello, 1/Riposo Lungo"
   },
   "cleric-divine-intervention.mechanics.actions.0": {
     "description": "Azione Magica: lancia gratuitamente un qualsiasi incantesimo da Chierico di livello 5 o inferiore (nessuno che si lanci come Reazione) — senza slot né componenti Materiali. 1/Riposo Lungo.",
@@ -253,7 +293,8 @@
   },
   "cleric-divine-order": {
     "description": "Ti dedichi a uno dei seguenti ruoli sacri a tua scelta. Protettore: addestrato per la battaglia, ottieni competenza con armi da Guerra e addestramento con armature Pesanti. Taumaturgo: conosci un trucchetto extra dalla lista degli incantesimi del Chierico e ottieni un bonus alle tue prove di Intelligenza (Arcano o Religione) pari al tuo modificatore di Saggezza (minimo +1).",
-    "name": "Ordine Divino"
+    "name": "Ordine Divino",
+    "gist": "Protettore: armi da Guerra, armature Pesanti; Taumaturgo: trucchetto extra e Arcano"
   },
   "cleric-divine-order.grants.0": {
     "label": "Ordine Divino"
@@ -266,7 +307,8 @@
   },
   "cleric-divine-spark": {
     "description": "Come azione Magica, punti il tuo Simbolo Sacro verso un'altra creatura che vedi entro 9 metri e concentri energia divina su di essa. Tira 1d8 e aggiungi il tuo modificatore di Saggezza. Puoi ripristinare alla creatura Punti Ferita pari a quel totale, oppure costringerla a effettuare un tiro salvezza su Costituzione — in caso di fallimento subisce danni Necrotici o Radiosi (a tua scelta) pari a quel totale, o metà (arrotondati per difetto) in caso di successo. Tiri un d8 aggiuntivo ai livelli da Chierico 7 (2d8), 13 (3d8) e 18 (4d8).",
-    "name": "Scintilla Divina"
+    "name": "Scintilla Divina",
+    "gist": "Azione Magica, 9 m: cura 1d8 + Saggezza o pari danni Necrotici/Radiosi (TS Costituzione)"
   },
   "cleric-divine-spark.mechanics.actions.0": {
     "description": "Incanalare Divinità: ripristina PF, oppure infliggi danni Necrotici/Radiosi (TS Costituzione per metà) a una creatura entro 9 m. Cura/danno = 1d8 + SAG (2d8 al liv. 7, 3d8 al liv. 13, 4d8 al liv. 18).",
@@ -274,27 +316,33 @@
   },
   "cleric-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "cleric-improved-blessed-strikes": {
     "description": "L'opzione scelta per Colpi Benedetti diventa più potente. Colpo Divino: i danni extra del tuo Colpo Divino aumentano a 2d8. Incantesimo Potente: quando infliggi danni con un trucchetto da Chierico a una creatura, puoi concedere a te stesso o a un'altra creatura entro 18 metri Punti Ferita Temporanei pari al doppio del tuo modificatore di Saggezza.",
-    "name": "Colpi Benedetti Migliorati"
+    "name": "Colpi Benedetti Migliorati",
+    "gist": "Colpo Divino sale a 2d8, o i trucchetti danno Punti Ferita Temporanei (2× Saggezza)"
   },
   "cleric-improved-divine-intervention": {
     "description": "Puoi invocare un intervento divino ancora più potente. Quando usi il privilegio Intervento Divino, puoi scegliere Desiderio quando selezioni un incantesimo. Se lo fai, non puoi usare di nuovo Intervento Divino finché non completi 2d4 Riposi Lunghi.",
-    "name": "Intervento Divino Superiore"
+    "name": "Intervento Divino Superiore",
+    "gist": "Intervento Divino può lanciare Desiderio; poi torna dopo 2d4 Riposi Lunghi"
   },
   "cleric-life-blessed-healer": {
     "description": "Quando lanci un incantesimo di 1° livello o superiore che ripristina punti ferita a un'altra creatura, anche tu recuperi punti ferita pari a 2 + il livello dell'incantesimo.",
-    "name": "Guaritore Benedetto"
+    "name": "Guaritore Benedetto",
+    "gist": "Curando altri con un incantesimo recuperi 2 + il livello dell'incantesimo"
   },
   "cleric-life-disciple-of-life": {
     "description": "I tuoi incantesimi di guarigione sono più efficaci. Ogni volta che usi un incantesimo di 1° livello o superiore per ripristinare punti ferita a una creatura, essa recupera punti ferita aggiuntivi pari a 2 + il livello dell'incantesimo.",
-    "name": "Discepolo della Vita"
+    "name": "Discepolo della Vita",
+    "gist": "Gli incantesimi di guarigione ridanno 2 + il livello dell'incantesimo Punti Ferita in più"
   },
   "cleric-life-preserve-life": {
     "description": "Come azione, usi Incanalare Divinità per guarire gli alleati. Distribuisci punti ferita pari a cinque volte il tuo livello da chierico tra le creature entro 9 metri, ripristinando ciascuna a non più della metà del suo massimo di punti ferita.",
-    "name": "Preservare Vita"
+    "name": "Preservare Vita",
+    "gist": "Incanalare Divinità: dividi 5× il livello da chierico in Punti Ferita entro 9 m"
   },
   "cleric-life-preserve-life.mechanics.actions.0": {
     "description": "Incanalare Divinità: distribuisci PF pari a 5 × livello chierico tra gli alleati entro 9 m.",
@@ -303,11 +351,13 @@
   },
   "cleric-life-supreme-healing": {
     "description": "Quando normalmente tireresti dadi per ripristinare punti ferita con un incantesimo, usi invece il numero massimo possibile per ogni dado. Ad esempio, invece di tirare 2d6, ripristini 12 punti ferita.",
-    "name": "Guarigione Suprema"
+    "name": "Guarigione Suprema",
+    "gist": "I dadi di guarigione degli incantesimi danno sempre il massimo"
   },
   "cleric-sear-undead": {
     "description": "Ogni volta che usi Scacciare Non Morti, puoi tirare un numero di d8 pari al tuo modificatore di Saggezza (minimo 1d8) e sommare i risultati. Ogni non morto che fallisce il suo tiro salvezza contro quell'uso di Scacciare Non Morti subisce danni Radiosi pari al totale. Questi danni non terminano l'effetto di scacciare.",
-    "name": "Bruciare i Non Morti"
+    "name": "Bruciare i Non Morti",
+    "gist": "Scacciare Non Morti infligge anche d8 Radiosi pari alla Saggezza a chi fallisce il TS"
   },
   "cleric-sear-undead.mechanics.actions.0": {
     "description": "Quando usi Scacciare Non Morti, ogni non morto che fallisce il tiro salvezza subisce anche (modificatore di SAG, min 1) d8 danni Radiosi. Non spendi un ulteriore uso di Incanalare Divinità.",
@@ -315,11 +365,13 @@
   },
   "cleric-spellcasting": {
     "description": "Hai imparato ad attingere alla magia divina attraverso meditazione e preghiera. Puoi lanciare incantesimi da chierico usando Saggezza come caratteristica da incantatore. Prepari incantesimi dall'intera lista del chierico dopo un riposo lungo.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Lanci incantesimi da chierico con Saggezza; prepari dall'intera lista dopo un Riposo Lungo"
   },
   "cleric-turn-undead": {
     "description": "Come azione, presenti il tuo simbolo sacro e pronunci una preghiera che censura i non morti. Ogni non morto entro 9 metri che può vederti o sentirti deve effettuare un tiro salvezza su Saggezza. In caso di fallimento, la creatura è scacciata per 1 minuto o finché non subisce danni.",
-    "name": "Scacciare Non Morti"
+    "name": "Scacciare Non Morti",
+    "gist": "Azione: i non morti entro 9 m, TS su Saggezza o scacciati per 1 minuto"
   },
   "cleric-turn-undead.mechanics.actions.0": {
     "description": "Ogni non morto entro 9 m deve effettuare un TS su Saggezza o essere scacciato per 1 minuto.",
@@ -327,19 +379,23 @@
   },
   "druid-archdruid": {
     "description": "Ottieni i seguenti benefici. **Forma Selvatica Sempreverde.** Quando tiri l'Iniziativa e non hai usi di Forma Selvatica rimasti, recuperi un uso speso. **Mago della Natura.** Puoi convertire usi non spesi di Forma Selvatica in uno slot incantesimo (nessuna azione richiesta); ogni uso vale 2 livelli di slot (es. due usi = uno slot di 4° livello), e puoi farlo una volta per Riposo Lungo. **Longevità.** Per ogni 10 anni che passano, il tuo corpo invecchia di 1 solo anno.",
-    "name": "Arcidruido"
+    "name": "Arcidruido",
+    "gist": "Recuperi una Forma Selvatica all'Iniziativa se esaurita; converti usi in slot incantesimo"
   },
   "druid-beast-spells": {
     "description": "Puoi mantenere la Concentrazione sugli incantesimi mentre sei in forma di Forma Selvatica, e puoi eseguire le componenti Somatiche e Verbali degli incantesimi da Druido mentre sei in forma bestiale.",
-    "name": "Incantesimi Bestiali"
+    "name": "Incantesimi Bestiali",
+    "gist": "In Forma Selvatica mantieni la Concentrazione e lanci incantesimi da Druido"
   },
   "druid-druidic": {
     "description": "Conosci il Druidico, la lingua segreta dei druidi. Puoi parlarlo e usarlo per lasciare messaggi nascosti. Altri possono notare tali messaggi con una prova di Intelligenza (Indagare) CD 15 ma non possono decifrarli senza magia. Inoltre hai sempre preparato l'incantesimo Parlare con gli Animali.",
-    "name": "Druidico"
+    "name": "Druidico",
+    "gist": "Conosci la lingua segreta Druidica; Parlare con gli Animali sempre preparato"
   },
   "druid-elemental-fury": {
     "description": "La potenza degli elementi scorre in te. Ottieni una delle seguenti opzioni a tua scelta. Incantesimo Potente: aggiungi il tuo modificatore di Saggezza ai danni che infliggi con qualsiasi trucchetto da Druido. Colpo Primordiale: una volta in ciascuno dei tuoi turni quando colpisci una creatura con un attacco con arma o l'attacco di una forma Bestia in Forma Selvatica, puoi infliggere 1d8 danni Freddo, Fuoco, Fulmine o Tuono extra (scegli quando colpisci; aumenta a 2d8 con Furia Elementale Migliorata).",
-    "name": "Furia Elementale"
+    "name": "Furia Elementale",
+    "gist": "Scegli: Saggezza ai danni dei trucchetti da Druido, o 1d8 danni elementali extra a turno"
   },
   "druid-elemental-fury.grants.0": {
     "label": "Furia Elementale"
@@ -352,15 +408,18 @@
   },
   "druid-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Un talento Dono Epico o un altro talento per cui hai i requisiti"
   },
   "druid-improved-elemental-fury": {
     "description": "L'opzione scelta per Furia Elementale diventa più potente. Incantesimo Potente: quando lanci un trucchetto da Druido con una gittata di 3 metri o superiore, la gittata dell'incantesimo aumenta di 90 metri. Colpo Primordiale: i danni extra del tuo Colpo Primordiale aumentano a 2d8.",
-    "name": "Furia Elementale Migliorata"
+    "name": "Furia Elementale Migliorata",
+    "gist": "Incantesimo Potente: +90 m di gittata ai trucchetti; Colpo Primordiale: danni extra a 2d8"
   },
   "druid-land-circle-spells": {
     "description": "Ogni volta che termini un Riposo Lungo, scegli un tipo di terra — Arida, Polare, Temperata o Tropicale. Hai sempre preparati gli Incantesimi del Circolo di quella terra (fino al tuo livello da Druido); non contano nel numero di incantesimi preparati.",
-    "name": "Incantesimi del Circolo della Terra"
+    "name": "Incantesimi del Circolo della Terra",
+    "gist": "A ogni Riposo Lungo scegli una terra; hai sempre preparati i suoi Incantesimi del Circolo"
   },
   "druid-land-circle-spells.grants.0": {
     "label": "Tipo di Terra"
@@ -379,7 +438,8 @@
   },
   "druid-land-lands-aid": {
     "description": "Come Azione Magica, spendi un uso di Forma Selvatica e scegli un punto entro 18 metri. In una Sfera di raggio 3 metri, ogni creatura a tua scelta effettua un tiro salvezza su Costituzione contro la tua CD degli incantesimi, subendo 2d6 danni Necrotici con un fallimento (metà con successo), e una creatura a tua scelta recupera 2d6 PF. Danni e cura aumentano a 3d6 al livello 10 da Druido e 4d6 al livello 14.",
-    "name": "Ausilio dalla Terra"
+    "name": "Ausilio dalla Terra",
+    "gist": "Azione Magica, 1 uso di Forma Selvatica: 2d6 danni Necrotici in Sfera di 3 m e cura 2d6"
   },
   "druid-land-lands-aid.mechanics.actions.0": {
     "description": "Azione Magica, spendi Forma Selvatica: 2d6 (→3d6 L10, →4d6 L14) Necrotici TS + cura un alleato 2d6.",
@@ -387,11 +447,13 @@
   },
   "druid-land-natural-recovery": {
     "description": "Puoi lanciare uno dei tuoi Incantesimi del Circolo di livello 1+ preparati senza spendere uno slot una volta per Riposo Lungo. Inoltre, quando termini un Riposo Breve puoi recuperare slot incantesimo spesi con un livello combinato fino a metà del tuo livello da Druido (arrotondato per eccesso), nessuno di livello 6+; una volta fatto, non puoi più finché non termini un Riposo Lungo.",
-    "name": "Recupero Naturale"
+    "name": "Recupero Naturale",
+    "gist": "Un Incantesimo del Circolo senza slot; al Riposo Breve recuperi slot fino a metà livello"
   },
   "druid-land-natures-sanctuary": {
     "description": "Come Azione Magica, spendi un uso di Forma Selvatica per evocare alberi e rampicanti spettrali in un Cubo di 4,5 metri entro 36 metri per 1 minuto (termina se sei Incapacitato o muori). Tu e i tuoi alleati avete Mezza Copertura nell'area, e i tuoi alleati ottengono lì la Resistenza attuale della tua Interdizione della Natura. Come Azione Bonus, puoi spostare il Cubo fino a 18 metri.",
-    "name": "Rifugio della Natura"
+    "name": "Rifugio della Natura",
+    "gist": "Azione Magica, 1 uso di Forma Selvatica: Cubo di 4,5 m che dà Mezza Copertura e Resistenza"
   },
   "druid-land-natures-sanctuary.mechanics.actions.0": {
     "description": "Azione Magica, spendi Forma Selvatica: Cubo di 4,5 m, Mezza Copertura + condividi la Resistenza della Interdizione della Natura con gli alleati.",
@@ -399,7 +461,8 @@
   },
   "druid-land-natures-ward": {
     "description": "Sei immune alla condizione Avvelenato e hai Resistenza a un tipo di danno legato alla tua attuale scelta di terra: Arida — Fuoco, Polare — Freddo, Temperata — Fulmine, Tropicale — Veleno.",
-    "name": "Interdizione della Natura"
+    "name": "Interdizione della Natura",
+    "gist": "Immune ad Avvelenato; Resistenza a Fuoco, Freddo, Fulmine o Veleno in base alla terra"
   },
   "druid-land-natures-ward.grants.1": {
     "label": "Tipo di Terra"
@@ -418,7 +481,8 @@
   },
   "druid-primal-order": {
     "description": "Ti dedichi a uno dei seguenti ruoli sacri a tua scelta. Mago: conosci un trucchetto extra dalla lista degli incantesimi del Druido e ottieni un bonus alle tue prove di Intelligenza (Arcano o Natura) pari al tuo modificatore di Saggezza (minimo +1). Guardiano: addestrato per la battaglia, ottieni competenza con armi da Guerra e addestramento con armature Medie.",
-    "name": "Ordine Primordiale"
+    "name": "Ordine Primordiale",
+    "gist": "Mago: trucchetto extra e bonus ad Arcano/Natura; Guardiano: armi da Guerra, armature Medie"
   },
   "druid-primal-order.grants.0": {
     "label": "Ordine Primordiale"
@@ -431,11 +495,13 @@
   },
   "druid-spellcasting": {
     "description": "Attingendo all'essenza divina della natura, puoi lanciare incantesimi per plasmare quell'essenza secondo la tua volontà. Usi Saggezza come caratteristica da incantatore e prepari incantesimi dalla lista del druido dopo ogni riposo lungo.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Lanci incantesimi da Druido con Saggezza; cambi quelli preparati dopo ogni Riposo Lungo"
   },
   "druid-wild-companion": {
     "description": "Puoi spendere un uso di Forma Selvatica per lanciare Trovare Famiglio senza componenti materiali. Il famiglio è un Folletto invece del suo tipo di creatura normale e scompare quando termini un Riposo Lungo.",
-    "name": "Compagno Selvatico"
+    "name": "Compagno Selvatico",
+    "gist": "Spendi un uso di Forma Selvatica per lanciare Trovare Famiglio; il famiglio è un Folletto"
   },
   "druid-wild-companion.mechanics.actions.0": {
     "description": "Spendi uno slot incantesimo o 1 uso di Forma Selvatica per lanciare Trovare Famiglio (senza componenti materiali).",
@@ -444,11 +510,13 @@
   },
   "druid-wild-resurgence": {
     "description": "Una volta per turno, se non hai usi di Forma Selvatica rimasti, puoi spendere uno slot incantesimo (di qualsiasi livello) per recuperare un uso di Forma Selvatica. Inoltre, puoi spendere un uso di Forma Selvatica (nessuna azione richiesta) per ottenere uno slot incantesimo di 1° livello, ma non puoi farlo di nuovo finché non completi un Riposo Lungo.",
-    "name": "Rinascita Selvatica"
+    "name": "Rinascita Selvatica",
+    "gist": "Uno slot per un uso di Forma Selvatica; 1 volta per Riposo Lungo, un uso per slot di 1°"
   },
   "druid-wild-shape": {
     "description": "Come Azione Bonus, puoi assumere la forma di una bestia usando uno dei tuoi usi di Forma Selvatica. Hai 2 usi al livello 2 (3 al livello 6, 4 al livello 17). Recuperi un uso speso con un Riposo Breve e tutti con un Riposo Lungo. Mentre sei trasformato, usi un blocco statistiche specifico invece di quello di una bestia normale.",
-    "name": "Forma Selvatica"
+    "name": "Forma Selvatica",
+    "gist": "Azione Bonus: diventi una bestia; 2 usi, uno torna col Riposo Breve, tutti col Lungo"
   },
   "druid-wild-shape.grants.0": {
     "trigger": "quando assumi una forma con Forma Selvatica"
@@ -461,7 +529,8 @@
   },
   "fighter-action-surge": {
     "description": "Puoi spingerti oltre i tuoi limiti normali per un istante. Nel tuo turno, puoi effettuare un'azione aggiuntiva. Dopo aver usato questa capacità, devi completare un Riposo Breve o Lungo prima di poterla riutilizzare. Dal 17° livello, puoi usarla due volte prima di un riposo.",
-    "name": "Azione Impetuosa"
+    "name": "Azione Impetuosa",
+    "gist": "Un'azione aggiuntiva nel tuo turno; una volta per Riposo Breve o Lungo (due dal 17°)"
   },
   "fighter-action-surge.grants.0": {
     "label": "Azione Impetuosa"
@@ -472,19 +541,23 @@
   },
   "fighter-champion-additional-fighting-style": {
     "description": "Scegli un secondo talento Stile di Combattimento.",
-    "name": "Stile di Combattimento Aggiuntivo"
+    "name": "Stile di Combattimento Aggiuntivo",
+    "gist": "Scegli un altro talento Stile di Combattimento"
   },
   "fighter-champion-heroic-warrior": {
     "description": "Il fervore della battaglia ti spinge verso la vittoria. Durante il combattimento, puoi conferirti Ispirazione Eroica ogni volta che inizi il tuo turno senza di essa.",
-    "name": "Guerriero Eroico"
+    "name": "Guerriero Eroico",
+    "gist": "In combattimento ottieni Ispirazione Eroica se inizi il turno senza"
   },
   "fighter-champion-improved-critical": {
     "description": "I tuoi attacchi con armi ottengono un colpo critico con un risultato di 19 o 20 sul d20.",
-    "name": "Critico Migliorato"
+    "name": "Critico Migliorato",
+    "gist": "Colpo critico con le armi con 19 o 20 sul d20"
   },
   "fighter-champion-remarkable-athlete": {
     "description": "Hai Vantaggio ai tiri di Iniziativa e alle prove di Forza (Atletica). Inoltre, subito dopo aver messo a segno un Colpo Critico, puoi muoverti fino a metà della tua Velocità senza provocare Attacchi di Opportunità.",
-    "name": "Atleta Straordinario"
+    "name": "Atleta Straordinario",
+    "gist": "Vantaggio a Iniziativa e Atletica; dopo un Colpo Critico muovi metà Velocità in sicurezza"
   },
   "fighter-champion-remarkable-athlete.grants.0": {
     "description": "Tiri di Iniziativa"
@@ -494,38 +567,46 @@
   },
   "fighter-champion-superior-critical": {
     "description": "I tuoi attacchi con armi ottengono un colpo critico con un risultato di 18-20 sul d20.",
-    "name": "Critico Superiore"
+    "name": "Critico Superiore",
+    "gist": "Colpo critico con le armi con 18-20 sul d20"
   },
   "fighter-champion-survivor": {
     "description": "Raggiungi l'apice della resistenza in battaglia, ottenendo questi benefici. Sfidare la Morte: hai Vantaggio ai Tiri Salvezza contro Morte. Inoltre, quando ottieni 18-20 a un Tiro Salvezza contro Morte, ottieni il beneficio di aver ottenuto un 20. Carica Eroica: all'inizio di ogni tuo turno, recuperi punti ferita pari a 5 più il tuo modificatore di Costituzione se sei Ferito Gravemente e hai almeno 1 punto ferita.",
-    "name": "Sopravvissuto"
+    "name": "Sopravvissuto",
+    "gist": "Vantaggio ai Tiri Salvezza contro Morte; se Ferito Gravemente recuperi 5 + Cos PF a turno"
   },
   "fighter-champion-survivor.grants.1": {
     "description": "Tiri Salvezza contro Morte (Sfidare la Morte)"
   },
   "fighter-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Un talento Dono Epico o un altro talento per cui hai i requisiti"
   },
   "fighter-extra-attack": {
     "description": "Puoi attaccare due volte, anziché una, ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra"
+    "name": "Attacco Extra",
+    "gist": "Attacchi due volte quando effettui l'azione di Attacco"
   },
   "fighter-extra-attack-2": {
     "description": "Puoi attaccare tre volte ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Due Attacchi Extra"
+    "name": "Due Attacchi Extra",
+    "gist": "Attacchi tre volte quando effettui l'azione di Attacco"
   },
   "fighter-extra-attack-3": {
     "description": "Puoi attaccare quattro volte ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Tre Attacchi Extra"
+    "name": "Tre Attacchi Extra",
+    "gist": "Attacchi quattro volte quando effettui l'azione di Attacco"
   },
   "fighter-fighting-style": {
     "description": "Adotti uno stile di combattimento particolare come tua specialità. Scegli un talento Stile di Combattimento. Non puoi prendere lo stesso talento più di una volta, anche se puoi scegliere di nuovo in seguito.",
-    "name": "Stile di Combattimento"
+    "name": "Stile di Combattimento",
+    "gist": "Scegli un talento Stile di Combattimento; non puoi prendere lo stesso due volte"
   },
   "fighter-indomitable": {
     "description": "Se fallisci un tiro salvezza, puoi ripeterlo con un bonus pari al tuo livello da Guerriero. Devi usare il nuovo risultato e non puoi usare questo privilegio di nuovo fino a un Riposo Lungo. Puoi usarlo due volte dal livello 13 e tre volte dal livello 17.",
-    "name": "Indomabile"
+    "name": "Indomabile",
+    "gist": "Ripeti un tiro salvezza fallito + livello da Guerriero; 1 volta per Riposo Lungo"
   },
   "fighter-indomitable.mechanics.actions.0": {
     "description": "Ritira un tiro salvezza fallito + livello da Guerriero.",
@@ -533,7 +614,8 @@
   },
   "fighter-second-wind": {
     "description": "Come Azione Bonus, puoi recuperare Punti Ferita pari a 1d10 + il tuo livello da Guerriero. Puoi usare questo privilegio due volte. Recuperi un uso con un Riposo Breve e tutti con un Riposo Lungo. Gli usi aumentano ai livelli superiori.",
-    "name": "Recuperare Energie"
+    "name": "Recuperare Energie",
+    "gist": "Azione Bonus: recuperi 1d10 + livello da Guerriero Punti Ferita; 2 usi"
   },
   "fighter-second-wind.mechanics.actions.0": {
     "description": "Recuperi Punti Ferita.",
@@ -545,7 +627,8 @@
   },
   "fighter-studied-attacks": {
     "description": "Studi i tuoi avversari e impari da ogni attacco. Se effettui un tiro per colpire contro una creatura e manchi, hai Vantaggio al tuo prossimo tiro per colpire contro quella creatura prima della fine del tuo prossimo turno.",
-    "name": "Attacchi Studiati"
+    "name": "Attacchi Studiati",
+    "gist": "Se manchi una creatura, hai Vantaggio al prossimo tiro per colpire contro di essa"
   },
   "fighter-studied-attacks.grants.0": {
     "label": "Attacchi Studiati"
@@ -555,15 +638,18 @@
   },
   "fighter-tactical-master": {
     "description": "Quando attacchi con un'arma di cui puoi usare la proprietà di padronanza, puoi sostituire quella proprietà con la proprietà Spinta, Fiaccare o Lentezza per quell'attacco.",
-    "name": "Signore delle Tattiche"
+    "name": "Signore delle Tattiche",
+    "gist": "Sostituisci la padronanza di un'arma con Spinta, Fiaccare o Lentezza per un attacco"
   },
   "fighter-tactical-mind": {
     "description": "Hai una mente tattica dentro e fuori dal campo di battaglia. Quando fallisci una prova di caratteristica, puoi spendere un uso di Recuperare Energie per spingerti verso il successo. Tira 1d10 e aggiungilo alla prova. Se la prova fallisce comunque, l'uso di Recuperare Energie non viene speso.",
-    "name": "Mente Tattica"
+    "name": "Mente Tattica",
+    "gist": "Prova fallita: spendi un uso di Recuperare Energie per aggiungere 1d10 (resta se fallisci)"
   },
   "fighter-tactical-shift": {
     "description": "Ogni volta che usi Recuperare Energie, puoi muoverti fino a metà della tua Velocità senza provocare Attacchi di Opportunità.",
-    "name": "Spostamento Tattico"
+    "name": "Spostamento Tattico",
+    "gist": "Con Recuperare Energie ti muovi di metà Velocità senza provocare Attacchi di Opportunità"
   },
   "fighter-tactical-shift.grants.tactical-shift": {
     "description": "Muoviti fino a metà della tua Velocità senza provocare Attacchi di Opportunità.",
@@ -572,19 +658,23 @@
   },
   "fighter-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di tre tipi di armi Semplici o da Guerra a tua scelta, che diventano quattro al 4° livello, cinque al 10° e sei al 16°. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
-    "name": "Padronanza d'Armi"
+    "name": "Padronanza d'Armi",
+    "gist": "Usi la padronanza di 3 tipi di armi (fino a 6); puoi cambiarli dopo un Riposo Lungo"
   },
   "monk-acrobatic-movement": {
     "description": "Mentre non indossi armatura né impugni uno scudo, ottieni la capacità di muoverti lungo superfici verticali e attraverso liquidi nel tuo turno senza cadere durante il movimento.",
-    "name": "Movimento Acrobatico"
+    "name": "Movimento Acrobatico",
+    "gist": "Senza armatura né scudo, ti muovi su superfici verticali e liquidi nel tuo turno"
   },
   "monk-body-and-mind": {
     "description": "Hai affinato il tuo corpo e la tua mente all'apice della perfezione. I tuoi punteggi di Destrezza e Saggezza aumentano di 4. Il massimo per quei punteggi è ora 25.",
-    "name": "Corpo e Mente"
+    "name": "Corpo e Mente",
+    "gist": "+4 a Destrezza e Saggezza, fino a un massimo di 25"
   },
   "monk-deflect-attacks": {
     "description": "Quando un tiro per colpire ti colpisce e i suoi danni includono danni Contundenti, Perforanti o Taglienti, puoi effettuare una Reazione per ridurre quei danni di 1d10 + il tuo modificatore di Destrezza + il tuo livello da Monaco. Se riduci il danno a 0, puoi spendere 1 Punto Concentrazione per ridirigere parte della forza dell'attacco: scegli una creatura entro 1,5 metri (se l'attacco era in mischia) o entro 18 metri e non dietro Copertura Totale (se era a distanza). Quella creatura effettua un tiro salvezza su Destrezza o subisce danni del tipo dell'attacco pari a due tiri del tuo dado Arti Marziali + il tuo modificatore di Destrezza.",
-    "name": "Devia Attacchi"
+    "name": "Devia Attacchi",
+    "gist": "Reazione: riduci i danni Contundenti, Perforanti o Taglienti di 1d10 + Destrezza + livello"
   },
   "monk-deflect-attacks.mechanics.actions.0": {
     "description": "Riduci il danno di un attacco di 1d10 + mod DES + livello Monaco."
@@ -596,11 +686,13 @@
   },
   "monk-deflect-energy": {
     "description": "Ora puoi usare la tua capacità Devia Attacchi contro qualsiasi tipo di danno, non solo i danni dagli attacchi con arma.",
-    "name": "Deviare Energia"
+    "name": "Deviare Energia",
+    "gist": "Devia Attacchi funziona contro qualsiasi tipo di danno"
   },
   "monk-disciplined-survivor": {
     "description": "La tua disciplina fisica e mentale ti concede competenza in tutti i tiri salvezza. Inoltre, ogni volta che effettui un tiro salvezza e fallisci, puoi spendere 1 Punto Concentrazione per ritirarlo, e devi usare il nuovo risultato.",
-    "name": "Esperto di Sopravvivenza Disciplinato"
+    "name": "Esperto di Sopravvivenza Disciplinato",
+    "gist": "Competenza in tutti i tiri salvezza; 1 Punto Concentrazione per ritirarne uno fallito"
   },
   "monk-disciplined-survivor.mechanics.actions.0": {
     "description": "1 Punto Concentrazione: ritira un tiro salvezza fallito.",
@@ -608,23 +700,28 @@
   },
   "monk-empowered-strikes": {
     "description": "Ogni volta che infliggi danni con il tuo Colpo Senz'Armi, esso può infliggere danni da Forza a tua scelta oppure il suo normale tipo di danno.",
-    "name": "Colpi Potenziati"
+    "name": "Colpi Potenziati",
+    "gist": "I Colpi Senz'Armi possono infliggere danni da Forza invece del tipo normale"
   },
   "monk-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Un talento Dono Epico o un altro talento per cui hai i requisiti"
   },
   "monk-evasion": {
     "description": "Quando sei soggetto a un effetto che ti permette di effettuare un tiro salvezza su Destrezza per subire solo metà danno, non subisci alcun danno se superi il tiro salvezza e solo metà danno se fallisci.",
-    "name": "Elusione"
+    "name": "Elusione",
+    "gist": "Tiri salvezza su Destrezza per metà danni: nessun danno se superi, metà se fallisci"
   },
   "monk-extra-attack": {
     "description": "Puoi attaccare due volte, anziché una, ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra"
+    "name": "Attacco Extra",
+    "gist": "Attacchi due volte quando effettui l'azione di Attacco"
   },
   "monk-flurry-of-blows": {
     "description": "Subito dopo aver usato l'azione di Attacco nel tuo turno, puoi spendere 1 Punto Concentrazione per effettuare due Colpi Senz'Armi come Azione Bonus.",
-    "name": "Raffica di Colpi"
+    "name": "Raffica di Colpi",
+    "gist": "Dopo l'azione di Attacco, 1 Punto Concentrazione: due Colpi Senz'Armi come Azione Bonus"
   },
   "monk-flurry-of-blows.mechanics.actions.0": {
     "description": "Spendi 1 Punto Concentrazione per effettuare 2 colpi senz'armi.",
@@ -633,15 +730,18 @@
   },
   "monk-focus": {
     "description": "Il tuo addestramento ti permette di incanalare energia mistica chiamata Punti Concentrazione. Hai un numero di Punti Concentrazione pari al tuo livello da Monaco. Puoi spendere questi punti per alimentare varie capacità come Raffica di Colpi, Difesa Paziente e Passo del Vento. Recuperi tutti i Punti Concentrazione spesi al termine di un Riposo Breve o Lungo.",
-    "name": "Concentrazione da Monaco"
+    "name": "Concentrazione da Monaco",
+    "gist": "Punti Concentrazione pari al livello da Monaco; tornano tutti col Riposo Breve o Lungo"
   },
   "monk-heightened-focus": {
     "description": "La tua Raffica di Colpi, Difesa Paziente e Passo del Vento ottengono benefici aggiuntivi. Raffica: puoi effettuare 3 colpi senz'armi invece di 2. Difesa Paziente: ottieni PF temporanei pari al doppio del tuo dado di Arti Marziali. Passo: la tua distanza di salto è triplicata per quel turno.",
-    "name": "Concentrazione Superiore"
+    "name": "Concentrazione Superiore",
+    "gist": "Raffica: 3 colpi; Difesa Paziente: Punti Ferita Temporanei; Passo: salto triplicato"
   },
   "monk-martial-arts": {
     "description": "La tua pratica nelle arti marziali ti dona la padronanza di stili di combattimento con colpi senz'armi e armi da monaco. Ottieni benefici senza armatura: puoi usare Destrezza per i tiri per colpire e danni con colpi senz'armi e armi da monaco, puoi tirare il dado Arti Marziali al posto del danno normale, e quando usi l'azione di Attacco puoi effettuare un colpo senz'armi come Azione Bonus.",
-    "name": "Arti Marziali"
+    "name": "Arti Marziali",
+    "gist": "Senza armatura: Destrezza e dado Arti Marziali per colpi senz'armi; uno come Azione Bonus"
   },
   "monk-martial-arts.mechanics.actions.0": {
     "description": "Effettua un colpo senz'armi dopo aver usato l'azione di Attacco.",
@@ -653,7 +753,8 @@
   },
   "monk-open-hand-fleet-step": {
     "description": "Quando effettui un'Azione Bonus diversa da Passo del Vento, puoi anche usare Passo del Vento subito dopo quell'Azione Bonus.",
-    "name": "Passo Lesto"
+    "name": "Passo Lesto",
+    "gist": "Usi Passo del Vento subito dopo qualsiasi altra Azione Bonus"
   },
   "monk-open-hand-fleet-step.mechanics.actions.0": {
     "description": "Dopo aver effettuato un'Azione Bonus diversa da Passo del Vento, usa anche Passo del Vento.",
@@ -662,7 +763,8 @@
   },
   "monk-open-hand-quivering-palm": {
     "description": "Ottieni la capacità di creare vibrazioni letali nel corpo di qualcuno. Quando colpisci una creatura con un Colpo Senz'armi, puoi spendere 4 Punti Concentrazione per iniziare vibrazioni impercettibili che durano un numero di giorni pari al tuo livello da Monaco. Puoi usare un'azione per terminare le vibrazioni (o rinunciare a uno dei tuoi attacchi quando effettui l'azione di Attacco). La creatura deve effettuare un tiro salvezza su Costituzione, subendo 10d12 danni da Forza con un fallimento o metà con un successo. Puoi avere una sola creatura sotto effetto alla volta.",
-    "name": "Palmo Tremante"
+    "name": "Palmo Tremante",
+    "gist": "4 Punti Concentrazione su un Colpo Senz'armi: poi 10d12 danni da Forza (TS Costituzione)"
   },
   "monk-open-hand-quivering-palm.mechanics.actions.0": {
     "description": "Spendi 4 Punti Concentrazione quando colpisci una creatura con un Colpo Senz'armi per innescare vibrazioni letali. Al termine, la creatura effettua un TS su Costituzione, subendo 10d12 danni da Forza con un fallimento o metà con un successo.",
@@ -670,7 +772,8 @@
   },
   "monk-open-hand-technique": {
     "description": "Ogni volta che colpisci una creatura con un attacco di Raffica di Colpi, puoi imporre al bersaglio uno dei seguenti effetti: Disorientamento — non può effettuare Attacchi di Opportunità fino all'inizio del suo prossimo turno; Spinta — deve superare un TS su Forza o essere spinta fino a 4,5 metri da te; oppure Rovesciamento — deve superare un TS su Destrezza o subire la condizione Prono.",
-    "name": "Tecnica della Mano Aperta"
+    "name": "Tecnica della Mano Aperta",
+    "gist": "Colpi di Raffica di Colpi: niente Attacchi di Opportunità, spinta di 4,5 m o Prono"
   },
   "monk-open-hand-technique.grants.addle": {
     "description": "Il bersaglio non può effettuare Attacchi di Opportunità fino all'inizio del suo prossimo turno.",
@@ -689,7 +792,8 @@
   },
   "monk-open-hand-wholeness-of-body": {
     "description": "Ottieni la capacità di curarti. Come Azione Bonus, recuperi Punti Ferita pari a un tiro del tuo dado Arti Marziali più il tuo modificatore di Saggezza (minimo 1 Punto Ferita). Puoi usarlo un numero di volte pari al tuo modificatore di Saggezza (minimo una), recuperando tutti gli usi spesi al termine di un Riposo Lungo.",
-    "name": "Integrità del Corpo"
+    "name": "Integrità del Corpo",
+    "gist": "Azione Bonus: recuperi dado Arti Marziali + Saggezza Punti Ferita; usi pari alla Saggezza"
   },
   "monk-open-hand-wholeness-of-body.mechanics.actions.0": {
     "description": "Azione Bonus: recupera dado Arti Marziali + modificatore SAG Punti Ferita (min 1). Nessun costo in Concentrazione.",
@@ -698,7 +802,8 @@
   },
   "monk-patient-defense": {
     "description": "Puoi effettuare l'azione Disimpegno come Azione Bonus. Se spendi 1 Punto Concentrazione, puoi anche effettuare l'azione Schivata come parte della stessa Azione Bonus.",
-    "name": "Difesa Paziente"
+    "name": "Difesa Paziente",
+    "gist": "Disimpegno come Azione Bonus; con 1 Punto Concentrazione anche Schivata"
   },
   "monk-patient-defense.mechanics.actions.0": {
     "description": "Disimpegno come Azione Bonus senza spendere Concentrazione.",
@@ -712,11 +817,13 @@
   },
   "monk-perfect-focus": {
     "description": "Quando hai meno di 4 Punti Concentrazione all'inizio del tuo turno, recuperi Punti Concentrazione fino ad averne 4.",
-    "name": "Concentrazione Perfetta"
+    "name": "Concentrazione Perfetta",
+    "gist": "A inizio turno, se hai meno di 4 Punti Concentrazione, risali a 4"
   },
   "monk-self-restoration": {
     "description": "Alla fine di ciascuno dei tuoi turni, puoi rimuovere una delle seguenti condizioni da te stesso: Affascinato, Spaventato o Avvelenato. Inoltre, rinunciare a cibo e bevande non ti conferisce livelli di Indebolimento.",
-    "name": "Autorigenerazione"
+    "name": "Autorigenerazione",
+    "gist": "A fine turno rimuovi Affascinato, Spaventato o Avvelenato; niente Indebolimento da fame"
   },
   "monk-self-restoration.grants.self-restoration": {
     "description": "Rimuovi da te stesso una delle seguenti condizioni: Affascinato, Spaventato o Avvelenato.",
@@ -725,11 +832,13 @@
   },
   "monk-slow-fall": {
     "description": "Puoi usare la tua Reazione quando cadi per ridurre qualsiasi danno da caduta che subisci di un ammontare pari a cinque volte il tuo livello da Monaco.",
-    "name": "Caduta Lenta"
+    "name": "Caduta Lenta",
+    "gist": "Reazione: riduci i danni da caduta di cinque volte il tuo livello da Monaco"
   },
   "monk-step-of-the-wind": {
     "description": "Puoi effettuare l'azione Scatto come Azione Bonus. Se spendi 1 Punto Concentrazione, puoi anche effettuare l'azione Disimpegno come parte della stessa Azione Bonus, e la distanza di salto è raddoppiata per il turno.",
-    "name": "Passo del Vento"
+    "name": "Passo del Vento",
+    "gist": "Scatto come Azione Bonus; con 1 Punto Concentrazione anche Disimpegno e salto raddoppiato"
   },
   "monk-step-of-the-wind.grants.0": {
     "label": "Passo del Vento"
@@ -746,7 +855,8 @@
   },
   "monk-stunning-strike": {
     "description": "Una volta per turno quando colpisci una creatura con un'arma da monaco o un Colpo Senz'armi, puoi spendere 1 Punto Concentrazione per tentare un colpo stordente. Il bersaglio deve effettuare un tiro salvezza su Costituzione. Con un fallimento, ha la condizione Stordito fino all'inizio del tuo turno successivo. Con un successo, la sua Velocità è dimezzata fino all'inizio del tuo turno successivo e il prossimo tiro per colpire effettuato contro di esso prima di allora ha Vantaggio.",
-    "name": "Colpo Stordente"
+    "name": "Colpo Stordente",
+    "gist": "1 Punto Concentrazione a colpo (1/turno): TS su Costituzione o Stordito, o Velocità a metà"
   },
   "monk-stunning-strike.mechanics.actions.0": {
     "description": "Una volta per turno dopo un colpo con un'arma da monaco o un Colpo Senz'armi, spendi 1 Punto Concentrazione: il bersaglio effettua un TS su Costituzione o è Stordito fino all'inizio del tuo prossimo turno (con un successo la sua Velocità è dimezzata e il prossimo attacco contro di esso ha Vantaggio).",
@@ -754,7 +864,8 @@
   },
   "monk-superior-defense": {
     "description": "All'inizio del tuo turno, puoi spendere 3 Punti Concentrazione per rafforzarti contro i danni per 1 minuto o finché non hai la condizione Incapacitato. Durante quel tempo, hai Resistenza a tutti i danni eccetto i danni da Forza.",
-    "name": "Difesa Superiore"
+    "name": "Difesa Superiore",
+    "gist": "Spendi 3 Punti Concentrazione: Resistenza a tutti i danni tranne Forza per 1 minuto"
   },
   "monk-superior-defense.grants.0": {
     "label": "Difesa Superiore"
@@ -766,18 +877,21 @@
   },
   "monk-unarmored-defense": {
     "description": "Mentre non indossi armatura e non impugni uno scudo, la tua CA è pari a 10 + il tuo modificatore di Destrezza + il tuo modificatore di Saggezza.",
-    "name": "Difesa Senza Armatura"
+    "name": "Difesa Senza Armatura",
+    "gist": "Senza armatura né scudo, CA = 10 + modificatore di Destrezza + modificatore di Saggezza"
   },
   "monk-unarmored-movement": {
     "description": "La tua velocità aumenta di 3 metri mentre non indossi armatura né impugni uno scudo. Questo bonus aumenta con i livelli da Monaco: +4,5 metri al 6°, +6 metri al 10°, +7,5 metri al 14° e +9 metri al 18° livello.",
-    "name": "Movimento Senza Armatura"
+    "name": "Movimento Senza Armatura",
+    "gist": "+3 metri di velocità senza armatura né scudo, fino a +9 metri al 18° livello"
   },
   "monk-unarmored-movement.mechanics.rider": {
     "label": "Velocità"
   },
   "monk-uncanny-metabolism": {
     "description": "Quando tiri Iniziativa, puoi recuperare tutti i Punti Concentrazione spesi. Quando lo fai, tira il tuo dado di Arti Marziali e recuperi un numero di Punti Ferita pari al tuo livello da Monaco + il risultato del tiro. Una volta usata questa capacità, non puoi farlo di nuovo fino a un Riposo Lungo.",
-    "name": "Metabolismo Straordinario"
+    "name": "Metabolismo Straordinario",
+    "gist": "All'Iniziativa recuperi i Punti Concentrazione e Punti Ferita; 1 volta per Riposo Lungo"
   },
   "monk-uncanny-metabolism.mechanics.actions.0": {
     "description": "Dopo aver tirato Iniziativa, recupera tutti i Punti Concentrazione e dado Arti Marziali + livello da Monaco Punti Ferita.",
@@ -786,7 +900,8 @@
   },
   "paladin-abjure-foes": {
     "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità per presentare il tuo simbolo sacro. Ogni nemico entro 18 m deve effettuare un TS di Saggezza o essere Spaventato per 1 minuto (TS pone fine).",
-    "name": "Abiurare Nemici"
+    "name": "Abiurare Nemici",
+    "gist": "Azione Magica, 1 Incanalare Divinità: nemici entro 18 m, TS Saggezza o Spaventati 1 minuto"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
     "description": "Incanalare Divinità: i nemici entro 18 m effettuano un TS su SAG o sono Spaventati.",
@@ -794,27 +909,33 @@
   },
   "paladin-aura-expansion": {
     "description": "La tua Aura di Protezione e Aura di Coraggio si estendono ora a 9 metri.",
-    "name": "Ampliamento dell'Aura"
+    "name": "Ampliamento dell'Aura",
+    "gist": "Aura di Protezione e Aura di Coraggio arrivano ora a 9 metri"
   },
   "paladin-aura-of-courage": {
     "description": "Tu e le creature amiche entro 3 metri non potete essere spaventati finché sei cosciente. Al 18° livello, il raggio aumenta a 9 metri.",
-    "name": "Aura di Coraggio"
+    "name": "Aura di Coraggio",
+    "gist": "Tu e gli alleati entro 3 metri non potete essere Spaventati finché sei cosciente"
   },
   "paladin-aura-of-protection": {
     "description": "Emetti un'aura di 3 metri, inattiva mentre hai la condizione Incapacitato. Tu e gli alleati al suo interno ottenete ai tiri salvezza un bonus pari al tuo modificatore di Carisma (minimo +1). Al livello 18, la portata diventa 9 metri.",
-    "name": "Aura di Protezione"
+    "name": "Aura di Protezione",
+    "gist": "Tu e gli alleati entro 3 m sommate il modificatore di Carisma (min +1) ai tiri salvezza"
   },
   "paladin-channel-divinity": {
     "description": "Puoi incanalare energia divina per alimentare effetti magici. Inizi con Percezione del Divino come opzione di Incanalare Divinità. Hai 2 usi, ne recuperi uno con un Riposo Breve e tutti con un Riposo Lungo. Ottieni un uso aggiuntivo al livello 11.",
-    "name": "Incanalare Divinità"
+    "name": "Incanalare Divinità",
+    "gist": "2 usi, tra cui Percezione del Divino; ne recuperi 1 con Riposo Breve, tutti con Lungo"
   },
   "paladin-devotion-aura-of-devotion": {
     "description": "Tu e le creature amiche entro 3 metri non potete essere affascinati finché sei cosciente. Al 18° livello, il raggio aumenta a 9 metri.",
-    "name": "Aura di Devozione"
+    "name": "Aura di Devozione",
+    "gist": "Tu e gli alleati entro 3 metri non potete essere Affascinati finché sei cosciente"
   },
   "paladin-devotion-holy-nimbus": {
     "description": "Come Azione Bonus, infondi la tua Aura di Protezione di potere sacro per 10 minuti o finché non la termini (nessuna azione richiesta). Emani un'Emanazione di Luce Intensa (luce solare) di 9 metri. All'inizio di ciascun tuo turno, ogni nemico nell'emanazione subisce danni Radiosi pari al tuo modificatore di Carisma più il tuo Bonus di Competenza. Hai Vantaggio a qualsiasi tiro salvezza che un Immondo o un Non Morto ti costringe a effettuare. Una volta usato questo privilegio, non puoi riutilizzarlo finché non completi un Riposo Lungo, ma puoi ripristinarne l'uso consumando uno slot incantesimo di livello 5 (nessuna azione richiesta).",
-    "name": "Nube Sacra"
+    "name": "Nube Sacra",
+    "gist": "Azione Bonus: per 10 minuti nemici entro 9 m subiscono danni Radiosi = Car + Competenza"
   },
   "paladin-devotion-holy-nimbus.grants.0": {
     "label": "Nube Sacra"
@@ -829,7 +950,8 @@
   },
   "paladin-devotion-sacred-weapon": {
     "description": "Quando effettui l'azione di Attacco, puoi consumare un uso di Incanalare Divinità per infondere un'arma da Mischia che impugni con energia positiva. Per 10 minuti o finché non riusi questo privilegio, aggiungi il tuo modificatore di Carisma ai tiri per colpire con quell'arma (bonus minimo di +1), e ogni colpo infligge il suo tipo di danno normale oppure danni Radiosi. L'arma emette Luce Intensa in un raggio di 6 metri e Luce Fioca per altri 6 metri oltre. Puoi terminare l'effetto in anticipo (nessuna azione richiesta); termina anche se smetti di impugnare l'arma.",
-    "name": "Arma Consacrata"
+    "name": "Arma Consacrata",
+    "gist": "1 Incanalare Divinità: +Carisma ai tiri per colpire con l'arma, danni Radiosi, 10 minuti"
   },
   "paladin-devotion-sacred-weapon.grants.0": {
     "label": "Arma Consacrata"
@@ -841,93 +963,114 @@
   },
   "paladin-devotion-smite-of-protection": {
     "description": "La tua punizione magica ora irradia energia protettiva. Ogni volta che lanci Punizione Divina, tu e i tuoi alleati ottenete Mezza Copertura mentre vi trovate nella tua Aura di Protezione. L'aura mantiene questo beneficio fino all'inizio del tuo turno successivo.",
-    "name": "Punizione Protettiva"
+    "name": "Punizione Protettiva",
+    "gist": "Quando lanci Punizione Divina, gli alleati nell'Aura di Protezione hanno Mezza Copertura"
   },
   "paladin-devotion-smite-of-protection.grants.0": {
     "label": "Punizione Protettiva"
   },
   "paladin-divine-smite": {
     "description": "Hai sempre preparato l'incantesimo Punizione Divina. Puoi lanciarlo senza consumare uno slot incantesimo, ma devi completare un Riposo Lungo prima di poterlo lanciare nuovamente in questo modo.",
-    "name": "Punizione del Paladino"
+    "name": "Punizione del Paladino",
+    "gist": "Punizione Divina sempre preparato; lo lanci senza slot una volta per Riposo Lungo"
   },
   "paladin-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "paladin-extra-attack": {
     "description": "Puoi attaccare due volte, invece di una, ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra"
+    "name": "Attacco Extra",
+    "gist": "Attacchi due volte quando effettui l'azione di Attacco"
   },
   "paladin-faithful-steed": {
     "description": "Hai sempre preparato l'incantesimo Trova Cavalcatura. Puoi anche lanciarlo una volta senza consumare uno slot incantesimo, recuperando la capacità di farlo quando completi un Riposo Lungo. Quando lo lanci in questo modo, il destriero è Celestiale, Fatato o Immondo (a tua scelta).",
-    "name": "Fido Destriero"
+    "name": "Fido Destriero",
+    "gist": "Trova Cavalcatura sempre preparato; lo lanci senza slot una volta per Riposo Lungo"
   },
   "paladin-fighting-style": {
     "description": "Adotti uno stile di combattimento particolare come tua specialità. Scegli un talento Stile di Combattimento. Non puoi prendere lo stesso Stile di Combattimento più di una volta.",
-    "name": "Stile di Combattimento"
+    "name": "Stile di Combattimento",
+    "gist": "Scegli un talento Stile di Combattimento"
   },
   "paladin-fighting-style-defense": {
     "description": "Mentre indossi un'armatura, ottieni un bonus di +1 alla CA.",
-    "name": "Stile di Combattimento: Difesa"
+    "name": "Stile di Combattimento: Difesa",
+    "gist": "+1 alla CA mentre indossi un'armatura"
   },
   "paladin-lay-on-hands": {
     "description": "Hai una riserva di potere curativo pari a 5 volte il tuo livello da Paladino. Come Azione Bonus, puoi toccare una creatura e attingere alla riserva per ripristinarle un numero di Punti Ferita, fino al massimo rimasto nella riserva. In alternativa, puoi spendere 5 Punti Ferita dalla riserva per rimuovere la condizione Avvelenato dalla creatura invece di ripristinare Punti Ferita.",
-    "name": "Imposizione delle Mani"
+    "name": "Imposizione delle Mani",
+    "gist": "Azione Bonus: cura da una riserva di 5 × livello da Paladino; 5 punti rimuovono Avvelenato"
   },
   "paladin-lay-on-hands.mechanics.actions.0": {
     "description": "Tocca una creatura per ripristinare PF dalla tua riserva."
   },
   "paladin-radiant-strikes": {
     "description": "Quando colpisci un bersaglio con un'arma da mischia o un Colpo Senz'armi, il bersaglio subisce 1d8 danni Radiosi extra.",
-    "name": "Colpi Radiosi"
+    "name": "Colpi Radiosi",
+    "gist": "+1d8 danni Radiosi quando colpisci con armi da mischia o Colpo Senz'armi"
   },
   "paladin-restoring-touch": {
     "description": "Quando usi Imposizione delle Mani su una creatura, puoi anche porre fine a una delle seguenti condizioni: Accecato, Affascinato, Assordato, Spaventato, Paralizzato o Stordito.",
-    "name": "Tocco Rigenerante"
+    "name": "Tocco Rigenerante",
+    "gist": "Imposizione delle Mani termina anche Accecato, Affascinato, Spaventato, Stordito e altre"
   },
   "paladin-spellcasting": {
     "description": "Hai imparato ad attingere alla magia divina attraverso meditazione e preghiera. Usi Carisma come caratteristica da incantatore e prepari incantesimi dalla lista del paladino dopo ogni riposo lungo.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Lanci incantesimi da paladino con Carisma; cambi i preparati dopo un Riposo Lungo"
   },
   "paladin-weapon-mastery": {
     "description": "Il tuo addestramento con le armi ti permette di usare le proprietà di padronanza di due tipi di armi di tua scelta con cui hai competenza. Ogni volta che completi un Riposo Lungo, puoi cambiare i tipi di arma scelti.",
-    "name": "Padronanza d'Armi"
+    "name": "Padronanza d'Armi",
+    "gist": "Usi le proprietà di padronanza di 2 tipi di arma; li cambi con un Riposo Lungo"
   },
   "ranger-deft-explorer": {
     "description": "Grazie ai tuoi viaggi, ottieni Maestria: scegli una delle tue competenze nelle abilità in cui non hai Maestria e ottieni Maestria in quell'abilità. Inoltre, conosci due lingue a tua scelta.",
-    "name": "Esploratore Esperto"
+    "name": "Esploratore Esperto",
+    "gist": "Maestria in un'abilità; conosci due lingue a tua scelta"
   },
   "ranger-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "ranger-expertise": {
     "description": "Scegli due delle tue competenze nelle abilità in cui non hai Maestria. Ottieni Maestria in quelle abilità.",
-    "name": "Maestria"
+    "name": "Maestria",
+    "gist": "Maestria in altre due abilità"
   },
   "ranger-extra-attack": {
     "description": "Puoi attaccare due volte, invece di una, ogni volta che effettui l'azione di Attacco nel tuo turno.",
-    "name": "Attacco Extra"
+    "name": "Attacco Extra",
+    "gist": "Attacchi due volte quando effettui l'azione di Attacco"
   },
   "ranger-favored-enemy": {
     "description": "Hai sempre preparato l'incantesimo Marchio del Cacciatore. Puoi lanciarlo senza spendere uno slot un numero limitato di volte per Riposo Lungo (vedi la colonna Nemico Prescelto della tabella del Ranger per il conteggio).",
-    "name": "Nemico Prescelto"
+    "name": "Nemico Prescelto",
+    "gist": "Marchio del Cacciatore sempre preparato; lo lanci senza slot alcune volte per Riposo Lungo"
   },
   "ranger-feral-senses": {
     "description": "Ottieni Vista Cieca con un raggio di 9 metri.",
-    "name": "Sensi Ferini"
+    "name": "Sensi Ferini",
+    "gist": "Vista Cieca entro 9 metri"
   },
   "ranger-fighting-style": {
     "description": "Adotti uno stile di combattimento particolare come tua specialità. Scegli un talento Stile di Combattimento. Non puoi prendere lo stesso Stile di Combattimento più di una volta.",
-    "name": "Stile di Combattimento"
+    "name": "Stile di Combattimento",
+    "gist": "Scegli un talento Stile di Combattimento"
   },
   "ranger-foe-slayer": {
     "description": "Il dado tirato per il tuo incantesimo Marchio del Cacciatore è un d10 anziché un d6. Inoltre, non hai bisogno di mantenere la Concentrazione sull'incantesimo per tenerlo attivo per tutta la durata (termina comunque se lanci di nuovo Marchio del Cacciatore, o se sei Incapacitato o muori).",
-    "name": "Sterminatore di Nemici"
+    "name": "Sterminatore di Nemici",
+    "gist": "Marchio del Cacciatore usa d10 anziché d6 e non richiede Concentrazione"
   },
   "ranger-hunter-defensive-tactics": {
     "description": "Scegli un'opzione, ri-selezionabile dopo un Riposo Breve o Lungo. Sfuggire all'Orda: gli Attacchi di Opportunità contro di te hanno Svantaggio. Difesa Multiattacco: quando una creatura ti colpisce con un tiro per colpire, quella creatura ha Svantaggio a tutti gli altri tiri per colpire contro di te in questo turno.",
-    "name": "Tattiche Difensive"
+    "name": "Tattiche Difensive",
+    "gist": "Attacchi di Opportunità contro di te con Svantaggio, o Svantaggio agli attacchi successivi"
   },
   "ranger-hunter-defensive-tactics.grants.0": {
     "label": "Tattiche Difensive"
@@ -947,11 +1090,13 @@
   },
   "ranger-hunter-hunters-lore": {
     "description": "Mentre una creatura è segnata dal tuo Marchio del Cacciatore, sai se quella creatura ha Immunità, Resistenze o Vulnerabilità e, in tal caso, quali sono.",
-    "name": "Sapienza del Cacciatore"
+    "name": "Sapienza del Cacciatore",
+    "gist": "Conosci Immunità, Resistenze e Vulnerabilità del bersaglio del Marchio del Cacciatore"
   },
   "ranger-hunter-hunters-prey": {
     "description": "Ottieni una delle seguenti opzioni a tua scelta. Ogni volta che completi un Riposo Breve o Lungo, puoi sostituire l'opzione scelta con l'altra. Uccisore di Colossi. Quando colpisci una creatura con un'arma, l'arma infligge 1d8 danni extra al bersaglio se gli mancano dei Punti Ferita. Puoi infliggere questi danni extra solo una volta per turno. Spezzatore di Orde. Una volta per ogni tuo turno quando effettui un attacco con un'arma, puoi effettuare un altro attacco con la stessa arma contro una creatura diversa che si trovi entro 1,5 metri dal bersaglio originale, a portata dell'arma e che tu non abbia già attaccato in questo turno.",
-    "name": "Preda del Cacciatore"
+    "name": "Preda del Cacciatore",
+    "gist": "+1d8 danni una volta per turno a un bersaglio ferito, o un attacco extra su un vicino"
   },
   "ranger-hunter-hunters-prey.grants.0": {
     "label": "Preda del Cacciatore"
@@ -968,7 +1113,8 @@
   },
   "ranger-hunter-superior-hunters-prey": {
     "description": "Una volta per turno quando infliggi danni a una creatura segnata dal tuo Marchio del Cacciatore, puoi infliggere anche i danni extra di quell'incantesimo a una creatura diversa che puoi vedere entro 9 metri dalla prima creatura.",
-    "name": "Preda del Cacciatore Superiore"
+    "name": "Preda del Cacciatore Superiore",
+    "gist": "1 volta per turno, i danni del Marchio del Cacciatore anche a un'altra creatura entro 9 m"
   },
   "ranger-hunter-superior-hunters-prey.grants.superior-hunters-prey": {
     "description": "Infliggi anche i danni extra del Marchio del Cacciatore a una creatura diversa che puoi vedere entro 9 metri dalla prima.",
@@ -977,7 +1123,8 @@
   },
   "ranger-hunter-superior-hunters-defense": {
     "description": "Quando subisci danni, puoi usare una Reazione per ottenere Resistenza a quel danno e a qualsiasi altro danno dello stesso tipo fino alla fine del turno in corso.",
-    "name": "Difesa del Cacciatore Superiore"
+    "name": "Difesa del Cacciatore Superiore",
+    "gist": "Reazione quando subisci danni: Resistenza a quel tipo di danno fino a fine turno"
   },
   "ranger-hunter-superior-hunters-defense.grants.superior-hunters-defense": {
     "description": "Puoi usare una Reazione per ottenere Resistenza a quel danno e a qualsiasi altro danno dello stesso tipo fino alla fine del turno in corso.",
@@ -989,44 +1136,52 @@
   },
   "ranger-natures-veil": {
     "description": "Come azione bonus, puoi conferirti la condizione Invisibile fino alla fine del tuo prossimo turno. Puoi usare questo privilegio un numero di volte pari al tuo modificatore di Saggezza (minimo una volta), recuperando tutti gli usi dopo un Riposo Lungo.",
-    "name": "Velo della Natura"
+    "name": "Velo della Natura",
+    "gist": "Azione Bonus: Invisibile fino a fine del prossimo turno; usi = Saggezza per Riposo Lungo"
   },
   "ranger-natures-veil.mechanics.actions.0": {
     "description": "Diventa invisibile fino all'inizio del tuo prossimo turno."
   },
   "ranger-precise-hunter": {
     "description": "Hai Vantaggio ai tiri per colpire contro il bersaglio del tuo Marchio del Cacciatore.",
-    "name": "Precisione del Cacciatore"
+    "name": "Precisione del Cacciatore",
+    "gist": "Vantaggio ai tiri per colpire contro il bersaglio del Marchio del Cacciatore"
   },
   "ranger-precise-hunter.grants.0": {
     "description": "Tiri per colpire contro il bersaglio del tuo Marchio del Cacciatore"
   },
   "ranger-relentless-hunter": {
     "description": "Subire danni non può interrompere la tua Concentrazione sul Marchio del Cacciatore.",
-    "name": "Cacciatore Implacabile"
+    "name": "Cacciatore Implacabile",
+    "gist": "I danni non interrompono la Concentrazione sul Marchio del Cacciatore"
   },
   "ranger-roving": {
     "description": "La tua Velocità aumenta di 3 m quando non indossi Armatura Pesante, e ottieni una velocità di Scalata e di Nuoto pari alla tua Velocità.",
-    "name": "Girovago"
+    "name": "Girovago",
+    "gist": "+3 m di Velocità senza Armatura Pesante; velocità di Scalata e Nuoto pari alla Velocità"
   },
   "ranger-spellcasting": {
     "description": "Hai imparato a usare l'essenza magica della natura per lanciare incantesimi. Usi Saggezza come caratteristica da incantatore. Nelle regole 2024, i ranger sono incantatori che preparano dalla lista del ranger dopo ogni riposo lungo.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Lanci incantesimi da ranger con Saggezza; cambi i preparati dopo un Riposo Lungo"
   },
   "ranger-tireless": {
     "description": "Con un'azione Magica, puoi darti punti ferita temporanei pari a 1d8 + il tuo modificatore di Saggezza (minimo 1). Puoi usare questo un numero di volte pari al tuo modificatore di Saggezza (minimo una volta), recuperando dopo un Riposo Lungo. Ogni volta che completi un Riposo Breve, il tuo livello di Indebolimento, se presente, diminuisce di 1.",
-    "name": "Instancabile"
+    "name": "Instancabile",
+    "gist": "Azione Magica: 1d8 + Saggezza Punti Ferita Temporanei; Riposo Breve: -1 Indebolimento"
   },
   "ranger-tireless.mechanics.actions.0": {
     "description": "Ottieni 1d8 + SAG punti ferita temporanei."
   },
   "ranger-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di due tipi di armi Semplici o da Guerra a tua scelta. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
-    "name": "Padronanza d'Armi"
+    "name": "Padronanza d'Armi",
+    "gist": "Usi le proprietà di padronanza di 2 tipi di arma; li cambi con un Riposo Lungo"
   },
   "rogue-cunning-action": {
     "description": "Il tuo pensiero rapido e la tua agilità ti permettono di muoverti e agire velocemente. Puoi effettuare un'Azione Bonus in ciascuno dei tuoi turni in combattimento per effettuare l'azione di Scatto, Disimpegno o Nascondersi.",
-    "name": "Azione Scaltra"
+    "name": "Azione Scaltra",
+    "gist": "Azione Bonus ogni turno: Scatto, Disimpegno o Nascondersi"
   },
   "rogue-cunning-action.mechanics.actions.0": {
     "description": "Raddoppia il movimento per questo turno.",
@@ -1042,7 +1197,8 @@
   },
   "rogue-cunning-strike": {
     "description": "Quando infliggi danni da Attacco Furtivo, puoi rinunciare ad alcuni dadi per applicare un effetto speciale: Veleno (rinunci a 1d6, TS COS o Avvelenato), Sgambetto (rinunci a 1d6, TS DES o Prono), Ritirata (rinunci a 1d6, Disimpegno dopo il colpo).",
-    "name": "Colpo Astuto"
+    "name": "Colpo Astuto",
+    "gist": "Rinunci a dadi di Attacco Furtivo per effetti: Avvelenato, Prono o Disimpegno"
   },
   "rogue-cunning-strike.grants.poison": {
     "description": "TS su Costituzione o il bersaglio ottiene la condizione Avvelenato per 1 minuto (ripete il tiro alla fine di ognuno dei suoi turni). Richiede delle Sostanze da Avvelenatore addosso.",
@@ -1058,7 +1214,8 @@
   },
   "rogue-devious-strikes": {
     "description": "Apprendi effetti di Colpo Astuto aggiuntivi: Frastornamento (rinunci a 2d6, TS COS o nel suo prossimo turno può fare solo uno tra muoversi/azione/Azione Bonus), Colpo del KO (rinunci a 6d6, TS COS o Privo di Sensi per 1 minuto), Oscuramento (rinunci a 3d6, TS DES o Accecato fino alla fine del suo prossimo turno).",
-    "name": "Colpi Infidi"
+    "name": "Colpi Infidi",
+    "gist": "Nuovi effetti di Colpo Astuto: Frastornamento, Colpo del KO, Oscuramento (Accecato)"
   },
   "rogue-devious-strikes.grants.daze": {
     "description": "TS su Costituzione o nel suo prossimo turno il bersaglio può fare solo una delle seguenti: muoversi, compiere un'azione o compiere un'Azione Bonus.",
@@ -1074,45 +1231,54 @@
   },
   "rogue-elusive": {
     "description": "Sei così elusivo che gli attaccanti raramente ottengono il sopravvento su di te. Nessun tiro per colpire ha Vantaggio contro di te mentre non sei Incapacitato.",
-    "name": "Inafferrabile"
+    "name": "Inafferrabile",
+    "gist": "Nessun tiro per colpire ha Vantaggio contro di te se non sei Incapacitato"
   },
   "rogue-elusive.grants.0": {
     "description": "Nessun tiro per colpire ha Vantaggio contro di te mentre non sei Incapacitato"
   },
   "rogue-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "rogue-evasion": {
     "description": "Quando sei soggetto a un effetto che ti permette di effettuare un tiro salvezza su Destrezza per subire solo metà danno, non subisci alcun danno se superi il tiro salvezza e solo metà danno se fallisci.",
-    "name": "Elusione"
+    "name": "Elusione",
+    "gist": "TS su Destrezza per metà danno: nessun danno se lo superi, metà se fallisci"
   },
   "rogue-expertise": {
     "description": "Scegli due delle tue competenze nelle abilità o una competenza in un'abilità e gli Arnesi da Scasso. Il tuo bonus di competenza è raddoppiato per qualsiasi prova di caratteristica che usa una delle competenze scelte. Al 6° livello, puoi scegliere altre due competenze.",
-    "name": "Maestria"
+    "name": "Maestria",
+    "gist": "Bonus di Competenza doppio in due abilità o Arnesi da Scasso; altre due al 6° livello"
   },
   "rogue-improved-cunning-strike": {
     "description": "Puoi usare fino a due effetti di Colpo Astuto quando infliggi danni da Attacco Furtivo, pagando il costo in dadi di ciascun effetto.",
-    "name": "Colpo Astuto Migliorato"
+    "name": "Colpo Astuto Migliorato",
+    "gist": "Fino a due effetti di Colpo Astuto per ogni Attacco Furtivo"
   },
   "rogue-reliable-talent": {
     "description": "Hai affinato le tue abilità scelte fino a rasentare la perfezione. Ogni volta che effettui una prova di caratteristica a cui aggiungi il tuo bonus di competenza, puoi trattare un risultato del d20 di 9 o inferiore come un 10.",
-    "name": "Dote Affidabile"
+    "name": "Dote Affidabile",
+    "gist": "Nelle prove con Bonus di Competenza, un d20 di 9 o meno conta come 10"
   },
   "rogue-reliable-talent.grants.0": {
     "description": "Tratta un d20 di 9 o inferiore come un 10 nelle prove con il tuo Bonus di Competenza"
   },
   "rogue-slippery-mind": {
     "description": "La tua mente astuta è eccezionalmente difficile da controllare. Ottieni competenza nei tiri salvezza su Saggezza e Carisma.",
-    "name": "Mente Sfuggente"
+    "name": "Mente Sfuggente",
+    "gist": "Competenza nei tiri salvezza su Saggezza e Carisma"
   },
   "rogue-sneak-attack": {
     "description": "Una volta per turno, puoi infliggere danni extra a una creatura che colpisci con un attacco se hai Vantaggio al tiro per colpire o se un altro nemico del bersaglio è entro 1,5 metri. Il danno extra è un numero di d6 pari alla metà del tuo livello da Ladro (arrotondato per eccesso). L'attacco deve usare un'arma con Accurata o a Distanza.",
-    "name": "Attacco Furtivo"
+    "name": "Attacco Furtivo",
+    "gist": "Una volta per turno, d6 extra (metà livello da Ladro) con Vantaggio o un alleato vicino"
   },
   "rogue-steady-aim": {
     "description": "Come Azione Bonus, ti concedi Vantaggio al tuo prossimo tiro per colpire nel turno corrente. Puoi usare questa capacità solo se non ti sei mosso durante questo turno, e dopo averla usata, la tua velocità è 0 fino alla fine del turno corrente.",
-    "name": "Mira Ferma"
+    "name": "Mira Ferma",
+    "gist": "Azione Bonus: Vantaggio al prossimo tiro per colpire se non ti sei mosso; velocità 0"
   },
   "rogue-steady-aim.mechanics.actions.0": {
     "description": "Ottieni Vantaggio al prossimo attacco (nessun movimento questo turno).",
@@ -1121,11 +1287,13 @@
   },
   "rogue-stroke-of-luck": {
     "description": "Hai un talento soprannaturale per riuscire quando ne hai bisogno. Se il tuo attacco manca un bersaglio a portata, puoi trasformare il fallimento in un colpo. In alternativa, se fallisci una prova di caratteristica, puoi trattare il tiro del d20 come un 20. Dopo aver usato questa capacità, devi completare un Riposo Breve o Lungo.",
-    "name": "Colpo di Fortuna"
+    "name": "Colpo di Fortuna",
+    "gist": "Un attacco mancato diventa un colpo, o una prova fallita vale 20 sul d20; 1/Riposo Breve"
   },
   "rogue-thief-fast-hands": {
     "description": "Puoi usare l'Azione Bonus concessa da Azione Scaltra per effettuare una prova di Destrezza (Rapidità di Mano), usare gli Arnesi da Scasso per disarmare una trappola o aprire una serratura, o effettuare l'azione Usare un Oggetto.",
-    "name": "Mani Veloci"
+    "name": "Mani Veloci",
+    "gist": "L'Azione Bonus di Azione Scaltra: Rapidità di Mano, Arnesi da Scasso o Usare un Oggetto"
   },
   "rogue-thief-fast-hands.mechanics.actions.0": {
     "description": "Rapidità di Mano, Arnesi da Scasso o Usare un Oggetto.",
@@ -1133,15 +1301,18 @@
   },
   "rogue-thief-reflexes": {
     "description": "Sei diventato esperto nel tendere imboscate e sfuggire rapidamente al pericolo. Puoi effettuare due turni durante il primo round di qualsiasi combattimento. Effettui il primo turno alla tua iniziativa normale e il secondo turno alla tua iniziativa meno 10. Non puoi usare questa capacità quando sei sorpreso.",
-    "name": "Riflessi da Furfante"
+    "name": "Riflessi da Furfante",
+    "gist": "Due turni nel primo round di combattimento: alla tua iniziativa e a iniziativa −10"
   },
   "rogue-thief-second-story-work": {
     "description": "Arrampicatore: Ottieni una Velocità di Scalata pari alla tua Velocità. Saltatore: Puoi determinare la distanza dei tuoi salti usando la tua Destrezza invece della tua Forza.",
-    "name": "Lavoro al Secondo Piano"
+    "name": "Lavoro al Secondo Piano",
+    "gist": "Velocità di Scalata pari alla tua Velocità; salti usando Destrezza invece di Forza"
   },
   "rogue-thief-supreme-sneak": {
     "description": "Ottieni l'opzione di Colpo Astuto Attacco Furtivo (Costo: 1d6). Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te se concludi il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
-    "name": "Furtività Suprema"
+    "name": "Furtività Suprema",
+    "gist": "Colpo Astuto Attacco Furtivo (1d6): attaccare non termina Invisibile se finisci al coperto"
   },
   "rogue-thief-supreme-sneak.grants.stealth-attack": {
     "description": "Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te, a patto che tu concluda il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
@@ -1149,26 +1320,31 @@
   },
   "rogue-thief-use-magic-device": {
     "description": "Sintonia: Puoi sintonizzarti con un massimo di quattro oggetti magici contemporaneamente. Cariche: Ogni volta che usi una proprietà di un oggetto magico che consuma cariche, tira 1d6; con un 6 usi la proprietà senza consumare le cariche. Pergamene: Puoi usare qualsiasi Pergamena Magica, usando Intelligenza come caratteristica da incantatore; lanci in modo affidabile trucchetti e incantesimi di 1° livello, mentre una pergamena di livello superiore richiede una prova di Intelligenza (Arcano) (CD 10 + il livello dell'incantesimo).",
-    "name": "Usare Oggetto Magico"
+    "name": "Usare Oggetto Magico",
+    "gist": "Sintonia con 4 oggetti; un 6 su 1d6 non consuma cariche; usi ogni Pergamena Magica"
   },
   "rogue-thieves-cant": {
     "description": "Hai imparato varie lingue nelle comunità dove hai esercitato i tuoi talenti da ladro. Conosci il Gergo Ladresco e un'altra lingua a tua scelta, scelta dalle tabelle delle lingue.",
-    "name": "Gergo Ladresco"
+    "name": "Gergo Ladresco",
+    "gist": "Conosci il Gergo Ladresco e un'altra lingua a tua scelta"
   },
   "rogue-uncanny-dodge": {
     "description": "Quando un attaccante che puoi vedere ti colpisce con un attacco, puoi usare la tua Reazione per dimezzare il danno dell'attacco contro di te.",
-    "name": "Schivata Prodigiosa"
+    "name": "Schivata Prodigiosa",
+    "gist": "Reazione: dimezzi il danno di un attacco che ti colpisce da un attaccante che vedi"
   },
   "rogue-uncanny-dodge.mechanics.actions.0": {
     "description": "Dimezza il danno di un attacco che ti colpisce."
   },
   "rogue-weapon-mastery": {
     "description": "Puoi usare la proprietà di padronanza di due tipi di armi Semplici o da Guerra a tua scelta. Ogni volta che finisci un Riposo Lungo, puoi cambiare le armi scelte.",
-    "name": "Padronanza d'Armi"
+    "name": "Padronanza d'Armi",
+    "gist": "Usi la proprietà di padronanza di due tipi di armi; le cambi con un Riposo Lungo"
   },
   "sorcerer-arcane-apotheosis": {
     "description": "Mentre il tuo privilegio Stregoneria Innata è attivo, puoi usare un'opzione di Metamagia in ognuno dei tuoi turni senza spendere Punti Stregoneria per essa.",
-    "name": "Apoteosi Arcana"
+    "name": "Apoteosi Arcana",
+    "gist": "Con Stregoneria Innata attiva, un'opzione di Metamagia per turno senza Punti Stregoneria"
   },
   "sorcerer-arcane-apotheosis.grants.arcane-apotheosis": {
     "description": "Usa un'opzione di Metamagia senza spendere Punti Stregoneria per essa.",
@@ -1177,27 +1353,33 @@
   },
   "sorcerer-asi": {
     "description": "Puoi aumentare un punteggio di caratteristica di 2, o due punteggi di caratteristica di 1 ciascuno. In alternativa, puoi scegliere un talento. Non puoi aumentare un punteggio oltre 20 con questo privilegio.",
-    "name": "Aumento dei Punteggi di Caratteristica"
+    "name": "Aumento dei Punteggi di Caratteristica",
+    "gist": "+2 a un punteggio di caratteristica o +1 a due (max 20), oppure un talento"
   },
   "sorcerer-draconic-sorcery-resilience": {
     "description": "Il tuo massimo di Punti Ferita aumenta di 3 e aumenta di 1 ogni volta che ottieni un altro livello da Stregone. Parti del tuo corpo sono inoltre ricoperte da scaglie simili a quelle di un drago: mentre non indossi un'armatura, la tua Classe Armatura base è pari a 10 più i tuoi modificatori di Destrezza e Carisma.",
-    "name": "Resilienza Draconica"
+    "name": "Resilienza Draconica",
+    "gist": "+3 al massimo di Punti Ferita, +1 per livello; senza armatura CA 10 + Destrezza + Carisma"
   },
   "sorcerer-draconic-sorcery-spells": {
     "description": "Quando raggiungi un livello da Stregone indicato nella tabella degli Incantesimi Draconici, da quel momento hai sempre preparati gli incantesimi elencati. Livello da Stregone 3: Alterare Se Stesso, Globo Cromatico, Comando, Soffio del Drago. Livello 5: Paura, Volare. Livello 7: Occhio Arcano, Charme sui Mostri. Livello 9: Conoscenza delle Leggende, Richiama Drago.",
-    "name": "Incantesimi Draconici"
+    "name": "Incantesimi Draconici",
+    "gist": "Incantesimi draconici sempre preparati: Globo Cromatico, Volare, Richiama Drago e altri"
   },
   "sorcerer-draconic-sorcery-elemental-affinity": {
     "description": "Scegli un tipo di danno associato ai draghi: Acido, Freddo, Fuoco, Fulmine o Veleno. Hai Resistenza a quel tipo e quando lanci un incantesimo che infligge quel danno, puoi aggiungere il modificatore di Carisma a un tiro per i danni.",
-    "name": "Affinità Elementale"
+    "name": "Affinità Elementale",
+    "gist": "Resistenza ad Acido, Freddo, Fuoco, Fulmine o Veleno; + Carisma ai danni di quel tipo"
   },
   "sorcerer-draconic-sorcery-dragon-wings": {
     "description": "Come Azione Bonus, puoi far apparire ali draconiche sulla tua schiena. Le ali durano 1 ora o finché non le congedi (nessuna azione richiesta). Per la durata, hai una Velocità di Volo di 18 metri. Dopo aver usato questo privilegio, non puoi riutilizzarlo finché non completi un Riposo Lungo, a meno che tu non spenda 3 Punti Stregoneria (nessuna azione richiesta) per ripristinarne l'uso.",
-    "name": "Ali di Drago"
+    "name": "Ali di Drago",
+    "gist": "Azione Bonus: Velocità di Volo 18 m per 1 ora; 1/Riposo Lungo o 3 Punti Stregoneria"
   },
   "sorcerer-draconic-sorcery-dragon-companion": {
     "description": "Puoi lanciare Richiama Drago senza componente Materiale. Puoi anche lanciarlo una volta senza spendere uno slot incantesimo e recuperi la capacità di lanciarlo in questo modo quando completi un Riposo Lungo. Ogni volta che inizi a lanciare l'incantesimo, puoi modificarlo in modo che non richieda Concentrazione; in tal caso, per quel lancio la durata dell'incantesimo diventa di 1 minuto.",
-    "name": "Seguace Draconico"
+    "name": "Seguace Draconico",
+    "gist": "Richiama Drago senza componente Materiale né Concentrazione; 1 lancio gratis/Riposo Lungo"
   },
   "sorcerer-draconic-sorcery-dragon-wings.grants.0": {
     "label": "Ali di Drago"
@@ -1225,15 +1407,18 @@
   },
   "sorcerer-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "sorcerer-font-of-magic": {
     "description": "Possiedi un pool di punti stregoneria pari al tuo livello da stregone. Puoi usare i punti stregoneria per alimentare opzioni di Metamagia, e puoi convertire slot incantesimo in punti stregoneria o viceversa come azione bonus. Recuperi tutti i punti spesi con un riposo lungo.",
-    "name": "Fonte di Magia"
+    "name": "Fonte di Magia",
+    "gist": "Punti Stregoneria pari al livello; Azione Bonus: li converti in slot e viceversa"
   },
   "sorcerer-innate-sorcery": {
     "description": "Come Azione Bonus, puoi attivare la tua Stregoneria Innata per 1 minuto. Mentre è attiva, hai Vantaggio su tutti i tiri per colpire degli incantesimi e un bonus di +1 alla CD dei tuoi tiri salvezza degli incantesimi. Puoi usare questo privilegio due volte e recuperi tutti gli usi spesi quando finisci un Riposo Lungo.",
-    "name": "Stregoneria Innata"
+    "name": "Stregoneria Innata",
+    "gist": "Azione Bonus, 1 min: Vantaggio agli attacchi con incantesimi e +1 alla CD; 2/Riposo Lungo"
   },
   "sorcerer-innate-sorcery.grants.0": {
     "label": "Stregoneria Innata"
@@ -1246,11 +1431,13 @@
   },
   "sorcerer-metamagic": {
     "description": "Ottieni la capacità di plasmare i tuoi incantesimi. Impari due opzioni di Metamagia a tua scelta (Incantesimo Accurato, Distante, Potenziato, Esteso, Intensificato, Rapido, Cercante, Sottile, Trasmutato o Raddoppiato). Impari opzioni aggiuntive a livelli superiori. Puoi usare una sola opzione per incantesimo salvo diversa indicazione.",
-    "name": "Metamagia"
+    "name": "Metamagia",
+    "gist": "Impari due opzioni di Metamagia per modificare gli incantesimi; una per incantesimo"
   },
   "sorcerer-sorcerous-restoration": {
     "description": "Quando lo stregone completa un riposo breve, può recuperare i punti stregoneria consumati, ma non più di un numero pari a metà del proprio livello da stregone (arrotondato per difetto). Dopo aver usato questo privilegio, il personaggio non può riutilizzarlo prima di aver completato un riposo lungo.",
-    "name": "Ripristino stregonesco"
+    "name": "Ripristino stregonesco",
+    "gist": "Con un Riposo Breve recuperi Punti Stregoneria fino a metà livello; 1/Riposo Lungo"
   },
   "sorcerer-sorcerous-restoration.mechanics.actions.0": {
     "description": "Durante un Riposo Breve, recupera fino a ⌊livello/2⌋ Punti Stregoneria. Una volta per Riposo Lungo.",
@@ -1259,84 +1446,102 @@
   },
   "sorcerer-sorcery-incarnate": {
     "description": "Se non hai più usi di Stregoneria Innata, puoi comunque attivarla spendendo 2 Punti Stregoneria quando usi l'Azione Bonus. Inoltre, mentre la tua Stregoneria Innata è attiva, puoi usare fino a due opzioni di Metamagia su ogni incantesimo che lanci invece di una.",
-    "name": "Stregoneria Incarnata"
+    "name": "Stregoneria Incarnata",
+    "gist": "Attivi Stregoneria Innata con 2 Punti Stregoneria; attiva, 2 opzioni di Metamagia a lancio"
   },
   "sorcerer-sorcery-incarnate.grants.1": {
     "label": "Stregoneria Incarnata"
   },
   "sorcerer-spellcasting": {
     "description": "Puoi lanciare incantesimi da stregone usando Carisma come caratteristica da incantatore. Conosci un numero limitato di incantesimi e puoi lanciarli usando slot incantesimo. Impari incantesimi aggiuntivi salendo di livello.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Lanci incantesimi da stregone con Carisma usando slot incantesimo; ne impari altri salendo"
   },
   "warlock-asi": {
     "description": "Puoi aumentare un punteggio di caratteristica di 2, o due punteggi di caratteristica di 1 ciascuno. In alternativa, puoi scegliere un talento. Non puoi aumentare un punteggio oltre 20 con questo privilegio.",
-    "name": "Aumento dei Punteggi di Caratteristica"
+    "name": "Aumento dei Punteggi di Caratteristica",
+    "gist": "+2 a un punteggio di caratteristica o +1 a due (max 20), oppure un talento"
   },
   "warlock-contact-patron": {
     "description": "Hai sempre preparato l'incantesimo Contattare Altri Piani. Puoi lanciarlo senza consumare uno slot incantesimo per contattare il tuo patrono e superi automaticamente il tiro salvezza dell'incantesimo. Una volta lanciato in questo modo, non puoi rifarlo fino a un Riposo Lungo.",
-    "name": "Contatta Patrono"
+    "name": "Contatta Patrono",
+    "gist": "Contattare Altri Piani sempre preparato; 1/Riposo Lungo gratis, superi il tiro salvezza"
   },
   "warlock-eldritch-invocations": {
     "description": "Ottieni una Supplica Occulta a tua scelta, come Patto del Tomo. Sono frammenti di conoscenza proibita che ti conferiscono capacità magiche permanenti. Impari suppliche aggiuntive a livelli superiori (secondo la colonna Suppliche Occulte) e puoi sostituirne una quando sali di livello.",
-    "name": "Suppliche Occulte"
+    "name": "Suppliche Occulte",
+    "gist": "Ottieni una Supplica Occulta, altre salendo di livello; ne sostituisci una a ogni livello"
   },
   "warlock-eldritch-master": {
     "description": "Una volta per Riposo Lungo, puoi recuperare tutti i tuoi slot incantesimo di Magia del Patto spesi.",
-    "name": "Maestro dell'Occulto"
+    "name": "Maestro dell'Occulto",
+    "gist": "Una volta per Riposo Lungo recuperi tutti gli slot incantesimo di Magia del Patto"
   },
   "warlock-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "warlock-fiend-patron-dark-ones-blessing": {
     "description": "Quando riduci un nemico a 0 PF, ottieni PF temporanei pari al modificatore di Carisma + livello da Warlock (minimo 1). Ottieni questo beneficio anche se qualcun altro riduce un nemico entro 3 metri da te a 0 PF.",
-    "name": "Benedizione dell'Oscuro"
+    "name": "Benedizione dell'Oscuro",
+    "gist": "Nemico a 0 PF entro 3 m: Punti Ferita Temporanei pari a Carisma + livello da Warlock"
   },
   "warlock-fiend-patron-dark-ones-own-luck": {
     "description": "Quando effettui una prova di caratteristica o un tiro salvezza, puoi usare questo privilegio per aggiungere 1d10 al tiro. Puoi farlo dopo aver visto il tiro, ma prima che uno qualsiasi dei suoi effetti si applichi. Puoi usare questo privilegio un numero di volte pari al tuo modificatore di Carisma (minimo una volta), ma non più di una volta per tiro. Recuperi tutti gli usi spesi quando completi un Riposo Lungo.",
-    "name": "Fortuna dell'Oscuro"
+    "name": "Fortuna dell'Oscuro",
+    "gist": "+1d10 a una prova o tiro salvezza dopo il tiro; usi pari al Carisma per Riposo Lungo"
   },
   "warlock-fiend-patron-dark-ones-blessing.grants.0": {
     "trigger": "quando riduci un nemico a 0 PF (o uno entro 3 m)"
   },
   "warlock-fiend-patron-fiendish-resilience": {
     "description": "Scegli un tipo di danno diverso da Forza ogni volta che completi un riposo breve o lungo. Hai Resistenza a quel tipo di danno finché non ne scegli un altro.",
-    "name": "Resilienza Immonda"
+    "name": "Resilienza Immonda",
+    "gist": "Resistenza a un tipo di danno (non Forza), scelto a ogni Riposo Breve o Lungo"
   },
   "warlock-fiend-patron-hurl-through-hell": {
     "description": "Una volta per turno quando colpisci una creatura con un tiro per colpire, puoi tentare di trasportarla istantaneamente attraverso i Piani Inferiori. Il bersaglio deve superare un tiro salvezza su Carisma contro la tua CD del tiro salvezza degli incantesimi, altrimenti scompare e piomba in un paesaggio da incubo. Il bersaglio subisce 8d10 danni Psichici se non è un Immondo e ha la condizione Incapacitato fino alla fine del tuo prossimo turno, quando ritorna nello spazio che occupava in precedenza o nello spazio libero più vicino. Dopo aver usato questo privilegio, non puoi riutilizzarlo finché non completi un Riposo Lungo, a meno che tu non spenda uno slot incantesimo di Magia del Patto (nessuna azione richiesta) per ripristinarne l'uso.",
-    "name": "Scagliare all'Inferno"
+    "name": "Scagliare all'Inferno",
+    "gist": "Se colpisci, TS su Carisma o 8d10 danni Psichici e Incapacitato; 1/Riposo Lungo o uno slot"
   },
   "warlock-fiend-patron-fiendish-resilience.grants.0": {
     "label": "Resilienza Immonda"
   },
   "warlock-magical-cunning": {
     "description": "Se tutti i tuoi slot incantesimo di Magia del Patto sono esauriti, puoi eseguire un rituale speciale per 1 minuto per recuperarne la metà (arrotondata per eccesso). Una volta fatto, non puoi rifarlo fino a un Riposo Lungo.",
-    "name": "Scaltrezza Magica"
+    "name": "Scaltrezza Magica",
+    "gist": "Slot di Magia del Patto esauriti: rituale di 1 minuto ne recupera metà; 1/Riposo Lungo"
   },
   "warlock-mystic-arcanum-6th": {
     "description": "Il tuo patrono ti conferisce un segreto magico chiamato Arcanum Mistico. Scegli un incantesimo da warlock di 6° livello. Puoi lanciarlo una volta senza spendere uno slot. Recuperi questa capacità con un riposo lungo.",
-    "name": "Arcanum Mistico (6° livello)"
+    "name": "Arcanum Mistico (6° livello)",
+    "gist": "Scegli un incantesimo da warlock di 6° livello da lanciare senza slot 1/Riposo Lungo"
   },
   "warlock-mystic-arcanum-7th": {
     "description": "Ottieni un Arcanum Mistico di 7° livello. Scegli un incantesimo da warlock di 7° livello. Puoi lanciarlo una volta senza spendere uno slot, recuperando la capacità con un riposo lungo.",
-    "name": "Arcanum Mistico (7° livello)"
+    "name": "Arcanum Mistico (7° livello)",
+    "gist": "Scegli un incantesimo da warlock di 7° livello da lanciare senza slot 1/Riposo Lungo"
   },
   "warlock-mystic-arcanum-8th": {
     "description": "Ottieni un Arcanum Mistico di 8° livello. Scegli un incantesimo da warlock di 8° livello. Puoi lanciarlo una volta senza spendere uno slot, recuperando la capacità con un riposo lungo.",
-    "name": "Arcanum Mistico (8° livello)"
+    "name": "Arcanum Mistico (8° livello)",
+    "gist": "Scegli un incantesimo da warlock di 8° livello da lanciare senza slot 1/Riposo Lungo"
   },
   "warlock-mystic-arcanum-9th": {
     "description": "Ottieni un Arcanum Mistico di 9° livello. Scegli un incantesimo da warlock di 9° livello. Puoi lanciarlo una volta senza spendere uno slot, recuperando la capacità con un riposo lungo.",
-    "name": "Arcanum Mistico (9° livello)"
+    "name": "Arcanum Mistico (9° livello)",
+    "gist": "Scegli un incantesimo da warlock di 9° livello da lanciare senza slot 1/Riposo Lungo"
   },
   "warlock-pact-magic": {
     "description": "Le tue ricerche arcane e la magia conferita dal tuo patrono ti permettono di lanciare incantesimi da warlock. Carisma è la tua caratteristica da incantatore. I tuoi slot di magia del patto si recuperano con un riposo breve o lungo, a differenza degli altri incantatori.",
-    "name": "Magia del Patto"
+    "name": "Magia del Patto",
+    "gist": "Incantesimi da warlock con Carisma; slot di Magia del Patto recuperati con Riposo Breve"
   },
   "wizard-arcane-recovery": {
     "description": "Una volta per Riposo Lungo, quando completi un Riposo Breve, puoi scegliere quali slot incantesimo spesi desideri recuperare. Gli slot incantesimo possono avere un livello totale pari o inferiore alla metà del livello da mago (arrotondato per eccesso) e nessuno slot può essere di livello pari o superiore al 6º. Per esempio, se sei un mago di 4º livello, puoi recuperare un massimo di due livelli di slot incantesimo, ripristinando uno slot di 2º livello o due slot di 1º livello.",
-    "name": "Recupero arcano"
+    "name": "Recupero arcano",
+    "gist": "Riposo Breve: recuperi slot fino a metà livello da mago (nessuno dal 6º); 1/Riposo Lungo"
   },
   "wizard-arcane-recovery.mechanics.actions.0": {
     "description": "Durante un Riposo Breve, recupera slot incantesimo con livello totale ≤ ⌈livello-mago/2⌉ (nessuno slot oltre il 5° livello). Una volta per Riposo Lungo.",
@@ -1345,31 +1550,38 @@
   },
   "wizard-asi": {
     "description": "Puoi aumentare un punteggio di caratteristica di 2, o due punteggi di caratteristica di 1 ciascuno. In alternativa, puoi scegliere un talento. Non puoi aumentare un punteggio oltre 20 con questo privilegio.",
-    "name": "Aumento dei Punteggi di Caratteristica"
+    "name": "Aumento dei Punteggi di Caratteristica",
+    "gist": "+2 a un punteggio di caratteristica o +1 a due (max 20), oppure un talento"
   },
   "wizard-epic-boon": {
     "description": "Ottieni un talento Dono Epico o un altro talento a tua scelta per cui sei idoneo.",
-    "name": "Dono Epico"
+    "name": "Dono Epico",
+    "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
   "wizard-evoker-empowered-evocation": {
     "description": "Ogni volta che lanci un incantesimo di Invocazione da Mago, puoi aggiungere il modificatore di Intelligenza a un tiro per i danni.",
-    "name": "Invocazione Potente"
+    "name": "Invocazione Potente",
+    "gist": "+ modificatore di Intelligenza a un tiro per i danni degli incantesimi di Invocazione"
   },
   "wizard-evoker-overchannel": {
     "description": "Puoi aumentare il potere dei tuoi incantesimi. Quando lanci un incantesimo da Mago con uno slot incantesimo di livello da 1 a 5 che infligge danni, puoi infliggere il massimo dei danni con quell'incantesimo nel turno in cui lo lanci. La prima volta che lo fai, non subisci alcun effetto negativo. Se usi di nuovo questo privilegio prima di completare un Riposo Lungo, subisci 2d12 danni Necrotici per ogni livello dello slot incantesimo subito dopo aver lanciato l'incantesimo. Questi danni ignorano Resistenza e Immunità. Ogni volta che usi di nuovo questo privilegio prima di completare un Riposo Lungo, i danni Necrotici per livello di incantesimo aumentano di 1d12.",
-    "name": "Saturazione Magica"
+    "name": "Saturazione Magica",
+    "gist": "Danni massimi con incantesimo da Mago di livello 1–5; riusarlo costa 2d12+ danni Necrotici"
   },
   "wizard-evoker-evocation-savant": {
     "description": "Scegli due incantesimi da Mago della scuola di Invocazione, ciascuno di livello non superiore al 2, e aggiungili gratuitamente al tuo libro degli incantesimi. Inoltre, ogni volta che ottieni accesso a un nuovo livello di slot incantesimo in questa classe, puoi aggiungere gratuitamente al tuo libro un incantesimo da Mago della scuola di Invocazione. L'incantesimo scelto deve essere di un livello per cui possiedi slot incantesimo.",
-    "name": "Invocatore Sapiente"
+    "name": "Invocatore Sapiente",
+    "gist": "Due incantesimi di Invocazione di livello ≤2 gratis nel libro, più uno per livello di slot"
   },
   "wizard-evoker-potent-cantrip": {
     "description": "Quando lanci un trucchetto su una creatura e manchi con il tiro per colpire o il bersaglio supera il tiro salvezza, il bersaglio subisce comunque metà dei danni del trucchetto (se previsti) ma nessun effetto aggiuntivo.",
-    "name": "Trucchetto Potente"
+    "name": "Trucchetto Potente",
+    "gist": "I trucchetti mancati o a cui si supera il tiro salvezza infliggono comunque metà danni"
   },
   "wizard-evoker-sculpt-spells": {
     "description": "Puoi creare sacche di relativa sicurezza all'interno degli effetti delle tue invocazioni. Quando lanci un incantesimo di Invocazione che influenza altre creature che puoi vedere, puoi sceglierne un numero pari a 1 più il livello dell'incantesimo. Le creature scelte superano automaticamente i loro tiri salvezza contro l'incantesimo e non subiscono alcun danno se normalmente ne subirebbero la metà superando il tiro salvezza.",
-    "name": "Plasmare Incantesimi"
+    "name": "Plasmare Incantesimi",
+    "gist": "Invocazione: 1 + livello creature scelte superano il tiro salvezza e non subiscono danni"
   },
   "wizard-evoker-sculpt-spells.grants.sculpt-spells": {
     "description": "Scegli fino a 1 più il livello dell'incantesimo di quelle creature: superano automaticamente i tiri salvezza contro l'incantesimo e non subiscono danni se normalmente ne subirebbero la metà superando il tiro salvezza.",
@@ -1378,27 +1590,33 @@
   },
   "wizard-memorize-spell": {
     "description": "Ogni volta che finisci un Riposo Breve, puoi studiare il tuo libro degli incantesimi e sostituire uno degli incantesimi da Mago di livello 1+ che hai preparato con un altro incantesimo di livello 1+ dal tuo libro. (2024: nessun limite di una volta per Riposo Lungo.)",
-    "name": "Memorizzare Incantesimi"
+    "name": "Memorizzare Incantesimi",
+    "gist": "Riposo Breve: sostituisci un incantesimo da Mago preparato di livello 1+ con uno del libro"
   },
   "wizard-ritual-adept": {
     "description": "Puoi lanciare qualsiasi incantesimo come Rituale se tale incantesimo ha il tag Rituale ed è nel tuo libro degli incantesimi. Non è necessario che l'incantesimo sia preparato, ma devi avere il libro in mano mentre lanci il Rituale.",
-    "name": "Adepto dei Rituali"
+    "name": "Adepto dei Rituali",
+    "gist": "Lanci come Rituale ogni incantesimo Rituale del tuo libro senza prepararlo, libro in mano"
   },
   "wizard-scholar": {
     "description": "Mentre studiavi la magia, ti sei anche specializzato in un altro campo di studio. Scegli una delle seguenti abilità in cui sei competente: Arcano, Storia, Indagare, Medicina, Natura o Religione. Hai Maestria nell'abilità scelta.",
-    "name": "Studioso"
+    "name": "Studioso",
+    "gist": "Maestria in un'abilità competente: Arcano, Storia, Indagare, Medicina, Natura o Religione"
   },
   "wizard-signature-spells": {
     "description": "Hai sempre due incantesimi di 3° livello da mago preparati che non contano nel numero di incantesimi preparati. Puoi lanciare ciascuno una volta al 3° livello senza spendere uno slot. Recuperi questa capacità dopo un riposo breve o lungo.",
-    "name": "Incantesimi Personali"
+    "name": "Incantesimi Personali",
+    "gist": "Due incantesimi da mago di 3° livello sempre preparati, 1 lancio gratis/Riposo Breve"
   },
   "wizard-spell-mastery": {
     "description": "Hai raggiunto una tale padronanza su certi incantesimi da poterli lanciare a volontà. Scegli un incantesimo di 1° livello e uno di 2° livello nel tuo libro. Puoi lanciarli al livello più basso senza spendere slot quando sono preparati. Puoi cambiare le scelte studiando per 8 ore.",
-    "name": "Maestria negli Incantesimi"
+    "name": "Maestria negli Incantesimi",
+    "gist": "Lanci a volontà un incantesimo di 1° e uno di 2° livello; li cambi con 8 ore di studio"
   },
   "wizard-spellcasting": {
     "description": "Hai imparato a lanciare incantesimi arcani attraverso lo studio e la memorizzazione. Intelligenza è la tua caratteristica da incantatore. Prepari incantesimi dal tuo libro ogni giorno, scegliendone un numero pari al tuo modificatore di Intelligenza + il tuo livello da mago (minimo 1). Necessiti di un libro degli incantesimi e un focus arcano o borsa dei componenti.",
-    "name": "Incantesimi"
+    "name": "Incantesimi",
+    "gist": "Incantesimi da mago con Intelligenza; ne prepari Intelligenza + livello dal tuo libro"
   },
   "monk-slow-fall.mechanics.actions.0": {
     "description": "Caduta Lenta — riduci il danno da caduta che subisci di 5 × il tuo livello da Monaco"
