@@ -31,6 +31,10 @@ const OFF_FIRST_PAINT: { module: string; why: string }[] = [
     module: "src/lib/views/combat-action-view.ts",
     why: "the combat action presenters; only the character sheet needs them",
   },
+  {
+    module: "src/lib/aggregate-character.ts",
+    why: "the grant-aware AC/HP engine; the roster reads the stored cache, and the save path loads the cache builder on demand",
+  },
 ];
 
 type ManualChunks = (id: string) => string | undefined;

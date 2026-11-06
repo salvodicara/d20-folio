@@ -24,7 +24,8 @@ import {
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { serializeCharacter, importCharacter } from "@/lib/character-io";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
-import { buildCharacterCache, cacheToRosterDoc } from "@/lib/character-cache";
+import { cacheToRosterDoc } from "@/lib/character-cache";
+import { buildCharacterCache } from "@/lib/character-cache-build";
 import { sanitizeCharacter } from "@/lib/sanitize-character";
 import { sanitizeSession } from "@/lib/sanitize-session";
 import type { CharacterDoc, SessionState } from "@/types/character";

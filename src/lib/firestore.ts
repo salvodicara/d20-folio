@@ -196,7 +196,7 @@ async function toStoredPayload(
   }
   const [{ serializeCharacterEnvelope }, { buildCharacterCache }] = await Promise.all([
     import("@/lib/character-codec"),
-    import("@/lib/character-cache"),
+    import("@/lib/character-cache-build"),
   ]);
   // `serializeCharacterEnvelope` reads ONLY `character` + `session`; the metadata
   // fields are irrelevant to the envelope, so a minimal doc is enough.

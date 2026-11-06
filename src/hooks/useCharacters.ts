@@ -13,8 +13,9 @@
  * each tile through the shared `applyCombatToRosterDoc` hydration seam. So a roster HP
  * bar updates live on every HP tap and can never drift from the open sheet.
  *
- * In dev bypass mode, returns the mock character directly (no Firestore call); the
- * subdoc listeners are no-ops there, so the tile reads the mock's live session HP.
+ * In dev bypass mode, returns the mock character (no Firestore call), projected on
+ * demand; the subdoc listeners are no-ops there, so the tile reads the mock's live
+ * session HP.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -23,11 +24,7 @@ import { subscribeToCharacters } from "@/lib/firestore";
 import { subscribeCombatState } from "@/lib/combat-state-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import {
-  rosterProjectionFromDoc,
-  applyCombatToRosterDoc,
-  type RosterCharacterDoc,
-} from "@/lib/character-cache";
+import { applyCombatToRosterDoc, type RosterCharacterDoc } from "@/lib/character-cache";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import type { CombatState } from "@/types/combat-state";
 
@@ -74,52 +71,71 @@ function devHpHydrateDelay(): boolean {
   return DEV_BYPASS_AUTH && window.localStorage.getItem(HP_HYDRATE_DELAY_FLAG) === "1";
 }
 
+function devEmptyRoster(): boolean {
+  return window.localStorage.getItem("d20-dev-empty-roster") === "1";
+}
+
 export function useCharacters(): UseCharactersResult {
   const user = useAuthStore((s) => s.user);
-  // Dev-bypass ONLY: `d20-dev-empty-roster=1` in localStorage renders the EMPTY
-  // roster (the P2 first-run onboarding state), which is otherwise unreachable in
-  // the preview (the mock character always seeds). Compile-time dead in prod.
-  const [characters, setCharacters] = useState<RosterCharacterDoc[]>(() => {
-    if (!DEV_BYPASS_AUTH || window.localStorage.getItem("d20-dev-empty-roster") === "1") {
-      return [];
-    }
-    // Project the mock to the EXACT roster shape the real subscription streams
-    // (the SRD-free `RosterCharacterDoc`), so dev + prod render identical types.
-    const doc = rosterProjectionFromDoc({ ...MOCK_CHARACTER, id: "mock-1" });
-    // Faithful two-phase repro (`d20-dev-hp-hydrate-delay`): start the tile at the
-    // FULL-HP placeholder `cacheToRosterDoc` seeds in prod, so the delayed real HP
-    // (emitted by `useRosterCombatStates` below) visibly folds in.
-    return devHpHydrateDelay()
-      ? [
-          {
-            ...doc,
-            session: applyCombatToSession(doc.session, null, doc.character.hp.max)
-              .session,
-          },
-        ]
-      : [doc];
-  });
+  const [characters, setCharacters] = useState<RosterCharacterDoc[]>([]);
   // Tracks which uid's snapshot has arrived; used to derive loading state
-  // without calling setState synchronously inside the effect.
-  const [loadedUid, setLoadedUid] = useState<string | null>(
-    DEV_BYPASS_AUTH ? "bypass" : null
+  // without calling setState synchronously inside the effect. Dev bypass settles as
+  // "bypass" once its mock roster is projected (below).
+  const [loadedUid, setLoadedUid] = useState<string | null>(() =>
+    DEV_BYPASS_AUTH && devEmptyRoster() ? "bypass" : null
   );
   const [error, setError] = useState<string | null>(null);
 
-  // loading = authenticated user present but we haven't received their first snapshot yet
-  const loading = !DEV_BYPASS_AUTH && !!user && loadedUid !== user.uid;
+  // loading = the first answer hasn't arrived: the user's first snapshot, or under
+  // dev bypass the projected mock roster.
+  const loading = DEV_BYPASS_AUTH
+    ? loadedUid !== "bypass"
+    : !!user && loadedUid !== user.uid;
 
-  // Dev-bypass ONLY: `d20-dev-roster=1` swaps the lone mock for the FULL roster
-  // gallery (many classes/levels, portraits vs monograms, a long name, HP bands,
-  // retired + fallen tiles) — the grid/filter/bulk states are unreachable on a
-  // one-tile roster. Lazy-imported through the same seam every scenario consumer
-  // uses, so the SRD-heavy builder never weighs on the roster bundle.
+  // Dev-bypass ONLY: the roster seeds from the mock character, projected to the EXACT
+  // roster shape the real subscription streams (the SRD-free `RosterCharacterDoc`), so
+  // dev + prod render identical types. The projection runs the grant engine, so it is
+  // loaded with `import()`: the engine stays off first paint in every build.
+  //  - `d20-dev-empty-roster=1` renders the EMPTY roster (the first-run onboarding
+  //    state, otherwise unreachable in the preview);
+  //  - `d20-dev-roster=1` swaps the lone mock for the FULL roster gallery (many
+  //    classes/levels, portraits vs monograms, a long name, HP bands, retired +
+  //    fallen tiles), through the same lazy seam every scenario consumer uses;
+  //  - `d20-dev-hp-hydrate-delay=1` starts the tile at the FULL-HP placeholder
+  //    `cacheToRosterDoc` seeds in prod, so the delayed real HP (emitted by
+  //    `useRosterCombatStates` below) visibly folds in.
+  // Compile-time dead in prod.
   useEffect(() => {
-    if (!DEV_BYPASS_AUTH || window.localStorage.getItem("d20-dev-roster") !== "1") return;
+    if (!DEV_BYPASS_AUTH || devEmptyRoster()) return;
     let alive = true;
-    void import("@/lib/dev-scenarios").then(({ buildDevRosterDocs }) => {
-      if (alive) setCharacters(buildDevRosterDocs().map(rosterProjectionFromDoc));
-    });
+    const settle = (docs: RosterCharacterDoc[]): void => {
+      if (!alive) return;
+      setCharacters(docs);
+      setLoadedUid("bypass");
+    };
+    if (window.localStorage.getItem("d20-dev-roster") === "1") {
+      void Promise.all([
+        import("@/lib/character-cache-build"),
+        import("@/lib/dev-scenarios"),
+      ]).then(([{ rosterProjectionFromDoc }, { buildDevRosterDocs }]) =>
+        settle(buildDevRosterDocs().map(rosterProjectionFromDoc))
+      );
+    } else {
+      void import("@/lib/character-cache-build").then(({ rosterProjectionFromDoc }) => {
+        const doc = rosterProjectionFromDoc({ ...MOCK_CHARACTER, id: "mock-1" });
+        settle(
+          devHpHydrateDelay()
+            ? [
+                {
+                  ...doc,
+                  session: applyCombatToSession(doc.session, null, doc.character.hp.max)
+                    .session,
+                },
+              ]
+            : [doc]
+        );
+      });
+    }
     return () => {
       alive = false;
     };
@@ -193,8 +209,8 @@ export function useCharacters(): UseCharactersResult {
   // `session.hp` is the REAL value, not the full-HP placeholder `cacheToRosterDoc`
   // seeds. The card gates its HP number + gold fill on this so the fill first-PAINTS at
   // the real width (no placeholder→real slide, no full-HP frame). Under dev-bypass the
-  // projection is synchronous (session HP already real) so every tile is ready from
-  // first paint — EXCEPT under the repro flag, which deliberately drives the real
+  // projected session HP is already real, so every tile is ready from its
+  // projection — EXCEPT under the repro flag, which deliberately drives the real
   // placeholder→settled transition.
   const syncReady = DEV_BYPASS_AUTH && !devHpHydrateDelay();
   const hpReady = useMemo(() => {

@@ -4,11 +4,11 @@
  * the cache: the public share sheet's cache is a closed schema.
  */
 import { describe, expect, it } from "vitest";
+import { cacheToRosterDoc } from "@/lib/character-cache";
 import {
   buildCharacterCache,
-  cacheToRosterDoc,
   rosterProjectionFromDoc,
-} from "@/lib/character-cache";
+} from "@/lib/character-cache-build";
 import { makeCharacterDoc } from "./_helpers";
 
 const meta = { createdAt: 0, updatedAt: 0, status: "active" } as never;

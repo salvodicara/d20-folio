@@ -5,7 +5,7 @@ import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { combatStateWriteData } from "@/lib/combat-state-io";
 import { buildPublicCharacterProjection } from "@/lib/public-character-projection";
-import { buildCharacterCache } from "@/lib/character-cache";
+import { buildCharacterCache } from "@/lib/character-cache-build";
 
 const harness = vi.hoisted(() => {
   type Operation = {

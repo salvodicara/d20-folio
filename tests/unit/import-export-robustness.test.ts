@@ -16,7 +16,8 @@ import {
   minimizeCharacter,
   type MinimalCharacter,
 } from "@/lib/character-minimal";
-import { buildCharacterCache, cacheToRosterDoc } from "@/lib/character-cache";
+import { cacheToRosterDoc } from "@/lib/character-cache";
+import { buildCharacterCache } from "@/lib/character-cache-build";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sanitizeCharacter } from "@/lib/sanitize-character";
 import { sanitizeSession } from "@/lib/sanitize-session";
