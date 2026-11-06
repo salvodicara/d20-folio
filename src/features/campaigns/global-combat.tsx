@@ -53,10 +53,12 @@ import {
   subscribeToSharedCampaigns,
 } from "@/features/campaigns/campaign-io";
 import {
+  effectIdsEndingOnAct,
   foldCombatEffectOps,
   incapacitationSweep,
   type IncapacitationRow,
 } from "@/lib/combat-effects";
+import { combatEffectEndsEarlyOn } from "@/lib/resolve-grant-sources";
 import { encounterRollFor, viewerActiveEncounters } from "@/features/campaigns/encounter";
 import {
   observePartyWorldFights,
@@ -461,6 +463,26 @@ export function GlobalCombatMount(): null {
       showToast({ message: t("combat.declareApplyFailed"), duration: 6000 })
     );
   }, [status, openCharacterId, t, effectsCampaignId, clockMinute, showToast]);
+
+  // An act the viewer performs (an attack, a spell, damage dealt) ends the effects others
+  // left on them that end on it: an ally's Invisibility, Sanctuary. In the fight they
+  // are revoked from its log; out of it, the campaign's are marked ended.
+  useEffect(() => {
+    const failed = () =>
+      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
+    useCharacterStore.getState().setStateEndingActSink((act) => {
+      if (status && live) {
+        for (const id of effectIdsEndingOnAct(live.encounter.effectOps, status.myId, act))
+          void revokePersistentCombatEffect(status.campaignId, id).catch(failed);
+      }
+      if (!effectsCampaignId) return;
+      const ending = myStoreEffects
+        .filter((effect) => combatEffectEndsEarlyOn(effect).includes(act))
+        .map((effect) => effect.id);
+      void setCampaignEffectsEnded(effectsCampaignId, ending, "revoked").catch(failed);
+    });
+    return () => useCharacterStore.getState().setStateEndingActSink(null);
+  }, [status, live, effectsCampaignId, myStoreEffects, showToast, t]);
 
   // Project campaign-owned standing effects onto the viewer's own open character.
   // This reuses the primary encounter listener above; the character store scopes the

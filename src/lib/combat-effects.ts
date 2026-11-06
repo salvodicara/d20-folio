@@ -14,6 +14,7 @@ import type {
   EncounterPosition,
 } from "@/types/combat-effect";
 import {
+  combatEffectEndsEarlyOn,
   resolveCombatEffectGrantGroup,
   resolveCombatEffectGrants,
 } from "@/lib/resolve-grant-sources";
@@ -900,13 +901,12 @@ export function effectIdsEndingOnAct(
   targetId: string,
   act: string
 ): string[] {
-  return foldCombatEffectOps(operations).flatMap((effect) => {
-    if (effect.target.combatantId !== targetId) return [];
-    const duration = resolveCombatEffectGrantGroup(effect)?.duration;
-    return duration && "endsEarlyOn" in duration && duration.endsEarlyOn?.includes(act)
+  return foldCombatEffectOps(operations).flatMap((effect) =>
+    effect.target.combatantId === targetId &&
+    combatEffectEndsEarlyOn(effect).includes(act)
       ? [effect.id]
-      : [];
-  });
+      : []
+  );
 }
 
 /** Revoke every live occurrence projecting one condition onto a target. This is

@@ -356,6 +356,29 @@ export function resolveCombatEffectGrantGroup(
 }
 
 /** Inner grants active for this instance phase. Target marks carry identity only. */
+/**
+ * The acts that end an occurrence early ("attack-roll", "deal-damage", …): its grant
+ * group's, or, for a condition a spell put on its target (an ally's Invisibility), the
+ * spell's own state's. None for anything else.
+ */
+export function combatEffectEndsEarlyOn(
+  effect: ActiveCombatEffect
+): ReadonlyArray<string> {
+  const group =
+    effect.payload.kind === "grant-group"
+      ? resolveCombatEffectGrantGroup(effect)
+      : effect.payload.kind === "condition" && effect.source.kind === "spell"
+        ? (getSpellById(effect.source.id)?.grants?.find(
+            (grant): grant is WhileActiveGrant =>
+              grant.type === "while-active" &&
+              grant.duration !== undefined &&
+              "endsEarlyOn" in grant.duration
+          ) ?? null)
+        : null;
+  const duration = group?.duration;
+  return duration && "endsEarlyOn" in duration ? (duration.endsEarlyOn ?? []) : [];
+}
+
 export function resolveCombatEffectGrants(
   effect: ActiveCombatEffect
 ): ReadonlyArray<Grant> {
