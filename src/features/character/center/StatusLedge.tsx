@@ -51,7 +51,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useCharacterStore } from "@/stores/characterStore";
 import { useLocale } from "@/hooks/useLocale";
 import { condColor, condInkColor } from "@/lib/condition-color";
-import { concentrationLabel, conditionLabel } from "@/lib/views/tracker-view";
+import { conditionLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import { localeDistance } from "@/lib/utils";
 import {
   composeStatusBadges,

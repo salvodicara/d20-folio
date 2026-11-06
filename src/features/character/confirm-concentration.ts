@@ -20,7 +20,7 @@ import {
   holdsCustomSpellConcentration,
 } from "@/lib/concentration";
 import { vitalConcentration } from "@/lib/character-vitals";
-import { concentrationLabel } from "@/lib/views/tracker-view";
+import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { Locale } from "@/lib/locale";
 
 export async function confirmConcentrationSwap(
