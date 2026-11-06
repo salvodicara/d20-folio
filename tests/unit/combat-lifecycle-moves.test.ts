@@ -7,6 +7,7 @@ import {
   planRoll,
   planRollForMissing,
   planUnrollMissing,
+  missingRollers,
   type CombatPatch,
 } from "@/features/campaigns/combat-lifecycle";
 import { addMonster, setInitiative } from "@/features/campaigns/encounter";
@@ -194,6 +195,24 @@ describe("the DM rolls for whoever has not rolled", () => {
     expect(plan?.started).toBe(true);
     expect(plan?.patch.encounterInit).toEqual({ ana: 4, ben: 19 });
     expect(plan?.patch.encounter?.order).toEqual(["pc-ben", "pc-ana"]);
+  });
+
+  it("after a fight ends, the next one starts with nobody rolled (rehearsal #1)", () => {
+    // Both PCs rolled, then the DM ended the fight: the old rolls stay for a reopen,
+    // but they belong to the ended fight, not the next one.
+    const rolled = apply(dmTable(), roll(dmTable(), "ana", 13)?.patch);
+    const both = apply(rolled, roll(rolled, "ben", 9)?.patch);
+    const ended = apply(both, planEnd(both, { reason: "manual", now: 5000 }));
+    expect(missingRollers(ended)).toEqual(["ana", "ben"]);
+    const plan = planRollForMissing(ended, {
+      uid: "dm",
+      bonuses: {},
+      now: 6000,
+      d20: d20(4, 19),
+    });
+    expect(plan?.started).toBe(true);
+    expect(plan?.rolled).toEqual({ ana: 4, ben: 19 });
+    expect(plan?.patch.encounterInit).toEqual({ ana: 4, ben: 19 });
   });
 
   it("is the DM's alone, and does nothing when nobody is missing", () => {
