@@ -106,6 +106,12 @@ import {
 } from "@/features/character/center/target-step";
 import { HELP_ACTION_ID, helpBenefit } from "@/lib/play/help";
 import { giveInspiration } from "./give-inspiration";
+import {
+  featureUsedThisTurn,
+  oncePerTurnEntry,
+  riderClaimedTurnFor,
+  riderFeatureKey,
+} from "@/lib/play/once-per-turn";
 import { checkSucceeded, type CheckResult } from "@/lib/play/checks";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
@@ -1259,6 +1265,14 @@ export function TurnEconomyProvider({
     execution: ActionExecution = TURN_EXECUTION
   ) {
     if (!guardActionState(action)) return;
+    // A once-per-turn feature whose rider already claimed the turn (Hand of Harm).
+    if (inEncounter() && riderClaimedTurnFor(turnEntryIds(), action.id)) {
+      showToast({
+        message: t("combat.oncePerTurnTaken", { name: action.name }),
+        duration: 2000,
+      });
+      return;
+    }
     const expendsSpellSlot = action.source === "spell" && action.costsSlot;
     if (expendsSpellSlot && !spellSlotExpenditureAvailable()) {
       showSpellSlotExpenditureLimit();
@@ -2490,6 +2504,21 @@ export function TurnEconomyProvider({
         () => {
           if (!guardLifeState()) return null;
           const cs = useCharacterStore.getState();
+          // A once-per-turn rider claims the turn for its feature (Hand of Harm): a
+          // second tap, or after the feature's own card, spends nothing.
+          const onceKey =
+            rider.oncePerTurn && fight ? riderFeatureKey(rider.sourceLoc) : undefined;
+          if (onceKey && featureUsedThisTurn(turnEntryIds(), onceKey)) {
+            bail.message = t("combat.oncePerTurnTaken", { name: rider.source });
+            return null;
+          }
+          const claim = onceKey
+            ? useCombatStore.getState().selectAction({
+                id: oncePerTurnEntry(onceKey),
+                name: rider.source,
+                slot: "free",
+              })
+            : false;
           let undoDebit: () => void;
           if (
             spend.kind === "tracker" &&
@@ -2531,6 +2560,8 @@ export function TurnEconomyProvider({
           return () => {
             undoDebit();
             useCharacterStore.getState().removeLogEntry(loggedId);
+            if (claim && onceKey)
+              useCombatStore.getState().deselectAction(oncePerTurnEntry(onceKey));
           };
         },
         { turnScoped: fight }
@@ -2539,6 +2570,12 @@ export function TurnEconomyProvider({
       if (bail.message) showToast({ message: bail.message, duration: 2000 });
       return;
     }
+  }
+
+  /** Every entry the turn holds, in any slot. */
+  function turnEntryIds(): string[] {
+    const { selected } = useCombatStore.getState();
+    return [...selected.action, ...selected.bonus, ...selected.free].map((a) => a.id);
   }
 
   // S6 — apply a Rogue Cunning Strike option on an attack: debit the once-per-turn
