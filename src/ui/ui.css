@@ -1966,9 +1966,7 @@
   background: var(--sunk);
 }
 .fui .f-turn-t {
-  font: 700 var(--fs-md) var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 .fui .f-turn-slots {
@@ -2491,9 +2489,7 @@
   text-align: center;
 }
 .fui .f-act-head > span {
-  font: 700 12px/1.2 var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-sm) / 1.2 var(--font-text);
   color: var(--label, var(--muted));
   white-space: nowrap;
 }
@@ -2505,10 +2501,9 @@
   padding: 8px 0;
   border-bottom: 2px solid
     color-mix(in srgb, var(--gc, var(--line-strong)) 40%, transparent);
-  font: 700 16px/1.45 var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--white);
+  /* a group title in title-case serif, as BG3 (§8) */
+  font: 600 var(--fs-lg) / 1.45 var(--font-title);
+  color: var(--strong);
 }
 .fui .f-act-group[data-group="actions"] {
   --gc: var(--t-action);
@@ -3153,7 +3148,7 @@
     padding: 16px;
   }
   .fui .f-sheet .f-turn-t {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-lg);
   }
 }
 @media (max-width: 360px) {
