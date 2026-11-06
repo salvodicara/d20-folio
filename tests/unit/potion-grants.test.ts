@@ -261,4 +261,22 @@ describe("Potion of Speed: Haste without its lethargy", () => {
     expect(blocked(ended)).toBe(false);
     expect(effectiveWalkingSpeedFt(ended)).toBe(30);
   });
+
+  it("an older save's lethargy key lights nothing and its turn edge clears it", () => {
+    useCharacterStore.getState().setCharacter(
+      makeCharacterDoc(
+        { equipment: [] },
+        {
+          activeFeatures: [lethargyKey],
+          effectBoundaries: { [lethargyKey]: { round: 3, phase: "turn-end" } },
+        }
+      )
+    );
+    expect(blocked(current())).toBe(false);
+    expect(effectiveWalkingSpeedFt(current())).toBe(30);
+
+    useCharacterStore.getState().expireEffectBoundaries({ round: 3, phase: "turn-end" });
+    expect(current().session.activeFeatures ?? []).not.toContain(lethargyKey);
+    expect(current().session.effectBoundaries).toBeUndefined();
+  });
 });

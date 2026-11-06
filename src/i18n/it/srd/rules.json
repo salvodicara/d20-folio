@@ -213,10 +213,6 @@
   "situation.squeezing": {
     "name": "Spazio stretto"
   },
-  "potion.lethargy": {
-    "name": "Spossatezza",
-    "summary": "Quando l'effetto di Velocità termina, sei Incapacitato e hai Velocità 0 fino al termine del tuo turno successivo."
-  },
   "skill.acrobatics": {
     "gist": "Restare in piedi in una situazione difficile o eseguire un'acrobazia"
   },

@@ -3262,8 +3262,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const priorConcentration = character.session.concentration;
     const priorConcentrationCastLevel = character.session.concentrationCastLevel;
     const priorConcentrationConditions = character.session.concentrationConditions;
-    // An after-effect a potion's end starts (Speed's lethargy) is undone with it.
-    const priorBoundaries = character.session.effectBoundaries;
     const concentrationExpired = endsConcentration(
       priorConcentration,
       expired.map((effect) => effect.activeKey),
@@ -3301,7 +3299,6 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
               : { effectTimers: priorTimers }),
             activeFeatures: priorActive,
             activeSpellCastLevels: priorCastLevels,
-            effectBoundaries: priorBoundaries,
             concentration: priorConcentration,
             concentrationCastLevel: priorConcentrationCastLevel,
             concentrationConditions: priorConcentrationConditions,

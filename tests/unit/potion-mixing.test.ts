@@ -33,7 +33,7 @@ describe("potionMixingOffer", () => {
     });
   });
 
-  it("a running countdown counts too; its after-effect does not", () => {
+  it("a running countdown counts too; an older save's after-effect key does not", () => {
     const doc = makeCharacterDoc(
       { equipment: [flying, giant] },
       {
