@@ -12,6 +12,7 @@ import { Link, useMatch, useNavigate, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
+import { PlayEffects } from "./PlayEffects";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
@@ -300,12 +301,7 @@ function PlayHeader({
             )}
             {view.form && !readonly && <RevertForm />}
             {view.concentration && <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>}
-            {view.effects > 0 && (
-              <Chip kind="buff">
-                {`✦ ${t("play.effects")}`}
-                <span className="f-chip-n">{view.effects}</span>
-              </Chip>
-            )}
+            <PlayEffects doc={doc} locale={locale} />
             <PlayConditions doc={doc} locale={locale} />
           </div>
         )}

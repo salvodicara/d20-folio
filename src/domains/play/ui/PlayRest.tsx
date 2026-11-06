@@ -8,7 +8,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { longRestChange } from "@/domains/play/long-rest-change";
+import { prepareList } from "@/domains/play/play-spells-view";
 import { restView, shortRestHeal, type RestLine } from "@/domains/play/rest-view";
+import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
 import { useRestCommit } from "@/features/character/use-rest-commit";
 import type { Locale } from "@/lib/locale";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
@@ -32,6 +35,12 @@ export function PlayRest({
   const view = restView(doc, kind, locale);
   const [count, setCount] = useState(0);
   const [typed, setTyped] = useState("");
+  // after a Long Rest, a class that prepares its spells may change them (owner, «Guida»)
+  const [preparing, setPreparing] = useState(false);
+  const change =
+    kind === "long" && prepareList(doc, locale).levels.length > 0
+      ? longRestChange(doc)
+      : null;
   const heal = shortRestHeal(doc, count, typed);
   const pool = hitDicePool(doc.character);
   const range = hitDiceTotalRange(pool, count);
@@ -63,8 +72,14 @@ export function PlayRest({
   const confirm = () => {
     const done =
       kind === "short" ? rest.shortRest(doc, count, heal.heal ?? 0) : rest.longRest(doc);
-    void done.then((ok) => ok && onClose());
+    void done.then((ok) => {
+      if (!ok) return;
+      if (change) setPreparing(true);
+      else onClose();
+    });
   };
+  if (preparing && change)
+    return <PlayPrepare doc={doc} locale={locale} longRest={change} onClose={onClose} />;
   return (
     <Dialog
       open

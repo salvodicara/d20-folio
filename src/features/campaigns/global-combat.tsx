@@ -68,6 +68,7 @@ import {
   makeDevGlobalCombat,
   makeDevChronicleCombat,
   makeDevParty,
+  makeDevAllyEffects,
   devPipMode,
   turnFlickerReplayMode,
   makeTurnFlickerSteps,
@@ -469,8 +470,12 @@ export function GlobalCombatMount(): null {
   useEffect(() => {
     if (useCharacterStore.getState().readonly) return;
     if (!status || !live) {
-      if (openCharacterId && myStoreEffects.length > 0) {
-        setEncounterEffects(openCharacterId, myStoreEffects);
+      const devAlly =
+        import.meta.env.DEV && DEV_BYPASS_AUTH && openCharacterId
+          ? makeDevAllyEffects(openCharacterId)
+          : [];
+      if (openCharacterId && myStoreEffects.length + devAlly.length > 0) {
+        setEncounterEffects(openCharacterId, [...myStoreEffects, ...devAlly]);
       } else {
         setEncounterEffects(null);
       }

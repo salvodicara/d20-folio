@@ -100,7 +100,11 @@
       "nothing": "Nothing to recover",
       "slotsLeft": "{{left}} of {{total}}",
       "blockedZeroHp": "No rest at 0 Hit Points: you need at least 1 Hit Point to begin.",
-      "blockedDead": "A dead character can't rest."
+      "blockedDead": "A dead character can't rest.",
+      "changePrepared": "Prepared spells",
+      "changeOne": "You can change 1 spell.",
+      "changeAny": "You can change as many as you like.",
+      "keepPrepared": "Keep them"
     },
     "mixing": {
       "title": "Mixing potions",
@@ -140,7 +144,8 @@
       "manage": "Manage spells",
       "always": "always prepared",
       "overLimit": "That's more than your class allows: fine if your DM agrees.",
-      "via": "through"
+      "via": "through",
+      "preparedLabel": "Prepared spells"
     },
     "inv": {
       "pack": "Pack",
@@ -306,6 +311,12 @@
       "toastRerollNoTarget": "{{name}}: reroll the save",
       "toastRerollAdvantage": "{{name}}: {{target}} rerolls the save with Advantage",
       "toastRerollAdvantageNoTarget": "{{name}}: reroll the save with Advantage"
-    }
+    },
+    "effectsFrom": "from {{name}}",
+    "effectsRounds_one": "{{count}} round",
+    "effectsRounds_other": "{{count}} rounds",
+    "effectsMinutes_one": "{{count}} minute",
+    "effectsMinutes_other": "{{count}} minutes",
+    "effectsConcentration": "while they concentrate"
   }
 }

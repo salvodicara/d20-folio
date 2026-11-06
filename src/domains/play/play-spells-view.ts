@@ -6,6 +6,7 @@
  * the Spells model (`buildSpellsViewModel`) says whether it is prepared, so an
  * unprepared spell is shown but not cast.
  */
+import type { SpellSchool } from "@/data/types";
 import { getSpellById } from "@/data/spells";
 import { localizeSrd } from "@/i18n/resolver";
 import { primaryClassId } from "@/lib/classes";
@@ -90,6 +91,9 @@ export interface PrepareList {
     spells: {
       idx: number;
       name: string;
+      /** The SRD spell (its art, level line and effect); null for a homebrew one. */
+      spellId: string | null;
+      school: SpellSchool | null;
       prepared: boolean;
       always: boolean;
       /** A spell two of the character's caster classes share: which one it comes
@@ -119,6 +123,8 @@ export function prepareList(doc: CharacterDoc, locale: Locale): PrepareList {
           return {
             idx: card.idx,
             name: card.name,
+            spellId: card.data?.id ?? null,
+            school: card.data?.school ?? null,
             prepared: card.isPrepared || card.isAlwaysPrepared,
             always: card.isAlwaysPrepared,
             ...(via ? { via } : {}),

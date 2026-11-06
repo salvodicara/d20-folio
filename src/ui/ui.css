@@ -5147,3 +5147,35 @@
     font-size: var(--fs-lg);
   }
 }
+
+/* «Gestisci incantesimi» and the Long Rest's step: the limit beside the count, then
+   each spell as the spell picks show it (art, name, level line, the effect in gold) */
+.fui .f-prep-head {
+  margin-bottom: 8px;
+}
+.fui .f-prep-eff {
+  margin-left: auto;
+  flex: none;
+  font: 700 var(--fs-sm) var(--font-text);
+  color: var(--gold-hi);
+  text-align: right;
+}
+.fui .f-choice[aria-pressed] > .f-act-slot {
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+
+/* «Effetti»: each effect as a spell row (its art, name, what it does, who cast it) */
+.fui .f-fx-row {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  column-gap: 12px;
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+.fui .f-fx-gist {
+  color: var(--gold-hi);
+  font-weight: 600;
+  text-wrap: pretty;
+}
