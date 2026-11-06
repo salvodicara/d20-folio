@@ -140,7 +140,9 @@ export async function signInAs(page: Page, email: string): Promise<void> {
       /\/node_modules\/\.vite\/deps\/firebase_auth\.js\?v=[0-9a-f]+/
     )?.[0];
     if (!authPath) throw new Error("firebase/auth dep path not found");
-    const firebase = (await import(/* @vite-ignore */ "/src/lib/firebase.ts")) as {
+    // Browser-side module paths (the dev server serves them); never resolved by tsc.
+    const firebasePath = "/src/lib/firebase.ts";
+    const firebase = (await import(/* @vite-ignore */ firebasePath)) as {
       auth: unknown;
     };
     const auth = (await import(/* @vite-ignore */ authPath)) as {
