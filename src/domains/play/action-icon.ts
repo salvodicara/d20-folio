@@ -40,15 +40,18 @@ function featureOf(row: PlayActionRow): { id: string; class: string } | undefine
 }
 
 /**
- * The painted icon a row's slot shows (BG3's hotbar art): a weapon its equipment art, a
- * usable magic item its item art, a class feature its own art. A spell paints through its
- * school (SpellArt); a base action and the unarmed strike keep their glyph.
+ * The painted icon a row's slot shows (BG3's slot art): a weapon its equipment art, a
+ * usable magic item its item art, a class feature its own art, a base action (Dash,
+ * Dodge…) and the unarmed strike their action art. A spell paints through its school
+ * (SpellArt).
  */
 export function actionArt(
   row: PlayActionRow
-): { kind: "equipment" | "item" | "feature"; id: string } | null {
+): { kind: "equipment" | "item" | "feature" | "action"; id: string } | null {
   if (row.spellId) return null;
   if (row.action.weaponId) return { kind: "equipment", id: row.action.weaponId };
+  if (row.id === "unarmed-strike") return { kind: "action", id: "unarmed-strike" };
+  if (row.id.startsWith("base-")) return { kind: "action", id: row.id.slice(5) };
   if (row.id.startsWith("item-")) return { kind: "item", id: row.id.slice(5) };
   const feature = featureOf(row);
   return feature ? { kind: "feature", id: feature.id } : null;

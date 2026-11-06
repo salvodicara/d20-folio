@@ -89,9 +89,15 @@ describe("actionArt", () => {
     expect(actionArt(potion)).toEqual({ kind: "item", id: "potion-of-healing" });
   });
 
-  it("a spell, a base action and the unarmed strike have none here", () => {
+  it("a base action and the unarmed strike show their action art", () => {
+    expect(actionArt(row("base-dash"))).toEqual({ kind: "action", id: "dash" });
+    expect(actionArt(row("unarmed-strike"))).toEqual({
+      kind: "action",
+      id: "unarmed-strike",
+    });
+  });
+
+  it("a spell has none here: it paints through its school", () => {
     expect(actionArt(row("spell-produce-flame"))).toBeNull();
-    expect(actionArt(row("base-dash"))).toBeNull();
-    expect(actionArt(row("unarmed-strike"))).toBeNull();
   });
 });
