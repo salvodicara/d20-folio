@@ -134,6 +134,8 @@ const CORRECTED_TRIGGERS: Record<string, string> = {
   // Reactive Spell answers an Opportunity Attack, not a spell being cast (the parser
   // matched "cast a spell" in its own wording).
   "war-caster": "creature leaves your reach",
+  // Retaliate answers a melee hit on you (the parser found no trigger in its wording).
+  "zhentarim-tactics": "another creature damages you with a melee attack roll",
   // Instinctive Charm answers an attack roll against you, before it hits (the parser
   // read "fails a save" from its own wording).
   "wizard-enchanter-instinctive-charm": "a creature attacks you",
