@@ -36,3 +36,25 @@ export interface CreatureLocation {
   plane?: string;
   inside?: string;
 }
+
+const MAX_LOCATION_ID = 128;
+const locationId = (raw: unknown): string | undefined =>
+  typeof raw === "string" && raw && raw.length <= MAX_LOCATION_ID ? raw : undefined;
+
+/** A stored location, bounded; absent when it names neither a plane nor a space. */
+export function parseCreatureLocation(raw: unknown): CreatureLocation | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const r = raw as Record<string, unknown>;
+  const plane = locationId(r.plane);
+  const inside = locationId(r.inside);
+  return plane || inside
+    ? { ...(plane ? { plane } : {}), ...(inside ? { inside } : {}) }
+    : undefined;
+}
+
+/** Where the character is; absent when untagged (every plane check then says yes). */
+export function locationOf(session: {
+  location?: CreatureLocation;
+}): CreatureLocation | undefined {
+  return session.location;
+}

@@ -7,7 +7,7 @@
  * after it. Pure: the entry shapes and their bounded parsers.
  */
 import type { CreatureType } from "@/data/types";
-import type { CreatureLocation } from "@/lib/familiar-ids";
+import { parseCreatureLocation, type CreatureLocation } from "@/lib/familiar-ids";
 
 /** What the party knows of a creature the DM keeps. */
 export interface RosterEntry {
@@ -40,16 +40,6 @@ const count = (raw: unknown): number | undefined =>
 const id = (raw: unknown): string | undefined =>
   typeof raw === "string" && raw && raw.length <= MAX_ID ? raw : undefined;
 
-function parseLocation(raw: unknown): CreatureLocation | undefined {
-  const r = record(raw);
-  if (!r) return undefined;
-  const plane = id(r.plane);
-  const inside = id(r.inside);
-  return plane || inside
-    ? { ...(plane ? { plane } : {}), ...(inside ? { inside } : {}) }
-    : undefined;
-}
-
 /** A stored `roster` entry, bounded; null without a name. */
 export function parseRosterEntry(raw: unknown): RosterEntry | null {
   const r = record(raw);
@@ -61,7 +51,7 @@ export function parseRosterEntry(raw: unknown): RosterEntry | null {
   const current = count(hpRaw?.current);
   const max = count(hpRaw?.max);
   const temp = count(hpRaw?.temp);
-  const location = parseLocation(r.location);
+  const location = parseCreatureLocation(r.location);
   return {
     name,
     ...(monsterId ? { monsterId } : {}),
