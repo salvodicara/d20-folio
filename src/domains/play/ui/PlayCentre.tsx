@@ -42,7 +42,7 @@ import type { Locale } from "@/lib/locale";
 import { formatWeight, localeDistance } from "@/lib/utils";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
-import { actionIcon } from "@/domains/play/action-icon";
+import { actionArt, actionIcon } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { giveHelp } from "@/features/character/center/outcome-offer";
@@ -52,9 +52,11 @@ import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Icon, Tabs } from "@/ui";
+import { Art, Button, Chip, Icon, Tabs } from "@/ui";
+import { spells as allSpells } from "@/data/spells";
+import { SpellArt } from "@/domains/spells/ui/SpellArt";
 
-import { ActionIcon } from "./ActionIcon";
+import { ActionGlyph, ActionIcon } from "./ActionIcon";
 import { PlayAttuneRow } from "./PlayAttune";
 import { PlayHelp } from "./PlayHelp";
 import { PlayPrepare } from "./PlayPrepare";
@@ -175,6 +177,23 @@ export function PlayCentre({
       </div>
     </section>
   );
+}
+
+const SPELL_SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
+
+/** A row's painted icon: a spell through its school's art, anything else its own art. */
+function rowArt(row: PlayActionRow) {
+  const school = row.spellId ? SPELL_SCHOOL.get(row.spellId) : undefined;
+  if (school && row.spellId)
+    return <SpellArt id={row.spellId} school={school} size="fill" />;
+  const painted = actionArt(row);
+  return painted ? (
+    <Art
+      kind={painted.kind}
+      id={painted.id}
+      fallback={<ActionGlyph icon={actionIcon(row)} />}
+    />
+  ) : undefined;
 }
 
 function ActionsPane({
@@ -771,7 +790,7 @@ function ActionLine({
       : "";
   return (
     <div className="f-act" data-blocked={row.blocked || undefined}>
-      <ActionIcon icon={actionIcon(row)} />
+      <ActionIcon icon={actionIcon(row)} art={rowArt(row)} />
       <div className="f-row-main">
         <div className="f-row-t">{row.name}</div>
         {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}

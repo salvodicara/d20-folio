@@ -901,6 +901,11 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
   // (not-your-turn / the needs-roll pre-begin gathering, whose pip is red not quiet).
   const gathering = mode === "gathering" || mode === "needsroll";
   const myId = "pc-mock-uid";
+  // `d20-dev-attached` puts the mock hero (`mock-1`, Lyra) in the fight, so the Play
+  // screen's right column (Iniziativa) can be shot on the default dev sheet.
+  const attached = window.localStorage.getItem("d20-dev-attached") === "1";
+  const characterId = attached ? "mock-1" : "team-catalion-bard";
+  const pcName = attached ? "Lyra Voss" : "Coralino di Sanvaldo";
   const currentId = gathering ? null : mode === "yourturn" ? myId : "monster-1";
   const round = gathering ? 1 : 3;
   const encounter: EncounterState = {
@@ -910,7 +915,7 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
     epoch: 1,
     status: "active",
     combatants: [
-      { kind: "pc", id: myId, memberUid: "mock-uid", characterId: "team-catalion-bard" },
+      { kind: "pc", id: myId, memberUid: "mock-uid", characterId },
       {
         kind: "monster",
         id: "monster-1",
@@ -927,14 +932,41 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
     encounter,
     view: {
       rows: [
-        { id: myId, kind: "pc", name: "Coralino di Sanvaldo" },
-        { id: "monster-1", kind: "monster", name: "Goblin" },
-      ] as GlobalCombat["view"]["rows"],
+        // Full rows (conditions, HP) so the Play screen's initiative list can render them.
+        {
+          id: myId,
+          kind: "pc",
+          name: pcName,
+          ac: 17,
+          initiative: 14,
+          conditions: [],
+          currentHp: 38,
+          maxHp: 62,
+          tempHp: 5,
+          down: false,
+          hidden: false,
+          memberUid: "mock-uid",
+          characterId,
+        },
+        {
+          id: "monster-1",
+          kind: "monster",
+          name: "Goblin",
+          ac: 13,
+          initiative: 14,
+          conditions: [],
+          currentHp: 7,
+          maxHp: 7,
+          tempHp: 0,
+          down: false,
+          hidden: false,
+        },
+      ],
       turnOrderIds: gathering ? [] : [myId, "monster-1"],
       currentId,
     },
     myId,
-    characterId: "team-catalion-bard",
+    characterId,
     gathering,
     isMyTurn: currentId === myId,
     initiativeBonus: DEV_NEEDS_ROLL_BONUS,

@@ -14,6 +14,7 @@ import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { MONSTERS } from "@/data/monsters";
 import { SRD_RACES } from "@/data/races";
 import { spells } from "@/data/spells";
+import { ACTION_ART_IDS } from "@/data/action-art-ids";
 
 const ROOT = resolve(__dirname, "../../public/assets/art");
 const subclassIds = classTables.flatMap((t) =>
@@ -29,6 +30,8 @@ const CATALOGUE: Record<string, ReadonlySet<string>> = {
   monster: new Set(MONSTERS.map((m) => m.id)),
   feature: new Set(classFeatures.map((f) => f.id)),
   species: new Set(SRD_RACES.map((r) => r.id)),
+  // the base actions (Dash, Dodge…) and the unarmed strike every character has
+  action: new Set(ACTION_ART_IDS),
 };
 
 describe("painted icons", () => {

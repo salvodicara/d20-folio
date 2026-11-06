@@ -27,19 +27,34 @@ const isDamageType = (value: string | undefined): value is DamageType =>
   (DAMAGE_TYPES as readonly string[]).includes(value ?? "");
 
 /** The class feature behind an action id (`<featureId>-<type>`), if any. */
-function featureClass(row: PlayActionRow): string | undefined {
+function featureOf(row: PlayActionRow): { id: string; class: string } | undefined {
   const tracker = row.action.costTracker;
-  const byTracker = tracker ? classFeatureIndex.get(tracker)?.class : undefined;
-  if (byTracker) return byTracker;
-  let best: string | undefined;
-  let length = 0;
+  const byTracker = tracker ? classFeatureIndex.get(tracker) : undefined;
+  if (tracker && byTracker) return { id: tracker, class: byTracker.class };
+  let best: { id: string; class: string } | undefined;
   for (const [id, feature] of classFeatureIndex) {
-    if (id.length > length && row.id.startsWith(`${id}-`)) {
-      best = feature.class;
-      length = id.length;
-    }
+    if ((!best || id.length > best.id.length) && row.id.startsWith(`${id}-`))
+      best = { id, class: feature.class };
   }
   return best;
+}
+
+/**
+ * The painted icon a row's slot shows (BG3's slot art): a weapon its equipment art, a
+ * usable magic item its item art, a class feature its own art, a base action (Dash,
+ * Dodge…) and the unarmed strike their action art. A spell paints through its school
+ * (SpellArt).
+ */
+export function actionArt(
+  row: PlayActionRow
+): { kind: "equipment" | "item" | "feature" | "action"; id: string } | null {
+  if (row.spellId) return null;
+  if (row.action.weaponId) return { kind: "equipment", id: row.action.weaponId };
+  if (row.id === "unarmed-strike") return { kind: "action", id: "unarmed-strike" };
+  if (row.id.startsWith("base-")) return { kind: "action", id: row.id.slice(5) };
+  if (row.id.startsWith("item-")) return { kind: "item", id: row.id.slice(5) };
+  const feature = featureOf(row);
+  return feature ? { kind: "feature", id: feature.id } : null;
 }
 
 export function actionIcon(row: PlayActionRow): ActionIconKey {
@@ -52,6 +67,6 @@ export function actionIcon(row: PlayActionRow): ActionIconKey {
   const school = row.spellId ? getSpellById(row.spellId)?.school : undefined;
   if (school) return { kind: "school", id: school };
   if (row.spellId) return { kind: "spell" };
-  const cls = featureClass(row);
+  const cls = featureOf(row)?.class;
   return cls ? { kind: "class", id: cls } : { kind: "feature" };
 }
