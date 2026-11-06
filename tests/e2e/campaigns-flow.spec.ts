@@ -142,6 +142,25 @@ test.describe("Campaigns flow", () => {
     ).toBe(true);
   });
 
+  test("a control inside a section detail still opening takes the click", async ({
+    page,
+  }) => {
+    // The CAMPAIGN-NOTES-UX flake: clicked while "All notes" was still opening,
+    // "Show more" took focus but never toggled. The press scrolled the detail's
+    // clipping box to reveal the button, the box then grew and pulled that scroll
+    // back, so the button slid away before the release. A press held 80 ms (a
+    // loaded CI runner) makes the race certain.
+    await page.goto("/campaigns/mock-1");
+    await page.getByRole("tab", { name: /^journal$/i }).click();
+    await expect(page.getByRole("heading", { name: /shared notes/i })).toBeVisible();
+    await page.getByRole("button", { name: /all notes/i }).click();
+    const noteClamp = page
+      .locator("li", { hasText: "Rumors heard in Duskwell" })
+      .locator(".note-clamp");
+    await noteClamp.getByRole("button", { name: /show more/i }).click({ delay: 80 });
+    await expect(noteClamp.getByRole("button", { name: /show less/i })).toBeVisible();
+  });
+
   test("a Personal character shows no campaign chrome (chrome hidden)", async ({
     page,
   }) => {
