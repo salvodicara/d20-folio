@@ -7,6 +7,7 @@
  * `PlayTray`. The shape-change form picker is still the sheet's own until its new
  * version lands.
  */
+import { useLiveTargetName } from "@/features/character/center/use-live-target-name";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { lazy, Suspense, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -346,6 +347,7 @@ function TargetStep({ prompt, locale }: { prompt: Prompts["target"]; locale: Loc
   const { request } = prompt;
   const { step } = request;
   const [picked, setPicked] = useState<string[]>([]);
+  const nameOf = useLiveTargetName();
   const cancel = useOnce(prompt.onCancel);
   const toggle = (id: string) =>
     setPicked((now) =>
@@ -419,7 +421,7 @@ function TargetStep({ prompt, locale }: { prompt: Prompts["target"]; locale: Loc
                   disabled={!on && step.max > 1 && picked.length >= step.max}
                   onClick={() => toggle(c.id)}
                 >
-                  {c.self ? t("combat.targetMe", { name: c.name }) : c.name}
+                  {c.self ? t("combat.targetMe", { name: nameOf(c) }) : nameOf(c)}
                 </Chip>
               );
             })}
