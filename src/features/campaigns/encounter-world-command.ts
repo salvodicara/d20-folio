@@ -62,6 +62,7 @@ import {
   resolveDamageIntake,
   type DamageInstance,
 } from "@/lib/damage-intake";
+import type { DamageRetaliation } from "@/lib/combat-transition";
 import type { DamageType } from "@/types/damage";
 import type { EncounterState } from "@/types/campaign";
 import type { LocText } from "@/lib/loc-text";
@@ -283,6 +284,27 @@ export function applyAdversaryDamage(
  * total lands through {@link applyAdversaryDamage} (temp HP first, chronicle
  * beat reads the applied amount). Untyped parts apply verbatim.
  */
+/**
+ * What hits sent back to their monster attackers (Armor of Agathys' Cold), landed on
+ * each monster's Hit Points through its own defenses. A retaliation aimed at anything
+ * but a monster of this fight changes nothing here.
+ */
+export function landRetaliations(
+  encounter: EncounterState,
+  campaignId: string,
+  retaliations: ReadonlyArray<DamageRetaliation>
+): EncounterState {
+  return retaliations.reduce(
+    (next, { target, amount, damageType }) =>
+      target.kind === "monster" && amount > 0
+        ? applyAdversaryDamageParts(next, campaignId, target.combatantId, [
+            { amount, type: damageType },
+          ])
+        : next,
+    encounter
+  );
+}
+
 export function applyAdversaryDamageParts(
   encounter: EncounterState,
   campaignId: string,

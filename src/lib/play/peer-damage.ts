@@ -13,7 +13,7 @@
  */
 import { concentrationSaveDc } from "@/lib/compute";
 import { damageQueuesConcentrationSave } from "@/lib/character-d20-tests";
-import type { DamageTransfer } from "@/lib/combat-transition";
+import type { DamageRetaliation, DamageTransfer } from "@/lib/combat-transition";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState, PendingConcentrationSave } from "@/types/combat-state";
 
@@ -27,6 +27,8 @@ export interface PeerHit {
   spends: PeerSpend[];
   /** The hit's shared damage (Warding Bond), for the writer to hand on. */
   transfers: DamageTransfer[];
+  /** What the hit sends back to its attacker (Armor of Agathys). */
+  retaliations: DamageRetaliation[];
 }
 
 /**
@@ -52,7 +54,8 @@ export function peerHit(
     { ...opts, fromPeer: ledgerFull },
     newId
   );
-  if (!resolved) return { state: current, spends: [], transfers: [], ledgerFull };
+  if (!resolved)
+    return { state: current, spends: [], transfers: [], retaliations: [], ledgerFull };
   const spends: PeerSpend[] = [
     ...Object.entries(resolved.taken.spent.pools).map(
       ([trackerId, absorbed]): PeerSpend => ({
@@ -70,6 +73,7 @@ export function peerHit(
     state: resolved.state,
     spends,
     transfers: [...resolved.taken.transition.transfers],
+    retaliations: [...resolved.taken.transition.retaliations],
     ledgerFull,
   };
 }
@@ -86,14 +90,15 @@ export function peerDamageState(
   return peerDamageHit(doc, current, amount, opts, newId).state;
 }
 
-/** {@link peerDamageState} with the hit's shared damage (Warding Bond). */
+/** {@link peerDamageState} with what the hit owes others (Warding Bond's share, Armor of
+ *  Agathys' cold). */
 export function peerDamageHit(
   doc: CharacterDoc,
   current: CombatState,
   amount: number,
   opts: DamageOptions = {},
   newId: () => string = () => crypto.randomUUID()
-): { state: CombatState; transfers: DamageTransfer[] } {
+): Pick<PeerHit, "state" | "transfers" | "retaliations"> {
   const resolved = resolvePeerHit(
     doc,
     current,
@@ -102,8 +107,12 @@ export function peerDamageHit(
     newId
   );
   return resolved
-    ? { state: resolved.state, transfers: [...resolved.taken.transition.transfers] }
-    : { state: current, transfers: [] };
+    ? {
+        state: resolved.state,
+        transfers: [...resolved.taken.transition.transfers],
+        retaliations: [...resolved.taken.transition.retaliations],
+      }
+    : { state: current, transfers: [], retaliations: [] };
 }
 
 function resolvePeerHit(

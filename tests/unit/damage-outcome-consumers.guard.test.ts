@@ -30,14 +30,27 @@ const LOCAL = new Set([
   "changed",
 ]);
 
-/** Outbound fields and the files that hand them on (`transition.<field>`). */
-const OUTBOUND: Record<string, string[]> = {
-  transfers: ["src/stores/characterStore.ts", "src/lib/play/peer-damage.ts"],
-  retaliations: [],
+/** Outbound fields: the files that hand them on (`transition.<field>`), and the file
+ *  that delivers them with the named function (it must call it, not only define it). */
+const OUTBOUND: Record<
+  string,
+  { readers: string[]; delivery: { file: string; call: string } }
+> = {
+  transfers: {
+    readers: ["src/stores/characterStore.ts", "src/lib/play/peer-damage.ts"],
+    delivery: {
+      file: "src/hooks/useCharacterSubscription.ts",
+      call: "deliverDamageTransfers",
+    },
+  },
+  retaliations: {
+    readers: ["src/lib/play/peer-damage.ts"],
+    delivery: {
+      file: "src/features/campaigns/encounter-monster-actions.tsx",
+      call: "landRetaliations",
+    },
+  },
 };
-
-/** Outbound fields still waiting for a consumer (each an open, reported gap). */
-const KNOWN_GAPS = new Set(["retaliations"]);
 
 function resultFields(): string[] {
   const src = read("src/lib/combat-transition.ts");
@@ -61,15 +74,17 @@ describe("the damage rule's outcomes for others are delivered", () => {
     expect(unclassified, "classify the new field in this guard").toEqual([]);
   });
 
-  for (const [field, consumers] of Object.entries(OUTBOUND)) {
-    const check = KNOWN_GAPS.has(field) ? it.fails : it;
-    check(`${field} is handed on by an entry point`, () => {
-      expect(consumers.length).toBeGreaterThan(0);
-      for (const file of consumers) {
+  for (const [field, { readers, delivery }] of Object.entries(OUTBOUND)) {
+    it(`${field} is handed on by an entry point and delivered`, () => {
+      expect(readers.length).toBeGreaterThan(0);
+      for (const file of readers) {
         expect(read(file), `${file} reads transition.${field}`).toMatch(
           new RegExp(`transition\\.${field}\\b`)
         );
       }
+      expect(read(delivery.file), `${delivery.file} calls ${delivery.call}`).toMatch(
+        new RegExp(`\\b${delivery.call}\\(`)
+      );
     });
   }
 });
