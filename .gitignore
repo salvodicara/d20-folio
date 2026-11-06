@@ -47,6 +47,7 @@ gha-creds-*.json
 # Playwright e2e output (reports + per-run artifacts; snapshots ARE committed)
 playwright-report
 test-results
+rehearsal-report
 
 # Misc
 *.tsbuildinfo
