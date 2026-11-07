@@ -16,6 +16,7 @@
     "count_one": "{{count}} entry",
     "count_other": "{{count}} entries",
     "cr": "CR {{cr}}",
-    "gist": "In short"
+    "gist": "In short",
+    "viewArt": "View the art of {{name}}"
   }
 }

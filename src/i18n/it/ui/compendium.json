@@ -16,6 +16,7 @@
     "count_one": "{{count}} voce",
     "count_other": "{{count}} voci",
     "cr": "GS {{cr}}",
-    "gist": "In breve"
+    "gist": "In breve",
+    "viewArt": "Vedi l'immagine di {{name}}"
   }
 }

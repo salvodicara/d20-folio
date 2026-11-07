@@ -31,7 +31,8 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { tieLast } from "@/lib/text-ties";
 import { formatCr } from "@/lib/utils";
-import { Art, Button, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
+import { monsterPortraitUrl } from "@/data/monster-art";
+import { Art, artUrl, Button, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
 
 export function CompendiumScreen() {
   const { t } = useTranslation();
@@ -300,6 +301,84 @@ function ResultRows({
   );
 }
 
+/**
+ * The entry's art and name, sized from the reference apps (FINDINGS, 2026-11-06): the
+ * first screen always holds the name, the gist and the key facts. Two variants for the
+ * owner's pick (`?art=a|b`): A, a thumbnail beside the name (App Store, Foundry, BG3's
+ * tooltip): 128 px, 112 on a laptop, 96 on a phone; B, a band at most 25% of the screen
+ * tall (Steam, Google Play). A monster with an illustration shows it at 2:3. A tap opens
+ * the full image (BG3's Inspect).
+ */
+function EntryHead({
+  spec,
+  entry,
+  ctx,
+  eyebrow,
+}: {
+  spec: AnyCompendiumSpec;
+  entry: unknown;
+  ctx: PickerCtx;
+  eyebrow: ReactNode;
+}) {
+  const { t } = useTranslation();
+  const [params] = useSearchParams();
+  const variant = params.get("art") === "b" ? "b" : "a";
+  const [viewing, setViewing] = useState(false);
+  const name = spec.getName(entry, ctx);
+  const portrait =
+    spec.id === "monster" ? monsterPortraitUrl((entry as { id: string }).id) : null;
+  const art = portrait ? (
+    <img className="f-art" src={portrait} alt="" loading="lazy" decoding="async" />
+  ) : (
+    <EntryArt spec={spec} entry={entry} />
+  );
+  const backdrop = portrait ?? artBackdrop(spec.id, entry);
+  return (
+    <>
+      <div className="f-cmp-head" data-v={variant}>
+        <button
+          type="button"
+          className={variant === "b" ? "f-cmp-band" : "f-cmp-art"}
+          data-tall={portrait ? "" : undefined}
+          aria-label={t("compendium.viewArt", { name })}
+          onClick={() => setViewing(true)}
+        >
+          {variant === "b" && backdrop && (
+            <span
+              className="f-cmp-band-bg"
+              style={{ backgroundImage: `url(${backdrop})` }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="f-cmp-art-img">{art}</span>
+        </button>
+        <div>
+          <h2 className="f-cmp-name">{name}</h2>
+          {eyebrow && <div className="f-row-s f-cmp-eyebrow">{eyebrow}</div>}
+        </div>
+      </div>
+      <Dialog
+        open={viewing}
+        color="cmp"
+        title={name}
+        closeLabel={t("common.close")}
+        onClose={() => setViewing(false)}
+      >
+        <div className="f-cmp-viewer" data-tall={portrait ? "" : undefined}>
+          {art}
+        </div>
+      </Dialog>
+    </>
+  );
+}
+
+/** The art's own file, for the band's blurred backdrop (none for a glyph). */
+function artBackdrop(specId: string, entry: unknown): string | null {
+  const art = compendiumArt(specId, entry);
+  if (!art) return null;
+  return "spell" in art ? artUrl("spell", art.spell) : artUrl(art.kind, art.id);
+}
+
 function EntryPanel({
   spec,
   entry,
@@ -321,18 +400,7 @@ function EntryPanel({
           {t("compendium.results")}
         </Button>
       )}
-      <div className="f-cmp-head">
-        {/* the entry's art large, as BG3's wiki shows it: beside the name, a banner on a phone */}
-        <span className="f-cmp-art" aria-hidden="true">
-          <span className="f-cmp-art-img">
-            <EntryArt spec={spec} entry={entry} />
-          </span>
-        </span>
-        <div>
-          <h2 className="f-cmp-name">{spec.getName(entry, ctx)}</h2>
-          {view.eyebrow && <div className="f-row-s f-cmp-eyebrow">{view.eyebrow}</div>}
-        </div>
-      </div>
+      <EntryHead spec={spec} entry={entry} ctx={ctx} eyebrow={view.eyebrow} />
       {gist && (
         <p className="f-cmp-gist">
           <span className="f-lbl">{t("compendium.gist")}</span>
