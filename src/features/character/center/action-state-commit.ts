@@ -111,17 +111,24 @@ export function activateActionState(
       : action.source === "feature" && store.character
         ? featureStateSource(store.character, key)
         : undefined;
-  const choiceKeys = castStateChoiceKeys(stateSource, key);
+  const bound =
+    binding && stateSource && store.character
+      ? castWeaponBinding({ spell: stateSource, ...binding }, store.character)
+      : null;
+  // A spell's cast clears its state's options; a feature's use never does (an option
+  // it carries was picked once): it only records the weapon it names (Brew Poison).
+  const choiceKeys =
+    action.source === "spell"
+      ? castStateChoiceKeys(stateSource, key)
+      : bound?.ok
+        ? Object.keys(bound.choices)
+        : [];
   const priorChoices = Object.fromEntries(
     choiceKeys.map((bundleKey) => [
       bundleKey,
       store.character?.session.grantBundleChoices?.[bundleKey] ?? null,
     ])
   );
-  const bound =
-    binding && stateSource && store.character
-      ? castWeaponBinding({ spell: stateSource, ...binding }, store.character)
-      : null;
   if (choiceKeys.length > 0) {
     store.dispatch({
       kind: "set-bundle-choices",
