@@ -112,4 +112,25 @@ describe("fightRows", () => {
     expect(late.at(-1)).toMatchObject({ name: "Tib", mustRoll: true, initiative: null });
     expect(late.slice(0, -1).every((r) => !r.mustRoll)).toBe(true);
   });
+
+  it("leads each line with its art: the monster's painting, the character's portrait or class crest", () => {
+    const art = fightRows(
+      [
+        foe("g1", "Goblin Warrior 1", 14, [7, 7], { srdId: "goblin-warrior" }),
+        foe("g2", "Goblin Warrior 2", 14, [7, 7], { srdId: "goblin-warrior" }),
+        foe("x1", "Ash Raider", 12, [11, 11]),
+        pc("pc-a", "Ana", 10, [9, 9], { portraitUrl: "https://img/ana.webp" }),
+        pc("pc-b", "Bo", 8, [9, 9], { classes: [{ classId: "wizard", level: 3 }] }),
+      ],
+      null,
+      {},
+      "en"
+    ).map((r) => r.art);
+    expect(art).toEqual([
+      { kind: "monster", id: "goblin-warrior" },
+      null,
+      { url: "https://img/ana.webp" },
+      { kind: "class", id: "wizard" },
+    ]);
+  });
 });

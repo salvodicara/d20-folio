@@ -27,6 +27,17 @@ export interface FightRow {
   /** How hurt the creatures look, by state, from the healthiest (none for a character). */
   bands: { band: HpBandValue; count: number }[];
   chips: PartyChip[];
+  /** The line's art: a monster's painting, a character's portrait or class crest. */
+  art: FightArt | null;
+}
+
+export type FightArt = { kind: "monster" | "class"; id: string } | { url: string };
+
+function artOf(c: EncounterCombatantView): FightArt | null {
+  if (c.portraitUrl) return { url: c.portraitUrl };
+  if (c.kind === "monster") return c.srdId ? { kind: "monster", id: c.srdId } : null;
+  const main = [...(c.classes ?? [])].sort((a, b) => b.level - a.level)[0];
+  return main ? { kind: "class", id: main.classId } : null;
 }
 
 const BAND_ORDER: readonly HpBandValue[] = ["healthy", "bloodied", "nearDeath", "down"];
@@ -65,6 +76,7 @@ export function fightRows(
         hp: { current: c.currentHp, max: c.maxHp, temp: c.tempHp },
         bands: [],
         chips,
+        art: artOf(c),
       });
       continue;
     }
@@ -99,6 +111,7 @@ export function fightRows(
       hp: null,
       bands: [{ band, count: 1 }],
       chips,
+      art: artOf(c),
     });
   }
   return [...out, ...waiting];

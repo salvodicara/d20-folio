@@ -47,6 +47,41 @@
       "cast": "{{name}} casts {{spell}}",
       "inside": "Inside",
       "applied": "{{amount}} damage to {{name}}"
+    },
+    "dm": {
+      "addMonsters": "Add monsters",
+      "addTitle": "Add monsters",
+      "add": "Add",
+      "addN_one": "Add {{count}}",
+      "addN_other": "Add {{count}}",
+      "search": "Search for a monster",
+      "yours": "Made by you",
+      "crLabel": "Challenge Rating",
+      "cr": {
+        "all": "All",
+        "low": "CR 0–½",
+        "mid": "CR 1–4",
+        "high": "CR 5–10",
+        "top": "CR 11+"
+      },
+      "less": "One fewer: {{name}}",
+      "more": "One more: {{name}}",
+      "none": "No monster found.",
+      "addDone": "In the fight: {{label}}",
+      "on": "On whom",
+      "pcRule": "A character takes damage by their own rules (resistances, temporary HP, Concentration). They mark healing on their sheet.",
+      "conditions": "Conditions",
+      "hpFor": "Damage and healing: {{name}}",
+      "targets": "Chosen targets",
+      "selected_one": "{{count}} target",
+      "selected_other": "{{count}} targets",
+      "clear": "Clear choice",
+      "hitDone_one": "{{amount}} damage to {{count}} target",
+      "hitDone_other": "{{amount}} damage to {{count}} targets",
+      "healDone_one": "{{amount}} HP healed on {{count}} target",
+      "healDone_other": "{{amount}} HP healed on {{count}} targets",
+      "conditionOn": "Condition added to {{name}}",
+      "conditionOff": "Condition removed from {{name}}"
     }
   }
 }

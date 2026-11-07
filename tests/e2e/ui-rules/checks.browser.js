@@ -323,10 +323,10 @@ window.__audit = (opts) => {
         pb = getComputedStyle(b).position;
       if (
         a.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.f-lvl-bar,.pills,.f-filters"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.f-lvl-bar,.f-dm-bar,.pills,.f-filters"
         ) !==
         b.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.f-lvl-bar,.pills,.f-filters"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#fab,.f-secbar,.f-lvl-bar,.f-dm-bar,.pills,.f-filters"
         )
       )
         continue;
@@ -372,10 +372,10 @@ window.__audit = (opts) => {
         continue;
       if (
         a.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh,#fab,.f-secbar,.pills,.f-filters"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh,#fab,.f-secbar,.f-dm-bar,.pills,.f-filters"
         ) !==
         b.closest(
-          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh,#fab,.f-secbar,.pills,.f-filters"
+          ".toast,.f-toast,.pop,.f-pop,.menu,.f-menu,.dlg,.f-dlg,.side,.f-side,[role=dialog],#sheet,#mh,#fab,.f-secbar,.f-dm-bar,.pills,.f-filters"
         )
       )
         continue;
