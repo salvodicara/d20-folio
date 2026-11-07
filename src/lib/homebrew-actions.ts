@@ -328,6 +328,10 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
         against: arraySchema(CONDITION_ID_SCHEMA),
       }
     ),
+    objectSchema({
+      kind: literals(["advantage"]),
+      rolls: arraySchema(REACTABLE_ROLL),
+    }),
   ]),
   cureConditions: arraySchema(
     objectSchema(

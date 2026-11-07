@@ -46,7 +46,9 @@ export function rollReactionOf(
   doc?: CharacterDoc
 ): RollReaction | null {
   const effect: ActionRollEffect | undefined = action.summary.rollEffect;
-  if (!effect) return null;
+  // A paid Advantage acts at the roll, not on a roll already made: the save entry's
+  // post-roll seam reads it (`postRollSources`).
+  if (!effect || effect.kind === "advantage") return null;
   if (effect.kind === "reroll") {
     const bonus = effect.bonus ? classLevel(doc, effect.bonus.classLevel) : 0;
     return {
