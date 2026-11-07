@@ -101,7 +101,10 @@
       "nothing": "Niente da recuperare",
       "slotsLeft": "{{left}} su {{total}}",
       "blockedZeroHp": "A 0 punti ferita non si riposa: serve almeno 1 punto ferita per iniziare.",
-      "blockedDead": "Un personaggio morto non può riposare."
+      "blockedDead": "Un personaggio morto non può riposare.",
+      "changeOne": "Puoi cambiare 1 incantesimo.",
+      "changeAny": "Puoi cambiare quelli che vuoi.",
+      "keepPrepared": "Tieni così"
     },
     "mixing": {
       "title": "Mescolanza",
@@ -307,6 +310,10 @@
       "toastRerollNoTarget": "{{name}}: ripeti il tiro salvezza",
       "toastRerollAdvantage": "{{name}}: {{target}} ripete il tiro salvezza con Vantaggio",
       "toastRerollAdvantageNoTarget": "{{name}}: ripeti il tiro salvezza con Vantaggio"
-    }
+    },
+    "effectsFrom": "da {{name}}",
+    "effectsRounds_one": "{{count}} round",
+    "effectsRounds_other": "{{count}} round",
+    "effectsConcentration": "finché si concentra"
   }
 }

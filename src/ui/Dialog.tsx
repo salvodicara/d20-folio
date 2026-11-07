@@ -32,6 +32,22 @@ export function Dialog({
     }
     if (!open && d.open) d.close();
   }, [open]);
+  // The actions bar draws its rule only while the body scrolls under it: a list that
+  // fits closes on the panel, with no divider under its last row.
+  const bd = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const body = bd.current;
+    const d = ref.current;
+    if (!open || !body || !d) return;
+    const mark = () =>
+      d.toggleAttribute("data-scrolls", body.scrollHeight > body.clientHeight + 1);
+    mark();
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(mark);
+    ro.observe(body);
+    for (const c of body.children) ro.observe(c);
+    return () => ro.disconnect();
+  }, [open, children]);
   return (
     <dialog
       ref={ref}
@@ -53,7 +69,9 @@ export function Dialog({
           </button>
         }
       />
-      <div className="f-bd">{children}</div>
+      <div ref={bd} className="f-bd">
+        {children}
+      </div>
       {actions && <div className="f-pn-foot">{actions}</div>}
     </dialog>
   );

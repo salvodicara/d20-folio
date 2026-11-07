@@ -101,7 +101,10 @@
       "nothing": "Nothing to recover",
       "slotsLeft": "{{left}} of {{total}}",
       "blockedZeroHp": "No rest at 0 Hit Points: you need at least 1 Hit Point to begin.",
-      "blockedDead": "A dead character can't rest."
+      "blockedDead": "A dead character can't rest.",
+      "changeOne": "You can change 1 spell.",
+      "changeAny": "You can change as many as you like.",
+      "keepPrepared": "Keep them"
     },
     "mixing": {
       "title": "Mixing potions",
@@ -307,6 +310,10 @@
       "toastRerollNoTarget": "{{name}}: reroll the save",
       "toastRerollAdvantage": "{{name}}: {{target}} rerolls the save with Advantage",
       "toastRerollAdvantageNoTarget": "{{name}}: reroll the save with Advantage"
-    }
+    },
+    "effectsFrom": "from {{name}}",
+    "effectsRounds_one": "{{count}} round",
+    "effectsRounds_other": "{{count}} rounds",
+    "effectsConcentration": "while they concentrate"
   }
 }

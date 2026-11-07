@@ -12,7 +12,7 @@ import { abilityModifier } from "@/lib/ability";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { currentForm, formNameKind, formSourceKind } from "@/lib/polymorph";
-import { effectChipsView } from "@/lib/views/effect-chips-view";
+import { playEffectsView } from "@/domains/play/play-effects-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import {
   localizeBackgroundName,
@@ -70,7 +70,7 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
       temp: doc.session.hp.temp,
     },
     concentration: concentration ? concentrationLabel(concentration, locale) : null,
-    effects: effectChipsView(doc, locale).length,
+    effects: playEffectsView(doc, locale, () => "").count,
     conditions: effectiveConditions(doc).length,
     form: formNames(doc, locale),
   };
