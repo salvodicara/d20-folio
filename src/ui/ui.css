@@ -805,6 +805,11 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+.fui dialog.f-dlg:not([data-scrolls]) .f-pn-foot {
+  padding-top: 0;
+  border-top-color: transparent;
+  box-shadow: none;
+}
 .fui .f-close {
   display: flex;
   align-items: center;
@@ -1010,7 +1015,14 @@
   color: inherit;
   text-decoration: none;
 }
-.fui .f-row:last-child {
+/* A list closes on its panel's edge: no divider under the last row (owner, 2026-11-07). */
+.fui .f-row:last-child,
+.fui .f-skill:last-child,
+.fui .f-act:last-child,
+.fui .f-cond-row:last-child,
+.fui .f-rule:last-child,
+.fui .f-countered:last-child,
+.fui .f-create-facts > div:last-child {
   border-bottom: 0;
 }
 .fui a.f-row:hover {

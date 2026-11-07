@@ -521,6 +521,21 @@ window.__audit = (opts) => {
     if (o > 1.5)
       add("past-box", label(e) + " sticks out " + o.toFixed(0) + "px of " + label(a));
   }
+  // A list closes on its panel's edge: the last row draws no divider under it (owner,
+  // 2026-11-07). A divider = a bottom rule on a row with no box border around it.
+  for (const e of all) {
+    if (!vis(e) || e.closest("svg,.frz,[data-audit-skip]")) continue;
+    const cs = getComputedStyle(e);
+    if (cs.borderBottomStyle === "none" || parseFloat(cs.borderBottomWidth) < 0.5)
+      continue;
+    if (parseFloat(cs.borderTopWidth) || parseFloat(cs.borderLeftWidth)) continue;
+    const sibs = [...(e.parentElement?.children ?? [])].filter(
+      (x) => vis(x) && !x.matches(".sr,.f-sr,.sr-only,template")
+    );
+    const prev = sibs[sibs.indexOf(e) - 1];
+    if (sibs.at(-1) !== e || !prev || prev.className !== e.className) continue;
+    add("last-divider", label(e) + " draws a divider under the last row");
+  }
   {
     const w = document.createTreeWalker(document.body, 4);
     let n;
