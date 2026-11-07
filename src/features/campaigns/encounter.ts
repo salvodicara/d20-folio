@@ -86,7 +86,6 @@ const MONSTER_COMBATANT_KEYS = new Set([
   "name",
   "srdId",
   "homebrewId",
-  "rosterId",
   "ac",
   "speed",
   "initiative",
@@ -173,7 +172,6 @@ function isEncounterMonster(value: Record<string, unknown>): boolean {
     (value.side !== undefined && value.side !== "ally" && value.side !== "enemy") ||
     (value.srdId !== undefined && !nonEmptyString(value.srdId)) ||
     (value.homebrewId !== undefined && !nonEmptyString(value.homebrewId)) ||
-    (value.rosterId !== undefined && !nonEmptyString(value.rosterId)) ||
     (value.speed !== undefined && !isMonsterSpeedFt(value.speed)) ||
     (value.revealed !== undefined && typeof value.revealed !== "boolean") ||
     (value.notes !== undefined && !nonEmptyString(value.notes)) ||
@@ -326,15 +324,34 @@ export function parseEncounterState(value: unknown): EncounterState {
   const badEnded = value.ended !== undefined && !validEnded(value.ended);
   const badInitiatives =
     value.initiatives !== undefined && !validInitiatives(value.initiatives);
-  if (badExtraTurns || badClock || badEnded || badInitiatives) {
+  // The roster links (M19): each a monster of this fight to its roster id. A malformed
+  // or stale map reads as absent; the creatures still fight, only their write-back goes.
+  const badRosterLinks =
+    value.rosterLinks !== undefined && !validRosterLinks(value.rosterLinks, combatants);
+  if (badExtraTurns || badClock || badEnded || badInitiatives || badRosterLinks) {
     const rest: Record<string, unknown> = { ...value };
     if (badExtraTurns) delete rest.extraTurns;
     if (badClock) delete rest.clock;
     if (badEnded) delete rest.ended;
     if (badInitiatives) delete rest.initiatives;
+    if (badRosterLinks) delete rest.rosterLinks;
     return rest as unknown as EncounterState;
   }
   return value as unknown as EncounterState;
+}
+
+function validRosterLinks(
+  value: unknown,
+  combatants: ReadonlyArray<EncounterCombatant>
+): boolean {
+  return (
+    isRecord(value) &&
+    Object.entries(value).every(
+      ([monsterId, rosterId]) =>
+        nonEmptyString(rosterId) &&
+        combatants.some((c) => c.kind === "monster" && c.id === monsterId)
+    )
+  );
 }
 
 function validInitiatives(value: unknown): boolean {
@@ -564,15 +581,14 @@ export interface RosterCombatantInput {
 /**
  * A roster creature joins by its id, never as a copy: with the Hit Points it has
  * now, so damage from the last fight still shows. An entry already in the fight
- * isn't added again. Writes `rosterId`: call it only once a deploy carrying the
- * reader is live (older clients reject unknown monster keys).
+ * isn't added again. The link goes on the encounter (`rosterLinks`), never on the
+ * monster, so a v0.25 client still reads the fight.
  */
 export function addRosterCombatant(
   state: EncounterState,
   input: RosterCombatantInput
 ): EncounterState {
-  if (state.combatants.some((c) => c.kind === "monster" && c.rosterId === input.rosterId))
-    return state;
+  if (Object.values(state.rosterLinks ?? {}).includes(input.rosterId)) return state;
   const { entry } = input;
   const max = entry.hp?.max ?? input.maxHp ?? 0;
   const added = addMonster(state, {
@@ -588,12 +604,15 @@ export function addRosterCombatant(
   });
   if (added === state) return state;
   const id = `monster-${state.nextMonsterOrdinal}`;
-  return mapCombatant(added, id, (c) =>
+  const linked = {
+    ...added,
+    rosterLinks: { ...(added.rosterLinks ?? {}), [id]: input.rosterId },
+  };
+  return mapCombatant(linked, id, (c) =>
     c.kind === "pc"
       ? c
       : {
           ...c,
-          rosterId: input.rosterId,
           hp: {
             current: Math.min(entry.hp?.current ?? max, max),
             temp: entry.hp?.temp ?? 0,
@@ -609,9 +628,11 @@ export function rosterHpWriteBack(
   state: EncounterState,
   roster: Readonly<Record<string, RosterEntry>>
 ): Array<{ rosterId: string; hp: NonNullable<RosterEntry["hp"]> }> {
+  const links = state.rosterLinks ?? {};
   return state.combatants.flatMap((c) => {
-    if (c.kind !== "monster" || !c.rosterId) return [];
-    const before = roster[c.rosterId]?.hp;
+    const rosterId = links[c.id];
+    if (c.kind !== "monster" || !rosterId) return [];
+    const before = roster[rosterId]?.hp;
     const hp = {
       current: c.hp.current,
       max: c.hp.max,
@@ -621,7 +642,7 @@ export function rosterHpWriteBack(
       before?.current === hp.current &&
       before.max === hp.max &&
       (before.temp ?? 0) === (hp.temp ?? 0);
-    return same ? [] : [{ rosterId: c.rosterId, hp }];
+    return same ? [] : [{ rosterId, hp }];
   });
 }
 
@@ -668,7 +689,21 @@ export function removeCombatant(state: EncounterState, id: string): EncounterSta
   };
   if (initiativeSwaps?.length) next.initiativeSwaps = initiativeSwaps;
   else delete next.initiativeSwaps;
+  // A roster creature that leaves takes its link with it.
+  const rosterLinks = withoutKey(state.rosterLinks, id);
+  if (rosterLinks) next.rosterLinks = rosterLinks;
+  else delete next.rosterLinks;
   return next;
+}
+
+/** `links` without `id`, or undefined when nothing is left. */
+function withoutKey(
+  links: Readonly<Record<string, string>> | undefined,
+  id: string
+): Record<string, string> | undefined {
+  if (!links) return undefined;
+  const rest = Object.fromEntries(Object.entries(links).filter(([key]) => key !== id));
+  return Object.keys(rest).length > 0 ? rest : undefined;
 }
 
 /** Set (or clear) the DM-only `hidden` ambush flag on a combatant. */

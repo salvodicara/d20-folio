@@ -159,12 +159,6 @@ export interface EncounterMonster extends EncounterCombatantBase {
    * carrying the reader is live (older clients reject unknown monster keys).
    */
   homebrewId?: string;
-  /**
-   * The campaign roster entry this creature is (edge-case M19): it joined by id, so
-   * its Hit Points go back to the entry after the fight. READER FIRST: parsed now;
-   * nothing writes it until a deploy carrying the reader is live.
-   */
-  rosterId?: string;
   /** Armor Class (informational; the DM may edit). */
   ac: number;
   /** The DM's walking-speed override in feet (e.g. after the Slow weapon mastery).
@@ -435,6 +429,13 @@ export interface EncounterState {
   memberEffects?: MemberCombatEffect[];
   /** Append-only source of truth for standing, target-bound combat effects. */
   effectOps?: CombatEffectOp[];
+  /**
+   * The campaign roster creatures in this fight (edge-case M19), by monster id: each
+   * joined by its roster id, so its Hit Points go back to the entry when the fight
+   * ends. Kept on the encounter, never on the monster: the v0.25 reader rejects a
+   * monster with an unknown key but passes unknown encounter keys through.
+   */
+  rosterLinks?: Record<string, string>;
   /**
    * The canonical shared-combat engine layer for THIS fight (a schema-4
    * `SharedMaterialState`): the action journal, mechanic occurrences

@@ -7,7 +7,7 @@ window.__audit = (opts) => {
     else R[k + "__more"] = (R[k + "__more"] || 0) + 1;
   };
   const vis = (e) => {
-    if (!e.getClientRects().length || e.closest(".sr,.f-sr")) return false;
+    if (!e.getClientRects().length || e.closest(".sr,.f-sr,.sr-only")) return false;
     {
       const rr = e.getBoundingClientRect();
       if (rr.width <= 1 && rr.height <= 1) return false;
@@ -422,7 +422,7 @@ window.__audit = (opts) => {
     while ((n = w.nextNode())) {
       if (
         !n.parentElement ||
-        n.parentElement.closest("script,style,svg") ||
+        n.parentElement.closest("script,style,svg,[data-audit-skip]") ||
         !vis(n.parentElement)
       )
         continue;
@@ -596,7 +596,9 @@ window.__audit = (opts) => {
         !p ||
         !n.textContent.trim() ||
         // Text a player wrote is shown as stored: its line breaks are theirs, not our copy.
-        p.closest("svg,script,style,.frz,[aria-hidden=true],.sr,.f-sr,[data-user-text]")
+        p.closest(
+          "svg,script,style,.frz,[aria-hidden=true],.sr,.f-sr,[data-user-text],[data-audit-skip]"
+        )
       )
         continue;
       while (p && inl(p) && p.parentElement) p = p.parentElement;

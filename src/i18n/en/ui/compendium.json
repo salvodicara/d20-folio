@@ -7,6 +7,12 @@
     "emptyTitle": "Nothing on this leaf",
     "emptyHint": "No entries match your search and filters.",
     "emptyReset": "Clear search & filters",
-    "frontisHint": "Choose an entry from the index to read it on this page."
+    "frontisHint": "Choose an entry from the index to read it on this page.",
+    "results": "Results",
+    "detail": "Detail",
+    "reset": "Reset",
+    "showResults_one": "Show {{count}} result",
+    "showResults_other": "Show {{count}} results",
+    "viewArt": "View the art of {{name}}"
   }
 }
