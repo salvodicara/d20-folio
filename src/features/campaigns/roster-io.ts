@@ -4,7 +4,14 @@
  * creature. Both wait for the v0.26 rules deploy (`combatEffectsV26On`): before it,
  * nothing is read or written. Imports only the Firestore functions it uses.
  */
-import { collection, deleteDoc, doc, onSnapshot, setDoc } from "firebase/firestore";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  onSnapshot,
+  setDoc,
+} from "firebase/firestore";
 
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { db } from "@/lib/firebase";
@@ -42,6 +49,18 @@ export function subscribeRoster(
         )
       ),
     onError
+  );
+}
+
+/** The roster the party knows, read once (the end-of-fight HP write-back). */
+export async function readRoster(campaignId: string): Promise<Docs<RosterEntry>> {
+  if (!combatEffectsV26On()) return {};
+  const snap = await getDocs(collection(db, "campaigns", campaignId, "roster"));
+  return Object.fromEntries(
+    snap.docs.flatMap((stored) => {
+      const entry = parseRosterEntry(stored.data());
+      return entry ? [[stored.id, entry] as const] : [];
+    })
   );
 }
 

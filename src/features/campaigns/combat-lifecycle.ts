@@ -19,12 +19,14 @@ import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/ca
 
 import {
   addMonster,
+  addRosterCombatant,
   parseEncounterState,
   removeCombatant,
   setInitiative,
   setMonsterCondition,
   type EncounterPcSeed,
   type MonsterInput,
+  type RosterCombatantInput,
 } from "./encounter";
 import { endCombat, reopenCombat, rollInitiative } from "./encounter-lifecycle";
 import { recordCondition, recordPcHp, undoHpEvent } from "./combat-chronicle";
@@ -471,13 +473,18 @@ export function planAddMonsters(
 }
 
 /**
- * The undo of an add: the creatures leave while nobody has touched them (full HP, no
- * condition, no line in the fight names them). Null when any was touched, for anyone but
+ * The undo of an add: the creatures leave while nobody has touched them (the HP they
+ * entered with, no condition, no line in the fight names them). Null when any was touched, for anyone but
  * the DM, or with no fight running.
  */
 export function planRemoveUntouched(
   campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
-  input: { uid: string; ids: ReadonlyArray<string> }
+  input: {
+    uid: string;
+    ids: ReadonlyArray<string>;
+    /** The HP each entered with, when not its maximum (a hurt roster creature). */
+    enteredHp?: Readonly<Record<string, number>>;
+  }
 ): CombatPatch | null {
   const fight = campaign.encounter;
   if (!fight || input.uid !== campaign.dmUid) return null;
@@ -494,7 +501,7 @@ export function planRemoveUntouched(
     if (!creature) continue;
     if (
       creature.kind !== "monster" ||
-      creature.hp.current !== creature.hp.max ||
+      creature.hp.current !== (input.enteredHp?.[id] ?? creature.hp.max) ||
       creature.conditions.length > 0 ||
       named.has(id)
     )
@@ -502,4 +509,31 @@ export function planRemoveUntouched(
     next = removeCombatant(next, id);
   }
   return { encounter: next };
+}
+
+/**
+ * The DM brings a roster creature into the running fight (edge-case M19): with the Hit
+ * Points it has now, linked to its entry so they go back when the fight ends. Names it
+ * and the HP it entered with, for the undo. Null for anyone but the DM, with no fight
+ * running, or when the entry is already in it.
+ */
+export function planAddRoster(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string } & RosterCombatantInput
+): { patch: CombatPatch; added: string[]; enteredHp: Record<string, number> } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const { uid: _uid, ...roster } = input;
+  void _uid;
+  const next = addRosterCombatant(fight, roster);
+  if (next === fight) return null;
+  const known = new Set(fight.combatants.map((c) => c.id));
+  const joined = next.combatants.filter((c) => !known.has(c.id));
+  return {
+    patch: { encounter: next },
+    added: joined.map((c) => c.id),
+    enteredHp: Object.fromEntries(
+      joined.flatMap((c) => (c.kind === "monster" ? [[c.id, c.hp.current]] : []))
+    ),
+  };
 }
