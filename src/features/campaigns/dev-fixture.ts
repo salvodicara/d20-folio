@@ -1153,7 +1153,8 @@ function devTableMembers(): CampaignDoc["memberDetails"] {
   };
 }
 
-/** The `table` demo's fight: four players and three groups of invented creatures. The
+/** The `table` demo's fight: four players and three groups of bestiary creatures (SRD,
+ *  each with its painting: the screenshots show the art the DM will see). The
  *  creatures have rolled and the characters are still to roll; the order is the engine's
  *  own sort of what has been rolled (never written by hand), and turns haven't begun, so
  *  every roll that comes in re-sorts it. Started by a roll: anyone passes the turn. */
@@ -1162,21 +1163,23 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
   const raider = (n: number, current: number) => ({
     kind: "monster" as const,
     id: `monster-${n}`,
-    name: `${L("Ash Raider", "Predone delle Ceneri")} ${n}`,
-    ac: 13,
+    name: `${L("Goblin Warrior", "Goblin guerriero")} ${n}`,
+    srdId: "goblin-warrior",
+    ac: 15,
     initiative: 15,
     conditions: [],
-    hp: { current, temp: 0, max: 11 },
-    creatureType: "humanoid" as const,
+    hp: { current, temp: 0, max: 10 },
+    creatureType: "fey" as const,
   });
   const hound = (n: number) => ({
     kind: "monster" as const,
     id: `monster-${n + 3}`,
-    name: `${L("Cinder Hound", "Segugio di Brace")} ${n}`,
-    ac: 13,
+    name: `${L("Wolf", "Lupo")} ${n}`,
+    srdId: "wolf",
+    ac: 12,
     initiative: 11,
     conditions: [],
-    hp: { current: 19, temp: 0, max: 19 },
+    hp: { current: 11, temp: 0, max: 11 },
     creatureType: "beast" as const,
   });
   const pc = (uid: string, characterId: string) => ({
@@ -1187,8 +1190,8 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
   });
   const combatants = [
     pc("member-ila", "team-santaera-barbarian"),
-    raider(1, 11),
-    raider(2, 11),
+    raider(1, 10),
+    raider(2, 10),
     raider(3, 4),
     pc("member-mara", "team-catalion-bard"),
     pc("member-lu", "team-chiaviddu-rogue"),
@@ -1198,11 +1201,12 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
     {
       kind: "monster" as const,
       id: "monster-6",
-      name: L("Raider Chief", "Capo dei Predoni"),
-      ac: 16,
+      name: L("Bandit Captain", "Capo dei banditi"),
+      srdId: "bandit-captain",
+      ac: 15,
       initiative: 6,
       conditions: [],
-      hp: { current: 30, temp: 0, max: 45 },
+      hp: { current: 30, temp: 0, max: 52 },
       creatureType: "humanoid" as const,
     },
   ];

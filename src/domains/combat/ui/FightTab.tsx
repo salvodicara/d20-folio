@@ -201,6 +201,13 @@ function LiveFight({
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
   const dm = useDmTools(campaign, view.rows, uid, isDm, locale, onToast);
+  // The monster whose turn it is: the DM may cast an area spell for it, from the head.
+  const monsterTurn =
+    isDm && encounter.currentCombatantId
+      ? encounter.combatants.find(
+          (c) => c.id === encounter.currentCombatantId && c.kind === "monster"
+        )
+      : undefined;
   return (
     <div className="f-split">
       <div className="f-stack">
@@ -252,7 +259,27 @@ function LiveFight({
         >
           {rows.map((row) => (
             <Fragment key={row.ids.join("+")}>
-              <FightLine row={row} dm={dm.line(row)} />
+              <FightLine
+                row={row}
+                dm={dm.line(row)}
+                action={
+                  monsterTurn &&
+                  row.ids.includes(monsterTurn.id) && (
+                    <MonsterZoneCast
+                      campaignId={campaign.id}
+                      monsterId={monsterTurn.id}
+                      monsterName={
+                        view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
+                      }
+                      defaultDc={monsterSpellDc(
+                        monsterStatBlockOf(encounter, monsterTurn.id)
+                      )}
+                      locale={locale}
+                      onToast={onToast}
+                    />
+                  )
+                }
+              />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
@@ -264,26 +291,6 @@ function LiveFight({
                   onToast={onToast}
                 />
               )}
-              {isDm &&
-                encounter.currentCombatantId &&
-                row.ids.includes(encounter.currentCombatantId) &&
-                encounter.combatants.some(
-                  (c) => c.id === encounter.currentCombatantId && c.kind === "monster"
-                ) && (
-                  <MonsterZoneCast
-                    campaignId={campaign.id}
-                    monsterId={encounter.currentCombatantId}
-                    monsterName={
-                      view.rows.find((r) => r.id === encounter.currentCombatantId)
-                        ?.name ?? ""
-                    }
-                    defaultDc={monsterSpellDc(
-                      monsterStatBlockOf(encounter, encounter.currentCombatantId)
-                    )}
-                    locale={locale}
-                    onToast={onToast}
-                  />
-                )}
               {/* the monster whose turn it is may spend its action to repeat a save */}
               {isDm &&
                 encounter.currentCombatantId &&

@@ -76,9 +76,9 @@ export function MonsterZoneCast({
   };
   return (
     <>
-      <div className="f-chips">
-        <Chip onClick={() => setOpen(true)}>{t("fight.zone.castOpen")}</Chip>
-      </div>
+      <Button kind="quiet" onClick={() => setOpen(true)}>
+        {t("fight.zone.castOpen")}
+      </Button>
       {open && (
         <Dialog
           open

@@ -12,11 +12,11 @@ import type { EncounterCombatantView } from "@/features/campaigns/encounter-view
 const base = {
   ac: 13,
   initiative: 12,
-  conditions: [],
+  conditions: [] as string[],
   tempHp: 0,
   down: false,
   hidden: false,
-} as const;
+};
 const goblin = (n: number, hp: number): EncounterCombatantView => ({
   ...base,
   id: `monster-${n}`,
