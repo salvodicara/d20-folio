@@ -82,7 +82,8 @@ export async function levelUp(
 ): Promise<void> {
   await page.goto(`/characters/${id}/level-up`);
   const confirm = page.getByRole("button", { name: `Confirm level ${opts.level}` });
-  await expect(confirm).toBeVisible({ timeout: 60_000 });
+  // A loaded Mac took over a minute to open this screen once (2026-11-07).
+  await expect(confirm).toBeVisible({ timeout: 120_000 });
   for (const name of opts.prefer ?? []) {
     const option = page.getByRole("button", { name, exact: true }).first();
     if (
