@@ -220,3 +220,20 @@ describe("the time-passes log line", () => {
     ).toEqual({ kind: "time-passes", minutes: 10, actor: "pc-ivo" });
   });
 });
+
+describe("a held Bardic Inspiration die (2024: it lasts 1 hour)", () => {
+  // The die an ally gave stays held «once within the next hour»; a rest already drops
+  // it (either rest outlasts the hour). An hour passing on the clock must drop it too:
+  // the sheet's own «Let time pass» and the campaign clock's catch-up both go through
+  // `passTime`.
+  it("survives 59 minutes and is gone once an hour has passed", () => {
+    const held = caster({ bardicInspirationDie: "d8" });
+    expect((passTime(held, 59) ?? held).session.bardicInspirationDie).toBe("d8");
+    expect((passTime(held, 60) ?? held).session.bardicInspirationDie ?? "").toBe("");
+  });
+
+  it("an hour passing with no die held changes nothing for it", () => {
+    const none = caster();
+    expect((passTime(none, 60) ?? none).session.bardicInspirationDie ?? "").toBe("");
+  });
+});

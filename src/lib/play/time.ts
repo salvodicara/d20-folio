@@ -144,7 +144,21 @@ export function passTime(doc: CharacterDoc, minutes: number): CharacterDoc | nul
   const passed = passTimeOwn(doc, minutes);
   const base = passed ?? doc;
   const aged = ageFallenSummons(base.session, minutes);
-  return aged === base.session ? passed : { ...base, session: aged };
+  const session = aged === base.session ? base.session : aged;
+  const lapsed = dropsBardicInspiration(session, minutes);
+  if (lapsed) return { ...base, session: lapsed };
+  return session === base.session ? passed : { ...base, session };
+}
+
+/** A Bardic Inspiration die is held «once within the next hour» (2024): a stretch of
+ *  an hour or more drops it, as either rest already does. The die's own start is not
+ *  stored, so shorter stretches that add up to an hour leave it (the table drops it). */
+function dropsBardicInspiration(
+  session: CharacterDoc["session"],
+  minutes: number
+): CharacterDoc["session"] | null {
+  if (minutes < 60 || !session.bardicInspirationDie) return null;
+  return { ...session, bardicInspirationDie: "" };
 }
 
 function passTimeOwn(doc: CharacterDoc, minutes: number): CharacterDoc | null {
