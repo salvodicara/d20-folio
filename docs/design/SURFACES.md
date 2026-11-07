@@ -93,6 +93,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `panel:features/character/center/tabs/SpellsTab`                   | Character  | todo   |
 | `picker:components/sheet/BeastFormPicker`                          | Character  | todo   |
 | `dialog:domains/play/ui/PlayConditions`                            | Character  | todo   |
+| `dialog:domains/play/ui/PlayEffects`                               | Character  | todo   |
 | `picker:domains/play/ui/PlayFormPicker`                            | Character  | todo   |
 | `picker:components/sheet/ExpertiseChoicePicker`                    | Character  | todo   |
 | `picker:components/sheet/FeatSpellChoicesPicker`                   | Character  | todo   |

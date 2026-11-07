@@ -51,7 +51,7 @@ export function PlayEffects({ doc, locale }: { doc: CharacterDoc; locale: Locale
       row.remaining
         ? "rounds" in row.remaining
           ? t("play.effectsRounds", { count: row.remaining.rounds })
-          : t("play.effectsMinutes", { count: row.remaining.minutes })
+          : t("equipment.armorTimeMinutes", { count: row.remaining.minutes })
         : null,
       row.concentration ? t("play.effectsConcentration") : null,
     ]

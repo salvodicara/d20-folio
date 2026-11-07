@@ -101,7 +101,6 @@
       "slotsLeft": "{{left}} su {{total}}",
       "blockedZeroHp": "A 0 punti ferita non si riposa: serve almeno 1 punto ferita per iniziare.",
       "blockedDead": "Un personaggio morto non può riposare.",
-      "changePrepared": "Incantesimi preparati",
       "changeOne": "Puoi cambiare 1 incantesimo.",
       "changeAny": "Puoi cambiare quelli che vuoi.",
       "keepPrepared": "Tieni così"
@@ -144,8 +143,7 @@
       "manage": "Gestisci incantesimi",
       "always": "sempre preparato",
       "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo.",
-      "via": "tramite",
-      "preparedLabel": "Incantesimi preparati"
+      "via": "tramite"
     },
     "inv": {
       "pack": "Zaino",
@@ -315,8 +313,6 @@
     "effectsFrom": "da {{name}}",
     "effectsRounds_one": "{{count}} round",
     "effectsRounds_other": "{{count}} round",
-    "effectsMinutes_one": "{{count}} minuto",
-    "effectsMinutes_other": "{{count}} minuti",
     "effectsConcentration": "finché si concentra"
   }
 }

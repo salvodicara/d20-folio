@@ -78,7 +78,7 @@ export function PlayPrepare({
       open
       onClose={onClose}
       color="res"
-      title={t(longRest ? "play.rest.changePrepared" : "play.spells.manage")}
+      title={t(longRest ? "create.screen.preparedSpells" : "play.spells.manage")}
       closeLabel={t("common.close")}
       actions={
         <>
@@ -98,7 +98,7 @@ export function PlayPrepare({
         <span className="f-help">
           {longRest
             ? t(longRest === "one" ? "play.rest.changeOne" : "play.rest.changeAny")
-            : t("play.spells.preparedLabel")}
+            : t("create.screen.preparedSpells")}
           {list.overLimit ? ` ${t("play.spells.overLimit")}` : ""}
         </span>
         <span
