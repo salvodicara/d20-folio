@@ -19,6 +19,9 @@ import { getAlwaysPreparedFromGrants, injectExpandedSpells } from "@/lib/expande
 import { evaluateGrants, type Grant, type GrantSource } from "@/lib/grants";
 import type { DamageType } from "@/types/damage";
 import { packGrantExtensions } from "@pack";
+import { resolveFreeCastFeatTrackers } from "@/lib/smart-tracker";
+import { asRaceId } from "@/data/srd-names";
+import { makeCharacterDoc } from "./_helpers";
 
 /** Pull the grants array off a race-trait feature id. */
 function traitGrants(id: string): ReadonlyArray<Grant> {
@@ -388,5 +391,52 @@ describe("Fiendish Legacy — L1 damage resistance per legacy", () => {
   it("no legacy chosen → no resistance injected", () => {
     const agg = evaluateGrants([srcFor("tiefling-fiendish-legacy")]);
     expect(agg.damageResistances.size).toBe(0);
+  });
+});
+
+/**
+ * A lineage's leveled spell comes with one free cast per Long Rest; the free cast is
+ * gated by the SAME character level as the spell (rehearsal 2026-11-06: a level-1 Drow
+ * showed Faerie Fire and Darkness charges, learned at levels 3 and 5). Derived from
+ * every species trait, so a new lineage cannot ship the gap.
+ */
+describe("a lineage's free cast waits for the level its spell is learned at", () => {
+  it("every free cast in a lineage option carries its spell's minLevel", () => {
+    const gaps: string[] = [];
+    for (const entry of raceFeatureIndex.values()) {
+      for (const grant of entry.grants ?? []) {
+        if (grant.type !== "choice-grant-bundle") continue;
+        for (const option of grant.options) {
+          const learnedAt = new Map<string, number>();
+          for (const g of option.grants) {
+            if (g.type === "always-prepared-spell" && g.minLevel != null)
+              learnedAt.set(g.spellId, g.minLevel);
+          }
+          for (const g of option.grants) {
+            if (g.type !== "free-cast-spell") continue;
+            const level = learnedAt.get(g.spellId);
+            if (level != null && g.minLevel !== level)
+              gaps.push(`${entry.id}/${option.id}: ${g.spellId} (learned at ${level})`);
+          }
+        }
+      }
+    }
+    expect(gaps).toEqual([]);
+  });
+
+  it("a Drow's Faerie Fire charge appears at level 3 and Darkness at 5, never before", () => {
+    // The free-cast rows, by the spell each one casts (a row's id ends `:<spellId>`).
+    const spells = (level: number) =>
+      resolveFreeCastFeatTrackers(
+        makeCharacterDoc(
+          { race: asRaceId("elf"), classId: "bard", level },
+          { grantBundleChoices: { "elf-lineage": "drow" } }
+        )
+      ).map((t) => t.id.split(":").at(-1));
+    expect(spells(1)).not.toContain("faerie-fire");
+    expect(spells(1)).not.toContain("darkness");
+    expect(spells(3)).toContain("faerie-fire");
+    expect(spells(3)).not.toContain("darkness");
+    expect(spells(5)).toContain("darkness");
   });
 });
