@@ -46,7 +46,7 @@ import { diagnosticsLog, setDiagnosticsContext } from "@/lib/diagnostics";
 import { normalizeLogEntry } from "@/lib/sanitize-session";
 import { normalizeLogEntryConcentration } from "@/lib/concentration";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
-import type { CharacterDoc, LogEntry, SessionState } from "@/types/character";
+import type { CharacterDoc, LogEntry } from "@/types/character";
 import type { CombatState, CombatPersistence } from "@/types/combat-state";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
@@ -702,7 +702,11 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         return;
       }
 
-      const sessionChanged = !onlyClockProjected(
+      // A runtime overlay alone (the projected campaign clock, table rules, others'
+      // effects) is no stored change: the clock re-set after every server echo used to
+      // save the whole play state again, a write loop that also put a level-up's HP back
+      // (rehearsal 2026-11-06; src/lib/session-overlays.ts).
+      const sessionChanged = storedSessionChanged(
         prevState.character.session,
         state.character.session
       );
@@ -719,13 +723,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
       // In v1 every mutable SessionState field lives in the complete child. Explicit
       // combat mutators call the same seam; its microtask coalescer collapses both
-      // routes into one write for a composite command. A runtime overlay alone (the
-      // projected campaign clock, table rules, others' effects) is never stored.
-      if (
-        sessionChanged &&
-        storedSessionChanged(prevState.character.session, state.character.session)
-      )
-        state.persistPlayState();
+      // routes into one write for a composite command.
+      if (sessionChanged) state.persistPlayState();
 
       if (parentChanged) {
         if (devBypassEnabled()) {
@@ -839,23 +838,4 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       window.removeEventListener("beforeunload", flush);
     };
   }, []);
-}
-
-/**
- * Whether two sessions differ in nothing but the projected campaign clock (or not at
- * all). The projection is a reading the sheet takes, never stored: `campaignClock` is
- * not part of the play state, so a server echo drops it and the projection puts it
- * back. Saving on that change sent the whole play state again on every echo — a write
- * loop that also overwrote a level-up's HP with the copy in memory (rehearsal,
- * 2026-11-06).
- */
-export function onlyClockProjected(before: SessionState, after: SessionState): boolean {
-  if (before === after) return true;
-  const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
-  keys.delete("campaignClock");
-  for (const key of keys) {
-    if (before[key as keyof SessionState] !== after[key as keyof SessionState])
-      return false;
-  }
-  return true;
 }
