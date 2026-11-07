@@ -36,6 +36,8 @@ import {
 } from "@/lib/character-snapshot-reconciler";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
+import { createCombatStateWriter } from "@/lib/combat-state-writer";
+import { storedSessionChanged } from "@/lib/session-overlays";
 import { removeFoldedPeerSpends, subscribePeerSpends } from "@/lib/peer-spends-io";
 import type { PeerSpend } from "@/lib/play/peer-spends";
 import { combatTrioRootsChanged, sessionToCombatState } from "@/lib/combat-state";
@@ -245,9 +247,6 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         }
 
         let quarantined = false;
-        let persistenceEnabled = true;
-        let pendingState: CombatState | null = null;
-        let playWriteQueued = false;
         // Same per-domain reconciliation as production, over the replica's own parent
         // projection: the dev replica has the SAME microtask-coalesced child write, so a
         // parent echo landing inside that window would revert the play state here too.
@@ -255,36 +254,19 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           DevCharacterParent,
           CombatState
         >();
-        const persistDevChild = (state: CombatState): void => {
-          void writeCombatState(uid, id, state).then(
-            () => devReconciler.acknowledgeChildWrite(state),
-            () => {
-              devReconciler.rejectChildWrite(state);
-              publish();
-            }
-          );
-        };
-        const writeComplete = (state: CombatState): void => {
-          if (!persistenceEnabled) return;
-          // Protect the local edit before a synchronous parent echo can publish.
-          devReconciler.markChildPending(state);
-          pendingState = state;
-          if (playWriteQueued) return;
-          playWriteQueued = true;
-          queueMicrotask(() => {
-            playWriteQueued = false;
-            const next = pendingState;
-            pendingState = null;
-            if (next && persistenceEnabled) persistDevChild(next);
-          });
-        };
-        useCharacterStore.getState().setCombatPersistence({ write: writeComplete });
+        const devWriter = createCombatStateWriter({
+          send: (state) => writeCombatState(uid, id, state),
+          reconciler: devReconciler,
+          onRejected: () => publish(),
+        });
+        useCharacterStore
+          .getState()
+          .setCombatPersistence({ write: (state) => devWriter.write(state) });
 
         const quarantine = (message: string): void => {
           if (quarantined) return;
           quarantined = true;
-          persistenceEnabled = false;
-          pendingState = null;
+          devWriter.stop();
           devReconciler.reset();
           useCharacterStore.getState().setCombatPersistence(null);
           useCharacterStore.getState().setParentPersistenceFlush(null);
@@ -349,6 +331,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
               quarantine("Invalid character document: missing-combat-state");
               return;
             }
+            devWriter.observe(combat);
             devReconciler.receiveChild(combat, meta);
             publish();
           },
@@ -459,40 +442,17 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     const logWrite = (err: unknown): void => {
       console.error("Combat-state write failed", err);
     };
-    let persistenceEnabled = true;
-    let pendingPlayWrite: CombatState | null = null;
-    let playWriteQueued = false;
-    // The child write is armed in the reconciler BEFORE it leaves, so an interleaving
-    // parent snapshot re-publishes THIS play state rather than the last stored one
-    // (REPLAY I3 — the reverting Focus). Resolution acknowledges it; a failure drops it
-    // and republishes whatever the server actually holds.
-    const persistChild = (state: CombatState): void => {
-      void writeCombatState(uid, characterId, state).then(
-        () => reconciler.acknowledgeChildWrite(state),
-        (err: unknown) => {
-          reconciler.rejectChildWrite(state);
-          publishResolvedPair();
-          logWrite(err);
-        }
-      );
-    };
-    const writeCompletePlayState = (state: CombatState): void => {
-      if (!persistenceEnabled) return;
-      // The edit is pending now, including the window before its queued send.
-      reconciler.markChildPending(state);
-      pendingPlayWrite = state;
-      if (playWriteQueued) return;
-      playWriteQueued = true;
-      queueMicrotask(() => {
-        playWriteQueued = false;
-        const next = pendingPlayWrite;
-        pendingPlayWrite = null;
-        if (next && persistenceEnabled) persistChild(next);
-      });
-    };
-    const persistence: CombatPersistence = {
-      write: writeCompletePlayState,
-    };
+    // At most one write per change (src/lib/combat-state-writer.ts): the asks of one
+    // command coalesce, and a state the server holds or is about to hold is not resent.
+    const writer = createCombatStateWriter({
+      send: (state) => writeCombatState(uid, characterId, state),
+      reconciler,
+      onRejected: (err) => {
+        publishResolvedPair();
+        logWrite(err);
+      },
+    });
+    const persistence: CombatPersistence = { write: (state) => writer.write(state) };
     useCharacterStore.getState().setCombatPersistence(persistence);
     // T4 — the lazy attached-campaign resolver for the DM-sheet fan-out (one
     // membership-scoped read on the first save; nothing until the owner edits).
@@ -507,8 +467,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       quarantined = true;
       reconciler.reset();
       resetRevisionCursor();
-      persistenceEnabled = false;
-      pendingPlayWrite = null;
+      writer.stop();
       debouncedSaveRef.current?.cancel();
       debouncedSaveRef.current = null;
       attachedCampaignsRef.current = null;
@@ -677,6 +636,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           else if (change.kind === "vitals")
             useUndoStore.getState().markRemoteTouched(change.roots);
         }
+        writer.observe(combat);
         reconciler.receiveChild(combat, meta);
         publishResolvedPair();
       },
@@ -759,8 +719,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
       // In v1 every mutable SessionState field lives in the complete child. Explicit
       // combat mutators call the same seam; its microtask coalescer collapses both
-      // routes into one write for a composite command.
-      if (sessionChanged) state.persistPlayState();
+      // routes into one write for a composite command. A runtime overlay alone (the
+      // projected campaign clock, table rules, others' effects) is never stored.
+      if (
+        sessionChanged &&
+        storedSessionChanged(prevState.character.session, state.character.session)
+      )
+        state.persistPlayState();
 
       if (parentChanged) {
         if (devBypassEnabled()) {
