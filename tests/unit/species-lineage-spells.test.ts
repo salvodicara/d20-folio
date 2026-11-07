@@ -20,6 +20,7 @@ import { evaluateGrants, type Grant, type GrantSource } from "@/lib/grants";
 import type { DamageType } from "@/types/damage";
 import { packGrantExtensions } from "@pack";
 import { resolveFreeCastFeatTrackers } from "@/lib/smart-tracker";
+import { asRaceId } from "@/data/srd-names";
 import { makeCharacterDoc } from "./_helpers";
 
 /** Pull the grants array off a race-trait feature id. */
@@ -428,7 +429,7 @@ describe("a lineage's free cast waits for the level its spell is learned at", ()
     const spells = (level: number) =>
       resolveFreeCastFeatTrackers(
         makeCharacterDoc(
-          { race: "elf", classId: "bard", level },
+          { race: asRaceId("elf"), classId: "bard", level },
           { grantBundleChoices: { "elf-lineage": "drow" } }
         )
       ).map((t) => t.id.split(":").at(-1));
