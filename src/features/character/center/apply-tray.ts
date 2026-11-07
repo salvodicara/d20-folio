@@ -417,6 +417,20 @@ export function applyTray(
             for (const spent of consumed) undoRevoke(spentIn, spent, t);
           });
         }
+        // Damage dealt to another creature ends what ends on dealing damage (your
+        // Invisibility, Sanctuary); the apply's undo brings it back.
+        if (
+          effect === "damage" &&
+          applied.some((row) => row.target.kind !== "self" && row.amount > 0)
+        ) {
+          const act = useCharacterStore
+            .getState()
+            .performAct(
+              "deal-damage",
+              offer.weaponAddress ? { weapon: offer.weaponAddress } : undefined
+            );
+          if (act) reversals.push(act.undo);
+        }
         // A budgeted zone (Guardian of Faith) counts the damage it dealt, and its
         // effect ends once the total reaches the budget.
         const zone = offer.zone;

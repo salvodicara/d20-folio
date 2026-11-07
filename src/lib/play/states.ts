@@ -21,6 +21,7 @@ import {
 import type { CharacterDoc, SessionState, TrackerState } from "@/types/character";
 import { concentrationValue } from "@/lib/concentration";
 import { changeConcentration } from "./concentration";
+import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { restoreTrackerEntry } from "./recoveries";
 import { countActivationUse } from "./reuse-save";
 
@@ -106,6 +107,12 @@ export type StateEndingAct =
   | "verbal-spell"
   | "loud-noise";
 
+/** Where an act came from, when its source matters: the weapon (its encoded address)
+ *  whose damage it was (Brew Poison ends on its coated weapon's damage only). */
+export interface StateEndingActDetail {
+  weapon?: string;
+}
+
 /** The acts that end a Hide (2024 Hide; being found is `removeCondition`). */
 const HIDE_ENDING_ACTS: ReadonlySet<StateEndingAct> = new Set([
   "attack-roll",
@@ -135,9 +142,22 @@ export function actsOfUse(action: ResolvedAction): StateEndingAct[] {
  */
 export function endStatesOnAct(
   doc: CharacterDoc,
-  act: StateEndingAct
+  act: StateEndingAct,
+  detail: StateEndingActDetail = {}
 ): { session: SessionState; ended: string[] } | null {
-  const states = potionStatesEndingOn(doc.session.activeFeatures ?? [], act);
+  const lit = doc.session.activeFeatures ?? [];
+  const states = potionStatesEndingOn(lit, act);
+  // A feature's own state that ends on the act (Brew Poison's coat), from where the
+  // state says it must come.
+  for (const key of lit) {
+    if (states.includes(key)) continue;
+    const state = featureStateSource(doc, key)?.grants?.[0];
+    if (state?.type !== "while-active" || !state.duration) continue;
+    const duration = state.duration;
+    if (!("endsEarlyOn" in duration) || !duration.endsEarlyOn?.includes(act)) continue;
+    if (!actComesFromBound(doc, state, act, detail, duration.earlyEndFrom)) continue;
+    states.push(key);
+  }
   const hide = doc.session.hiddenDc !== undefined && HIDE_ENDING_ACTS.has(act);
   if (states.length === 0 && !hide) return null;
   const session = endSpellsOf(doc, states, endStateKeys(doc.session, states));
@@ -151,6 +171,24 @@ export function endStatesOnAct(
       : session,
     ended: hide ? [...states, "hide"] : states,
   };
+}
+
+/** Whether the act counts for the state: from anywhere, unless the state wants it from
+ *  the weapon it binds and a weapon is bound (then only that weapon's act counts). */
+function actComesFromBound(
+  doc: CharacterDoc,
+  state: Extract<Grant, { type: "while-active" }>,
+  act: StateEndingAct,
+  detail: StateEndingActDetail,
+  from: Partial<Record<string, "bound-weapon">> | undefined
+): boolean {
+  if (from?.[act] !== "bound-weapon") return true;
+  const binding = state.grants.find((grant) => grant.type === "weapon-binding");
+  const bound =
+    binding?.type === "weapon-binding"
+      ? doc.session.grantBundleChoices?.[binding.choiceKey]
+      : undefined;
+  return bound === undefined || detail.weapon === bound;
 }
 
 /**
@@ -314,6 +352,24 @@ export function castStateChoiceKeys(
       ? choiceBundleKeys(g.grants)
       : []
   );
+}
+
+/**
+ * The standing state a feature's action lights (Brew Poison's coat), as a source of
+ * grants the cast-state readers take (`castStateChoiceKeys`, `castWeaponBinding`):
+ * the `while-active` with that key among the character's own grant sources.
+ */
+export function featureStateSource(
+  doc: CharacterDoc,
+  activeKey: string
+): Pick<SrdSpellData, "grants"> | undefined {
+  for (const source of resolveAllGrantSources(doc.character, doc.session.itemResources)) {
+    const state = (source.grants ?? []).find(
+      (grant) => grant.type === "while-active" && grant.activeKey === activeKey
+    );
+    if (state) return { grants: [state] };
+  }
+  return undefined;
 }
 
 /** Set (an option id) or clear (null) option choices, or null when none changes. */

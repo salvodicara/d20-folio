@@ -1635,3 +1635,42 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
     ],
   };
 }
+
+/**
+ * Dev-only: an ally's Bless and Warding Bond on the open character (`d20-dev-ally-effects`
+ * = 1), so Play's «Effetti» can be shot. Dev-bypass only, like the seeds above.
+ */
+export function makeDevAllyEffects(characterId: string): ActiveCombatEffect[] {
+  if (typeof window === "undefined") return [];
+  if (window.localStorage.getItem("d20-dev-ally-effects") !== "1") return [];
+  const ally = {
+    kind: "pc" as const,
+    // the dev party's ally (`makeDevParty`, `d20-dev-party`), so «da Bren» reads
+    combatantId: "pc-mock-ally",
+    memberUid: "mock-ally",
+    characterId: "scn-champion-6",
+  };
+  const me = {
+    kind: "pc" as const,
+    combatantId: "pc-dev-user",
+    memberUid: "dev-user",
+    characterId,
+  };
+  const of = (id: string, spell: string, duration: ActiveCombatEffect["duration"]) =>
+    ({
+      id,
+      actor: ally,
+      target: me,
+      source: { kind: "spell", id: spell, actionId: spell },
+      payload: { kind: "grant-group", groupId: spell },
+      duration,
+    }) as unknown as ActiveCombatEffect;
+  return [
+    of("dev-bless", "bless", {
+      kind: "concentration",
+      actorId: ally.combatantId,
+      sourceId: "bless",
+    }),
+    of("dev-warding-bond", "warding-bond", { kind: "encounter" }),
+  ];
+}

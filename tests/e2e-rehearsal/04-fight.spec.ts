@@ -172,6 +172,32 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
       .toBe(true);
   });
 
+  await test.step("the DM has the tools to run the fight (finding 2, open)", async () => {
+    // Until the new campaign page carries DM tools, the fight holds PCs only and the
+    // DM's hit is typed by the player on their own sheet (the step below). These two
+    // soft checks keep the gap on every run's list; their names follow the UI that lands.
+    await openFightTab(dm);
+    await expect
+      .soft(
+        dm
+          .getByRole("button", { name: /add (a )?monster|aggiungi (un )?mostro/i })
+          .first(),
+        "the DM can add a monster to the fight"
+      )
+      .toBeVisible({ timeout: 5_000 });
+    const pcRow = dm.locator(".f-split").getByText("Catalion di Sancaldo").first();
+    await expect
+      .soft(
+        dm
+          .locator(".f-split")
+          .filter({ has: pcRow })
+          .getByRole("button", { name: /damage|danni/i })
+          .first(),
+        "the DM can damage a PC from the fight"
+      )
+      .toBeVisible({ timeout: 5_000 });
+  });
+
   await test.step("a 10-damage hit the DM calls on Catalion lands through the bond", async () => {
     const bardBefore = await currentHp(bard);
     const paladinBefore = await currentHp(paladin);

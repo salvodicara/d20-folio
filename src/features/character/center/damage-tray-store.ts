@@ -21,6 +21,9 @@ export interface DamageTrayOffer {
    *  receipts bind to (absent when the use sits outside the turn's economy). */
   actionId: string;
   occurrenceId?: string;
+  /** The carried weapon the use attacks with: its damage is that weapon's (a coat that
+   *  ends on its own weapon's damage, Brew Poison). */
+  weaponAddress?: string;
   plan: DamageTrayPlan;
   /** What a hit puts on its target beyond damage (a companion's Web Bolt: Speed 0),
    *  as persistent combat effects the apply writes to the encounter, undoable. */

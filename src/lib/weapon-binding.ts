@@ -278,6 +278,29 @@ function characterLevel(character: CharacterDoc): number {
 }
 
 /**
+ * The weapon each lit binding names, by its state's key: a state that binds a weapon
+ * (Brew Poison's coat) keeps its other grants on that weapon's row only. A state whose
+ * pick is missing, gone or no longer qualifies binds no weapon (its grants ride as
+ * unbound ones do).
+ */
+export function boundWeaponIndexByState(
+  lit: AggregatedGrants["weaponBindings"],
+  character: CharacterDoc
+): Map<string, number> {
+  const picks = character.session.grantBundleChoices ?? {};
+  const weapons = character.character.weapons;
+  const out = new Map<string, number>();
+  for (const { activeKey, grant } of lit) {
+    const address = decodeWeaponAddress(picks[grant.choiceKey]);
+    if (!address) continue;
+    const index = weaponIndexOf(weapons, address);
+    const weapon = weapons[index];
+    if (weapon && !weaponRejection(grant, weapon)) out.set(activeKey, index);
+  }
+  return out;
+}
+
+/**
  * The lit bindings by the index of the weapon each rides. A pick for a weapon that
  * is gone or no longer qualifies binds nothing. Two bindings on one weapon add
  * their bonuses; the later one's die, ability and type win.

@@ -126,6 +126,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "faerie-fire",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -138,6 +139,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "darkness",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -160,6 +162,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "detect-magic",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -172,6 +175,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "misty-step",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -198,6 +202,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "longstrider",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -210,6 +215,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "pass-without-trace",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -501,6 +507,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "ray-of-sickness",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -513,6 +520,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "hold-person",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -538,6 +546,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "false-life",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -550,6 +559,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "ray-of-enfeeblement",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -580,6 +590,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "hellish-rebuke",
+                    minLevel: 3,
                     chargesPerRest: 1,
                     rest: "long",
                   },
@@ -592,6 +603,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
                   {
                     type: "free-cast-spell",
                     spellId: "darkness",
+                    minLevel: 5,
                     chargesPerRest: 1,
                     rest: "long",
                   },

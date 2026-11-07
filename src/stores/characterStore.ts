@@ -71,6 +71,7 @@ import {
   recoverPerTurnTrackers as recoverPerTurnTrackersOf,
   restoreStateKey,
   type StateEndingAct,
+  type StateEndingActDetail,
 } from "@/lib/play/states";
 import { breathLogEvents } from "@/lib/play/suffocation";
 import { riderTakenEvents, riderTakenLog } from "@/lib/play/rider-taken";
@@ -256,6 +257,10 @@ interface CharacterState {
    * Injected by the campaign layer, which lands each share on the caster's sheet; with
    * none (no campaign) a share has nowhere to go. */
   damageTransferSink: ((transfers: DamageTransfer[]) => void) | null;
+  /** Where an act goes beyond this sheet: the effects others left on the character
+   * that end on it (an ally's Invisibility ends on its attack). Injected by the
+   * campaign layer, which revokes them. */
+  stateEndingActSink: ((act: StateEndingAct) => void) | null;
   /**
    * The SOLO combat `round` hydrated from the `combat/state` subdoc — the round's
    * in-store mirror (the parallel of {@link combatEpoch}). The SESSION no longer carries
@@ -310,6 +315,7 @@ interface CharacterState {
   persistPlayState: () => void;
   setParentPersistenceFlush: (flush: (() => void) | null) => void;
   setDamageTransferSink: (sink: ((transfers: DamageTransfer[]) => void) | null) => void;
+  setStateEndingActSink: (sink: ((act: StateEndingAct) => void) | null) => void;
   /** T4 — load a sheet in read-only mode (DM viewing a member's character). */
   loadReadonly: (doc: CharacterDoc | null) => void;
   /** Atomically publish one parent + play-state pair. Marked v1 parents are never
@@ -634,7 +640,10 @@ interface CharacterState {
    * state keys it ended, for the caller's notice, and the undo; null when nothing
    * ended. The UI that knows an act happened calls it (the core has no act funnel).
    */
-  performAct: (act: StateEndingAct) => { ended: string[]; undo: () => void } | null;
+  performAct: (
+    act: StateEndingAct,
+    detail?: StateEndingActDetail
+  ) => { ended: string[]; undo: () => void } | null;
   /**
    * The owner's turn ends while holding their breath (SRD Suffocation): one turn of
    * air goes, or, out of breath, 1 Exhaustion with its log line. Through the play
@@ -1351,6 +1360,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   combatPersistence: null,
   parentPersistenceFlush: null,
   damageTransferSink: null,
+  stateEndingActSink: null,
   combatRound: 1,
   combatActiveEffects: [],
   combatLegacyActiveEffects: [],
@@ -1480,6 +1490,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   persistPlayState: () => persistCombat(get),
   setParentPersistenceFlush: (flush) => set({ parentPersistenceFlush: flush }),
   setDamageTransferSink: (sink) => set({ damageTransferSink: sink }),
+  setStateEndingActSink: (sink) => set({ stateEndingActSink: sink }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
@@ -3008,12 +3019,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().dispatch({ kind: "set-active-cast-level", key, level });
   },
 
-  performAct: (act) => {
+  performAct: (act, detail) => {
     const character = get().character;
-    if (!character) return null;
-    const ended = endStatesOnAct(character, act)?.ended;
+    if (!character || get().readonly) return null;
+    // What others left on this character that ends on the act ends too (their side).
+    get().stateEndingActSink?.(act);
+    const ended = endStatesOnAct(character, act, detail)?.ended;
     if (!ended) return null;
-    const undo = get().dispatch({ kind: "perform-act", act });
+    const undo = get().dispatch({
+      kind: "perform-act",
+      act,
+      ...(detail ? { detail } : {}),
+    });
     if (!undo) return null;
     persistCombat(get);
     return {

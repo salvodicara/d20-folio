@@ -11,11 +11,29 @@
  * `memberJoinsOrResorts`, `memberCancelsFight`, `memberEndsFight`, `memberReopensFight`).
  */
 
+import type { DamageRetaliation } from "@/lib/combat-transition";
+import type { DamageInstance } from "@/lib/damage-intake";
+import type { LocText } from "@/lib/loc-text";
 import { stripUndefined } from "@/lib/strip-undefined";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
 
-import { parseEncounterState, type EncounterPcSeed } from "./encounter";
+import {
+  addMonster,
+  parseEncounterState,
+  removeCombatant,
+  setInitiative,
+  setMonsterCondition,
+  type EncounterPcSeed,
+  type MonsterInput,
+} from "./encounter";
 import { endCombat, reopenCombat, rollInitiative } from "./encounter-lifecycle";
+import { recordCondition, recordPcHp, undoHpEvent } from "./combat-chronicle";
+import {
+  applyAdversaryDamageParts,
+  applyAdversaryHeal,
+  landRetaliations,
+  undoAdversaryChronicleEvent,
+} from "./encounter-world-command";
 
 /** What a lifecycle move writes: campaign fields, and the kept fight (`null` deletes it). */
 export interface CombatPatch {
@@ -279,4 +297,209 @@ export function planUnrollMissing(
     current = { ...current, ...plan.patch };
   }
   return patch;
+}
+
+/** A hit the DM landed on a PC through the peer write, as the fight records it. */
+export interface PcDamageBeat {
+  uid: string;
+  campaignId: string;
+  /** The PC's combatant id (`pc-<uid>`). */
+  targetId: string;
+  amount: number;
+  /** The PC's HP before and after the write (its own damage rule decided them). */
+  preCurrent: number;
+  postCurrent: number;
+  max: number;
+  tempAbsorbed?: number;
+  /** The creature that hit, when the DM named one. */
+  attackerId?: string;
+  action?: LocText;
+  /** What the hit sends back to its attacker (Armor of Agathys), landed here. */
+  retaliations: ReadonlyArray<DamageRetaliation>;
+}
+
+/**
+ * The fight's side of the DM's hit on a PC: the beat (and the fall, at 0), and what the
+ * hit sends back landed on the attacker, in one write. Returns the lines it added, for
+ * its undo. Null for anyone but the DM, or with no fight running.
+ */
+export function planPcDamageBeat(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  beat: PcDamageBeat
+): { patch: CombatPatch; eventIds: string[] } | null {
+  const fight = campaign.encounter;
+  if (!fight || beat.uid !== campaign.dmUid) return null;
+  const recorded = recordPcHp(fight, {
+    targetId: beat.targetId,
+    kind: "damage",
+    amount: beat.amount,
+    preCurrent: beat.preCurrent,
+    postCurrent: beat.postCurrent,
+    max: beat.max,
+    ...(beat.tempAbsorbed ? { tempAbsorbed: beat.tempAbsorbed } : {}),
+    ...(beat.attackerId ? { attackerId: beat.attackerId } : {}),
+    ...(beat.action ? { action: beat.action } : {}),
+  });
+  const next = landRetaliations(recorded, beat.campaignId, beat.retaliations);
+  const before = new Set((fight.events ?? []).map((event) => event.id));
+  const eventIds = (next.events ?? [])
+    .map((event) => event.id)
+    .filter((id) => !before.has(id));
+  return { patch: { encounter: next }, eventIds };
+}
+
+/**
+ * The undo of a DM move's lines: each line it added comes off the fight, newest first,
+ * and a monster's HP line gives the HP back. Null for anyone but the DM, or when the
+ * fight is gone.
+ */
+export function planUndoBeats(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; campaignId: string; eventIds: ReadonlyArray<string> }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  let next = fight;
+  for (const id of [...input.eventIds].reverse()) {
+    const event = next.events?.find((candidate) => candidate.id === id);
+    if (!event) continue;
+    const target =
+      "targetId" in event
+        ? next.combatants.find((combatant) => combatant.id === event.targetId)
+        : undefined;
+    const undone =
+      target?.kind === "monster"
+        ? undoAdversaryChronicleEvent(next, input.campaignId, id)
+        : event.kind === "hp-damage" || event.kind === "hp-heal"
+          ? undoHpEvent(next, id)
+          : next;
+    next = {
+      ...undone,
+      events: (undone.events ?? []).filter((candidate) => candidate.id !== id),
+    };
+  }
+  return { encounter: next };
+}
+
+/** What the DM does to a monster's Hit Points: a hit (typed parts, through its own
+ *  defenses) or a heal. */
+export type MonsterHpChange =
+  | { kind: "damage"; parts: ReadonlyArray<DamageInstance>; attackerId?: string }
+  | { kind: "heal"; amount: number };
+
+/**
+ * The DM's hit or heal on a monster, with the lines it adds for its undo
+ * ({@link planUndoBeats}). Null for anyone but the DM, with no fight running, or when
+ * nothing changed.
+ */
+export function planMonsterHp(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; campaignId: string; monsterId: string; change: MonsterHpChange }
+): { patch: CombatPatch; eventIds: string[] } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const { change } = input;
+  const next =
+    change.kind === "damage"
+      ? applyAdversaryDamageParts(fight, input.campaignId, input.monsterId, change.parts)
+      : applyAdversaryHeal(fight, input.campaignId, input.monsterId, change.amount);
+  if (next === fight) return null;
+  const before = new Set((fight.events ?? []).map((event) => event.id));
+  const eventIds = (next.events ?? [])
+    .map((event) => event.id)
+    .filter((id) => !before.has(id));
+  return { patch: { encounter: next }, eventIds };
+}
+
+/**
+ * The DM puts a condition on a monster, or takes it off, with its line in the fight. Its
+ * undo is the same move inverted. Null for anyone but the DM, with no fight running,
+ * or when the monster already has (or lacks) it.
+ */
+export function planMonsterCondition(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string; conditionId: string; active: boolean }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  if (monster.conditions.includes(input.conditionId) === input.active) return null;
+  const next = recordCondition(
+    setMonsterCondition(fight, input.monsterId, input.conditionId, input.active),
+    input.monsterId,
+    input.conditionId,
+    input.active
+  );
+  return { encounter: next };
+}
+
+/**
+ * The DM sets a monster's initiative (the turn order follows), handing back the old
+ * value for the undo. Null for anyone but the DM, with no fight running, or when the
+ * value is the same.
+ */
+export function planMonsterInitiative(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string; value: number | null }
+): { patch: CombatPatch; previous: number | null } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster" || monster.initiative === input.value) return null;
+  return {
+    patch: { encounter: setInitiative(fight, input.monsterId, input.value) },
+    previous: monster.initiative,
+  };
+}
+
+/**
+ * The DM adds monsters to the running fight (each takes its place by initiative), naming
+ * the new creatures for the undo. v1 adds only during a fight: there is no staging area
+ * yet. Null for anyone but the DM, or with no fight running.
+ */
+export function planAddMonsters(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monster: MonsterInput }
+): { patch: CombatPatch; added: string[] } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const next = addMonster(fight, input.monster);
+  const known = new Set(fight.combatants.map((c) => c.id));
+  const added = next.combatants.map((c) => c.id).filter((id) => !known.has(id));
+  return added.length > 0 ? { patch: { encounter: next }, added } : null;
+}
+
+/**
+ * The undo of an add: the creatures leave while nobody has touched them (full HP, no
+ * condition, no line in the fight names them). Null when any was touched, for anyone but
+ * the DM, or with no fight running.
+ */
+export function planRemoveUntouched(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; ids: ReadonlyArray<string> }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const named = new Set(
+    (fight.events ?? []).flatMap((event) => [
+      ...("targetId" in event ? [event.targetId] : []),
+      ...("attackerId" in event && event.attackerId ? [event.attackerId] : []),
+      ...("actor" in event && typeof event.actor === "string" ? [event.actor] : []),
+    ])
+  );
+  let next = fight;
+  for (const id of input.ids) {
+    const creature = fight.combatants.find((c) => c.id === id);
+    if (!creature) continue;
+    if (
+      creature.kind !== "monster" ||
+      creature.hp.current !== creature.hp.max ||
+      creature.conditions.length > 0 ||
+      named.has(id)
+    )
+      return null;
+    next = removeCombatant(next, id);
+  }
+  return { encounter: next };
 }

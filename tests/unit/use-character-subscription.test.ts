@@ -727,6 +727,36 @@ describe("useCharacterSubscription — v1 play ownership gate", () => {
     expect(state.playState?.state.notes).toBe("child only");
   });
 
+  it("projecting the campaign clock writes nothing: it is a reading, not an edit", async () => {
+    // The 2026-11-06 rehearsal: `campaignClock` is never stored, so each server echo
+    // dropped it, the projection put it back, and this save sent the whole play state
+    // again — about 15 writes a second, each carrying the HP in memory, which overwrote
+    // a level-up's new HP (a campaign Bard stayed at 24/31).
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(v1Combat()));
+    act(() => snapshotCb()(v1Doc()));
+    writeCombatStateMock.mockClear();
+    debouncedSave.mockClear();
+
+    act(() =>
+      useCharacterStore
+        .getState()
+        .setCampaignClock("char1", { campaignId: "camp1", clock: { minute: 0 } })
+    );
+    await flushPlayWrite();
+    expect(useCharacterStore.getState().character?.session.campaignClock).toEqual({
+      campaignId: "camp1",
+      clock: { minute: 0 },
+    });
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+    expect(debouncedSave).not.toHaveBeenCalled();
+
+    // A real edit on the projected sheet still saves, once.
+    act(() => useCharacterStore.getState().updateSession({ notes: "after the clock" }));
+    await flushPlayWrite();
+    expect(writeCombatStateMock).toHaveBeenCalledTimes(1);
+  });
+
   it("coalesces a combat + log composite action into one complete child write", async () => {
     renderHook(() => useCharacterSubscription("char1"));
     act(() => combatCb()(v1Combat()));

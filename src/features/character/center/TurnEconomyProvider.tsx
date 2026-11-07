@@ -1053,6 +1053,7 @@ export function TurnEconomyProvider({
       castLogId,
       actionId: action.id,
       ...(occurrenceId ? { occurrenceId } : {}),
+      ...(action.weaponAddress ? { weaponAddress: action.weaponAddress } : {}),
       plan,
       ...(onSaved ? { onSaved } : {}),
       ...(onFailed ? { onFailed } : {}),

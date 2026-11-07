@@ -15,16 +15,30 @@ import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { updateDevDocument } from "@/lib/dev-document-store";
 import { db } from "@/lib/firebase";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
+import type { DamageInstance } from "@/lib/damage-intake";
+import type { LocText } from "@/lib/loc-text";
 
-import { advanceEncounterTurn, toCampaignDoc } from "./campaign-io";
+import {
+  advanceEncounterTurn,
+  toCampaignDoc,
+  writeCampaignCombatEffect,
+} from "./campaign-io";
 import { createSessionRecorder, type SessionRecorder } from "@/lib/session-log";
 
+import { recordCondition } from "./combat-chronicle";
 import { useCampaignStore } from "./campaignStore";
-import { parseEncounterState } from "./encounter";
+import { parseEncounterState, type MonsterInput } from "./encounter";
 import { sessionLogStoreFor } from "./session-log-source";
 import {
   planCancel,
   planEnd,
+  planAddMonsters,
+  planMonsterCondition,
+  planMonsterHp,
+  planMonsterInitiative,
+  planPcDamageBeat,
+  planRemoveUntouched,
+  planUndoBeats,
   planReopen,
   planRoll,
   planRollForMissing,
@@ -32,6 +46,7 @@ import {
   combatPatchFields,
   type CombatFields,
   type CombatPatch,
+  type MonsterHpChange,
 } from "./combat-lifecycle";
 
 /** The undo of a lifecycle move: true when it was undone, false when it no longer fits. */
@@ -302,4 +317,235 @@ export async function rollForMissing(
     }
     return undone;
   };
+}
+
+/**
+ * The DM hits a PC from the fight (the new campaign page's DM tools): the hit lands on
+ * the PC through its own damage rule (the peer write: Resistance from its sheet as it
+ * stands, temporary HP, 0 HP, a Concentration save, Warding Bond's share), then the
+ * fight records it, with what the hit sends back to a monster attacker (Armor of
+ * Agathys). Typed parts resolve at the write; an untyped hit is one part with no type.
+ * Its undo puts the PC's HP back and takes the lines off. Null for anyone but the DM,
+ * with no fight running, or when the hit changed nothing.
+ */
+export async function damagePcFromDm(
+  campaignId: string,
+  input: {
+    uid: string;
+    memberUid: string;
+    characterId: string;
+    maxHp: number;
+    parts: ReadonlyArray<DamageInstance>;
+    /** The monster that hit, and whether in melee (Armor of Agathys answers that). */
+    attacker?: { id: string; melee: boolean };
+    action?: LocText;
+  }
+): Promise<CombatUndo | null> {
+  const campaign = useCampaignStore.getState().campaign;
+  if (campaign?.id !== campaignId || campaign.dmUid !== input.uid || !campaign.encounter)
+    return null;
+  const amount = input.parts.reduce((sum, part) => sum + Math.max(0, part.amount), 0);
+  if (amount <= 0) return null;
+  const { before, after, retaliations } = await writeCampaignCombatEffect(
+    input.memberUid,
+    input.characterId,
+    null,
+    input.maxHp,
+    {
+      kind: "hp",
+      operation: {
+        kind: "damage",
+        amount,
+        parts: input.parts,
+        ...(input.attacker
+          ? {
+              hit: {
+                attacker: { kind: "monster", combatantId: input.attacker.id },
+                attackMode: input.attacker.melee ? "melee" : "ranged",
+              },
+            }
+          : {}),
+      },
+    }
+  );
+  const revertHit = () =>
+    writeCampaignCombatEffect(input.memberUid, input.characterId, null, input.maxHp, {
+      kind: "revert",
+      written: after,
+      previous: before,
+    });
+  const eventIds = await applyMove(campaignId, (fresh) => {
+    const planned = planPcDamageBeat(fresh, {
+      uid: input.uid,
+      campaignId,
+      targetId: `pc-${input.memberUid}`,
+      amount,
+      preCurrent: before.hp.current,
+      postCurrent: after.hp.current,
+      max: input.maxHp,
+      tempAbsorbed: Math.max(0, before.hp.temp - after.hp.temp),
+      ...(input.attacker ? { attackerId: input.attacker.id } : {}),
+      ...(input.action ? { action: input.action } : {}),
+      retaliations,
+    });
+    return planned && { patch: planned.patch, result: planned.eventIds };
+  });
+  if (eventIds === null) {
+    // The fight went meanwhile: the hit stays on the sheet, with nothing to record.
+    return async () => {
+      await revertHit();
+      return true;
+    };
+  }
+  return async () => {
+    await revertHit();
+    const undone = await applyMove(campaignId, (fresh) => {
+      const patch = planUndoBeats(fresh, { uid: input.uid, campaignId, eventIds });
+      return patch && { patch, result: true };
+    });
+    return undone === true;
+  };
+}
+
+/**
+ * The DM's hit (typed parts, through the monster's own defenses) or heal on a monster
+ * in the fight. Its undo takes the lines off and gives the HP back. Null for anyone but
+ * the DM, with no fight running, or when nothing changed.
+ */
+export async function changeMonsterHp(
+  campaignId: string,
+  input: { uid: string; monsterId: string; change: MonsterHpChange }
+): Promise<CombatUndo | null> {
+  const eventIds = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterHp(campaign, { ...input, campaignId });
+    return planned && { patch: planned.patch, result: planned.eventIds };
+  });
+  if (eventIds === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planUndoBeats(campaign, { uid: input.uid, campaignId, eventIds });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** The DM toggles a condition on a monster in the fight; the undo inverts it. */
+export async function setMonsterConditionMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string; conditionId: string; active: boolean }
+): Promise<CombatUndo | null> {
+  const done = await applyMove(campaignId, (campaign) => {
+    const patch = planMonsterCondition(campaign, input);
+    return patch && { patch, result: true };
+  });
+  if (done === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planMonsterCondition(campaign, { ...input, active: !input.active });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** The DM sets a monster's initiative; the undo puts the old value back. */
+export async function setMonsterInitiativeMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string; value: number | null }
+): Promise<CombatUndo | null> {
+  const previous = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterInitiative(campaign, input);
+    return planned && { patch: planned.patch, result: { value: planned.previous } };
+  });
+  if (previous === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const planned = planMonsterInitiative(campaign, {
+        ...input,
+        value: previous.value,
+      });
+      return planned && { patch: planned.patch, result: true };
+    })) === true;
+}
+
+/**
+ * The DM toggles a condition on a PC: written on the PC's own combat state (the peer
+ * write), then recorded in the fight. The undo reverts the write and takes the line
+ * off. Null for anyone but the DM, or with no fight running.
+ */
+export async function setPcConditionMove(
+  campaignId: string,
+  input: {
+    uid: string;
+    memberUid: string;
+    characterId: string;
+    maxHp: number;
+    conditionId: string;
+    active: boolean;
+  }
+): Promise<CombatUndo | null> {
+  const campaign = useCampaignStore.getState().campaign;
+  if (campaign?.id !== campaignId || campaign.dmUid !== input.uid || !campaign.encounter)
+    return null;
+  const { before, after } = await writeCampaignCombatEffect(
+    input.memberUid,
+    input.characterId,
+    null,
+    input.maxHp,
+    {
+      kind: "condition",
+      operation: {
+        kind: input.active ? "add" : "remove",
+        conditionId: input.conditionId,
+      },
+    }
+  );
+  const revert = () =>
+    writeCampaignCombatEffect(input.memberUid, input.characterId, null, input.maxHp, {
+      kind: "revert",
+      written: after,
+      previous: before,
+    });
+  const eventIds = await applyMove(campaignId, (fresh) => {
+    const fight = fresh.encounter;
+    if (!fight || fresh.dmUid !== input.uid) return null;
+    const next = recordCondition(
+      fight,
+      `pc-${input.memberUid}`,
+      input.conditionId,
+      input.active
+    );
+    const known = new Set((fight.events ?? []).map((event) => event.id));
+    const added = (next.events ?? []).map((e) => e.id).filter((id) => !known.has(id));
+    return { patch: { encounter: next }, result: added };
+  });
+  return async () => {
+    await revert();
+    if (!eventIds?.length) return true;
+    return (
+      (await applyMove(campaignId, (fresh) => {
+        const patch = planUndoBeats(fresh, { uid: input.uid, campaignId, eventIds });
+        return patch && { patch, result: true };
+      })) === true
+    );
+  };
+}
+
+/**
+ * The DM adds monsters to the running fight (a bestiary entry, a homebrew one, or a
+ * quick name/AC/HP): they take their place by initiative. The undo takes them out while
+ * nobody has touched them. Null for anyone but the DM, or with no fight running (v1:
+ * no staging area).
+ */
+export async function addMonstersMove(
+  campaignId: string,
+  input: { uid: string; monster: MonsterInput }
+): Promise<CombatUndo | null> {
+  const added = await applyMove(campaignId, (campaign) => {
+    const planned = planAddMonsters(campaign, input);
+    return planned && { patch: planned.patch, result: planned.added };
+  });
+  if (added === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planRemoveUntouched(campaign, { uid: input.uid, ids: added });
+      return patch && { patch, result: true };
+    })) === true;
 }
