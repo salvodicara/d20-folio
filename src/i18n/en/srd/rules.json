@@ -212,9 +212,5 @@
   },
   "situation.squeezing": {
     "name": "Squeezing"
-  },
-  "potion.lethargy": {
-    "name": "Lethargy",
-    "summary": "When the Haste effect ends, you are Incapacitated and have a Speed of 0 until the end of your next turn."
   }
 }

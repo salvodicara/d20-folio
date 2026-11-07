@@ -5,11 +5,7 @@
  * the DM's book (private pack data; its source is not in hand yet), so with no table
  * the DM reads the result off their own copy.
  */
-import {
-  drunkPotionId,
-  POTION_AFTEREFFECT_SUFFIX,
-  POTION_TIMER_PREFIX,
-} from "@/lib/potion-states";
+import { drunkPotionId, POTION_TIMER_PREFIX } from "@/lib/potion-states";
 import type { CharacterDoc } from "@/types/character";
 
 /** The DM's mixing table: a d100, its rows by range, each naming an outcome id. */
@@ -25,7 +21,8 @@ export interface MixingOffer {
 }
 
 /** The potions whose effect is still running: a lit `potion:<id>` state or a
- *  running countdown. An after-effect (Speed's lethargy) is not the potion. */
+ *  running countdown. A potion id holds no further `:` (a slug or a copy's UUID), so
+ *  an older save's leftover `potion:<id>:aftereffect` key is not a potion. */
 function runningPotions(doc: CharacterDoc): string[] {
   const keys = new Set([
     ...(doc.session.activeFeatures ?? []),
@@ -34,11 +31,9 @@ function runningPotions(doc: CharacterDoc): string[] {
       .map(([key]) => key),
   ]);
   return [...keys]
-    .filter(
-      (key) =>
-        key.startsWith(POTION_TIMER_PREFIX) && !key.endsWith(POTION_AFTEREFFECT_SUFFIX)
-    )
-    .map((key) => key.slice(POTION_TIMER_PREFIX.length));
+    .filter((key) => key.startsWith(POTION_TIMER_PREFIX))
+    .map((key) => key.slice(POTION_TIMER_PREFIX.length))
+    .filter((id) => !id.includes(":"));
 }
 
 /**

@@ -11,7 +11,6 @@ import {
   advanceEffectTimers as advanceEffectTimersEngine,
   resolveActiveBoundaryEffects,
 } from "@/lib/smart-tracker";
-import { startPotionAftereffects } from "@/lib/potion-states";
 import { selfFormRule } from "@/lib/polymorph";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import { ageFallenSummons, endExpiredSummons, ROUND_MINUTES } from "./companions";
@@ -76,13 +75,7 @@ export function advanceEffectTimers(
 } {
   const { timers, expired } = advanceEffectTimersEngine(doc, forRound);
   const expiredKeys = new Set(expired.map((effect) => effect.activeKey));
-  const ticked = withoutKeys({ ...doc.session, effectTimers: timers }, expiredKeys);
-  // A potion that ran out at this End Turn may leave an after-effect for the next
-  // turn (Speed's lethargy); out of combat there is no next turn to hold it.
-  const session =
-    forRound === undefined
-      ? ticked
-      : (startPotionAftereffects(ticked, expiredKeys, forRound) ?? ticked);
+  const session = withoutKeys({ ...doc.session, effectTimers: timers }, expiredKeys);
   // A form held for its spell's full duration lasts until dispelled (True Polymorph,
   // M12): its Concentration ends next, and the form stays.
   const form = session.activeForm;
