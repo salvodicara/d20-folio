@@ -27,7 +27,14 @@ import {
 } from "@/lib/compute";
 import type { D20RerollClause } from "@/lib/grants";
 import type { CharacterDoc } from "@/types/character";
-import type { D20RollMode, D20TestRequest, D20TestResult } from "@/types/d20-test";
+import type { ActionRollEffect } from "@/data/types";
+import { STANDARD_DIE_SIDES, type DieSides } from "@/types/dice-formula";
+import type {
+  D20EnteredModifierRule,
+  D20RollMode,
+  D20TestRequest,
+  D20TestResult,
+} from "@/types/d20-test";
 import type { PendingConcentrationSave } from "@/types/combat-state";
 
 const DEATH_SAVE_VS = "death-saving-throws";
@@ -49,6 +56,8 @@ interface CharacterD20ContextBase {
   readonly disadvantageSourceIds: readonly string[];
   /** Face-triggered rerolls the character may take on this test (Halfling Luck). */
   readonly rerolls: readonly D20RerollClause[];
+  /** Dice the character may add after the roll (a held Bardic Inspiration die). */
+  readonly enteredModifiers: readonly D20EnteredModifierRule[];
 }
 
 /** Fully resolved facts for one character Death Save. */
@@ -112,6 +121,99 @@ function effectiveScores(character: CharacterDoc) {
       aggregate,
       character.character.abilityScoreOverrides
     ),
+  };
+}
+
+/** The entered-modifier source of a held Bardic Inspiration die. */
+export const BARDIC_INSPIRATION_DIE_SOURCE = "bardic-inspiration-die";
+
+/** A sheet action as the post-roll seam reads it (the resolved action summary). */
+export interface PostRollAction {
+  readonly id: string;
+  readonly summary: { readonly rollEffect?: ActionRollEffect };
+}
+
+/** What a character may add to a d20 test it has rolled (2024 D20 Test reactions). */
+export interface PostRollSources {
+  /** Dice added after the roll, each optional: the held Bardic Inspiration die
+   *  («roll the die and add the number rolled to the d20»). */
+  readonly enteredModifiers: readonly D20EnteredModifierRule[];
+  /** Actions that pay for Advantage on your own save, opted into at the roll
+   *  (a Luck Point: «spend 1 Luck Point to give yourself Advantage on the roll»). */
+  readonly advantageOptIns: readonly string[];
+}
+
+/** A post-roll use the player chose on one entered save. Paying for it (the die,
+ *  the Luck Point) stays with the caller, as for every reaction. */
+export interface PostRollUse {
+  /** The faces rolled for each entered post-roll die, by its source. */
+  readonly enteredModifierFaces?: Readonly<Record<string, readonly number[]>>;
+  /** A paid Advantage chosen at the roll, and the sheet's actions that allow it. */
+  readonly advantage?: {
+    readonly sourceId: string;
+    readonly actions: ReadonlyArray<PostRollAction>;
+  };
+}
+
+/** One die of `sides` faces, added: the entered-modifier rule for a held die. */
+function oneDieRule(sourceId: string, sides: DieSides): D20EnteredModifierRule {
+  return {
+    kind: "dice-formula",
+    formula: {
+      terms: [
+        {
+          kind: "dice",
+          count: { kind: "fixed", value: 1 },
+          operation: "add",
+          sides,
+          termId: sourceId,
+        },
+      ],
+    },
+    required: false,
+    sourceId,
+  };
+}
+
+/**
+ * The one seam for post-roll sources on the d20 tests the app judges (death and
+ * Concentration saves): every request builder reads it, so a new source lands in all
+ * of them at once. Outcomes judged at the table (attacks, checks, most saves) take
+ * these at the table; the app only pays and logs the use there.
+ */
+export function postRollSources(
+  character: CharacterDoc,
+  actions: ReadonlyArray<PostRollAction> = []
+): PostRollSources {
+  const held = /^d(\d+)$/.exec(character.session.bardicInspirationDie ?? "");
+  const sides = STANDARD_DIE_SIDES.find((s) => s === Number(held?.[1]));
+  return {
+    enteredModifiers:
+      sides === undefined ? [] : [oneDieRule(BARDIC_INSPIRATION_DIE_SOURCE, sides)],
+    advantageOptIns: actions.flatMap((action) =>
+      action.summary.rollEffect?.kind === "advantage" &&
+      action.summary.rollEffect.rolls.includes("save")
+        ? [action.id]
+        : []
+    ),
+  };
+}
+
+/** The context with a chosen paid Advantage added; throws when the sheet has no
+ *  action that allows it. */
+function withPostRollAdvantage<C extends CharacterD20TestContext>(
+  character: CharacterDoc,
+  context: C,
+  use: PostRollUse | undefined
+): C {
+  if (!use?.advantage) return context;
+  const allowed = postRollSources(character, use.advantage.actions).advantageOptIns;
+  if (!allowed.includes(use.advantage.sourceId)) {
+    throw new TypeError("no action on the sheet allows this Advantage");
+  }
+  return {
+    ...context,
+    advantageSourceIds: [...context.advantageSourceIds, use.advantage.sourceId],
   };
 }
 
@@ -221,6 +323,7 @@ export function deathSaveD20Context(
       "disadvantage"
     ),
     rerolls: aggregate.d20Rerolls,
+    enteredModifiers: postRollSources(character).enteredModifiers,
   };
 }
 
@@ -315,6 +418,7 @@ export function concentrationSaveD20Context(
       "disadvantage"
     ),
     rerolls: aggregate.d20Rerolls,
+    enteredModifiers: postRollSources(character).enteredModifiers,
   };
 }
 
@@ -332,7 +436,7 @@ export function enteredD20FaceCount(context: {
 function kernelRequest(context: CharacterD20TestContext): D20TestRequest {
   const common = {
     actor: combatTableEntityRef(context.actorId),
-    enteredModifiers: [],
+    enteredModifiers: [...context.enteredModifiers],
     modifiers: context.modifierTerms.map((term) => ({
       sourceId: term.sourceId,
       value: { kind: "fixed" as const, value: term.value },
@@ -398,12 +502,23 @@ function rerollSteps(
 function resolveEnteredFaces(
   context: CharacterD20TestContext,
   faces: ReadonlyArray<number>,
-  rerolled: ReadonlyArray<ReadonlyArray<number>> = []
+  rerolled: ReadonlyArray<ReadonlyArray<number>> = [],
+  use?: PostRollUse
 ): CharacterEnteredD20Result {
+  // A die entered for a source the character doesn't hold is refused, not ignored.
+  const held = new Set(context.enteredModifiers.map((rule) => rule.sourceId));
+  for (const sourceId of Object.keys(use?.enteredModifierFaces ?? {})) {
+    if (!held.has(sourceId)) {
+      throw new TypeError(`no post-roll source ${sourceId} on this test`);
+    }
+  }
   const result = evaluateEnteredCombatD20Test(kernelRequest(context), {
     faces,
     ...(rerolled.length > 0
       ? { replacements: rerollSteps(context, faces, rerolled) }
+      : {}),
+    ...(use?.enteredModifierFaces
+      ? { enteredModifierFaces: use.enteredModifierFaces }
       : {}),
   });
   if (!result) {
@@ -436,9 +551,16 @@ function resolveEnteredFaces(
 export function resolveCharacterDeathSave(
   character: CharacterDoc,
   faces: ReadonlyArray<number>,
-  rerolled: ReadonlyArray<ReadonlyArray<number>> = []
+  rerolled: ReadonlyArray<ReadonlyArray<number>> = [],
+  /** A post-roll use the player chose (a Bardic Inspiration die, a paid Advantage). */
+  use?: PostRollUse
 ): CharacterEnteredD20Result {
-  return resolveEnteredFaces(deathSaveD20Context(character), faces, rerolled);
+  return resolveEnteredFaces(
+    withPostRollAdvantage(character, deathSaveD20Context(character), use),
+    faces,
+    rerolled,
+    use
+  );
 }
 
 export function resolveCharacterConcentrationSave(
@@ -447,14 +569,21 @@ export function resolveCharacterConcentrationSave(
   faces: ReadonlyArray<number>,
   rerolled: ReadonlyArray<ReadonlyArray<number>> = [],
   /** The failed save taken again (Indomitable): its bonus and Advantage. */
-  reroll?: FailedSaveReroll
+  reroll?: FailedSaveReroll,
+  /** A post-roll use the player chose (a Bardic Inspiration die, a paid Advantage). */
+  use?: PostRollUse
 ): CharacterEnteredD20Result {
   if (concentrationSaveDc(pending.damage) !== pending.difficultyClass) {
     throw new TypeError("pending Concentration save has a stale damage/DC pair");
   }
   return resolveEnteredFaces(
-    concentrationSaveD20Context(character, pending, reroll),
+    withPostRollAdvantage(
+      character,
+      concentrationSaveD20Context(character, pending, reroll),
+      use
+    ),
     faces,
-    rerolled
+    rerolled,
+    use
   );
 }

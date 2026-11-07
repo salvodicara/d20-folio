@@ -1978,6 +1978,11 @@ export type ActionRollEffect =
       bonus?: { classLevel: ClassId };
       /** Only a save against an effect applying one of these (Countercharm). */
       against?: ReadonlyArray<ConditionId>;
+    }
+  | {
+      /** Advantage on your own d20 test, paid at the roll (a Luck Point). */
+      kind: "advantage";
+      rolls: ReadonlyArray<ReactableRoll>;
     };
 
 export interface ActionCheckBonus {
