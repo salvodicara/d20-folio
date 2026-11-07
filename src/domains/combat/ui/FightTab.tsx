@@ -7,7 +7,8 @@
  * last fight to reopen, and the past fights from the play logs.
  */
 import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import type { PartyChip } from "@/domains/campaign/party-rows-view";
@@ -19,9 +20,13 @@ import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
-import { FightLine } from "@/domains/combat/ui/FightLine";
+import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
+import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
+import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
+import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
+  dmMoves,
   moves,
   useEndedCombat,
   useFightMove,
@@ -52,6 +57,14 @@ import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import { Button, Panel } from "@/ui";
 
 const FEED_LINES = 8;
+
+// The add-monsters sheet carries the bestiary: it loads when the DM opens it.
+const AddMonstersDialog = lazy(() =>
+  Promise.all([
+    import("@/domains/combat/ui/AddMonstersDialog"),
+    import("@/i18n").then((i) => i.ensureSrdKind("monster")),
+  ]).then(([m]) => ({ default: m.AddMonstersDialog }))
+);
 
 export function FightTab({
   campaign,
@@ -187,6 +200,7 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
+  const dm = useDmTools(campaign, view.rows, uid, isDm, locale, onToast);
   return (
     <div className="f-split">
       <div className="f-stack">
@@ -199,7 +213,15 @@ function LiveFight({
         <Panel
           color="ini"
           title={t("fight.listTitle", { round: encounter.round })}
-          aside={t("fight.fighters", { count: view.rows.length })}
+          aside={
+            isDm ? (
+              <Button kind="quiet" icon="u-add" onClick={dm.openAdd}>
+                {t("fight.dm.addMonsters")}
+              </Button>
+            ) : (
+              t("fight.fighters", { count: view.rows.length })
+            )
+          }
           foot={
             <>
               {controls.pass && (
@@ -230,7 +252,7 @@ function LiveFight({
         >
           {rows.map((row) => (
             <Fragment key={row.ids.join("+")}>
-              <FightLine row={row} />
+              <FightLine row={row} dm={dm.line(row)} />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
@@ -278,8 +300,10 @@ function LiveFight({
                 )}
             </Fragment>
           ))}
+          {dm.bar}
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
+        {dm.dialogs}
       </div>
       <Feed
         campaign={campaign}
@@ -290,6 +314,117 @@ function LiveFight({
       />
     </div>
   );
+}
+
+/**
+ * The DM's tools on the live fight (owner's blocker, 2026-11-07): «Aggiungi mostri» in
+ * the list's head, and «Danni e cure» on any creature. Two entry points for the owner's
+ * pick (`?dm=a|b`): A, tap a line's HP (D&D Beyond's tracker); B, tap lines to choose
+ * targets, then one bar acts on all of them (BG3's targets, dnd5e's apply tray).
+ */
+function useDmTools(
+  campaign: CampaignDoc,
+  fighters: ReturnType<typeof buildEncounterView>["rows"],
+  uid: string,
+  isDm: boolean,
+  locale: Locale,
+  onToast: Toaster
+) {
+  const { t } = useTranslation();
+  const [params] = useSearchParams();
+  const variant = params.get("dm") === "b" ? "b" : "a";
+  const move = useFightMove(onToast);
+  const [hitting, setHitting] = useState<readonly string[] | null>(null);
+  const [adding, setAdding] = useState(false);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const targets = hitting ? dmTargets(fighters, hitting) : [];
+  const line = (row: FightRow): FightLineDm | undefined => {
+    if (!isDm) return undefined;
+    const members = fighters.filter((f) => row.ids.includes(f.id));
+    const hp = members.reduce(
+      (sum, f) => ({ current: sum.current + f.currentHp, max: sum.max + f.maxHp }),
+      { current: 0, max: 0 }
+    );
+    const label = t("fight.dm.hpFor", { name: row.name });
+    if (variant === "a") return { hp, label, onHp: () => setHitting(row.ids) };
+    const on = row.ids.every((id) => picked.has(id));
+    return {
+      hp,
+      label,
+      selected: on,
+      onSelect: () => {
+        const next = new Set(picked);
+        for (const id of row.ids) {
+          if (on) next.delete(id);
+          else next.add(id);
+        }
+        setPicked(next);
+      },
+    };
+  };
+  const chosen = fighters.filter((f) => picked.has(f.id)).length;
+  const bar = isDm && variant === "b" && chosen > 0 && (
+    <div className="f-dm-bar" role="region" aria-label={t("fight.dm.targets")}>
+      <span>{t("fight.dm.selected", { count: chosen })}</span>
+      <Button kind="quiet" onClick={() => setPicked(new Set())}>
+        {t("fight.dm.clear")}
+      </Button>
+      <Button kind="primary" icon="u-damage" onClick={() => setHitting([...picked])}>
+        {t("play.hp.title")}
+      </Button>
+    </div>
+  );
+  const dialogs = isDm && (
+    <>
+      {hitting && targets.length > 0 && (
+        <DmHitDialog
+          targets={targets}
+          locale={locale}
+          onClose={() => setHitting(null)}
+          onHit={(chosenTargets, entry) => {
+            move(
+              dmMoves.hit(campaign.id, uid, planDmHit(chosenTargets, entry)),
+              t(entry.kind === "heal" ? "fight.dm.healDone" : "fight.dm.hitDone", {
+                amount: entry.amount,
+                count: chosenTargets.length,
+              })
+            );
+            setPicked(new Set());
+          }}
+          onCondition={(target, conditionId, active) =>
+            move(
+              dmMoves.condition(
+                campaign.id,
+                uid,
+                { ...target, maxHp: target.hp.max },
+                conditionId,
+                active
+              ),
+              t(active ? "fight.dm.conditionOn" : "fight.dm.conditionOff", {
+                name: target.name,
+              })
+            )
+          }
+        />
+      )}
+      {adding && (
+        <Suspense fallback={null}>
+          <AddMonstersDialog
+            campaign={campaign}
+            locale={locale}
+            onClose={() => setAdding(false)}
+            onAdd={(inputs, label) =>
+              move(
+                dmMoves.add(campaign.id, uid, inputs),
+                t("fight.dm.addDone", { label })
+              )
+            }
+          />
+        </Suspense>
+      )}
+    </>
+  );
+  return { line, bar, dialogs, openAdd: () => setAdding(true) };
 }
 
 interface Party {

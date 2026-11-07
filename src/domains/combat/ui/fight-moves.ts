@@ -7,8 +7,14 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import type { DmHitStep } from "@/domains/combat/dm-hit-plan";
 import {
+  addMonstersMove,
+  changeMonsterHp,
+  damagePcFromDm,
   endCombatNow,
+  setMonsterConditionMove,
+  setPcConditionMove,
   passCombatTurn,
   reopenLastCombat,
   rollForMissing,
@@ -18,6 +24,7 @@ import {
   type CombatUndo,
 } from "@/features/campaigns/combat-lifecycle-io";
 import { diagnosticsLog } from "@/lib/diagnostics";
+import type { MonsterInput } from "@/features/campaigns/encounter";
 import type { EncounterEndReason, EncounterState } from "@/types/campaign";
 
 export type Toaster = (message: string, undo?: () => void) => void;
@@ -72,4 +79,81 @@ export const moves = {
     (campaignId: string, uid: string, roll: number, bonuses: Record<string, number>) =>
     () =>
       rollIntoCombat(campaignId, { uid, roll, bonuses }),
+};
+
+/** Several moves as one: the undo takes them back newest first. Null when none landed. */
+async function together(
+  runs: ReadonlyArray<() => Promise<CombatUndo | null>>
+): Promise<CombatUndo | null> {
+  const undos: CombatUndo[] = [];
+  for (const run of runs) {
+    const undo = await run();
+    if (undo) undos.push(undo);
+  }
+  if (undos.length === 0) return null;
+  return async () => {
+    let ok = true;
+    for (const undo of undos.reverse()) ok = (await undo()) && ok;
+    return ok;
+  };
+}
+
+/** The DM's tools on the Scontro tab (combat-lifecycle-io's DM-only moves). */
+export const dmMoves = {
+  hit: (campaignId: string, uid: string, steps: readonly DmHitStep[]) => () =>
+    together(
+      steps.map((s) =>
+        s.kind === "monster"
+          ? () =>
+              changeMonsterHp(campaignId, {
+                uid,
+                monsterId: s.monsterId,
+                change: s.change,
+              })
+          : () =>
+              damagePcFromDm(campaignId, {
+                uid,
+                memberUid: s.memberUid,
+                characterId: s.characterId,
+                maxHp: s.maxHp,
+                parts: s.parts,
+              })
+      )
+    ),
+  condition:
+    (
+      campaignId: string,
+      uid: string,
+      target: {
+        id: string;
+        kind: "pc" | "monster";
+        memberUid?: string;
+        characterId?: string;
+        maxHp: number;
+      },
+      conditionId: string,
+      active: boolean
+    ) =>
+    () =>
+      target.kind === "monster"
+        ? setMonsterConditionMove(campaignId, {
+            uid,
+            monsterId: target.id,
+            conditionId,
+            active,
+          })
+        : target.memberUid && target.characterId
+          ? setPcConditionMove(campaignId, {
+              uid,
+              memberUid: target.memberUid,
+              characterId: target.characterId,
+              maxHp: target.maxHp,
+              conditionId,
+              active,
+            })
+          : Promise.resolve(null),
+  add: (campaignId: string, uid: string, monsters: readonly MonsterInput[]) => () =>
+    together(
+      monsters.map((monster) => () => addMonstersMove(campaignId, { uid, monster }))
+    ),
 };
