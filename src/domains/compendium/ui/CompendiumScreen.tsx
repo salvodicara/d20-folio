@@ -77,7 +77,7 @@ export function CompendiumScreen() {
     <Panel
       color="cmp"
       title={t("compendium.results")}
-      aside={t("compendium.count", { count: picker.count })}
+      aside={t("sessionReport.entries", { count: picker.count })}
       className="f-cmp-results"
     >
       <Tabs
@@ -259,7 +259,7 @@ function ResultRows({
         // the codex drew a monster's CR on its seal: here it leads the line
         const cr =
           spec.id === "monster"
-            ? t("compendium.cr", { cr: formatCr((entry as { cr: number }).cr) })
+            ? t("polymorph.crShort", { cr: formatCr((entry as { cr: number }).cr) })
             : null;
         return (
           <a
@@ -385,7 +385,7 @@ function EntryPanel({
       <EntryHead spec={spec} entry={entry} ctx={ctx} eyebrow={view.eyebrow} />
       {gist && (
         <p className="f-cmp-gist">
-          <span className="f-lbl">{t("compendium.gist")}</span>
+          <span className="f-lbl">{t("levelUp.screen.gist")}</span>
           {tieLast(gist)}
         </p>
       )}

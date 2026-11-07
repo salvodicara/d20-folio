@@ -13,10 +13,6 @@
     "reset": "Reset",
     "showResults_one": "Show {{count}} result",
     "showResults_other": "Show {{count}} results",
-    "count_one": "{{count}} entry",
-    "count_other": "{{count}} entries",
-    "cr": "CR {{cr}}",
-    "gist": "In short",
     "viewArt": "View the art of {{name}}"
   }
 }

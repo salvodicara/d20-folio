@@ -5225,10 +5225,10 @@
   cursor: pointer;
 }
 .fui .f-cmp-row:hover {
-  background: var(--hover, rgb(255 255 255 / 0.04));
+  background: var(--hover);
 }
 .fui .f-cmp-row[aria-current] {
-  background: rgb(95 179 138 / 0.08);
+  background: color-mix(in srgb, var(--c-cmp) 8%, transparent);
   box-shadow: inset 2px 0 0 var(--c-cmp);
 }
 .fui .f-cmp-row:focus-visible {
@@ -5345,7 +5345,7 @@
   margin: 0 0 16px;
   padding: 12px 16px;
   border-left: 2px solid var(--c-cmp);
-  background: rgb(95 179 138 / 0.08);
+  background: color-mix(in srgb, var(--c-cmp) 8%, transparent);
   color: var(--strong);
   text-wrap: pretty;
 }
@@ -5391,7 +5391,7 @@
 .fui
   .f-cmp-extras
   :is(dt, th, .uc-tag, .beast-ref-label, [class*="text-micro"], .text-xs) {
-  font-size: var(--fs-xs, 12px);
+  font-size: var(--fs-xs);
 }
 @media (max-width: 640px) {
   .fui .f-cmp-row {
