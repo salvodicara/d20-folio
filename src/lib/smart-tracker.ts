@@ -275,7 +275,11 @@ import {
 import { srdEn, type SrdKind } from "@/i18n/srd-en";
 import { srdKey } from "@/i18n/srd-key";
 import type { LocText } from "@/lib/loc-text";
-import { resolveWeaponBindings } from "@/lib/weapon-binding";
+import {
+  boundWeaponIndexByState,
+  encodeWeaponAddress,
+  resolveWeaponBindings,
+} from "@/lib/weapon-binding";
 import { srdText, customText, uiText } from "@/lib/loc-text";
 import { homebrewTextKey } from "@/lib/homebrew-text";
 import type {
@@ -868,6 +872,10 @@ export interface ResolvedAction {
    *  (`weaponSealIcon`). Undefined for custom / manifested / pact weapons (→
    *  generic sword). */
   weaponId?: string;
+  /** The carried weapon this row attacks with (`encodeWeaponAddress`): which weapon
+   *  dealt a hit's damage, for a state that ends on its own weapon's damage only
+   *  (Brew Poison's coat). Absent for a row with no carried weapon. */
+  weaponAddress?: string;
   /** Catalogue id of the magic item behind a bounded spell-pool opener. The
    * runtime `castPoolSourceId` stays instance-bound; presentation uses this
    * stable id without parsing or exposing the physical copy's UUID. */
@@ -7688,6 +7696,8 @@ function resolveWeaponActions(
     weaponId: string;
     /** SRD weapon id for the per-weapon seal glyph (undefined for custom). */
     srdWeaponId?: string;
+    /** The carried weapon's address (see `ResolvedAction.weaponAddress`). */
+    weaponAddress: string;
     /** Weapon name as a {@link LocText} ref — localized in the view. */
     name: LocText;
     damageDie: string;
@@ -7767,10 +7777,17 @@ function resolveWeaponActions(
   // The lit spells bound to one chosen weapon (Magic Weapon, Shillelagh), by the
   // index of that weapon — each change rides its own weapon's row only.
   const weaponBindings = resolveWeaponBindings(grantAgg.weaponBindings, character);
+  // A state that binds one weapon keeps its riders on that weapon (Brew Poison's coat).
+  const boundByState = boundWeaponIndexByState(grantAgg.weaponBindings, character);
 
   for (const [weaponIndex, weaponRef] of charData.weapons.entries()) {
     const isCustom = "custom" in weaponRef;
     const binding = weaponBindings.get(weaponIndex);
+    const weaponAddress = encodeWeaponAddress(
+      isCustom
+        ? { kind: "custom", instanceId: weaponRef.instanceId }
+        : { kind: "srd", index: weaponIndex, srdId: weaponRef.srdId }
+    );
     const srdWeapon = isCustom ? undefined : WEAPONS_BY_ID.get(weaponRef.srdId);
     // Weapon name. `nameEn` is the canonical English FACT (action id + proficiency
     // lookup) — from the equipment catalogue via `srdEn`, else an id-derived title.
@@ -8009,6 +8026,7 @@ function resolveWeaponActions(
       lightMeleeEntries.push({
         weaponId,
         srdWeaponId,
+        weaponAddress,
         name,
         damageDie,
         damageFormula,
@@ -8042,7 +8060,12 @@ function resolveWeaponActions(
     const isTwoHandedOnly = properties.some((p) => /\btwo-?handed\b/i.test(p));
     const extraDamage = [
       ...resolveAttackDamageRiders(
-        grantAgg.damageRiders,
+        grantAgg.damageRiders.filter((rider) => {
+          const bound = rider.whileActiveKey
+            ? boundByState.get(rider.whileActiveKey)
+            : undefined;
+          return bound === undefined || bound === weaponIndex;
+        }),
         {
           kind: "weapon",
           isRanged: isRangedWeapon,
@@ -8210,6 +8233,7 @@ function resolveWeaponActions(
     actions.push({
       id: weaponId,
       weaponId: srdWeaponId,
+      weaponAddress,
       name,
       type: "action",
       source: "weapon",
@@ -8242,6 +8266,7 @@ function resolveWeaponActions(
         actions.push({
           id,
           ...(srdWeaponId ? { weaponId: srdWeaponId } : {}),
+          weaponAddress,
           name,
           bonusAttackAfter: weaponId,
           bonusAttackName: extra.name,
@@ -8407,6 +8432,7 @@ function resolveWeaponActions(
       actions.push({
         id: offHandId,
         weaponId: w.srdWeaponId,
+        weaponAddress: w.weaponAddress,
         // The weapon's own name ref; the "(off-hand)" suffix is appended by the
         // view (it's a fixed bilingual token, composed at the presenter edge from
         // the `offhand` flag below — the engine can't localize).

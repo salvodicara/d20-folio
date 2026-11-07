@@ -423,7 +423,12 @@ export function applyTray(
           effect === "damage" &&
           applied.some((row) => row.target.kind !== "self" && row.amount > 0)
         ) {
-          const act = useCharacterStore.getState().performAct("deal-damage");
+          const act = useCharacterStore
+            .getState()
+            .performAct(
+              "deal-damage",
+              offer.weaponAddress ? { weapon: offer.weaponAddress } : undefined
+            );
           if (act) reversals.push(act.undo);
         }
         // A budgeted zone (Guardian of Faith) counts the damage it dealt, and its

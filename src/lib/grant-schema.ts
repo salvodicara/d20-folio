@@ -2359,6 +2359,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           },
           {
             endsEarlyOn: arraySchema(stringSchema),
+            /** Where an early-ending act must come from to count: damage dealt with
+             *  the weapon the state binds (Brew Poison ends when the coated weapon
+             *  deals damage, not on any damage you deal). With no weapon bound, the
+             *  act counts from anywhere. */
+            earlyEndFrom: objectSchema(
+              {},
+              { "deal-damage": literalSchema("bound-weapon") }
+            ),
             maxMinutes: numberSchema,
             maxRounds: numberSchema,
           }
@@ -2377,6 +2385,14 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
               })
             ),
             endsEarlyOn: arraySchema(stringSchema),
+            /** Where an early-ending act must come from to count: damage dealt with
+             *  the weapon the state binds (Brew Poison ends when the coated weapon
+             *  deals damage, not on any damage you deal). With no weapon bound, the
+             *  act counts from anywhere. */
+            earlyEndFrom: objectSchema(
+              {},
+              { "deal-damage": literalSchema("bound-weapon") }
+            ),
             maxRounds: numberSchema,
           }
         ),

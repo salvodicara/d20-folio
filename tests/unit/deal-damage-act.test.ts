@@ -79,6 +79,28 @@ describe("dealing damage ends what ends on it", () => {
     );
   });
 
+  it("the tray says which weapon dealt the damage", () => {
+    const performAct = vi.spyOn(useCharacterStore.getState(), "performAct");
+    const plan = { effect: "damage", damageType: "piercing" } as DamageTrayPlan;
+    applyTray(
+      {
+        characterId: MOCK_CHARACTER.id,
+        actionName: "Dagger",
+        source: { custom: "Dagger" },
+        castLogId: null,
+        actionId: "weapon-dagger",
+        weaponAddress: "srd:0:dagger",
+        plan,
+      },
+      [{ id: "monster-1", name: "Goblin", kind: "monster" }],
+      [initialTrayRow(plan, "monster-1")],
+      [3],
+      ((key: string) => key) as never
+    );
+    expect(performAct).toHaveBeenCalledWith("deal-damage", { weapon: "srd:0:dagger" });
+    performAct.mockRestore();
+  });
+
   it("every act reaches the effects others left on you, ending on it or not", () => {
     const sink = vi.fn();
     useCharacterStore.getState().setStateEndingActSink(sink);

@@ -27,7 +27,7 @@ import {
   situationalState,
   type SituationId,
 } from "@/lib/situational-states";
-import { castStateChoiceKeys } from "@/lib/play/states";
+import { castStateChoiceKeys, featureStateSource } from "@/lib/play/states";
 import { castLitStates } from "@/lib/play/on-cast";
 import { spellDataOf, spellKeyOf } from "@/lib/play/spell-identity";
 import { castWeaponBinding, type WeaponBindingCast } from "@/lib/weapon-binding";
@@ -103,18 +103,24 @@ export function activateActionState(
   // Each cast picks its option anew (Enlarge or Reduce): a new cast, even over a
   // still-lit state, clears the remembered choice so the rail asks again. The same
   // cast keeps its pick across re-renders and reloads; undo puts the prior one back.
-  const choiceKeys =
-    action.source === "spell" ? castStateChoiceKeys(spellDataOf(action), key) : [];
+  // The state's own grants: a spell's, or the feature's that lights it (Brew Poison
+  // names the weapon it coats, as Shillelagh does).
+  const stateSource =
+    action.source === "spell"
+      ? spellDataOf(action)
+      : action.source === "feature" && store.character
+        ? featureStateSource(store.character, key)
+        : undefined;
+  const choiceKeys = castStateChoiceKeys(stateSource, key);
   const priorChoices = Object.fromEntries(
     choiceKeys.map((bundleKey) => [
       bundleKey,
       store.character?.session.grantBundleChoices?.[bundleKey] ?? null,
     ])
   );
-  const spell = action.source === "spell" ? spellDataOf(action) : undefined;
   const bound =
-    binding && spell && store.character
-      ? castWeaponBinding({ spell, ...binding }, store.character)
+    binding && stateSource && store.character
+      ? castWeaponBinding({ spell: stateSource, ...binding }, store.character)
       : null;
   if (choiceKeys.length > 0) {
     store.dispatch({
