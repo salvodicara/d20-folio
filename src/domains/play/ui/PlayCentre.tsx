@@ -17,7 +17,11 @@ import { useTranslation } from "react-i18next";
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
 import { helpView, type HelpView } from "@/domains/play/help-view";
 import { spareView, type SpareView } from "@/domains/play/spare-view";
-import { weaponPickView, type WeaponPick } from "@/domains/play/weapon-pick-view";
+import {
+  stateWeaponPickView,
+  weaponPickView,
+  type WeaponPick,
+} from "@/domains/play/weapon-pick-view";
 import {
   playInventoryView,
   type PlayInventoryView,
@@ -813,8 +817,13 @@ function ActionLine({
       setSparing(spare);
       return;
     }
-    const choices =
-      doc && row.spellId ? weaponPickView(doc, row.spellId, row.level ?? 0, locale) : [];
+    const choices = !doc
+      ? []
+      : row.spellId
+        ? weaponPickView(doc, row.spellId, row.level ?? 0, locale)
+        : row.action.source === "feature" && row.action.activatesKey
+          ? stateWeaponPickView(doc, row.action.activatesKey, locale)
+          : [];
     if (choices.length > 0) setPicking(choices);
     else executeAction(row.action);
   };
@@ -940,6 +949,7 @@ function ActionLine({
       {picking && (
         <PlayWeaponPick
           spellName={row.name}
+          verb={row.spellId ? "cast" : "use"}
           choices={picking}
           onClose={() => setPicking(null)}
           onCast={(pick, damageType) => {

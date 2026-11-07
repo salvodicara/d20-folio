@@ -71,6 +71,7 @@ import {
   recoverPerTurnTrackers as recoverPerTurnTrackersOf,
   restoreStateKey,
   type StateEndingAct,
+  type StateEndingActDetail,
 } from "@/lib/play/states";
 import { breathLogEvents } from "@/lib/play/suffocation";
 import { riderTakenEvents, riderTakenLog } from "@/lib/play/rider-taken";
@@ -639,7 +640,10 @@ interface CharacterState {
    * state keys it ended, for the caller's notice, and the undo; null when nothing
    * ended. The UI that knows an act happened calls it (the core has no act funnel).
    */
-  performAct: (act: StateEndingAct) => { ended: string[]; undo: () => void } | null;
+  performAct: (
+    act: StateEndingAct,
+    detail?: StateEndingActDetail
+  ) => { ended: string[]; undo: () => void } | null;
   /**
    * The owner's turn ends while holding their breath (SRD Suffocation): one turn of
    * air goes, or, out of breath, 1 Exhaustion with its log line. Through the play
@@ -3015,14 +3019,18 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().dispatch({ kind: "set-active-cast-level", key, level });
   },
 
-  performAct: (act) => {
+  performAct: (act, detail) => {
     const character = get().character;
     if (!character || get().readonly) return null;
     // What others left on this character that ends on the act ends too (their side).
     get().stateEndingActSink?.(act);
-    const ended = endStatesOnAct(character, act)?.ended;
+    const ended = endStatesOnAct(character, act, detail)?.ended;
     if (!ended) return null;
-    const undo = get().dispatch({ kind: "perform-act", act });
+    const undo = get().dispatch({
+      kind: "perform-act",
+      act,
+      ...(detail ? { detail } : {}),
+    });
     if (!undo) return null;
     persistCombat(get);
     return {

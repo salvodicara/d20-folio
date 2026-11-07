@@ -90,7 +90,7 @@ describe("every end trigger the catalogue declares has a firing site", () => {
   it.each([...triggers].sort())("%s fires somewhere", (trigger) => {
     const sites = [
       emittedByUse.has(trigger),
-      src.includes(`performAct("${trigger}")`),
+      new RegExp(`performAct\\(\\s*"${trigger}"`).test(src),
       new RegExp(`resolveActiveStatesEndingOn\\([^)]*"${trigger}"\\)`).test(src),
     ];
     expect(sites.some(Boolean), `"${trigger}" is declared but fired nowhere`).toBe(true);

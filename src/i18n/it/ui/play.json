@@ -35,6 +35,7 @@
       "charges": "{{remaining}} cariche su {{total}}",
       "whichSpell": "Quale incantesimo?",
       "castTitle": "Lancia {{name}}",
+      "useTitle": "Usa {{name}}",
       "castNoTarget": "Lancia senza scegliere",
       "confirmNoTarget": "Conferma senza scegliere"
     },

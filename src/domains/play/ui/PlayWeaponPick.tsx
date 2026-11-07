@@ -13,11 +13,14 @@ import { Button, Chip, Choice, Dialog } from "@/ui";
 
 export function PlayWeaponPick({
   spellName,
+  verb = "cast",
   choices,
   onCast,
   onClose,
 }: {
   spellName: string;
+  /** A spell is cast; a feature's action (Brew Poison's coat) is used. */
+  verb?: "cast" | "use";
   choices: WeaponPick[];
   onCast: (pick: WeaponPick, damageType?: DamageType) => void;
   onClose: () => void;
@@ -47,7 +50,9 @@ export function PlayWeaponPick({
       onClose={onClose}
       color="res"
       // Glue the name's last two words so a narrow title never ends on one word.
-      title={t("play.ask.castTitle", { name: spellName.replace(/ (\S+)$/, "\u00a0$1") })}
+      title={t(verb === "use" ? "play.ask.useTitle" : "play.ask.castTitle", {
+        name: spellName.replace(/ (\S+)$/, "\u00a0$1"),
+      })}
       closeLabel={t("common.close")}
       actions={
         <>
@@ -59,7 +64,7 @@ export function PlayWeaponPick({
             disabled={!picked}
             onClick={() => picked && onCast(picked, type)}
           >
-            {t("spells.cast")}
+            {verb === "use" ? t("common.use") : t("spells.cast")}
           </Button>
         </>
       }

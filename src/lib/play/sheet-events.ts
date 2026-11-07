@@ -64,6 +64,7 @@ import {
   setActiveState,
   setBundleChoices,
   type StateEndingAct,
+  type StateEndingActDetail,
 } from "./states";
 import { endFightSituations, setSituation, type SituationUntil } from "./situations";
 import { setSurprised } from "./surprise";
@@ -216,7 +217,7 @@ export type SheetEvent =
   | { kind: "expire-effect-boundaries"; round: number; phase: BoundaryPhase }
   /** The character attacked, dealt damage or cast a spell: the states that end early
    *  on that act end (Potion of Invisibility). */
-  | { kind: "perform-act"; act: StateEndingAct }
+  | { kind: "perform-act"; act: StateEndingAct; detail?: StateEndingActDetail }
   /**
    * Minutes pass outside the turn order: what runs out ends (`passTime`).
    * To the first dispatcher: when `timePassEndsConcentration(doc, minutes)`, an
@@ -450,7 +451,7 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
     case "short-rest":
       return shortRestCharacter(doc);
     case "perform-act":
-      return withSession(endStatesOnAct(doc, event.act)?.session);
+      return withSession(endStatesOnAct(doc, event.act, event.detail)?.session);
     case "arm-effect-timer":
       return withSession(armEffectTimer(doc, event.key, event.rounds, event.tickedRound));
     case "arm-effect-boundary":
