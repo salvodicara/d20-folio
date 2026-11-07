@@ -32,7 +32,7 @@ import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { tieLast } from "@/lib/text-ties";
 import { formatCr } from "@/lib/utils";
 import { monsterPortraitUrl } from "@/data/monster-art";
-import { Art, artUrl, Button, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
+import { Art, Button, Dialog, Icon, Panel, Room, Tabs } from "@/ui";
 
 export function CompendiumScreen() {
   const { t } = useTranslation();
@@ -303,10 +303,9 @@ function ResultRows({
 
 /**
  * The entry's art and name, sized from the reference apps (FINDINGS, 2026-11-06): the
- * first screen always holds the name, the gist and the key facts. Two variants for the
- * owner's pick (`?art=a|b`): A, a thumbnail beside the name (App Store, Foundry, BG3's
- * tooltip): 128 px, 112 on a laptop, 96 on a phone; B, a band at most 25% of the screen
- * tall (Steam, Google Play). A monster with an illustration shows it at 2:3. A tap opens
+ * first screen always holds the name, the gist and the key facts. A thumbnail beside the
+ * name (App Store, Foundry, BG3's tooltip; the owner's pick, 2026-11-07): 128 px, 112 on
+ * a laptop, 96 on a phone. A monster with an illustration shows it at 2:3. A tap opens
  * the full image (BG3's Inspect).
  */
 function EntryHead({
@@ -321,8 +320,6 @@ function EntryHead({
   eyebrow: ReactNode;
 }) {
   const { t } = useTranslation();
-  const [params] = useSearchParams();
-  const variant = params.get("art") === "b" ? "b" : "a";
   const [viewing, setViewing] = useState(false);
   const name = spec.getName(entry, ctx);
   const portrait =
@@ -332,24 +329,16 @@ function EntryHead({
   ) : (
     <EntryArt spec={spec} entry={entry} />
   );
-  const backdrop = portrait ?? artBackdrop(spec.id, entry);
   return (
     <>
-      <div className="f-cmp-head" data-v={variant}>
+      <div className="f-cmp-head">
         <button
           type="button"
-          className={variant === "b" ? "f-cmp-band" : "f-cmp-art"}
+          className="f-cmp-art"
           data-tall={portrait ? "" : undefined}
           aria-label={t("compendium.viewArt", { name })}
           onClick={() => setViewing(true)}
         >
-          {variant === "b" && backdrop && (
-            <span
-              className="f-cmp-band-bg"
-              style={{ backgroundImage: `url(${backdrop})` }}
-              aria-hidden="true"
-            />
-          )}
           <span className="f-cmp-art-img">{art}</span>
         </button>
         <div>
@@ -370,13 +359,6 @@ function EntryHead({
       </Dialog>
     </>
   );
-}
-
-/** The art's own file, for the band's blurred backdrop (none for a glyph). */
-function artBackdrop(specId: string, entry: unknown): string | null {
-  const art = compendiumArt(specId, entry);
-  if (!art) return null;
-  return "spell" in art ? artUrl("spell", art.spell) : artUrl(art.kind, art.id);
 }
 
 function EntryPanel({
