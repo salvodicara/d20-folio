@@ -91,6 +91,14 @@ export function isLazyDataChunk(chunk: {
 }
 
 export default defineConfig({
+  // One dependency pre-bundle cache per server. Several dev servers started at once
+  // from this checkout (the e2e webServers) shared `node_modules/.vite`, and two
+  // optimising together raced: one emptied `deps` while the other wrote it
+  // («ENOTEMPTY: directory not empty, rmdir node_modules/.vite/deps», Verify on
+  // 3775967a). The e2e config names a folder per server; the default stays.
+  ...(process.env.FOLIO_VITE_CACHE_DIR
+    ? { cacheDir: process.env.FOLIO_VITE_CACHE_DIR }
+    : {}),
   define: {
     __APP_VERSION__: JSON.stringify(pkgVersion),
     __GIT_SHA__: JSON.stringify(resolveGitSha()),

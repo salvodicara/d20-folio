@@ -146,6 +146,9 @@ export default defineConfig({
         VITE_DEV_BYPASS_AUTH: "true",
         // No HMR socket: it reloads a page by itself mid-test (see vite.config.ts).
         VITE_E2E_NO_HMR: "true",
+        // Each server its own pre-bundle cache: servers starting together raced on
+        // one (see vite.config.ts).
+        FOLIO_VITE_CACHE_DIR: `node_modules/.vite-e2e-${E2E_PORT}`,
       },
     },
     // SW-enabled dev server for the portrait-export journey (real Workbox SW +
@@ -163,6 +166,7 @@ export default defineConfig({
               VITE_DEV_BYPASS_AUTH: "true",
               VITE_E2E_NO_HMR: "true",
               VITE_NEW_UI: "1",
+              FOLIO_VITE_CACHE_DIR: `node_modules/.vite-e2e-${NEW_UI_PORT}`,
             },
           },
         ]
@@ -176,6 +180,7 @@ export default defineConfig({
             env: {
               VITE_DEV_BYPASS_AUTH: "true",
               VITE_PWA_DEV: "true",
+              FOLIO_VITE_CACHE_DIR: `node_modules/.vite-e2e-${SW_PORT}`,
               // No VITE_E2E_NO_HMR here: the dev service worker needs the Vite
               // client's socket (measured: the four portrait-sw tests time out
               // without it). Only those four tests run on this server.
