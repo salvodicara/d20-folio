@@ -19,6 +19,7 @@ function row(
     hp: null,
     bands: [],
     chips: [],
+    art: null,
     ...over,
   };
 }

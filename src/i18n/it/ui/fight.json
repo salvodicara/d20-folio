@@ -47,6 +47,32 @@
       "cast": "{{name}} lancia {{spell}}",
       "inside": "Dentro",
       "applied": "{{amount}} danni a {{name}}"
+    },
+    "dm": {
+      "addMonsters": "Aggiungi mostri",
+      "search": "Cerca un mostro",
+      "yours": "Creato da te",
+      "crLabel": "Grado di Sfida",
+      "cr": {
+        "low": "GS 0–½",
+        "mid": "GS 1–4",
+        "high": "GS 5–10",
+        "top": "GS 11+"
+      },
+      "less": "Uno in meno: {{name}}",
+      "more": "Uno in più: {{name}}",
+      "none": "Nessun mostro trovato.",
+      "addDone": "Nello scontro: {{label}}",
+      "on": "Su chi",
+      "pcRule": "Un personaggio subisce i danni con le sue regole (resistenze, PF temporanei, Concentrazione). Le cure le segna sulla sua scheda.",
+      "hpFor": "Danni e cure: {{name}}",
+      "hitDone_one": "{{amount}} danni a {{count}} bersaglio",
+      "hitDone_other": "{{amount}} danni a {{count}} bersagli",
+      "healDone_one": "{{amount}} PF curati a {{count}} bersaglio",
+      "healDone_other": "{{amount}} PF curati a {{count}} bersagli",
+      "conditionOn": "Condizione aggiunta a {{name}}",
+      "conditionOff": "Condizione tolta a {{name}}",
+      "addN": "Aggiungi {{count}}"
     }
   }
 }

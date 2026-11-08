@@ -7,7 +7,7 @@
  * last fight to reopen, and the past fights from the play logs.
  */
 import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { PartyChip } from "@/domains/campaign/party-rows-view";
@@ -19,9 +19,13 @@ import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
-import { FightLine } from "@/domains/combat/ui/FightLine";
+import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
+import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
+import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
+import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
+  dmMoves,
   moves,
   useEndedCombat,
   useFightMove,
@@ -52,6 +56,14 @@ import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import { Button, Panel } from "@/ui";
 
 const FEED_LINES = 8;
+
+// The add-monsters sheet carries the bestiary: it loads when the DM opens it.
+const AddMonstersDialog = lazy(() =>
+  Promise.all([
+    import("@/domains/combat/ui/AddMonstersDialog"),
+    import("@/i18n").then((i) => i.ensureSrdKind("monster")),
+  ]).then(([m]) => ({ default: m.AddMonstersDialog }))
+);
 
 export function FightTab({
   campaign,
@@ -187,6 +199,14 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
+  const dm = useDmTools(campaign, view.rows, uid, isDm, locale, onToast);
+  // The monster whose turn it is: the DM may cast an area spell for it, from the head.
+  const monsterTurn =
+    isDm && encounter.currentCombatantId
+      ? encounter.combatants.find(
+          (c) => c.id === encounter.currentCombatantId && c.kind === "monster"
+        )
+      : undefined;
   return (
     <div className="f-split">
       <div className="f-stack">
@@ -199,7 +219,15 @@ function LiveFight({
         <Panel
           color="ini"
           title={t("fight.listTitle", { round: encounter.round })}
-          aside={t("fight.fighters", { count: view.rows.length })}
+          aside={
+            isDm ? (
+              <Button kind="quiet" icon="u-add" onClick={dm.openAdd}>
+                {t("fight.dm.addMonsters")}
+              </Button>
+            ) : (
+              t("fight.fighters", { count: view.rows.length })
+            )
+          }
           foot={
             <>
               {controls.pass && (
@@ -230,7 +258,27 @@ function LiveFight({
         >
           {rows.map((row) => (
             <Fragment key={row.ids.join("+")}>
-              <FightLine row={row} />
+              <FightLine
+                row={row}
+                dm={dm.line(row)}
+                action={
+                  monsterTurn &&
+                  row.ids.includes(monsterTurn.id) && (
+                    <MonsterZoneCast
+                      campaignId={campaign.id}
+                      monsterId={monsterTurn.id}
+                      monsterName={
+                        view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
+                      }
+                      defaultDc={monsterSpellDc(
+                        monsterStatBlockOf(encounter, monsterTurn.id)
+                      )}
+                      locale={locale}
+                      onToast={onToast}
+                    />
+                  )
+                }
+              />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
@@ -242,26 +290,6 @@ function LiveFight({
                   onToast={onToast}
                 />
               )}
-              {isDm &&
-                encounter.currentCombatantId &&
-                row.ids.includes(encounter.currentCombatantId) &&
-                encounter.combatants.some(
-                  (c) => c.id === encounter.currentCombatantId && c.kind === "monster"
-                ) && (
-                  <MonsterZoneCast
-                    campaignId={campaign.id}
-                    monsterId={encounter.currentCombatantId}
-                    monsterName={
-                      view.rows.find((r) => r.id === encounter.currentCombatantId)
-                        ?.name ?? ""
-                    }
-                    defaultDc={monsterSpellDc(
-                      monsterStatBlockOf(encounter, encounter.currentCombatantId)
-                    )}
-                    locale={locale}
-                    onToast={onToast}
-                  />
-                )}
               {/* the monster whose turn it is may spend its action to repeat a save */}
               {isDm &&
                 encounter.currentCombatantId &&
@@ -280,6 +308,7 @@ function LiveFight({
           ))}
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
+        {dm.dialogs}
       </div>
       <Feed
         campaign={campaign}
@@ -290,6 +319,86 @@ function LiveFight({
       />
     </div>
   );
+}
+
+/**
+ * The DM's tools on the live fight (owner's blocker, 2026-11-07): «Aggiungi mostri» in
+ * the list's head, and «Danni e cure» from a tap on a line's HP (D&D Beyond's tracker;
+ * the owner's pick, 2026-11-08). A group line brings all its creatures, each droppable.
+ */
+function useDmTools(
+  campaign: CampaignDoc,
+  fighters: ReturnType<typeof buildEncounterView>["rows"],
+  uid: string,
+  isDm: boolean,
+  locale: Locale,
+  onToast: Toaster
+) {
+  const { t } = useTranslation();
+  const move = useFightMove(onToast);
+  const [hitting, setHitting] = useState<readonly string[] | null>(null);
+  const [adding, setAdding] = useState(false);
+  const targets = hitting ? dmTargets(fighters, hitting) : [];
+  const line = (row: FightRow): FightLineDm | undefined => {
+    if (!isDm) return undefined;
+    const members = fighters.filter((f) => row.ids.includes(f.id));
+    const hp = members.reduce(
+      (sum, f) => ({ current: sum.current + f.currentHp, max: sum.max + f.maxHp }),
+      { current: 0, max: 0 }
+    );
+    const label = t("fight.dm.hpFor", { name: row.name });
+    return { hp, label, onHp: () => setHitting(row.ids) };
+  };
+  const dialogs = isDm && (
+    <>
+      {hitting && targets.length > 0 && (
+        <DmHitDialog
+          targets={targets}
+          locale={locale}
+          onClose={() => setHitting(null)}
+          onHit={(chosenTargets, entry) => {
+            move(
+              dmMoves.hit(campaign.id, uid, planDmHit(chosenTargets, entry)),
+              t(entry.kind === "heal" ? "fight.dm.healDone" : "fight.dm.hitDone", {
+                amount: entry.amount,
+                count: chosenTargets.length,
+              })
+            );
+          }}
+          onCondition={(target, conditionId, active) =>
+            move(
+              dmMoves.condition(
+                campaign.id,
+                uid,
+                { ...target, maxHp: target.hp.max },
+                conditionId,
+                active
+              ),
+              t(active ? "fight.dm.conditionOn" : "fight.dm.conditionOff", {
+                name: target.name,
+              })
+            )
+          }
+        />
+      )}
+      {adding && (
+        <Suspense fallback={null}>
+          <AddMonstersDialog
+            campaign={campaign}
+            locale={locale}
+            onClose={() => setAdding(false)}
+            onAdd={(inputs, label) =>
+              move(
+                dmMoves.add(campaign.id, uid, inputs),
+                t("fight.dm.addDone", { label })
+              )
+            }
+          />
+        </Suspense>
+      )}
+    </>
+  );
+  return { line, dialogs, openAdd: () => setAdding(true) };
 }
 
 interface Party {
