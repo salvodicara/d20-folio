@@ -19,7 +19,7 @@ import { SRD_CONDITIONS } from "@/data/conditions";
 import i18n, { ensureSrdKind } from "@/i18n";
 import { localizeSrd } from "@/i18n/resolver";
 import { primaryClassId, totalLevel } from "@/lib/classes";
-import { LOCALES, type Locale } from "@/lib/locale";
+import { LOCALES, SOURCE_LOCALE, type Locale } from "@/lib/locale";
 import { ALL_SKILLS } from "@/lib/skills";
 import { localizeClassName } from "@/lib/views/srd-i18n";
 import type { ClassEntry } from "@/types/character";
@@ -86,7 +86,8 @@ export function destinationEntries(
     id: `sec:${route}`,
     label: t(key),
     action: { kind: "navigate", route },
-    names: allNames(t(key), (l) => i18n.getFixedT(l)(key)),
+    // The reader's name and the source (English) one, as the classic palette matched.
+    names: [...new Set([t(key), i18n.getFixedT(SOURCE_LOCALE)(key)])],
   }));
 }
 
@@ -142,9 +143,6 @@ export async function loadCompendiumEntries(
     return spec.data.map((entry): SearchEntry => {
       const id = spec.getId(entry);
       const label = spec.getName(entry, ctx);
-      const names = spec
-        .nameText(entry, ctx)
-        .filter((name): name is string => typeof name === "string" && name !== "");
       return {
         kind: "compendium",
         id: `cmp:${spec.id}:${id}`,
@@ -156,7 +154,10 @@ export async function loadCompendiumEntries(
           kind: "navigate",
           route: `/compendium?type=${spec.id}&sel=${encodeURIComponent(id)}`,
         },
-        names: [label, ...names.filter((name) => name !== label)],
+        // Ranked by the shown name only; the other languages' names live in the
+        // text (`searchText` holds `nameText`), so they surface as capped hints,
+        // as in the classic palette.
+        names: [label],
         text: spec.searchText(entry, ctx),
       };
     });
