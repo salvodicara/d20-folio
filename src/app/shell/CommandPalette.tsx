@@ -79,7 +79,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogBody, SearchInput, Icon } from "@/components/ui";
 import { Kbd } from "@/components/ui/kbd";
-import { matchesSearch, matchQuality, MATCH_QUALITY_RANK } from "@/lib/search";
+import { matchesSearch } from "@/lib/search";
 import { retireTopOverlayThen } from "@/lib/overlay-history";
 import { getPaletteRecents, recordPaletteRecent } from "./palette-recents";
 import { useCoarsePointer, isCoarsePointer } from "@/hooks/useCoarsePointer";
@@ -89,16 +89,17 @@ import { useLocale } from "@/hooks/useLocale";
 import { useUIStore } from "@/stores/uiStore";
 import { useAuthStore } from "@/stores/authStore";
 import { signOut } from "@/lib/auth";
-import { localizeClassName } from "@/lib/views/srd-i18n";
-import { ensureSrdKind } from "@/i18n";
-import { primaryClassId, totalLevel } from "@/lib/classes";
 import { REALM_ICONS } from "@/components/shared/realm-icons";
-// COMPENDIUM_SPECS pull the whole SRD. The palette is always-mounted (⌘K), so a
-// STATIC import would weigh the SRD onto the initial bundle (#59/#78). It's instead
-// dynamically imported when PaletteBody mounts (palette opens) — type-only here.
-type CompendiumSpec =
-  (typeof import("@/features/compendium/picker/specs"))["COMPENDIUM_SPECS"][number];
-import type { PickerCtx } from "@/features/compendium/picker";
+// The results come from the shared search layer (the global ⌘K search reads the same
+// sources and ranking). Its compendium index pulls the whole SRD, so it loads LAZILY
+// when PaletteBody mounts (palette opens), never onto the initial bundle (#59/#78).
+import { searchEntries, type SearchEntry } from "@/domains/search/global-search";
+import {
+  campaignEntries,
+  characterEntries,
+  destinationEntries,
+  loadCompendiumEntries,
+} from "@/domains/search/search-sources";
 import { PERSONAL_CAMPAIGN_ID } from "@/app/_data/personal-campaign";
 import { triggerCharacterImport } from "@/features/roster/import-trigger";
 import { openReport } from "@/features/report/open-report";
@@ -141,13 +142,22 @@ interface Hit {
  */
 const CURATED_QUICK = ["act:new-char", "act:new-camp", "act:report"];
 
-/**
- * How many COMPENDIUM rows may be earned by the entry's TEXT alone (no visible
- * match in the row's name). A gloss hit is a hint — "cover" surfacing Sacred
- * Flame, whose rule mentions Cover — so it supplements the name results without
- * ever becoming the whole group.
- */
-const GLOSS_HIT_CAP = 3;
+/** Each screen's glyph (the shared search layer carries no React components). */
+const SECTION_ICONS: Readonly<Record<string, Glyph>> = {
+  "/characters": REALM_ICONS.characters,
+  "/campaigns": REALM_ICONS.campaigns,
+  "/compendium": REALM_ICONS.compendium,
+  "/settings": SlidersHorizontal,
+  "/legal": Scale,
+  "/admin": Shield,
+};
+
+const routeOf = (entry: SearchEntry): string | undefined =>
+  entry.action.kind === "navigate" ? entry.action.route : undefined;
+
+/** The classic groups filter, not rank: any entry whose names contain the query. */
+const matching = (entries: SearchEntry[], q: string) =>
+  entries.filter((entry) => matchesSearch(q, ...entry.names));
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
   const { t } = useTranslation();
@@ -269,84 +279,47 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
     };
   }, [uid]);
 
-  // Lazy-load the SRD compendium specs the FIRST time the palette opens (this body
-  // only mounts while open). Until they arrive, compendium search yields nothing
-  // and the palette's nav/actions work immediately — but the ~250 KB-gzip SRD
-  // never weighs on the initial app load (#59/#78).
-  const [compendiumSpecs, setCompendiumSpecs] = useState<
-    readonly CompendiumSpec[] | null
-  >(null);
+  // Lazy-load the compendium index the FIRST time the palette opens (this body only
+  // mounts while open), again on a language switch. Until it arrives, compendium
+  // search yields nothing and the palette's nav/actions work immediately — but the
+  // ~250 KB-gzip SRD never weighs on the initial app load (#59/#78). The specs come
+  // along only for each type's glyph.
+  const [compendium, setCompendium] = useState<{
+    entries: SearchEntry[];
+    icons: ReadonlyMap<string, Glyph>;
+  } | null>(null);
   useEffect(() => {
     let alive = true;
-    // Load the specs registry AND (D-2) resolve the lazy `monster` catalogue before
-    // exposing the specs, so palette monster hits never show a raw name key. The gate
-    // lives here (not as a specs-barrel top-level await, which would make that barrel
-    // async and fragment the eager closure — see picker/specs/index.ts).
     void Promise.all([
+      loadCompendiumEntries(t, locale),
       import("@/features/compendium/picker/specs"),
-      ensureSrdKind("monster"),
-    ]).then(([m]) => {
-      if (alive) setCompendiumSpecs(m.COMPENDIUM_SPECS);
+    ]).then(([entries, { COMPENDIUM_SPECS }]) => {
+      if (!alive) return;
+      const icons = new Map(
+        COMPENDIUM_SPECS.map((spec) => [spec.id, (spec.icon ?? BookOpen) as Glyph])
+      );
+      setCompendium({ entries, icons });
     });
     return () => {
       alive = false;
     };
-  }, []);
+  }, [t, locale]);
 
   // ── Sections (realm nav) ─────────────────────────────────────────────────────
-  const sections: Hit[] = useMemo(() => {
-    const base: { to: string; label: string; labelEn: string; icon: Glyph }[] = [
-      {
-        to: "/characters",
-        label: t("nav.characters"),
-        labelEn: "Characters",
-        icon: REALM_ICONS.characters,
-      },
-      {
-        to: "/campaigns",
-        label: t("nav.campaigns"),
-        labelEn: "Campaigns",
-        icon: REALM_ICONS.campaigns,
-      },
-      {
-        to: "/compendium",
-        label: t("nav.compendium"),
-        labelEn: "Compendium",
-        icon: REALM_ICONS.compendium,
-      },
-      {
-        to: "/settings",
-        label: t("nav.settings"),
-        labelEn: "Settings",
-        icon: SlidersHorizontal,
-      },
-      // The colophon leaf — ungated (a public route), so every routed surface is
-      // palette-reachable (D7).
-      {
-        to: "/legal",
-        label: t("legal.title"),
-        labelEn: "Legal & Attribution",
-        icon: Scale,
-      },
-    ];
-    if (isAdmin) {
-      base.push({
-        to: "/admin",
-        label: t("nav.admin"),
-        labelEn: "Admin",
-        icon: Shield,
-      });
-    }
-    return base
-      .filter((s) => matchesSearch(q, s.label, s.labelEn))
-      .map((s) => ({
-        key: `sec:${s.to}`,
-        to: s.to,
-        label: s.label,
-        icon: s.icon,
-        current: location.pathname === s.to || location.pathname.startsWith(`${s.to}/`),
-      }));
-  }, [t, isAdmin, q, location.pathname]);
+  const sections: Hit[] = useMemo(
+    () =>
+      matching(destinationEntries(t, { isAdmin }), q).map((entry) => {
+        const to = routeOf(entry) ?? "/";
+        return {
+          key: entry.id,
+          to,
+          label: entry.label,
+          icon: SECTION_ICONS[to] ?? BookOpen,
+          current: location.pathname === to || location.pathname.startsWith(`${to}/`),
+        };
+      }),
+    [t, isAdmin, q, location.pathname]
+  );
 
   // ── Quick actions (OWN-25c) ──────────────────────────────────────────────────
   // The palette isn't only a finder: it runs the one-keystroke commands a player
@@ -486,19 +459,13 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   // of my characters is the cleric?".
   const characterHits: Hit[] = useMemo(() => {
     if (!q) return [];
-    return characters
-      .map((c) => {
-        const classId = primaryClassId(c.character);
-        const cls = classId ? localizeClassName(classId, locale) : "";
-        return { c, classId, cls };
-      })
-      .filter(({ c, classId, cls }) => matchesSearch(q, c.character.name, cls, classId))
+    return matching(characterEntries(characters, locale), q)
       .slice(0, 6)
-      .map(({ c, cls }) => ({
-        key: `char:${c.id}`,
-        to: `/characters/${c.id}`,
-        label: c.character.name,
-        sub: cls ? `${cls} ${totalLevel(c.character)}` : undefined,
+      .map((entry) => ({
+        key: entry.id,
+        to: routeOf(entry),
+        label: entry.label,
+        sub: entry.sub,
         icon: UserRound,
       }));
   }, [characters, q, locale]);
@@ -506,13 +473,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   // ── Campaigns (the player's shared campaigns) — searched like the roster ──────
   const campaignHits: Hit[] = useMemo(() => {
     if (!q) return [];
-    return campaigns
-      .filter((c) => matchesSearch(q, c.name))
+    return matching(campaignEntries(campaigns), q)
       .slice(0, 6)
-      .map((c) => ({
-        key: `camp:${c.id}`,
-        to: `/campaigns/${c.id}`,
-        label: c.name,
+      .map((entry) => ({
+        key: entry.id,
+        to: routeOf(entry),
+        label: entry.label,
         icon: MapIcon,
       }));
   }, [campaigns, q]);
@@ -610,77 +576,20 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   }, [q, onCockpit, requestPlayRef, t]);
 
   // ── Compendium (the whole SRD) ───────────────────────────────────────────────
-  // Built once per locale (lazily — this body only mounts when the palette opens).
-  const index = useMemo(() => {
-    const ctx = { t, locale, character: null, mode: "browse" } as PickerCtx;
-    const out: {
-      typeId: string;
-      typeLabel: string;
-      icon: Glyph;
-      id: string;
-      name: string;
-      cands: Array<string | null | undefined>;
-    }[] = [];
-    if (!compendiumSpecs) return out; // specs still loading (lazy on open)
-    for (const spec of compendiumSpecs) {
-      const label = spec.label(t);
-      const icon = (spec.icon ?? BookOpen) as Glyph;
-      for (const entry of spec.data) {
-        out.push({
-          typeId: spec.id,
-          typeLabel: label,
-          icon,
-          id: spec.getId(entry),
-          name: spec.getName(entry, ctx),
-          cands: spec.searchText(entry, ctx),
-        });
-      }
-    }
-    return out;
-  }, [t, locale, compendiumSpecs]);
-
+  // The shared ranking (`searchEntries`): a name prefix, then a name word, then a
+  // name suffix, then a capped text hint; an infix only when nothing better matched.
   const compendiumHits: Hit[] = useMemo(() => {
-    if (!q) return [];
-    // Ranked in QUALITY bands, each kept in data order so the result is
-    // deterministic (a stable partition, never a comparator on floats):
-    //
-    //   1. name prefix — "fire"  → "Fire Bolt"
-    //   2. name word   — "bolt"  → "Fire Bolt"
-    //   3. name suffix — "sword" → "Greatsword", "axe" → "Handaxe" (D&D compounds)
-    //   4. gloss       — the entry's TEXT, word-quality only, CAPPED: a hint band,
-    //                    never the answer (it is what puts "Fire Bolt" above the
-    //                    spells that merely mention fire).
-    //
-    // INFIX matches — a token buried INSIDE a word, touching neither edge — are a
-    // LAST RESORT, shown only when nothing better matched at all: "cover" used to
-    // put five *Re**cover**y* entries and "Dis**cover**ies" at the top, hits no
-    // reader can see in the row (post-sweep F). They never mix into the bands above.
-    const bands: (typeof index)[] = [[], [], [], []];
-    const infix: typeof index = [];
-    for (const e of index) {
-      const name = matchQuality(q, e.name);
-      if (name === "prefix") bands[0]?.push(e);
-      else if (name === "word") bands[1]?.push(e);
-      else if (name === "suffix") bands[2]?.push(e);
-      else if (
-        bands[3] != null &&
-        bands[3].length < GLOSS_HIT_CAP &&
-        MATCH_QUALITY_RANK[matchQuality(q, ...e.cands)] >= MATCH_QUALITY_RANK.word
-      )
-        bands[3].push(e);
-      else if (name === "infix") infix.push(e);
-    }
-    const ranked = bands.flat();
-    return (ranked.length > 0 ? ranked : infix).slice(0, 8).map((e, i) => ({
-      key: `cmp:${e.typeId}:${e.id}:${i}`,
-      // OWN-25e — deep-link straight to the entry's DETAIL page (`?sel=`), not the
-      // filtered list, so "Search the Folio" → a spell/item opens it ready to read.
-      to: `/compendium?type=${e.typeId}&sel=${encodeURIComponent(e.id)}`,
-      label: e.name,
-      sub: e.typeLabel,
-      icon: e.icon,
+    if (!q || !compendium) return [];
+    return searchEntries(compendium.entries, q, { limit: 8 }).map((entry, i) => ({
+      key: `${entry.id}:${i}`,
+      // OWN-25e — deep-link straight to the entry's DETAIL page (`?sel=`).
+      to: routeOf(entry),
+      label: entry.label,
+      sub: entry.sub,
+      // The id is `cmp:<type>:<entry id>`.
+      icon: compendium.icons.get(entry.id.split(":")[1] ?? "") ?? BookOpen,
     }));
-  }, [index, q]);
+  }, [compendium, q]);
 
   // OWN-33 — the BOUNDED launcher. With no query, show a few recents + curated
   // actions (the "Quick" group) and the stable Sections, NOT the full action list —
