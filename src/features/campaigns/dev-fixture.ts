@@ -1154,7 +1154,8 @@ function devTableMembers(): CampaignDoc["memberDetails"] {
 }
 
 /** The `table` demo's fight: four players and three groups of bestiary creatures (SRD,
- *  each with its painting: the screenshots show the art the DM will see). The
+ *  each with its painting: the screenshots show the art the DM will see; the names are
+ *  the DM's own, as at a real table). The
  *  creatures have rolled and the characters are still to roll; the order is the engine's
  *  own sort of what has been rolled (never written by hand), and turns haven't begun, so
  *  every roll that comes in re-sorts it. Started by a roll: anyone passes the turn. */
@@ -1163,7 +1164,7 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
   const raider = (n: number, current: number) => ({
     kind: "monster" as const,
     id: `monster-${n}`,
-    name: `${L("Goblin Warrior", "Goblin guerriero")} ${n}`,
+    name: `${L("Goblin", "Goblin")} ${n}`,
     srdId: "goblin-warrior",
     ac: 15,
     initiative: 15,
@@ -1201,7 +1202,7 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
     {
       kind: "monster" as const,
       id: "monster-6",
-      name: L("Bandit Captain", "Capo dei banditi"),
+      name: L("Bandit Chief", "Capo dei banditi"),
       srdId: "bandit-captain",
       ac: 15,
       initiative: 6,
