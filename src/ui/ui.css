@@ -3277,7 +3277,11 @@
 }
 .fui .f-act-slot {
   display: grid;
+  /* one track bounded to the slot: an image's height: 100% resolves to the slot, so a
+     tall painting is cropped (object-fit) instead of running past the frame */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
+  flex: none;
   width: var(--slot-size);
   height: var(--slot-size);
   border: 1px solid var(--frame);
