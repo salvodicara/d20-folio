@@ -5,14 +5,11 @@ import type { FightArt, FightRow } from "@/domains/combat/fight-rows-view";
 import { Art, Chip } from "@/ui";
 
 /** The DM's hands on a line: its creatures' HP (a monster's numbers are the DM's own),
- *  and either a tap on the HP (variant A: D&D Beyond's tracker) or a tap on the line
- *  to choose it as a target (variant B: BG3's targets, dnd5e's apply tray). */
+ *  and a tap on the HP for «Danni e cure» (D&D Beyond's tracker). */
 export interface FightLineDm {
   hp: { current: number; max: number };
   label: string;
-  onHp?: () => void;
-  selected?: boolean;
-  onSelect?: () => void;
+  onHp: () => void;
 }
 
 /** One line of the initiative list (the campaign's Scontro and the sheet's Iniziativa),
@@ -50,20 +47,7 @@ export function FightLine({
     </>
   );
   return (
-    <div
-      className="f-row f-fight"
-      data-current={row.current || undefined}
-      data-picked={dm?.selected || undefined}
-    >
-      {dm?.onSelect && (
-        <button
-          type="button"
-          className="f-fight-pick"
-          aria-pressed={dm.selected ?? false}
-          aria-label={dm.label}
-          onClick={dm.onSelect}
-        />
-      )}
+    <div className="f-row f-fight" data-current={row.current || undefined}>
       <span className="f-init">{row.initiative ?? ""}</span>
       <span className="f-act-slot" data-painted="" aria-hidden="true">
         <LineArt art={row.art} name={row.name} />

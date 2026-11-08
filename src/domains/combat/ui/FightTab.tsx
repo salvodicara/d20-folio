@@ -8,7 +8,6 @@
  */
 import { useEffectsOnParty } from "@/features/campaigns/effects-on-party";
 import { Fragment, lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router";
 import { useTranslation } from "react-i18next";
 
 import type { PartyChip } from "@/domains/campaign/party-rows-view";
@@ -307,7 +306,6 @@ function LiveFight({
                 )}
             </Fragment>
           ))}
-          {dm.bar}
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
         {dm.dialogs}
@@ -325,9 +323,8 @@ function LiveFight({
 
 /**
  * The DM's tools on the live fight (owner's blocker, 2026-11-07): «Aggiungi mostri» in
- * the list's head, and «Danni e cure» on any creature. Two entry points for the owner's
- * pick (`?dm=a|b`): A, tap a line's HP (D&D Beyond's tracker); B, tap lines to choose
- * targets, then one bar acts on all of them (BG3's targets, dnd5e's apply tray).
+ * the list's head, and «Danni e cure» from a tap on a line's HP (D&D Beyond's tracker;
+ * the owner's pick, 2026-11-08). A group line brings all its creatures, each droppable.
  */
 function useDmTools(
   campaign: CampaignDoc,
@@ -338,12 +335,9 @@ function useDmTools(
   onToast: Toaster
 ) {
   const { t } = useTranslation();
-  const [params] = useSearchParams();
-  const variant = params.get("dm") === "b" ? "b" : "a";
   const move = useFightMove(onToast);
   const [hitting, setHitting] = useState<readonly string[] | null>(null);
   const [adding, setAdding] = useState(false);
-  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const targets = hitting ? dmTargets(fighters, hitting) : [];
   const line = (row: FightRow): FightLineDm | undefined => {
     if (!isDm) return undefined;
@@ -353,34 +347,8 @@ function useDmTools(
       { current: 0, max: 0 }
     );
     const label = t("fight.dm.hpFor", { name: row.name });
-    if (variant === "a") return { hp, label, onHp: () => setHitting(row.ids) };
-    const on = row.ids.every((id) => picked.has(id));
-    return {
-      hp,
-      label,
-      selected: on,
-      onSelect: () => {
-        const next = new Set(picked);
-        for (const id of row.ids) {
-          if (on) next.delete(id);
-          else next.add(id);
-        }
-        setPicked(next);
-      },
-    };
+    return { hp, label, onHp: () => setHitting(row.ids) };
   };
-  const chosen = fighters.filter((f) => picked.has(f.id)).length;
-  const bar = isDm && variant === "b" && chosen > 0 && (
-    <div className="f-dm-bar" role="region" aria-label={t("fight.dm.targets")}>
-      <span>{t("fight.dm.selected", { count: chosen })}</span>
-      <Button kind="quiet" onClick={() => setPicked(new Set())}>
-        {t("fight.dm.clear")}
-      </Button>
-      <Button kind="primary" icon="u-damage" onClick={() => setHitting([...picked])}>
-        {t("play.hp.title")}
-      </Button>
-    </div>
-  );
   const dialogs = isDm && (
     <>
       {hitting && targets.length > 0 && (
@@ -396,7 +364,6 @@ function useDmTools(
                 count: chosenTargets.length,
               })
             );
-            setPicked(new Set());
           }}
           onCondition={(target, conditionId, active) =>
             move(
@@ -431,7 +398,7 @@ function useDmTools(
       )}
     </>
   );
-  return { line, bar, dialogs, openAdd: () => setAdding(true) };
+  return { line, dialogs, openAdd: () => setAdding(true) };
 }
 
 interface Party {

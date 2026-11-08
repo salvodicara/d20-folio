@@ -23,7 +23,7 @@ import type { Locale } from "@/lib/locale";
 import { matchesSearch } from "@/lib/search";
 import { fmtXp, formatCr } from "@/lib/utils";
 import type { CampaignDoc } from "@/types/campaign";
-import { Button, Chip, Dialog, Field } from "@/ui";
+import { Art, Button, Chip, Dialog, Field } from "@/ui";
 
 const BANDS = [
   { id: "all", min: 0, max: 99 },
@@ -165,11 +165,7 @@ export function AddMonstersDialog({
           return (
             <div key={r.key} className="f-row f-dm-pick" data-on={n > 0 || undefined}>
               <span className="f-act-slot" data-painted="" aria-hidden="true">
-                {r.art ? (
-                  <img className="f-art" src={r.art} alt="" loading="lazy" />
-                ) : (
-                  <b className="f-dm-initial">{r.name.slice(0, 1)}</b>
-                )}
+                <MonsterFace row={r} />
               </span>
               <div className="f-row-main">
                 <div className="f-row-t">{r.name}</div>
@@ -212,5 +208,22 @@ export function AddMonstersDialog({
         {found.length === 0 && <p className="f-quiet">{t("fight.dm.none")}</p>}
       </div>
     </Dialog>
+  );
+}
+
+/** The creature's face in the slot (D&D Beyond's builder avatars): its painted icon, the
+ *  one the initiative rows show; else its full painting cropped to the head; else its
+ *  initial. */
+function MonsterFace({ row }: { row: Row }) {
+  const initial = <b className="f-dm-initial">{row.name.slice(0, 1)}</b>;
+  const painting = row.art ? (
+    <img className="f-art f-dm-face" src={row.art} alt="" loading="lazy" />
+  ) : (
+    initial
+  );
+  return row.kind === "srd" ? (
+    <Art kind="monster" id={row.id} fallback={painting} />
+  ) : (
+    painting
   );
 }
