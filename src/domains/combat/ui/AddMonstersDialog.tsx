@@ -121,7 +121,7 @@ export function AddMonstersDialog({
       open
       onClose={onClose}
       color="ini"
-      title={t("fight.dm.addTitle")}
+      title={t("fight.dm.addMonsters")}
       closeLabel={t("common.close")}
       actions={
         <>
@@ -136,7 +136,7 @@ export function AddMonstersDialog({
             </span>
           )}
           <Button kind="primary" disabled={count === 0} onClick={add}>
-            {count > 0 ? t("fight.dm.addN", { count }) : t("fight.dm.add")}
+            {count > 0 ? t("fight.dm.addN", { count }) : t("common.add")}
           </Button>
         </>
       }
@@ -154,7 +154,7 @@ export function AddMonstersDialog({
         <div className="f-chips" role="group" aria-label={t("fight.dm.crLabel")}>
           {BANDS.map((b) => (
             <Chip key={b.id} pressed={band === b.id} onClick={() => setBand(b.id)}>
-              {t(`fight.dm.cr.${b.id}`)}
+              {b.id === "all" ? t("common.all") : t(`fight.dm.cr.${b.id}`)}
             </Chip>
           ))}
         </div>

@@ -127,7 +127,7 @@ export function DmHitDialog({
       )}
       {only && (
         <div className="f-ask">
-          <span className="f-lbl">{t("fight.dm.conditions")}</span>
+          <span className="f-lbl">{t("combat.effectReview.conditions")}</span>
           <div className="f-chips">
             {TOGGLES.map((id) => {
               const on = only.conditions.includes(id);
