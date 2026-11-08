@@ -479,6 +479,12 @@
   background: var(--buff-bg);
   color: var(--white);
 }
+/* Inspiration held (BG3's gold status icon) */
+.fui .f-chip[data-kind="insp"] {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  color: var(--gold-hi);
+}
 
 /* ---------- fields ---------- */
 .fui .f-field {
@@ -5445,4 +5451,9 @@
   color: var(--gold-hi);
   font-weight: 600;
   text-wrap: pretty;
+}
+
+/* «Ispirazione»: each row's art, name and what it does, then its one action */
+.fui .f-insp-row {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) auto;
 }

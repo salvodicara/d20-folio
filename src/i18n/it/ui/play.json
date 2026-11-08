@@ -252,7 +252,12 @@
       "face": "Cosa è uscito sul d20?",
       "faceHint": "Con 20 ti rialzi a 1 punto ferita; con 1 contano due fallimenti.",
       "stable": "Stabile: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
-      "stableFor": "Stabile da {{minutes}} min: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo)."
+      "stableFor": "Stabile da {{minutes}} min: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
+      "addAfter": "Dopo il tiro",
+      "addBardic": "+ Ispirazione Bardica ({{die}})",
+      "paidAdvantage": "{{name}}: Vantaggio",
+      "secondFace": "Il secondo d20",
+      "dieFace": "Quanto hai fatto col {{die}}?"
     },
     "conditions": {
       "cantSeeSource": "Non vedo la fonte",
@@ -314,6 +319,16 @@
     "effectsFrom": "da {{name}}",
     "effectsRounds_one": "{{count}} round",
     "effectsRounds_other": "{{count}} round",
-    "effectsConcentration": "finché si concentra"
+    "effectsConcentration": "finché si concentra",
+    "insp": {
+      "heroicGist": "Ritira un dado appena tirato; tieni il nuovo risultato.",
+      "bardic": "Ispirazione Bardica",
+      "bardicDie": "Ispirazione Bardica · {{die}}",
+      "bardicGist": "Quando fallisci un Test del d20, tira il dado e aggiungilo.",
+      "held": "Ce l'hai",
+      "fromDm": "La concede il DM",
+      "received": "Ricevuta",
+      "receivedDie": "Dado ricevuto da un alleato"
+    }
   }
 }

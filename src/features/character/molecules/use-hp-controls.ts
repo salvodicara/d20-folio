@@ -58,6 +58,7 @@ import { uiText, type LocText } from "@/lib/loc-text";
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import type { CombatEvent } from "@/types/combat-log";
+import type { PostRollUse } from "@/lib/character-d20-tests";
 
 // hpState + HpStateValue moved to the dependency-free `./hp-tier` module so the
 // roster card can import the tier without pulling this store-coupled hook (which
@@ -160,7 +161,11 @@ export interface HpControls {
    * above the character's crit threshold (nat 20, Champion Survivor 18+) =
    * regain 1 HP and wake. No-op above 0 HP or once stable/dead.
    */
-  applyDeathSave: (faces: number | ReadonlyArray<number>) => void;
+  applyDeathSave: (
+    faces: number | ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) => void;
 }
 
 /**
@@ -421,9 +426,13 @@ export function useHpControls(): HpControls {
     );
   }
 
-  function applyDeathSave(faces: number | ReadonlyArray<number>) {
+  function applyDeathSave(
+    faces: number | ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) {
     const enteredFaces = typeof faces === "number" ? [faces] : Array.from(faces);
-    const commit = useCharacterStore.getState().commitDeathSave(enteredFaces);
+    const commit = useCharacterStore.getState().commitDeathSave(enteredFaces, use, spend);
     if (!commit) return;
     const outcome = commit.result.reviewedOutcome.deathSave;
     const entered = commit.result.selectedNaturalFace;
@@ -453,7 +462,9 @@ export function useHpControls(): HpControls {
           ? t("combat.deathSaveStableToast", { n: entered })
           : t("combat.deathSaveSuccessToast", { n: entered, s: successes });
     }
-    registerUndoableResult({ message }, commit.undo, () => applyDeathSave(enteredFaces));
+    registerUndoableResult({ message }, commit.undo, () =>
+      applyDeathSave(enteredFaces, use, spend)
+    );
   }
 
   return {
