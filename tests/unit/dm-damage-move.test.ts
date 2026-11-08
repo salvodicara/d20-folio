@@ -285,6 +285,12 @@ describe("the DM brings a roster creature into the fight", () => {
     });
   });
 
+  it("only in a running fight, and only by the DM", () => {
+    const input = { rosterId: "bren", entry: bren, ac: 16 };
+    expect(planAddRoster(table(), { uid: "player-1", ...input })).toBeNull();
+    expect(planAddRoster(table(null), { uid: "dm", ...input })).toBeNull();
+  });
+
   it("the undo takes it out, hurt as it came, while nobody has touched it", () => {
     const plan = planAddRoster(table(), {
       uid: "dm",
