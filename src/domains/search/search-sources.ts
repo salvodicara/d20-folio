@@ -19,14 +19,18 @@ import { SRD_CONDITIONS } from "@/data/conditions";
 import i18n, { ensureSrdKind } from "@/i18n";
 import { localizeSrd } from "@/i18n/resolver";
 import { primaryClassId, totalLevel } from "@/lib/classes";
-import type { Locale } from "@/lib/locale";
+import { LOCALES, type Locale } from "@/lib/locale";
 import { ALL_SKILLS } from "@/lib/skills";
 import { localizeClassName } from "@/lib/views/srd-i18n";
 import type { ClassEntry } from "@/types/character";
 
 import type { SearchEntry } from "./global-search";
 
-const other = (locale: Locale): Locale => (locale === "it" ? "en" : "it");
+/** The label first, then every other language's name for the same entry. */
+const allNames = (label: string, nameIn: (locale: Locale) => string): string[] => [
+  label,
+  ...LOCALES.map(nameIn).filter((name) => name !== label),
+];
 
 /** The user's characters (the roster's live list). */
 export function characterEntries(
@@ -69,7 +73,6 @@ export function destinationEntries(
   t: TFunction,
   opts: { isAdmin: boolean }
 ): SearchEntry[] {
-  const en = i18n.getFixedT("en");
   const screens: Array<{ route: string; key: string }> = [
     { route: "/characters", key: "nav.characters" },
     { route: "/campaigns", key: "nav.campaigns" },
@@ -83,13 +86,12 @@ export function destinationEntries(
     id: `sec:${route}`,
     label: t(key),
     action: { kind: "navigate", route },
-    names: [t(key), en(key)],
+    names: allNames(t(key), (l) => i18n.getFixedT(l)(key)),
   }));
 }
 
 /** The rules glossary: the conditions and the skills, explained in place. */
 export function ruleEntries(t: TFunction, locale: Locale): SearchEntry[] {
-  const tOther = i18n.getFixedT(other(locale));
   const conditions = SRD_CONDITIONS.map((condition): SearchEntry => {
     const label = localizeSrd("condition", condition.id, "name", locale);
     const description = localizeSrd("condition", condition.id, "description", locale);
@@ -100,7 +102,7 @@ export function ruleEntries(t: TFunction, locale: Locale): SearchEntry[] {
       sub: t("palette.kindCondition"),
       gist: description.split(/(?<=\.)\s/)[0] ?? null,
       action: { kind: "explain" },
-      names: [label, localizeSrd("condition", condition.id, "name", other(locale))],
+      names: allNames(label, (l) => localizeSrd("condition", condition.id, "name", l)),
       text: [description],
     };
   });
@@ -110,10 +112,10 @@ export function ruleEntries(t: TFunction, locale: Locale): SearchEntry[] {
       kind: "rule",
       id: `skill:${skill.id}`,
       label,
-      sub: t("palette.kindSkill"),
+      sub: t("abilities.skill"),
       gist: t(`abilities.${skill.ability}`),
       action: { kind: "explain" },
-      names: [label, tOther(`skills.${skill.id}`)],
+      names: allNames(label, (l) => i18n.getFixedT(l)(`skills.${skill.id}`)),
     };
   });
   return [...conditions, ...skills];
