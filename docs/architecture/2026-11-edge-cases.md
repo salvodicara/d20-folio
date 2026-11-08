@@ -102,7 +102,10 @@ rows it covers, and retires the special cases it lists. Shape changes go through
   fight ends it with the spell; a spell's Exhaustion is a level on the sheet, capped by its `upTo`
   (`src/lib/play/exhaustion.ts`), and a failed repeat save's comes from `failedRepeatSaveEffects`.
 - **Engine-ready, needs a caller** (the conformance case stays pending until a player reaches it):
-  `OBJECT_DEFENSES` and `damageToItem` wait for the tray to name an object or an item as a target;
+  `OBJECT_DEFENSES`, `damageToItem` and `objectTarget` / `objectAfterDamage`
+  (`src/lib/object-targets.ts`) wait for the tray to name an object or an item as a target;
+  `familiarLinkHolds` / `familiarLocation` (`src/lib/familiar.ts`) wait for a control that
+  sets a creature's location (M19, planes);
   `sentientConflictDc` waits for a sentient item's card. M20's DM side
   (`revealCurse`, `identifyReveal`, `curseBinds`, `rolledProperties`, `unlockedProperties`,
   and `dmItems` / `itemReveals` read and written behind the v0.26 rules) waits for the DM's

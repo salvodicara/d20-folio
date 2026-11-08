@@ -14,7 +14,8 @@
  */
 import type { MonsterStatBlock } from "@/data/types";
 import { filterMonsters, getMonster } from "@/data/monsters";
-import type { CreatureLocation } from "@/lib/familiar-ids";
+import { locationOf, type CreatureLocation } from "@/lib/familiar-ids";
+import type { SessionState } from "@/types/character";
 
 export type { CreatureLocation };
 
@@ -49,4 +50,32 @@ export function sharesPlane(
   if (a?.inside || b?.inside) return a?.inside !== undefined && a.inside === b?.inside;
   if (!a?.plane || !b?.plane) return true;
   return a.plane === b.plane;
+}
+
+/** The pocket dimension a dismissed familiar waits in (Find Familiar: «you can
+ *  dismiss it … into a pocket dimension»), as a location id. */
+export const FAMILIAR_POCKET_DIMENSION = "find-familiar:pocket-dimension";
+
+/**
+ * Where the familiar is: inside its pocket dimension while dismissed, else beside its
+ * owner (it has no stored place of its own). Undefined with no familiar.
+ */
+export function familiarLocation(
+  session: Pick<SessionState, "familiar" | "location">
+): CreatureLocation | undefined {
+  if (!session.familiar) return undefined;
+  if (session.familiar.dismissed) return { inside: FAMILIAR_POCKET_DIMENSION };
+  return locationOf(session);
+}
+
+/**
+ * Whether the familiar's link to its owner holds: the two share a plane (and an
+ * extradimensional space only with one in the same space). Engine-ready: the Play
+ * screen reads it once a creature's location can be set (edge-case M19, owner-gated).
+ */
+export function familiarLinkHolds(
+  session: Pick<SessionState, "familiar" | "location">
+): boolean {
+  if (!session.familiar) return false;
+  return sharesPlane(locationOf(session), familiarLocation(session));
 }
