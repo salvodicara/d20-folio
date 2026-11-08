@@ -13,6 +13,7 @@ import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/fires
 
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { updateDevDocument } from "@/lib/dev-document-store";
+import { diagnosticsLog } from "@/lib/diagnostics";
 import { db } from "@/lib/firebase";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
 import type { DamageInstance } from "@/lib/damage-intake";
@@ -27,12 +28,19 @@ import { createSessionRecorder, type SessionRecorder } from "@/lib/session-log";
 
 import { recordCondition } from "./combat-chronicle";
 import { useCampaignStore } from "./campaignStore";
-import { parseEncounterState, type MonsterInput } from "./encounter";
+import {
+  parseEncounterState,
+  rosterHpWriteBack,
+  type MonsterInput,
+  type RosterCombatantInput,
+} from "./encounter";
+import { readRoster, writeRosterEntry } from "./roster-io";
 import { sessionLogStoreFor } from "./session-log-source";
 import {
   planCancel,
   planEnd,
   planAddMonsters,
+  planAddRoster,
   planMonsterCondition,
   planMonsterHp,
   planMonsterInitiative,
@@ -218,11 +226,15 @@ export async function endCombatNow(
   input: { reason?: EncounterEndReason } = {}
 ): Promise<CombatUndo | null> {
   const reason = input.reason ?? "manual";
-  const epoch = await applyMove(campaignId, (campaign) => {
+  const ended = await applyMove<EncounterState>(campaignId, (campaign) => {
+    const fight = campaign.encounter;
     const patch = planEnd(campaign, { reason, now: Date.now() });
-    return patch && { patch, result: campaign.encounter?.epoch ?? 0 };
+    return patch && fight ? { patch, result: fight } : null;
   });
-  if (epoch === null) return null;
+  if (ended === null) return null;
+  const epoch = ended.epoch;
+  // The roster creatures' Hit Points go back to their entries (edge-case M19).
+  if (ended.rosterLinks) void writeBackRosterHp(campaignId, ended);
   return async () =>
     (await applyMove(campaignId, (campaign) => {
       const patch = planReopen(campaign, { now: Date.now(), epoch });
@@ -546,6 +558,54 @@ export async function addMonstersMove(
   return async () =>
     (await applyMove(campaignId, (campaign) => {
       const patch = planRemoveUntouched(campaign, { uid: input.uid, ids: added });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** Each roster creature's Hit Points after the fight, back on its entry. A failure is
+ *  reported; the fight has already ended. */
+async function writeBackRosterHp(
+  campaignId: string,
+  fight: EncounterState
+): Promise<void> {
+  try {
+    const roster = await readRoster(campaignId);
+    await Promise.all(
+      rosterHpWriteBack(fight, roster).flatMap(({ rosterId, hp }) => {
+        const entry = roster[rosterId];
+        return entry ? [writeRosterEntry(campaignId, rosterId, { ...entry, hp })] : [];
+      })
+    );
+  } catch (error) {
+    diagnosticsLog("warn", "campaign.roster-writeback-failed", {
+      message: String(error),
+    });
+  }
+}
+
+/**
+ * The DM brings a roster creature into the running fight (edge-case M19): with the Hit
+ * Points it has now, linked so they go back to its entry when the fight ends. The undo
+ * takes it out while nobody has touched it. Null for anyone but the DM, with no fight
+ * running, or when the entry is already in it.
+ */
+export async function addRosterToFight(
+  campaignId: string,
+  input: { uid: string } & RosterCombatantInput
+): Promise<CombatUndo | null> {
+  const joined = await applyMove(campaignId, (campaign) => {
+    const planned = planAddRoster(campaign, input);
+    return (
+      planned && {
+        patch: planned.patch,
+        result: { ids: planned.added, enteredHp: planned.enteredHp },
+      }
+    );
+  });
+  if (joined === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planRemoveUntouched(campaign, { uid: input.uid, ...joined });
       return patch && { patch, result: true };
     })) === true;
 }

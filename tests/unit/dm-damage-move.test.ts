@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   planAddMonsters,
+  planAddRoster,
   planMonsterCondition,
   planMonsterHp,
   planMonsterInitiative,
@@ -261,3 +262,69 @@ describe("the DM adds monsters to the running fight", () => {
     ).toBeNull();
   });
 });
+
+describe("the DM brings a roster creature into the fight", () => {
+  const bren = {
+    name: "Bren the guard",
+    monsterId: "guard",
+    hp: { current: 9, max: 16 },
+  };
+
+  it("it joins with the HP it has now, linked to its entry", () => {
+    const plan = planAddRoster(table(), {
+      uid: "dm",
+      rosterId: "bren",
+      entry: bren,
+      ac: 16,
+      side: "ally",
+    });
+    expect(plan?.added).toEqual(["monster-2"]);
+    expect(plan?.patch.encounter?.rosterLinks).toEqual({ "monster-2": "bren" });
+    expect(monster2(plan?.patch.encounter)).toMatchObject({
+      hp: { current: 9, max: 16 },
+    });
+  });
+
+  it("only in a running fight, and only by the DM", () => {
+    const input = { rosterId: "bren", entry: bren, ac: 16 };
+    expect(planAddRoster(table(), { uid: "player-1", ...input })).toBeNull();
+    expect(planAddRoster(table(null), { uid: "dm", ...input })).toBeNull();
+  });
+
+  it("the undo takes it out, hurt as it came, while nobody has touched it", () => {
+    const plan = planAddRoster(table(), {
+      uid: "dm",
+      rosterId: "bren",
+      entry: bren,
+      ac: 16,
+    });
+    const undo = planRemoveUntouched(table(plan?.patch.encounter ?? null), {
+      uid: "dm",
+      ids: plan?.added ?? [],
+      enteredHp: plan?.enteredHp,
+    });
+    expect(undo?.encounter?.rosterLinks).toBeUndefined();
+    expect(undo?.encounter?.combatants.map((c) => c.id)).toEqual(["monster-1"]);
+  });
+
+  it("an entry already in the fight is not added again", () => {
+    const once = planAddRoster(table(), {
+      uid: "dm",
+      rosterId: "bren",
+      entry: bren,
+      ac: 16,
+    });
+    expect(
+      planAddRoster(table(once?.patch.encounter ?? null), {
+        uid: "dm",
+        rosterId: "bren",
+        entry: bren,
+        ac: 16,
+      })
+    ).toBeNull();
+  });
+});
+
+function monster2(state: EncounterState | null | undefined) {
+  return state?.combatants.find((c) => c.id === "monster-2");
+}
