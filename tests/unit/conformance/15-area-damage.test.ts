@@ -444,7 +444,9 @@ describe("conformance · 15. multi-target and area damage", () => {
         immunities: new Set(["poison", "psychic"]),
       });
       // Engine-ready, needs a caller: the case works once the tray can name an
-      // object in the area as a target, resolved by OBJECT_DEFENSES.
+      // object in the area as a target. The object's rules are in
+      // `@/lib/object-targets` (defenses, failed saves, HP); the tray's control is
+      // owner-gated.
       const id = "@/lib/play/object-targets";
       const tray = (await import(/* @vite-ignore */ id)) as Record<string, unknown>;
       expect(tray.objectTrayTarget).toBeTypeOf("function");
