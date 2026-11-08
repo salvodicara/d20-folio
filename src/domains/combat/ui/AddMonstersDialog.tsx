@@ -23,7 +23,8 @@ import type { Locale } from "@/lib/locale";
 import { matchesSearch } from "@/lib/search";
 import { fmtXp, formatCr } from "@/lib/utils";
 import type { CampaignDoc } from "@/types/campaign";
-import { Art, Button, Chip, Dialog, Field } from "@/ui";
+import { Button, Chip, Dialog, Field } from "@/ui";
+import { MonsterFace } from "@/domains/combat/ui/FightLine";
 
 const BANDS = [
   { id: "all", min: 0, max: 99 },
@@ -165,7 +166,7 @@ export function AddMonstersDialog({
           return (
             <div key={r.key} className="f-row f-dm-pick" data-on={n > 0 || undefined}>
               <span className="f-act-slot" data-painted="" aria-hidden="true">
-                <MonsterFace row={r} />
+                <Face row={r} />
               </span>
               <div className="f-row-main">
                 <div className="f-row-t">{r.name}</div>
@@ -211,19 +212,12 @@ export function AddMonstersDialog({
   );
 }
 
-/** The creature's face in the slot (D&D Beyond's builder avatars): its painted icon, the
- *  one the initiative rows show; else its full painting cropped to the head; else its
- *  initial. */
-function MonsterFace({ row }: { row: Row }) {
-  const initial = <b className="f-dm-initial">{row.name.slice(0, 1)}</b>;
-  const painting = row.art ? (
-    <img className="f-art f-dm-face" src={row.art} alt="" loading="lazy" />
+/** The creature's face in the slot: its own painting cropped to the head, the same as
+ *  the initiative rows; else its initial. */
+function Face({ row }: { row: Row }) {
+  return row.art ? (
+    <MonsterFace src={row.art} />
   ) : (
-    initial
-  );
-  return row.kind === "srd" ? (
-    <Art kind="monster" id={row.id} fallback={painting} />
-  ) : (
-    painting
+    <b className="f-dm-initial">{row.name.slice(0, 1)}</b>
   );
 }

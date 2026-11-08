@@ -1602,6 +1602,7 @@
 .fui .f-fight > .f-act-slot {
   width: var(--slot-size);
   height: var(--slot-size);
+  overflow: hidden;
 }
 .fui .f-fight .f-row-main > .f-chips {
   margin-top: 4px;

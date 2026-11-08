@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { FightArt, FightRow } from "@/domains/combat/fight-rows-view";
+import { monsterPortraitUrl } from "@/data/monster-art";
 import { Art, Chip } from "@/ui";
 
 /** The DM's hands on a line: its creatures' HP (a monster's numbers are the DM's own),
@@ -106,5 +107,16 @@ function LineArt({ art, name }: { art: FightArt | null; name: string }) {
   if (!art) return initial;
   if ("url" in art)
     return <img className="f-art" src={art.url} alt="" loading="lazy" decoding="async" />;
-  return <Art kind={art.kind} id={art.id} fallback={initial} />;
+  if (art.kind === "class") return <Art kind="class" id={art.id} fallback={initial} />;
+  // A monster's own painting, cropped to its head: every creature has its own (the icon
+  // set still repeats a motif across kin, e.g. goblins).
+  const painting = monsterPortraitUrl(art.id);
+  return painting ? <MonsterFace src={painting} /> : initial;
+}
+
+/** A creature's painting, cropped to its head (D&D Beyond's builder avatars). */
+export function MonsterFace({ src }: { src: string }) {
+  return (
+    <img className="f-art f-dm-face" src={src} alt="" loading="lazy" decoding="async" />
+  );
 }
