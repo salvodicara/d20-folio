@@ -14,6 +14,9 @@
  * one call, `collectionGroup(name).get()`; the corpus copy for the baseline lives in a
  * fresh private temp directory and is removed at the end.
  *
+ * `--detail` adds, per field pattern, the catalogue ids involved and how many
+ * characters each (user-made ids folded to `<homebrew>`), to trace a pattern to a fix.
+ *
  * Run with (the baseline tree: `scripts/setup-v025-baseline.sh`):
  *   node --import ./scripts/alias-loader.mjs scripts/survey-v026-derived-diff.ts \
  *     --baseline-root /absolute/path/to/v025-baseline
@@ -79,6 +82,26 @@ export interface DerivedDiffSurvey {
   byFix: Record<string, number>;
   /** Characters with at least one unexpected CHANGED value. */
   withUnexpected: number;
+  /** With `--detail` only: per `pattern [kind]`, the catalogue ids involved (a
+   *  resource, an action, a class) and how many characters each. A user-made id
+   *  (homebrew, an uuid) is folded to `<homebrew>`; no name, note or value. */
+  detail?: Record<string, Record<string, number>>;
+}
+
+/** The catalogue id a path names (`resources.<id>.total`, `actions.<id>.…`,
+ *  `spells.<classId>.…`), or null for a sheet-wide field. */
+export function contentIdOf(path: string): string | null {
+  const [head, id] = path.split(".");
+  if (!id || !(head === "resources" || head === "actions" || head === "spells"))
+    return null;
+  return safeContentId(id);
+}
+
+/** A catalogue id as is; anything a player could have typed (homebrew, custom, an
+ *  uuid, odd characters) folded to `<homebrew>`. */
+export function safeContentId(id: string): string {
+  if (/homebrew|custom|user|[0-9a-f]{8}-[0-9a-f]{4}/i.test(id)) return "<homebrew>";
+  return /^[a-z0-9][a-z0-9:_-]{0,80}$/.test(id) ? id : "<homebrew>";
 }
 
 /** A path with its catalogue ids folded: `resources.drow-x:faerie-fire.total` →
@@ -108,7 +131,8 @@ function changedPaths(
 export function surveyDerivedDiff(
   baseline: readonly ProbeResult[],
   current: readonly ProbeResult[],
-  expected: readonly ExpectedRule[] = EXPECTED
+  expected: readonly ExpectedRule[] = EXPECTED,
+  options: { detail?: boolean } = {}
 ): DerivedDiffSurvey {
   if (baseline.length !== current.length)
     throw new Error("the two probes read different corpora");
@@ -121,7 +145,9 @@ export function surveyDerivedDiff(
     byField: {},
     byFix: {},
     withUnexpected: 0,
+    ...(options.detail ? { detail: {} } : {}),
   };
+  const detailSeen = new Set<string>();
   baseline.forEach((before, index) => {
     const after = current[index];
     if (!after) return;
@@ -150,6 +176,16 @@ export function surveyDerivedDiff(
           ? "removed"
           : "changed";
       const key = `${fieldPattern(path)}|${kind}`;
+      const id = survey.detail ? contentIdOf(path) : null;
+      if (survey.detail && id) {
+        const row = (survey.detail[`${fieldPattern(path)} [${kind}]`] ??= {});
+        // Per character: one count per id however many of its paths moved.
+        const seen = `${index}|${id}`;
+        if (!detailSeen.has(`${key}|${seen}`)) {
+          detailSeen.add(`${key}|${seen}`);
+          row[id] = (row[id] ?? 0) + 1;
+        }
+      }
       if (fields.get(key) !== "unexpected")
         fields.set(key, rule ? "expected" : "unexpected");
     }
@@ -263,7 +299,10 @@ async function run(): Promise<void> {
       join(dir, "baseline.json")
     );
     const current = await probeCorpus(sources);
-    console.log(JSON.stringify(surveyDerivedDiff(baseline, current), null, 2));
+    const detail = processArgv.includes("--detail");
+    console.log(
+      JSON.stringify(surveyDerivedDiff(baseline, current, EXPECTED, { detail }), null, 2)
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
     await deleteApp(app);
