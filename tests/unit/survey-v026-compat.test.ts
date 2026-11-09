@@ -28,7 +28,7 @@ import { surveyV026Compat } from "../../scripts/survey-v026-compat";
 import { makeCharacterDoc } from "./_helpers";
 
 const SCRIPT = resolve(__dirname, "../../scripts/survey-v026-compat.ts");
-const catalogue = { items: [], fingerprint: "sha256:test" };
+const catalogue = { items: [], fingerprint: "sha256:test", mode: "composed" };
 
 /** A character as the app stores it: the parent envelope and its combat child. */
 function character(
@@ -106,6 +106,8 @@ describe("surveyV026Compat", () => {
       ok: 2,
       defaulted: 0,
       rejected: {},
+      rejectedWhere: {},
+      rejectedPaths: {},
       changedOnRead: {},
       rewrites: {},
     });
@@ -177,6 +179,11 @@ describe("surveyV026Compat", () => {
       "invalid-revision": 1,
       "invalid-v1-play-state": 1,
     });
+    // Which check refused each: the parent's revision, the child's play state.
+    expect(survey.kinds.character.rejectedWhere).toEqual({
+      "invalid-revision": { parent: 1 },
+      "invalid-v1-play-state": { "play-state:invalid-play-state": 1 },
+    });
     expect(survey.kinds.campaign).toMatchObject({
       read: 2,
       defaulted: 1,
@@ -188,6 +195,8 @@ describe("surveyV026Compat", () => {
       ok: 1,
       defaulted: 1,
       rejected: { "invalid-roster-entry": 1 },
+      rejectedWhere: {},
+      rejectedPaths: {},
       changedOnRead: { "hp.current": 1 },
       rewrites: { "hp.current": 1 },
     });
@@ -196,6 +205,26 @@ describe("surveyV026Compat", () => {
       read: 2,
       ok: 1,
       rejected: { "invalid-log-item": 1 },
+    });
+  });
+
+  it("names the field a combat state is refused for, and the keys where it differs", async () => {
+    const [parent, child] = character("users/u1/characters/a");
+    if (!parent || !child) throw new Error("fixture");
+    const combat = {
+      ...child.data,
+      turnEconomy: { key: "solo:turn", unknownKey: 1 },
+    };
+    const survey = await surveyV026Compat({
+      documents: [parent, { path: child.path, data: combat }],
+      accounts: [],
+      catalogue,
+    });
+    expect(survey.kinds.character.rejectedWhere).toEqual({
+      "invalid-combat-state": { "canonical:turnEconomy": 1 },
+    });
+    expect(survey.kinds.character.rejectedPaths).toMatchObject({
+      "turnEconomy.unknownKey": 1,
     });
   });
 
