@@ -16,7 +16,7 @@ const SRC = join(__dirname, "../../src");
 /** Loaders that hand a sheet on without reading its rules, and why. */
 const EXEMPT: Record<string, string> = {
   // The loaders themselves: they decode a stored sheet; their readers project it.
-  "lib/firestore.ts": "decodes a stored sheet (hydrateStoredCharacter)",
+  "lib/character-read.ts": "decodes a stored sheet (hydrateStoredCharacter)",
   "features/campaigns/useMemberCharacterDocs.ts": "loads teammates' raw docs",
   "features/campaigns/usePartyCombatStates.ts": "seeds a dev replica's play state",
   "features/campaigns/useMemberCharacterSubscription.ts":
