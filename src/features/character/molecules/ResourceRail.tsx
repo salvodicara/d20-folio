@@ -119,6 +119,7 @@ import { ensureSrdKind } from "@/i18n";
 import type { AbilityCode, ConditionId } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { addTemporaryDefense } from "@/domains/play/forms-defenses-view";
+import { nextChoiceResistancePicks } from "@/lib/choice-resistance-pick";
 import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
@@ -1392,17 +1393,8 @@ function ChoiceResistancePicker({
   const { t } = useTranslation();
   const picked = slot.selected;
   function toggle(type: DamageType): void {
-    let next: DamageType[];
-    if (picked.includes(type)) {
-      next = picked.filter((d) => d !== type);
-    } else if (picked.length < slot.amount) {
-      next = [...picked, type];
-    } else if (slot.amount === 1) {
-      // Single-pick slot: tapping another option REPLACES the pick.
-      next = [type];
-    } else {
-      return; // at cap on a multi-pick slot — deselect first
-    }
+    const next = nextChoiceResistancePicks(picked, slot.amount, type);
+    if (!next) return; // at cap on a multi-pick slot — deselect first
     useCharacterStore.getState().setGrantBundleChoice(slot.choiceKey, next.join(","));
   }
   return (
