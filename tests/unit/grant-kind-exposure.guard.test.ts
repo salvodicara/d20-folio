@@ -601,7 +601,7 @@ const EXPOSURE: Record<string, Exposure> = {
   },
   "cunning-strike-option": {
     via: "resolveCunningStrikeOptions",
-    consumer: "src/features/character/center/tabs/PlayTab.tsx",
+    consumer: "src/domains/play/after-hit-options.ts",
   },
   // ATTACK-PIPS — War Magic became an INTERACTION: the provider reads
   // `resolveReplaceAttackWithCast` to route a mid-Attack-action cantrip cast onto
