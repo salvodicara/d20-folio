@@ -17,6 +17,6 @@ export interface PlayInspirationView {
 export function playInspirationView(doc: CharacterDoc): PlayInspirationView {
   const raw = doc.session.bardicInspirationDie ?? "";
   const die = INSPIRATION_DICE.find((d) => d === raw) ?? null;
-  const heroic = doc.session.inspiration === true;
+  const heroic = doc.session.inspiration;
   return { heroic, die, count: (heroic ? 1 : 0) + (die ? 1 : 0) };
 }
