@@ -59,7 +59,8 @@ export function PlayInspiration({ doc }: { doc: CharacterDoc }) {
       () => {
         store().setBardicInspirationDie("");
         return () => store().setBardicInspirationDie(die);
-      }
+      },
+      { turnScoped: false }
     );
   const slot = (art: string, kind: "feature") => (
     <span className="f-act-slot" data-painted="" aria-hidden="true">

@@ -339,6 +339,9 @@
 .fui [data-c="cond"] {
   --c: var(--cond);
 }
+.fui [data-c="conc"] {
+  --c: var(--conc);
+}
 .fui [data-c="dng"] {
   --c: var(--c-ini);
 }
