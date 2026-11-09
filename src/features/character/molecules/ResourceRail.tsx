@@ -55,7 +55,7 @@ import {
   deriveAdvantageChips,
   deriveConditionResistances,
   deriveDamageSourceResistances,
-  deriveDefenseKind,
+  defenseKindViews,
   deriveFlatDamageReductions,
   displayLanguages,
   displayToolProficiencies,
@@ -118,6 +118,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import { ensureSrdKind } from "@/i18n";
 import type { AbilityCode, ConditionId } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
+import { addTemporaryDefense } from "@/domains/play/forms-defenses-view";
 import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
@@ -374,28 +375,7 @@ export function ResourceRail() {
   // permanent rows + session chips + the quiet add (the conditions register);
   // edit mode exposes the build add/remove chip editors below.
   const sessionDefenses = session.sessionDefenses;
-  const defViews: Record<SessionDefenseKind, DefenseKindView> = {
-    resistance: deriveDefenseKind(
-      aggregate.damageResistances,
-      charData.damageResistanceOverrides,
-      sessionDefenses?.resistance
-    ),
-    immunity: deriveDefenseKind(
-      aggregate.damageImmunities,
-      charData.damageImmunityOverrides,
-      sessionDefenses?.immunity
-    ),
-    vulnerability: deriveDefenseKind(
-      aggregate.damageVulnerabilities,
-      charData.damageVulnerabilityOverrides,
-      sessionDefenses?.vulnerability
-    ),
-    conditionImmunity: deriveDefenseKind(
-      aggregate.conditionImmunities,
-      charData.conditionImmunityOverrides,
-      sessionDefenses?.conditionImmunity
-    ),
-  };
+  const defViews = defenseKindViews(aggregate, charData, sessionDefenses);
   const resistances = defViews.resistance.permanent as DamageType[];
   const damageImmunities = defViews.immunity.permanent as DamageType[];
   const vulnerabilities = defViews.vulnerability.permanent as DamageType[];
@@ -1552,7 +1532,7 @@ function AddDefensePicker({
     if (onAdd) {
       onAdd(kind, id);
     } else {
-      useCharacterStore.getState().addSessionDefense(kind, id);
+      addTemporaryDefense(kind, id);
     }
     setOpen(false);
   }

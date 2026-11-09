@@ -22,8 +22,7 @@ import {
 } from "@/features/compendium/picker/specs/monster";
 import { MONSTERS } from "@/data/monsters";
 import { bestiaryPickAllows } from "@/lib/bestiary-pick";
-import { useCharacterStore } from "@/stores/characterStore";
-import { registerUndoableToast } from "@/stores/undoStore";
+import { pickSummonForm } from "@/domains/play/forms-defenses-view";
 import { useLocale } from "@/hooks/useLocale";
 import { localizeSrd } from "@/i18n/resolver";
 import type { BestiaryPickRule, MonsterStatBlock } from "@/data/types";
@@ -53,12 +52,7 @@ export function BestiarySummonPicker({
       ),
       addLabel: () => t("features.pickCreatureAdd"),
       onAdd: (m: MonsterStatBlock) => {
-        const name = localizeSrd("monster", m.id, "name", locale);
-        registerUndoableToast(
-          { message: t("features.creaturePicked", { name }) },
-          () => useCharacterStore.getState().setCompanionVariant(spellId, m.id),
-          { turnScoped: false }
-        );
+        pickSummonForm(spellId, m.id, localizeSrd("monster", m.id, "name", locale), t);
         onClose();
       },
     }),
