@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 
 import { playDownView } from "@/domains/play/play-down-view";
 import { useHpControls } from "@/features/character/molecules/use-hp-controls";
+import { resolveCharacterDeathSave } from "@/lib/character-d20-tests";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Dialog } from "@/ui";
@@ -22,10 +23,12 @@ export function PlayDown({ doc }: { doc: CharacterDoc }) {
   const readonly = useSheetReadonly();
   const { applyDeathSave } = useHpControls();
   const [rolling, setRolling] = useState(false);
-  const roll = usePostRollEntry(doc, 1, {
-    face: t("play.down.face"),
-    hint: t("play.down.faceHint"),
-  });
+  const roll = usePostRollEntry(
+    doc,
+    1,
+    { face: t("play.down.face"), hint: t("play.down.faceHint") },
+    (faces, use) => resolveCharacterDeathSave(doc, faces, [], use)
+  );
   const down = playDownView(doc);
   if (!down) return null;
   const close = () => {

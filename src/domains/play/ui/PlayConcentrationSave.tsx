@@ -14,6 +14,7 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
   concentrationSaveD20Context,
   enteredD20FaceCount,
+  resolveCharacterConcentrationSave,
 } from "@/lib/character-d20-tests";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -55,7 +56,13 @@ function Prompt({
           context.advantageSourceIds.length === 0
         ? "disadvantage"
         : null;
-  const roll = usePostRollEntry(doc, sheetFaces, { face: t("play.down.face") });
+  const roll = usePostRollEntry(
+    doc,
+    sheetFaces,
+    { face: t("play.down.face") },
+    (faces, use) =>
+      resolveCharacterConcentrationSave(doc, pending, faces, [], undefined, use)
+  );
   const spell = concentrationLabel(pending.spell, locale);
   const close = () => {
     roll.reset();

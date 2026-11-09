@@ -12,13 +12,14 @@ import { useTranslation } from "react-i18next";
 import {
   BARDIC_INSPIRATION_DIE_SOURCE,
   postRollSources,
+  type CharacterEnteredD20Result,
   type PostRollUse,
 } from "@/lib/character-d20-tests";
 import { useLocale } from "@/hooks/useLocale";
 import { bareActionSpend } from "@/lib/play/cast-payment";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import type { CharacterDoc } from "@/types/character";
-import { Chip, Field } from "@/ui";
+import { Chip, Field, Icon } from "@/ui";
 
 export interface PostRollCommit {
   faces: number[];
@@ -33,7 +34,10 @@ export function usePostRollEntry(
   doc: CharacterDoc,
   /** 2 when the sheet already rolls this save with Advantage or Disadvantage. */
   sheetFaces: 1 | 2,
-  labels: { face: string; hint?: string }
+  labels: { face: string; hint?: string },
+  /** The save resolved without committing (the same resolver the store calls), for the
+   *  running total and verdict shown before «Conferma» (BG3's roll result line). */
+  preview?: (faces: number[], use: PostRollUse) => CharacterEnteredD20Result | null
 ) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -83,6 +87,35 @@ export function usePostRollEntry(
     };
   };
 
+  const outcome = (() => {
+    if (!valid || !preview) return null;
+    const e = entry();
+    try {
+      return preview(e.faces, e.use);
+    } catch {
+      return null;
+    }
+  })();
+  const face = outcome?.effectiveFace ?? outcome?.selectedNaturalFace ?? null;
+  const sum =
+    outcome && face !== null && outcome.total !== null
+      ? [
+          String(face),
+          ...(outcome.deterministicModifier !== 0
+            ? [
+                `${outcome.deterministicModifier > 0 ? "+" : "−"} ${String(
+                  Math.abs(outcome.deterministicModifier)
+                )}`,
+              ]
+            : []),
+          ...(outcome.enteredModifierTotal !== 0
+            ? [`+ ${String(outcome.enteredModifierTotal)}`]
+            : []),
+        ].join(" ") + ` = ${String(outcome.total)}`
+      : null;
+  const passed = outcome?.reviewedOutcome.status === "success";
+  const pressedMark = <Icon name="u-check" />;
+
   const fields = (
     <div className="f-roll-entry">
       <Field
@@ -111,6 +144,7 @@ export function usePostRollEntry(
           <div className="f-chips" role="group" aria-label={t("play.down.addAfter")}>
             {sources.enteredModifiers.length > 0 && (
               <Chip pressed={withDie} onClick={() => setWithDie((on) => !on)}>
+                {withDie && pressedMark}
                 {t("play.down.addBardic", { die })}
               </Chip>
             )}
@@ -121,6 +155,7 @@ export function usePostRollEntry(
                   pressed={advantage === a.id}
                   onClick={() => setAdvantage((on) => (on === a.id ? null : a.id))}
                 >
+                  {advantage === a.id && pressedMark}
                   {a.name}
                 </Chip>
               ))}
@@ -136,6 +171,12 @@ export function usePostRollEntry(
           value={dieFace}
           onChange={(e) => setDieFace(e.target.value)}
         />
+      )}
+      {sum && (
+        <p className="f-note f-roll-sum" data-c={passed ? "cmp" : "dng"} role="status">
+          <b>{sum}</b>
+          {` · ${passed ? t("combat.damageTray.succeeded") : t("combat.atZeroHpSaveFailed")}`}
+        </p>
       )}
     </div>
   );
