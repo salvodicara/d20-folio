@@ -13,8 +13,10 @@ import { Link, useMatch, useNavigate, useParams } from "react-router";
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
+import { PlayInspiration } from "./PlayInspiration";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
+import { PlayConcentrationSave } from "@/domains/play/ui/PlayConcentrationSave";
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
@@ -293,7 +295,9 @@ function PlayHeader({
           view.form ||
           view.concentration ||
           view.effects > 0 ||
-          view.conditions > 0) && (
+          view.conditions > 0 ||
+          doc.session.inspiration ||
+          Boolean(doc.session.bardicInspirationDie)) && (
           <div className="f-chips">
             {/* In a form the sheet is the beast's: say so first (the source, then it). */}
             {view.form && (
@@ -301,6 +305,7 @@ function PlayHeader({
             )}
             {view.form && !readonly && <RevertForm />}
             {view.concentration && <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>}
+            <PlayInspiration doc={doc} />
             <PlayEffects doc={doc} locale={locale} />
             <PlayConditions doc={doc} locale={locale} />
           </div>
@@ -371,6 +376,7 @@ function PlayHeader({
           {/* What waits on this character (a save due, Help's Advantage): one
               container with its own row on a phone, never a stray grid cell. */}
           <div className="f-char-notes">
+            <PlayConcentrationSave doc={doc} />
             {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
             {fight && (
               <HelpedCheck

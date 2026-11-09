@@ -20,7 +20,11 @@ import {
   commitDeathSaveEntry,
   commitZeroHpSaver,
 } from "@/features/character/molecules/hp-commits";
-import { deathSaveD20Context, enteredD20FaceCount } from "@/lib/character-d20-tests";
+import {
+  deathSaveD20Context,
+  enteredD20FaceCount,
+  type PostRollUse,
+} from "@/lib/character-d20-tests";
 import {
   deathSaveLimits,
   diedInPlay,
@@ -129,8 +133,14 @@ function editable(): CharacterDoc | null {
 }
 
 /** Enter the death save's d20 (one face, or both with Advantage/Disadvantage). */
-export function recordDeathSave(faces: ReadonlyArray<number>, t: TFunction): void {
-  if (editable()) commitDeathSaveEntry(faces, t);
+export function recordDeathSave(
+  faces: ReadonlyArray<number>,
+  t: TFunction,
+  /** What the player added after the roll and its payment (`usePostRollEntry`). */
+  use?: PostRollUse,
+  spend?: { trackerId: string; amount: number }
+): void {
+  if (editable()) commitDeathSaveEntry(faces, t, use, spend);
 }
 
 /** Use a zero-HP saver on offer; a save-gated one takes the rolled result. */

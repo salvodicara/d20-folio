@@ -12,7 +12,7 @@
      text, Alegreya SC for labels and panel titles, names and buttons at a lighter 500. */
   --font-title:
     "Folio Title Figures", "Folio Title Text", "Alegreya Variable", Georgia, serif;
-  --font-label: "Folio Label", "Alegreya SC", Georgia, serif;
+  --font-label: "Folio Label Figures", "Folio Label", "Alegreya SC", Georgia, serif;
   --font-text: "Folio Text Figures", "Alegreya Variable", Georgia, serif;
   --font-num: "Folio Title Text", "Alegreya Variable", Georgia, serif;
   --fw-name: 500;
@@ -344,6 +344,9 @@
 .fui [data-c="cond"] {
   --c: var(--cond);
 }
+.fui [data-c="conc"] {
+  --c: var(--conc);
+}
 .fui [data-c="dng"] {
   --c: var(--c-ini);
 }
@@ -483,6 +486,12 @@
   border-color: var(--buff);
   background: var(--buff-bg);
   color: var(--white);
+}
+/* Inspiration held (BG3's gold status icon) */
+.fui .f-chip[data-kind="insp"] {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  color: var(--gold-hi);
 }
 
 /* ---------- fields ---------- */
@@ -5602,4 +5611,15 @@
 }
 .fui .f-dm-budget:is([data-d="high"], [data-d="over"]) > b {
   color: var(--hp-r);
+}
+
+/* «Ispirazione»: each row's art, name and what it does, then its one action */
+.fui .f-insp-row {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) auto;
+}
+
+/* a save's d20 entry: the faces, what is added after the roll, and its die */
+.fui .f-roll-entry {
+  display: grid;
+  gap: 16px;
 }

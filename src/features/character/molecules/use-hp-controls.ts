@@ -39,6 +39,7 @@ import { FALL_DAMAGE_TYPE } from "@/lib/play/fall";
 import { uiText } from "@/lib/loc-text";
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
+import type { PostRollUse } from "@/lib/character-d20-tests";
 
 // hpState + HpStateValue moved to the dependency-free `./hp-tier` module so the
 // roster card can import the tier without pulling this store-coupled hook (which
@@ -117,7 +118,11 @@ export interface HpControls {
    * above the character's crit threshold (nat 20, Champion Survivor 18+) =
    * regain 1 HP and wake. No-op above 0 HP or once stable/dead.
    */
-  applyDeathSave: (faces: number | ReadonlyArray<number>) => void;
+  applyDeathSave: (
+    faces: number | ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) => void;
 }
 
 /**
@@ -249,8 +254,12 @@ export function useHpControls(): HpControls {
     );
   }
 
-  function applyDeathSave(faces: number | ReadonlyArray<number>) {
-    commitDeathSaveEntry(faces, t);
+  function applyDeathSave(
+    faces: number | ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) {
+    commitDeathSaveEntry(faces, t, use, spend);
   }
 
   return {

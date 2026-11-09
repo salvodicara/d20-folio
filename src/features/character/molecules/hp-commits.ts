@@ -5,6 +5,7 @@
  * messages live once. Each reads the LIVE sheet at commit and registers one undo.
  */
 import type { TFunction } from "i18next";
+import type { PostRollUse } from "@/lib/character-d20-tests";
 
 import { getEquipment } from "@/data/equipment";
 import {
@@ -210,14 +211,17 @@ export function commitDamage(
  */
 export function commitDeathSaveEntry(
   faces: number | ReadonlyArray<number>,
-  t: TFunction
+  t: TFunction,
+  /** What the player added after the roll and its payment (`usePostRollEntry`). */
+  use?: PostRollUse,
+  spend?: { trackerId: string; amount: number }
 ): void {
   const enteredFaces = typeof faces === "number" ? [faces] : Array.from(faces);
   const before = useCharacterStore.getState().character;
   const { successes: deathSucc, failures: deathFail } = before
     ? vitalDeathSaves(before.session)
     : { successes: 0, failures: 0 };
-  const commit = useCharacterStore.getState().commitDeathSave(enteredFaces);
+  const commit = useCharacterStore.getState().commitDeathSave(enteredFaces, use, spend);
   if (!commit) return;
   const outcome = commit.result.reviewedOutcome.deathSave;
   const entered = commit.result.selectedNaturalFace;
@@ -248,7 +252,7 @@ export function commitDeathSaveEntry(
         : t("combat.deathSaveSuccessToast", { n: entered, s: successes });
   }
   registerUndoableResult({ message }, commit.undo, () =>
-    commitDeathSaveEntry(enteredFaces, t)
+    commitDeathSaveEntry(enteredFaces, t, use, spend)
   );
 }
 
