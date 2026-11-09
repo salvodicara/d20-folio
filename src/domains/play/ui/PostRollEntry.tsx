@@ -84,7 +84,7 @@ export function usePostRollEntry(
   };
 
   const fields = (
-    <>
+    <div className="f-roll-entry">
       <Field
         label={twoFaces ? t("combat.d20FirstAria") : labels.face}
         inputMode="numeric"
@@ -137,7 +137,7 @@ export function usePostRollEntry(
           onChange={(e) => setDieFace(e.target.value)}
         />
       )}
-    </>
+    </div>
   );
 
   return { fields, valid, entry, reset };

@@ -27,6 +27,18 @@
     format("woff2");
 }
 @font-face {
+  font-family: "Folio Label Figures";
+  font-weight: 400 900;
+  font-display: swap;
+  size-adjust: 110%;
+  ascent-override: 80%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039;
+}
+@font-face {
   font-family: "Folio Title Text";
   font-weight: 400 900;
   font-display: swap;

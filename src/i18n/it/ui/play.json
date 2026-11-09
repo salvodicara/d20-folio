@@ -324,7 +324,7 @@
       "heroicGist": "Ritira un dado appena tirato; tieni il nuovo risultato.",
       "bardic": "Ispirazione Bardica",
       "bardicDie": "Ispirazione Bardica · {{die}}",
-      "bardicGist": "Quando fallisci un Test del d20, tira il dado e aggiungilo.",
+      "bardicGist": "Se fallisci un Test del d20, tira il dado e aggiungilo.",
       "held": "Ce l'hai",
       "fromDm": "La concede il DM",
       "received": "Ricevuta",

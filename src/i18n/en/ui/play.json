@@ -324,7 +324,7 @@
       "heroicGist": "Reroll a die you just rolled; keep the new result.",
       "bardic": "Bardic Inspiration",
       "bardicDie": "Bardic Inspiration · {{die}}",
-      "bardicGist": "When you fail a D20 Test, roll the die and add it.",
+      "bardicGist": "When you fail a D20 Test, roll it and add it.",
       "held": "You have it",
       "fromDm": "The DM grants it",
       "received": "Received",
