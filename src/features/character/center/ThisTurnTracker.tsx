@@ -82,6 +82,7 @@ import {
   TIME_STOP_MIN_TURNS,
 } from "@/lib/play/extra-turns";
 import { takeSoloExtraTurn } from "./extra-turn";
+import { standUp as commitStandUp } from "./stand-up";
 import { SURPRISE_STATE, isSurprised } from "@/lib/surprise-state";
 import { WISH_STRESS_STATE, isWishStressed } from "@/lib/wish-state";
 import { WISH_DUPLICATE_MAX_LEVEL, pendingWish } from "@/lib/play/wish";
@@ -607,49 +608,7 @@ export function ThisTurnTracker({
     !movementLocked &&
     remainingMovementFt >= standCostFt;
   function standUp() {
-    // Re-resolve every prerequisite at commit: the character/conditions or turn
-    // budget may have changed since the prompt rendered.
-    const cs = useCharacterStore.getState();
-    const live = cs.character;
-    if (!live || !isCharacterAlive(live.status, live.session)) return;
-    const liveConditions = effectiveConditions(live);
-    const liveConditionEffects = resolveConditionEffects(
-      liveConditions,
-      conditionFactsFor(live, liveConditionEncounter(live.id))
-    );
-    const combat = useCombatStore.getState();
-    const liveSpeedFt = shownWalkingSpeedFt(live, getEquipment, round);
-    const liveStandCostFt = Math.floor(liveSpeedFt / 2);
-    const liveBudgetFt = turnMovementBudgetFt(liveSpeedFt, combat);
-    if (
-      !liveConditions.includes("prone") ||
-      liveSpeedFt <= 0 ||
-      liveConditionEffects.speedZero ||
-      combat.movementLocked ||
-      liveBudgetFt - combat.movementUsedFt < liveStandCostFt
-    ) {
-      return;
-    }
-    // Drop Prone SILENTLY (returns its exact reverse) so the condition clear and
-    // the movement debit ride ONE undo entry, not two separate toasts.
-    const dropProne = cs.removeConditionSilent("prone");
-    if (!dropProne) return; // not prone / read-only — nothing to do
-    // DELTA debit (un-clamped upper): the MovementSlider snap-clamps the display,
-    // and a delta refund on undo stays exact across a later turn's movement.
-    combat.setMovementUsed(combat.movementUsedFt + liveStandCostFt);
-    registerUndoableResult(
-      {
-        message: t("combat.stoodUpToast", {
-          cost: localeDistance(liveStandCostFt, locale),
-        }),
-      },
-      () => {
-        dropProne(); // re-adds Prone + strips the condition-loss log line
-        const c = useCombatStore.getState();
-        c.setMovementUsed(Math.max(0, c.movementUsedFt - liveStandCostFt));
-      },
-      () => standUp()
-    );
+    commitStandUp(t, locale, round);
   }
   // The FIRST active condition that breaks concentration — names the cause on the
   // concentration banner note. (Speed-0's cause is NOT named on the movement
