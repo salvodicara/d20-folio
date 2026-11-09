@@ -8,7 +8,7 @@
  *    hit and damage values, one section switcher on phones.
  */
 
-@import url("https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Cinzel:wght@500;600;700;800&family=Cormorant+Garamond:wght@600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Alegreya+SC:wght@500;700&family=Cormorant+Garamond:wght@600;700&display=swap");
 
 /* Google's Alegreya and Cormorant Garamond ship only old-style figures, which read a size smaller.
    Digits 0–9 come from faces with full-height figures: Source Serif 4 for text, Cormorant Infant (same design as Cormorant) for titles. */
@@ -16,9 +16,9 @@
 @font-face{font-family:"Folio Title Figures";font-style:normal;font-weight:400 600;font-display:swap;ascent-override:92%;descent-override:29%;line-gap-override:0%;src:url(https://fonts.gstatic.com/s/cormorantinfant/v22/HhyCU44g9vKiM1sORYSiWeAsLN99xfs9KOOc_agJPrjxZ9WUjjhhlHSzYzs.woff2) format("woff2");unicode-range:U+0030-0039}
 @font-face{font-family:"Folio Title Figures";font-style:normal;font-weight:700 900;font-display:swap;ascent-override:92%;descent-override:29%;line-gap-override:0%;src:url(https://fonts.gstatic.com/s/cormorantinfant/v22/HhyCU44g9vKiM1sORYSiWeAsLN99xfs9KOOc_agJPrjIZ9WUjjhhlHSzYzs.woff2) format("woff2");unicode-range:U+0030-0039}
 :root {
-  --font-title:
-    "Folio Title Figures", "Cormorant Garamond", Georgia, serif; /* names and titles, title case (BG3) */
-  --font-label: "Cinzel", Georgia, serif; /* small caps labels: FOR DES COS (BG3) */
+  /* one family, as BG3 (owner, 2026-11-08) */
+  --font-title: "Folio Title Figures", "Alegreya", Georgia, serif; /* names and titles, title case */
+  --font-label: "Alegreya SC", Georgia, serif; /* small caps labels: FOR DES COS */
   --font-text: "Folio Text Figures", "Alegreya", Georgia, serif; /* every line a player reads or taps */
 
   --fs-name: 36px;
