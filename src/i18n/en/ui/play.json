@@ -255,7 +255,6 @@
       "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
       "addAfter": "After the roll",
       "addBardic": "+ Bardic Inspiration ({{die}})",
-      "paidAdvantage": "{{name}}: Advantage",
       "secondFace": "The second d20",
       "dieFace": "What did the {{die}} show?"
     },

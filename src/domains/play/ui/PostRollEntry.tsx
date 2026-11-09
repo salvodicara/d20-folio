@@ -121,7 +121,7 @@ export function usePostRollEntry(
                   pressed={advantage === a.id}
                   onClick={() => setAdvantage((on) => (on === a.id ? null : a.id))}
                 >
-                  {t("play.down.paidAdvantage", { name: a.name })}
+                  {a.name}
                 </Chip>
               ))}
           </div>
