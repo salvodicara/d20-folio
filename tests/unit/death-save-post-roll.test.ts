@@ -7,6 +7,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { BARDIC_INSPIRATION_DIE_SOURCE } from "@/lib/character-d20-tests";
+import { concentrationValue } from "@/lib/concentration";
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -61,7 +62,11 @@ describe("Concentration save with a post-roll use", () => {
   it("adds the held Bardic Inspiration die and spends it, undone together", () => {
     const doc = makeCharacterDoc(
       { abilityScores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS: 10, CHA: 10 } },
-      { hp: { current: 20, temp: 0 }, concentration: "bless", bardicInspirationDie: "d8" }
+      {
+        hp: { current: 20, temp: 0 },
+        concentration: concentrationValue("bless"),
+        bardicInspirationDie: "d8",
+      }
     );
     useCharacterStore.getState().setCharacter(doc);
     useCharacterStore.getState().queueConcentrationSaveForDamage(10);
@@ -75,7 +80,7 @@ describe("Concentration save with a post-roll use", () => {
     expect(commit?.result.total).toBe(14);
     expect(commit?.result.reviewedOutcome.status).toBe("success");
     const after = useCharacterStore.getState().character;
-    expect(after?.session.concentration).toBe("bless");
+    expect(after?.session.concentration).toBe(concentrationValue("bless"));
     expect(after?.session.bardicInspirationDie ?? "").toBe("");
 
     expect(commit?.undo()).toBe(true);
