@@ -7,7 +7,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The fixtures are built with the app's combat-state writer, whose module holds a
+// Firestore ref helper: keep the client SDK out of CI (pure-modules guard).
+vi.mock("@/lib/firebase", () => ({ db: {}, functions: {} }));
 
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToCombatState } from "@/lib/combat-state";
