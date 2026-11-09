@@ -62,7 +62,11 @@ import { liveConditionEncounter } from "@/features/character/condition-encounter
 import { mixingOutcome, potionMixingOffer } from "@/lib/play/potion-mixing";
 import { customText, srdText, type LocText } from "@/lib/loc-text";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { runEndTurn } from "@/lib/play/end-turn";
+import {
+  endMaintainedState,
+  endTurnWithStores,
+  expireReadiedHold,
+} from "./end-turn-wiring";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { actsOfUse } from "@/lib/play/states";
 import {
@@ -93,7 +97,6 @@ import {
   useUndoStore,
   registerUndoableToast,
   registerUndoableResult,
-  MAX_UNDO_DEPTH,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
@@ -194,7 +197,6 @@ import {
   castReadiesSpell,
   READIED_SPELL_REACTION_ID,
   readiedHold,
-  readiedSpellExpires,
   readiedTargets,
   releaseKeepsConcentration,
 } from "@/lib/play/ready";
@@ -228,16 +230,10 @@ import {
   createItemResourcePaymentCycle,
   useOptionalItemResourceCommands,
 } from "./useItemResourceCommands";
-import { advanceSharedTurn } from "./turn-state";
-import { advanceSoloWorldTurn } from "./solo-world-turn";
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
 import { isSelfFormSpell } from "@/lib/polymorph";
-import {
-  advanceGlobalCombat,
-  syncPipToStatus,
-} from "@/features/campaigns/combat-reconcile";
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -273,33 +269,6 @@ function durableTurnChanged(
  *  is the resource a Cunning Strike option debits (golden rule 7 — a stable id). */
 const SNEAK_ATTACK_TRACKER_ID = "rogue-sneak-attack";
 
-/**
- * The readied spell is lost at the start of your next turn: Concentration on it ends
- * (logged). Returns the lost spell and the exact inverse, or null when nothing was
- * held or due.
- */
-function expireReadiedHold(round: number): { spell: string; restore: () => void } | null {
-  const cs = useCharacterStore.getState();
-  const doc = cs.character;
-  if (!doc || cs.readonly || !readiedSpellExpires(doc.session, round)) return null;
-  const spell = doc.session.concentration;
-  let restoreConcentration: (() => void) | undefined;
-  const logIds = cs.setConcentration("", {
-    undoable: false,
-    captureUndo: (undo) => {
-      restoreConcentration = undo;
-    },
-  });
-  return {
-    spell,
-    restore: () => {
-      restoreConcentration?.();
-      const current = useCharacterStore.getState();
-      for (const id of logIds) current.removeLogEntry(id);
-    },
-  };
-}
-
 // The self-transformation form picker a Polymorph-family cast opens; a lazy leaf,
 // so the cockpit pays for it only when such a spell is cast.
 const TransformFormPicker = lazy(() =>
@@ -325,7 +294,6 @@ export function TurnEconomyProvider({
   const setAttackBudget = useCombatStore((s) => s.setAttackBudget);
   const markReactionUsed = useCombatStore((s) => s.useReaction);
   const resetReaction = useCombatStore((s) => s.resetReaction);
-  const endTurn = useCombatStore((s) => s.endTurn);
   const showToast = useToastStore((s) => s.showToast);
 
   /** A delayed picker/target review is only a proposal. Re-read the canonical
@@ -2640,18 +2608,7 @@ export function TurnEconomyProvider({
   // End Turn: the sequence is `runEndTurn` (lib/play/end-turn); this wires its
   // ports to the stores, the shared turn and this provider's toasts and prompt.
   function handleEndTurn() {
-    runEndTurn({
-      // Read at CLICK time (getState, never a reactive subscription), so the
-      // render isolation of this provider holds.
-      encounter: () => useCombatStatusStore.getState().status,
-      soloRound: () => useCombatStore.getState().round,
-      selections: () => useCombatStore.getState().selected,
-      character: () => useCharacterStore.getState().character,
-      expireBoundaries: (position) =>
-        useCharacterStore.getState().expireEffectBoundaries(position),
-      recoverPerTurnTrackers: () => useCharacterStore.getState().recoverPerTurnTrackers(),
-      advanceEffectTimers: (round) =>
-        useCharacterStore.getState().advanceEffectTimers(round),
+    endTurnWithStores({
       setMaintenancePrompts,
       announce: (sourceIds) => {
         for (const sourceId of sourceIds) {
@@ -2663,74 +2620,7 @@ export function TurnEconomyProvider({
           });
         }
       },
-      handOffSharedTurn: () => {
-        const combatStatusStore = useCombatStatusStore.getState();
-        const encounterStatus = combatStatusStore.status;
-        if (!encounterStatus) return;
-        // Flip the hand-off at once (optimistic): the band goes to `waiting` and the
-        // own-turn controls vanish in this tick, not after the shared write's round
-        // trip. The in-flight turn is recorded BEFORE it is published, so a lagging
-        // listener can never republish the pre-advance "your turn" frame; it clears
-        // when the real read lands or the write fails (see combat-reconcile.ts). A
-        // rapid second press then reads `isMyTurn === false` and no-ops.
-        const optimisticStatus = advanceGlobalCombat(encounterStatus);
-        combatStatusStore.setPendingTurn({
-          campaignId: encounterStatus.campaignId,
-          epoch: encounterStatus.encounter.epoch,
-          fromId: encounterStatus.encounter.currentCombatantId ?? encounterStatus.myId,
-          fromRound: encounterStatus.round,
-        });
-        combatStatusStore.set(
-          optimisticStatus,
-          syncPipToStatus(combatStatusStore.pip, optimisticStatus)
-        );
-        advanceSharedTurn(
-          encounterStatus.campaignId,
-          encounterStatus.myId,
-          encounterStatus.encounter.currentCombatantId
-        );
-      },
-      advanceSoloTurn: () => {
-        const c = useCombatStore.getState();
-        // endTurn() replaces these wholesale, so the captured references stay valid
-        // for the restore (round, economy, budget, reaction, movement, and the
-        // round's damage so the maintained-state check re-evaluates identically).
-        const prevTurn = {
-          round: c.round,
-          selected: c.selected,
-          budget: c.budget,
-          attacksUsed: c.attacksUsed,
-          outcomeReceipts: c.outcomeReceipts,
-          outcomeOrdinal: c.outcomeOrdinal,
-          attackSwings: c.attackSwings,
-          reactionUsed: c.reactionUsed,
-          reactionUsedId: c.reactionUsedId,
-          reactionOutcomeOccurrenceId: c.reactionOutcomeOccurrenceId,
-          movementUsedFt: c.movementUsedFt,
-          damageTakenThisRound: c.damageTakenThisRound,
-        };
-        endTurn();
-        // The canonical engine turn boundary over the character's own world
-        // (fail-closed, one-way); the legacy expiry engines keep running for every
-        // state the world does not own yet.
-        advanceSoloWorldTurn(prevTurn.round);
-        return () => useCombatStore.setState(prevTurn);
-      },
-      compactTurnUndo: () => {
-        // The turn's own entries fold into End Turn's; their stale toasts close.
-        // Undoing End Turn re-instates them, each again individually undoable,
-        // without clearing `future` (the End Turn entry just moved there).
-        const compacted = useUndoStore.getState().past.filter((e) => e.turnScoped);
-        useUndoStore.getState().purgeTurnScoped();
-        return () =>
-          useUndoStore.setState((s) => ({
-            past: [...s.past, ...compacted].slice(-MAX_UNDO_DEPTH),
-          }));
-      },
-      expireReadiedSpell,
-      logTurnEnd: (round) =>
-        useCharacterStore.getState().logEvent({ kind: "turn-end", round }),
-      removeLogEntry: (id) => useCharacterStore.getState().removeLogEntry(id),
+      readiedSpellLost: announceReadiedSpellLost,
       registerUndo: (round, reverse, replay) =>
         registerUndoableResult(
           { message: t("combat.endTurnToast", { round }) },
@@ -2992,24 +2882,7 @@ export function TurnEconomyProvider({
   // while-active grant drops) and dismiss the prompt. Undoable via toast.
   function endMaintainedEffect(activeKey: string) {
     setMaintenancePrompts((prev) => prev.filter((e) => e.activeKey !== activeKey));
-    const message = t("combat.maintainedEndedToast");
-    // Character-state (not turn-scoped): survives an encounter turn-start purge.
-    if (
-      registerUndoableToast(
-        { message },
-        () => {
-          const cs = useCharacterStore.getState();
-          const wasActive = (cs.character?.session.activeFeatures ?? []).includes(
-            activeKey
-          );
-          if (!wasActive) return null;
-          cs.setActiveFeature(activeKey, false);
-          return () => useCharacterStore.getState().setActiveFeature(activeKey, true);
-        },
-        { turnScoped: false }
-      ) === null
-    )
-      return;
+    endMaintainedState(activeKey, t);
   }
 
   function prepareResolution(
@@ -3224,17 +3097,14 @@ export function TurnEconomyProvider({
     );
   }
 
-  /** {@link expireReadiedHold}, announced. */
-  function expireReadiedSpell(round: number): (() => void) | null {
-    const lost = expireReadiedHold(round);
-    if (!lost) return null;
+  /** A readied spell lost at the next turn's start, announced. */
+  function announceReadiedSpellLost(spell: string): void {
     showToast({
       message: t("combat.readiedSpellLostToast", {
-        name: concentrationLabel(lost.spell, locale),
+        name: concentrationLabel(spell, locale),
       }),
       duration: 4000,
     });
-    return lost.restore;
   }
 
   function selfCombatantId(): string {
