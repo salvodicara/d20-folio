@@ -1,6 +1,6 @@
 /**
  * What a hit can add on the new Play screen (headless), as the classic action card
- * offers it: the on-hit riders (a Battle Master maneuver, Divine Smite), the weapon's
+ * offers it: the on-hit riders (Divine Smite and the like), the weapon's
  * Mastery, and the Rogue's Cunning Strike on a weapon attack. The actions are the
  * classic ones: `spendRider` and `applyCunningStrike` from `useTurnEconomy`, and
  * `applyMasteryRider`.
