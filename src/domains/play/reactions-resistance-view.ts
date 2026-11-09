@@ -9,7 +9,7 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { nextChoiceResistancePicks } from "@/lib/choice-resistance-pick";
 import type { LocText } from "@/lib/loc-text";
 import type { Locale } from "@/lib/locale";
-import { OFF_LIST_REACTION_ID } from "@/lib/play/off-list-reaction";
+import { OFF_LIST_REACTION_ID } from "@/lib/views/off-list-reaction";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { useCharacterStore } from "@/stores/characterStore";

@@ -19,7 +19,7 @@ import { nextChoiceResistancePicks } from "@/lib/choice-resistance-pick";
 import {
   OFF_LIST_REACTION_ID,
   offListReactionAction,
-} from "@/lib/play/off-list-reaction";
+} from "@/lib/views/off-list-reaction";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";

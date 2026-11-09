@@ -62,7 +62,7 @@ import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
-import { offListReactionAction } from "@/lib/play/off-list-reaction";
+import { offListReactionAction } from "@/lib/views/off-list-reaction";
 import { useTurnState } from "@/features/character/center/turn-state";
 import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
