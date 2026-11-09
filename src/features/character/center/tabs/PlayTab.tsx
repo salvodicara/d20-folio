@@ -62,8 +62,13 @@ import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
+import { cunningStrikeOptionsFor } from "@/domains/play/after-hit-options";
+import {
+  applyEscapeCheck as applySheetEscapeCheck,
+  applyHideCheck as applySheetHideCheck,
+  skillBonusFor,
+} from "@/domains/play/check-entry";
 import { useTurnState } from "@/features/character/center/turn-state";
-import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { formatModifier, localeDistance } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
@@ -82,12 +87,10 @@ import {
   type RollState,
   type ResolvedActionSource,
 } from "@/lib/views/sheet-view";
-import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { litSituations } from "@/lib/situational-states";
 import { attackCardFacts, situationalAttackChips } from "@/lib/play/situations";
 import { SituationChips } from "../SituationChips";
-import { useToastStore } from "@/stores/toastStore";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import {
   UniversalCard,
@@ -100,7 +103,6 @@ import {
 import { ActionLog } from "@/features/character/molecules/ActionLog";
 import {
   resolveTrackers,
-  resolveCunningStrikeOptions,
   resolveReplaceAttackWithCast,
   armorDisadvantageClauses,
   type ResolvedAction,
@@ -112,10 +114,7 @@ import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
 import { MasteryRiders } from "@/components/shared/MasteryRiders";
 import { masteryRiderLine } from "@/lib/views/mastery-rider-view";
 import { applyMasteryRider } from "@/features/character/center/mastery-rider-commit";
-import {
-  buildCunningStrikeOptions,
-  type CunningStrikeVM,
-} from "@/lib/views/cunning-strike-view";
+import { type CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 import { GlossaryTip, type GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { WeaponFacts } from "@/components/shared/WeaponFacts";
 import { ActionRiders, RiderSummary } from "@/components/shared/ActionRiders";
@@ -141,18 +140,13 @@ import {
 } from "@/lib/views/combat-action-view";
 import { repeatUseCost } from "@/lib/play/object-interaction";
 import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
-import {
-  ESCAPE_GRAPPLE_ACTION_ID,
-  escapeGrappleSkill,
-  judgeEscapeGrapple,
-} from "@/lib/play/escape-grapple";
+import { ESCAPE_GRAPPLE_ACTION_ID, escapeGrappleSkill } from "@/lib/play/escape-grapple";
 import {
   actionHigherLevels,
   conditionLabel,
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
-import { vitalExhaustion } from "@/lib/character-vitals";
 import { useTurnEconomy } from "../useTurnEconomy";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
@@ -167,10 +161,6 @@ type FilterType = "pinned" | "all" | "action" | "bonus" | "reaction" | "free";
 /** Stable empty conditions array — keeps the `conditionEffects` memo dep stable
  *  when no character is loaded (a fresh `[]` each render would thrash the memo). */
 const EMPTY_CONDITIONS: ReadonlyArray<string> = [];
-
-/** The Rogue Sneak Attack feature's stable srdId — its once-per-turn use tracker
- *  is what a Cunning Strike option debits (golden rule 7 — a stable id). */
-const SNEAK_ATTACK_ID = "rogue-sneak-attack";
 
 /** The Cunning Strike bundle threaded to every action card (weapon attack rows
  *  render the picker; other rows ignore it) — the catalogue + the apply handler. */
@@ -463,26 +453,9 @@ export function PlayTab() {
   // derivation (`deriveSavesAndChecks`, the same rows the Skills panel and the
   // LeftHud render) so the roll-entry and the sheet can never disagree
   // (golden rule 6). Override-aware by construction (`row.bonus`).
-  const skillRows = useMemo(
-    () =>
-      character
-        ? deriveSavesAndChecks(character.character, {
-            exhaustion: vitalExhaustion(character.session),
-            ...(character.session.tableRules
-              ? { tableRules: character.session.tableRules }
-              : {}),
-            activeFeatures: character.session.activeFeatures,
-            conditions: effectiveConditions(character),
-            grantBundleChoices: character.session.grantBundleChoices,
-            fadingPenalties: character.session.fadingPenalties,
-            activeForm: character.session.activeForm,
-          }).skills
-        : [],
+  const skillCheckBonusFor = useMemo(
+    () => (character ? skillBonusFor(character) : () => 0),
     [character]
-  );
-  const skillCheckBonusFor = useCallback(
-    (skillId: string) => skillRows.find((r) => r.id === skillId)?.bonus ?? 0,
-    [skillRows]
   );
 
   const dispatchAction = commitAction;
@@ -740,22 +713,10 @@ export function PlayTab() {
   // weapon attack cards beside their riders. The legality reads the live Sneak
   // Attack use + dice budget so an unaffordable option renders disabled. Empty for
   // non-Rogues / pre-L5 Rogues → the strip never appears.
-  const cunningStrikeOptions = useMemo<CunningStrikeVM[]>(() => {
-    if (!character) return [];
-    const { options } = resolveCunningStrikeOptions(character);
-    if (options.length === 0) return [];
-    const sneak = resolveTrackers(character).find((tr) => tr.id === SNEAK_ATTACK_ID);
-    const sneakAttackAvailable = sneak ? sneak.total - sneak.used > 0 : false;
-    // The Rogue's Sneak Attack dice budget (⌈Rogue level/2⌉) — the parsed die
-    // count from the resolved tracker's scaling die ("3d6" → 3); the dice cost of
-    // an option must fit this budget. Falls back to 0 when no die is resolved.
-    const sneakAttackDice = sneak?.die ? parseInt(sneak.die, 10) || 0 : 0;
-    return buildCunningStrikeOptions(
-      options,
-      { sneakAttackAvailable, sneakAttackDice },
-      locale
-    );
-  }, [character, locale]);
+  const cunningStrikeOptions = useMemo<CunningStrikeVM[]>(
+    () => (character ? cunningStrikeOptionsFor(character, locale) : []),
+    [character, locale]
+  );
 
   // S6 — apply a Cunning Strike option (debit the Sneak Attack use + undo). Bound
   // once here so every weapon attack card threads the SAME handler.
@@ -1590,20 +1551,10 @@ function CombatActionCard({
   function applyHideCheck(face: number) {
     const sc = effectiveSummary.skillCheck;
     if (!sc) return;
-    const total = face + (skillCheckBonusFor?.(sc.skill) ?? 0);
-    if (total < sc.dc) {
-      useToastStore.getState().showToast({
-        message: t("combat.hideFailToast", { total, dc: sc.dc }),
-        duration: 4000,
-      });
-      return;
-    }
-    const undo = useCharacterStore.getState().applyHiddenState(total);
-    if (!undo) return;
-    registerUndoableResult(
-      { message: t("combat.hideSuccessToast", { total }) },
-      undo,
-      () => applyHideCheck(face)
+    applySheetHideCheck(
+      face,
+      { dc: sc.dc, bonus: skillCheckBonusFor?.(sc.skill) ?? 0 },
+      t
     );
   }
 
@@ -1616,21 +1567,7 @@ function CombatActionCard({
       : null;
   function applyEscapeCheck(face: number, dc: number) {
     if (!escapeSkill) return;
-    const { total, escaped } = judgeEscapeGrapple(face, escapeSkill.bonus, dc);
-    if (!escaped) {
-      useToastStore.getState().showToast({
-        message: t("combat.escapeFailToast", { total, dc }),
-        duration: 4000,
-      });
-      return;
-    }
-    const undo = useCharacterStore.getState().removeConditionSilent("grappled");
-    if (!undo) return;
-    registerUndoableResult(
-      { message: t("combat.escapeSuccessToast", { total, dc }) },
-      undo,
-      () => applyEscapeCheck(face, dc)
-    );
+    applySheetEscapeCheck(face, dc, escapeSkill.bonus, t);
   }
 
   return (
