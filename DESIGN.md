@@ -335,6 +335,11 @@ per-hue twins follow. BG3's stroke-twin pattern pairs each glow with a dark grou
 
 ## 3. Typography
 
+**The new UI (`.fui`, `src/ui/ui.css`) uses one family, as Baldur's Gate 3 (owner, 2026-11-08):**
+Alegreya for titles, names and text (names, tabs, buttons and chips at 500), Alegreya SC for labels
+and panel titles, Alegreya 700 for numbers; digits keep the full-height figure faces. The faces
+below describe the classic UI until each screen is rebuilt.
+
 **"The Gilded Plate"** (owner-ratified 2026-07-02, the BG3-identity epic) — four registers, three
 faces:
 

@@ -8,9 +8,14 @@
 
 /* ---------- tokens ---------- */
 .fui {
-  --font-title: "Folio Title Figures", "Cormorant Garamond", Georgia, serif;
-  --font-label: "Cinzel Variable", Georgia, serif;
+  /* One family, as Baldur's Gate 3 (owner's pick, 2026-11-08): Alegreya for titles and
+     text, Alegreya SC for labels and panel titles, names and buttons at a lighter 500. */
+  --font-title:
+    "Folio Title Figures", "Folio Title Text", "Alegreya Variable", Georgia, serif;
+  --font-label: "Folio Label", "Alegreya SC", Georgia, serif;
   --font-text: "Folio Text Figures", "Alegreya Variable", Georgia, serif;
+  --font-num: "Folio Title Text", "Alegreya Variable", Georgia, serif;
+  --fw-name: 500;
 
   --bg: #0b0907;
   --bar: #0d0a08;
@@ -46,7 +51,7 @@
   --temp: #5fd4ff;
   --danger: #ff7a6a;
   --danger-line: #c0392b;
-  --turn: #33a6ff;
+  --turn: var(--gold-hi);
 
   --white: #fff;
   --shade: #000;
@@ -274,7 +279,7 @@
       transparent
     );
   font: 700 18px/1.2 var(--font-label);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--white);
 }
@@ -358,7 +363,7 @@
   border-radius: var(--r-sm);
   background: none;
   color: var(--text);
-  font: 600 15px var(--font-text);
+  font: var(--fw-name) 15px var(--font-text);
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -421,7 +426,7 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font: 600 15px var(--font-text);
+  font: var(--fw-name) 15px var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -447,7 +452,7 @@
   border-radius: var(--r-pill);
   background: none;
   color: var(--text);
-  font: 600 14px var(--font-text);
+  font: var(--fw-name) 14px var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -959,7 +964,7 @@
 }
 .fui .f-hero h1 {
   margin: 0;
-  font: 600 36px/1.1 var(--font-title);
+  font: 500 36px/1.1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-hero-sub {
@@ -1043,7 +1048,7 @@
   min-width: 0;
 }
 .fui .f-row-t {
-  font-weight: 600;
+  font-weight: var(--fw-name);
   text-wrap: balance;
   color: var(--strong);
 }
@@ -1066,7 +1071,7 @@
   text-align: center;
 }
 .fui .f-stat-v {
-  font: 600 20px/1.2 var(--font-title);
+  font: 700 20px/1.2 var(--font-num);
   color: var(--strong);
 }
 .fui .f-stat-v[data-hp="ok"] {
@@ -1598,9 +1603,74 @@
 /* ---------- fight: the initiative list ---------- */
 /* every row carries the same inset, so the current one never shifts its columns */
 .fui .f-fight {
+  display: grid;
+  grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) auto 72px;
+  align-items: center;
+  gap: 4px 12px;
   padding-left: 12px;
   padding-right: 12px;
   border-radius: var(--r-sm);
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+.fui .f-fight > .f-act-slot {
+  width: var(--slot-size);
+  height: var(--slot-size);
+  overflow: hidden;
+}
+.fui .f-fight .f-row-main > .f-chips {
+  margin-top: 4px;
+}
+.fui .f-fight-state {
+  display: flex;
+  justify-content: flex-end;
+}
+/* the HP column: one width on every line, right-aligned, bare like the Play rows */
+.fui .f-fight-hpcol {
+  display: flex;
+  justify-content: flex-end;
+}
+.fui .f-fight-hpcol .f-stat {
+  white-space: nowrap;
+  text-align: right;
+}
+.fui .f-fight-hpcol .f-stat > .f-lbl {
+  margin-left: 2px;
+}
+/* the current monster's own action (DDB's and Foundry's row actions), on its line */
+.fui .f-fight-act {
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
+}
+.fui .f-fight-act > .f-btn {
+  padding-left: 0;
+  padding-right: 0;
+}
+@media (max-width: 640px) {
+  .fui .f-fight {
+    grid-template-columns: 24px var(--slot-size) minmax(0, 1fr) 76px;
+    gap: 4px 8px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  /* on a phone the state sits in the HP's column, under the HP, on every line */
+  .fui .f-fight-state {
+    grid-row: 2;
+    grid-column: 3 / 5;
+    justify-content: flex-end;
+  }
+  .fui .f-fight-hpcol {
+    grid-row: 1;
+    grid-column: 4;
+  }
+  .fui .f-fight > .f-init,
+  .fui .f-fight > .f-act-slot {
+    grid-row: 1 / span 2;
+  }
+  .fui .f-fight-state:empty {
+    display: none;
+  }
 }
 .fui .f-fight[data-current] {
   background: color-mix(in srgb, var(--turn) 10%, transparent);
@@ -3221,7 +3291,11 @@
 }
 .fui .f-act-slot {
   display: grid;
+  /* one track bounded to the slot: an image's height: 100% resolves to the slot, so a
+     tall painting is cropped (object-fit) instead of running past the frame */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
+  flex: none;
   width: var(--slot-size);
   height: var(--slot-size);
   border: 1px solid var(--frame);
@@ -5454,6 +5528,89 @@
   color: var(--gold-hi);
   font-weight: 600;
   text-wrap: pretty;
+}
+
+/* ---------- the DM's tools on the fight (Scontro) ---------- */
+/* A: the line's HP is a button (D&D Beyond's tracker: tap the HP, type, Damage) */
+.fui .f-fight-hp {
+  min-width: 56px;
+  min-height: 44px;
+  margin-right: -8px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+.fui .f-fight-hp:hover {
+  background: var(--hover);
+}
+.fui .f-fight-hp:focus-visible,
+.fui .f-dm-step:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 2px;
+}
+/* the add sheet: D&D Beyond's builder rows, «+» at the end, the count beside it */
+.fui .f-dm-list {
+  margin-top: 8px;
+}
+.fui .f-dm-pick {
+  gap: 12px;
+}
+/* the avatar stays inside its slot: a tall painting shows its head (DDB's builder) */
+.fui .f-dm-pick > .f-act-slot {
+  width: var(--slot-size);
+  height: var(--slot-size);
+  overflow: hidden;
+}
+.fui .f-dm-face {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 12%;
+}
+.fui .f-dm-pick[data-on] .f-row-t {
+  color: var(--gold-hi);
+}
+.fui .f-dm-initial {
+  font: 600 var(--fs-lg) var(--font-title);
+}
+.fui .f-dm-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+.fui .f-dm-count > b {
+  min-width: 16px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.fui .f-dm-step {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--text);
+  font: 600 var(--fs-lg) var(--font-text);
+  cursor: pointer;
+}
+.fui .f-dm-budget {
+  margin-right: auto;
+  color: var(--muted);
+}
+.fui .f-dm-budget[data-d="low"] > b {
+  color: var(--c-cmp);
+}
+.fui .f-dm-budget[data-d="moderate"] > b {
+  color: var(--hp-y);
+}
+.fui .f-dm-budget:is([data-d="high"], [data-d="over"]) > b {
+  color: var(--hp-r);
 }
 
 /* «Ispirazione»: each row's art, name and what it does, then its one action */

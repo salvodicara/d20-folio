@@ -28,8 +28,9 @@ import {
 
 import type { LogItem, SessionHead, SessionLogStore } from "@/lib/session-log";
 
-/** Shared input: keep only items with the envelope the fold relies on. */
-function isLogItem(value: unknown): value is LogItem {
+/** Shared input: keep only items with the envelope the fold relies on. Exported for
+ *  the v0.26 compatibility survey, which counts the items a reader would drop. */
+export function isLogItem(value: unknown): value is LogItem {
   if (typeof value !== "object" || value === null) return false;
   const item = value as Record<string, unknown>;
   if (typeof item.id !== "string" || typeof item.by !== "string") return false;
