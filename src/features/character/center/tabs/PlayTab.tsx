@@ -62,6 +62,7 @@ import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
+import { offListReactionAction } from "@/lib/views/off-list-reaction";
 import { useTurnState } from "@/features/character/center/turn-state";
 import { registerUndoableResult } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
@@ -107,7 +108,6 @@ import {
 } from "@/lib/smart-tracker";
 
 import { uiText } from "@/lib/loc-text";
-import { localizeText } from "@/lib/views/srd-i18n";
 import { CunningStrikeOptions } from "@/components/shared/CunningStrikeOptions";
 import { MasteryRiders } from "@/components/shared/MasteryRiders";
 import { masteryRiderLine } from "@/lib/views/mastery-rider-view";
@@ -831,30 +831,7 @@ export function PlayTab() {
   // the action log, the 5s undo toast, and the meter's dimming disc all behave
   // identically. View-layer data only — it consumes no resource and models no
   // SRD mechanic.
-  const offListReaction = useMemo<ResolvedAction>(() => {
-    // This off-list reaction is a view-synthesized row whose label is a CHROME key
-    // (not SRD content, not user text). Its `nameLoc` is a `ui` REF to the ONE
-    // `ui/combat.json` key — never a frozen both-locale string (golden rule 7).
-    // The combat LOG stores this ref, so the logged row re-localizes on a language
-    // switch like every other; `nameEn` (the search FACT) and the active `name`
-    // both DERIVE from it (no cross-locale i18n fetch in the feature — the EN
-    // canonical resolves through the presenter, which always has EN `common` loaded).
-    const otherReactionLoc = uiText("combat.otherReactionName");
-    return {
-      id: "manual-reaction",
-      name: t("combat.otherReactionName"),
-      nameEn: localizeText(otherReactionLoc, "en"),
-      nameLoc: otherReactionLoc,
-      type: "reaction",
-      source: "feature",
-      spellLevel: null,
-      concentration: false,
-      summary: {},
-      costsSlot: false,
-      pinned: false,
-      defaultPinned: false,
-    };
-  }, [t]);
+  const offListReaction = useMemo(() => offListReactionAction(t), [t]);
 
   if (!character) return null;
 
