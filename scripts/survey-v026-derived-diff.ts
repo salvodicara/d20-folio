@@ -29,6 +29,8 @@ import { join, resolve } from "node:path";
 import process, { argv as processArgv } from "node:process";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
+import { existsSync } from "node:fs";
+import { contentPackEnabled } from "./content-pack-mode.ts";
 import { discoverDocuments, readTargetConfiguration } from "./lib/migration-kit.ts";
 import { probeCorpus, type ProbeResult, type ProbeSource } from "./lib/derived-probe.ts";
 
@@ -209,6 +211,27 @@ export function surveyDerivedDiff(
   return survey;
 }
 
+// ── Both sides composed the same way ───────────────────────────────────────────
+
+/** Whether the private pack takes part on each side (`content-pack/index.ts` linked
+ *  and not switched off). */
+export interface Composition {
+  current: boolean;
+  baseline: boolean;
+}
+
+/** Refuse a lopsided run: an engine without the pack reads every pack feature as
+ *  missing, so the diff would be all false removals (2026-11-09: a checkout with no
+ *  `content-pack` link reported pack trackers and actions as «removed»). */
+export function assertSameComposition(composition: Composition): void {
+  if (composition.current !== composition.baseline) {
+    throw new Error(
+      `composed: current ${String(composition.current)}, baseline ${String(composition.baseline)}. ` +
+        "Link content-pack on both sides (the pack's origin/main here, the release's pack there) or on neither."
+    );
+  }
+}
+
 // ── Read-only Firestore ───────────────────────────────────────────────────────
 
 /** The one read the survey needs, and nothing else: any other property (a doc ref, a
@@ -283,6 +306,12 @@ async function run(): Promise<void> {
   console.log(
     `Target: ${target.projectId} (${target.emulator ? "explicit emulator" : "production read"})`
   );
+  const composition: Composition = {
+    current: contentPackEnabled(),
+    baseline: existsSync(join(resolve(root), "content-pack", "index.ts")),
+  };
+  assertSameComposition(composition);
+  console.log(`composed: ${String(composition.current)} (both sides)`);
   const dir = await mkdtemp(join(tmpdir(), "folio-derived-diff-"));
   try {
     const db = readOnlyFirestore(getFirestore(app)) as Parameters<

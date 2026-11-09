@@ -13,6 +13,7 @@ import type { CharacterDoc } from "@/types/character";
 import { probeCorpus, type ProbeSource } from "../../scripts/lib/derived-probe";
 import {
   fieldPattern,
+  assertSameComposition,
   readOnlyFirestore,
   safeContentId,
   surveyDerivedDiff,
@@ -163,6 +164,24 @@ describe("--detail names the catalogue ids behind a pattern", () => {
     expect(
       surveyDerivedDiff([{ ok: true, stats: {} }], [{ ok: true, stats: {} }]).detail
     ).toBeUndefined();
+  });
+});
+
+describe("both sides must be composed the same way", () => {
+  it("a side without the pack would read every pack feature as removed: refused", () => {
+    expect(() => assertSameComposition({ current: false, baseline: true })).toThrow(
+      /composed: current false, baseline true/
+    );
+    expect(() => assertSameComposition({ current: true, baseline: false })).toThrow(
+      /composed/
+    );
+  });
+
+  it("the same composition on both sides runs", () => {
+    expect(() => assertSameComposition({ current: true, baseline: true })).not.toThrow();
+    expect(() =>
+      assertSameComposition({ current: false, baseline: false })
+    ).not.toThrow();
   });
 });
 
