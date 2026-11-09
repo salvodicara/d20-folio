@@ -14,6 +14,7 @@ import { probeCorpus, type ProbeSource } from "../../scripts/lib/derived-probe";
 import {
   fieldPattern,
   readOnlyFirestore,
+  safeContentId,
   surveyDerivedDiff,
 } from "../../scripts/survey-v026-derived-diff";
 import { makeCharacterDoc } from "./_helpers";
@@ -120,6 +121,48 @@ describe("the comparison", () => {
     );
     const text = JSON.stringify(survey);
     expect(text).not.toMatch(/dagger|\b1[45]\b/);
+  });
+});
+
+describe("--detail names the catalogue ids behind a pattern", () => {
+  it("per pattern and kind, each id with its character count", () => {
+    const survey = surveyDerivedDiff(
+      [
+        {
+          ok: true,
+          stats: {
+            "resources.bard-bardic-inspiration.total": 3,
+            "actions.weapon-dagger.toHit": 4,
+          },
+        },
+        { ok: true, stats: { "resources.bard-bardic-inspiration.total": 3 } },
+      ],
+      [
+        { ok: true, stats: { "actions.weapon-dagger.toHit": 5 } },
+        { ok: true, stats: {} },
+      ],
+      [],
+      { detail: true }
+    );
+    expect(survey.detail).toEqual({
+      "resources.*.total [removed]": { "bard-bardic-inspiration": 2 },
+      "actions.*.toHit [changed]": { "weapon-dagger": 1 },
+    });
+  });
+
+  it("an id a player could have typed is folded, never shown", () => {
+    expect(safeContentId("homebrew-sword-of-bob")).toBe("<homebrew>");
+    expect(safeContentId("3f2a9c1e-77aa-4b1c-9d2e-0a1b2c3d4e5f")).toBe("<homebrew>");
+    expect(safeContentId("My Sword")).toBe("<homebrew>");
+    expect(safeContentId("race:tiefling:fiendish-legacy:darkness")).toBe(
+      "race:tiefling:fiendish-legacy:darkness"
+    );
+  });
+
+  it("without the flag there is no detail", () => {
+    expect(
+      surveyDerivedDiff([{ ok: true, stats: {} }], [{ ok: true, stats: {} }]).detail
+    ).toBeUndefined();
   });
 });
 
