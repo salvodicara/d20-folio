@@ -278,7 +278,7 @@ function bump(map: Record<string, number>, key: string): void {
 
 /** Why a character's combat child is refused: the check, and for a field that is not
  *  in its canonical form, the key paths where it differs (keys only). */
-function combatFault(combat: unknown): [string, string[]] | [] {
+function combatFault(combat: unknown): [string, string[]] {
   if (combat === null) return ["parent-or-missing-combat-state", []];
   const parsed = engine.parseCombatState(combat);
   if (parsed.ok) return ["parent", []];
@@ -357,7 +357,8 @@ export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSu
         ];
         read(kinds.character, [], rewrites);
       } catch (error) {
-        reject(kinds.character, reasonOf(error), ...combatFault(combat));
+        const [where, paths] = combatFault(combat);
+        reject(kinds.character, reasonOf(error), where, paths);
       }
     } else if (CAMPAIGN.test(path)) {
       try {
