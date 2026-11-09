@@ -108,6 +108,7 @@ import { ResourceConversions } from "./ResourceConversions";
 import { TableClockControl } from "./TableClockControl";
 import { ItemResourceRailRow } from "./ItemResourceRailRow";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
+import { restGrantBundles } from "@/lib/play/rest-bundles";
 import { ActivatableFeaturesBar } from "./ActivatableFeaturesBar";
 import {
   WEAPON_PROFICIENCY_CATEGORIES,
@@ -304,8 +305,7 @@ export function ResourceRail() {
   // REST-frequency variant bundles (re-chosen each rest per RAW) — the
   // creation-frequency ones (lineages) are owned by the Bio tab.
   const restBundles = useMemo(
-    () =>
-      aggregate ? aggregate.grantBundles.filter((b) => b.choiceFrequency === "rest") : [],
+    () => (aggregate ? restGrantBundles(aggregate.grantBundles) : []),
     [aggregate]
   );
 
