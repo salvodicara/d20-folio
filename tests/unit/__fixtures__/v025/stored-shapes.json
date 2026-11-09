@@ -1,0 +1,498 @@
+{
+  "combatStateFullTurn": {
+    "hp": {
+      "current": 37,
+      "temp": 9
+    },
+    "conditions": ["prone", "frightened"],
+    "bardicInspirationDie": "d10",
+    "heroicInspiration": true,
+    "initiativeRoll": 18,
+    "deathSaves": {
+      "successes": 2,
+      "failures": 1
+    },
+    "round": 8,
+    "activeEffects": [
+      {
+        "id": "effect-concentration",
+        "actor": {
+          "kind": "pc",
+          "combatantId": "pc-u1",
+          "memberUid": "u1",
+          "characterId": "char-1"
+        },
+        "target": {
+          "kind": "monster",
+          "combatantId": "monster-0"
+        },
+        "source": {
+          "kind": "spell",
+          "id": "hex",
+          "actionId": "spell-hex",
+          "castLevel": 2
+        },
+        "payload": {
+          "kind": "grant-group",
+          "activeKey": "spell-hex",
+          "phase": "active"
+        },
+        "bindings": {
+          "spellcastingModifier": 4
+        },
+        "applied": {
+          "currentHpDelta": -3
+        },
+        "duration": {
+          "kind": "concentration",
+          "actorId": "pc-u1",
+          "sourceId": "hex"
+        }
+      },
+      {
+        "id": "effect-turn-boundary",
+        "actor": {
+          "kind": "monster",
+          "combatantId": "monster-0"
+        },
+        "target": {
+          "kind": "pc",
+          "combatantId": "pc-u1",
+          "memberUid": "u1",
+          "characterId": "char-1"
+        },
+        "source": {
+          "kind": "feature",
+          "id": "mark",
+          "actionId": "feature-mark"
+        },
+        "payload": {
+          "kind": "target-mark",
+          "activeKey": "feature-mark",
+          "scope": "marked"
+        },
+        "duration": {
+          "kind": "turn-boundary",
+          "combatantId": "pc-u1",
+          "round": 8,
+          "phase": "turn-end"
+        }
+      },
+      {
+        "id": "effect-condition",
+        "actor": {
+          "kind": "monster",
+          "combatantId": "monster-1"
+        },
+        "target": {
+          "kind": "pc",
+          "combatantId": "pc-u1",
+          "memberUid": "u1",
+          "characterId": "char-1"
+        },
+        "source": {
+          "kind": "feature",
+          "id": "terror",
+          "actionId": "feature-terror"
+        },
+        "payload": {
+          "kind": "condition",
+          "conditionId": "frightened"
+        },
+        "duration": {
+          "kind": "encounter"
+        }
+      },
+      {
+        "id": "effect-aftereffect",
+        "actor": {
+          "kind": "pc",
+          "combatantId": "pc-u1",
+          "memberUid": "u1",
+          "characterId": "char-1"
+        },
+        "target": {
+          "kind": "pc",
+          "combatantId": "pc-u1",
+          "memberUid": "u1",
+          "characterId": "char-1"
+        },
+        "source": {
+          "kind": "spell",
+          "id": "haste",
+          "actionId": "spell-haste"
+        },
+        "payload": {
+          "kind": "grant-group",
+          "activeKey": "spell-haste",
+          "phase": "aftereffect"
+        },
+        "duration": {
+          "kind": "encounter"
+        }
+      }
+    ],
+    "appliedEncounterEffects": {
+      "epoch": 12,
+      "ids": ["effect-a", "effect-b"]
+    },
+    "turnEconomy": {
+      "key": "encounter:camp-1:12:8:pc-u1",
+      "selected": {
+        "action": [
+          {
+            "id": "attack-action",
+            "slot": "action",
+            "name": {
+              "custom": "Homebrew Feint"
+            },
+            "isAttackGroup": true,
+            "economyCategory": "attack",
+            "triggerEvents": ["attack", "bonus-extend"]
+          },
+          {
+            "id": "dash-action",
+            "slot": "action",
+            "name": {
+              "srd": {
+                "kind": "spell",
+                "key": "fireball",
+                "field": "name"
+              }
+            },
+            "economyCategory": "dash"
+          }
+        ],
+        "bonus": [
+          {
+            "id": "disengage-action",
+            "slot": "bonus",
+            "name": {
+              "lit": {
+                "en": "Brace",
+                "it": "Prepararsi"
+              }
+            },
+            "economyCategory": "disengage",
+            "triggerEvents": ["bonus-extend"]
+          },
+          {
+            "id": "hide-action",
+            "slot": "bonus",
+            "name": {
+              "ui": "combat.otherReactionName"
+            },
+            "economyCategory": "hide"
+          }
+        ],
+        "free": [
+          {
+            "id": "utilize-action",
+            "slot": "free",
+            "name": {
+              "custom": "Homebrew Feint"
+            },
+            "economyCategory": "utilize",
+            "outcomeOccurrenceId": "utilize-1"
+          },
+          {
+            "id": "uncategorized-action",
+            "slot": "free",
+            "name": {
+              "lit": {
+                "en": "Brace",
+                "it": "Prepararsi"
+              }
+            }
+          }
+        ]
+      },
+      "attacksUsed": 3,
+      "attackSwings": [
+        {
+          "actionId": "longsword",
+          "outcomeOccurrenceId": "longsword-1"
+        },
+        {
+          "actionId": "longsword",
+          "outcomeOccurrenceId": "longsword-2"
+        },
+        {
+          "actionId": "fire-bolt",
+          "outcomeOccurrenceId": "fire-bolt-1"
+        }
+      ],
+      "outcomeReceipts": [
+        {
+          "id": "utilize-1:0",
+          "occurrenceId": "utilize-1",
+          "actionId": "utilize-action",
+          "instance": 0,
+          "count": 1,
+          "target": {
+            "combatantId": "monster-0"
+          },
+          "fact": {
+            "kind": "save",
+            "ability": "DEX",
+            "result": "failure"
+          }
+        },
+        {
+          "id": "longsword-1:0",
+          "occurrenceId": "longsword-1",
+          "actionId": "longsword",
+          "instance": 0,
+          "count": 1,
+          "target": {
+            "combatantId": "monster-0"
+          },
+          "fact": {
+            "kind": "attack",
+            "result": "hit"
+          }
+        },
+        {
+          "id": "longsword-2:0",
+          "occurrenceId": "longsword-2",
+          "actionId": "longsword",
+          "instance": 0,
+          "count": 1,
+          "target": {
+            "combatantId": "monster-0"
+          },
+          "fact": {
+            "kind": "attack",
+            "result": "miss"
+          }
+        },
+        {
+          "id": "fire-bolt-1:0",
+          "occurrenceId": "fire-bolt-1",
+          "actionId": "fire-bolt",
+          "instance": 0,
+          "count": 1,
+          "target": {
+            "combatantId": "monster-0"
+          },
+          "fact": {
+            "kind": "attack",
+            "result": "hit"
+          }
+        },
+        {
+          "id": "counterspell-1:0",
+          "occurrenceId": "counterspell-1",
+          "actionId": "counterspell",
+          "instance": 0,
+          "count": 1,
+          "target": {
+            "combatantId": "monster-0"
+          },
+          "fact": {
+            "kind": "save",
+            "ability": "INT",
+            "result": "success"
+          }
+        }
+      ],
+      "outcomeOrdinal": 5,
+      "reactionUsed": true,
+      "reactionUsedId": "counterspell",
+      "reactionOutcomeOccurrenceId": "counterspell-1",
+      "movementUsedFt": 25,
+      "dashesThisTurn": 2,
+      "spellSlotCastsThisTurn": 1,
+      "spellSlotCastTurnKey": "encounter:camp-1:12:8:pc-u1",
+      "damageTakenThisRound": true,
+      "nextAttackAdvantage": true,
+      "movementLocked": true
+    },
+    "pendingConcentrationSaves": [
+      {
+        "id": "con-save-1",
+        "spell": "haste",
+        "damage": 22,
+        "difficultyClass": 11
+      },
+      {
+        "id": "con-save-2",
+        "spell": "haste",
+        "damage": 80,
+        "difficultyClass": 30
+      }
+    ],
+    "playState": {
+      "version": 1,
+      "state": {}
+    },
+    "updatedAt": {
+      "_methodName": "serverTimestamp"
+    }
+  },
+  "combatStateFresh": {
+    "hp": {
+      "current": 44,
+      "temp": 0
+    },
+    "conditions": [],
+    "bardicInspirationDie": "",
+    "heroicInspiration": false,
+    "initiativeRoll": null,
+    "deathSaves": {
+      "successes": 0,
+      "failures": 0
+    },
+    "round": 1,
+    "playState": {
+      "version": 1,
+      "state": {}
+    },
+    "updatedAt": {
+      "_methodName": "serverTimestamp"
+    }
+  },
+  "characterParent": {
+    "schema": 3,
+    "build": {
+      "name": "Fixture",
+      "race": "human",
+      "classes": [
+        {
+          "classId": "fighter",
+          "level": 5
+        }
+      ],
+      "background": "soldier",
+      "alignment": "neutral-good",
+      "abilities": {
+        "STR": 16,
+        "DEX": 14,
+        "CON": 14,
+        "INT": 10,
+        "WIS": 12,
+        "CHA": 8
+      },
+      "speed": "30 ft"
+    },
+    "state": {},
+    "revision": 4,
+    "shared": false,
+    "status": "active",
+    "portraitUrl": null
+  },
+  "encounterRunning": {
+    "combatants": [
+      {
+        "kind": "monster",
+        "name": "Goblin",
+        "ac": 13,
+        "initiative": 12,
+        "conditions": [],
+        "hp": {
+          "current": 10,
+          "temp": 0,
+          "max": 10
+        },
+        "id": "monster-1",
+        "groupId": "monster-1",
+        "groupIndex": 1,
+        "groupSize": 2
+      },
+      {
+        "kind": "monster",
+        "name": "Goblin",
+        "ac": 13,
+        "initiative": 12,
+        "conditions": [],
+        "hp": {
+          "current": 10,
+          "temp": 0,
+          "max": 10
+        },
+        "id": "monster-2",
+        "groupId": "monster-1",
+        "groupIndex": 2,
+        "groupSize": 2
+      }
+    ],
+    "nextMonsterOrdinal": 3,
+    "round": 1,
+    "currentCombatantId": "monster-1",
+    "epoch": 1000,
+    "status": "active",
+    "order": ["monster-1", "monster-2"]
+  },
+  "campaign": {
+    "name": "Fixture campaign",
+    "createdBy": "dm-uid",
+    "dmUid": "dm-uid",
+    "members": ["dm-uid", "p-uid"],
+    "memberDetails": {
+      "dm-uid": {
+        "displayName": "DM",
+        "photoURL": null,
+        "characterId": null,
+        "role": "dm"
+      },
+      "p-uid": {
+        "displayName": "P",
+        "photoURL": null,
+        "characterId": "c1",
+        "role": "player"
+      }
+    },
+    "status": "active",
+    "inviteCode": "ABCDEFGHJKLMNP",
+    "treasury": {
+      "pp": 0,
+      "gp": 12,
+      "ep": 0,
+      "sp": 3,
+      "cp": 0
+    },
+    "treasuryLog": [],
+    "encounter": {
+      "combatants": [
+        {
+          "kind": "monster",
+          "name": "Goblin",
+          "ac": 13,
+          "initiative": 12,
+          "conditions": [],
+          "hp": {
+            "current": 10,
+            "temp": 0,
+            "max": 10
+          },
+          "id": "monster-1",
+          "groupId": "monster-1",
+          "groupIndex": 1,
+          "groupSize": 2
+        },
+        {
+          "kind": "monster",
+          "name": "Goblin",
+          "ac": 13,
+          "initiative": 12,
+          "conditions": [],
+          "hp": {
+            "current": 10,
+            "temp": 0,
+            "max": 10
+          },
+          "id": "monster-2",
+          "groupId": "monster-1",
+          "groupIndex": 2,
+          "groupSize": 2
+        }
+      ],
+      "nextMonsterOrdinal": 3,
+      "round": 1,
+      "currentCombatantId": "monster-1",
+      "epoch": 1000,
+      "status": "active",
+      "order": ["monster-1", "monster-2"]
+    }
+  }
+}
