@@ -30,24 +30,17 @@ import {
   TrendingDown,
   Focus,
 } from "lucide-react";
+import { restSummary, type RestSummary } from "@/lib/play/rest-summary";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { useRestCommit } from "./use-rest-commit";
 import { canCharacterRest } from "@/lib/character-status";
 import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
 import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
-import {
-  longRestFades,
-  sessionAfterLongRestReduction,
-  type LongRestFades,
-} from "@/lib/play/rests";
+import { sessionAfterLongRestReduction } from "@/lib/play/rests";
 import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
-import {
-  getShortRestExhaustionRecovery,
-  gainsHeroicInspirationOnLongRest,
-} from "@/lib/smart-tracker";
 import { cn } from "@/lib/utils";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { ModalShell } from "@/components/shared/ModalShell";
@@ -57,23 +50,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 type RestPhase = "idle" | "confirm-short" | "confirm-long" | "summary";
-
-interface RestSummary {
-  type: "short" | "long";
-  hpBefore: number;
-  hpAfter: number;
-  hpMax: number;
-  hitDiceUsed: number;
-  slotsRestored: number;
-  trackersRestored: number;
-  exhaustionReduced: boolean;
-  /** S4 — Human's Resourceful: a Long Rest auto-lit Heroic Inspiration. */
-  inspirationGained: boolean;
-  /** Total typed item-resource units restored by this exact rest boundary. */
-  itemResourceUnitsRecovered: number;
-  /** A Long Rest's fading penalty steps and restored Hit Point maximum. */
-  fades: LongRestFades | null;
-}
 
 /** "−4", or "0" once the penalty is gone. */
 function penaltyText(amount: number): string {
@@ -196,75 +172,41 @@ function RestFlow({ onClose }: { onClose: () => void }) {
    */
   async function finishShortRest(healedHp: number) {
     if (!diceCountValid) return;
-    const hpBefore = hpCurrent;
-    const newHp = Math.min(hpCurrent + healedHp, hpMax);
-
-    // S4 — Ranger's Tireless: a Short Rest removes Exhaustion (computed BEFORE
-    // the rest applies it, so the summary can report it). 0 for anyone
-    // without the grant.
-    const exhaustionRemovedOnShort =
-      getShortRestExhaustionRecovery(restCharacter) > 0 && session.exhaustion > 0;
 
     // The rest routes through the canonical mechanics runtime (`useRestCommit`:
     // the item-resource boundary, `restThroughWorld`, the heal, the dice, the fight).
     const prepared = await rest.shortRest(restCharacter, hitDiceToSpend, healedHp);
     if (!prepared) return;
 
-    setSummary({
-      type: "short",
-      hpBefore,
-      hpAfter: newHp,
-      hpMax,
-      hitDiceUsed: hitDiceToSpend,
-      slotsRestored: 0,
-      trackersRestored: 0,
-      exhaustionReduced: exhaustionRemovedOnShort,
-      inspirationGained: false,
-      fades: null,
-      itemResourceUnitsRecovered: prepared.entries.reduce(
-        (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
-        0
-      ),
-    });
+    const after = useCharacterStore.getState().character ?? restCharacter;
+    setSummary(
+      restSummary(
+        "short",
+        restCharacter,
+        after,
+        prepared.entries.map(({ receipt }) => receipt)
+      )
+    );
     setPhase("summary");
     setHitDiceToSpend(0);
   }
 
   async function handleLongRestConfirm() {
-    const hpBefore = hpCurrent;
-    const hadExhaustion = session.exhaustion > 0;
-    // RA-01 — Hit Dice regain is handled by `longRest()` (2024 RAW: regain ALL
-    // spent Hit Dice). Surface the count we restored so the summary can show it.
-    const hitDiceRestored = hitDiceUsed;
-
-    // S4 — Human's Resourceful: a Long Rest auto-lights Heroic Inspiration. Show
-    // it in the summary ONLY when it's a genuine GAIN (the character didn't
-    // already have it), so the line reads as a consequence of this rest.
-    const inspirationGained =
-      gainsHeroicInspirationOnLongRest(restCharacter) && !session.inspiration;
-    // Read before the rest: a fading penalty's step, a reduced maximum restored.
-    const fades = longRestFades(restCharacter);
-
+    // The summary (Hit Dice regained, Resourceful's Inspiration, the fades) is read
+    // from the sheet before and after the rest (`restSummary`).
     // The rest routes through the canonical mechanics runtime (`useRestCommit`).
     const prepared = await rest.longRest(restCharacter);
     if (!prepared) return;
 
-    setSummary({
-      type: "long",
-      hpBefore,
-      hpAfter: longRestHpMax,
-      hpMax: longRestHpMax,
-      hitDiceUsed: hitDiceRestored,
-      slotsRestored: totalSlotsSpent,
-      trackersRestored: totalTrackersSpent,
-      exhaustionReduced: hadExhaustion,
-      inspirationGained,
-      fades,
-      itemResourceUnitsRecovered: prepared.entries.reduce(
-        (sum, { receipt }) => sum + Math.max(0, receipt.after - receipt.before),
-        0
-      ),
-    });
+    const after = useCharacterStore.getState().character ?? restCharacter;
+    setSummary(
+      restSummary(
+        "long",
+        restCharacter,
+        after,
+        prepared.entries.map(({ receipt }) => receipt)
+      )
+    );
     setPhase("summary");
   }
 
@@ -283,20 +225,20 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           as="h2"
           tight
           title={
-            summary.type === "long"
+            summary.kind === "long"
               ? t("rest.longRestSummary")
               : t("rest.shortRestSummary")
           }
         />
         <div className="rest-summary-panel">
           <div className="rest-summary-head">
-            {summary.type === "long" ? (
+            {summary.kind === "long" ? (
               <Moon className="h-5 w-5" />
             ) : (
               <Sun className="h-5 w-5" />
             )}
             <span className="rest-summary-title">
-              {summary.type === "long"
+              {summary.kind === "long"
                 ? t("rest.longRestSummaryTitle")
                 : t("rest.shortRestSummaryTitle")}
             </span>
@@ -305,21 +247,21 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           <div className="rest-summary-rows">
             <SummaryRow
               label={t("character.hitPoints")}
-              value={`${summary.hpBefore} → ${summary.hpAfter} / ${summary.hpMax}`}
-              highlight={summary.hpAfter > summary.hpBefore}
+              value={`${summary.hp.before} → ${summary.hp.after} / ${summary.hp.max}`}
+              highlight={summary.hp.after > summary.hp.before}
             />
-            {summary.type === "short" && summary.hitDiceUsed > 0 && (
+            {summary.kind === "short" && summary.hitDice.count > 0 && (
               <SummaryRow
                 // RA-02 — report the ACTUAL HP healed (hpAfter − hpBefore from the
                 // player's entered roll), never a fabricated average.
                 label={t("rest.hitDiceSpent")}
                 value={t("rest.hitDiceSpentValue", {
-                  dice: hitDiceText(summary.hitDiceUsed),
-                  hp: summary.hpAfter - summary.hpBefore,
+                  dice: hitDiceText(summary.hitDice.count),
+                  hp: summary.hp.after - summary.hp.before,
                 })}
               />
             )}
-            {summary.type === "short" && summary.exhaustionReduced && (
+            {summary.kind === "short" && summary.exhaustionReduced && (
               <SummaryRow
                 label={t("character.exhaustion")}
                 value={t("rest.exhaustionReduced")}
@@ -335,13 +277,13 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                 highlight
               />
             )}
-            {summary.type === "long" && (
+            {summary.kind === "long" && (
               <>
                 <SummaryRow
                   label={t("rest.hitDiceRecovered")}
                   value={t("rest.hitDiceRecoveredValue", {
-                    count: summary.hitDiceUsed,
-                    total: hitDiceMax,
+                    count: summary.hitDice.count,
+                    total: summary.hitDice.total,
                   })}
                   highlight
                 />

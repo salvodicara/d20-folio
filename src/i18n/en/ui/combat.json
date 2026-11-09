@@ -1,5 +1,6 @@
 {
   "combat": {
+    "grantBundlePickedToast": "{{name}}: now {{option}}",
     "effectRider": {
       "push": "Pushed up to {{distance}} away",
       "pull": "Pulled up to {{distance}} closer",

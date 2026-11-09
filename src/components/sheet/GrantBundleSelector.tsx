@@ -12,6 +12,7 @@
  */
 import { useTranslation } from "react-i18next";
 import type { GrantBundle } from "@/lib/grants";
+import { uniqueGrantBundles } from "@/lib/play/rest-bundles";
 import { localizeText } from "@/lib/views/srd-i18n";
 import type { Locale } from "@/lib/locale";
 
@@ -29,14 +30,9 @@ export function GrantBundleSelector({
   const { t } = useTranslation();
   if (bundles.length === 0) return null;
 
-  // Two features can share a bundleKey (Circle Spells + Nature's Ward); show
-  // one selector per key (first wins; its `selected` is authoritative).
-  const seen = new Set<string>();
-  const unique = bundles.filter((b) => {
-    if (seen.has(b.bundleKey)) return false;
-    seen.add(b.bundleKey);
-    return true;
-  });
+  // Two features can share a bundleKey (Circle Spells + Nature's Ward): one
+  // selector per key (first wins; its `selected` is authoritative).
+  const unique = uniqueGrantBundles(bundles);
 
   return (
     <div className="flex flex-col gap-1.5" data-testid="grant-bundle-selector">
