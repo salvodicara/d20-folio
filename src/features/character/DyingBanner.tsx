@@ -39,7 +39,6 @@ import { useTranslation } from "react-i18next";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Heart, HeartCrack, ShieldPlus, Skull } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
-import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import {
   zeroHpSavers,
@@ -51,6 +50,7 @@ import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { deathSaveD20Context, enteredD20FaceCount } from "@/lib/character-d20-tests";
 import { vitalExhaustion, vitalHp } from "@/lib/character-vitals";
 import { useHpControls } from "./molecules/use-hp-controls";
+import { commitZeroHpSaver } from "./molecules/hp-commits";
 import { DeathSaves } from "./molecules/DeathSaves";
 import { EnteredD20Faces } from "./molecules/EnteredD20Faces";
 import { Icon } from "@/components/ui/icon";
@@ -67,7 +67,6 @@ export function DyingBanner() {
     s.character ? vitalHp(s.character.session).current : 1
   );
   const character = useCharacterStore((s) => s.character);
-  const applyZeroHpSaver = useCharacterStore((s) => s.applyZeroHpSaver);
 
   // The same shared HP engine the header pill uses — the quick heal, the dying
   // verdict (stable/dead), and the RA-11 death-save roll consumer.
@@ -111,14 +110,7 @@ export function DyingBanner() {
   );
 
   function trySaver(saver: ZeroHpSaver, result?: ZeroHpSaveResult) {
-    const source = grantSourceLabel(saver.sourceId, locale);
-    const message =
-      result === "failure"
-        ? t("combat.atZeroHpSaveFailedToast", { source })
-        : t("combat.atZeroHpAppliedToast", { source, hp: saver.hitPoints });
-    registerUndoableToast({ message }, () => applyZeroHpSaver(saver.sourceId, result), {
-      turnScoped: false,
-    });
+    commitZeroHpSaver(saver, result, t, locale);
   }
 
   // Fallen by ANY cause — the SAME predicate the roster tile reads (golden rule 6),
