@@ -43,4 +43,10 @@ describe("usePostRollEntry", () => {
     render(<Harness total={10} status="success" />);
     expect(screen.queryByRole("status")).toBeNull();
   });
+
+  it("with no modifier shows the total once", () => {
+    render(<Harness total={8} status="failure" />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "8" } });
+    expect(screen.getByRole("status")).toHaveTextContent(/^8 · Failed$/);
+  });
 });

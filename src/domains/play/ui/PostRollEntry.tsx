@@ -97,22 +97,27 @@ export function usePostRollEntry(
     }
   })();
   const face = outcome?.effectiveFace ?? outcome?.selectedNaturalFace ?? null;
-  const sum =
-    outcome && face !== null && outcome.total !== null
-      ? [
-          String(face),
-          ...(outcome.deterministicModifier !== 0
-            ? [
-                `${outcome.deterministicModifier > 0 ? "+" : "−"} ${String(
-                  Math.abs(outcome.deterministicModifier)
-                )}`,
-              ]
-            : []),
-          ...(outcome.enteredModifierTotal !== 0
-            ? [`+ ${String(outcome.enteredModifierTotal)}`]
-            : []),
-        ].join(" ") + ` = ${String(outcome.total)}`
-      : null;
+  const sum = (() => {
+    if (!outcome || face === null || outcome.total === null) return null;
+    const added = [
+      ...(outcome.deterministicModifier !== 0
+        ? [
+            `${outcome.deterministicModifier > 0 ? "+" : "−"} ${String(
+              Math.abs(outcome.deterministicModifier)
+            )}`,
+          ]
+        : []),
+      ...(outcome.enteredModifierTotal !== 0
+        ? [`+ ${String(outcome.enteredModifierTotal)}`]
+        : []),
+    ];
+    // Two d20s (Advantage or Disadvantage): which one counted.
+    const faces = entry().faces;
+    const kept = faces.length === 2 ? `${faces.join(" / ")} → ` : "";
+    return added.length > 0
+      ? `${kept}${[String(face), ...added].join(" ")} = ${String(outcome.total)}`
+      : `${kept}${String(outcome.total)}`;
+  })();
   const passed = outcome?.reviewedOutcome.status === "success";
   const pressedMark = <Icon name="u-check" />;
 
