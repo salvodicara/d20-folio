@@ -13,14 +13,16 @@ import {
   runEffectRowAction,
 } from "@/domains/play/concentration-model";
 import { playEffectsView } from "@/domains/play/play-effects-view";
+import { concentrationValue } from "@/lib/concentration";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
+import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
-const cleric = (session: Record<string, unknown> = {}) =>
+const cleric = (session: Partial<CharacterDoc["session"]> = {}) =>
   makeCharacterDoc(
     { classes: [{ classId: "cleric", level: 5 }] },
-    { concentration: "bless", ...session }
+    { concentration: concentrationValue("bless"), ...session }
   );
 
 describe("concentrationModel", () => {
@@ -44,7 +46,7 @@ describe("concentrationModel", () => {
   });
 
   it("not concentrating: no spell, nothing blocked", () => {
-    expect(concentrationModel(cleric({ concentration: "" }), "en")).toEqual({
+    expect(concentrationModel(cleric({ concentration: "" as const }), "en")).toEqual({
       spell: null,
       roundsLeft: null,
       blockedBy: null,
