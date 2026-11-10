@@ -8,6 +8,7 @@
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
+import { resolveConditionEffects } from "@/lib/condition-effects";
 import { srdText, type LocText } from "@/lib/loc-text";
 
 /** A base action's `rule` catalogue key (`base-dash` → `action.dash`). */
@@ -31,6 +32,8 @@ export interface BaseActionState {
   /** The `BASE_ACTIONS` id whose use lights the state. */
   actionId: string;
   grant: TurnBoundaryWhileActive;
+  /** Ends early when its user is Incapacitated or their Speed is 0 (Dodge). */
+  endsOnIncapacitatedOrSpeedZero?: true;
 }
 
 export const BASE_ACTION_STATES: ReadonlyArray<BaseActionState> = [
@@ -45,6 +48,9 @@ export const BASE_ACTION_STATES: ReadonlyArray<BaseActionState> = [
         { type: "advantage-on", rollType: "save", vs: "dex" },
       ],
     },
+    // SRD 5.2.1 Dodge: "This benefit ends early if you have the Incapacitated
+    // condition or if your Speed is 0."
+    endsOnIncapacitatedOrSpeedZero: true,
   },
 ];
 
@@ -58,16 +64,23 @@ export function baseActionState(actionId: string): BaseActionState | undefined {
  * nothing, so it never shows as a rail toggle the player did not ask for.
  */
 export function resolveBaseActionStateSources(
-  activeKeys: ReadonlySet<string>
+  activeKeys: ReadonlySet<string>,
+  /** The creature's active conditions (implied ones included). */
+  conditions: ReadonlyArray<string> = []
 ): GrantSource[] {
-  return BASE_ACTION_STATES.filter((state) => activeKeys.has(state.grant.activeKey)).map(
-    (state) => ({
-      id: state.actionId,
-      ref: { kind: "rule", key: baseActionKey(state.actionId) },
-      label: baseActionText(state.actionId, "name"),
-      grants: [state.grant],
-    })
-  );
+  const ended =
+    conditions.includes("incapacitated") ||
+    resolveConditionEffects(conditions, {}).speedZero;
+  return BASE_ACTION_STATES.filter(
+    (state) =>
+      activeKeys.has(state.grant.activeKey) &&
+      !(state.endsOnIncapacitatedOrSpeedZero && ended)
+  ).map((state) => ({
+    id: state.actionId,
+    ref: { kind: "rule", key: baseActionKey(state.actionId) },
+    label: baseActionText(state.actionId, "name"),
+    grants: [state.grant],
+  }));
 }
 
 /** The name behind a base-action state key, for log lines and labels. */
