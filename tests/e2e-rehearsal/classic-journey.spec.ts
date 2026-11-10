@@ -131,10 +131,19 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
 
   await test.step("the turns move; Catalion ends a turn from the classic sheet", async () => {
     await bard.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+    // Advance one turn at a time, and only once the last move has reached the player's
+    // sheet: a fixed pause could click past Catalion's turn before the sheet showed it.
+    const pip = bard.getByRole("link", { name: /^Round \d+ · / });
     for (let i = 0; i < 4; i++) {
       if (await bard.locator('.turn[data-phase="my-turn"]').isVisible()) break;
+      const shown = await pip.getAttribute("aria-label");
       await dm.getByRole("button", { name: "Next turn" }).click();
-      await bard.waitForTimeout(1_000);
+      await expect
+        .poll(() => pip.getAttribute("aria-label"), {
+          message: "the turn reaches the player's sheet",
+          timeout: 15_000,
+        })
+        .not.toBe(shown);
     }
     const endTurn = bard.getByRole("button", { name: "End Turn" });
     await expect.soft(endTurn, "Catalion's turn reaches the sheet").toBeEnabled();
