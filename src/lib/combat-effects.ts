@@ -164,6 +164,8 @@ export interface ActiveRollModeAdjustment {
   rollType: "save" | "check" | "attack" | "initiative";
   mode: "advantage" | "disadvantage";
   consume: "next" | "each";
+  /** Holds only against creatures other than this one (the state's source actor). */
+  exceptAgainst?: string;
 }
 
 export interface ActiveIncomingAttackModeAdjustment {
@@ -212,6 +214,9 @@ export function activeRollModeAdjustments(
               ? ("advantage" as const)
               : ("disadvantage" as const),
           consume: "consume" in grant ? (grant.consume ?? "each") : "each",
+          ...("scope" in grant && grant.scope === "otherThanSource"
+            ? { exceptAgainst: effect.actor.combatantId }
+            : {}),
         },
       ];
     })

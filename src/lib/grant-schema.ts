@@ -2140,6 +2140,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           literalSchema("mounted"),
           literalSchema("strDex"),
           literalSchema("sorcery"),
+          literalSchema("otherThanSource"),
         ]),
         type: literalSchema("disadvantage-on"),
         vs: stringSchema,

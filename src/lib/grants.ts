@@ -101,6 +101,8 @@ export const ATTACK_CLAUSE_SCOPES = [
   "strength",
   "strDex",
   "sorcery",
+  // Against any creature other than the one who put the state there (a duel).
+  "otherThanSource",
 ] as const;
 
 export type AttackClauseScope = (typeof ATTACK_CLAUSE_SCOPES)[number];
