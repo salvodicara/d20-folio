@@ -3,7 +3,9 @@
  * every attached hero on one row (AC, HP, passives, saves), the best of each column
  * marked, and how many sheets are still loading.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { partyMemberRefs, partySummaryView } from "@/domains/campaign/party-summary-view";
 import type { MemberDocState } from "@/features/campaigns/useMemberCharacterDocs";
