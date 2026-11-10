@@ -7,6 +7,7 @@
  */
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import { useSoloTurn } from "./PlaySoloTurn";
+import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
@@ -629,14 +630,14 @@ function TurnStrip({
     extraMovementFt,
   });
   const slots = turnBarView({
-    mode: fight || solo.active ? "combat" : "exploration",
+    mode: fight || (solo.active && !campaign) ? "combat" : "exploration",
     selected,
     budget,
     reaction: { used: reactionUsed },
     movement: { usedFt: movementUsedFt, speedFt },
   });
   const title = !fight
-    ? solo.active
+    ? solo.active && !campaign
       ? [t("combatChronicle.round", { n: solo.round }), t("play.turnMine")].join(" · ")
       : t("diary.explore")
     : [
@@ -686,6 +687,10 @@ function TurnStrip({
       {rolling && rollOffer && campaign && (
         <RollDialog
           bonus={rollOffer.bonus}
+          roll={{
+            ...initiativeRollModel(doc),
+            onSurprise: () => toggleSurprise(t),
+          }}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>
             move(
@@ -695,7 +700,7 @@ function TurnStrip({
           }
         />
       )}
-      {(solo.active || (fight && phase === "my-turn")) && (
+      {((solo.active && !campaign) || (fight && phase === "my-turn")) && (
         <PlayTurnStart doc={doc} round={fight ? round : solo.round} locale={locale} />
       )}
       {!fight && !campaign && solo.notes}

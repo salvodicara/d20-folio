@@ -346,6 +346,9 @@
       "gathering": "Initiative: roll",
       "mine": "Round {{round}} · your turn",
       "theirs": "Round {{round}} · {{name}}"
+    },
+    "roll": {
+      "surprised": "Surprised"
     }
   }
 }

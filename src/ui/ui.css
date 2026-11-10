@@ -5712,3 +5712,7 @@
   justify-content: space-between;
   gap: 8px 16px;
 }
+/* an «Effetti» row the character can end carries «Termina» at its end */
+.fui .f-fx-row:has(> .f-btn) {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) auto;
+}

@@ -346,6 +346,9 @@
       "gathering": "Iniziativa: tira",
       "mine": "Round {{round}} · tocca a te",
       "theirs": "Round {{round}} · {{name}}"
+    },
+    "roll": {
+      "surprised": "Sorpreso"
     }
   }
 }
