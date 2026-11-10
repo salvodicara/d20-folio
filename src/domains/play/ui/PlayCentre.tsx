@@ -883,7 +883,8 @@ function ActionLine({
     <div className="f-act" data-blocked={row.blocked || undefined}>
       <ActionIcon icon={actionIcon(row)} art={rowArt(row)} />
       <div className="f-row-main">
-        <div className="f-row-t">{row.name}</div>
+        {/* the last two words together: a long name never ends on one alone */}
+        <div className="f-row-t">{row.name.replace(/ (\S+)$/, "\u00a0$1")}</div>
         {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
         {/* the phone reads the numbers under the name (D&D Beyond's phone row) */}
         {(hit || effect) && (

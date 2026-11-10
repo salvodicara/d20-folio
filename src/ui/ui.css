@@ -1049,7 +1049,8 @@
 }
 .fui .f-row-t {
   font-weight: var(--fw-name);
-  text-wrap: balance;
+  /* never one word alone on the last line (owner, 2026-11-10) */
+  text-wrap: pretty;
   color: var(--strong);
 }
 .fui .f-row-s {
@@ -1723,7 +1724,8 @@
   text-transform: uppercase;
 }
 .fui .f-toast > span {
-  text-wrap: balance;
+  /* never one word alone on the last line (owner, 2026-11-10) */
+  text-wrap: pretty;
 }
 
 /* ---------- notes ---------- */
