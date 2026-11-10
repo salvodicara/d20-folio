@@ -130,7 +130,7 @@ interfaccia resta spenta (sotto, le voci che arriveranno con lei).
 Arriveranno quando la nuova interfaccia verrà accesa: la creazione del personaggio e il passaggio
 di livello nuovi, le scelte in stile BG3 con le icone dipinte, «In breve» su incantesimi, talenti,
 oggetti e privilegi, la nuova schermata di Gioco, la pagina della campagna (Gruppo, Diario,
-Scontro, Tesoro, Note), il nuovo Compendio con le icone, gli strumenti del master nello Scontro,
+Scontro, Tesoro, Note), il nuovo Compendio con le icone, gli strumenti del master nello Scontro
 e «Tira l'iniziativa» dalla scheda.
 
 ### Summary (English)
