@@ -1,5 +1,5 @@
 import { vitalConditions } from "@/lib/character-vitals";
-import { withImpliedConditions } from "@/lib/condition";
+import { conditionGrantedImmunities, withImpliedConditions } from "@/lib/condition";
 import { potionStateConditions } from "@/lib/potion-states";
 import type { SessionState } from "@/types/character";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
@@ -48,9 +48,12 @@ export function effectiveSessionConditions(
     // A lit potion state's own condition (Potion of Invisibility).
     ...potionStateConditions(session.activeFeatures ?? []),
   ];
-  if (immunities.size === 0) return withImpliedConditions(sources);
-  return withImpliedConditions(sources.filter((id) => !immunities.has(id))).filter(
-    (id) => !immunities.has(id)
+  // A condition can make the creature immune to another (Petrified: Poisoned).
+  const granted = conditionGrantedImmunities(withImpliedConditions(sources));
+  const immune = granted.length === 0 ? immunities : new Set([...immunities, ...granted]);
+  if (immune.size === 0) return withImpliedConditions(sources);
+  return withImpliedConditions(sources.filter((id) => !immune.has(id))).filter(
+    (id) => !immune.has(id)
   );
 }
 

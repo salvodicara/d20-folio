@@ -25,12 +25,11 @@ describe("TRAVEL_PACE_REFERENCE (RA-29)", () => {
     expect(p?.perDayMiles).toBe(30);
   });
 
-  it("Normal = 300 ft/min · 3 mph · 24 mi/day, no special effect", () => {
+  it("Normal = 300 ft/min · 3 mph · 24 mi/day", () => {
     const p = TRAVEL_PACE_REFERENCE.find((x) => x.id === "normal");
     expect(p?.perMinuteFt).toBe(300);
     expect(p?.perHourMiles).toBe(3);
     expect(p?.perDayMiles).toBe(24);
-    for (const locale of LOCALES) expect(paceText("normal", "effect", locale)).toBe("");
   });
 
   it("Slow = 200 ft/min · 2 mph · 18 mi/day", () => {
@@ -40,26 +39,27 @@ describe("TRAVEL_PACE_REFERENCE (RA-29)", () => {
     expect(p?.perDayMiles).toBe(18);
   });
 
-  // REGRESSION (post-sweep h3) — the Fast pace's penalty shipped with an ASCII
-  // hyphen ("-5") where every other number on the sheet uses the true minus sign.
-  it.each(LOCALES)(
-    "writes its penalty with the app's true minus sign in %s",
-    (locale) => {
-      expect(paceText("fast", "effect", locale)).toContain("−5");
-      for (const p of TRAVEL_PACE_REFERENCE) {
-        expect(paceText(p.id, "effect", locale)).not.toMatch(/-\d/);
-      }
-    }
-  );
+  // 2024: each pace changes a roll (SRD 5.2.1 Travel Pace), not the 2014 "−5 passive
+  // Perception" / "can move stealthily".
+  it("each pace's effect is the 2024 roll", () => {
+    expect(paceText("fast", "effect", "en")).toBe(
+      "Disadvantage on Wisdom (Perception or Survival) checks."
+    );
+    expect(paceText("normal", "effect", "en")).toBe(
+      "Disadvantage on Dexterity (Stealth) checks."
+    );
+    expect(paceText("slow", "effect", "en")).toBe(
+      "Advantage on Wisdom (Perception or Survival) checks."
+    );
+    expect(paceText("normal", "effect", "it")).toBe(
+      "Svantaggio alle prove di Destrezza (Furtività)."
+    );
+  });
 
-  it.each(LOCALES)(
-    "every pace has its name in %s; Fast and Slow their effect",
-    (locale) => {
-      for (const p of TRAVEL_PACE_REFERENCE) {
-        expect(paceText(p.id, "name", locale), p.id).toBeTruthy();
-      }
-      expect(paceText("fast", "effect", locale)).toBeTruthy();
-      expect(paceText("slow", "effect", locale)).toBeTruthy();
+  it.each(LOCALES)("every pace has its name and its effect in %s", (locale) => {
+    for (const p of TRAVEL_PACE_REFERENCE) {
+      expect(paceText(p.id, "name", locale), p.id).toBeTruthy();
+      expect(paceText(p.id, "effect", locale), p.id).toBeTruthy();
     }
-  );
+  });
 });

@@ -52,10 +52,11 @@ export interface MasteryRiderVM {
   /** Push / Slow: the locale distance ("10 ft", "3 m"). */
   distance?: string;
   /**
-   * The seam a tap lights beyond the log line: Vex grants Advantage on the
-   * character's next attack roll. Absent → the tap only logs the declaration.
+   * The seam beyond the log line: Vex grants Advantage on the character's next
+   * attack roll; Sap and Slow leave their state on the creature hit (in a fight,
+   * the damage tray writes it: `masteryHitEffects`). Absent → only logged.
    */
-  apply?: "next-attack-advantage";
+  apply?: "next-attack-advantage" | "target-attack-disadvantage" | "target-speed-loss";
   /** Cleave: "no more than once per turn" (SRD 5.2.1); the others ride every hit. */
   oncePerTurn?: true;
 }
@@ -97,6 +98,8 @@ export function buildMasteryRiders(
         ? { distance: localeDistance(MASTERY_DISTANCE_FT, locale) }
         : {}),
       ...(id === "vex" ? { apply: "next-attack-advantage" as const } : {}),
+      ...(id === "sap" ? { apply: "target-attack-disadvantage" as const } : {}),
+      ...(id === "slow" ? { apply: "target-speed-loss" as const } : {}),
       ...(id === "cleave" ? { oncePerTurn: true as const } : {}),
     }));
 }
