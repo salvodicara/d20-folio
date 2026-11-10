@@ -205,11 +205,17 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "Chronicle editing, versions, .md download": {
     classic: "src/features/campaigns/Chronicle.tsx",
-    answer: { pending: "direction: the Chronicle editor (no model yet)" },
+    answer: {
+      model: "src/domains/chronicle/chronicle-editor.ts",
+      pending: "direction: the control on screen",
+    },
   },
   "A DM-run character in the fight; join or skip a fight": {
     classic: "src/features/campaigns/Party.tsx",
-    answer: { pending: "direction: fight participation (no model yet)" },
+    answer: {
+      model: "src/domains/combat/fight-participation.ts",
+      pending: "direction: the control on screen",
+    },
   },
 };
 

@@ -33,9 +33,15 @@ import { InfoCard } from "@/components/shared/InfoCard";
 import { NoteClamp } from "@/components/shared/NoteClamp";
 import { Select } from "@/components/shared/Select";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
-import { splitChapters } from "@/features/campaigns/chronicle-chapters";
-import { isLargeReduction } from "@/features/campaigns/chronicle-versions";
-import { downloadChronicleMarkdown } from "@/features/campaigns/chronicle-export";
+import {
+  chronicleByline,
+  chronicleVersionRows,
+  downloadChronicleMarkdown,
+  isLargeReduction,
+  saveChronicle,
+  splitChapters,
+  type ChronicleVersionRow,
+} from "@/domains/chronicle/chronicle-editor";
 import { Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
@@ -44,12 +50,9 @@ import { BlockMarkdown } from "@/components/shared/BlockMarkdown";
 import { AutoAnimateHeight } from "@/components/shared/AutoAnimateHeight";
 import { useAuthStore } from "@/stores/authStore";
 import { useConfirmStore } from "@/stores/confirmStore";
-import { useToastStore } from "@/stores/toastStore";
 import { useLocale } from "@/hooks/useLocale";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
-import { commitChronicleEdit } from "@/features/campaigns/campaign-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import type { ChronicleVersion } from "@/types/campaign";
 
 export function Chronicle({
   campaignId,
@@ -64,9 +67,7 @@ export function Chronicle({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const uid = useAuthStore((s) => s.user?.uid);
-  const showToast = useToastStore((s) => s.showToast);
   const chronicle = useChronicleStore((s) => s.chronicle);
-  const commitText = useChronicleStore((s) => s.commitText);
   const memberDetails = useCampaignStore((s) => s.campaign?.memberDetails);
   const [editing, setEditing] = useState(false);
   // The chapter the reader is on, lifted here so Edit can drop the cursor there. A
@@ -76,62 +77,29 @@ export function Chronicle({
   const [activeChapter, setActiveChapter] = useState<number | null>(null);
 
   const text = chronicle?.text ?? "";
-  const versions = chronicle?.versions ?? [];
+  const versions = chronicleVersionRows(
+    chronicle?.versions ?? [],
+    uid,
+    memberDetails,
+    locale,
+    t
+  );
   const hasText = text.trim().length > 0;
   const chapters = useMemo(() => splitChapters(text), [text]);
   const lastIdx = Math.max(0, chapters.length - 1);
   const activeIdx = activeChapter === null ? lastIdx : Math.min(activeChapter, lastIdx);
   const activeChapterData = chapters[activeIdx];
 
-  // The RAW display name for `id` — used verbatim ONLY where a name must be PERSISTED
-  // (the `editedByName` snapshot `handleSave` writes below), so a self-authored entry
-  // never bakes a locale-specific "you"/"te" string into Firestore for every future
-  // viewer to see. Byline RENDERING always goes through {@link authorLabel} instead.
-  const nameOf = (id: string): string =>
-    memberDetails?.[id]?.displayName || t("campaignHub.unnamedPlayer");
-  // B32 — the self-authored byline: when the entry's author IS the viewer themselves
-  // (a uid match — golden rule 7, never a display-string comparison), name them the
-  // localized "you"/"te" instead of their raw account name ("Narrato da te" / "Narrated
-  // by you"), reading naturally and never risking a stray English placeholder leaking
-  // into another locale. `id` is always a uid here (`lastEditedBy` / `ChronicleVersion.
-  // editedBy`), never user content.
-  const authorLabel = (id: string): string =>
-    id === uid ? t("campaignHub.chronicleAuthorSelf") : nameOf(id);
-  const editorName = chronicle?.lastEditedBy ? authorLabel(chronicle.lastEditedBy) : null;
-  // The version-history row label: self-authored still wins over the STORED snapshot
-  // name (so an old self-edit reads "you"/"te" today, never a name the viewer typed
-  // years ago); otherwise the snapshot's `editedByName` (a departed member's name
-  // preserved verbatim) falls back to a live `memberDetails` lookup.
-  const versionAuthor = (v: ChronicleVersion): string =>
-    v.editedBy === uid
-      ? t("campaignHub.chronicleAuthorSelf")
-      : v.editedByName || nameOf(v.editedBy);
-  // Absolute timestamp (no Date.now() in render → React-compiler safe); only shown
-  // once a real edit has been recorded (lastEditedBy set ⇒ lastEditedAt is real).
-  const lastEdited = chronicle?.lastEditedBy
-    ? new Intl.DateTimeFormat(locale, {
-        dateStyle: "medium",
-        timeStyle: "short",
-      }).format(chronicle.lastEditedAt)
-    : null;
+  const byline = chronicleByline(chronicle, uid, memberDetails, locale, t);
 
-  // Save commits the draft. B18 — the authoritative persist is an ATOMIC transaction
-  // (`commitChronicleEdit`) that snapshots the SERVER's current text into history before
-  // overwriting, so a concurrent editor's paragraph is never lost from the text OR the
-  // restore history. The local `commitText` is kept purely OPTIMISTIC (instant reading
-  // view). An event handler, so the `new Date()` stamp is React-compiler safe.
+  // Save commits the draft (the model shows it at once, then commits atomically); a
+  // refused save keeps the editor open with the draft for a retry.
   async function handleSave(next: string): Promise<void> {
-    const priorEditor = chronicle?.lastEditedBy ?? "";
-    commitText(next, uid ?? "", priorEditor ? nameOf(priorEditor) : "", new Date());
-    try {
-      await commitChronicleEdit(campaignId, { text: next, editedBy: uid ?? "" });
-      setEditing(false);
-    } catch (e) {
-      // The atomic save needs a live round-trip, so it can't silently queue offline —
-      // tell the user honestly and keep the editor open with the draft so they can retry.
-      console.error("Chronicle save failed", e);
-      showToast({ message: t("campaignHub.chronicleSaveFailed"), duration: 6000 });
-    }
+    const saved = await saveChronicle(
+      { campaignId, uid: uid ?? "", next, members: memberDetails },
+      t
+    );
+    if (saved) setEditing(false);
   }
 
   // The chapter NAVIGATOR is responsive (a multi-chapter log only): on DESKTOP it is a
@@ -161,8 +129,6 @@ export function Chronicle({
           <ChronicleEditor
             initialText={text}
             versions={versions}
-            versionAuthor={versionAuthor}
-            locale={locale}
             initialCursor={activeChapterData?.start ?? 0}
             onSave={(next) => void handleSave(next)}
             onCancel={() => setEditing(false)}
@@ -192,16 +158,7 @@ export function Chronicle({
                     like a forum "posted by" line): smaller than the serif prose above
                     and clearly metadata, not part of the story. */}
                 <span className="font-mono text-[length:var(--text-micro)] tracking-wide text-text-muted">
-                  {lastEdited
-                    ? editorName
-                      ? t("campaignHub.chronicleLastEditedBy", {
-                          name: editorName,
-                          when: lastEdited,
-                        })
-                      : t("campaignHub.chronicleLastEdited", {
-                          when: lastEdited,
-                        })
-                    : ""}
+                  {byline}
                 </span>
                 {/* Document actions sit together at the foot, same button vocabulary:
                     Download (any member may export the shared log as portable markdown —
@@ -281,18 +238,12 @@ function caretTopPx(ta: HTMLTextAreaElement, index: number): number {
 function ChronicleEditor({
   initialText,
   versions,
-  versionAuthor,
-  locale,
   initialCursor,
   onSave,
   onCancel,
 }: {
   initialText: string;
-  versions: ChronicleVersion[];
-  /** B32 — the byline label for one version row: "you"/"te" when the viewer wrote
-   *  it themselves, else its stored/live author name. */
-  versionAuthor: (v: ChronicleVersion) => string;
-  locale: string;
+  versions: ChronicleVersionRow[];
   /** Char offset to focus the cursor at on open — the start of the section you
    *  were reading. */
   initialCursor: number;
@@ -334,8 +285,8 @@ function ChronicleEditor({
     onSave(draft);
   }
 
-  function restore(v: ChronicleVersion): void {
-    setDraft(v.textSnapshot);
+  function restore(v: ChronicleVersionRow): void {
+    setDraft(v.text);
     setShowHistory(false);
   }
 
@@ -392,13 +343,10 @@ function ChronicleEditor({
                       column (the WHEN is the key for "which version to restore");
                       the author is secondary context. */}
                   <time className="shrink-0 font-mono text-xs tabular-nums text-text-secondary">
-                    {new Intl.DateTimeFormat(locale, {
-                      dateStyle: "medium",
-                      timeStyle: "short",
-                    }).format(v.timestamp)}
+                    {v.when}
                   </time>
                   <span className="min-w-0 flex-1 truncate text-text-muted">
-                    {versionAuthor(v)}
+                    {v.author}
                   </span>
                   {/* Icon-only restore (reuses the Treasury ledger's `.hdr-icon`
                       row action) so a column of revisions stays uncluttered. The

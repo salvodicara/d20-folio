@@ -57,7 +57,6 @@ import {
   persistBeginTurns,
   persistStartEncounter,
   persistEndEncounter,
-  setEncounterParticipation,
 } from "@/features/campaigns/campaign-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -79,6 +78,12 @@ import {
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { undoAdversaryChronicleEvent } from "@/features/campaigns/encounter-world-command";
 import { useGatheringScrollAnchor } from "@/features/campaigns/gathering-scroll-anchor";
+import {
+  dmSeat,
+  participatingIds as participatingIdsOf,
+  setFightParticipation,
+  skippedAtBegin,
+} from "@/domains/combat/fight-participation";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
 import {
   useMemberCharacterDocs,
@@ -333,12 +338,10 @@ export function Party() {
   // WITHOUT a character is filtered OUT of the card grid (the banner represents
   // them); a DM WITH a character (a DMPC) still renders as a normal gold combatant
   // card AND keeps the banner above it.
-  const dmUid = campaign.dmUid;
-  const dmDetails = campaign.memberDetails[dmUid];
-  const dmName = dmDetails?.displayName || t("campaignHub.unnamedPlayer");
-  const dmIsMe = dmUid === currentUid;
-  const dmHasNoChar = !dmDetails?.character;
-  const gridMembers = members.filter(([, m]) => !(m.role === "dm" && !m.character));
+  const { dmName, dmIsMe, dmPlays, gridUids } = dmSeat(campaign, currentUid, t);
+  const dmHasNoChar = !dmPlays;
+  const dmDetails = campaign.memberDetails[campaign.dmUid];
+  const gridMembers = members.filter(([uid]) => gridUids.includes(uid));
 
   // Aggregated party info — the at-a-glance line under the heading.
   const heroes = members
@@ -408,21 +411,7 @@ export function Party() {
           memberDetails={campaign.memberDetails}
           skipped={campaign.encounterSkipped ?? {}}
           onParticipationChange={(participating) => {
-            if (!currentUid) return;
-            const encounterSkipped = participating
-              ? Object.fromEntries(
-                  Object.entries(campaign.encounterSkipped ?? {}).filter(
-                    ([uid]) => uid !== currentUid
-                  )
-                )
-              : { ...(campaign.encounterSkipped ?? {}), [currentUid]: true };
-            setCampaign({ ...campaign, encounterSkipped });
-            void setEncounterParticipation(campaign.id, currentUid, participating).catch(
-              (error: unknown) => {
-                console.error("Encounter participation write failed", error);
-                setCampaign(campaign);
-              }
-            );
+            if (currentUid) setFightParticipation(campaign, currentUid, participating);
           }}
           onEnd={endEncounter}
         />
@@ -542,10 +531,7 @@ function CombatLayer({
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
-  const participatingIds = view.turnOrderIds.filter((id) => {
-    const combatant = encounter.combatants.find((candidate) => candidate.id === id);
-    return combatant?.kind !== "pc" || !skipped[combatant.memberUid];
-  });
+  const participatingIds = participatingIdsOf(encounter, view.turnOrderIds, skipped);
   const empty = encounter.combatants.length === 0;
   // The "gathering initiative" phase — players roll, then the DM begins the turn order. A
   // NULLISH pointer (null OR a legacy doc's missing field) is gathering (see `initLocked`).
@@ -744,12 +730,7 @@ function CombatLayer({
     if (!apply || rolledIds.length === 0) return;
     // Starting with a partial table is the DM's explicit skip: unrolled PCs remain in
     // the encounter for targeting/late correction but do not enter the frozen order.
-    const skippedAtStart = { ...skipped };
-    for (const combatant of encounter.combatants) {
-      if (combatant.kind === "pc" && !rolledIds.includes(combatant.id)) {
-        skippedAtStart[combatant.memberUid] = true;
-      }
-    }
+    const skippedAtStart = skippedAtBegin(encounter, skipped, rolledIds);
     // Thief's Reflexes: each holder's round-1 second turn, slotted at its Initiative
     // minus 10 (the classes and totals the DM's view already reads live).
     const extraTurns = thiefsReflexesTurns(rolledIds, view.rows);
