@@ -703,7 +703,6 @@ const PUBLIC_RACES: SrdRaceData[] = [
               type: "bonus",
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
-                choiceFrequency: "creation",
                 optionId: "clouds-jaunt",
               },
             },
@@ -714,7 +713,6 @@ const PUBLIC_RACES: SrdRaceData[] = [
               targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
-                choiceFrequency: "creation",
                 optionId: "fires-burn",
               },
             },
@@ -725,7 +723,6 @@ const PUBLIC_RACES: SrdRaceData[] = [
               targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
-                choiceFrequency: "creation",
                 optionId: "frosts-chill",
               },
             },
@@ -736,7 +733,6 @@ const PUBLIC_RACES: SrdRaceData[] = [
               targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
-                choiceFrequency: "creation",
                 optionId: "hills-tumble",
               },
             },
@@ -752,7 +748,6 @@ const PUBLIC_RACES: SrdRaceData[] = [
               targeting: { affinity: "self", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
-                choiceFrequency: "creation",
                 optionId: "stones-endurance",
               },
             },
@@ -764,7 +759,6 @@ const PUBLIC_RACES: SrdRaceData[] = [
               targeting: { affinity: "enemy", maxTargets: 1 },
               requiresBundleOption: {
                 bundleKey: "goliath-giant-ancestry",
-                choiceFrequency: "creation",
                 optionId: "storms-thunder",
               },
             },

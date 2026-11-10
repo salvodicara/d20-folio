@@ -24,8 +24,8 @@ const bundle = (
 ): GrantBundle => ({
   bundleKey,
   sourceId: bundleKey,
-  label: { en: bundleKey, it: bundleKey },
-  options: [{ id: "a", label: { en: "A", it: "A" } }],
+  label: { custom: bundleKey },
+  options: [{ id: "a", label: { custom: "A" } }],
   selected,
   choiceFrequency,
 });
