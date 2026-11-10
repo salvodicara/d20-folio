@@ -805,6 +805,15 @@
     "name": "Difesa Paziente",
     "gist": "Disimpegno come Azione Bonus; con 1 Punto Concentrazione anche Schivata"
   },
+  "monk-patient-defense.grants.0": {
+    "label": "Difesa Paziente"
+  },
+  "monk-patient-defense.grants.0.grants.0": {
+    "description": "Gli attacchi contro di te hanno Svantaggio (Schivata)"
+  },
+  "monk-patient-defense.grants.0.grants.1": {
+    "description": "Tiri salvezza su Destrezza (Schivata)"
+  },
   "monk-patient-defense.mechanics.actions.0": {
     "description": "Disimpegno come Azione Bonus senza spendere Concentrazione.",
     "label": "Difesa Paziente",
