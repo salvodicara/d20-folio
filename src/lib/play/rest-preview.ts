@@ -6,7 +6,7 @@
  * promise what the rest doesn't do. Ids only: the screen names them.
  */
 import type { CharacterDoc } from "@/types/character";
-import { hitDicePool, type HitDieSize } from "./hit-dice";
+import { hitDiceLeft, hitDicePool, hitDiceTotal, type HitDieSize } from "./hit-dice";
 import { longRestCharacter, shortRestCharacter } from "./rests";
 import { shortRestHealing } from "./short-rest-healing";
 
@@ -38,7 +38,7 @@ const averageRoll = (die: HitDieSize): number => Math.floor(die / 2) + 1;
 export function restPreview(doc: CharacterDoc, kind: RestKind): RestPreview {
   const after = kind === "short" ? shortRestCharacter(doc) : longRestCharacter(doc);
   const pool = hitDicePool(doc.character);
-  const total = pool.reduce((sum, entry) => sum + entry.count, 0);
+  const total = hitDiceTotal(doc.character);
   const recovers: RestRecovery[] = [];
 
   const hp = after.session.hp.current - doc.session.hp.current;
@@ -60,7 +60,7 @@ export function restPreview(doc: CharacterDoc, kind: RestKind): RestPreview {
   const still = new Set(after.session.activeFeatures ?? []);
   return {
     kind,
-    hitDice: { total, available: Math.max(0, total - doc.session.hitDice.used) },
+    hitDice: { total, available: hitDiceLeft(doc.character, doc.session) },
     perDieHeal: pool.map(({ die }) => ({
       die,
       average: shortRestHealing(doc, 1, averageRoll(die)) ?? 0,

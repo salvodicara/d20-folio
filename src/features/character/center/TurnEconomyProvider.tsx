@@ -27,7 +27,12 @@
 import { castTriggerFacts, firedCastTriggers } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
-import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
+import {
+  hitDiceLabel,
+  hitDiceLeft,
+  hitDicePool,
+  hitDiceTotalRange,
+} from "@/lib/play/hit-dice";
 import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-recovery";
 import { standingAtCommit, standingEffectsForTargets } from "@/lib/play/standing-effects";
 import { standingOnClock } from "@/lib/play/campaign-effects";
@@ -218,7 +223,7 @@ import {
   type PlayPrompts,
 } from "@/features/character/center/playPromptStore";
 import { localizeSrd } from "@/i18n/resolver";
-import { classEntryLevel, totalLevel } from "@/lib/classes";
+import { classEntryLevel } from "@/lib/classes";
 import {
   TurnEconomyContext,
   getEconomySlot,
@@ -2514,10 +2519,8 @@ export function TurnEconomyProvider({
             // Hit-die spend (Lifedrinker) — clamp to the live Hit-Die pool.
             const doc = cs.character;
             if (!doc) return null;
-            const level = totalLevel(doc.character);
-            const total = doc.character.hitDiceTotalOverride ?? level;
             const prevUsed = doc.session.hitDice.used;
-            if (prevUsed >= total) {
+            if (hitDiceLeft(doc.character, doc.session) === 0) {
               bail.message = t("combat.noHitDiceRemaining");
               return null;
             }
