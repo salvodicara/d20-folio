@@ -9,6 +9,13 @@
  *    campaign clock re-set after a snapshot dropped it, used to send the same ~25 KB
  *    back each time (rehearsal 2026-11-06: ~16 billed writes in a few seconds).
  *
+ * Each write goes with the state it was built on (`base`: what the sheet last showed,
+ * or what this writer last sent), so only the owner's changes are written and a peer's
+ * write the sheet had not shown yet stays (`writeCombatState`). Not the last snapshot:
+ * while its own write is unacknowledged the sheet shows that write, not the snapshot,
+ * and an edit diffed against a snapshot it never built on undoes the snapshot's news
+ * (rehearsal 2026-11-10: a DM's hit read as a heal and reverted).
+ *
  * The reconciler marks the state pending before it leaves, so a parent snapshot landing
  * meanwhile republishes this play state, not the stored one; the answer settles it, and
  * a failure drops it and lets the caller republish what the server holds.
@@ -21,12 +28,14 @@ export interface CombatStateWriter {
   write(state: CombatState): void;
   /** The server's snapshot arrived: it holds `state`. */
   observe(state: CombatState): void;
+  /** The sheet now shows `state`: the next edit is built on it. */
+  shown(state: CombatState): void;
   /** Stop writing (the sheet closed or was quarantined); a queued ask is dropped. */
   stop(): void;
 }
 
 export function createCombatStateWriter(deps: {
-  send: (state: CombatState) => Promise<void>;
+  send: (state: CombatState, base: CombatState | null) => Promise<void>;
   reconciler: {
     markChildPending: (state: CombatState) => void;
     acknowledgeChildWrite: (state: CombatState) => void;
@@ -38,19 +47,25 @@ export function createCombatStateWriter(deps: {
   const { reconciler } = deps;
   let enabled = true;
   let queued: CombatState | null = null;
+  // The state the next edit is built on: what the sheet last showed, advanced to what
+  // this writer sent (the sheet shows it until it is acknowledged).
+  let base: CombatState | null = null;
 
   const flush = (state: CombatState): void => {
     const verdict = gate.admit(state);
     // Already on the server: settle it as written. On its way: its answer settles it.
     if (verdict === "held") reconciler.acknowledgeChildWrite(state);
     if (verdict !== "send") return;
-    void deps.send(state).then(
+    const builtOn = base;
+    base = state;
+    void deps.send(state, builtOn).then(
       () => {
         gate.observe(state);
         reconciler.acknowledgeChildWrite(state);
       },
       (error: unknown) => {
         gate.forget();
+        if (base === state) base = builtOn;
         reconciler.rejectChildWrite(state);
         deps.onRejected(error);
       }
@@ -73,6 +88,10 @@ export function createCombatStateWriter(deps: {
     },
     observe(state) {
       gate.observe(state);
+    },
+    shown(state) {
+      // The sheet's own ask, pending before it leaves, is not what an edit built on.
+      if (state !== queued) base = state;
     },
     stop() {
       enabled = false;

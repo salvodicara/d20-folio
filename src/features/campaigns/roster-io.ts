@@ -11,6 +11,7 @@ import {
   getDocs,
   onSnapshot,
   setDoc,
+  updateDoc,
 } from "firebase/firestore";
 
 import { combatEffectsV26On } from "@/lib/deployed-rules";
@@ -99,6 +100,20 @@ export async function writeRosterEntry(
     await deleteDoc(known);
     await deleteDoc(doc(db, "campaigns", campaignId, "dmRoster", entryId));
   }
+  return true;
+}
+
+/**
+ * A creature's Hit Points after a fight (the end-of-fight write-back): only that field,
+ * so an edit to the entry made meanwhile on another device (its name, its notes) stays.
+ */
+export async function writeRosterHp(
+  campaignId: string,
+  entryId: string,
+  hp: NonNullable<RosterEntry["hp"]>
+): Promise<boolean> {
+  if (!combatEffectsV26On() || !validId(entryId)) return false;
+  await updateDoc(doc(db, "campaigns", campaignId, "roster", entryId), { hp });
   return true;
 }
 

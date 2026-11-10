@@ -34,7 +34,7 @@ import {
   type MonsterInput,
   type RosterCombatantInput,
 } from "./encounter";
-import { readRoster, writeRosterEntry } from "./roster-io";
+import { readRoster, writeRosterHp } from "./roster-io";
 import { sessionLogStoreFor } from "./session-log-source";
 import {
   planCancel,
@@ -651,10 +651,9 @@ async function writeBackRosterHp(
   try {
     const roster = await readRoster(campaignId);
     await Promise.all(
-      rosterHpWriteBack(fight, roster).flatMap(({ rosterId, hp }) => {
-        const entry = roster[rosterId];
-        return entry ? [writeRosterEntry(campaignId, rosterId, { ...entry, hp })] : [];
-      })
+      rosterHpWriteBack(fight, roster).flatMap(({ rosterId, hp }) =>
+        roster[rosterId] ? [writeRosterHp(campaignId, rosterId, hp)] : []
+      )
     );
   } catch (error) {
     diagnosticsLog("warn", "campaign.roster-writeback-failed", {
