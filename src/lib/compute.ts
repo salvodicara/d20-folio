@@ -795,6 +795,19 @@ export function isArmorProficient(
  * Mirrors `computeAC`'s equipped-resolve loop so they always agree about what
  * counts as "worn". Pure / deterministic.
  */
+/** Whether any armor or a Shield is worn (equipped). */
+export function isArmorOrShieldEquipped(
+  equipment: Array<SrdEquipmentRef | CustomEquipment>,
+  resolveSrd: (id: string) => SrdEquipmentData | undefined
+): boolean {
+  return equipment.some(
+    (item) =>
+      item.equipped &&
+      ("custom" in item ? item.armorCategory : resolveSrd(item.srdId)?.armorCategory) !==
+        undefined
+  );
+}
+
 export function isHeavyArmorEquipped(
   equipment: Array<SrdEquipmentRef | CustomEquipment>,
   resolveSrd: (id: string) => SrdEquipmentData | undefined

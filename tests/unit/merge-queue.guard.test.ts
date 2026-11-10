@@ -54,3 +54,19 @@ describe("merge-pr.sh waits for CI's real check names", () => {
     expect([...required].sort()).toEqual(jobNames.flatMap(expand).sort());
   });
 });
+
+describe("lockstep-merge.sh works under the up-to-date rule", () => {
+  const script = readFileSync(
+    join(__dirname, "..", "..", "scripts/lockstep-merge.sh"),
+    "utf8"
+  );
+
+  it("brings a branch that is behind up to date instead of stopping", () => {
+    expect(script).toContain("gh pr update-branch");
+    expect(script).not.toMatch(/is behind main: rebase it first/);
+  });
+
+  it("verifies the pair again when main moves, a bounded number of times", () => {
+    expect(script).toMatch(/for _ in 1 2 3 4; do\n\s+if round; then/);
+  });
+});
