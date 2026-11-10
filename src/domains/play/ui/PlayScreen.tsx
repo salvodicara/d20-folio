@@ -298,16 +298,26 @@ function PlayHeader({
           view.conditions > 0 ||
           doc.session.inspiration ||
           Boolean(doc.session.bardicInspirationDie)) && (
-          <div className="f-chips">
-            {/* In a form the sheet is the beast's: say so first (the source, then it). */}
-            {view.form && (
-              <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
+          <div className="f-char-chips">
+            {/* What the character is now (a form, a held spell) on its own line, then
+                the three status chips always on one line, so the row never reflows. */}
+            {(view.form || view.concentration) && (
+              <div className="f-chips">
+                {/* In a form the sheet is the beast's: say so first (the source, then it). */}
+                {view.form && (
+                  <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
+                )}
+                {view.form && !readonly && <RevertForm />}
+                {view.concentration && (
+                  <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>
+                )}
+              </div>
             )}
-            {view.form && !readonly && <RevertForm />}
-            {view.concentration && <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>}
-            <PlayInspiration doc={doc} />
-            <PlayEffects doc={doc} locale={locale} />
-            <PlayConditions doc={doc} locale={locale} />
+            <div className="f-chips f-chips-status">
+              <PlayInspiration doc={doc} />
+              <PlayEffects doc={doc} locale={locale} />
+              <PlayConditions doc={doc} locale={locale} />
+            </div>
           </div>
         )}
       </div>

@@ -337,7 +337,11 @@
       "start": "Start combat",
       "ammo_one": "You can recover {{count}} piece of ammunition after the fight.",
       "ammo_other": "You can recover {{count}} pieces of ammunition after the fight.",
-      "ammoRecover": "Recover"
+      "ammoRecover": "Recover",
+      "endingName": "{{name}} is about to end:",
+      "endingWhyAttack": "this turn you didn't attack or force an enemy to make a saving throw.",
+      "extendBonus": "Extend (Bonus Action)",
+      "letEnd": "Let it end"
     },
     "pip": {
       "gathering": "Initiative: roll",

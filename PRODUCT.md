@@ -29,8 +29,8 @@ it is. Decisions behind this: `docs/strategy/2026-10-16-product-brief.md`.
 **Direction B, "BG3 fantasy ricco"** (owner, 2026-10-16; approved as a direction, each screen still
 needs the owner's yes): magical, premium, confident, legible. Dark stone, gold leaf, and one type
 family as Baldur's Gate 3 (owner, 2026-11-08): Alegreya for titles, names and every reading line
-(names and buttons at 500), Alegreya SC for label capitals and panel titles, never below 14px. One lit action per screen: End Turn on Play, in the turn's cyan "now" light (the colour
-of the current initiative row). One colour per action type: Action ember, Bonus teal, Reaction
+(names and buttons at 500), Alegreya SC for label capitals and panel titles, never below 14px. One lit action per screen: End Turn on Play, in the turn's gold "now" light (the colour
+of the current initiative row and «ORA», owner 2026-11-10). One colour per action type: Action ember, Bonus teal, Reaction
 violet, Movement green. The only ornament is **Lume** (owner, 2026-11-03): one faint gold hairline,
 a lit top edge that fades at both ends, a warm light from above and a soft vignette below, the same
 on the hero, every panel and every dialog; a panel's colour is its header's light, at low
