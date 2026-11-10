@@ -2170,6 +2170,9 @@ export interface SrdClassFeatureData {
        *    a number.
        */
       appliesTo?: "speed";
+      /** The active modifier holds only with no armor and no Shield worn
+       *  (Monk Unarmored Movement). */
+      whileUnarmored?: true;
       /**
        * Additional rider chips on the SAME feature card, each reading its own
        * `classSpecific[sourceKey]` and rendered by the SAME chip consumer as the
