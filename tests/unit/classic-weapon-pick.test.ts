@@ -75,4 +75,27 @@ describe("weaponPickStep", () => {
     ).find((toggle) => toggle.key === "item-poison-basic");
     expect(coat?.label).toBe("Poisoned weapon · Dagger");
   });
+
+  it("Magic Weapon asks the same question at its cast", () => {
+    const base = buildDevScenario("scn-devotion-paladin");
+    if (!base) throw new Error("scenario missing");
+    const doc: CharacterDoc = {
+      ...base,
+      character: {
+        ...base.character,
+        weapons: [
+          { srdId: "longsword", quantity: 1 },
+          { srdId: "dagger", quantity: 1 },
+        ],
+        spells: [...base.character.spells, { srdId: "magic-weapon", prepared: true }],
+      },
+    };
+    const cast = resolveActions(doc).find((a) => a.spellId === "magic-weapon");
+    if (!cast) throw new Error("no Magic Weapon row");
+    const step = weaponPickStep(doc, cast, "en");
+    expect(step.kind === "ask" && step.picks.map((p) => p.name)).toEqual([
+      "Longsword",
+      "Dagger",
+    ]);
+  });
 });

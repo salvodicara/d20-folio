@@ -31,7 +31,8 @@ export interface PaymentRow {
   affordable: boolean;
   /** Whether this is the action's primary (default) cost — gets the gold tint. */
   primary: boolean;
-  /** The row's tag in place of Primary / Alternate (a weapon's "in hand"). */
+  /** The row's tag in place of Primary / Alternate (a weapon's "in hand"); an
+   *  empty string shows none. */
   tag?: string;
 }
 
@@ -83,12 +84,14 @@ export function PaymentPickerModal({
                   disabled={!row.affordable}
                   onClick={() => onConfirm(row.index)}
                 >
-                  <span className="cl-tag">
-                    {row.tag ??
-                      (row.primary
-                        ? t("combat.paymentPrimary")
-                        : t("combat.paymentAlternate"))}
-                  </span>
+                  {row.tag !== "" && (
+                    <span className="cl-tag">
+                      {row.tag ??
+                        (row.primary
+                          ? t("combat.paymentPrimary")
+                          : t("combat.paymentAlternate"))}
+                    </span>
+                  )}
                   <span className="cl-name">{row.label}</span>
                   {row.remaining && <span className="cl-count">{row.remaining}</span>}
                 </button>
