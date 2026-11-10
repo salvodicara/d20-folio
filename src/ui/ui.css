@@ -5623,3 +5623,52 @@
   display: grid;
   gap: 16px;
 }
+
+/* dead: the verdict in place of the tracker (BG3's skull, D&D Beyond's death saves) */
+.fui .f-down-verdict {
+  margin: 0;
+  font: 700 var(--fs-lg) var(--font-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hp-r);
+}
+
+/* the fight in the top bar (D&D Beyond's initiative flag): whose turn, with its art */
+.fui .f-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  font: var(--fw-name) var(--fs-sm) var(--font-text);
+  text-decoration: none;
+  white-space: nowrap;
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+.fui .f-pip > .f-act-slot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.fui .f-pip[data-mine] {
+  border-color: var(--turn);
+  color: var(--gold-hi);
+  box-shadow: 0 0 0 1px var(--turn);
+}
+@media (max-width: 640px) {
+  .fui .f-pip > .f-pip-t {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .fui .f-pip {
+    padding: 0 4px;
+  }
+}

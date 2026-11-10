@@ -63,7 +63,8 @@
       "fromTemp": "Tolgono prima {{temp}} punti ferita temporanei, poi passi da {{from}} a {{to}}.",
       "tempOnly": "I punti ferita temporanei li assorbono tutti: i tuoi restano {{from}}.",
       "plain": "Passi da {{from}} a {{to}} punti ferita.",
-      "concentration": "Tiri per la concentrazione su {{spell}} (CD {{dc}})."
+      "concentration": "Tiri per la concentrazione su {{spell}} (CD {{dc}}).",
+      "critAtZero": "A 0 punti ferita un colpo critico conta due fallimenti."
     },
     "form": {
       "tempHp": "Ottieni {{amount}} punti ferita temporanei, che restano quando torni alla tua forma.",
@@ -256,7 +257,10 @@
       "addAfter": "Dopo il tiro",
       "addBardic": "+ Ispirazione Bardica ({{die}})",
       "secondFace": "Il secondo d20",
-      "dieFace": "Quanto hai fatto col {{die}}?"
+      "dieFace": "Quanto hai fatto col {{die}}?",
+      "dust": "Il corpo è diventato polvere.",
+      "threeFailures_one": "{{count}} fallimento nei tiri salvezza contro la morte.",
+      "threeFailures_other": "{{count}} fallimenti nei tiri salvezza contro la morte."
     },
     "conditions": {
       "cantSeeSource": "Non vedo la fonte",
@@ -328,6 +332,17 @@
       "fromDm": "La concede il DM",
       "received": "Ricevuta",
       "receivedDie": "Dado ricevuto da un alleato"
+    },
+    "solo": {
+      "start": "Inizia il combattimento",
+      "ammo_one": "Puoi recuperare {{count}} munizione dopo lo scontro.",
+      "ammo_other": "Puoi recuperare {{count}} munizioni dopo lo scontro.",
+      "ammoRecover": "Recupera"
+    },
+    "pip": {
+      "gathering": "Iniziativa: tira",
+      "mine": "Round {{round}} · tocca a te",
+      "theirs": "Round {{round}} · {{name}}"
     }
   }
 }

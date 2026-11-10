@@ -6,6 +6,7 @@
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
 import { RollDialog } from "@/domains/combat/ui/FightActions";
+import { useSoloTurn } from "./PlaySoloTurn";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
@@ -602,6 +603,7 @@ function TurnStrip({
   const markCountered = useMarkCountered(locale);
   const counterable = readonly ? [] : counterableCasts(doc.session.logEntries);
   const fight = useSheetCombat();
+  const solo = useSoloTurn(locale);
   const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
@@ -626,14 +628,16 @@ function TurnStrip({
     extraMovementFt,
   });
   const slots = turnBarView({
-    mode: fight ? "combat" : "exploration",
+    mode: fight || solo.active ? "combat" : "exploration",
     selected,
     budget,
     reaction: { used: reactionUsed },
     movement: { usedFt: movementUsedFt, speedFt },
   });
   const title = !fight
-    ? t("diary.explore")
+    ? solo.active
+      ? [t("combatChronicle.round", { n: solo.round }), t("play.turnMine")].join(" · ")
+      : t("diary.explore")
     : [
         t("combatChronicle.round", { n: round }),
         phase === "my-turn" || phase === "solo"
@@ -667,6 +671,7 @@ function TurnStrip({
             {t("play.endTurn")}
           </Button>
         )}
+        {!fight && !campaign && solo.controls}
         {rollOffer && campaign && (
           <Button
             kind={fight ? "primary" : "ghost"}
@@ -689,6 +694,7 @@ function TurnStrip({
           }
         />
       )}
+      {!fight && !campaign && solo.notes}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
       {counterable.map((cast) => {
         const name = localizeText(cast.action, locale);
