@@ -72,7 +72,8 @@ export function LastTime({
 
   if (latest === undefined) return null;
   const { notes } = lastTimeView(latest ? [latest] : []);
-  const { at: nextAt, upcoming } = nextSessionView(campaign?.nextSessionAt ?? null, now);
+  const next = nextSessionView(campaign?.nextSessionAt ?? null, now);
+  const nextAt = next.at;
 
   function saveNext(at: number | null): void {
     setEditing(false);
@@ -104,12 +105,12 @@ export function LastTime({
         </Button>
       )}
     </form>
-  ) : upcoming ? (
+  ) : next.upcoming ? (
     <p className="last-time-next">
       <Icon as={CalendarClock} size="sm" decorative />
       <span className="last-time-next-label">{t("campaignHub.nextSession")}</span>
       <span className="last-time-next-when">
-        {new Date(nextAt).toLocaleString(i18n.language, {
+        {new Date(next.at).toLocaleString(i18n.language, {
           weekday: "short",
           day: "numeric",
           month: "short",
@@ -123,7 +124,7 @@ export function LastTime({
           size="sm"
           className="last-time-next-edit"
           onClick={() => {
-            setDraft(toLocalInput(nextAt));
+            setDraft(toLocalInput(next.at));
             setEditing(true);
           }}
         >

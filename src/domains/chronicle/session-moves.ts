@@ -59,11 +59,16 @@ export function removeSession(campaignId: string, id: string): void {
   void deleteSession(campaignId, id).catch(() => {});
 }
 
-export function nextSessionView(
-  nextAt: number | null,
-  now: number
-): { at: number | null; upcoming: boolean } {
-  return { at: nextAt, upcoming: nextAt !== null && nextAt + STILL_TONIGHT_MS > now };
+/** An upcoming session always has its time, so a caller reading `upcoming` can use
+ *  `at` as a number. */
+export type NextSessionView =
+  | { upcoming: true; at: number }
+  | { upcoming: false; at: number | null };
+
+export function nextSessionView(nextAt: number | null, now: number): NextSessionView {
+  return nextAt !== null && nextAt + STILL_TONIGHT_MS > now
+    ? { upcoming: true, at: nextAt }
+    : { upcoming: false, at: nextAt };
 }
 
 /** The DM sets (or clears, with null) the next session on the open campaign. */
