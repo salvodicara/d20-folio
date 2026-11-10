@@ -15,33 +15,48 @@ import { describe, expect, it } from "vitest";
 
 type Answer =
   | { covered: string } // the new-UI module that covers it
+  | { model: string; pending: string } // the headless model is ready; the control is not
   | { pending: string } // the owner of the new control still to build
   | { na: string }; // not a prompt (a display row): why
 
 /** Component-level classic prompts, by function name. */
 const COMPONENTS: Record<string, Answer> = {
-  AddDefensePicker: { pending: "direction: adding a temporary defense on Play" },
+  AddDefensePicker: {
+    model: "src/domains/play/forms-defenses-view.ts",
+    pending: "direction: the control on screen",
+  },
   BestiaryFormPicker: { covered: "src/domains/play/ui/PlayFormPicker.tsx" },
-  BestiarySummonPicker: { pending: "direction: a summon's form on Play" },
+  BestiarySummonPicker: {
+    model: "src/domains/play/forms-defenses-view.ts",
+    pending: "direction: the control on screen",
+  },
   ChoiceRePicker: { pending: "direction: the grant-bundle re-pick (rest batch)" },
   ChoiceResistancePicker: {
-    pending: "direction: the choice-resistance pick (new control)",
+    model: "src/domains/play/reactions-resistance-view.ts",
+    pending: "direction: the control on screen",
   },
-  ConcentrationSaveBanner: { pending: "direction: the Concentration save prompt" },
-  ConcentrationSavePrompt: { pending: "direction: the Concentration save prompt" },
+  ConcentrationSaveBanner: { covered: "src/domains/play/ui/PlayConcentrationSave.tsx" },
+  ConcentrationSavePrompt: { covered: "src/domains/play/ui/PlayConcentrationSave.tsx" },
   DamageTray: { covered: "src/domains/play/ui/PlayTray.tsx" },
   DefenseRow: { na: "a display row of the sheet's defenses" },
-  DyingBanner: { pending: "direction: the 0-HP family (savers, the dead verdict)" },
-  FamiliarFormPicker: { pending: "direction: the familiar's form on Play" },
+  DyingBanner: { covered: "src/domains/play/ui/PlayDown.tsx" },
+  FamiliarFormPicker: {
+    model: "src/domains/play/forms-defenses-view.ts",
+    pending: "direction: the control on screen",
+  },
   HpEditPopover: { covered: "src/domains/play/ui/PlayHp.tsx" },
   ItemResourceRailRow: { covered: "src/domains/play/ui/PlayLeft.tsx" },
   LogEntryRow: { covered: "src/domains/play/ui/PlayRight.tsx" },
   OffListReactionRow: {
-    pending: "direction: «Mark reaction used» for an off-list reaction",
+    model: "src/domains/play/reactions-resistance-view.ts",
+    pending: "direction: the control on screen",
   },
   PipRow: { na: "the death-save gems, a display of the track" },
   PromptedBanner: { pending: "direction: Wish's follow-up on the turn strip" },
-  ReadiedSpellRow: { pending: "direction: releasing a Readied spell" },
+  ReadiedSpellRow: {
+    model: "src/domains/play/reactions-resistance-view.ts",
+    pending: "direction: the control on screen",
+  },
   SpeciesChoicesBanner: { covered: "src/domains/play/ui/PlaySpeciesChoices.tsx" },
   SummaryRow: { covered: "src/domains/play/ui/PlayRest.tsx" },
   TransformFormPicker: { covered: "src/domains/play/ui/PlayFormPicker.tsx" },
@@ -50,23 +65,60 @@ const COMPONENTS: Record<string, Answer> = {
 /** Store-level classic prompts (direction's inventory, 2026-11-09). */
 const SELECTORS: Record<string, Answer> = {
   applyFirstRollTopUps: { covered: "src/domains/play/sheet-initiative-roll.ts" },
-  resolveStartOfTurnRegen: { pending: "direction: a turn-start note with one-tap apply" },
-  resolveRound1DamageDoubles: { pending: "direction: the round-1 Death Strike note" },
-  toggleSurprise: { pending: "direction: Advantage/Disadvantage on the initiative roll" },
-  maintenancePrompts: { pending: "direction: the solo turn strip" },
-  pendingWish: { pending: "direction: the solo turn strip" },
-  timeStopTurns: { pending: "direction: the solo turn strip" },
-  extraTurnOffer: { pending: "direction: the solo turn strip" },
-  standUp: { pending: "direction: the solo turn strip" },
-  soloEndTurn: { pending: "direction: the solo turn strip (End Turn out of a fight)" },
-  concentrationDrop: {
-    pending: "direction: «Drop» Concentration (the chip has no popover)",
+  resolveStartOfTurnRegen: {
+    model: "src/domains/play/turn-start-notes.ts",
+    pending: "direction: the control on screen",
   },
-  critAtZero: { pending: "direction: the crit-at-0 toggle on the HP control" },
-  deathSaveAdvantage: { pending: "direction: Advantage on the death save" },
-  heldInspiration: { pending: "direction: Heroic Inspiration and a held Bardic die" },
-  afterHitOptions: { pending: "direction: Cunning Strike and maneuvers after a hit" },
-  checkEntry: { pending: "direction: the Hide / Escape / Search check entry" },
+  resolveRound1DamageDoubles: {
+    model: "src/domains/play/turn-start-notes.ts",
+    pending: "direction: the control on screen",
+  },
+  toggleSurprise: {
+    model: "src/domains/play/roll-dialog-state.ts",
+    pending: "direction: the control on screen",
+  },
+  maintenancePrompts: {
+    model: "src/domains/play/turn-model.ts",
+    pending: "direction: the control on screen",
+  },
+  pendingWish: {
+    model: "src/domains/play/turn-model.ts",
+    pending: "direction: the control on screen",
+  },
+  timeStopTurns: {
+    model: "src/domains/play/turn-model.ts",
+    pending: "direction: the control on screen",
+  },
+  extraTurnOffer: {
+    model: "src/domains/play/turn-model.ts",
+    pending: "direction: the control on screen",
+  },
+  standUp: {
+    model: "src/domains/play/turn-model.ts",
+    pending: "direction: the control on screen",
+  },
+  soloEndTurn: {
+    model: "src/domains/play/turn-model.ts",
+    pending: "direction: the control on screen",
+  },
+  concentrationDrop: {
+    model: "src/domains/play/concentration-model.ts",
+    pending: "direction: the control on screen",
+  },
+  critAtZero: { covered: "src/domains/play/ui/PlayDown.tsx" },
+  deathSaveAdvantage: {
+    model: "src/domains/play/roll-dialog-state.ts",
+    pending: "direction: the control on screen",
+  },
+  heldInspiration: { covered: "src/domains/play/ui/PlayInspiration.tsx" },
+  afterHitOptions: {
+    model: "src/domains/play/after-hit-options.ts",
+    pending: "direction: the control on screen",
+  },
+  checkEntry: {
+    model: "src/domains/play/check-entry.ts",
+    pending: "direction: the control on screen",
+  },
 };
 
 const PROMPT_FUNCTION =
@@ -100,9 +152,10 @@ describe("Play parity: every classic prompt has an answer on the new Play screen
 
   it("each covering module exists", () => {
     const answers = [...Object.values(COMPONENTS), ...Object.values(SELECTORS)];
-    const gone = answers.flatMap((a) =>
-      "covered" in a && !existsSync(a.covered) ? [a.covered] : []
-    );
+    const gone = answers.flatMap((a) => {
+      const path = "covered" in a ? a.covered : "model" in a ? a.model : null;
+      return path && !existsSync(path) ? [path] : [];
+    });
     expect(gone).toEqual([]);
   });
 
