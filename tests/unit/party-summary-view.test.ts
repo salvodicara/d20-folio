@@ -10,6 +10,7 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 import { partyMemberRefs, partySummaryView } from "@/domains/campaign/party-summary-view";
 import type { MemberDocState } from "@/features/campaigns/useMemberCharacterDocs";
 import type { CampaignDoc } from "@/types/campaign";
+import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { makeCharacterDoc } from "./_helpers";
 
 const campaign = {
@@ -30,7 +31,7 @@ const campaign = {
 
 const sheet = (name: string, WIS: number) =>
   makeCharacterDoc({
-    name,
+    name: assertNonEmptyString(name),
     classes: [{ classId: "fighter", level: 1 }],
     abilityScores: { STR: 10, DEX: 10, CON: 10, INT: 10, WIS, CHA: 10 },
   });
