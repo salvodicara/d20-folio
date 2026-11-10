@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { classTables } from "@/data/classes";
-import { hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
+import {
+  hitDiceLeft,
+  hitDicePool,
+  hitDiceTotal,
+  hitDiceTotalRange,
+} from "@/lib/play/hit-dice";
 
 /**
  * A multiclass character's Hit Point Dice are one die per level of each class,
@@ -60,5 +65,21 @@ describe("Hit Point Dice pool", () => {
         hitDiceTotalOverride: 4,
       })
     ).toEqual([{ die: 6, count: 4 }]);
+  });
+
+  it("the total is one die per level, or the manual total; what is left never goes below 0", () => {
+    const multiclass = {
+      classes: [
+        { classId: "fighter", level: 5 },
+        { classId: "wizard", level: 2 },
+      ],
+      hitDieType: 6 as const,
+    };
+    expect(hitDiceTotal(multiclass)).toBe(7);
+    expect(hitDiceLeft(multiclass, { hitDice: { used: 3 } })).toBe(4);
+    expect(hitDiceTotal({ ...multiclass, hitDiceTotalOverride: 4 })).toBe(4);
+    expect(
+      hitDiceLeft({ ...multiclass, hitDiceTotalOverride: 4 }, { hitDice: { used: 6 } })
+    ).toBe(0);
   });
 });
