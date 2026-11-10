@@ -503,6 +503,18 @@ export function conditionDamageDefenseRules(
   );
 }
 
+/** The conditions these condition ids make the creature immune to (Petrified:
+ *  Poisoned). Unknown or custom ids contribute nothing. */
+export function conditionGrantedImmunities(ids: ReadonlyArray<string>): string[] {
+  return [...new Set(ids)].flatMap((id) =>
+    (NON_EXHAUSTION_CONDITION_IDS as ReadonlyArray<string>).includes(id)
+      ? occurrenceRule(id as NonExhaustionConditionId).effects.flatMap((effect) =>
+          effect.kind === "condition-immunity" ? [effect.conditionId] : []
+        )
+      : []
+  );
+}
+
 /** Exact condition-instance boundary; multiplicity is retained, identities are unique. */
 export function conformConditionInstances(
   value: unknown

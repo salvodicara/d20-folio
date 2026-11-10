@@ -72,6 +72,7 @@ import { PlayHelp } from "./PlayHelp";
 import { PlayPrepare } from "./PlayPrepare";
 import { PlayCompanions } from "./PlayCompanions";
 import { PlayScrollPick } from "./PlayScrollPick";
+import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
 
@@ -854,7 +855,9 @@ function ActionLine({
       : row.saveDc !== undefined
         ? [
             t("play.dc", { dc: row.saveDc }),
-            row.saveAbility ? t(`abilities.${row.saveAbility}_short`) : null,
+            row.saveAbility
+              ? saveAbilityShort(row.saveAbility, row.saveAbilities, t)
+              : null,
           ]
             .filter(Boolean)
             .join(" ")

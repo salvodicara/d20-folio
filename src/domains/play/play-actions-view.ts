@@ -53,6 +53,8 @@ export interface PlayActionRow {
   attackBonus?: number;
   saveDc?: number;
   saveAbility?: string;
+  /** The abilities the target picks from (Grapple, Shove). */
+  saveAbilities?: string[];
   damage?: string;
   damageType?: string;
   healing?: string;
@@ -111,6 +113,7 @@ export function playActionsView(
       attackBonus: a.weaponFacts?.attackBonus ?? s.attackBonus,
       saveDc: f.saveDc?.total ?? s.saveDC,
       saveAbility: s.saveAbility,
+      ...(s.saveAbilities ? { saveAbilities: s.saveAbilities } : {}),
       damage: a.weaponFacts?.damageOneHanded ?? s.damage,
       damageType: a.weaponFacts?.damageTypeId ?? s.damageType,
       healing: s.healing,

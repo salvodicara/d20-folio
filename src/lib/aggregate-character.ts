@@ -234,7 +234,7 @@ function aggregateWithConditions(
         ...resolveAllGrantSources(character, session.itemResources),
         ...encounterSources,
         // A lit Dodge (a base action's state) carries its rules until it ends.
-        ...resolveBaseActionStateSources(activeKeys),
+        ...resolveBaseActionStateSources(activeKeys, conditions),
         // A lit cover level (Half / Three-Quarters) holds until it ends.
         ...resolveCoverStateSources(activeKeys),
         // A lit situation (Underwater's Fire Resistance) holds until it ends.
