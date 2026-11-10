@@ -261,10 +261,14 @@ describe("dev-scenarios — the Sacred Weapon to-hit reaches the rendered weapon
         weapons: [...doc.character.weapons, { srdId: "shortbow", quantity: 1 }],
       },
     };
-    const vm = buildInventoryViewModel(withBow, "en");
-    const bow = vm.weapons.find((w) => w.id === "shortbow");
-    // DEX 10 (+0) + PB +3 = +3 — no Sacred Weapon (+5) folded into the ranged row.
-    expect(bow?.attackBonus).toBe(3);
+    const bowAtk = (d: typeof withBow): number | undefined =>
+      buildInventoryViewModel(d, "en").weapons.find((w) => w.id === "shortbow")
+        ?.attackBonus;
+    const off = { ...withBow, session: { ...withBow.session, activeFeatures: [] } };
+    // Lit and off give the same ranged bonus: no Sacred Weapon (+5) folded into the bow
+    // row. Compared against "off" so the paladin's Fighting Style does not move the pin.
+    expect(bowAtk(off)).toBeTypeOf("number");
+    expect(bowAtk(withBow)).toBe(bowAtk(off));
   });
 });
 
