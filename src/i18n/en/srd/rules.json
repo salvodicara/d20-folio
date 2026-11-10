@@ -13,14 +13,15 @@
   },
   "travel-pace.fast": {
     "name": "Fast",
-    "effect": "−5 penalty to passive Perception."
+    "effect": "Disadvantage on Wisdom (Perception or Survival) checks."
   },
   "travel-pace.normal": {
-    "name": "Normal"
+    "name": "Normal",
+    "effect": "Disadvantage on Dexterity (Stealth) checks."
   },
   "travel-pace.slow": {
     "name": "Slow",
-    "effect": "Can move stealthily."
+    "effect": "Advantage on Wisdom (Perception or Survival) checks."
   },
   "mounted.eligible-mount": {
     "name": "Eligible Mount",
