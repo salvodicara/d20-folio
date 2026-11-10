@@ -36,6 +36,7 @@ export function AppShell({
   nav,
   navLabel,
   searchLabel,
+  status,
   onSearch,
   menuLabel,
   account,
@@ -48,6 +49,8 @@ export function AppShell({
   nav: ShellLink[];
   navLabel: string;
   searchLabel: string;
+  /** Live status beside the search (the fight's round and whose turn). */
+  status?: ReactNode;
   onSearch: (query: string) => void;
   menuLabel: string;
   account: {
@@ -95,6 +98,7 @@ export function AppShell({
           {links}
         </nav>
         <div className="f-tb-r">
+          {status}
           <div className="f-tb-srch">{search}</div>
           <button
             type="button"

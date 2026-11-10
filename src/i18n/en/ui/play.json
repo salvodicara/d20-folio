@@ -63,7 +63,8 @@
       "fromTemp": "It takes {{temp}} temporary hit points first, then you go from {{from}} to {{to}}.",
       "tempOnly": "Your temporary hit points take it all: you stay at {{from}}.",
       "plain": "You go from {{from}} to {{to}} hit points.",
-      "concentration": "Make a concentration save for {{spell}} (DC {{dc}})."
+      "concentration": "Make a concentration save for {{spell}} (DC {{dc}}).",
+      "critAtZero": "At 0 Hit Points a critical hit counts as two failures."
     },
     "form": {
       "tempHp": "You gain {{amount}} Temporary Hit Points, and they stay when you return to your form.",
@@ -258,7 +259,10 @@
       "addAfter": "After the roll",
       "addBardic": "+ Bardic Inspiration ({{die}})",
       "secondFace": "The second d20",
-      "dieFace": "What did the {{die}} show?"
+      "dieFace": "What did the {{die}} show?",
+      "dust": "The body turned to dust.",
+      "threeFailures_one": "{{count}} failed death saving throw.",
+      "threeFailures_other": "{{count}} failed death saving throws."
     },
     "conditions": {
       "cantSeeSource": "I can't see the source",
@@ -331,6 +335,17 @@
       "received": "Received",
       "receivedDie": "Die received from an ally"
     },
-    "turnStart": "Start of the turn"
+    "turnStart": "Start of the turn",
+    "solo": {
+      "start": "Start combat",
+      "ammo_one": "You can recover {{count}} piece of ammunition after the fight.",
+      "ammo_other": "You can recover {{count}} pieces of ammunition after the fight.",
+      "ammoRecover": "Recover"
+    },
+    "pip": {
+      "gathering": "Initiative: roll",
+      "mine": "Round {{round}} · your turn",
+      "theirs": "Round {{round}} · {{name}}"
+    }
   }
 }
