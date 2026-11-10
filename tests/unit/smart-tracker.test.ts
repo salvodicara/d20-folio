@@ -248,7 +248,8 @@ describe("resolveActions — dual-wield", () => {
       type: "bonus",
       activatesKey: "item-poison-basic",
       costEquipment: "poison-basic",
-      summary: { uses: { current: 1, total: 1 } },
+      // The vials carried, read "×1" like the inventory (never a "1/1" ratio).
+      summary: { uses: { current: 1, stock: true } },
     });
     expect(featureStateSource(char, "item-poison-basic")).toBeDefined();
     // The inventory badge reads the same Bonus Action.

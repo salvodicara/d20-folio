@@ -638,7 +638,14 @@ export interface ActionSummary {
    */
   extraMasteries?: string[];
   /** Tracker uses remaining: { current: 2, total: 4, isPool?: true, unit?: "hp" } */
-  uses?: { current: number; total: number; isPool?: boolean; unit?: TrackerUnit };
+  uses?: {
+    current: number;
+    total: number;
+    isPool?: boolean;
+    unit?: TrackerUnit;
+    /** The copies carried (a potion, a vial): read as "×2", never a "2/2" ratio. */
+    stock?: true;
+  };
   /** Feature die: "d6", "d8", "d10" */
   die?: string;
   /** The roll `die` is spent on: the triggering attack's damage or its attack
@@ -5860,7 +5867,7 @@ function resolveEquipmentActions(
             }
           : item.isConsumable
             ? // The copies left (Basic Poison's vials), as a potion's card counts them.
-              { uses: { current: copies, total: copies } }
+              { uses: { current: copies, total: copies, stock: true } }
             : {}),
       };
       applyActionEffectSummary(
@@ -8585,7 +8592,9 @@ function resolveWeaponActions(
 
     // A healing potion shows its heal verdict; any other potion (Giant Strength,
     // Fire Breath, …) shows a short effect from its SRD description (LocaleText data).
-    const summary: RawActionSummary = { uses: { current: qty, total: qty } };
+    const summary: RawActionSummary = {
+      uses: { current: qty, total: qty, stock: true },
+    };
     if (potionFormula) {
       summary.healing = potionFormula;
     } else if (!isCustomItem && srdEn("magic-item", itemRef.srdId, "description")) {
