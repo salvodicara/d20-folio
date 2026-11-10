@@ -936,6 +936,12 @@
     "name": "Incanalare Divinità",
     "gist": "2 usi, tra cui Percezione del Divino; ne recuperi 1 con Riposo Breve, tutti con Lungo"
   },
+  "paladin-channel-divinity.grants.0": {
+    "label": "Percezione del Divino"
+  },
+  "paladin-channel-divinity.mechanics.actions.0": {
+    "description": "Percepisci Celestiali, Immondi e Non Morti per 10 minuti."
+  },
   "paladin-devotion-aura-of-devotion": {
     "description": "Tu e le creature amiche entro 3 metri non potete essere affascinati finché sei cosciente. Al 18° livello, il raggio aumenta a 9 metri.",
     "name": "Aura di Devozione",
