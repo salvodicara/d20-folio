@@ -69,7 +69,8 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
       const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
       if (!(await roll.isVisible().catch(() => false))) break;
       await roll.click();
-      const input = dm.getByRole("textbox", { name: /Your d20 roll for/ });
+      // A committed roll keeps its field on the card: the one just opened has focus.
+      const input = dm.locator("input.init-edit-input:focus");
       await input.fill(String(15 - i));
       await input.press("Enter");
     }
