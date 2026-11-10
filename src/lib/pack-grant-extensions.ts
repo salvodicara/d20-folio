@@ -35,8 +35,8 @@ function mergeChoiceBundle(
   base: ChoiceBundle,
   extension: ChoiceBundle
 ): ChoiceBundle {
-  const baseFrequency = base.choiceFrequency ?? "rest";
-  const extensionFrequency = extension.choiceFrequency ?? "rest";
+  const baseFrequency = base.choiceFrequency ?? "once";
+  const extensionFrequency = extension.choiceFrequency ?? "once";
   if (baseFrequency !== extensionFrequency) {
     throw new Error(
       `[content-pack] choice bundle "${base.bundleKey}" changes frequency in ${sourceKey}`

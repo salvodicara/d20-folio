@@ -63,6 +63,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-alter-self",
+            choiceFrequency: "cast",
             options: [
               {
                 id: "aquatic-adaptation",
@@ -308,6 +309,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-enhance-ability",
+            choiceFrequency: "cast",
             options: [
               {
                 id: "str",
@@ -368,6 +370,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-enlarge-reduce",
+            choiceFrequency: "cast",
             options: [
               {
                 id: "enlarge",

@@ -783,8 +783,13 @@ export interface GrantBundle {
   label: LocText;
   options: ReadonlyArray<{ id: string; label: LocText }>;
   selected: string | null;
-  /** Mirrors the grant's `choiceFrequency`; defaults to `"rest"` when absent. */
-  choiceFrequency: "creation" | "rest";
+  /**
+   * When the choice may change, per its rule (the grant's `choiceFrequency`):
+   * `creation` with the species; `rest` at a rest (Circle of the Land's terrain);
+   * `cast` each time the spell is cast (Fire Shield); `once`, the default, never
+   * after it is made (Primal Order, an item's type).
+   */
+  choiceFrequency: "creation" | "rest" | "cast" | "once";
 }
 
 /**
@@ -3814,7 +3819,7 @@ export function evaluateGrants(
             label: grantField(optionGrantRef(gref, o.id), "label", o.label),
           })),
           selected,
-          choiceFrequency: g.choiceFrequency ?? "rest",
+          choiceFrequency: g.choiceFrequency ?? "once",
         });
         if (selected !== null) {
           const chosen = g.options.find((o) => o.id === selected);

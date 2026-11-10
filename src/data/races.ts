@@ -484,6 +484,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "tiefling-legacy",
+            choiceFrequency: "creation",
             options: [
               {
                 id: "abyssal",
@@ -767,6 +768,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "goliath-giant-ancestry",
+            choiceFrequency: "creation",
             options: [
               { id: "clouds-jaunt", grants: [] },
               { id: "fires-burn", grants: [] },
@@ -805,6 +807,7 @@ const PUBLIC_RACES: SrdRaceData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "dragonborn-ancestry",
+            choiceFrequency: "creation",
             options: [
               {
                 id: "black",

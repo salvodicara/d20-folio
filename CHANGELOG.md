@@ -124,6 +124,9 @@ interfaccia resta spenta (sotto, le voci che arriveranno con lei).
   altri giocatori; annullare un'azione vecchia annulla solo quella
 - Un colpo del DM o di un alleato non si perde più se la tua scheda salva qualcosa nello stesso
   momento, anche offline
+- Una scelta che le regole fissano (Ordine Primordiale, Ordine Divino, il tipo di un oggetto,
+  l'ascendenza della specie) non si cambia più dalla barra delle risorse; restano quelle che si
+  rifanno a ogni riposo o a ogni lancio
 - In italiano i termini seguono l'SRD 5.2.1 italiano e le distanze sono in metri
 - La prima schermata è più leggera e l'installazione offline pesa meno
 
@@ -164,6 +167,9 @@ e «Tira l'iniziativa» dalla scheda.
 - Encounter reports file every hit under its round; a new fight starts with clean initiative.
 - A hit from the DM or an ally is no longer erased when the player's sheet saves a change at the
   same moment, even offline (the sheet now writes only what it changed).
+- A choice the rules fix once made (Primal Order, Divine Order, an item's type, a species
+  ancestry) can no longer be swapped from the resource rail; the ones re-chosen at a rest or
+  at each cast stay.
 - Combat-state writes happen only when something changed (no repeated rewrites in a campaign).
 - A turn saved by v0.25.0 loads in v0.26.0 (a release-blocking read fix found by the
   pre-deploy survey).

@@ -2430,7 +2430,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("choice-grant-bundle"),
     },
     {
-      choiceFrequency: unionSchema([literalSchema("creation"), literalSchema("rest")]),
+      choiceFrequency: unionSchema([
+        literalSchema("creation"),
+        literalSchema("rest"),
+        literalSchema("cast"),
+        literalSchema("once"),
+      ]),
       label: LOCALE_TEXT_SCHEMA,
     }
   ),

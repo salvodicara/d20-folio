@@ -5,7 +5,7 @@
  * Land (terrain re-chosen each Long Rest).
  */
 import { describe, expect, it } from "vitest";
-import { evaluateGrants, type GrantSource } from "@/lib/grants";
+import { evaluateGrants, type Grant, type GrantSource } from "@/lib/grants";
 import { getAlwaysPreparedFromGrants, allBundleSpellIds } from "@/lib/expanded-spells";
 
 const TERRAIN: GrantSource = {
@@ -16,6 +16,7 @@ const TERRAIN: GrantSource = {
       type: "choice-grant-bundle",
       bundleKey: "druid-land-terrain",
       label: { en: "Land Type", it: "Tipo di Terra" },
+      choiceFrequency: "rest",
       options: [
         {
           id: "arid",
@@ -101,7 +102,19 @@ describe("getAlwaysPreparedFromGrants — bundle descent + minLevel gate", () =>
 });
 
 describe("choice-grant-bundle — choiceFrequency field", () => {
-  it("defaults to 'rest' when choiceFrequency is omitted", () => {
+  it("defaults to 'once' when choiceFrequency is omitted: a choice stays made", () => {
+    // A level-up pick (Primal Order, Divine Order) or an item's type is fixed once
+    // chosen; only a rule that says so lets it change (`rest`, `cast`).
+    const { choiceFrequency: _rest, ...bundle } = TERRAIN.grants?.[0] as Extract<
+      Grant,
+      { type: "choice-grant-bundle" }
+    >;
+    void _rest;
+    const agg = evaluateGrants([{ ...TERRAIN, grants: [bundle] }]);
+    expect(agg.grantBundles[0]?.choiceFrequency).toBe("once");
+  });
+
+  it("forwards 'rest' when the grant declares it (Circle of the Land's terrain)", () => {
     const agg = evaluateGrants([TERRAIN]);
     expect(agg.grantBundles[0]?.choiceFrequency).toBe("rest");
   });

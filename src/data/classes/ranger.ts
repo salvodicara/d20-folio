@@ -364,6 +364,7 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-grant-bundle",
         bundleKey: "ranger-hunter-prey",
+        choiceFrequency: "rest",
         options: [
           {
             id: "colossus-slayer",
@@ -409,6 +410,7 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-grant-bundle",
         bundleKey: "ranger-hunter-defensive-tactics",
+        choiceFrequency: "rest",
         options: [
           {
             id: "escape-the-horde",
