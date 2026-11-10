@@ -1,5 +1,177 @@
 # Changelog
 
+## 0.26.0
+
+**La scheda applica da sola molte più regole: reazioni ai tiri degli altri, effetti lanciati
+sugli alleati che arrivano sulla loro scheda, un solo orologio per tutta la campagna, Forma
+Selvatica vera e una scheda che chiede le scelte che mancano.** Interfaccia classica; la nuova
+interfaccia resta spenta (sotto, le voci che arriveranno con lei).
+
+### Per chi gioca
+
+**Combattimento e turno**
+
+- I potenziamenti lanciati su un alleato (Benedizione, Vincolo di Interdizione, Velocità,
+  Armatura Magica…) e i marchi (Marchio del Cacciatore, Sortilegio) arrivano sulla sua scheda;
+  il Legame Interdittivo divide i danni con chi lo lancia e Armatura di Agathys colpisce di nuovo
+  chi ti colpisce
+- Un colpo del DM o di un alleato segue le tue regole: prima i PF temporanei, a 0 PF Privo di
+  sensi, un colpo mentre muori è un fallimento al TS contro la morte (un critico, due), e il TS di
+  Concentrazione da tirare
+- Nuovo pannello «Condizioni»: ogni condizione dice da dove viene; le immunità valgono davvero
+  (Spaventato sotto Eroismo resta ma non dà Svantaggio); con «Non vedo la fonte» la paura non dà
+  Svantaggio
+- Le condizioni finiscono come dice il loro incantesimo: Charme al primo danno, Dominare ritira il
+  TS a ogni danno, Risata Incontenibile anche sul danno; il TS ripetuto aspetta sulla carta del
+  bersaglio finché qualcuno risponde; Contagio e Carne in Pietra contano tre successi o tre
+  fallimenti
+- Invisibilità, Nascondersi e la Pozione di Invisibilità finiscono quando attacchi, lanci un
+  incantesimo o infliggi danni; lo stesso vale per gli effetti lasciati da altri che finiscono così
+- Vessazione e Aiuto diventano uno stato sul nemico, consumato dal prossimo attacco giusto; il
+  prossimo attacco con Vantaggio (Dardo Tracciante, Colpo Stordente) si consuma e la scheda lo dice
+- Zone degli incantesimi (Spiriti Guardiani, Guardiano della Fede…): scattano a inizio o fine
+  turno e passano dal vassoio dei danni
+- Munizioni contate durante lo scontro; alla fine ne recuperi la metà
+- Gli usi «una volta per turno» tornano a ogni turno dello scontro; un nuovo scontro non tiene le
+  iniziative vecchie
+- Salti dalla Forza, Spostamento Tattico e Balzo Istintivo (metà Velocità in più), Caduta Lenta,
+  Passo del Vento; Indebolimento riduce anche volo e nuoto
+- Lo stesso effetto da due fonti non si somma: due Aure di Protezione danno il bonus una volta
+
+**Reazioni ai tiri degli altri**
+
+- Parole Taglienti (Bardo del Sapere) sottrae il dado di Ispirazione Bardica al tiro di una
+  creatura, anche dopo il tiro; Controfascino, Indomabile e Sopravvissuto Disciplinato ritirano un
+  TS fallito
+- Nuove reazioni: quando una creatura ti attacca, quando fallisce una prova d20, quando fallisci o
+  superi un TS
+- Musicista e Ispirazione Bardica: l'Ispirazione Eroica e il dado arrivano sulla scheda
+  dell'alleato; un dado ricevuto sparisce dopo un'ora di gioco
+
+**Il tempo in campagna**
+
+- Un solo orologio per il tavolo: «Passa il tempo» e i riposi lo spostano per tutti; ora del
+  giorno, alba e durata degli effetti si leggono da lì (al massimo 24 ore per volta)
+- Un potenziamento che dura più dello scontro (Armatura Magica, 8 ore) resta sulla scheda
+  dell'alleato fino alla scadenza; fuori dallo scontro «Su chi?» propone il gruppo
+- Le cariche che tornano all'alba ricaricano all'alba vera dell'orologio di gioco
+
+**Incantesimi**
+
+- Fonte della Magia crea uno slot anche oltre il massimo; Controincantesimo: «Contrastato» ti
+  restituisce lo slot; Incantesimo Gemello solo dove serve; Stregoneria Incarnata: due Metamagie
+  insieme
+- Parola del Potere Uccidere e Stordire applicano solo il ramo giusto con la risposta del DM;
+  Rinascita, Rianimare Morti e Resurrezione riportano in vita anche un altro giocatore
+- Dissolvi Magie dissolve da solo fino al 3° livello e chiede quale incantesimo finire su una
+  creatura; Raggio di Affaticamento toglie 1d8 ai danni del bersaglio
+- Dentro Silenzio, o da Incapacitato, niente incantesimi con componente verbale né oggetti a parola
+  di comando
+- Trova Cavalcatura e Destriero Fantomatico compaiono e svaniscono quando devono; un compagno
+  caduto resta sulla scheda e si può rianimare entro il suo tempo
+- Gli incantesimi che spendono Dadi Vita o recuperano slot chiedono quanti e quali; Memorizzare
+  Incantesimi dopo un Riposo Breve
+
+**Forme**
+
+- Forma Selvatica è una forma vera: scegli la bestia (secondo il livello da druido), tieni INT, SAG
+  e CAR, ricevi PF temporanei e torni indietro con un tocco; in forma niente incantesimi, salvo le
+  eccezioni, e gli oggetti indossati non danno bonus
+- In una forma hai le difese della creatura; la CA è la più alta tra quella della bestia e Pelle
+  Coriacea; una forma finisce da sola anche per un colpo del DM
+
+**0 PF e morte**
+
+- Ira Implacabile propone il TS di Costituzione con la CD giusta; con più salvataggi a 0 PF scegli
+  tu l'ordine; scendere a 0 PF fa finire l'Ira
+- Disintegrazione: se un salvataggio ti rimette a 1 PF non diventi polvere; morire termina la
+  sintonia con gli oggetti (annullabile)
+
+**Oggetti**
+
+- La carta dell'arma nell'inventario mostra gli stessi numeri della carta di Gioco (anche nel PDF)
+- Comprare dal catalogo con il resto, vendere a metà prezzo; le armature dicono quanto tempo serve
+  per indossarle
+- Togliere un oggetto ne spegne l'effetto (l'Anello dell'Invisibilità tolto non lascia Invisibile)
+- La sintonia controlla davvero chi può usarlo; un oggetto maledetto si lascia solo forzando
+- Oggetti con il testo 2024: Elmo della Luminosità, Bastone del Potere (20 cariche), Bastone del
+  Colpo Possente, Pozione di Velocità senza letargia, Collana delle Palle di Fuoco, Lama della
+  Fortuna, Pozione di Eroismo
+
+**Classi e scelte**
+
+- «Scelte da completare»: la scheda chiede le scelte che mancano (suppliche, trucchetti,
+  Metamagia, manovre, Padronanze d'Armi), la caratteristica degli incantesimi della specie e
+  quella aumentata da un talento
+- Ira anche sui Colpi Senz'Armi con la Forza; Ira Persistente all'iniziativa; Ripristino
+  Stregonesco a fine Riposo Breve; Schivata Prodigiosa dimezza il colpo; Abiura i Nemici sulla
+  carta; Scoperte Magiche con le opzioni giuste; il Warlock riceve le suppliche della tabella 2024
+- Le specie con incantesimi per livello li mostrano solo dal livello giusto
+- Avvelenatore: il veleno ricopre l'arma che scegli e finisce quando quell'arma infligge danni
+
+**Il master (DM)**
+
+- Nuova scheda «Regole» della campagna: TS contro la morte, accerchiamento, 1 naturale,
+  nascondersi, punti eroe, Indebolimento; arrivano sulla scheda aperta
+- Il DM usa l'attacco o il TS di un mostro con un tocco; le zone lanciate da un mostro chiedono il
+  TS sul suo dispositivo; un mostro a 0 PF o Stordito perde concentrazione e lotte
+- Il resoconto mette ogni colpo sotto il suo round, anche se il DM ha chiuso la pagina
+
+**Ovunque**
+
+- Ogni condizione, azione base e termine di combattimento si spiega con un tocco
+- Annulla ricorda 50 azioni, annulla anche i riposi e non sovrascrive le modifiche del DM o di
+  altri giocatori; annullare un'azione vecchia annulla solo quella
+- In italiano i termini seguono l'SRD 5.2.1 italiano e le distanze sono in metri
+- La prima schermata è più leggera e l'installazione offline pesa meno
+
+### Solo con la nuova interfaccia (non attiva in v0.26.0)
+
+Arriveranno quando la nuova interfaccia verrà accesa: la creazione del personaggio e il passaggio
+di livello nuovi, le scelte in stile BG3 con le icone dipinte, «In breve» su incantesimi, talenti,
+oggetti e privilegi, la nuova schermata di Gioco, la pagina della campagna (Gruppo, Diario,
+Scontro, Tesoro, Note), il nuovo Compendio con le icone, gli strumenti del master nello Scontro,
+e «Tira l'iniziativa» dalla scheda.
+
+### Summary (English)
+
+**Added**
+
+- Effects cast on allies (buffs, marks, Warding Bond, Armor of Agathys) land on their sheets; a
+  hit from the DM or an ally follows the target's own rules (temp HP, 0 HP, death saves,
+  Concentration).
+- Reactions to other creatures' rolls (Cutting Words, Countercharm, Indomitable, Disciplined
+  Survivor), Bardic and Heroic Inspiration delivered to the ally's sheet.
+- One campaign clock for the whole table: time passing, rests, dawn and effect durations.
+- Wild Shape as a real transformation; ammunition counted and half recovered after a fight;
+  a Conditions panel with sources; spell zones on the turn boundary.
+- «Choices to complete»: the sheet asks for missing class, species and feat choices.
+- The DM's table-rules tab; monster attacks and saves in one tap.
+
+**Changed**
+
+- Conditions, Invisibility and Hide end as their rules say; the same effect from two sources no
+  longer stacks; condition immunities are enforced.
+- Items follow their 2024 text; attunement restrictions are enforced; removing an item ends its
+  effect.
+- Undo remembers 50 actions, covers rests and never overwrites another device's change.
+- Italian terms follow the Italian SRD 5.2.1; distances in metres.
+
+**Fixed**
+
+- Encounter reports file every hit under its round; a new fight starts with clean initiative.
+- Combat-state writes happen only when something changed (no repeated rewrites in a campaign).
+- A turn saved by v0.25.0 loads in v0.26.0 (a release-blocking read fix found by the
+  pre-deploy survey).
+- Functions: five denial-of-service advisories in body-parser and qs.
+
+### Dati e compatibilità
+
+Nessuna migrazione dei dati salvati: solo campi e raccolte nuove e opzionali (orologio ed effetti
+della campagna, elenco delle creature, lato del master degli oggetti). Ogni scheda salvata dalla
+v0.25.0 si legge senza cambiamenti (verificato sui dati live, in sola lettura). Un client v0.25.0
+ancora aperto non si rompe.
+
 ## 0.25.0
 
 ### Minor Changes
