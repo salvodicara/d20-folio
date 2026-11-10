@@ -5,6 +5,8 @@
  * server refuses it, as the classic hub does.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/firebase", () => ({ db: {} }));
 import type { TFunction } from "i18next";
 
 const io = vi.hoisted(() => ({
