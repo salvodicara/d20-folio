@@ -57,12 +57,13 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
   }
   await expect(dialog).toHaveCount(0);
   // The confirmation toast can be gone by the time a slow runner looks: the slot spent
-  // and the effect on the target are what count; the toast is checked softly.
+  // and the effect on the target are what count; the toast is checked softly. A spell
+  // with a costly component shows that note in the same toast slot instead.
   await expect
     .soft(
       page
         .locator("[role=status]")
-        .filter({ hasText: new RegExp(`${spell} used`) })
+        .filter({ hasText: new RegExp(`${spell} (used|needs)`) })
         .first()
     )
     .toBeVisible({ timeout: 3_000 });

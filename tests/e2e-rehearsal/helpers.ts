@@ -138,7 +138,7 @@ export async function signInAs(page: Page, email: string): Promise<void> {
   await page.evaluate(async (who) => {
     const source = await (await fetch("/src/lib/auth.ts")).text();
     const authPath = source.match(
-      /\/node_modules\/\.vite\/deps\/firebase_auth\.js\?v=[0-9a-f]+/
+      /\/node_modules\/\.vite[^/]*\/deps\/firebase_auth\.js\?v=[0-9a-f]+/
     )?.[0];
     if (!authPath) throw new Error("firebase/auth dep path not found");
     // Browser-side module paths (the dev server serves them); never resolved by tsc.
