@@ -61,4 +61,15 @@ describe("the deploy's feature flags are the ones its gating e2e runs use", () =
     const flags = literalFlags(jobBlock(read(file), job));
     expect(flags).toMatchObject(deployFlags);
   });
+
+  it("the rehearsal (the real emulator and rules) builds with the deploy flags", () => {
+    const config = readFileSync(join(ROOT, "playwright.rehearsal.config.ts"), "utf8");
+    const flags = Object.fromEntries(
+      [...config.matchAll(/^\s+(VITE_[A-Z0-9_]+):\s*"([^"]*)",?\s*$/gm)].map((m) => [
+        m[1] ?? "",
+        m[2] ?? "",
+      ])
+    );
+    expect(flags).toMatchObject(deployFlags);
+  });
 });

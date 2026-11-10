@@ -68,15 +68,16 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
     .toBeVisible({ timeout: 3_000 });
 }
 
-/** Whether the sheet's Conditions panel lists an effect by name (opens and closes it). */
+/** Whether the sheet's Effects panel lists an effect by name (opens and closes it).
+ *  What an ally cast on the character sits under «Effects» (#903). */
 async function showsEffect(page: Page, name: string): Promise<boolean> {
   await page
-    .getByRole("button", { name: /Conditions/ })
+    .getByRole("button", { name: /Effects/ })
     .first()
     .click();
   const panel = page
     .getByRole("dialog")
-    .or(page.locator("[aria-label='Conditions']"))
+    .or(page.locator("[aria-label='Effects']"))
     .last();
   const found = await panel
     .getByText(name)
@@ -185,14 +186,9 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
         "the DM can add a monster to the fight"
       )
       .toBeVisible({ timeout: 5_000 });
-    const pcRow = dm.locator(".f-split").getByText("Catalion di Sancaldo").first();
     await expect
       .soft(
-        dm
-          .locator(".f-split")
-          .filter({ has: pcRow })
-          .getByRole("button", { name: /damage|danni/i })
-          .first(),
+        dm.getByRole("button", { name: /^Damage and healing: Catalion/ }).first(),
         "the DM can damage a PC from the fight"
       )
       .toBeVisible({ timeout: 5_000 });

@@ -32,6 +32,8 @@ export default defineConfig({
   use: {
     ...devices["Desktop Chrome"],
     baseURL: REHEARSAL_URL,
+    // A control that is not there fails the step in seconds, never hangs the journey.
+    actionTimeout: 30_000,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -44,7 +46,9 @@ export default defineConfig({
         // No HMR socket: it reloads a page by itself mid-test (see vite.config.ts).
         VITE_E2E_NO_HMR: "true",
         VITE_NEW_UI: "1",
+        // The deploy's flags (deploy.yml): the rehearsal runs the writers players get.
         VITE_COMBAT_EFFECTS_V26: "true",
+        VITE_PEER_SPENDS_LEDGER: "true",
       },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

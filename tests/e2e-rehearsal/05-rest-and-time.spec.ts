@@ -55,9 +55,15 @@ test("the Wizard: a Long Rest offers the prepared-spells step", async ({ page })
   await page.getByRole("button", { name: "Long rest" }).first().click();
   const dialog = page.locator("dialog[open]");
   await expect(dialog).toBeVisible();
-  await expect(dialog.getByText(/prepare/i).first()).toBeVisible();
+  // The rest first, then the step that offers to change the prepared spells (#903).
   await dialog.getByRole("button", { name: "Complete rest" }).click();
-  await expect(dialog).toHaveCount(0);
+  await expect(
+    page
+      .locator("dialog[open]")
+      .getByText(/prepare/i)
+      .first()
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
   await expectNoCrash(page);
   expect(errors).toEqual([]);
 });

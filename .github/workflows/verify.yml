@@ -217,6 +217,58 @@ jobs:
           path: blob-report
           retention-days: 3
 
+  # The release rehearsal (playwright.rehearsal.config.ts) on the real Auth, Firestore
+  # and Storage emulators with this branch's rules: real sandbox accounts, a DM and two
+  # players, with the deploy's flags. The e2e shards run under the dev auth bypass,
+  # which short-circuits every campaign write (campaign-io.ts), so only this job
+  # exercises cross-device hits, the spends ledger and the campaign clock against
+  # the rules the deploy ships.
+  rehearsal:
+    name: e2e (rehearsal, real emulators)
+    needs: pack
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
+        with:
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+          ref: ${{ needs.pack.outputs.sha }}
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: "temurin"
+          java-version: "25"
+      - run: pnpm install --frozen-lockfile
+      - name: Install Firebase CLI
+        run: npm install --global firebase-tools@15.28.1
+      - name: Cache emulator JARs
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-15.28.1
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: playwright-${{ runner.os }}-
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Rehearsal
+        run: bash scripts/e2e-rehearsal.sh
+      - name: Upload the failure traces
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: e2e-rehearsal-traces
+          path: test-results
+          retention-days: 3
+
   # A single merged HTML report, published only when a shard failed — the one
   # artifact to open when Verify goes red. Short retention: the repo is public,
   # and failure screenshots can show composed (pack) content — same exposure
