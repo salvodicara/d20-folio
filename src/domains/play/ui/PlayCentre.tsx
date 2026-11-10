@@ -667,7 +667,7 @@ function TurnStrip({
           ))}
         </ul>
         {fight && (phase === "my-turn" || phase === "solo") && (
-          <Button kind="primary" icon="u-next" onClick={handleEndTurn}>
+          <Button kind="primary" icon="u-next" data-end-turn="" onClick={handleEndTurn}>
             {t("play.endTurn")}
           </Button>
         )}
@@ -733,8 +733,9 @@ function Playbook({
     mode: fight ? "combat" : "exploration",
     round,
   });
-  const lines = open ? view.steps : view.plan;
-  if (lines.length === 0) return null;
+  // Closed, only its line, as in the prototype (x-play .tip); open, the steps and why.
+  const lines = open ? view.steps : [];
+  if (view.steps.length === 0 && view.plan.length === 0) return null;
   return (
     <div className="f-playbook">
       <button
@@ -743,33 +744,36 @@ function Playbook({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
+        <Icon name="g-compass" />
         <span>{t("play.playbookTitle")}</span>
         <Icon name="u-expand" />
       </button>
-      <ul className="f-playbook-lines">
-        {lines.map((l) => (
-          <li key={l.stepId} data-status={l.status}>
-            <span data-prose="">
-              {l.before}
-              {l.strong &&
-                (l.opens === "short-rest" && onShortRest ? (
-                  <button
-                    type="button"
-                    className="f-link"
-                    aria-haspopup="dialog"
-                    onClick={onShortRest}
-                  >
-                    {l.strong}
-                  </button>
-                ) : (
-                  <b>{l.strong}</b>
-                ))}
-              {l.after}
-            </span>
-            {open && l.why && <span className="f-tl-by">{l.why}</span>}
-          </li>
-        ))}
-      </ul>
+      {open && (
+        <ul className="f-playbook-lines">
+          {lines.map((l) => (
+            <li key={l.stepId} data-status={l.status}>
+              <span data-prose="">
+                {l.before}
+                {l.strong &&
+                  (l.opens === "short-rest" && onShortRest ? (
+                    <button
+                      type="button"
+                      className="f-link"
+                      aria-haspopup="dialog"
+                      onClick={onShortRest}
+                    >
+                      {l.strong}
+                    </button>
+                  ) : (
+                    <b>{l.strong}</b>
+                  ))}
+                {l.after}
+              </span>
+              {l.why && <span className="f-tl-by">{l.why}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

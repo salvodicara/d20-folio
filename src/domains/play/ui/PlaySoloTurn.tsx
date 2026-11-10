@@ -66,12 +66,13 @@ export function useSoloTurn(locale: Locale) {
           <Button
             kind="primary"
             icon="u-next"
+            data-end-turn=""
             onClick={() => setPrompts(endTurn(t).maintenancePrompts)}
           >
-            {t("combat.endTurn")}
+            {t("play.endTurn")}
           </Button>
-          <Button kind="ghost" onClick={() => setConfirmEnd(true)}>
-            {t("combat.endCombat")}
+          <Button kind="quiet" onClick={() => setConfirmEnd(true)}>
+            {t("fight.end")}
           </Button>
         </>
       ) : (
@@ -191,7 +192,7 @@ export function useSoloTurn(locale: Locale) {
                 setAmmo(0);
               }}
             >
-              {t("play.solo.ammoRecover")}
+              {t("common.recover")}
             </Button>
             <Button kind="quiet" onClick={() => setAmmo(0)}>
               {t("common.close")}
@@ -221,7 +222,7 @@ export function useSoloTurn(locale: Locale) {
                   setConfirmEnd(false);
                 }}
               >
-                {t("combat.endCombat")}
+                {t("fight.end")}
               </Button>
             </>
           }

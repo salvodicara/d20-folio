@@ -337,7 +337,6 @@
       "start": "Inizia il combattimento",
       "ammo_one": "Puoi recuperare {{count}} munizione dopo lo scontro.",
       "ammo_other": "Puoi recuperare {{count}} munizioni dopo lo scontro.",
-      "ammoRecover": "Recupera",
       "endingName": "{{name}} sta per finire:",
       "endingWhyAttack": "in questo turno non hai attaccato né imposto un tiro salvezza a un nemico.",
       "extendBonus": "Prolunga (Azione Bonus)",
