@@ -25,7 +25,8 @@ describe("18. Rules glossary audit", () => {
     () => {
       for (const id of ["base-grapple", "base-shove"]) {
         const card = resolveActions(lyra()).find((row) => row.id === id);
-        expect(card?.summary.saveAbilities).toEqual(["STR", "DEX"]);
+        // Read loosely: the field arrives with the fix.
+        expect(Reflect.get(card?.summary ?? {}, "saveAbilities")).toEqual(["STR", "DEX"]);
       }
     }
   );
