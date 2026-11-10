@@ -7,8 +7,7 @@
 # pack and an app that don't match. So the pair is verified together BEFORE anything
 # merges: Verify runs on the app PR's branch composing the pack PR's head commit. Only
 # when that is green, and neither the pack's main nor either PR moved since, are the
-# pack and then the app merged back to back (seconds apart; with main's merge queue,
-# the app goes first in the queue right after the pack merges).
+# pack and then the app merged back to back (seconds apart).
 #
 # The app PR names its pack PR with a line in its body:   Pack: #114
 #
@@ -52,15 +51,19 @@ if [ "$(behindMain "$PACK_REPO" "$packBranch")" != "0" ]; then
   exit 1
 fi
 
-# 1. The app PR's own checks (the SRD-only CI) must be green; right after a push
-#    they take a moment to register.
-for _ in $(seq 1 40); do
-  [ "$(gh pr checks "$app" --repo "$APP_REPO" --json name --jq length 2>/dev/null || echo 0)" -gt 0 ] && break
-  sleep 15
+# 1. The app PR's own checks (the CI the ruleset requires) must all be finished and
+#    green on its head. Fail CLOSED: an empty or failed read means wait, never go on.
+appHead0="$(gh pr view "$app" --repo "$APP_REPO" --json headRefOid --jq .headRefOid)"
+while :; do
+  runs="$(gh api "repos/$APP_REPO/commits/$appHead0/check-runs?per_page=100" \
+    --jq '[.check_runs[]|{name,status,conclusion,started_at}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null || true)"
+  if [ -n "$runs" ] && [ "$(jq length <<<"$runs")" -gt 0 ] &&
+    [ "$(jq '[.[]|select(.status!="completed")]|length' <<<"$runs")" -eq 0 ]; then
+    break
+  fi
+  sleep 30
 done
-gh pr checks "$app" --repo "$APP_REPO" --watch --interval 60 >/dev/null || true
-bad="$(gh pr checks "$app" --repo "$APP_REPO" --json name,state \
-  --jq '.[]|select(.state!="SUCCESS" and .state!="SKIPPED")|.name')"
+bad="$(jq -r '.[]|select(.conclusion!="success" and .conclusion!="skipped" and .conclusion!="neutral")|.name' <<<"$runs")"
 if [ -n "$bad" ]; then
   echo "✗ #$app checks not green: $bad" >&2
   exit 1
@@ -68,6 +71,10 @@ fi
 
 # 2. Verify the pair: the app branch composed with the pack PR's head commit.
 appHead="$(gh pr view "$app" --repo "$APP_REPO" --json headRefOid --jq .headRefOid)"
+if [ "$appHead" != "$appHead0" ]; then
+  echo "✗ #$app moved while its checks ran: run again (nothing merged)." >&2
+  exit 1
+fi
 packHead="$(gh pr view "$pack" --repo "$PACK_REPO" --json headRefOid --jq .headRefOid)"
 packMainBefore="$(gh api "repos/$PACK_REPO/commits/main" --jq .sha)"
 since="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -123,33 +130,16 @@ if [ "$verdict" != "MERGEABLE CLEAN" ]; then
   exit 1
 fi
 
-# 4. The pair, back to back. When main has a merge queue, the app cannot merge directly:
-#    the pack (its repo has no queue) merges first, then the app enters the queue at the
-#    FRONT (jump), so no other app change lands on main in between and the queue's
-#    composed build already composes the new pack. Without a queue, both merge directly.
-appOwner="${APP_REPO%/*}"
-appName="${APP_REPO#*/}"
-queueId="$(gh api graphql -f query='query($o:String!,$r:String!){repository(owner:$o,name:$r){mergeQueue(branch:"main"){id}}}' \
-  -f o="$appOwner" -f r="$appName" --jq '.data.repository.mergeQueue.id // empty')"
+# 4. The pair, back to back. main's ruleset requires the app branch up to date and its
+#    8 CI checks green on that head; both were checked above, and the pack merge does
+#    not touch the app branch. The app merges pinned to the head Verify saw. If it is
+#    refused anyway (main moved in the seconds between), say so loudly: the pack is in.
 gh pr merge "$pack" --repo "$PACK_REPO" --squash --delete-branch
-if [ -z "$queueId" ]; then
-  gh pr merge "$app" --repo "$APP_REPO" --squash --delete-branch
-else
-  appId="$(gh pr view "$app" --repo "$APP_REPO" --json id --jq .id)"
-  gh api graphql -f query='mutation($id:ID!){enqueuePullRequest(input:{pullRequestId:$id,jump:true}){mergeQueueEntry{position}}}' \
-    -f id="$appId" >/dev/null
-  echo "app #$app is first in main's merge queue; waiting for it to land…"
-  while :; do
-    sleep 30
-    read -r state queued < <(gh api graphql -f query='query($id:ID!){node(id:$id){... on PullRequest{state isInMergeQueue}}}' \
-      -f id="$appId" --jq '.data.node | "\(.state) \(.isInMergeQueue)"' || echo "UNKNOWN true")
-    [ "$state" = MERGED ] && break
-    if [ "$state" != UNKNOWN ] && [ "$queued" = false ]; then
-      echo "✗ pack #$pack is merged but app #$app left the queue without merging (its checks failed)." >&2
-      echo "  main now composes the new pack with the old app: fix #$app and enqueue it now." >&2
-      exit 1
-    fi
-  done
-  gh api -X DELETE "repos/$APP_REPO/git/refs/heads/$branch" >/dev/null 2>&1 || true
+if ! gh api -X PUT "repos/$APP_REPO/pulls/$app/merge" -f merge_method=squash -f sha="$appHead" \
+  -f commit_title="$(gh pr view "$app" --repo "$APP_REPO" --json title --jq .title) (#$app)" >/dev/null; then
+  echo "✗ pack #$pack is merged but app #$app was refused (main moved, or a check is not green)." >&2
+  echo "  main now composes the new pack with the old app: run scripts/merge-pr.sh $app now." >&2
+  exit 1
 fi
+gh api -X DELETE "repos/$APP_REPO/git/refs/heads/$branch" >/dev/null 2>&1 || true
 echo "pack #$pack: $(gh pr view "$pack" --repo "$PACK_REPO" --json state --jq .state) · app #$app: $(gh pr view "$app" --repo "$APP_REPO" --json state --jq .state)"
