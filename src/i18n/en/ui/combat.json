@@ -337,7 +337,7 @@
     "turnStartTempHp": "Gain {{amount}} temporary HP at the start of your turn ({{name}})",
     "turnStartTempHpApply": "Gain {{amount}}",
     "useGainedTempHp": "{{name}} used: +{{amount}} temp HP",
-    "maintainedEndPrompt": "{{name}} ends. Keep it active?",
+    "maintainedEndPrompt": "{{name}} is about to end. Keep it going?",
     "maintainedKeepAction": "Keep",
     "maintainedEndAction": "End",
     "maintainedEndedToast": "Effect ended",
