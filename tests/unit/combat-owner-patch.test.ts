@@ -8,7 +8,9 @@
  * - conditions and pending Concentration saves add or remove the items that changed;
  * - the play state changes key by key; any other field is the owner's, field by field.
  */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { ownerCombatPatch } from "@/lib/combat-state-io";
 

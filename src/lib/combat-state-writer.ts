@@ -9,9 +9,12 @@
  *    campaign clock re-set after a snapshot dropped it, used to send the same ~25 KB
  *    back each time (rehearsal 2026-11-06: ~16 billed writes in a few seconds).
  *
- * Each write goes with the server state it was built on (`base`: the last snapshot, or
- * what this writer last sent), so only the owner's changes are written and a peer's
- * write the sheet had not seen yet stays (`writeCombatState`).
+ * Each write goes with the state it was built on (`base`: what the sheet last showed,
+ * or what this writer last sent), so only the owner's changes are written and a peer's
+ * write the sheet had not shown yet stays (`writeCombatState`). Not the last snapshot:
+ * while its own write is unacknowledged the sheet shows that write, not the snapshot,
+ * and an edit diffed against a snapshot it never built on undoes the snapshot's news
+ * (rehearsal 2026-11-10: a DM's hit read as a heal and reverted).
  *
  * The reconciler marks the state pending before it leaves, so a parent snapshot landing
  * meanwhile republishes this play state, not the stored one; the answer settles it, and
@@ -25,6 +28,8 @@ export interface CombatStateWriter {
   write(state: CombatState): void;
   /** The server's snapshot arrived: it holds `state`. */
   observe(state: CombatState): void;
+  /** The sheet now shows `state`: the next edit is built on it. */
+  shown(state: CombatState): void;
   /** Stop writing (the sheet closed or was quarantined); a queued ask is dropped. */
   stop(): void;
 }
@@ -42,8 +47,8 @@ export function createCombatStateWriter(deps: {
   const { reconciler } = deps;
   let enabled = true;
   let queued: CombatState | null = null;
-  // The server state the next edit is built on: the last snapshot, advanced to what
-  // this writer sent (the local cache already shows it, so the next diff is only new).
+  // The state the next edit is built on: what the sheet last showed, advanced to what
+  // this writer sent (the sheet shows it until it is acknowledged).
   let base: CombatState | null = null;
 
   const flush = (state: CombatState): void => {
@@ -83,7 +88,10 @@ export function createCombatStateWriter(deps: {
     },
     observe(state) {
       gate.observe(state);
-      base = state;
+    },
+    shown(state) {
+      // The sheet's own ask, pending before it leaves, is not what an edit built on.
+      if (state !== queued) base = state;
     },
     stop() {
       enabled = false;

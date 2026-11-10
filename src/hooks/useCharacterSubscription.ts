@@ -565,6 +565,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         quarantine("Invalid character document");
         return;
       }
+      // The next edit is built on this play state (the snapshot, or the sheet's own
+      // unacknowledged write), so it is the base of that edit's write.
+      writer.shown(lastCombat);
       const current = useCharacterStore.getState().character;
       if (current) restoreLocalLog(current);
       setLoading(false);
