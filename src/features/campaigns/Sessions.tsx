@@ -48,12 +48,13 @@ import {
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useConfirmStore } from "@/stores/confirmStore";
 import type { SessionLogDoc } from "@/types/campaign";
+import { listSessions, updateSession } from "@/features/campaigns/campaign-io";
 import {
-  createSession,
-  deleteSession,
-  listSessions,
-  updateSession,
-} from "@/features/campaigns/campaign-io";
+  addSession as addSessionMove,
+  removeSession,
+  renameSession as renameSessionMove,
+  sortSessions,
+} from "@/domains/chronicle/session-moves";
 
 /** Sessions shown at a glance (newest first); the long campaign tail sits behind
  *  "View all" (the Treasury-log bounded-list recipe) so recency stays scannable
@@ -304,24 +305,11 @@ export function Sessions({
     const active = activeDraft.current;
     if (active && active.value !== active.saved) flushNotes(active.id, active.value);
     setBusy(true);
-    const label = t("campaignHub.sessionN", { n: sessions.length + 1 });
     try {
-      const id = await createSession(campaignId, { label, date });
-      const created: SessionLogDoc = {
-        id,
-        date,
-        label,
-        notes: "",
-        recapRequested: false,
-        recapRequestedBy: null,
-        recapRequestedAt: null,
-        logs: {},
-        generatedRecap: null,
-        addedToChronicle: false,
-      };
-      setSessions((prev) =>
-        [created, ...prev].sort((a, b) => b.date.getTime() - a.date.getTime())
-      );
+      const created = await addSessionMove(campaignId, sessions.length, t, date);
+      if (!created) return; // surfaced on the next load; keep the optimistic UI quiet
+      const { id } = created;
+      setSessions((prev) => sortSessions([created, ...prev]));
       // Open it AND drop straight into edit mode — write the recap on the spot.
       setOpenIds(new Set([id]));
       focusEditorRequested.current = true;
@@ -329,8 +317,6 @@ export function Sessions({
       setDraft("");
       activeDraft.current = { id, value: "", saved: "" };
       setSaveState("saved");
-    } catch {
-      /* surfaced on the next load; keep the optimistic UI quiet */
     } finally {
       setBusy(false);
     }
@@ -339,7 +325,7 @@ export function Sessions({
   /** Rename a session (#49) — optimistic, persisted through the io. */
   function renameSession(id: string, label: string): void {
     setSessions((prev) => prev.map((s) => (s.id === id ? { ...s, label } : s)));
-    void updateSession(campaignId, id, { label }).catch(() => {});
+    renameSessionMove(campaignId, id, label);
   }
 
   /** Delete a session (#49) — confirm first (it's shared, party-wide). */
@@ -352,7 +338,7 @@ export function Sessions({
     });
     if (!ok) return;
     setSessions((prev) => prev.filter((s) => s.id !== id));
-    void deleteSession(campaignId, id).catch(() => {});
+    removeSession(campaignId, id);
   }
 
   // One session as a full accordion row (the chevron + grid-rows reveal). Used for

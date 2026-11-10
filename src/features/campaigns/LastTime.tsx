@@ -17,11 +17,13 @@ import { Icon } from "@/components/ui/icon";
 import { Input } from "@/components/ui/input";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import { listSessions, setNextSession } from "@/features/campaigns/campaign-io";
+import { listSessions } from "@/features/campaigns/campaign-io";
+import {
+  lastTimeView,
+  nextSessionView,
+  saveNextSession,
+} from "@/domains/chronicle/session-moves";
 import type { SessionLogDoc } from "@/types/campaign";
-
-/** The evening stays "next" for a few hours after it starts (people are playing). */
-const STILL_TONIGHT_MS = 6 * 3_600_000;
 
 /** `datetime-local` value (local time, minute precision) ↔ epoch ms. */
 function toLocalInput(at: number): string {
@@ -45,7 +47,6 @@ export function LastTime({
 }) {
   const { t, i18n } = useTranslation();
   const campaign = useCampaignStore((s) => s.campaign);
-  const setCampaign = useCampaignStore((s) => s.setCampaign);
   const [latest, setLatest] = useState<SessionLogDoc | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -70,15 +71,12 @@ export function LastTime({
   }, [campaignId, visible]);
 
   if (latest === undefined) return null;
-  const notes = latest?.notes.trim() ?? "";
-  const nextAt = campaign?.nextSessionAt ?? null;
-  const upcoming = nextAt !== null && nextAt + STILL_TONIGHT_MS > now;
+  const { notes } = lastTimeView(latest ? [latest] : []);
+  const { at: nextAt, upcoming } = nextSessionView(campaign?.nextSessionAt ?? null, now);
 
   function saveNext(at: number | null): void {
     setEditing(false);
-    if (!campaign) return;
-    setCampaign({ ...campaign, nextSessionAt: at });
-    void setNextSession(campaignId, at);
+    saveNextSession(at);
   }
 
   const nextRow = editing ? (
