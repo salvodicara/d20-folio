@@ -60,7 +60,6 @@ import {
   persistStartEncounter,
   persistEndEncounter,
   setEncounterParticipation,
-  appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -68,12 +67,11 @@ import {
   EndEncounterDialog,
   type EncounterClose,
 } from "@/features/campaigns/party-chronicle";
-import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { feedHp, undoableBeatId } from "@/features/campaigns/chronicle-feed";
 import { useSessionLog, type SessionDraft } from "@/features/campaigns/useSessionLog";
+import { saveFightToChronicle } from "@/domains/combat/fight-write-up";
 import {
   attributionCorrection,
-  encounterCloseDrafts,
   encounterFeed,
   hideCombatants,
   noteDraft,
@@ -969,38 +967,17 @@ function CombatLayer({
   // Save the DM's finished chronicle chapter — the SINGLE persisted Chronicle write per
   // fight. Resolves → the caller clears the encounter (the dialog unmounts); rejects
   // (offline) → the dialog stays open + the fight running for a retry.
-  const saveChronicle = ({ chapter, note, outcome }: EncounterClose): Promise<void> => {
-    // The session report keeps the DM's note and the outcome. Not awaited: offline, the
-    // writes queue in order and land with the next connection.
-    writeLog(encounterCloseDrafts(encounterId, note, outcome));
-    // DEV ONLY — under bypass `appendChronicleChapter` is a no-op (no Firestore) and there
-    // is no listener echo, so mirror the append into the chronicle store optimistically so
-    // the saved chapter shows in the dev/e2e Chronicle exactly as the live echo would.
-    if (DEV_BYPASS_AUTH) {
-      useChronicleStore
-        .getState()
-        .appendChapter(chapter, ctx.currentUid ?? "", new Date());
-    }
-    return appendChronicleChapter(ctx.campaignId, {
-      chapter,
-      editedBy: ctx.currentUid ?? "",
-    })
-      .then(() => {
-        useToastStore.getState().showToast({
-          message: t("combatChronicle.savedToast"),
-          duration: 3000,
-        });
-        onEnd();
-      })
-      .catch((e: unknown) => {
-        console.error("Chronicle append failed", e);
-        useToastStore.getState().showToast({
-          message: t("combatChronicle.saveFailedToast"),
-          duration: 6000,
-        });
-        throw e;
-      });
-  };
+  const saveChronicle = (close: EncounterClose): Promise<void> =>
+    saveFightToChronicle(
+      {
+        campaignId: ctx.campaignId,
+        uid: ctx.currentUid ?? "",
+        encounterId,
+        close,
+        writeLog,
+      },
+      t
+    ).then(onEnd);
 
   return (
     <div className="encounter-command-stack flex flex-col gap-4">

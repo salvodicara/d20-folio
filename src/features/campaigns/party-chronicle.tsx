@@ -36,8 +36,8 @@ import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
+import { fightChapterClose, type EncounterClose } from "@/domains/combat/fight-write-up";
 import {
-  buildEncounterChapter,
   localizeFeedEvent,
   rankAttackers,
   type FeedNames,
@@ -394,13 +394,7 @@ function FeedRow({
 
 // ─── The End-encounter editable entry ────────────────────────────────────────
 
-/** What "Save to Chronicle" hands back: the chapter for the book, and the note and
- *  outcome the session log records. */
-export interface EncounterClose {
-  chapter: string;
-  note: string;
-  outcome: EncounterOutcome;
-}
+export type { EncounterClose } from "@/domains/combat/fight-write-up";
 
 /**
  * The editable entry shown at "End encounter". The DM edits the title, writes a
@@ -460,24 +454,17 @@ export function EndEncounterDialog({
   // Which record lines the DM keeps in the chapter (all, until they remove some).
   const [removed, setRemoved] = useState<ReadonlySet<string>>(() => new Set());
 
-  const effectiveTitle =
-    title.trim() || t("combatChronicle.endTitlePlaceholder", { date: defaultDate });
-
   const save = (): void => {
     if (saving) return;
-    const chapter = buildEncounterChapter(
-      {
-        title: effectiveTitle,
-        note,
-        lines: texts.filter((line) => !removed.has(line.id)),
-        outcome,
-      },
-      t
+    const close = fightChapterClose(
+      { title, note, lines: texts, removed, outcome },
+      t,
+      defaultDate
     );
     setSaving(true);
     // On success the caller clears the encounter (this dialog unmounts); on failure it
     // re-enables so the DM can retry (the fight is untouched).
-    void onSave({ chapter, note: note.trim(), outcome }).catch(() => setSaving(false));
+    void onSave(close).catch(() => setSaving(false));
   };
 
   return (
