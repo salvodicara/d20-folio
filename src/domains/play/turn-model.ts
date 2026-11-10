@@ -40,6 +40,7 @@ import {
 } from "@/features/character/center/turn-state";
 import { isCharacterAlive } from "@/lib/character-status";
 import type { Locale } from "@/lib/locale";
+import { localizeActions, type CombatAction } from "@/lib/views/combat-action-view";
 import { ammunitionRecovery } from "@/lib/play/ammunition";
 import type { unmaintainedStates } from "@/lib/play/end-turn";
 import {
@@ -161,8 +162,38 @@ export function endTurn(t: TFunction): EndTurnResult {
   return result;
 }
 
-/** «End it» on a maintained state's prompt: the state goes out, undoably. («Keep it»
- *  needs nothing: the screen just drops the prompt.) */
+/**
+ * The dedicated action that keeps `activeKey` going with the Bonus Action (Rage's
+ * «extend»), localized for the economy's `executeAction`; null when the sheet has none.
+ */
+export function bonusExtendAction(
+  activeKey: string,
+  locale: Locale
+): CombatAction | null {
+  const doc = useCharacterStore.getState().character;
+  if (!doc) return null;
+  return (
+    localizeActions(doc, locale).find(
+      (action) => action.maintainsActiveKey === activeKey && action.type === "bonus"
+    ) ?? null
+  );
+}
+
+/** Whether «Extend (Bonus Action)» is possible now: the action exists and this turn's
+ *  Bonus Action is still free. */
+export function canExtendWithBonus(
+  activeKey: string,
+  locale: Locale
+): { ok: true } | { ok: false; reason: "no-action" | "bonus-spent" } {
+  if (!bonusExtendAction(activeKey, locale)) return { ok: false, reason: "no-action" };
+  const { selected, budget } = useCombatStore.getState();
+  return selected.bonus.length < budget.bonus
+    ? { ok: true }
+    : { ok: false, reason: "bonus-spent" };
+}
+
+/** «End it» on a maintained state's prompt: the state goes out, undoably. («Let it
+ *  end» on the screen; extending it spends the Bonus Action: `useExtendMaintained`.) */
 export function endMaintainedEffect(activeKey: string, t: TFunction): void {
   endMaintainedState(activeKey, t);
 }
