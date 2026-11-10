@@ -279,6 +279,31 @@ describe("resolveActions — dual-wield", () => {
     expect(dagger(litCarried)?.summary.extraDamage).toHaveLength(1);
   });
 
+  // RAW Basic Poison coats ONE weapon: once a weapon is named, the coat rides it alone.
+  it("Basic Poison: a coat bound to the dagger rides the dagger only", () => {
+    const char = makeChar({
+      weapons: [
+        { srdId: "shortbow", quantity: 1 },
+        { srdId: "dagger", quantity: 1 },
+      ],
+      equipment: [{ srdId: "poison-basic", quantity: 1 }],
+    });
+    const lit: CharacterDoc = {
+      ...char,
+      session: {
+        ...char.session,
+        activeFeatures: ["item-poison-basic"],
+        grantBundleChoices: { "poison-basic-coated-weapon": "srd:1:dagger" },
+      },
+    };
+    const extra = (id: string) =>
+      localizeActions(lit, "en").find((a) => a.id === id)?.summary.extraDamage ?? [];
+    expect(extra("weapon-dagger")).toEqual([
+      expect.objectContaining({ dice: "1d4", damageType: "poison" }),
+    ]);
+    expect(extra("weapon-shortbow")).toEqual([]);
+  });
+
   it("RA-13 — Topple/Graze chips carry the live resolved numbers", () => {
     const char = makeChar({
       weapons: [
@@ -858,7 +883,7 @@ describe("resolveActions — potions", () => {
     expect(potion).toBeDefined();
     expect(potion?.type).toBe("bonus");
     expect(potion?.summary.healing).toBe("2d4+2");
-    expect(potion?.summary.uses).toEqual({ current: 2, total: 2 });
+    expect(potion?.summary.uses).toEqual({ current: 2, total: 2, stock: true });
     expect(potion?.name).toBe("Pozione di Guarigione");
     expect(potion?.costEquipment).toBe(
       `custom-${customInstanceId("Pozione di Guarigione")}`
@@ -880,7 +905,7 @@ describe("resolveActions — potions", () => {
     expect(potion).toBeDefined();
     expect(potion?.type).toBe("bonus");
     expect(potion?.summary.healing).toBe("2d4+2"); // from magic-item potionFormula
-    expect(potion?.summary.uses).toEqual({ current: 3, total: 3 });
+    expect(potion?.summary.uses).toEqual({ current: 3, total: 3, stock: true });
     expect(potion?.name).toBe("Potion of Healing"); // from the magic-item index, not a slug
     expect(potion?.costEquipment).toBe("potion-of-healing"); // spends a unit on use
     // Localized (IT) — proves the name resolves through the catalogue, not slug-casing.
@@ -957,7 +982,7 @@ describe("resolveActions — potions", () => {
     });
     const actions = localizeActions(char, "en");
     const potion = actions.find((a) => a.id.startsWith("item-custom-"));
-    expect(potion?.summary.uses).toEqual({ current: 3, total: 3 });
+    expect(potion?.summary.uses).toEqual({ current: 3, total: 3, stock: true });
   });
 
   it("potion card is not defaultPinned", () => {
