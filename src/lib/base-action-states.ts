@@ -8,7 +8,7 @@
  */
 import type { GrantSource } from "@/lib/grants";
 import type { Grant } from "@/lib/grant-schema";
-import { resolveConditionEffects } from "@/lib/condition-effects";
+import { conditionSetsSpeedZero } from "@/lib/condition-effects";
 import { srdText, type LocText } from "@/lib/loc-text";
 
 /** A base action's `rule` catalogue key (`base-dash` → `action.dash`). */
@@ -69,8 +69,7 @@ export function resolveBaseActionStateSources(
   conditions: ReadonlyArray<string> = []
 ): GrantSource[] {
   const ended =
-    conditions.includes("incapacitated") ||
-    resolveConditionEffects(conditions, {}).speedZero;
+    conditions.includes("incapacitated") || conditions.some(conditionSetsSpeedZero);
   return BASE_ACTION_STATES.filter(
     (state) =>
       activeKeys.has(state.grant.activeKey) &&
