@@ -18,7 +18,7 @@ vi.mock("@/lib/resolve-grant-sources", async (importOriginal) => {
               type: "disadvantage-on",
               rollType: "attack",
               scope: "otherThanSource",
-              vs: "attack rolls against others",
+              vs: "creatures-other-than-source",
             },
           ]
         : real.resolveCombatEffectGrants(effect),
