@@ -7,7 +7,11 @@
  */
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { bonusExtendAction, canExtendWithBonus } from "@/domains/play/turn-model";
+import {
+  bonusExtendAction,
+  canExtendWithBonus,
+  maintenanceDue,
+} from "@/domains/play/turn-model";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { makeCharacterDoc } from "./_helpers";
@@ -52,5 +56,47 @@ describe("extending Rage with the Bonus Action", () => {
     useCharacterStore.getState().setCharacter(makeCharacterDoc({}));
     expect(bonusExtendAction(RAGE, "en")).toBeNull();
     expect(canExtendWithBonus(RAGE, "en")).toEqual({ ok: false, reason: "no-action" });
+  });
+});
+
+/**
+ * The prompt is asked BEFORE the turn ends (direction, BG3-style): extending spends
+ * this turn's Bonus Action, not the next one's. `maintenanceDue()` is End Turn's own
+ * check, read before ending.
+ */
+describe("maintenanceDue", () => {
+  it("Rage lit and nothing done this turn: it is due", () => {
+    expect(maintenanceDue().map((state) => state.activeKey)).toEqual([RAGE]);
+  });
+
+  it("an attack this turn keeps it going: nothing due", () => {
+    useCombatStore.setState({
+      selected: {
+        action: [
+          { id: "a", name: "a", slot: "action", triggerEvents: ["attack"] } as never,
+        ],
+        bonus: [],
+        free: [],
+      },
+    });
+    expect(maintenanceDue()).toEqual([]);
+  });
+
+  it("the Bonus Action spent on extending it: nothing due", () => {
+    useCombatStore.setState({
+      selected: {
+        action: [],
+        bonus: [
+          { id: "e", name: "e", slot: "bonus", triggerEvents: ["bonus-extend"] } as never,
+        ],
+        free: [],
+      },
+    });
+    expect(maintenanceDue()).toEqual([]);
+  });
+
+  it("no Rage lit: nothing due", () => {
+    useCharacterStore.getState().setCharacter(makeCharacterDoc({}));
+    expect(maintenanceDue()).toEqual([]);
   });
 });

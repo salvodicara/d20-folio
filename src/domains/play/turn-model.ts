@@ -42,7 +42,8 @@ import { isCharacterAlive } from "@/lib/character-status";
 import type { Locale } from "@/lib/locale";
 import { localizeActions, type CombatAction } from "@/lib/views/combat-action-view";
 import { ammunitionRecovery } from "@/lib/play/ammunition";
-import type { unmaintainedStates } from "@/lib/play/end-turn";
+import { unmaintainedStates } from "@/lib/play/end-turn";
+import { advanceEffectTimers } from "@/lib/play/effect-timers";
 import {
   classesGrantThiefsReflexes,
   parseTimeStopTurns,
@@ -160,6 +161,24 @@ export function endTurn(t: TFunction): EndTurnResult {
       ),
   });
   return result;
+}
+
+/**
+ * The maintained states End Turn would ask about now (Rage not kept going this turn),
+ * read BEFORE ending: End Turn's own check, on the same round, selections and timers.
+ * Ask first; once each is extended (`useExtendMaintained`) or ended
+ * (`endMaintainedEffect`), `endTurn()` asks about nothing.
+ */
+export function maintenanceDue(): MaintainedPrompt[] {
+  const doc = useCharacterStore.getState().character;
+  if (!doc) return [];
+  const combat = useCombatStore.getState();
+  const round = useCombatStatusStore.getState().status?.round ?? combat.round;
+  // A timed state that runs out at this End Turn ends outright: it never also asks.
+  const expired = new Set(
+    advanceEffectTimers(doc, round).expired.map((effect) => effect.activeKey)
+  );
+  return unmaintainedStates(doc, combat.selected, expired);
 }
 
 /**
