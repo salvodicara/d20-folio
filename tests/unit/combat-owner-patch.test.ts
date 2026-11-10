@@ -31,17 +31,25 @@ describe("ownerCombatPatch", () => {
     expect(ownerCombatPatch(base, structuredClone(base))).toEqual([]);
   });
 
-  it("Hit Points and death saves move by their delta", () => {
+  it("a heal moves Hit Points by its delta, so a hit landing meanwhile stays", () => {
+    expect(ownerCombatPatch(base, { ...base, hp: { current: 35, temp: 0 } })).toEqual([
+      { path: "hp.current", kind: "increment", by: 5 },
+    ]);
+  });
+
+  it("bounded values are written as they are: damage, temp HP, death saves", () => {
+    // An increment past a bound (HP below 0, temp below 0, a fourth failure) is refused
+    // by the rules with the whole write; the owner's value always holds them.
     expect(
       ownerCombatPatch(base, {
         ...base,
-        hp: { current: 35, temp: 5 },
+        hp: { current: 22, temp: 5 },
         deathSaves: { successes: 1, failures: 0 },
       })
     ).toEqual([
-      { path: "hp.current", kind: "increment", by: 5 },
-      { path: "hp.temp", kind: "increment", by: 5 },
-      { path: "deathSaves.successes", kind: "increment", by: 1 },
+      { path: "hp.current", kind: "set", value: 22 },
+      { path: "hp.temp", kind: "set", value: 5 },
+      { path: "deathSaves.successes", kind: "set", value: 1 },
     ]);
   });
 

@@ -214,7 +214,7 @@ export type OwnerFieldOp =
   | { path: string; kind: "union"; values: unknown[] }
   | { path: string; kind: "remove"; values: unknown[] };
 
-/** Fields counted as a number that peers move too: written as a delta. */
+/** Numbers peers move too, written field by field (`hp.current`, `deathSaves.failures`). */
 const COUNTED: Readonly<Record<string, readonly string[]>> = {
   hp: ["current", "temp"],
   deathSaves: ["successes", "failures"],
@@ -238,8 +238,10 @@ const keysOf = (a: Record<string, unknown>, b: Record<string, unknown>): string[
  * holds it. Another device (the DM's hit, an ally's condition) may have written the
  * same document since `base`; this patch never overwrites what the owner did not change:
  *
- * - Hit Points and death saves move by their delta, so a heal entered while a hit
- *   lands keeps both;
+ * - a heal moves Hit Points by its delta, so a hit landing meanwhile keeps both (past
+ *   the maximum, the read clamps it and the owner's next write stores the bound);
+ *   damage, temporary Hit Points and death saves are written as the owner holds
+ *   them, so no bound is ever passed;
  * - conditions and pending Concentration saves add or remove the items that changed
  *   (both at once: the owner's list);
  * - the play state changes key by key;
@@ -260,7 +262,17 @@ export function ownerCombatPatch(
       const nowRecord = record(now);
       for (const field of counted) {
         const by = Number(nowRecord[field] ?? 0) - Number(wasRecord[field] ?? 0);
-        if (by !== 0) ops.push({ path: `${key}.${field}`, kind: "increment", by });
+        if (by === 0) continue;
+        const path = `${key}.${field}`;
+        // Only a heal goes as a delta: it can pass the maximum (read clamps it, and the
+        // owner's next write stores the bound) but never a bound the store refuses.
+        // Damage (below 0), temporary Hit Points (they don't stack) and death saves
+        // (0–3) are written as the owner holds them.
+        ops.push(
+          path === "hp.current" && by > 0
+            ? { path, kind: "increment", by }
+            : { path, kind: "set", value: nowRecord[field] }
+        );
       }
       continue;
     }

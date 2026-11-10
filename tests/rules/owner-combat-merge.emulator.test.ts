@@ -40,6 +40,8 @@ vi.mock("@/lib/firebase", () => ({
 
 import { writeCampaignCombatEffect } from "@/features/campaigns/campaign-io";
 import { createCharacter } from "@/lib/firestore";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { hydrateStoredCharacter } from "@/lib/character-read";
 import { parseCombatState, writeCombatState } from "@/lib/combat-state-io";
 import type { CombatState } from "@/types/combat-state";
 import { makeCharacterDoc } from "../unit/_helpers";
@@ -202,5 +204,92 @@ describe("the owner's write after a DM hit it had not seen", () => {
     void fresh;
     expect(hit.hp.current).toBeLessThan(base.hp.current);
     expect((await stored()).hp.current).toBe(hit.hp.current + 5);
+  });
+});
+
+/** The DM's write on Bren through the real peer path. */
+async function dm(
+  mutation: Parameters<typeof writeCampaignCombatEffect>[4]
+): Promise<void> {
+  as("dm");
+  await writeCampaignCombatEffect("a", brenId, null, 40, mutation);
+}
+
+/** Set Bren's stored combat state directly (setup only). */
+async function seed(patch: Record<string, unknown>): Promise<void> {
+  await testEnv.withSecurityRulesDisabled(async (ctx) => {
+    await updateDoc(
+      doc(ctx.firestore(), "users", "a", "characters", brenId, "combat", "state"),
+      patch
+    );
+  });
+}
+
+describe("bounds hold when both sides change the same value", () => {
+  it("both heal past the maximum: the sheet reads the maximum, and the next write stores it", async () => {
+    await dmHits(12);
+    as("a");
+    const base = await stored();
+    const parent = await getDoc(
+      doc(holder.db as Firestore, "users", "a", "characters", brenId)
+    );
+    const max = effectiveMaxHp(
+      (await hydrateStoredCharacter(brenId, parent.data() ?? {}, base)).character,
+      (await hydrateStoredCharacter(brenId, parent.data() ?? {}, base)).session
+    );
+    await dm({ kind: "hp", operation: { kind: "heal", amount: 12 } });
+    as("a");
+    await writeCombatState(
+      "a",
+      brenId,
+      { ...base, hp: { ...base.hp, current: max } },
+      base
+    );
+    const raw = await stored();
+    const read = await hydrateStoredCharacter(brenId, parent.data() ?? {}, raw);
+    expect(read.session.hp.current).toBe(max);
+    // The owner's next write (End Turn) stores the bound the sheet shows.
+    await writeCombatState(
+      "a",
+      brenId,
+      { ...raw, round: raw.round + 1, hp: { ...raw.hp, current: max } },
+      raw
+    );
+    expect((await stored()).hp.current).toBe(max);
+  });
+
+  it("damage on both sides never goes below 0 (the write is not refused)", async () => {
+    as("a");
+    const base = await stored();
+    await dmHits(base.hp.current - 2); // the DM leaves Bren at 2
+    as("a");
+    const mine = { ...base, hp: { ...base.hp, current: base.hp.current - 5 } };
+    await writeCombatState("a", brenId, mine, base);
+    expect((await stored()).hp.current).toBe(mine.hp.current);
+  });
+
+  it("death saves never pass 3 (the write is not refused)", async () => {
+    await seed({ "hp.current": 0, "deathSaves.failures": 2 });
+    as("a");
+    const base = await stored();
+    await dm({ kind: "death-save", outcome: "failure" });
+    as("a");
+    await writeCombatState(
+      "a",
+      brenId,
+      { ...base, deathSaves: { ...base.deathSaves, failures: 3 } },
+      base
+    );
+    expect((await stored()).deathSaves.failures).toBe(3);
+  });
+
+  it("temporary Hit Points do not stack: the owner's new pool is the pool", async () => {
+    await seed({ "hp.temp": 5 });
+    as("a");
+    const base = await stored();
+    await dmHits(5); // the hit takes the 5 temporary Hit Points
+    as("a");
+    await writeCombatState("a", brenId, { ...base, hp: { ...base.hp, temp: 8 } }, base);
+    expect((await stored()).hp.temp).toBe(8);
   });
 });
