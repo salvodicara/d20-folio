@@ -5623,3 +5623,43 @@
   display: grid;
   gap: 16px;
 }
+
+/* after a rest: what came back, label and before → after (D&D Beyond's Recover list) */
+.fui .f-rest-sum {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.fui .f-rest-sum > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-rest-sum > div:last-child {
+  border-bottom: 0;
+}
+.fui .f-rest-sum dt {
+  color: var(--muted);
+}
+.fui .f-rest-sum dd {
+  margin: 0;
+  font-weight: var(--fw-name);
+  color: var(--strong);
+  text-align: right;
+}
+
+/* the turn's start: a feature's heal or temporary HP, one quiet tap; a round-1 reminder */
+.fui .f-turn-start {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fui .f-turn-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}

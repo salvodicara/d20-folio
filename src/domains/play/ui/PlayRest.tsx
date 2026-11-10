@@ -12,6 +12,9 @@ import { longRestChange } from "@/domains/play/long-rest-change";
 import { prepareList } from "@/domains/play/play-spells-view";
 import { restView, shortRestHeal, type RestLine } from "@/domains/play/rest-view";
 import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
+import { PlayRestSummary } from "@/domains/play/ui/PlayRestSummary";
+import { restSummary, type RestSummary } from "@/domains/play/rest-model";
+import { useCharacterStore } from "@/stores/characterStore";
 import { useRestCommit } from "@/features/character/use-rest-commit";
 import type { Locale } from "@/lib/locale";
 import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
@@ -37,6 +40,8 @@ export function PlayRest({
   const [typed, setTyped] = useState("");
   // after a Long Rest, a class that prepares its spells may change them (owner, «Guida»)
   const [preparing, setPreparing] = useState(false);
+  // what came back, shown before closing or changing prepared spells
+  const [summary, setSummary] = useState<RestSummary | null>(null);
   const change =
     kind === "long" && prepareList(doc, locale).levels.length > 0
       ? longRestChange(doc)
@@ -72,12 +77,30 @@ export function PlayRest({
   const confirm = () => {
     const done =
       kind === "short" ? rest.shortRest(doc, count, heal.heal ?? 0) : rest.longRest(doc);
-    void done.then((ok) => {
-      if (!ok) return;
-      if (change) setPreparing(true);
-      else onClose();
+    void done.then((prepared) => {
+      if (!prepared) return;
+      const after = useCharacterStore.getState().character ?? doc;
+      setSummary(
+        restSummary(
+          kind,
+          doc,
+          after,
+          prepared.entries.map(({ receipt }) => receipt)
+        )
+      );
     });
   };
+  if (summary && !preparing) {
+    const live = useCharacterStore.getState().character ?? doc;
+    return (
+      <PlayRestSummary
+        doc={live}
+        summary={summary}
+        locale={locale}
+        onDone={() => (change ? setPreparing(true) : onClose())}
+      />
+    );
+  }
   if (preparing && change)
     return <PlayPrepare doc={doc} locale={locale} longRest={change} onClose={onClose} />;
   return (

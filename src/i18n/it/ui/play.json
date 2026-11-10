@@ -104,7 +104,9 @@
       "blockedDead": "Un personaggio morto non può riposare.",
       "changeOne": "Puoi cambiare 1 incantesimo.",
       "changeAny": "Puoi cambiare quelli che vuoi.",
-      "keepPrepared": "Tieni così"
+      "keepPrepared": "Tieni così",
+      "diceSpent_one": "{{count}} dado → +{{hp}} PF",
+      "diceSpent_other": "{{count}} dadi → +{{hp}} PF"
     },
     "mixing": {
       "title": "Mescolanza",
@@ -328,6 +330,7 @@
       "fromDm": "La concede il DM",
       "received": "Ricevuta",
       "receivedDie": "Dado ricevuto da un alleato"
-    }
+    },
+    "turnStart": "Inizio del turno"
   }
 }
