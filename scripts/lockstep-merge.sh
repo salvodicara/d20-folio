@@ -7,7 +7,8 @@
 # pack and an app that don't match. So the pair is verified together BEFORE anything
 # merges: Verify runs on the app PR's branch composing the pack PR's head commit. Only
 # when that is green, and neither the pack's main nor either PR moved since, are the
-# pack and then the app merged back to back (seconds apart).
+# pack and then the app merged back to back (seconds apart; with main's merge queue,
+# the app goes first in the queue right after the pack merges).
 #
 # The app PR names its pack PR with a line in its body:   Pack: #114
 #
@@ -122,7 +123,33 @@ if [ "$verdict" != "MERGEABLE CLEAN" ]; then
   exit 1
 fi
 
-# 4. The pair, back to back.
+# 4. The pair, back to back. When main has a merge queue, the app cannot merge directly:
+#    the pack (its repo has no queue) merges first, then the app enters the queue at the
+#    FRONT (jump), so no other app change lands on main in between and the queue's
+#    composed build already composes the new pack. Without a queue, both merge directly.
+appOwner="${APP_REPO%/*}"
+appName="${APP_REPO#*/}"
+queueId="$(gh api graphql -f query='query($o:String!,$r:String!){repository(owner:$o,name:$r){mergeQueue(branch:"main"){id}}}' \
+  -f o="$appOwner" -f r="$appName" --jq '.data.repository.mergeQueue.id // empty')"
 gh pr merge "$pack" --repo "$PACK_REPO" --squash --delete-branch
-gh pr merge "$app" --repo "$APP_REPO" --squash --delete-branch
+if [ -z "$queueId" ]; then
+  gh pr merge "$app" --repo "$APP_REPO" --squash --delete-branch
+else
+  appId="$(gh pr view "$app" --repo "$APP_REPO" --json id --jq .id)"
+  gh api graphql -f query='mutation($id:ID!){enqueuePullRequest(input:{pullRequestId:$id,jump:true}){mergeQueueEntry{position}}}' \
+    -f id="$appId" >/dev/null
+  echo "app #$app is first in main's merge queue; waiting for it to land…"
+  while :; do
+    sleep 30
+    read -r state queued < <(gh api graphql -f query='query($id:ID!){node(id:$id){... on PullRequest{state isInMergeQueue}}}' \
+      -f id="$appId" --jq '.data.node | "\(.state) \(.isInMergeQueue)"' || echo "UNKNOWN true")
+    [ "$state" = MERGED ] && break
+    if [ "$state" != UNKNOWN ] && [ "$queued" = false ]; then
+      echo "✗ pack #$pack is merged but app #$app left the queue without merging (its checks failed)." >&2
+      echo "  main now composes the new pack with the old app: fix #$app and enqueue it now." >&2
+      exit 1
+    fi
+  done
+  gh api -X DELETE "repos/$APP_REPO/git/refs/heads/$branch" >/dev/null 2>&1 || true
+fi
 echo "pack #$pack: $(gh pr view "$pack" --repo "$PACK_REPO" --json state --jq .state) · app #$app: $(gh pr view "$app" --repo "$APP_REPO" --json state --jq .state)"
