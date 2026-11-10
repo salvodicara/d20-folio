@@ -49,7 +49,17 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
-import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
+import {
+  arrayRemove,
+  arrayUnion,
+  deleteField,
+  doc,
+  increment,
+  onSnapshot,
+  setDoc,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -196,15 +206,135 @@ export function subscribeCombatState(
   );
 }
 
+/** One field change of the owner's write (see {@link ownerCombatPatch}). */
+export type OwnerFieldOp =
+  | { path: string; kind: "set"; value: unknown }
+  | { path: string; kind: "delete" }
+  | { path: string; kind: "increment"; by: number }
+  | { path: string; kind: "union"; values: unknown[] }
+  | { path: string; kind: "remove"; values: unknown[] };
+
+/** Fields counted as a number that peers move too: written as a delta. */
+const COUNTED: Readonly<Record<string, readonly string[]>> = {
+  hp: ["current", "temp"],
+  deathSaves: ["successes", "failures"],
+};
+/** Lists peers add to or take from: written as the items that changed. */
+const LISTED = new Set(["conditions", "pendingConcentrationSaves"]);
+const PLAIN_KEY = /^[A-Za-z_][A-Za-z0-9_]*$/;
+
+const json = (value: unknown): string => JSON.stringify(value ?? null);
+const record = (value: unknown): Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+const keysOf = (a: Record<string, unknown>, b: Record<string, unknown>): string[] => [
+  ...new Set([...Object.keys(a), ...Object.keys(b)]),
+];
+
 /**
- * Persist the combat-state subdoc (last-write-wins OVERWRITE — creates the doc if
- * absent, drops any stray/legacy key). Dev bypass writes the equivalent local document;
- * production stamps `updatedAt` server-side.
+ * What the owner changed, from the stored shape its edit was built on (`base`) to the
+ * one it wants (`mine`), as field changes that leave every other field as the server
+ * holds it. Another device (the DM's hit, an ally's condition) may have written the
+ * same document since `base`; this patch never overwrites what the owner did not change:
+ *
+ * - Hit Points and death saves move by their delta, so a heal entered while a hit
+ *   lands keeps both;
+ * - conditions and pending Concentration saves add or remove the items that changed
+ *   (both at once: the owner's list);
+ * - the play state changes key by key;
+ * - any other field is the owner's, field by field.
+ */
+export function ownerCombatPatch(
+  base: Record<string, unknown>,
+  mine: Record<string, unknown>
+): OwnerFieldOp[] {
+  const ops: OwnerFieldOp[] = [];
+  for (const key of keysOf(base, mine)) {
+    const was = base[key];
+    const now = mine[key];
+    if (json(was) === json(now)) continue;
+    const counted = COUNTED[key];
+    if (counted) {
+      const wasRecord = record(was);
+      const nowRecord = record(now);
+      for (const field of counted) {
+        const by = Number(nowRecord[field] ?? 0) - Number(wasRecord[field] ?? 0);
+        if (by !== 0) ops.push({ path: `${key}.${field}`, kind: "increment", by });
+      }
+      continue;
+    }
+    if (LISTED.has(key) && Array.isArray(now)) {
+      const before = Array.isArray(was) ? was : [];
+      const had = new Set(before.map(json));
+      const has = new Set(now.map(json));
+      const added = now.filter((item) => !had.has(json(item)));
+      const removed = before.filter((item) => !has.has(json(item)));
+      if (added.length > 0 && removed.length > 0) {
+        ops.push({ path: key, kind: "set", value: now });
+      } else if (added.length > 0) {
+        ops.push({ path: key, kind: "union", values: added });
+      } else if (removed.length > 0) {
+        ops.push({ path: key, kind: "remove", values: removed });
+      }
+      continue;
+    }
+    if (key === "playState" && json(record(was).version) === json(record(now).version)) {
+      const wasState = record(record(was).state);
+      const nowState = record(record(now).state);
+      const stateKeys = keysOf(wasState, nowState);
+      if (stateKeys.every((k) => PLAIN_KEY.test(k))) {
+        for (const k of stateKeys) {
+          if (json(wasState[k]) === json(nowState[k])) continue;
+          ops.push(
+            Object.hasOwn(nowState, k)
+              ? { path: `playState.state.${k}`, kind: "set", value: nowState[k] }
+              : { path: `playState.state.${k}`, kind: "delete" }
+          );
+        }
+        continue;
+      }
+    }
+    ops.push(
+      Object.hasOwn(mine, key)
+        ? { path: key, kind: "set", value: now }
+        : { path: key, kind: "delete" }
+    );
+  }
+  return ops;
+}
+
+function fieldUpdate(ops: readonly OwnerFieldOp[]): Record<string, unknown> {
+  return Object.fromEntries(
+    ops.map((op) => [
+      op.path,
+      op.kind === "set"
+        ? op.value
+        : op.kind === "delete"
+          ? deleteField()
+          : op.kind === "increment"
+            ? increment(op.by)
+            : op.kind === "union"
+              ? arrayUnion(...op.values)
+              : arrayRemove(...op.values),
+    ])
+  );
+}
+
+/**
+ * Persist the combat-state subdoc.
+ *
+ * With `base`, the server state the edit was built on, it writes only what the owner
+ * changed ({@link ownerCombatPatch}) as a field update: a peer's write the sheet had
+ * not seen yet (the DM's hit) stays, and the update queues offline and replays the
+ * same way. Without a base (the first write, before any snapshot) it writes the
+ * complete document. Dev bypass writes the equivalent local document.
  */
 export async function writeCombatState(
   uid: string,
   charId: string,
-  state: CombatState
+  state: CombatState,
+  base?: CombatState | null
 ): Promise<void> {
   if (devBypassEnabled()) {
     writeDevDocument(
@@ -214,11 +344,15 @@ export async function writeCombatState(
     );
     return;
   }
-  // OVERWRITE (not merge): `combatStateWriteData` ALWAYS emits the COMPLETE CombatState,
-  // so there is nothing to merge onto; the overwrite also sheds stray/legacy keys (an
-  // old-schema field, a half-run migration residue) on every write. Still
-  // offline-queueable (`setDoc` durably caches + replays).
-  await setDoc(combatStateRef(uid, charId), combatStateWriteData(state));
+  const mine = combatStateWriteData(state);
+  if (!base) {
+    // The complete document: also sheds stray/legacy keys; still offline-queueable.
+    await setDoc(combatStateRef(uid, charId), mine);
+    return;
+  }
+  const ops = ownerCombatPatch(combatStateWriteData(base), mine);
+  if (ops.length === 0) return;
+  await updateDoc(combatStateRef(uid, charId), fieldUpdate(ops));
 }
 
 /**

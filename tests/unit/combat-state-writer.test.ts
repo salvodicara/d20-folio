@@ -20,7 +20,9 @@ const at = (current: number): CombatState => ({
 const tick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 function setup(
-  send = vi.fn<(state: CombatState) => Promise<void>>(() => Promise.resolve())
+  send = vi.fn<(state: CombatState, base: CombatState | null) => Promise<void>>(() =>
+    Promise.resolve()
+  )
 ) {
   const reconciler = {
     markChildPending: vi.fn(),
@@ -38,7 +40,7 @@ describe("the combat/state writer", () => {
     for (const hp of [28, 26, 25, 25]) writer.write(at(hp));
     await tick();
     expect(send).toHaveBeenCalledTimes(1);
-    expect(send).toHaveBeenCalledWith(at(25));
+    expect(send).toHaveBeenCalledWith(at(25), null);
   });
 
   it("the echo loop: sixteen snapshots and re-projections of the same state, one write", async () => {
@@ -67,7 +69,7 @@ describe("the combat/state writer", () => {
     writer.observe(at(20));
     writer.write(at(14));
     await tick();
-    expect(send).toHaveBeenCalledWith(at(14));
+    expect(send).toHaveBeenCalledWith(at(14), at(20));
   });
 
   it("after a failed write the same state is sent again", async () => {
@@ -81,6 +83,38 @@ describe("the combat/state writer", () => {
     writer.write(at(20));
     await tick();
     expect(send).toHaveBeenCalledTimes(2);
+  });
+
+  it("each write goes with the server state it was built on", async () => {
+    const { writer, send } = setup();
+    writer.observe(at(30)); // the snapshot the sheet holds
+    writer.write(at(25));
+    await tick();
+    expect(send).toHaveBeenLastCalledWith(at(25), at(30));
+    // Before the next snapshot, the next edit builds on what was just sent.
+    writer.write(at(20));
+    await tick();
+    expect(send).toHaveBeenLastCalledWith(at(20), at(25));
+    // A snapshot carrying another device's write is the new base.
+    writer.observe(at(12));
+    writer.write(at(10));
+    await tick();
+    expect(send).toHaveBeenLastCalledWith(at(10), at(12));
+  });
+
+  it("a failed write is not counted as sent: the retry goes from the old base", async () => {
+    const send = vi
+      .fn<
+        (state: CombatState, base: CombatState | null) => Promise<void>
+      >(() => Promise.resolve())
+      .mockRejectedValueOnce(new Error("denied"));
+    const { writer } = setup(send);
+    writer.observe(at(30));
+    writer.write(at(25));
+    await tick();
+    writer.write(at(25));
+    await tick();
+    expect(send).toHaveBeenLastCalledWith(at(25), at(30));
   });
 
   it("a stopped writer writes nothing", async () => {
