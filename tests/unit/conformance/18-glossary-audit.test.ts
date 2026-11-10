@@ -78,7 +78,7 @@ describe("18. Rules glossary audit", () => {
       category: 18,
       case: "Dodge ends on Incapacitated or Speed 0",
       source: "GLOSS Dodge",
-      status: "M21",
+      status: "works",
     },
     () => {
       const dodging = (conditions: string[]) => {
@@ -100,7 +100,7 @@ describe("18. Rules glossary audit", () => {
       category: 18,
       case: "Petrified means immune to Poisoned",
       source: "GLOSS Petrified",
-      status: "M21",
+      status: "works",
     },
     () => {
       const on = effectiveSessionConditions(

@@ -197,6 +197,12 @@ export function conditionBreaksConcentration(id: string): boolean {
   return CONDITION_GATES[id as ConditionId]?.breaksConcentration === true;
 }
 
+/** Whether a condition sets its creature's Speed to 0 (Grappled, Restrained…).
+ *  Unknown / custom ids → false. */
+export function conditionSetsSpeedZero(id: string): boolean {
+  return CONDITION_GATES[id as ConditionId]?.speedZero === true;
+}
+
 /** The resolved, unioned effect of every active condition on this character. */
 export interface ResolvedConditionEffects {
   /** Economy slots forbidden by at least one active condition. */
