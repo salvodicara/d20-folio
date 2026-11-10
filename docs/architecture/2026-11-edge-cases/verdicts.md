@@ -1,5 +1,31 @@
 # Edge-case verdicts against the engine
 
+## Status on 2026-11-10: 294 of 304 cases work
+
+The live verdict of each case is its conformance test (`tests/unit/conformance`, the pack's in
+`content-pack/tests/unit/conformance`): `[works]` passes today, a family tag (`M18`…) is still
+expected to fail. CI prints the count («conformance 294/304»). The tables below are the
+**2026-11-02 snapshot** that planned the work: most of their (b), (c) and (d) rows have since been
+built and their tests flipped to works, so read a row's class as history, not as today's state.
+
+| Category                         | Works | Pending |
+| -------------------------------- | ----- | ------- |
+| 1–12, 14, 18                     | 245   | 0       |
+| 13. Items                        | 12    | 6       |
+| 15. Multi-target and area damage | 18    | 1       |
+| 16. DM adjudication              | 16    | 1       |
+| 17. At-the-table gaps            | 12    | 2       |
+
+The 10 pending, all public cases:
+
+- **M20** (items and DM-only state): Identify shows charges but not curses; Sentient item conflict;
+  Artifacts; Magic items resist damage; Evolving magic items; Hidden curses and DM-only state.
+- **M18**: Mixing potions.
+- **M19**: Planes and extradimensional spaces; Creatures outside the combat tracker.
+- **M1**: Objects in the area.
+
+## The 2026-11-02 snapshot
+
 Each case from [corpus.md](corpus.md), judged against the engine model on main 656937b2 (2026-11-02): (a) works, (b) missing data, (c) missing generic mechanism, (d) the model can't express it. Families and the plan: [../2026-11-edge-cases.md](../2026-11-edge-cases.md).
 
 ## 1. Stacking and ordering
