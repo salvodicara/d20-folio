@@ -20,7 +20,7 @@ Slow are written but not yet shown: `monsterTurnModifiers` is the model for the 
 | --- | ------------------------------------------- | --------------------------------------------------------------------- | ----------- | -------------------------------------------------------------- |
 | 1   | ~~Weapon Mastery: Sap, Slow~~ (fixed #976)  | Logged only. Sap and Slow change no number                            | engine      | Sap: Disadvantage on the target's next attack; Slow: −10 ft    |
 | 2   | ~~Grappling, Shove~~ (fixed #973)           | The save is labelled STR only; 2024 lets the target pick STR or DEX   | engine      | "STR or DEX" save on both options                              |
-| 3   | Aura (Aura of Protection)                   | Only the paladin gets the save bonus; allies in the aura get nothing  | engine      | An "in the aura" state on the ally adding the source's CHA mod |
+| 3   | Aura (Aura of Protection)                   | Only the paladin gets the save bonus; allies in the aura get nothing  | (no screen) | An "in the aura" state on the ally adding the source's CHA mod |
 | 4   | Per Day (monster N/Day, Recharge)           | `spendMonsterUse` exists, nothing calls it                            | (no screen) | Spend/restore on the DM monster card                           |
 | 5   | ~~Travel Pace~~ (fixed #974)                | The effect text is 2014's (−5 passive, "move stealthily")             | engine      | 2024: Fast Disadvantage on Perception/Survival, Slow Advantage |
 | 6   | Burning (hazard)                            | `environment.ts` is done, nothing sets or ticks it                    | (no screen) | An "On fire" state and a turn-start prompt                     |
