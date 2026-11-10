@@ -20,7 +20,7 @@ describe("18. Rules glossary audit", () => {
       category: 18,
       case: "Grapple and Shove: the target picks the save",
       source: "GLOSS Unarmed Strike",
-      status: "M21",
+      status: "works",
     },
     () => {
       for (const id of ["base-grapple", "base-shove"]) {
@@ -62,7 +62,7 @@ describe("18. Rules glossary audit", () => {
       category: 18,
       case: "Travel pace effects are rolls, not penalties",
       source: "SRD 5.2.1 Travel Pace",
-      status: "M21",
+      status: "works",
     },
     () => {
       const effect = (pace: string) =>

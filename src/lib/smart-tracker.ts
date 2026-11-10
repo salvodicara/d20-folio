@@ -612,6 +612,8 @@ export interface ActionSummary {
   saveDC?: number;
   /** Save ability: "DEX", "WIS" */
   saveAbility?: string;
+  /** The abilities the target picks from (2024 Grapple and Shove: STR or DEX). */
+  saveAbilities?: AbilityCode[];
   /** Range: "120 feet", "Touch", "Self" */
   range?: string;
   /** Duration (omitted if Instantaneous) */
@@ -8684,6 +8686,8 @@ function resolveTemporaryHpActions(
               saveDC: unarmedStrikeDc,
               saveDcParts: unarmedStrikeDcParts,
               saveAbility: "STR",
+              // SRD 5.2.1 Unarmed Strike: the target picks STR or DEX.
+              saveAbilities: ["STR", "DEX"] satisfies AbilityCode[],
             }
           : {}),
         ...(ba.id === "base-grapple"
