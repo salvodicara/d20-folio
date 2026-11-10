@@ -122,6 +122,8 @@ interfaccia resta spenta (sotto, le voci che arriveranno con lei).
 - Ogni condizione, azione base e termine di combattimento si spiega con un tocco
 - Annulla ricorda 50 azioni, annulla anche i riposi e non sovrascrive le modifiche del DM o di
   altri giocatori; annullare un'azione vecchia annulla solo quella
+- Un colpo del DM o di un alleato non si perde più se la tua scheda salva qualcosa nello stesso
+  momento, anche offline
 - In italiano i termini seguono l'SRD 5.2.1 italiano e le distanze sono in metri
 - La prima schermata è più leggera e l'installazione offline pesa meno
 
@@ -160,6 +162,8 @@ e «Tira l'iniziativa» dalla scheda.
 **Fixed**
 
 - Encounter reports file every hit under its round; a new fight starts with clean initiative.
+- A hit from the DM or an ally is no longer erased when the player's sheet saves a change at the
+  same moment, even offline (the sheet now writes only what it changed).
 - Combat-state writes happen only when something changed (no repeated rewrites in a campaign).
 - A turn saved by v0.25.0 loads in v0.26.0 (a release-blocking read fix found by the
   pre-deploy survey).
