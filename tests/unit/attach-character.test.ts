@@ -5,6 +5,8 @@
  * detaching, and no change of character mid-fight.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/firebase", () => ({ db: {} }));
 import type { TFunction } from "i18next";
 
 const io = vi.hoisted(() => ({
