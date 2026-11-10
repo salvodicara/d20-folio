@@ -8,9 +8,14 @@
 
 /* ---------- tokens ---------- */
 .fui {
-  --font-title: "Folio Title Figures", "Cormorant Garamond", Georgia, serif;
-  --font-label: "Cinzel Variable", Georgia, serif;
+  /* One family, as Baldur's Gate 3 (owner's pick, 2026-11-08): Alegreya for titles and
+     text, Alegreya SC for labels and panel titles, names and buttons at a lighter 500. */
+  --font-title:
+    "Folio Title Figures", "Folio Title Text", "Alegreya Variable", Georgia, serif;
+  --font-label: "Folio Label Figures", "Folio Label", "Alegreya SC", Georgia, serif;
   --font-text: "Folio Text Figures", "Alegreya Variable", Georgia, serif;
+  --font-num: "Folio Title Text", "Alegreya Variable", Georgia, serif;
+  --fw-name: 500;
 
   --bg: #0b0907;
   --bar: #0d0a08;
@@ -274,7 +279,7 @@
       transparent
     );
   font: 700 18px/1.2 var(--font-label);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--white);
 }
@@ -339,6 +344,9 @@
 .fui [data-c="cond"] {
   --c: var(--cond);
 }
+.fui [data-c="conc"] {
+  --c: var(--conc);
+}
 .fui [data-c="dng"] {
   --c: var(--c-ini);
 }
@@ -355,7 +363,7 @@
   border-radius: var(--r-sm);
   background: none;
   color: var(--text);
-  font: 600 15px var(--font-text);
+  font: var(--fw-name) 15px var(--font-text);
   white-space: nowrap;
   cursor: pointer;
   transition:
@@ -418,7 +426,7 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font: 600 15px var(--font-text);
+  font: var(--fw-name) 15px var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -444,7 +452,7 @@
   border-radius: var(--r-pill);
   background: none;
   color: var(--text);
-  font: 600 14px var(--font-text);
+  font: var(--fw-name) 14px var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -478,6 +486,12 @@
   border-color: var(--buff);
   background: var(--buff-bg);
   color: var(--white);
+}
+/* Inspiration held (BG3's gold status icon) */
+.fui .f-chip[data-kind="insp"] {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  color: var(--gold-hi);
 }
 
 /* ---------- fields ---------- */
@@ -950,7 +964,7 @@
 }
 .fui .f-hero h1 {
   margin: 0;
-  font: 600 36px/1.1 var(--font-title);
+  font: 500 36px/1.1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-hero-sub {
@@ -1034,7 +1048,7 @@
   min-width: 0;
 }
 .fui .f-row-t {
-  font-weight: 600;
+  font-weight: var(--fw-name);
   text-wrap: balance;
   color: var(--strong);
 }
@@ -1057,7 +1071,7 @@
   text-align: center;
 }
 .fui .f-stat-v {
-  font: 600 20px/1.2 var(--font-title);
+  font: 700 20px/1.2 var(--font-num);
   color: var(--strong);
 }
 .fui .f-stat-v[data-hp="ok"] {
@@ -5597,4 +5611,15 @@
 }
 .fui .f-dm-budget:is([data-d="high"], [data-d="over"]) > b {
   color: var(--hp-r);
+}
+
+/* «Ispirazione»: each row's art, name and what it does, then its one action */
+.fui .f-insp-row {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) auto;
+}
+
+/* a save's d20 entry: the faces, what is added after the roll, and its die */
+.fui .f-roll-entry {
+  display: grid;
+  gap: 16px;
 }

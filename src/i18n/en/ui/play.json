@@ -252,7 +252,11 @@
       "face": "What did the d20 show?",
       "faceHint": "A 20 gets you up at 1 Hit Point; a 1 counts as two failures.",
       "stable": "Stable: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
-      "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours)."
+      "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
+      "addAfter": "After the roll",
+      "addBardic": "+ Bardic Inspiration ({{die}})",
+      "secondFace": "The second d20",
+      "dieFace": "What did the {{die}} show?"
     },
     "conditions": {
       "cantSeeSource": "I can't see the source",
@@ -314,6 +318,16 @@
     "effectsFrom": "from {{name}}",
     "effectsRounds_one": "{{count}} round",
     "effectsRounds_other": "{{count}} rounds",
-    "effectsConcentration": "while they concentrate"
+    "effectsConcentration": "while they concentrate",
+    "insp": {
+      "heroicGist": "Reroll a die you just rolled; keep the new result.",
+      "bardic": "Bardic Inspiration",
+      "bardicDie": "Bardic Inspiration · {{die}}",
+      "bardicGist": "When you fail a D20 Test, roll it and add it.",
+      "held": "You have it",
+      "fromDm": "The DM grants it",
+      "received": "Received",
+      "receivedDie": "Die received from an ally"
+    }
   }
 }

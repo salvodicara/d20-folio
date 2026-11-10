@@ -18,6 +18,14 @@ const EMULATOR_CLIENT_ENV = {
 };
 const PORT = Number(process.env.E2E_REHEARSAL_PORT ?? 5185);
 export const REHEARSAL_URL = `http://127.0.0.1:${PORT}`;
+/** The classic UI (`VITE_NEW_UI` off), the build v0.26.0 ships by default. */
+const CLASSIC_PORT = PORT + 1;
+export const REHEARSAL_CLASSIC_URL = `http://127.0.0.1:${CLASSIC_PORT}`;
+/** The deploy's flags (deploy.yml): the rehearsal runs the writers players get. */
+const DEPLOY_FLAGS = {
+  VITE_COMBAT_EFFECTS_V26: "true",
+  VITE_PEER_SPENDS_LEDGER: "true",
+};
 
 export default defineConfig({
   testDir: "./tests/e2e-rehearsal",
@@ -32,6 +40,8 @@ export default defineConfig({
   use: {
     ...devices["Desktop Chrome"],
     baseURL: REHEARSAL_URL,
+    // A control that is not there fails the step in seconds, never hangs the journey.
+    actionTimeout: 30_000,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -43,11 +53,34 @@ export default defineConfig({
         ...EMULATOR_CLIENT_ENV,
         // No HMR socket: it reloads a page by itself mid-test (see vite.config.ts).
         VITE_E2E_NO_HMR: "true",
+        FOLIO_VITE_CACHE_DIR: `node_modules/.vite-rehearsal-${PORT}`,
         VITE_NEW_UI: "1",
-        VITE_COMBAT_EFFECTS_V26: "true",
+        ...DEPLOY_FLAGS,
+      },
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+    {
+      command: `pnpm vite --host 127.0.0.1 --port ${CLASSIC_PORT} --strictPort`,
+      url: REHEARSAL_CLASSIC_URL,
+      env: {
+        ...EMULATOR_CLIENT_ENV,
+        VITE_E2E_NO_HMR: "true",
+        FOLIO_VITE_CACHE_DIR: `node_modules/.vite-rehearsal-${CLASSIC_PORT}`,
+        ...DEPLOY_FLAGS,
       },
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
     },
   ]),
+  projects: [
+    // The new UI's journey (01–07), then the classic UI on the same data. No
+    // dependency between them: a new-UI failure must not hide the classic run.
+    { name: "new-ui", testIgnore: /classic-.*\.spec\.ts$/ },
+    {
+      name: "classic",
+      testMatch: /classic-.*\.spec\.ts$/,
+      use: { baseURL: REHEARSAL_CLASSIC_URL },
+    },
+  ],
 });

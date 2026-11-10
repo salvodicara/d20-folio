@@ -97,6 +97,8 @@ interface Engine {
   parseRosterEntry: (raw: unknown) => RawMap | null;
   parseDmRosterEntry: (raw: unknown) => RawMap;
   isLogItem: (value: unknown) => boolean;
+  parseCombatState: (data: unknown) => { ok: true } | { ok: false; where: string };
+  canonicalCombatField: (key: string, value: unknown) => unknown;
 }
 
 async function engineFunction(file: string, name: string): Promise<unknown> {
@@ -137,6 +139,11 @@ const engine = {
     "parseDmRosterEntry"
   ),
   isLogItem: await engineFunction("lib/session-log-io.ts", "isLogItem"),
+  parseCombatState: await engineFunction("lib/combat-state-codec.ts", "parseCombatState"),
+  canonicalCombatField: await engineFunction(
+    "lib/combat-state-codec.ts",
+    "canonicalCombatField"
+  ),
 } as Engine;
 
 // ── The pure survey ──────────────────────────────────────────────────────────
@@ -156,6 +163,10 @@ export interface KindReport {
   ok: number;
   defaulted: number;
   rejected: Record<string, number>;
+  /** Per reason, which check refused it (`<step>:<field>`), and how often. */
+  rejectedWhere: Record<string, Record<string, number>>;
+  /** For a field refused as not canonical: the key paths where it differs. */
+  rejectedPaths: Record<string, number>;
   /** Field path → how many documents the reader changes it on (filled, dropped, fixed). */
   changedOnRead: Record<string, number>;
   /** Field path → how many documents a v0.26 writer would rewrite it on (next save). */
@@ -164,6 +175,9 @@ export interface KindReport {
 
 export interface V026CompatSurvey {
   format: "d20-folio-v026-compat-survey-v1";
+  /** The catalogue the readers ran with: `composed` (the content pack linked) or
+   *  `srd-only`. Prod data must be read `composed`. */
+  catalogue: string;
   kinds: Record<DocKind, KindReport>;
   /** v0.25 shapes still in the data, read fine by v0.26 (for the release notes). */
   legacy: {
@@ -188,7 +202,11 @@ export interface V026CompatSurvey {
 export interface V026Corpus {
   documents: readonly MigrationSourceDocument[];
   accounts: readonly AccountClaims[];
-  catalogue: { items: readonly MigrationCatalogueItem[]; fingerprint: string };
+  catalogue: {
+    items: readonly MigrationCatalogueItem[];
+    fingerprint: string;
+    mode?: string;
+  };
   truncated?: readonly string[];
 }
 
@@ -242,11 +260,35 @@ function reasonOf(error: unknown): string {
 const POTION_AFTEREFFECT = /^potion:.+:aftereffect$/;
 
 function emptyReport(): KindReport {
-  return { read: 0, ok: 0, defaulted: 0, rejected: {}, changedOnRead: {}, rewrites: {} };
+  return {
+    read: 0,
+    ok: 0,
+    defaulted: 0,
+    rejected: {},
+    rejectedWhere: {},
+    rejectedPaths: {},
+    changedOnRead: {},
+    rewrites: {},
+  };
 }
 
 function bump(map: Record<string, number>, key: string): void {
   map[key] = (map[key] ?? 0) + 1;
+}
+
+/** Why a character's combat child is refused: the check, and for a field that is not
+ *  in its canonical form, the key paths where it differs (keys only). */
+function combatFault(combat: unknown): [string, string[]] {
+  if (combat === null) return ["parent-or-missing-combat-state", []];
+  const parsed = engine.parseCombatState(combat);
+  if (parsed.ok) return ["parent", []];
+  const field = /^canonical:(\w+)$/.exec(parsed.where)?.[1];
+  if (!field || !isRecord(combat)) return [parsed.where, []];
+  const stored = combat[field];
+  return [
+    parsed.where,
+    changedPaths(stored, engine.canonicalCombatField(field, stored), field),
+  ];
 }
 
 /** Survey the corpus. Pure: no credentials, no Firebase. */
@@ -272,9 +314,16 @@ export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSu
     for (const path of changed) bump(kind.changedOnRead, path);
     for (const path of rewrites) bump(kind.rewrites, path);
   };
-  const reject = (kind: KindReport, reason: string) => {
+  const reject = (
+    kind: KindReport,
+    reason: string,
+    where?: string,
+    paths: string[] = []
+  ) => {
     kind.read += 1;
     bump(kind.rejected, reason);
+    if (where) bump((kind.rejectedWhere[reason] ??= {}), where);
+    for (const path of paths) bump(kind.rejectedPaths, path);
   };
 
   const byPath = new Map(corpus.documents.map((d) => [d.path, d.data] as const));
@@ -308,7 +357,8 @@ export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSu
         ];
         read(kinds.character, [], rewrites);
       } catch (error) {
-        reject(kinds.character, reasonOf(error));
+        const [where, paths] = combatFault(combat);
+        reject(kinds.character, reasonOf(error), where, paths);
       }
     } else if (CAMPAIGN.test(path)) {
       try {
@@ -366,6 +416,7 @@ export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSu
 
   return {
     format: "d20-folio-v026-compat-survey-v1",
+    catalogue: corpus.catalogue.mode ?? "unknown",
     kinds,
     legacy,
     claims: {
@@ -386,6 +437,15 @@ export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSu
 // ── The capped, read-only reader ────────────────────────────────────────────
 
 async function run(): Promise<void> {
+  // Prod characters carry pack content: read without it, they would fail for the
+  // wrong reason. Refuse unless asked for explicitly.
+  const catalogue = await loadMigrationCatalogue();
+  console.log(`Catalogue: ${catalogue.mode} ${catalogue.fingerprint}`);
+  if (catalogue.mode !== "composed" && !processArgv.includes("--allow-srd-only")) {
+    throw new Error(
+      "The content pack is not linked (srd-only). Link it, or pass --allow-srd-only."
+    );
+  }
   const target = await readTargetConfiguration();
   const [
     { initializeApp, applicationDefault, deleteApp },
@@ -425,7 +485,6 @@ async function run(): Promise<void> {
       uid: user.uid,
       customClaims: user.customClaims ?? {},
     }));
-    const catalogue = await loadMigrationCatalogue();
     const survey = await surveyV026Compat({ documents, accounts, catalogue, truncated });
     console.log(JSON.stringify(survey, null, 2));
   } finally {

@@ -116,6 +116,9 @@ export type CombatStateParseResult =
   | {
       ok: false;
       reason: "invalid-combat-state" | "invalid-v1-play-state";
+      /** Which check refused it: `<step>:<field>` (keys only, never a value), for
+       *  diagnostics such as the v0.26 compatibility survey. */
+      where: string;
     };
 
 /**
@@ -124,6 +127,21 @@ export type CombatStateParseResult =
  * partial or play-state-less documents are never reinterpreted as a valid 0-HP
  * character.
  */
+/**
+ * The form the strict reader requires a stored v1 field to have (its own parse): a
+ * stored value that differs from it refuses the whole document. For diagnostics, to
+ * name the keys where a refused field differs.
+ */
+export function canonicalCombatField(
+  key: (typeof STRICT_V1_FIELDS)[number],
+  value: unknown
+): unknown {
+  if (key === "activeEffects") return conformActiveCombatEffects(value);
+  if (key === "pendingConcentrationSaves") return parsePendingConcentrationSaves(value);
+  if (key === "turnEconomy") return parseTurnEconomy(value);
+  return parseAppliedEncounterEffects(value);
+}
+
 export function parseCombatState(data: unknown): CombatStateParseResult {
   return parseStoredCombatState(data, false);
 }
@@ -144,47 +162,62 @@ function parseStoredCombatState(
   allowMissingPlayState: boolean
 ): CombatStateParseResult {
   if (!isRecord(data) || !isRecord(data.hp) || !isRecord(data.deathSaves)) {
-    return { ok: false, reason: "invalid-combat-state" };
+    const field = !isRecord(data) ? "(root)" : !isRecord(data.hp) ? "hp" : "deathSaves";
+    return { ok: false, reason: "invalid-combat-state", where: `core:${field}` };
   }
   const hp = data.hp;
   const ds = data.deathSaves;
   const num = (v: unknown, fallback: number): number =>
     typeof v === "number" && Number.isFinite(v) ? v : fallback;
-  if (
-    typeof hp.current !== "number" ||
-    !Number.isFinite(hp.current) ||
-    typeof hp.temp !== "number" ||
-    !Number.isFinite(hp.temp) ||
-    !Array.isArray(data.conditions) ||
-    !data.conditions.every((condition) => typeof condition === "string") ||
-    !(
-      data.initiativeRoll === null ||
-      (typeof data.initiativeRoll === "number" && Number.isFinite(data.initiativeRoll))
-    ) ||
-    typeof ds.successes !== "number" ||
-    !Number.isFinite(ds.successes) ||
-    typeof ds.failures !== "number" ||
-    !Number.isFinite(ds.failures) ||
-    (data.round !== undefined &&
-      (typeof data.round !== "number" || !Number.isFinite(data.round))) ||
-    (data.bardicInspirationDie !== undefined &&
-      typeof data.bardicInspirationDie !== "string") ||
-    (data.heroicInspiration !== undefined && typeof data.heroicInspiration !== "boolean")
-  ) {
-    return { ok: false, reason: "invalid-combat-state" };
+  const finite = (v: unknown): boolean => typeof v === "number" && Number.isFinite(v);
+  const coreFault = (
+    [
+      ["hp.current", !finite(hp.current)],
+      ["hp.temp", !finite(hp.temp)],
+      [
+        "conditions",
+        !Array.isArray(data.conditions) ||
+          !data.conditions.every((condition) => typeof condition === "string"),
+      ],
+      ["initiativeRoll", !(data.initiativeRoll === null || finite(data.initiativeRoll))],
+      ["deathSaves.successes", !finite(ds.successes)],
+      ["deathSaves.failures", !finite(ds.failures)],
+      ["round", data.round !== undefined && !finite(data.round)],
+      [
+        "bardicInspirationDie",
+        data.bardicInspirationDie !== undefined &&
+          typeof data.bardicInspirationDie !== "string",
+      ],
+      [
+        "heroicInspiration",
+        data.heroicInspiration !== undefined &&
+          typeof data.heroicInspiration !== "boolean",
+      ],
+    ] as const
+  ).find(([, bad]) => bad)?.[0];
+  if (coreFault || !Array.isArray(data.conditions)) {
+    return {
+      ok: false,
+      reason: "invalid-combat-state",
+      where: `core:${coreFault ?? "conditions"}`,
+    };
   }
   const playState =
     allowMissingPlayState && data.playState === undefined
       ? null
       : parsePersistedPlayStateV1(data.playState);
   if (playState && !playState.ok) {
-    return { ok: false, reason: "invalid-v1-play-state" };
+    return {
+      ok: false,
+      reason: "invalid-v1-play-state",
+      where: `play-state:${playState.reason}`,
+    };
   }
-  if (
-    playState?.ok &&
-    STRICT_V1_FIELDS.some((key) => !presentFieldIsPlainJson(data, key))
-  ) {
-    return { ok: false, reason: "invalid-combat-state" };
+  const notPlain = playState?.ok
+    ? STRICT_V1_FIELDS.find((key) => !presentFieldIsPlainJson(data, key))
+    : undefined;
+  if (notPlain) {
+    return { ok: false, reason: "invalid-combat-state", where: `plain-json:${notPlain}` };
   }
   // Stored subdocs written by the deleted effect-program runtime may still carry
   // `actionRevision` / `actionHead` / `actionLifecycles` / `effectLifecycles`,
@@ -198,31 +231,38 @@ function parseStoredCombatState(
   const pendingConcentrationSaves = parsePendingConcentrationSaves(
     data.pendingConcentrationSaves
   );
-  if (
-    playState?.ok &&
-    (!presentFieldIsCanonical(data, "activeEffects", activeEffects) ||
-      new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length ||
-      !presentFieldIsCanonical(
-        data,
-        "pendingConcentrationSaves",
-        pendingConcentrationSaves
-      ) ||
-      !presentFieldIsCanonical(data, "turnEconomy", turnEconomy) ||
-      !presentFieldIsCanonical(data, "appliedEncounterEffects", applied))
-  ) {
-    return { ok: false, reason: "invalid-combat-state" };
+  const notCanonical = !playState?.ok
+    ? undefined
+    : !presentFieldIsCanonical(data, "activeEffects", activeEffects)
+      ? "canonical:activeEffects"
+      : new Set(activeEffects.map(({ id }) => id)).size !== activeEffects.length
+        ? "duplicate-ids:activeEffects"
+        : !presentFieldIsCanonical(
+              data,
+              "pendingConcentrationSaves",
+              pendingConcentrationSaves
+            )
+          ? "canonical:pendingConcentrationSaves"
+          : !presentFieldIsCanonical(data, "turnEconomy", turnEconomy)
+            ? "canonical:turnEconomy"
+            : !presentFieldIsCanonical(data, "appliedEncounterEffects", applied)
+              ? "canonical:appliedEncounterEffects"
+              : undefined;
+  if (notCanonical) {
+    return { ok: false, reason: "invalid-combat-state", where: notCanonical };
   }
   const state: CombatState = {
-    hp: { current: hp.current, temp: hp.temp },
-    conditions: data.conditions,
+    // `coreFault` above proved these numeric and the conditions a string list.
+    hp: { current: hp.current as number, temp: hp.temp as number },
+    conditions: data.conditions as string[],
     ...(typeof data.bardicInspirationDie === "string"
       ? { bardicInspirationDie: data.bardicInspirationDie }
       : {}),
     ...(typeof data.heroicInspiration === "boolean"
       ? { heroicInspiration: data.heroicInspiration }
       : {}),
-    initiativeRoll: data.initiativeRoll,
-    deathSaves: { successes: ds.successes, failures: ds.failures },
+    initiativeRoll: data.initiativeRoll as number | null,
+    deathSaves: { successes: ds.successes as number, failures: ds.failures as number },
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
@@ -410,7 +450,11 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
     reactionOutcomeOccurrenceId,
     movementUsedFt: number(row.movementUsedFt),
     dashesThisTurn: number(row.dashesThisTurn),
-    extraMovementFt: number(row.extraMovementFt),
+    // Added in v0.26 (#755): kept only when stored. A v0.25 turn economy has no such
+    // key, and its parse must equal it, or the whole combat state is refused.
+    ...(row.extraMovementFt !== undefined
+      ? { extraMovementFt: number(row.extraMovementFt) }
+      : {}),
     spellSlotCastsThisTurn,
     spellSlotCastTurnKey,
     damageTakenThisRound: row.damageTakenThisRound === true,

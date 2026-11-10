@@ -1,6 +1,54 @@
 @import "tailwindcss";
 @import "./styles/folio.css";
 
+/* New UI (src/ui): the BG3 pairing (owner, 2026-11-08) with tuned metrics. Alegreya SC's
+   capitals are smaller than Cinzel's, so its labels are scaled up to keep 12 px labels at
+   8 px capitals; both faces keep the old line box, so a title never touches its subtitle. */
+@font-face {
+  font-family: "Folio Label";
+  font-weight: 500;
+  font-display: swap;
+  size-adjust: 110%;
+  ascent-override: 80%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource/alegreya-sc/files/alegreya-sc-latin-500-normal.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Folio Label";
+  font-weight: 600 900;
+  font-display: swap;
+  size-adjust: 110%;
+  ascent-override: 80%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource/alegreya-sc/files/alegreya-sc-latin-700-normal.woff2")
+    format("woff2");
+}
+@font-face {
+  font-family: "Folio Label Figures";
+  font-weight: 400 900;
+  font-display: swap;
+  size-adjust: 110%;
+  ascent-override: 80%;
+  descent-override: 22%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource/source-serif-4/files/source-serif-4-latin-600-normal.woff2")
+    format("woff2");
+  unicode-range: U+0030-0039;
+}
+@font-face {
+  font-family: "Folio Title Text";
+  font-weight: 400 900;
+  font-display: swap;
+  ascent-override: 92%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  src: url("../node_modules/@fontsource-variable/alegreya/files/alegreya-latin-wght-normal.woff2")
+    format("woff2-variations");
+}
+
 /* New UI (src/ui): digit faces for the Folio fonts, used only under .fui. */
 /* Google's Alegreya and Cormorant ship old-style digits; digits come from faces with full-height figures. */
 @font-face {

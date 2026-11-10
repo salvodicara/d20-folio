@@ -12,8 +12,6 @@
  * summon) via `React.lazy(Promise.all([import(…), ensureSrdKind("monster")]))`.
  */
 
-import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
-import { summonMaxHp } from "@/lib/play/companions";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ModalShell } from "@/components/shared/ModalShell";
@@ -26,8 +24,7 @@ import { monsterIdentity } from "@/components/shared/monster-identity";
 import { monsterSpec } from "@/features/compendium/picker/specs/monster";
 import { resolveFamiliarForms } from "@/lib/familiar";
 import { FAMILIAR_CREATURE_TYPES, type FamiliarCreatureType } from "@/lib/familiar-ids";
-import { useCharacterStore } from "@/stores/characterStore";
-import { registerUndoableToast } from "@/stores/undoStore";
+import { summonFamiliarForm } from "@/domains/play/forms-defenses-view";
 import { useLocale } from "@/hooks/useLocale";
 import { localizeSrd } from "@/i18n/resolver";
 import type { MonsterStatBlock } from "@/data/types";
@@ -72,22 +69,11 @@ export function FamiliarFormPicker({
       filters: [],
       addLabel: () => t("familiar.summon"),
       onAdd: (m: MonsterStatBlock) => {
-        const name = localizeSrd("monster", m.id, "name", locale);
-        registerUndoableToast(
-          { message: t("familiar.summoned", { name }) },
-          () => {
-            const doc = useCharacterStore.getState().character;
-            return useCharacterStore
-              .getState()
-              .summonFamiliar(
-                m.id,
-                creatureType,
-                doc
-                  ? summonMaxHp(doc, FIND_FAMILIAR_SPELL_ID, m.hp.average)
-                  : m.hp.average
-              );
-          },
-          { turnScoped: false }
+        summonFamiliarForm(
+          { id: m.id, hpAverage: m.hp.average },
+          creatureType,
+          localizeSrd("monster", m.id, "name", locale),
+          t
         );
         onClose();
       },

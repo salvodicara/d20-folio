@@ -37,6 +37,7 @@ import type { DamageDefenses } from "@/lib/damage-intake";
 import type { SituationalAttackScope } from "@/lib/situational-states";
 import type { AbilityCode, ConditionId, DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
+import type { CharacterData, SessionDefenseKind, SessionState } from "@/types/character";
 import { SRD_LANGUAGE_IDS } from "@/lib/feat-language-choices";
 import { SRD_TOOLS_2024 } from "@/lib/feat-skill-tool-choices";
 import { isUmbrellaTool } from "@/lib/tool-names";
@@ -463,6 +464,49 @@ export function deriveDefenseKind(
     .filter((id) => !permanentSet.has(id))
     .sort();
   return { permanent, session, effective: [...permanent, ...session].sort() };
+}
+
+/** Every defense kind's view: the build's set (grants + the build override map) with
+ *  the session overlay (a potion, a spell) on top. The rail and Play read the same. */
+export function defenseKindViews(
+  aggregate: Pick<
+    AggregatedGrants,
+    | "damageResistances"
+    | "damageImmunities"
+    | "damageVulnerabilities"
+    | "conditionImmunities"
+  >,
+  character: Pick<
+    CharacterData,
+    | "damageResistanceOverrides"
+    | "damageImmunityOverrides"
+    | "damageVulnerabilityOverrides"
+    | "conditionImmunityOverrides"
+  >,
+  sessionDefenses: SessionState["sessionDefenses"]
+): Record<SessionDefenseKind, DefenseKindView> {
+  return {
+    resistance: deriveDefenseKind(
+      aggregate.damageResistances,
+      character.damageResistanceOverrides,
+      sessionDefenses?.resistance
+    ),
+    immunity: deriveDefenseKind(
+      aggregate.damageImmunities,
+      character.damageImmunityOverrides,
+      sessionDefenses?.immunity
+    ),
+    vulnerability: deriveDefenseKind(
+      aggregate.damageVulnerabilities,
+      character.damageVulnerabilityOverrides,
+      sessionDefenses?.vulnerability
+    ),
+    conditionImmunity: deriveDefenseKind(
+      aggregate.conditionImmunities,
+      character.conditionImmunityOverrides,
+      sessionDefenses?.conditionImmunity
+    ),
+  };
 }
 
 // ─── Source-keyed damage resistance render block ────────────────────────────

@@ -25,39 +25,21 @@
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useToastStore } from "@/stores/toastStore";
-import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
-import {
-  aggregateCharacterGrants,
-  effectiveMaxHp,
-  bloodiedFromHp,
-  effectiveConditions,
-} from "@/lib/aggregate-character";
+import { registerUndoableToast } from "@/stores/undoStore";
+import { effectiveMaxHp, bloodiedFromHp } from "@/lib/aggregate-character";
 import {
   NO_DEFENSES,
-  resolveDamageIntake,
   defendedDamageTypes,
-  isInstantDeathAtZero,
-  isMassiveDamageDeath,
   type DamageDefenses,
   type DamageInstance,
 } from "@/lib/damage-intake";
-import { vitalDeathSaves, vitalHp } from "@/lib/character-vitals";
-import { deriveDamageDefenses } from "@/lib/views/sheet-view";
-import { effectiveSessionConditions } from "@/lib/effective-conditions";
-import { effectiveProficiencyBonus, isHeavyArmorEquipped } from "@/lib/compute";
-import { totalLevel } from "@/lib/classes";
-import { getEquipment } from "@/data/equipment";
-import {
-  isCharacterAlive,
-  stabilisedInPlay,
-  deathSaveLimits,
-} from "@/lib/character-status";
-import { FALL_DAMAGE_TYPE, fallLandsProne } from "@/lib/play/fall";
-import { uiText, type LocText } from "@/lib/loc-text";
+import { vitalHp } from "@/lib/character-vitals";
+import { isCharacterAlive, stabilisedInPlay } from "@/lib/character-status";
+import { FALL_DAMAGE_TYPE } from "@/lib/play/fall";
+import { uiText } from "@/lib/loc-text";
 import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
-import type { CombatEvent } from "@/types/combat-log";
+import type { PostRollUse } from "@/lib/character-d20-tests";
 
 // hpState + HpStateValue moved to the dependency-free `./hp-tier` module so the
 // roster card can import the tier without pulling this store-coupled hook (which
@@ -66,36 +48,12 @@ import type { CombatEvent } from "@/types/combat-log";
 import { hpState, type HpStateValue } from "./hp-tier";
 export { hpState, type HpStateValue };
 
-/** How an entered hit lands: a Critical Hit, its log source, landing Prone. */
-interface DamageOpts {
-  crit?: boolean;
-  /** Stamped on the damage (and Prone) log lines. */
-  source?: LocText;
-  /** Gain Prone with the hit when it deals damage (a fall). */
-  landProne?: boolean;
-}
-
-/** The ids of the log lines on the sheet now. */
-function logIds(): Set<string> {
-  return new Set(
-    useCharacterStore.getState().character?.session.logEntries.map((e) => e.id) ?? []
-  );
-}
-
-/** Stamp `source` on the newest `kind` line logged since `before`; returns its reverse. */
-function stampSource(
-  before: ReadonlySet<string>,
-  kind: "hp-damage" | "condition-gain",
-  source: LocText
-): (() => void) | null {
-  const store = useCharacterStore.getState();
-  const entry = store.character?.session.logEntries.findLast(
-    (e) => !before.has(e.id) && e.event.kind === kind
-  );
-  return entry
-    ? store.amendLogEntry(entry.id, { ...entry.event, source } as CombatEvent)
-    : null;
-}
+import {
+  commitDamage,
+  commitDeathSaveEntry,
+  damageDefensesFor,
+  type DamageOpts,
+} from "./hp-commits";
 
 /** The derived readout + the amount-arg mutators every cockpit HP surface needs. */
 export interface HpControls {
@@ -160,7 +118,11 @@ export interface HpControls {
    * above the character's crit threshold (nat 20, Champion Survivor 18+) =
    * regain 1 HP and wake. No-op above 0 HP or once stable/dead.
    */
-  applyDeathSave: (faces: number | ReadonlyArray<number>) => void;
+  applyDeathSave: (
+    faces: number | ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) => void;
 }
 
 /**
@@ -171,7 +133,6 @@ export interface HpControls {
 export function useHpControls(): HpControls {
   const { t } = useTranslation();
   const character = useCharacterStore((s) => s.character);
-  const applyDamage = useCharacterStore((s) => s.applyDamage);
   const applyHealing = useCharacterStore((s) => s.applyHealing);
   const gainTempHp = useCharacterStore((s) => s.gainTempHp);
   const setTempHP = useCharacterStore((s) => s.setTempHP);
@@ -205,26 +166,10 @@ export function useHpControls(): HpControls {
   // Keyed on the whole sheet: an ally's effect (Warding Bond's Resistance) lands as a
   // projection attached to the SAME session object on a new sheet, so a memo keyed on
   // the session kept the defenses from before it landed.
-  const defenses = useMemo(() => {
-    const charData = character?.character;
-    const session = character?.session;
-    if (!charData || !session) {
-      return NO_DEFENSES;
-    }
-    const aggregate = aggregateCharacterGrants(charData, session);
-    return deriveDamageDefenses(
-      aggregate,
-      {
-        resistance: charData.damageResistanceOverrides,
-        immunity: charData.damageImmunityOverrides,
-        vulnerability: charData.damageVulnerabilityOverrides,
-      },
-      session.sessionDefenses,
-      effectiveProficiencyBonus(totalLevel(charData), charData.proficiencyBonusOverride),
-      isHeavyArmorEquipped(charData.equipment, getEquipment),
-      effectiveSessionConditions(session)
-    );
-  }, [character]);
+  const defenses = useMemo(
+    () => (character ? damageDefensesFor(character) : NO_DEFENSES),
+    [character]
+  );
 
   const defended = useMemo(() => defendedDamageTypes(defenses), [defenses]);
   const resistedSources = useMemo(
@@ -232,125 +177,13 @@ export function useHpControls(): HpControls {
     [defenses]
   );
 
-  const death = character
-    ? vitalDeathSaves(character.session)
-    : { successes: 0, failures: 0 };
-  const deathSucc = death.successes;
-  const deathFail = death.failures;
   const atZero = character !== null && current === 0;
   const dead =
     character !== null && !isCharacterAlive(character.status, character.session);
   const stable = character !== null && stabilisedInPlay(character.session);
 
-  /** Snapshot the slice every damage/death-save undo restores exactly. */
-  function snapshotHp() {
-    return {
-      current,
-      temp,
-      deathSucc,
-      deathFail,
-      conditions: character ? [...character.session.conditions] : [],
-    };
-  }
-
   function handleApplyDamage(parts: ReadonlyArray<DamageInstance>, opts?: DamageOpts) {
-    if (!character || dead) return;
-    // RA-05 — resolve the ENTERED roll against the character's own defenses
-    // (the same pure math the popover previews). Untyped parts pass verbatim.
-    const intake = resolveDamageIntake(parts, defenses);
-    if (intake.rawTotal <= 0) return;
-    if (intake.netTotal <= 0) {
-      // Fully immune / reduced to 0 — nothing changed, so nothing to undo: a
-      // plain notice in its own lane (reversal contract §5), showing the math.
-      useToastStore.getState().showToast({
-        message: t("combat.noDamageTakenToast", { raw: intake.rawTotal }),
-        duration: 4000,
-      });
-      return;
-    }
-    const prev = snapshotHp();
-    const wasAtZero = atZero;
-    const crit = opts?.crit === true;
-    // Death Ward — snapshot whether the ward toggle was lit BEFORE the hit, so we
-    // can detect the store's 0-HP interrupt (it clamps to 1 + ends the ward) and
-    // re-light it on undo.
-    const hadDeathWard =
-      character.session.activeFeatures?.includes("spell-death-ward") ?? false;
-    // A fall lands you Prone when it deals damage: the chip goes on first, so the
-    // damage receipt below is the last change and its causal undo stays valid.
-    const source = opts?.source;
-    const landsProne =
-      opts?.landProne === true &&
-      fallLandsProne(intake.netTotal) &&
-      !effectiveConditions(character).includes("prone");
-    const dropProne = () =>
-      void useCharacterStore.getState().removeConditionSilent("prone");
-    if (landsProne) {
-      const before = logIds();
-      useCharacterStore.getState().addCondition("prone");
-      if (source) stampSource(before, "condition-gain", source);
-    }
-    // Delegate to the store (temp absorption + the concentration DC from the FULL
-    // damage taken + the Death Ward interrupt + the 0-HP rules — RA-03/RA-10).
-    const beforeDamage = logIds();
-    // A fall is not an attack: a claimed Uncanny Dodge waits for the attack's hit.
-    const undoHit = applyDamage(intake.netTotal, {
-      crit,
-      ...(opts?.landProne !== undefined ? { notAnAttack: true as const } : {}),
-    });
-    if (!undoHit) {
-      if (landsProne) dropProne();
-      return;
-    }
-    const unstamp = source ? stampSource(beforeDamage, "hp-damage", source) : null;
-    // Reverse newest first: the source stamp, the hit, then Prone.
-    const undoDamage = (): boolean => {
-      unstamp?.();
-      if (!undoHit()) return false;
-      if (landsProne) dropProne();
-      return true;
-    };
-    // Read the ACTUAL resulting state from the store (Death Ward may have clamped
-    // to 1; the 0-HP rules may have marked failures) — the toast reflects truth.
-    const after = useCharacterStore.getState().character;
-    const newHP = after?.session.hp.current ?? Math.max(0, prev.current - prev.temp);
-    const failNow = after?.session.deathFail ?? deathFail;
-    const wardTriggered =
-      hadDeathWard &&
-      !(after?.session.activeFeatures?.includes("spell-death-ward") ?? false);
-
-    // Pattern B — the message depends on the mutation's RESULT. Priority: the
-    // death/dying beats outrank the arithmetic line (the popover already showed
-    // the math live); a typed hit that changed the number keeps rolled → taken.
-    const message = wardTriggered
-      ? t("combat.deathWardToast", { prev: prev.current })
-      : wasAtZero
-        ? isInstantDeathAtZero(intake.netTotal, max)
-          ? t("combat.instantDeathToast")
-          : failNow >=
-              deathSaveLimits(useCharacterStore.getState().character?.session).failures
-            ? t("deathSaves.dead")
-            : t(crit ? "combat.zeroHpCritFailToast" : "combat.zeroHpFailToast", {
-                n: failNow,
-              })
-        : newHP === 0
-          ? isMassiveDamageDeath(intake.netTotal, prev.current, prev.temp, max)
-            ? t("combat.massiveDeathToast", { val: intake.netTotal })
-            : t("combat.knockoutToast", { val: intake.netTotal })
-          : intake.netTotal !== intake.rawTotal
-            ? t("combat.hpDamageResolvedToast", {
-                raw: intake.rawTotal,
-                net: intake.netTotal,
-                prev: prev.current,
-                next: newHP,
-              })
-            : t("combat.hpDamageToast", {
-                val: intake.netTotal,
-                prev: prev.current,
-                next: newHP,
-              });
-    // Redo repeats the same manual damage entry.
-    registerUndoableResult({ message }, undoDamage, () => handleApplyDamage(parts, opts));
+    commitDamage(parts, opts, t);
   }
 
   function applyFall(total: number, opts: { prone: boolean }) {
@@ -421,39 +254,12 @@ export function useHpControls(): HpControls {
     );
   }
 
-  function applyDeathSave(faces: number | ReadonlyArray<number>) {
-    const enteredFaces = typeof faces === "number" ? [faces] : Array.from(faces);
-    const commit = useCharacterStore.getState().commitDeathSave(enteredFaces);
-    if (!commit) return;
-    const outcome = commit.result.reviewedOutcome.deathSave;
-    const entered = commit.result.selectedNaturalFace;
-    if (!outcome || entered === null) return;
-    const after = useCharacterStore.getState().character;
-    let message: string;
-    if (outcome.naturalTwentyBenefit) {
-      message = t("combat.deathSaveNat20Toast", { n: entered });
-    } else if (outcome.failures === 2) {
-      const failures = after?.session.deathFail ?? deathFail;
-      message =
-        failures >=
-        deathSaveLimits(useCharacterStore.getState().character?.session).failures
-          ? t("deathSaves.dead")
-          : t("combat.deathSaveNat1Toast", { n: entered, f: failures });
-    } else if (commit.result.reviewedOutcome.status === "failure") {
-      const failures = after?.session.deathFail ?? deathFail;
-      message =
-        failures >=
-        deathSaveLimits(useCharacterStore.getState().character?.session).failures
-          ? t("deathSaves.dead")
-          : t("combat.deathSaveFailToast", { n: entered, f: failures });
-    } else {
-      const successes = after?.session.deathSucc ?? deathSucc;
-      message =
-        successes >= 3
-          ? t("combat.deathSaveStableToast", { n: entered })
-          : t("combat.deathSaveSuccessToast", { n: entered, s: successes });
-    }
-    registerUndoableResult({ message }, commit.undo, () => applyDeathSave(enteredFaces));
+  function applyDeathSave(
+    faces: number | ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) {
+    commitDeathSaveEntry(faces, t, use, spend);
   }
 
   return {

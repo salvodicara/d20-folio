@@ -183,7 +183,9 @@ import {
   resolveCharacterConcentrationSave,
   type FailedSaveReroll,
   resolveCharacterDeathSave,
+  BARDIC_INSPIRATION_DIE_SOURCE,
   type CharacterEnteredD20Result,
+  type PostRollUse,
 } from "@/lib/character-d20-tests";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
 import { createItemInstanceId } from "@/lib/item-resources";
@@ -571,14 +573,24 @@ interface CharacterState {
   setExhaustion: (level: number) => void;
   /** Commit a physical Death Save through the universal D20 kernel. Live rules
    * facts are resolved only after every eligibility check at this boundary. */
-  commitDeathSave: (faces: ReadonlyArray<number>) => D20TestCommitResult | null;
+  /** A death save from its entered faces, with what the player added after the roll
+   *  (`use`: a held Bardic Inspiration die, a paid Advantage) and that payment
+   *  (`spend`: the paid Advantage's tracker), all in one undoable step. */
+  commitDeathSave: (
+    faces: ReadonlyArray<number>,
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
+  ) => D20TestCommitResult | null;
   /** Resolve the current FIFO Concentration prompt. A stale spell, queue head,
    * damage/DC pair, or character state is rejected without mutation. */
   commitPendingConcentrationSave: (
     pending: PendingConcentrationSave,
     faces: ReadonlyArray<number>,
     /** The failed save taken again (Indomitable): its bonus and Advantage. */
-    reroll?: FailedSaveReroll
+    reroll?: FailedSaveReroll,
+    /** What the player added after the roll, and its payment (as `commitDeathSave`). */
+    use?: PostRollUse,
+    spend?: { trackerId: string; amount: number }
   ) => D20TestCommitResult | null;
   /**
    * Surface the RAW damage-while-concentrating consequence for damage the
@@ -1017,6 +1029,25 @@ function endIncapacitatedStates(get: () => CharacterState): void {
   if (!current) return;
   for (const key of resolveActiveStatesEndingOn(current, "incapacitated")) {
     get().setActiveFeature(key, false);
+  }
+}
+
+/** Pay for what the player added after an entered save (a held Bardic Inspiration die
+ *  is spent; a paid Advantage spends its tracker), inside the save's own command. */
+function payPostRoll(
+  get: () => CharacterState,
+  use: PostRollUse | undefined,
+  spend: { trackerId: string; amount: number } | undefined
+): void {
+  if (use?.enteredModifierFaces?.[BARDIC_INSPIRATION_DIE_SOURCE]?.length) {
+    get().setBardicInspirationDie("");
+  }
+  if (spend) {
+    get().dispatch({
+      kind: "spend-tracker",
+      trackerId: spend.trackerId,
+      amount: spend.amount,
+    });
   }
 }
 
@@ -2747,7 +2778,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().dispatch({ kind: "set-exhaustion", level });
   },
 
-  commitDeathSave: (faces) => {
+  commitDeathSave: (faces, use, spend) => {
     if (get().readonly) return null;
     const live = get().character;
     if (
@@ -2764,7 +2795,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     try {
       // The builder reads the live aggregate here, at the mutation boundary:
       // all-save bonuses, Exhaustion, threshold, and net roll mode cannot stale.
-      result = resolveCharacterDeathSave(live, faces);
+      result = resolveCharacterDeathSave(live, faces, [], use);
     } catch {
       return null;
     }
@@ -2784,6 +2815,8 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         )
       );
     }
+    // The payment rides the same step, so one undo takes the save and it back.
+    payPostRoll(get, use, spend);
     const after = captureD20Command(get());
     if (!after) return null;
     return {
@@ -2792,7 +2825,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
-  commitPendingConcentrationSave: (pending, faces, reroll) => {
+  commitPendingConcentrationSave: (pending, faces, reroll, use, spend) => {
     if (get().readonly) return null;
     const live = get().character;
     const head = get().combatPendingConcentrationSaves[0];
@@ -2813,7 +2846,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!before) return null;
     let result: CharacterEnteredD20Result;
     try {
-      result = resolveCharacterConcentrationSave(live, pending, faces, [], reroll);
+      result = resolveCharacterConcentrationSave(live, pending, faces, [], reroll, use);
     } catch {
       return null;
     }
@@ -2829,6 +2862,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     } else {
       return null;
     }
+    payPostRoll(get, use, spend);
     const after = captureD20Command(get());
     if (!after) return null;
     return {

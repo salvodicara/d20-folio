@@ -292,7 +292,7 @@ describe("combat-state IO — full persistence contract", () => {
     // reader still accepts it. Both die in P3 with the script.
     const { playState: _playState, ...legacy } = combatStateWriteData(state);
     void _playState;
-    expect(parseCombatState(legacy)).toEqual({
+    expect(parseCombatState(legacy)).toMatchObject({
       ok: false,
       reason: "invalid-v1-play-state",
     });
@@ -352,7 +352,7 @@ describe("combat-state IO — full persistence contract", () => {
       playState: sessionToPlayStateV1(makeCharacterDoc().session),
       ...testCase.patch,
     });
-    expect(v1).toEqual({ ok: false, reason: "invalid-combat-state" });
+    expect(v1).toMatchObject({ ok: false, reason: "invalid-combat-state" });
 
     // The migration's PRE-CUTOVER reader stays tolerant of the same stored shapes,
     // which is exactly what the cutover canonicalizes. Dies in P3 with the script.
@@ -381,7 +381,7 @@ describe("combat-state IO — full persistence contract", () => {
         return [];
       },
     });
-    expect(parseCombatState(hostile)).toEqual({
+    expect(parseCombatState(hostile)).toMatchObject({
       ok: false,
       reason: "invalid-combat-state",
     });
@@ -401,13 +401,13 @@ describe("combat-state IO — full persistence contract", () => {
   });
 
   it("rejects partial combat docs instead of fabricating a 0-HP character", () => {
-    expect(parseCombatState({})).toEqual({
+    expect(parseCombatState({})).toMatchObject({
       ok: false,
       reason: "invalid-combat-state",
     });
     expect(
       parseCombatState({ hp: {}, conditions: [], initiativeRoll: null, deathSaves: {} })
-    ).toEqual({ ok: false, reason: "invalid-combat-state" });
+    ).toMatchObject({ ok: false, reason: "invalid-combat-state" });
   });
 
   it("strictly rejects hostile v1 play-state containers without invoking accessors", () => {
@@ -657,7 +657,7 @@ describe("combat-state IO — full persistence contract", () => {
       },
     });
 
-    expect(parsed).toEqual({ ok: false, reason: "invalid-combat-state" });
+    expect(parsed).toMatchObject({ ok: false, reason: "invalid-combat-state" });
   });
 
   it.each([undefined, null, [], {}, { key: "" }, { key: 7 }])(

@@ -55,7 +55,7 @@ import {
   deriveAdvantageChips,
   deriveConditionResistances,
   deriveDamageSourceResistances,
-  deriveDefenseKind,
+  defenseKindViews,
   deriveFlatDamageReductions,
   displayLanguages,
   displayToolProficiencies,
@@ -108,6 +108,7 @@ import { ResourceConversions } from "./ResourceConversions";
 import { TableClockControl } from "./TableClockControl";
 import { ItemResourceRailRow } from "./ItemResourceRailRow";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
+import { restGrantBundles } from "@/lib/play/rest-bundles";
 import { ActivatableFeaturesBar } from "./ActivatableFeaturesBar";
 import {
   WEAPON_PROFICIENCY_CATEGORIES,
@@ -118,6 +119,8 @@ import { localizeSrd } from "@/i18n/resolver";
 import { ensureSrdKind } from "@/i18n";
 import type { AbilityCode, ConditionId } from "@/data/types";
 import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
+import { addTemporaryDefense } from "@/domains/play/forms-defenses-view";
+import { nextChoiceResistancePicks } from "@/lib/choice-resistance-pick";
 import type { SessionDefenseKind } from "@/types/character";
 import type { TFunction } from "i18next";
 import { localeDistance } from "@/lib/utils";
@@ -302,8 +305,7 @@ export function ResourceRail() {
   // REST-frequency variant bundles (re-chosen each rest per RAW) — the
   // creation-frequency ones (lineages) are owned by the Bio tab.
   const restBundles = useMemo(
-    () =>
-      aggregate ? aggregate.grantBundles.filter((b) => b.choiceFrequency === "rest") : [],
+    () => (aggregate ? restGrantBundles(aggregate.grantBundles) : []),
     [aggregate]
   );
 
@@ -374,28 +376,7 @@ export function ResourceRail() {
   // permanent rows + session chips + the quiet add (the conditions register);
   // edit mode exposes the build add/remove chip editors below.
   const sessionDefenses = session.sessionDefenses;
-  const defViews: Record<SessionDefenseKind, DefenseKindView> = {
-    resistance: deriveDefenseKind(
-      aggregate.damageResistances,
-      charData.damageResistanceOverrides,
-      sessionDefenses?.resistance
-    ),
-    immunity: deriveDefenseKind(
-      aggregate.damageImmunities,
-      charData.damageImmunityOverrides,
-      sessionDefenses?.immunity
-    ),
-    vulnerability: deriveDefenseKind(
-      aggregate.damageVulnerabilities,
-      charData.damageVulnerabilityOverrides,
-      sessionDefenses?.vulnerability
-    ),
-    conditionImmunity: deriveDefenseKind(
-      aggregate.conditionImmunities,
-      charData.conditionImmunityOverrides,
-      sessionDefenses?.conditionImmunity
-    ),
-  };
+  const defViews = defenseKindViews(aggregate, charData, sessionDefenses);
   const resistances = defViews.resistance.permanent as DamageType[];
   const damageImmunities = defViews.immunity.permanent as DamageType[];
   const vulnerabilities = defViews.vulnerability.permanent as DamageType[];
@@ -1412,17 +1393,8 @@ function ChoiceResistancePicker({
   const { t } = useTranslation();
   const picked = slot.selected;
   function toggle(type: DamageType): void {
-    let next: DamageType[];
-    if (picked.includes(type)) {
-      next = picked.filter((d) => d !== type);
-    } else if (picked.length < slot.amount) {
-      next = [...picked, type];
-    } else if (slot.amount === 1) {
-      // Single-pick slot: tapping another option REPLACES the pick.
-      next = [type];
-    } else {
-      return; // at cap on a multi-pick slot — deselect first
-    }
+    const next = nextChoiceResistancePicks(picked, slot.amount, type);
+    if (!next) return; // at cap on a multi-pick slot — deselect first
     useCharacterStore.getState().setGrantBundleChoice(slot.choiceKey, next.join(","));
   }
   return (
@@ -1552,7 +1524,7 @@ function AddDefensePicker({
     if (onAdd) {
       onAdd(kind, id);
     } else {
-      useCharacterStore.getState().addSessionDefense(kind, id);
+      addTemporaryDefense(kind, id);
     }
     setOpen(false);
   }
