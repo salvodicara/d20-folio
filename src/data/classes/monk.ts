@@ -333,6 +333,8 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
         // formatSpeed's bonusFt). Without this flag, the rider would be
         // a purely informational chip.
         appliesTo: "speed",
+        // «While you aren't wearing armor or wielding a Shield».
+        whileUnarmored: true,
       },
     },
     source: "SRD",

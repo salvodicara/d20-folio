@@ -259,6 +259,7 @@ import {
   resolveItemBoundDamageRiders,
   attacksPerAction,
   maxTableExtraAttacks,
+  isArmorOrShieldEquipped,
   isHeavyArmorEquipped,
   heavyWeaponDisadvantage,
   type ResolvedWeaponDie,
@@ -3163,8 +3164,26 @@ function resolveRiderFromRow(
  * automatically as the character levels up, with no Monk-specific code
  * in the consumer.
  */
-export function resolveActiveSpeedRiderBonus(character: CharacterDoc): number {
-  let total = 0;
+export function resolveActiveSpeedRiderBonus(
+  character: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined
+): number {
+  return activeSpeedRiderParts(character, resolveSrd).reduce(
+    (sum, p) => sum + p.value,
+    0
+  );
+}
+
+/** Each active speed rider as (feature id, feet). A `whileUnarmored` rider counts
+ *  only when no armor or Shield is worn (unknown without a resolver: counted). */
+function activeSpeedRiderParts(
+  character: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined
+): Array<{ featureId: string; value: number }> {
+  const armored = resolveSrd
+    ? isArmorOrShieldEquipped(character.character.equipment, resolveSrd)
+    : false;
+  const out: Array<{ featureId: string; value: number }> = [];
   for (const f of character.character.features) {
     if ("custom" in f) continue;
     const srdFeature = classFeatureIndex.get(f.srdId);
@@ -3172,12 +3191,13 @@ export function resolveActiveSpeedRiderBonus(character: CharacterDoc): number {
     const rider =
       "rider" in srdFeature.mechanics ? srdFeature.mechanics.rider : undefined;
     if (rider?.appliesTo !== "speed") continue;
+    if (rider.whileUnarmored && armored) continue;
     // R4 — read each rider's tier from its OWNING class at the character's level IN
     // that class (a multiclass Monk's Unarmored Movement uses the Monk level).
     const raw = featureClassRow(f.srdId, character)?.[rider.sourceKey];
-    if (typeof raw === "number" && raw > 0) total += raw;
+    if (typeof raw === "number" && raw > 0) out.push({ featureId: f.srdId, value: raw });
   }
-  return total;
+  return out;
 }
 
 /**
@@ -9790,7 +9810,9 @@ export function effectiveWalkingSpeedFt(
     facts.push("no-heavy-armor");
   }
   if (round === 1) facts.push("round-1");
-  const bonus = ruleNumber(agg.values, "speed:walk", facts);
+  const bonus =
+    ruleNumber(agg.values, "speed:walk", facts) +
+    resolveActiveSpeedRiderBonus(character, resolveSrd);
 
   const multiplied = Math.round((baseFt + bonus) * agg.speedMultiplier);
 
@@ -9857,6 +9879,13 @@ export function effectiveWalkingSpeedBreakdown(
   let running = baseFt;
   for (const { source, value } of ruleParts(agg.ruleOrigins, "speed:walk", facts)) {
     parts.push(named(source, "breakdown.featureBonus", value));
+    running += value;
+  }
+  // A class feature's speed rider (Monk Unarmored Movement), named.
+  for (const { featureId, value } of activeSpeedRiderParts(character, resolveSrd)) {
+    parts.push(
+      named({ kind: "class-feature", key: featureId }, "breakdown.featureBonus", value)
+    );
     running += value;
   }
 
