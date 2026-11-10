@@ -6,6 +6,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const fs = vi.hoisted(() => ({
+  getDocs: vi.fn(() =>
+    Promise.resolve({
+      docs: [
+        { id: "sildar", data: () => ({ name: "Sildar", hp: { current: 70, max: 58 } }) },
+        { id: "nameless", data: () => ({ hp: { current: 1, max: 1 } }) },
+      ],
+    })
+  ),
   collection: vi.fn((...path: unknown[]) => ({ path: path.slice(1).join("/") })),
   doc: vi.fn((...path: unknown[]) => ({ path: path.slice(1).join("/") })),
   setDoc: vi.fn(() => Promise.resolve()),
@@ -34,6 +42,8 @@ const rules = vi.hoisted(() => ({ v26: true }));
 vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }));
 
 import {
+  readRoster,
+  subscribeDmRoster,
   subscribeRoster,
   writeDmRosterEntry,
   writeRosterEntry,
@@ -89,6 +99,29 @@ describe("the roster documents", () => {
     await writeRosterEntry("c1", "sildar", null);
     expect(fs.deleteDoc).toHaveBeenCalledWith({ path: "campaigns/c1/roster/sildar" });
     expect(fs.deleteDoc).toHaveBeenCalledWith({ path: "campaigns/c1/dmRoster/sildar" });
+  });
+
+  it("reads the roster once (the end-of-fight write-back), through the parser", async () => {
+    expect(await readRoster("c1")).toEqual({
+      sildar: { name: "Sildar", hp: { current: 58, max: 58 } },
+    });
+    rules.v26 = false;
+    expect(await readRoster("c1")).toEqual({});
+  });
+
+  it("the DM's side is read through its parser", () => {
+    const seen: unknown[] = [];
+    subscribeDmRoster(
+      "c1",
+      (docs) => seen.push(docs),
+      () => undefined
+    );
+    expect(fs.onSnapshot).toHaveBeenCalledWith(
+      { path: "campaigns/c1/dmRoster" },
+      expect.any(Function),
+      expect.any(Function)
+    );
+    expect(seen).toEqual([{ sildar: {}, nameless: {} }]);
   });
 
   it("nothing before the rules deploy, and no malformed id", async () => {
