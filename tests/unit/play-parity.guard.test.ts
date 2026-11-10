@@ -121,6 +121,98 @@ const SELECTORS: Record<string, Answer> = {
   },
 };
 
+/**
+ * The campaign screen's classic-only features (the #940 inventory), by the classic file
+ * they live in: model ready on the new side, or still pending.
+ */
+const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
+  "Invite: share the link, lock joins": {
+    classic: "src/features/campaigns/CampaignInvite.tsx",
+    answer: {
+      model: "src/domains/campaign/campaign-admin.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Hand over the DM role, remove a member, delete the campaign": {
+    classic: "src/features/campaigns/DmTools.tsx",
+    answer: {
+      model: "src/domains/campaign/campaign-admin.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "The DM's party summary": {
+    classic: "src/features/campaigns/PartySummary.tsx",
+    answer: {
+      model: "src/domains/campaign/party-summary-view.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Sessions: create, rename, delete": {
+    classic: "src/features/campaigns/Sessions.tsx",
+    answer: {
+      model: "src/domains/chronicle/session-moves.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Next session and «Last time»": {
+    classic: "src/features/campaigns/LastTime.tsx",
+    answer: {
+      model: "src/domains/chronicle/session-moves.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Rename the campaign": {
+    classic: "src/features/campaigns/CampaignHubPage.tsx",
+    answer: {
+      model: "src/features/campaigns/campaignStore.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Campaign art": {
+    classic: "src/features/campaigns/CampaignArtControl.tsx",
+    answer: {
+      model: "src/features/campaigns/useCampaignBannerCrop.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Attach a character": {
+    classic: "src/features/campaigns/Party.tsx",
+    answer: {
+      model: "src/domains/campaign/attach-character.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Hide a creature, reveal its HP, ally or enemy, reorder the turns": {
+    classic: "src/features/campaigns/party-encounter.tsx",
+    answer: {
+      model: "src/features/campaigns/combat-lifecycle-io.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Custom monsters": {
+    classic: "src/features/campaigns/encounter-custom-monsters.tsx",
+    answer: {
+      model: "src/domains/combat/custom-monsters.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "End-of-fight write-up": {
+    classic: "src/features/campaigns/party-chronicle.tsx",
+    answer: {
+      model: "src/domains/combat/fight-write-up.ts",
+      pending: "direction: the control on screen",
+    },
+  },
+  "Chronicle editing, versions, .md download": {
+    classic: "src/features/campaigns/Chronicle.tsx",
+    answer: { pending: "direction: the Chronicle editor (no model yet)" },
+  },
+  "A DM-run character in the fight; join or skip a fight": {
+    classic: "src/features/campaigns/Party.tsx",
+    answer: { pending: "direction: fight participation (no model yet)" },
+  },
+};
+
 const PROMPT_FUNCTION =
   /^(?:export )?function ([A-Z][A-Za-z]*(?:Banner|Prompt|Picker|Row|Popover|Dialog|Tray))\b/gm;
 
@@ -188,3 +280,21 @@ function grepTree(dir: string): string {
   }
   return out;
 }
+
+describe("Campaign parity: every classic-only feature has an answer", () => {
+  it("each classic file still exists (a move updates the table)", () => {
+    const gone = Object.values(CAMPAIGN).flatMap(({ classic }) =>
+      existsSync(classic) ? [] : [classic]
+    );
+    expect(gone).toEqual([]);
+  });
+
+  it("each model or covering module exists", () => {
+    const gone = Object.values(CAMPAIGN).flatMap(({ answer }) => {
+      const path =
+        "covered" in answer ? answer.covered : "model" in answer ? answer.model : null;
+      return path && !existsSync(path) ? [path] : [];
+    });
+    expect(gone).toEqual([]);
+  });
+});
