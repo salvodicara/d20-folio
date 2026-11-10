@@ -2207,7 +2207,7 @@
 .fui .f-row-main > .f-act-m {
   display: none;
 }
-.fui .f-playbook-h[aria-expanded="true"] .f-ic {
+.fui .f-playbook-h[aria-expanded="true"] .f-ic:last-child {
   transform: rotate(180deg);
 }
 @media (max-width: 640px) {
@@ -2254,13 +2254,11 @@
   --glow-ac: rgb(212 175 102 / 0.53);
   --glow-hp: rgb(70 240 74 / 0.53);
   --band-quiet: rgb(255 255 255 / 0.024);
-  /* the one lit action (End Turn), in the turn's gold: the colour of «ORA» and the
-     current row (owner, 2026-11-10; was cyan) */
-  --lit-hi: var(--gold-hi);
-  --lit-mid: var(--gold-line);
-  --lit-deep: var(--line-soft);
-  --lit-glow: var(--glow-ac);
-  --lit-glow-hi: var(--gold);
+  --lit-hi: #6fd3f2;
+  --lit-mid: #4fb6dc;
+  --lit-deep: #0f3a4b;
+  --lit-glow: rgb(42 141 176 / 0.53);
+  --lit-glow-hi: #5fb3e6;
   --advice: #c9bba3;
   --rule-quiet: rgb(255 255 255 / 0.07);
   --row-rule: rgb(255 255 255 / 0.06);
@@ -2370,8 +2368,10 @@
 }
 /* the header (prototype .hero), framed as every hero is («Lume») */
 .fui .f-sheet .f-char {
-  gap: 32px 24px;
-  padding: 40px 56px;
+  /* the abilities sit 16 px under the chips, as in the prototype's .hero__id */
+  gap: 16px 24px;
+  /* the prototype's hero is 34 px 56 px; 32 keeps the 8 px grid */
+  padding: 32px 56px;
 }
 .fui .f-sheet .f-char-id h1 {
   font: 700 36px/1 var(--font-title);
@@ -2386,15 +2386,35 @@
   letter-spacing: 0.08em;
   color: var(--muted);
 }
+.fui .f-sheet .f-char-stats {
+  gap: 12px;
+}
+.fui .f-sheet .f-char-stats .f-lbl {
+  letter-spacing: 0.03em;
+}
+/* the hexes are the prototype's .badge--hex .badge__shape: 58 × 58 (the phone's are
+   plain numbers) */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-char-stats .f-badge[data-shape="hex"] .f-badge-frame {
+    width: 58px;
+    height: 58px;
+  }
+}
 .fui .f-sheet .f-badge-frame b {
   font: 700 24px/1 var(--font-title);
   color: var(--text);
 }
-.fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
-  /* the scale draws 10 px past the box: room for it above the label */
-  margin-bottom: 10px;
-  transform: scale(1.25);
-  filter: drop-shadow(0 0 8px var(--glow-ac));
+/* the prototype's .badge__shape: a 58 × 64 shield drawn at 1.25 (shared .badge-wrap);
+   the phone's is a plain number */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
+    width: 58px;
+    height: 64px;
+    /* the scale draws 8 px past the box: room for it above the label */
+    margin-bottom: 8px;
+    transform: scale(1.25);
+    filter: drop-shadow(0 0 8px var(--glow-ac));
+  }
 }
 .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame b {
   font-size: var(--fs-ac);
@@ -5679,15 +5699,40 @@
   }
 }
 
-/* the header's chips: a form or held spell on its own line, the status chips on one */
+/* the header's chips: one row on a laptop (prototype x-play .hero__chips); on a phone
+   a form or held spell on its own line, then the status chips (x-play-m) */
 .fui .f-char-chips {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
-@media (min-width: 641px) {
-  .fui .f-chips-status {
-    flex-wrap: nowrap;
-  }
+.fui .f-char-chips > .f-chips {
+  display: contents;
+}
+
+/* Play parity with the approved prototype (x-play), from its computed styles */
+/* «Fine turno ›»: the label, then the chevron (.ft) */
+.fui .f-sheet .f-turn .f-btn[data-end-turn] {
+  flex-direction: row-reverse;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: var(--r-lg);
+}
+/* «Fine scontro», quiet, after it */
+.fui .f-sheet .f-turn .f-btn[data-end-turn] + .f-btn {
+  margin-left: 0;
+}
+.fui .f-sheet .f-turn .f-btn[data-end-turn] .f-ic {
+  width: 14px;
+  height: 14px;
+}
+/* «Cosa ti conviene fare»: the compass, the line, the chevron at the end (.tip__head) */
+.fui .f-sheet .f-playbook-h > span {
+  flex: 1;
+}
+.fui .f-sheet .f-playbook-h > .f-ic:first-child {
+  width: 20px;
+  height: 20px;
 }
 
 /* after a rest: what came back, label and before → after (D&D Beyond's Recover list) */

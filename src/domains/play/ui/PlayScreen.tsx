@@ -271,7 +271,7 @@ function PlayHeader({
           hp={view.hp.current}
           max={view.hp.max}
           temp={view.hp.temp}
-          size={tiny ? 64 : narrow ? 88 : 136}
+          size={tiny ? 64 : narrow ? 88 : 120}
           portrait={view.portraitUrl ?? undefined}
           name={view.name}
           ornate

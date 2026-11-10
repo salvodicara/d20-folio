@@ -16,6 +16,7 @@ export const ICON_NAMES = [
   "g-class-warlock",
   "g-class-wizard",
   "g-combat",
+  "g-compass",
   "g-create",
   "g-crossbow",
   "g-error",
