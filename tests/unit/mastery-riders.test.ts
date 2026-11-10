@@ -63,8 +63,12 @@ describe("weapon mastery riders on the attack card", () => {
       if (id === "topple") expect(rider?.dc).toBe(8 + mod + 3);
       else expect(rider?.dc).toBeUndefined();
       if (id === "push" || id === "slow") expect(rider?.distance).toBe("3 m");
-      if (id === "vex") expect(rider?.apply).toBe("next-attack-advantage");
-      else expect(rider?.apply).toBeUndefined();
+      const applies: Record<string, string> = {
+        vex: "next-attack-advantage",
+        sap: "target-attack-disadvantage",
+        slow: "target-speed-loss",
+      };
+      expect(rider?.apply).toBe(applies[id]);
     }
   );
 
