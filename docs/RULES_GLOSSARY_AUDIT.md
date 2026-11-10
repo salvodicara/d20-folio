@@ -9,7 +9,7 @@ conformance case (corpus category 18).
 [RULES_COVERAGE.md](RULES_COVERAGE.md) maps the catalogues; this file maps the rules themselves. A PR
 that closes a gap updates its row.
 
-**Count: 137 entries: 115 modeled (10 with a small partial gap), 10 table-side, 12 gaps.**
+**Count: 137 entries: 116 modeled (10 with a small partial gap), 10 table-side, 11 gaps.**
 
 ## Gaps, most frequent at real tables first
 
@@ -19,7 +19,7 @@ that closes a gap updates its row.
 | 2   | Grappling, Shove                            | The save is labelled STR only; 2024 lets the target pick STR or DEX   | engine      | "STR or DEX" save on both options                              |
 | 3   | Aura (Aura of Protection)                   | Only the paladin gets the save bonus; allies in the aura get nothing  | engine      | An "in the aura" state on the ally adding the source's CHA mod |
 | 4   | Per Day (monster N/Day, Recharge)           | `spendMonsterUse` exists, nothing calls it                            | (no screen) | Spend/restore on the DM monster card                           |
-| 5   | Travel Pace                                 | The effect text is 2014's (−5 passive, "move stealthily")             | engine      | 2024: Fast Disadvantage on Perception/Survival, Slow Advantage |
+| 5   | ~~Travel Pace~~ (fixed #974)                | The effect text is 2014's (−5 passive, "move stealthily")             | engine      | 2024: Fast Disadvantage on Perception/Survival, Slow Advantage |
 | 6   | Burning (hazard)                            | `environment.ts` is done, nothing sets or ticks it                    | (no screen) | An "On fire" state and a turn-start prompt                     |
 | 7   | Dodge                                       | Does not end on Incapacitated or Speed 0                              | engine      | Add those two end conditions                                   |
 | 8   | Petrified                                   | Its Poisoned immunity is not applied to the sheet's active conditions | engine      | Feed condition-granted immunities into the active conditions   |
@@ -149,7 +149,7 @@ Jumping (feet not charged automatically); Experience Points (no DM award at figh
 | Utilize, free object interaction              | modeled    | `smart-tracker.ts`; `object-interaction.test.ts`                                       |
 | Weapon properties                             | modeled    | `smart-tracker.ts` (all ten); `weapon-facts.test.tsx`                                  |
 | Weapon Mastery                                | modeled    | Nick, Graze, Topple, Vex apply (gap #1: the other four); `mastery-rider-view.ts`       |
-| Travel Pace                                   | gap        | #5                                                                                     |
+| Travel Pace                                   | modeled    | `rules.json` 2024 pace effects; `travel-pace.test.ts`                                  |
 | Exploration, marching order                   | table-side | Narrative and positional                                                               |
 | Social interaction                            | modeled    | Influence check; attitude and DC are the DM's                                          |
 | Initiative order and turns                    | modeled    | `turn-economy.ts`; `turn-economy.test.ts`                                              |
