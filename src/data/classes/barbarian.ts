@@ -334,12 +334,8 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-fast-movement",
     class: "barbarian",
     level: 5,
-    // Static +10 ft speed — declared via the standard grants pipeline; the
-    // sheet header sums these into `formatSpeed`'s `bonusFt`. The
-    // "not wearing heavy armor" condition is not auto-enforced (would
-    // require a per-equipped-piece check); the player can override the
-    // displayed Speed if they're in plate.
-    grants: [{ type: "speed", amount: 10 }],
+    // +10 ft «while you aren't wearing Heavy armor» (the gate Ranger Roving uses).
+    grants: [{ type: "speed", amount: 10, condition: "no-heavy-armor" }],
     source: "SRD",
   },
   {
