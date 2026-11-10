@@ -182,6 +182,7 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-guidance",
+            choiceFrequency: "cast",
             options: GUIDANCE_SKILLS.map((id) => ({
               id,
               grants: [
@@ -371,6 +372,7 @@ export const SRD_CANTRIPS: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-resistance",
+            choiceFrequency: "cast",
             options: RESISTANCE_DAMAGE_TYPES.map((damageType) => ({
               id: damageType,
               grants: [
