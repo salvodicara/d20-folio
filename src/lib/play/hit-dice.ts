@@ -48,6 +48,19 @@ export function hitDicePool(character: HitDiceBearer): HitDiceEntry[] {
     .sort((a, b) => b.die - a.die);
 }
 
+/** How many Hit Point Dice the character has: one per level, or the manual total. */
+export function hitDiceTotal(character: HitDiceBearer): number {
+  return hitDicePool(character).reduce((sum, entry) => sum + entry.count, 0);
+}
+
+/** The Hit Point Dice left to spend (never below 0). */
+export function hitDiceLeft(
+  character: HitDiceBearer,
+  session: { hitDice: { used: number } }
+): number {
+  return Math.max(0, hitDiceTotal(character) - session.hitDice.used);
+}
+
 /** The lowest and highest total `count` spent dice can roll: the largest dice the pool holds. */
 export function hitDiceTotalRange(
   pool: ReadonlyArray<HitDiceEntry>,

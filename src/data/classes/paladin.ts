@@ -244,7 +244,27 @@ export const PALADIN_FEATURES: SrdClassFeatureData[] = [
         shortRestRecovery: 1,
         levels: [{ from: 11, total: "3" }],
       },
+      // Divine Sense, the option every Paladin starts with: a Bonus Action that
+      // spends one use; for 10 minutes you sense Celestials, Fiends and Undead
+      // (what you sense is the DM's).
+      actions: [
+        {
+          id: "divine-sense",
+          type: "bonus",
+          costTracker: "paladin-channel-divinity",
+          trackerCost: 1,
+        },
+      ],
     },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "paladin-divine-sense",
+        activatedByAction: ["divine-sense"],
+        duration: { kind: "timed", minutes: 10, maxRounds: 100 },
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
