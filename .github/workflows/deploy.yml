@@ -221,6 +221,8 @@ jobs:
       # Item resources (#386): the catalogue now declares item-owned resources, so
       # an unmigrated owned copy would show a full counter; the owner-gated
       # `live-data-migration` (snapshot, dry-run, yes, apply, verify) must run first.
+      # Monk base Speed (v0.26.1): the sheet now adds Unarmored Movement itself, so a
+      # stored base that already counts it must be reset first (same owner-gated path).
       # The checks read the composed catalogue (the private pack checked out above),
       # never the runtime pack the build uses: in runtime mode `@pack` is the empty
       # shell the browser fills after sign-in, so the parents check refuses to run
@@ -231,6 +233,7 @@ jobs:
           node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
           node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
           node --import ./scripts/alias-loader.mjs scripts/migrate-item-resources.ts --check
+          node --import ./scripts/alias-loader.mjs scripts/migrate-monk-base-speed.ts --check
 
       - name: Require live Blaze billing
         run: |

@@ -284,6 +284,20 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
         },
       ],
     },
+    // The Focus version also takes the Dodge action: until the start of your next
+    // turn, attacks against you have Disadvantage and your DEX saves Advantage.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "monk-patient-defense",
+        activatedByAction: ["focused"],
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [
+          { type: "incoming-attack-disadvantage" },
+          { type: "advantage-on", rollType: "save", vs: "dex" },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -299,12 +313,14 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "bonus",
+          economyCategory: "dash",
         },
         {
           id: "focused",
           type: "bonus",
           costTracker: "monk-focus",
           trackerCost: 1,
+          economyCategory: "dash",
         },
       ],
     },
@@ -333,6 +349,8 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
         // formatSpeed's bonusFt). Without this flag, the rider would be
         // a purely informational chip.
         appliesTo: "speed",
+        // «While you aren't wearing armor or wielding a Shield».
+        whileUnarmored: true,
       },
     },
     source: "SRD",
@@ -407,6 +425,8 @@ export const MONK_FEATURES: SrdClassFeatureData[] = [
       actions: [
         {
           type: "free",
+          // "Once per turn" (SRD 5.2.1 Stunning Strike).
+          maxUsesPerTurn: 1,
           costTracker: "monk-focus",
           trackerCost: 1,
           saveAbility: "CON",

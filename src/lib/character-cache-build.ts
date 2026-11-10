@@ -7,6 +7,8 @@
 import type { CharacterData, CharacterDoc, SessionState } from "@/types/character";
 import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
 import { getClasses } from "@/lib/classes";
+import { getEquipment } from "@/data/equipment";
+import { shownWalkingSpeedFt } from "@/lib/smart-tracker";
 import { nonEmptyString } from "@/lib/non-empty-string";
 import {
   cacheToRosterCharacter,
@@ -46,9 +48,15 @@ export function buildCharacterCache(
     name,
     ac: Number.isFinite(ac) && ac > 0 ? ac : 0,
     hpMax: Number.isFinite(hpMaxStamp) && hpMaxStamp > 0 ? hpMaxStamp : 0,
-    // `speed` is GENUINELY optional (not a `validateCharacterData` must-have) — a
+    // The Speed the sheet shows (`shownWalkingSpeedFt`: a hand-set Speed, a form,
+    // else the stored base with every bonus), like the stamped effective AC. A
     // character with no speed set stamps "" (the roster reads it as "unknown").
-    speed: typeof character.speed === "string" ? character.speed : "",
+    speed:
+      typeof character.speed === "string"
+        ? String(
+            shownWalkingSpeedFt({ character, session } as CharacterDoc, getEquipment)
+          )
+        : "",
     // `race` is a `validateCharacterData`-guaranteed non-empty species id (the parse
     // rejects a missing/empty race), so it passes through directly — no "" default.
     raceId: character.race,

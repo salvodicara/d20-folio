@@ -26,6 +26,7 @@
  * actually defends something).
  */
 
+import { hitDiceLeft, hitDiceTotal } from "@/lib/play/hit-dice";
 import { useTranslation } from "react-i18next";
 import { HeartCrack } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -85,12 +86,14 @@ export function HeaderHpControl() {
   const grantBundleChoices = useCharacterStore(
     (s) => s.character?.session.grantBundleChoices
   );
-  const hitDiceUsed = useCharacterStore((s) => s.character?.session.hitDice.used ?? 0);
   const level = useCharacterStore((s) =>
     s.character ? totalLevel(s.character.character) : 0
   );
-  const hitDiceTotalOverride = useCharacterStore(
-    (s) => s.character?.character.hitDiceTotalOverride ?? null
+  const hitDiceCount = useCharacterStore((s) =>
+    s.character ? hitDiceTotal(s.character.character) : 0
+  );
+  const hitDiceRemaining = useCharacterStore((s) =>
+    s.character ? hitDiceLeft(s.character.character, s.character.session) : 0
   );
 
   // ONE HP engine — the derived readout + the amount-arg mutators (undo toasts,
@@ -121,8 +124,6 @@ export function HeaderHpControl() {
   if (!hasCharacter) return null;
 
   const state = hpState(current, max);
-  const hitDiceTotal = hitDiceTotalOverride ?? level;
-  const hitDiceRemaining = Math.max(0, hitDiceTotal - hitDiceUsed);
 
   // #95 / D1 — the Max-HP breakdown tip, OVERRIDE-GATED exactly like AC's. `max`
   // above is now the EFFECTIVE max (stored base + hp-flat boons, incl. a standing
@@ -332,7 +333,7 @@ export function HeaderHpControl() {
             <InlineEditable
               type="number"
               editable={sheetMode === "edit"}
-              value={hitDiceTotal}
+              value={hitDiceCount}
               computedValue={level}
               min={1}
               max={20}
