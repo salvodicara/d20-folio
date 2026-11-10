@@ -44,6 +44,8 @@ describe("surveyOwedClassPicks", () => {
           weaponMasteries: ["longsword", "greatsword", "longbow"],
         },
       ],
+      // Its Fighting Style picked too (Defense), so it owes nothing.
+      features: [{ srdId: "fighter-fighting-style" }, { srdId: "defense" }],
     });
     const survey = surveyOwedClassPicks([
       ...family(owing, "users/u1/characters/a"),

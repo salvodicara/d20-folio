@@ -182,6 +182,7 @@
       "invocation": "Eldritch Invocation",
       "maneuver": "Maneuver",
       "hoverHint": "Point at an option to read what it does."
-    }
+    },
+    "searchFightingStyles": "Search Fighting Styles"
   }
 }

@@ -306,7 +306,9 @@
         "maneuvers_one": "{{count}} manovra",
         "maneuvers_other": "{{count}} manovre",
         "weaponMasteries_one": "{{count}} Padronanza d'Armi",
-        "weaponMasteries_other": "{{count}} Padronanze d'Armi"
+        "weaponMasteries_other": "{{count}} Padronanze d'Armi",
+        "fightingStyles_one": "{{count}} Stile di Combattimento",
+        "fightingStyles_other": "{{count}} Stili di Combattimento"
       }
     },
     "rollReaction": {
