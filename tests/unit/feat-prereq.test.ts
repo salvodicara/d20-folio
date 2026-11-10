@@ -14,7 +14,7 @@ import {
 import { FEATS_BY_ID } from "@/data/feats";
 import { offeredFeatVMs } from "@/lib/views/feat-pick-view";
 import { makeCharacterDoc } from "./_helpers";
-import type { AbilityCode } from "@/data/types";
+import type { AbilityCode, SrdFeatData } from "@/data/types";
 
 const SCORES: Record<AbilityCode, number> = {
   STR: 14,
@@ -205,5 +205,20 @@ describe("D7 — offeredFeatVMs at the epic-boon gate vs a normal ASI level", ()
     expect(vms.some((v) => v.category === "general")).toBe(true);
     // Epic boons are NOT offered yet at 16.
     expect(vms.some((v) => v.category === "epic-boon")).toBe(false);
+  });
+});
+
+describe("featPrereqMet — a feat that requires another feat", () => {
+  // Some 2024 feats name another feat as their prerequisite.
+  const needsAlert = { prereq: { feat: "alert" } } as Pick<SrdFeatData, "prereq">;
+
+  it("is met only when the character holds that feat", () => {
+    expect(featPrereqMet(needsAlert, ctx({ featIds: ["alert"] }))).toBe(true);
+    expect(featPrereqMet(needsAlert, ctx({ featIds: [] }))).toBe(false);
+  });
+
+  it("the gate reads the feats among the character's features", () => {
+    const c = makeCharacterDoc({ features: [{ srdId: "alert" }] }).character;
+    expect(featGateCtx(c, 4).featIds).toContain("alert");
   });
 });

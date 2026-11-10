@@ -28,6 +28,7 @@
  *
  * Pure + Firebase-free (composes the inference seam + the feature builders).
  */
+import { hitDiceTotal } from "@/lib/play/hit-dice";
 import type {
   CharacterData,
   ClassEntry,
@@ -708,8 +709,9 @@ export function reconcileSessionAfterBuild(
     current: Math.max(0, Math.min(session.hp.current, next.hp.max)),
   };
 
-  const hitDiceTotal = next.hitDiceTotalOverride ?? totalLevel(next);
-  out.hitDice = { used: Math.max(0, Math.min(session.hitDice.used, hitDiceTotal)) };
+  out.hitDice = {
+    used: Math.max(0, Math.min(session.hitDice.used, hitDiceTotal(next))),
+  };
 
   // Key by `slotUsageKey` (NOT bare level) so a Sorlock's Pact pool (`pact-1`)
   // survives a build edit — keying the totals map by `String(level)` would leave

@@ -3569,6 +3569,8 @@ export interface SrdFeatData {
     spellcasting?: boolean;
     /** Requires training with this armor kind ("Medium Armor Training", …). */
     armorTraining?: ArmorCategory;
+    /** Requires another feat (its id), held already. */
+    feat?: string;
   };
   /** Mechanical effects (for feats with tracked resources or actions) */
   mechanics?: {

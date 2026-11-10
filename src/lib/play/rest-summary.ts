@@ -4,8 +4,8 @@
  * read, so they never disagree. A Long Rest also reports the fading penalties it
  * stepped down and the Hit Point maximum it restored, read from the sheet before.
  */
+import { hitDiceTotal } from "./hit-dice";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
-import { totalLevel } from "@/lib/classes";
 import type { RestKind } from "@/lib/play/rest-preview";
 import { longRestFades, type LongRestFades } from "@/lib/play/rests";
 import type { CharacterDoc } from "@/types/character";
@@ -54,7 +54,7 @@ export function restSummary(
     },
     hitDice: {
       count: Math.abs(now.hitDice.used - was.hitDice.used),
-      total: after.character.hitDiceTotalOverride ?? totalLevel(after.character),
+      total: hitDiceTotal(after.character),
     },
     slotsRestored: Math.max(0, usedSlots(before) - usedSlots(after)),
     trackersRestored: Math.max(0, usedTrackers(before) - usedTrackers(after)),
