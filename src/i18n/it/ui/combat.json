@@ -337,7 +337,7 @@
     "turnStartTempHp": "Ottieni {{amount}} PF temporanei all'inizio del tuo turno ({{name}})",
     "turnStartTempHpApply": "Ottieni {{amount}}",
     "useGainedTempHp": "Usato: {{name}} · +{{amount}} PF temporanei",
-    "maintainedEndPrompt": "{{name}} termina. Mantenerlo attivo?",
+    "maintainedEndPrompt": "{{name}} sta per finire. Vuoi mantenerne l'effetto?",
     "maintainedKeepAction": "Mantieni",
     "maintainedEndAction": "Termina",
     "maintainedEndedToast": "Effetto terminato",
