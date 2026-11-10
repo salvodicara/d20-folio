@@ -16,7 +16,7 @@ that closes a gap updates its row.
 | #   | Entry                                       | Missing                                                               | Kind        | Smallest fix                                                   |
 | --- | ------------------------------------------- | --------------------------------------------------------------------- | ----------- | -------------------------------------------------------------- |
 | 1   | Weapon Mastery: Cleave, Push, Sap, Slow     | Logged only. Sap and Slow change no number                            | engine      | Sap: Disadvantage on the target's next attack; Slow: −10 ft    |
-| 2   | Grappling, Shove                            | The save is labelled STR only; 2024 lets the target pick STR or DEX   | engine      | "STR or DEX" save on both options                              |
+| 2   | ~~Grappling, Shove~~ (fixed #973)           | The save is labelled STR only; 2024 lets the target pick STR or DEX   | engine      | "STR or DEX" save on both options                              |
 | 3   | Aura (Aura of Protection)                   | Only the paladin gets the save bonus; allies in the aura get nothing  | engine      | An "in the aura" state on the ally adding the source's CHA mod |
 | 4   | Per Day (monster N/Day, Recharge)           | `spendMonsterUse` exists, nothing calls it                            | (no screen) | Spend/restore on the DM monster card                           |
 | 5   | ~~Travel Pace~~ (fixed #974)                | The effect text is 2014's (−5 passive, "move stealthily")             | engine      | 2024: Fast Disadvantage on Perception/Survival, Slow Advantage |
@@ -88,7 +88,7 @@ Jumping (feet not charged automatically); Experience Points (no DM award at figh
 | Flying, Hover                                 | modeled    | `play/flight.ts` (partial: fall cue at Speed 0); `fly-hover.test.ts`                   |
 | Frightened                                    | modeled    | `condition-effects.ts` (line of sight); `conformance/09-conditions.test.ts`            |
 | Grappled                                      | modeled    | `condition-effects.ts`, `combat-effects.ts`; `incapacitation-sweep.test.ts`            |
-| Grappling                                     | modeled    | `compute.ts` DC, `play/escape-grapple.ts` (gap #2: the save); `escape-grapple.test.ts` |
+| Grappling                                     | modeled    | `compute.ts` DC, `play/escape-grapple.ts` (save: STR or DEX); `escape-grapple.test.ts` |
 | Hazard                                        | gap        | Falling only reaches a screen: #6, #9, #12                                             |
 | Healing                                       | modeled    | `play/vitals.ts`; `combat-hp.test.ts`                                                  |
 | Heavily, Lightly Obscured                     | modeled    | `light-states.ts` (partial: fog, foliage); `light-states.test.ts`                      |
@@ -128,7 +128,7 @@ Jumping (feet not charged automatically); Experience Points (no DM award at figh
 | Saving Throw                                  | modeled    | `compute.ts`, `saves-checks-view.ts`; `d20-test.test.ts`                               |
 | Shape-Shifting                                | modeled    | `play/forms.ts`, `polymorph.ts`; `conformance/03-forms.test.ts`                        |
 | Short Rest                                    | modeled    | `play/rests.ts`; `short-rest-healing.test.ts`                                          |
-| Shove                                         | modeled    | `smart-tracker.ts` base-shove (gap #2: the save); `conformance/06-...test.ts`          |
+| Shove                                         | modeled    | `smart-tracker.ts` base-shove (save: STR or DEX); `conformance/06-...test.ts`          |
 | Simultaneous Effects                          | modeled    | The turn's owner orders; `conformance/01-stacking.test.ts`                             |
 | Size                                          | modeled    | Carrying, Enlarge/Reduce; space is the table's; `carry-as-larger-size.test.ts`         |
 | Speed                                         | modeled    | `rider-speed-loss.ts`, `compute.ts`; `speed-breakdown.test.ts`                         |
