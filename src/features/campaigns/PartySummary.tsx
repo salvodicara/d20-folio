@@ -14,16 +14,9 @@ import { useLocale } from "@/hooks/useLocale";
 import { cn, localeDistance } from "@/lib/utils";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import {
-  useMemberCharacterDocs,
-  type MemberCharacterRef,
-} from "@/features/campaigns/useMemberCharacterDocs";
-import { derivePartyMemberStats } from "@/features/campaigns/party-stats";
-import {
-  partySummary,
-  type PartySummaryMember,
-  type SummaryColumn,
-} from "@/features/campaigns/party-summary";
+import { useMemberCharacterDocs } from "@/features/campaigns/useMemberCharacterDocs";
+import { type SummaryColumn } from "@/features/campaigns/party-summary";
+import { partyMemberRefs, partySummaryView } from "@/domains/campaign/party-summary-view";
 
 const signed = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
 
@@ -32,32 +25,12 @@ export function PartySummary() {
   const { language: locale } = useLocale();
   const campaign = useCampaignStore((s) => s.campaign);
 
-  const refs = useMemo<MemberCharacterRef[]>(() => {
-    if (!campaign) return [];
-    return Object.entries(campaign.memberDetails).flatMap(([uid, m]) =>
-      m.characterId ? [{ uid, characterId: m.characterId }] : []
-    );
-  }, [campaign]);
+  const refs = useMemo(() => partyMemberRefs(campaign), [campaign]);
   const docs = useMemberCharacterDocs(refs);
-
-  const members = useMemo<PartySummaryMember[]>(
-    () =>
-      refs.flatMap(({ uid }) => {
-        const state = docs[uid];
-        if (state?.status !== "ready") return [];
-        const snapshot = campaign?.memberDetails[uid]?.character?.name;
-        return [
-          {
-            uid,
-            name: snapshot?.trim() || state.doc.character.name,
-            stats: derivePartyMemberStats(state.doc),
-          },
-        ];
-      }),
-    [refs, docs, campaign]
+  const { rows, best, loading } = useMemo(
+    () => partySummaryView(campaign, docs),
+    [campaign, docs]
   );
-  const { rows, best } = useMemo(() => partySummary(members), [members]);
-  const loading = refs.length - members.length;
 
   const cell = (uid: string, column: SummaryColumn, value: string | number) => (
     <td

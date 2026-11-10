@@ -43,6 +43,31 @@ async function endEncounter(page: Page): Promise<boolean> {
   return true;
 }
 
+/**
+ * The DM rolls each hero still missing initiative. A hero who rolled on their own sheet
+ * brings that roll a moment after the cards appear, and its «Roll initiative» button
+ * goes: so wait for the cards to settle, and never wait on a button that went.
+ */
+async function rollEachHero(dm: Page): Promise<void> {
+  await expect(
+    dm.getByRole("button", { name: /^Begin (turns|with)/ }).first()
+  ).toBeVisible();
+  await dm.waitForTimeout(1_500);
+  for (let i = 0; i < 4; i++) {
+    const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
+    if (!(await roll.isVisible())) break;
+    const opened = await roll.click({ timeout: 3_000 }).then(
+      () => true,
+      () => false
+    );
+    if (!opened) continue;
+    // A committed roll keeps its field on the card: the one just opened has focus.
+    const input = dm.locator("input.init-edit-input:focus");
+    await input.fill(String(15 - i));
+    await input.press("Enter");
+  }
+}
+
 /** The HP chip of a hero's card in the encounter ("24 of 24 hit points: …"). */
 const hpChip = (page: Page, uid: string) =>
   page
@@ -65,14 +90,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     await openLiveTab(dm);
     await endEncounter(dm);
     await dm.getByRole("button", { name: "Run encounter" }).click();
-    for (let i = 0; i < 4; i++) {
-      const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
-      if (!(await roll.isVisible().catch(() => false))) break;
-      await roll.click();
-      const input = dm.getByRole("textbox", { name: /Your d20 roll for/ });
-      await input.fill(String(15 - i));
-      await input.press("Enter");
-    }
+    await rollEachHero(dm);
     await dm
       .getByRole("button", { name: /^Begin (turns|with)/ })
       .first()

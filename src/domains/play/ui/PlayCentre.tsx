@@ -7,6 +7,7 @@
  */
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
+import { rollInitiativeFromSheet } from "@/domains/play/sheet-initiative-roll";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
@@ -682,10 +683,15 @@ function TurnStrip({
           bonus={rollOffer.bonus}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>
-            move(
-              moves.roll(campaign.id, uid, d20, rollOffer.bonuses),
-              t("fight.rollDone", { total: d20 + rollOffer.bonus })
-            )
+            rollInitiativeFromSheet({
+              send: () =>
+                move(
+                  moves.roll(campaign.id, uid, d20, rollOffer.bonuses),
+                  t("fight.rollDone", { total: d20 + rollOffer.bonus })
+                ),
+              t,
+              locale,
+            })
           }
         />
       )}

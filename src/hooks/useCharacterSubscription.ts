@@ -255,7 +255,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           CombatState
         >();
         const devWriter = createCombatStateWriter({
-          send: (state) => writeCombatState(uid, id, state),
+          send: (state, base) => writeCombatState(uid, id, state, base),
           reconciler: devReconciler,
           onRejected: () => publish(),
         });
@@ -445,7 +445,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // At most one write per change (src/lib/combat-state-writer.ts): the asks of one
     // command coalesce, and a state the server holds or is about to hold is not resent.
     const writer = createCombatStateWriter({
-      send: (state) => writeCombatState(uid, characterId, state),
+      send: (state, base) => writeCombatState(uid, characterId, state, base),
       reconciler,
       onRejected: (err) => {
         publishResolvedPair();
@@ -565,6 +565,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         quarantine("Invalid character document");
         return;
       }
+      // The next edit is built on this play state (the snapshot, or the sheet's own
+      // unacknowledged write), so it is the base of that edit's write.
+      writer.shown(lastCombat);
       const current = useCharacterStore.getState().character;
       if (current) restoreLocalLog(current);
       setLoading(false);

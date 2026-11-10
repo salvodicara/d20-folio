@@ -18,6 +18,7 @@ import {
   fightSideOf,
   giveHelp,
   helpEffect,
+  vexIsTargeted,
   vexWriter,
 } from "@/features/character/center/outcome-offer";
 import { effectIdsConsumedByAttack, incomingAttackModes } from "@/lib/combat-effects";
@@ -73,6 +74,18 @@ describe("Vex", () => {
     ).toBeUndefined();
     vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
     expect(vexWriter({ id: "w", masteryRiders: [{ id: "vex" }] }, "c1")).toBeUndefined();
+  });
+});
+
+describe("Vex on the sheet or on the creature", () => {
+  it("in a fight on the v0.26.0 rules Vex is the creature's state; elsewhere the sheet's next attack", () => {
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+    expect(vexIsTargeted()).toBe(true);
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
+    expect(vexIsTargeted()).toBe(false);
+    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+    useCombatStatusStore.setState({ status: null });
+    expect(vexIsTargeted()).toBe(false);
   });
 });
 
