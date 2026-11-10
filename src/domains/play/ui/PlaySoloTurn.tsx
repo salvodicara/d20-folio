@@ -70,7 +70,7 @@ export function useSoloTurn(locale: Locale) {
           >
             {t("combat.endTurn")}
           </Button>
-          <Button kind="quiet" onClick={() => setConfirmEnd(true)}>
+          <Button kind="ghost" onClick={() => setConfirmEnd(true)}>
             {t("combat.endCombat")}
           </Button>
         </>
@@ -93,17 +93,19 @@ export function useSoloTurn(locale: Locale) {
     <>
       {prompts.map((m) => (
         <div key={m.activeKey} className="f-note f-save-due" data-c="res" role="group">
+          {/* the 2024 reason it ends (Rage: no attack and no forced save this turn) */}
           <p>
-            {t("combat.maintainedEndPrompt", {
-              name: grantSourceLabel(m.sourceId, locale),
-            })}
+            {t("play.solo.endingName", { name: grantSourceLabel(m.sourceId, locale) })}
+            {m.maintainedBy.includes("attack") && ` ${t("play.solo.endingWhyAttack")}`}
           </p>
           <div className="f-acts">
             <Button
               kind="primary"
               onClick={() => setPrompts((all) => all.filter((x) => x !== m))}
             >
-              {t("combat.maintainedKeepAction")}
+              {m.maintainedBy.includes("bonus-extend")
+                ? t("play.solo.extendBonus")
+                : t("combat.maintainedKeepAction")}
             </Button>
             <Button
               kind="ghost"
@@ -112,7 +114,7 @@ export function useSoloTurn(locale: Locale) {
                 setPrompts((all) => all.filter((x) => x !== m));
               }}
             >
-              {t("combat.maintainedEndAction")}
+              {t("play.solo.letEnd")}
             </Button>
           </div>
         </div>
