@@ -131,8 +131,15 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   await test.step("a player rolls initiative (and starts the fight if the DM could not)", async () => {
     await openFightTab(bard);
     const roll = bard.getByRole("button", { name: "Roll initiative" });
-    if (await roll.isVisible()) {
-      await roll.click();
+    // The DM's «Roll for the missing» may roll for Catalion first: the button then
+    // goes away between the look and the click, and there is nothing left to roll.
+    const opened =
+      (await roll.isVisible()) &&
+      (await roll.click({ timeout: 5_000 }).then(
+        () => true,
+        () => false
+      ));
+    if (opened) {
       const dialog = bard.locator("dialog[open]");
       await dialog
         .getByRole("textbox")
