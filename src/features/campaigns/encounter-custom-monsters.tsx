@@ -36,18 +36,24 @@ import { useConfirmStore } from "@/stores/confirmStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
-import { compressImage, uploadMonsterPortrait } from "@/lib/storage";
+import { compressImage } from "@/lib/storage";
 import { readFileAsDataUrl } from "@/lib/image-crop";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
-import { matchesSearch } from "@/lib/search";
 import { xpForCr } from "@/lib/monster";
 import { fmtXp, formatCr } from "@/lib/utils";
 import { useLocale } from "@/hooks/useLocale";
-import type { LibraryEntry } from "@/lib/library";
 import type { CustomMonster } from "@/types/campaign";
 import type { PortraitCrop } from "@/types/character";
 import { AddMonsterForm } from "./party-encounter";
 import { customMonsterToInput } from "./encounter-monster-input";
+import {
+  customMonsterMeta,
+  customMonsterRows,
+  deleteCustomMonster,
+  isMonsterEntry,
+  saveCustomMonster,
+  type MonsterEntry,
+} from "@/domains/combat/custom-monsters";
 import type { MonsterInput } from "./encounter";
 
 // The portrait editor pulls the crop UI (react-easy-crop); load it only when a saved
@@ -176,9 +182,6 @@ function DraftMonsterPortrait({
 }
 
 /** A library entry known to carry a custom monster. */
-type MonsterEntry = LibraryEntry & { kind: "monster"; item: CustomMonster };
-
-const isMonsterEntry = (e: LibraryEntry): e is MonsterEntry => e.kind === "monster";
 
 export function EncounterCustomMonsters({
   onAdd,
@@ -189,9 +192,7 @@ export function EncounterCustomMonsters({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const entries = useLibraryStore((s) => s.entries);
-  const saveToLibrary = useLibraryStore((s) => s.saveToLibrary);
   const updateEntry = useLibraryStore((s) => s.updateEntry);
-  const removeFromLibrary = useLibraryStore((s) => s.removeFromLibrary);
   const showToast = useToastStore((s) => s.showToast);
   const uid = useAuthStore((s) => s.user?.uid) ?? "dev";
 
@@ -204,10 +205,10 @@ export function EncounterCustomMonsters({
   const [draftPortrait, setDraftPortrait] = useState<DraftPortrait | null>(null);
 
   const mine = useMemo(() => entries.filter(isMonsterEntry), [entries]);
-  const rows = useMemo(() => {
-    if (!search.trim()) return mine;
-    return mine.filter((e) => matchesSearch(search, e.item.name));
-  }, [mine, search]);
+  const rows = useMemo(
+    () => customMonsterRows(entries, search, t).map((row) => row.entry),
+    [entries, search, t]
+  );
   // Read the open detail from the LIVE library, never a captured row. Portrait edits
   // mutate the entry in place; a stale snapshot used to hide the new art and then add
   // the portrait-less template to the encounter.
@@ -216,46 +217,21 @@ export function EncounterCustomMonsters({
     : null;
 
   /** The one-line reading under the name: type · CR · AC/HP. */
-  function meta(m: CustomMonster): string {
-    return [
-      m.creatureType ? t(`srd.creatureType_${m.creatureType}`) : undefined,
-      m.cr ? t("polymorph.crShort", { cr: formatCr(Number(m.cr)) }) : undefined,
-      `${t("character.armorClassShort")} ${m.ac}`,
-      `${m.maxHp} ${t("character.hp")}`,
-    ]
-      .filter(Boolean)
-      .join(" · ");
-  }
+  const meta = (m: CustomMonster): string => customMonsterMeta(m, t);
 
   function commitCreate(
     template: CustomMonster,
     addCount: number,
     initiative: number | null
   ): void {
-    const { outcome, id } = saveToLibrary({ kind: "monster", item: template });
-    if (outcome === "full") {
-      showToast({ message: t("custom.libraryFull"), duration: 4000 });
-      return;
-    }
+    const portrait = draftPortrait;
+    const id = saveCustomMonster(template, portrait, uid, t);
     if (!id) return;
     setCount(addCount);
     setPendingInitiative(initiative);
     setViewingId(id);
     setCreating(false);
-    const portrait = draftPortrait;
     setDraftPortrait(null);
-    if (portrait) {
-      void uploadMonsterPortrait(uid, id, portrait.blob)
-        .then((portraitUrl) =>
-          useLibraryStore.getState().setEntryPortrait(id, {
-            portraitUrl,
-            portraitCrop: portrait.crop,
-          })
-        )
-        .catch(() =>
-          showToast({ message: t("portrait.crop.saveError"), duration: 5000 })
-        );
-    }
   }
 
   async function handleDelete(entry: MonsterEntry): Promise<void> {
@@ -266,7 +242,7 @@ export function EncounterCustomMonsters({
       confirmLabel: t("common.delete"),
       tone: "danger",
     });
-    if (ok) removeFromLibrary(entry.id);
+    if (ok) deleteCustomMonster(entry.id);
   }
 
   // CREATE / EDIT — one shared form with a Back bar whenever a prior surface exists.
