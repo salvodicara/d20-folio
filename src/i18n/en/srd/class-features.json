@@ -808,6 +808,12 @@
     "description": "You can channel divine energy to fuel magical effects. You start with Divine Sense as a Channel Divinity option. You have 2 uses, regain one on a Short Rest, and regain all on a Long Rest. You gain an additional use at level 11.",
     "name": "Channel Divinity"
   },
+  "paladin-channel-divinity.grants.0": {
+    "label": "Divine Sense"
+  },
+  "paladin-channel-divinity.mechanics.actions.0": {
+    "description": "Sense Celestials, Fiends and Undead for 10 minutes."
+  },
   "paladin-devotion-aura-of-devotion": {
     "description": "You and friendly creatures within 10 feet of you can't be charmed while you are conscious. At 18th level, the range increases to 30 feet.",
     "name": "Aura of Devotion"
