@@ -350,3 +350,14 @@ Collected 2026-11-02 from dnd2024.wikidot.com, the 2024 Sage Advice Compendium, 
 - **DM-adjudicated outcomes** — Influence attitudes, improvised actions, gear that fits in Wild Shape and disputed Hide results all need a "DM ruled: X" entry instead of a computed result. [GLOSS; SAC #38]
 - **Owlbear and VTT damage applied outside the app** — When the DM applies damage on the VTT, the sheet must reconcile HP and temp HP and still prompt a concentration save (the DC comes from damage before temp HP). [SAC #109; FVTT#5394]
 - **Lingering penalties across sessions** — Raise Dead's −4 decays per Long Rest, and Exhaustion and temp HP last across rests. Rests taken off-app need a "we long-rested" button that processes every timer. [WIKI spell:raise-dead; GLOSS]
+
+## 18. Rules glossary audit
+
+Found by the 2026-11-10 audit of the SRD 5.2.1 Rules Glossary against the engine ([../../RULES_GLOSSARY_AUDIT.md](../../RULES_GLOSSARY_AUDIT.md)).
+
+- **Grapple and Shove: the target picks the save** — The Unarmed Strike's Grapple and Shove options force a Strength or Dexterity saving throw, and the target chooses which. A card that names Strength alone states the wrong rule. [GLOSS Unarmed Strike]
+- **Sap gives the target Disadvantage** — A creature hit by a Sap weapon has Disadvantage on its next attack roll before the start of the attacker's next turn. Logging the mastery is not enough: the target's attack must show it. [GLOSS Weapon Mastery]
+- **Slow lowers the target's Speed** — A creature hit and damaged by a Slow weapon has its Speed reduced by 10 feet until the start of the attacker's next turn; several Slow hits never reduce it by more than 10 feet. [GLOSS Weapon Mastery]
+- **Travel pace effects are rolls, not penalties** — In 2024 a Fast pace gives Disadvantage on Wisdom (Perception or Survival) checks, a Normal pace Disadvantage on Dexterity (Stealth) checks, and a Slow pace Advantage on Wisdom (Perception or Survival) checks. The 2014 "−5 passive Perception" and "can move stealthily" are gone. [SRD 5.2.1 Travel Pace]
+- **Dodge ends on Incapacitated or Speed 0** — The Dodge action's benefit ends early if you have the Incapacitated condition or your Speed is 0. [GLOSS Dodge]
+- **Petrified means immune to Poisoned** — A Petrified creature has Immunity to the Poisoned condition, so a Poisoned it had or gets does nothing while it is Petrified. [GLOSS Petrified]
