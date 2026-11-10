@@ -1423,6 +1423,24 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Sacred Weapon to-hit: with the `paladin-devotion-sacred-weapon` toggle LIT, the Longsword attack row's to-hit gains +CHA mod (CHA 20 → +5, min +1) on the melee weapon (breakdown tip names '+5 CHA'); toggling off in the rail drops it back to base STR + PB. Proves the ability-derived weapon-attack-bonus reaches the rendered weapon row.",
   },
+  // Basic Poison — two vials and a dagger: the vial's Bonus Action card spends one
+  // and lights the coat; the dagger then carries +1d4 Poison until it deals damage.
+  // Visit `/characters/scn-basic-poison` (Play tab).
+  "basic-poison": {
+    name: "Vex, Basic Poison",
+    raceId: "human",
+    classId: "rogue",
+    level: 3,
+    background: "criminal",
+    abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 12, WIS: 12, CHA: 10 },
+    weapons: [
+      { srdId: "dagger", quantity: 1 },
+      { srdId: "shortbow", quantity: 1 },
+    ],
+    equipment: [{ srdId: "poison-basic", quantity: 2 }],
+    exercises:
+      "Basic Poison: the Basic Poison Bonus Action card spends a vial and lights the `item-poison-basic` coat; while lit, every weapon row shows +1d4 Poison, and the coat ends after 1 minute or the coated weapon's damage.",
+  },
   // Spell companions — a Paladin with Find Steed prepared fields the Otherworldly
   // Steed on the Companions rail (a non-Concentration summon shows while the spell
   // is prepared). Visit `/characters/scn-steed-paladin` (Play tab, Companions rail).

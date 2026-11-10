@@ -248,6 +248,7 @@ describe("resolveActions — dual-wield", () => {
       type: "bonus",
       activatesKey: "item-poison-basic",
       costEquipment: "poison-basic",
+      summary: { uses: { current: 1, total: 1 } },
     });
     expect(featureStateSource(char, "item-poison-basic")).toBeDefined();
     // The inventory badge reads the same Bonus Action.
@@ -265,7 +266,12 @@ describe("resolveActions — dual-wield", () => {
       session: { ...char.session, activeFeatures: ["item-poison-basic"] },
     };
     expect(dagger(lit)?.summary.extraDamage).toEqual([
-      expect.objectContaining({ dice: "1d4", damageType: "poison" }),
+      expect.objectContaining({
+        dice: "1d4",
+        damageType: "poison",
+        // Named by the item, never by its raw id.
+        sourceName: "Poison, Basic",
+      }),
     ]);
     // Lit with a vial still carried: the coat rides once, not twice.
     const litCarried: CharacterDoc = { ...lit, character: char.character };

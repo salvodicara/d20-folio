@@ -5846,6 +5846,7 @@ function resolveEquipmentActions(
     const total = tracker ? resolveTrackerTotal(tracker.total, character) : 0;
     const used = trackerId ? (character.session.trackers[trackerId]?.used ?? 0) : 0;
     for (const [index, action] of item.mechanics.actions.entries()) {
+      const copies = ref.quantity ?? 1;
       const summary: RawActionSummary = {
         effect: srdEffectText("equipment", item.id),
         ...(tracker
@@ -5857,7 +5858,10 @@ function resolveEquipmentActions(
                 unit: tracker.unit,
               },
             }
-          : {}),
+          : item.isConsumable
+            ? // The copies left (Basic Poison's vials), as a potion's card counts them.
+              { uses: { current: copies, total: copies } }
+            : {}),
       };
       applyActionEffectSummary(
         summary,
