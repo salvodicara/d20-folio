@@ -10,7 +10,8 @@ import { useTranslation } from "react-i18next";
 
 import { longRestChange } from "@/domains/play/long-rest-change";
 import { prepareList } from "@/domains/play/play-spells-view";
-import { restView, shortRestHeal, type RestLine } from "@/domains/play/rest-view";
+import { restView, type RestLine } from "@/domains/play/rest-view";
+import { shortRestHeal } from "@/lib/play/short-rest-healing";
 import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
 import { useRestCommit } from "@/features/character/use-rest-commit";
 import type { Locale } from "@/lib/locale";

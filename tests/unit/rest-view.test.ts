@@ -5,7 +5,8 @@
  * the engine's own preview (`restPreview`), so it never promises what the rest doesn't do.
  */
 import { describe, expect, it } from "vitest";
-import { restView, shortRestHeal } from "@/domains/play/rest-view";
+import { restView } from "@/domains/play/rest-view";
+import { shortRestHeal } from "@/lib/play/short-rest-healing";
 import { buildDevScenario } from "@/lib/dev-scenarios";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";

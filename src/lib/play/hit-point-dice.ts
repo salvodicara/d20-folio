@@ -8,7 +8,7 @@
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { totalLevel } from "@/lib/classes";
 import { abilityModifier, aggregateAbilityScores } from "@/lib/compute";
-import { hitDicePool } from "@/lib/play/hit-dice";
+import { hitDiceLeft } from "@/lib/play/hit-dice";
 import { proficiencyBonus } from "@/lib/proficiency";
 import type { CharacterDoc } from "@/types/character";
 
@@ -62,7 +62,6 @@ export function hitPointDiceContext(
   cast?: { slotLevel: number; spellLevel: number }
 ): HitPointDiceContext {
   const character = doc.character;
-  const total = hitDicePool(character).reduce((n, entry) => n + entry.count, 0);
   const scores = aggregateAbilityScores(
     character.abilityScores,
     aggregateCharacterGrants(character, doc.session),
@@ -70,7 +69,7 @@ export function hitPointDiceContext(
   );
   const ability = character.spellcasting?.ability;
   return {
-    available: Math.max(0, total - doc.session.hitDice.used),
+    available: hitDiceLeft(character, doc.session),
     ...(cast ?? {}),
     spellcastingMod: ability ? abilityModifier(scores[ability]) : 0,
     conMod: abilityModifier(scores.CON),

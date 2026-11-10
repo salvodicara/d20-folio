@@ -52,6 +52,8 @@ export interface FeatGateCtx {
   hasSpellcasting: boolean;
   /** Has the Fighting Style class feature (or already owns a style feat). */
   hasFightingStyleFeature: boolean;
+  /** The feats (and features) the character holds, by id; absent reads as none. */
+  featIds?: ReadonlyArray<string>;
   /**
    * D7 — this gate is the L19 EPIC-BOON grant (the class grants its Epic Boon at
    * level 19). 2024 RAW restricts level 19 to an Epic Boon feat — NOT a general
@@ -108,6 +110,11 @@ export function featGateCtx(
     armorTraining: [...armorTraining],
     hasSpellcasting,
     hasFightingStyleFeature,
+    featIds: [
+      ...character.features.flatMap((f) => ("custom" in f ? [] : [f.srdId])),
+      ...(character.bgFeat ? [character.bgFeat] : []),
+      ...(character.humanOriginFeat ? [character.humanOriginFeat] : []),
+    ],
     isEpicBoonGate,
   };
 }
@@ -182,5 +189,6 @@ export function featPrereqMet(
   if (p.armorTraining && !isArmorProficient(p.armorTraining, ctx.armorTraining)) {
     return false;
   }
+  if (p.feat && !(ctx.featIds ?? []).includes(p.feat)) return false;
   return true;
 }
