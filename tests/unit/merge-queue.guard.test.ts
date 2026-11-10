@@ -28,3 +28,29 @@ describe("the merge queue can run CI's checks", () => {
     expect(gated.filter((condition) => !condition.includes("merge_group"))).toEqual([]);
   });
 });
+
+/**
+ * scripts/merge-pr.sh waits for the checks main's ruleset requires, by name. A CI job
+ * renamed without the script would leave it waiting forever (or merging without it).
+ */
+describe("merge-pr.sh waits for CI's real check names", () => {
+  const script = readFileSync(join(__dirname, "..", "..", "scripts/merge-pr.sh"), "utf8");
+  const required = [
+    ...script
+      .slice(
+        script.indexOf("REQUIRED=("),
+        script.indexOf(")\n", script.indexOf("REQUIRED=("))
+      )
+      .matchAll(/"([^"]+)"/g),
+  ].map((m) => m[1] ?? "");
+  const jobNames = [...CI.matchAll(/^ {4}name: (.+)$/gm)].map((m) => m[1] ?? "");
+  const expand = (name: string) =>
+    name.includes("${{ matrix.shard }}")
+      ? [1, 2].map((n) => name.replace("${{ matrix.shard }}", String(n)))
+      : [name];
+
+  it("each required check is a CI job, and every CI job is required", () => {
+    expect(required.length).toBeGreaterThan(0);
+    expect([...required].sort()).toEqual(jobNames.flatMap(expand).sort());
+  });
+});
