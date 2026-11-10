@@ -10,9 +10,10 @@ import {
   resolveAttackDamageRiders,
 } from "@/lib/smart-tracker";
 import { SRD_WEAPONS } from "@/data/weapons";
+import { featureStateSource } from "@/lib/play/states";
 import { getEquipment } from "@/data/equipment";
 import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
-import { consumableActionSlot } from "@/lib/srd-resolve";
+import { consumableActionSlot, resolveItemConsumable } from "@/lib/srd-resolve";
 import { combatVerdict } from "@/features/character/center/tabs/combat-card-helpers";
 import { spellInstanceCount } from "@/lib/utils";
 import { concentrationValue } from "@/lib/concentration";
@@ -230,6 +231,47 @@ describe("resolveActions — dual-wield", () => {
   // (= the attack ability modifier) resolve onto the mastery chips — the app
   // has the numbers, so the player never computes them (SRD "Mastery
   // Properties — Topple / Graze").
+  // Basic Poison (SRD 5.2.1): a Bonus Action coats a weapon; its Piercing or
+  // Slashing hits add 1d4 Poison for 1 minute or until the damage is dealt. It
+  // reuses the coat seam of the Poisoner's Brew Poison: an item action lights the
+  // state, a vial is spent, and the lit state rides the weapons even once the last
+  // vial is gone.
+  it("Basic Poison: a Bonus Action spends a vial and lights the coat; the coat adds 1d4 Poison", () => {
+    const char = makeChar({
+      weapons: [{ srdId: "dagger", quantity: 1 }],
+      equipment: [{ srdId: "poison-basic", quantity: 1 }],
+    });
+    const coat = localizeActions(char, "en").find((a) =>
+      a.id.startsWith("equipment-action-poison-basic")
+    );
+    expect(coat).toMatchObject({
+      type: "bonus",
+      activatesKey: "item-poison-basic",
+      costEquipment: "poison-basic",
+    });
+    expect(featureStateSource(char, "item-poison-basic")).toBeDefined();
+    // The inventory badge reads the same Bonus Action.
+    expect(
+      consumableActionSlot(resolveItemConsumable({ srdId: "poison-basic", quantity: 1 }))
+    ).toBe("bonus");
+    const dagger = (doc: CharacterDoc) =>
+      localizeActions(doc, "en").find((a) => a.id === "weapon-dagger");
+    // Unlit: no Poison on the dagger.
+    expect(dagger(char)?.summary.extraDamage ?? []).toEqual([]);
+    // Lit, the vial spent: the dagger carries 1d4 Poison.
+    const lit: CharacterDoc = {
+      ...char,
+      character: { ...char.character, equipment: [] },
+      session: { ...char.session, activeFeatures: ["item-poison-basic"] },
+    };
+    expect(dagger(lit)?.summary.extraDamage).toEqual([
+      expect.objectContaining({ dice: "1d4", damageType: "poison" }),
+    ]);
+    // Lit with a vial still carried: the coat rides once, not twice.
+    const litCarried: CharacterDoc = { ...lit, character: char.character };
+    expect(dagger(litCarried)?.summary.extraDamage).toHaveLength(1);
+  });
+
   it("RA-13 — Topple/Graze chips carry the live resolved numbers", () => {
     const char = makeChar({
       weapons: [

@@ -34,6 +34,7 @@ import { HELP_ACTION_ID } from "@/lib/play/help";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
   POTION_TIMER_PREFIX,
+  spentGearStateSources,
   potionDurationRounds,
   potionTimerKey,
   resolvePotionStateSources,
@@ -5872,8 +5873,10 @@ function resolveEquipmentActions(
         name: srdText("equipment", item.id, "name"),
         description: srdText("equipment", item.id, "description"),
         type: action.type,
-        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
-        ...actionTurnConstraints(action),
+        // The state the item's action lights (Basic Poison's coat), as a feature's.
+        ...featureActionRowFacts(action, item.id, featureActivation(item.grants)),
+        // A consumable with no use pool of its own spends one copy per use.
+        ...(!tracker && item.isConsumable ? { costEquipment: item.id } : {}),
         source: "feature",
         spellLevel: null,
         concentration: false,
@@ -7769,6 +7772,12 @@ function resolveWeaponActions(
       // only while the spell's toggle is lit (auto-lit on cast, retracts on
       // concentration drop). Cast-time damage stays on the spell's own card.
       ...resolveGrantSourcesForSpells(charData.spells),
+      // An item's lit state carries weapon riders too (Basic Poison's coat): the
+      // carried item's, or the lit key's once the last copy is spent.
+      ...resolveGrantSourcesForEquipment(charData.equipment).filter(
+        (source) => source.ref?.kind === "equipment"
+      ),
+      ...spentGearStateSources(sessionActiveKeys(character.session), charData.equipment),
     ],
     sessionActiveKeys(character.session),
     // Bundle-gated weapon riders (Hunter Colossus Slayer) only apply once the
