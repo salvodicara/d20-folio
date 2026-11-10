@@ -22,8 +22,12 @@ import {
   addRosterCombatant,
   parseEncounterState,
   removeCombatant,
+  reorderCombatant,
+  setHidden,
   setInitiative,
   setMonsterCondition,
+  setMonsterSide,
+  setRevealed,
   type EncounterPcSeed,
   type MonsterInput,
   type RosterCombatantInput,
@@ -453,6 +457,75 @@ export function planMonsterInitiative(
     patch: { encounter: setInitiative(fight, input.monsterId, input.value) },
     previous: monster.initiative,
   };
+}
+
+/**
+ * The DM hides a combatant from the players (an ambush) or shows it again. Null for
+ * anyone but the DM, with no fight running, or when nothing changes; the undo is the
+ * opposite plan.
+ */
+export function planCombatantHidden(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; id: string; hidden: boolean }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const combatant = fight.combatants.find((c) => c.id === input.id);
+  if (!combatant || (combatant.hidden === true) === input.hidden) return null;
+  return { encounter: setHidden(fight, input.id, input.hidden) };
+}
+
+/**
+ * The DM shows the players a monster's exact Hit Points (or the concealed band again).
+ * Only a monster: a hero always sees its own. The undo is the opposite plan.
+ */
+export function planMonsterRevealed(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string; revealed: boolean }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster" || (monster.revealed === true) === input.revealed)
+    return null;
+  return { encounter: setRevealed(fight, input.monsterId, input.revealed) };
+}
+
+/**
+ * The DM switches a creature between enemy and ally (never inferred from its type),
+ * handing back the side it had for the undo.
+ */
+export function planMonsterSide(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string; side: "ally" | "enemy" }
+): { patch: CombatPatch; previous: "ally" | "enemy" } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  const previous = monster.side === "ally" ? "ally" : "enemy";
+  if (previous === input.side) return null;
+  return {
+    patch: { encounter: setMonsterSide(fight, input.monsterId, input.side) },
+    previous,
+  };
+}
+
+/**
+ * The DM moves a combatant in the turn order, before `beforeId` (null: to the end).
+ * Whose turn it is never changes. Hands back who followed it, so the undo puts it back.
+ */
+export function planReorder(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; id: string; beforeId: string | null }
+): { patch: CombatPatch; previousBefore: string | null } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const order = fight.order ?? [];
+  const at = order.indexOf(input.id);
+  const next = reorderCombatant(fight, input.id, input.beforeId);
+  if (at < 0 || next === fight) return null;
+  return { patch: { encounter: next }, previousBefore: order[at + 1] ?? null };
 }
 
 /**

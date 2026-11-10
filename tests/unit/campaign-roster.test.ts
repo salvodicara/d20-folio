@@ -17,6 +17,7 @@ const fs = vi.hoisted(() => ({
   collection: vi.fn((...path: unknown[]) => ({ path: path.slice(1).join("/") })),
   doc: vi.fn((...path: unknown[]) => ({ path: path.slice(1).join("/") })),
   setDoc: vi.fn(() => Promise.resolve()),
+  updateDoc: vi.fn(() => Promise.resolve()),
   deleteDoc: vi.fn(() => Promise.resolve()),
   onSnapshot: vi.fn(
     (
@@ -43,6 +44,7 @@ vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }))
 
 import {
   readRoster,
+  writeRosterHp,
   subscribeDmRoster,
   subscribeRoster,
   writeDmRosterEntry,
@@ -107,6 +109,15 @@ describe("the roster documents", () => {
     });
     rules.v26 = false;
     expect(await readRoster("c1")).toEqual({});
+  });
+
+  it("the end-of-fight write-back changes only the Hit Points, never the whole entry", async () => {
+    expect(await writeRosterHp("c1", "sildar", { current: 9, max: 58 })).toBe(true);
+    expect(fs.updateDoc).toHaveBeenCalledWith(
+      { path: "campaigns/c1/roster/sildar" },
+      { hp: { current: 9, max: 58 } }
+    );
+    expect(fs.setDoc).not.toHaveBeenCalled();
   });
 
   it("the DM's side is read through its parser", () => {
