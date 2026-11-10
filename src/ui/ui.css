@@ -2852,14 +2852,16 @@
     display: none;
   }
   /* the states stay chips in a row, not full-width pills */
-  .fui .f-sheet .f-char-id > .f-chips {
+  .fui .f-sheet .f-char-id > .f-char-chips {
     grid-area: chips;
+    margin-top: 12px;
+  }
+  .fui .f-sheet .f-char-chips > .f-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
   }
-  .fui .f-sheet .f-char-id > .f-chips > .f-chip {
+  .fui .f-sheet .f-char-chips .f-chip {
     border-radius: var(--r-pill);
   }
   .fui .f-sheet .f-char-hp-open {
