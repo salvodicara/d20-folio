@@ -3,15 +3,14 @@
  * the engine's own preview (`restPreview`), so they never promise what the rest doesn't
  * do: the Hit Point Dice a Short Rest can spend, and what either rest gives back or
  * ends, named for the table. The heal is the player's entered roll plus Constitution
- * (golden rule 21: the app never rolls for them), through `shortRestHealing`.
+ * (golden rule 21: the app never rolls for them), through `shortRestHeal`.
  */
 import { canCharacterRest, isCharacterAlive } from "@/lib/character-status";
 import type { Locale } from "@/lib/locale";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
-import { hitDicePool, hitDiceTotalRange, type HitDieSize } from "@/lib/play/hit-dice";
+import { hitDicePool, type HitDieSize } from "@/lib/play/hit-dice";
 import { longRestCharacter } from "@/lib/play/rests";
 import { restPreview, type RestKind } from "@/lib/play/rest-preview";
-import { shortRestHealing } from "@/lib/play/short-rest-healing";
 import { deriveStatuses } from "@/lib/status";
 import { grantSourceLabel, localizeTrackers } from "@/lib/views/tracker-view";
 import type { CharacterDoc } from "@/types/character";
@@ -89,24 +88,4 @@ export function restView(doc: CharacterDoc, kind: RestKind, locale: Locale): Res
         ? "zero-hp"
         : "dead",
   };
-}
-
-/** A Short Rest's heal for `count` dice and the roll the player typed, or null while
- *  the roll is not one those dice can make. No dice heal nothing and need no roll. */
-export function shortRestHeal(
-  doc: CharacterDoc,
-  count: number,
-  typed: string
-): { heal: number | null; valid: boolean } {
-  if (count <= 0) return { heal: 0, valid: true };
-  const roll = Number(typed.trim());
-  const range = hitDiceTotalRange(hitDicePool(doc.character), count);
-  const valid =
-    typed.trim() !== "" &&
-    Number.isInteger(roll) &&
-    roll >= range.min &&
-    roll <= range.max;
-  return valid
-    ? { heal: shortRestHealing(doc, count, roll), valid }
-    : { heal: null, valid };
 }
