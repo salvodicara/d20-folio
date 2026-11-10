@@ -20,7 +20,7 @@ describe("18. Rules glossary audit", () => {
       category: 18,
       case: "Grapple and Shove: the target picks the save",
       source: "GLOSS Unarmed Strike",
-      status: "M21",
+      status: "works",
     },
     () => {
       for (const id of ["base-grapple", "base-shove"]) {
