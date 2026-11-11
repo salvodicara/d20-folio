@@ -6,6 +6,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { visibleWithin } from "./visible-within";
 
 test.describe("Character Creation Wizard", () => {
   test.beforeEach(async ({ page }) => {
@@ -22,33 +23,33 @@ test.describe("Character Creation Wizard", () => {
   test("Quick Start: can fill in character name", async ({ page }) => {
     // Look for Quick Start option
     const quickStart = page.getByRole("button", { name: /quick start/i }).first();
-    if (await quickStart.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(quickStart, 2000)) {
       await quickStart.click();
     }
 
     // Name field should be available
     const nameInput = page.getByPlaceholder(/name/i).or(page.getByLabel(/name/i)).first();
-    if (await nameInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(nameInput, 2000)) {
       await nameInput.fill("Test Hero");
     }
   });
 
   test("Quick Start: can select a class", async ({ page }) => {
     const quickStart = page.getByRole("button", { name: /quick start/i }).first();
-    if (await quickStart.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(quickStart, 2000)) {
       await quickStart.click();
     }
 
     // Look for class selection grid or dropdown
     const fighterOption = page.getByText(/Fighter/i).first();
-    if (await fighterOption.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(fighterOption, 2000)) {
       await fighterOption.click();
     }
   });
 
   test("Quick Start: validates required fields", async ({ page }) => {
     const quickStart = page.getByRole("button", { name: /quick start/i }).first();
-    if (await quickStart.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(quickStart, 2000)) {
       await quickStart.click();
     }
 
@@ -57,7 +58,7 @@ test.describe("Character Creation Wizard", () => {
     const submitButton = page
       .getByRole("button", { name: /create|finish|done/i })
       .first();
-    if (await submitButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(submitButton, 2000)) {
       await expect(submitButton).toBeDisabled();
     }
   });
@@ -65,7 +66,7 @@ test.describe("Character Creation Wizard", () => {
   test("Guided mode: navigates through steps", async ({ page }) => {
     // Look for Guided option
     const guided = page.getByRole("button", { name: /guided/i }).first();
-    if (await guided.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(guided, 2000)) {
       await guided.click();
     }
 
@@ -74,12 +75,12 @@ test.describe("Character Creation Wizard", () => {
 
     // Select a class to proceed
     const bardOption = page.getByText(/Bard/i).first();
-    if (await bardOption.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(bardOption, 2000)) {
       await bardOption.click();
 
       // Should be able to go to next step
       const nextButton = page.getByRole("button", { name: /next/i }).first();
-      if (await nextButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (await visibleWithin(nextButton, 2000)) {
         await nextButton.click();
       }
     }
@@ -87,26 +88,26 @@ test.describe("Character Creation Wizard", () => {
 
   test("Guided mode: can go back between steps", async ({ page }) => {
     const guided = page.getByRole("button", { name: /guided/i }).first();
-    if (await guided.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(guided, 2000)) {
       await guided.click();
     }
 
     // Select class
     const bardOption = page.getByText(/Bard/i).first();
-    if (await bardOption.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(bardOption, 2000)) {
       await bardOption.click();
     }
 
     // Go next
     const nextButton = page.getByRole("button", { name: /next/i }).first();
-    if (await nextButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(nextButton, 2000)) {
       await nextButton.click();
 
       // Go back
       const backButton = page
         .getByRole("button", { name: /back|prev|indietro/i })
         .first();
-      if (await backButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (await visibleWithin(backButton, 2000)) {
         await backButton.click();
         // Should be back on a previous step — verify page didn't break
         await expect(page.locator("body")).toBeVisible();
