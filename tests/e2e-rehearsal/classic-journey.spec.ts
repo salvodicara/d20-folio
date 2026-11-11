@@ -10,11 +10,11 @@
  * the rest. The classic UI has no "roll for the missing" and no clock control: the DM
  * rolls each hero, and only a rest moves the clock.
  */
-import { execFileSync } from "node:child_process";
 import { expect, type Browser, type Page } from "@playwright/test";
 import {
   expectNoCrash,
   PLAYER_BARD,
+  reseedHero,
   rollEachHero,
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
@@ -30,24 +30,8 @@ const errors: string[][] = [];
  * on what the new-UI run did before it: `--project=classic` passes alone.
  */
 function reseedHeroes(): void {
-  for (const [user, uid, fixture] of [
-    [SANDBOX_USERS.catalion, PLAYER_BARD, "catalion-bard.json"],
-    [SANDBOX_USERS.mandorlino, "dev-player-mandorlino", "mandorlino-paladin.json"],
-  ] as const) {
-    execFileSync(
-      "node",
-      [
-        "--import",
-        "./scripts/alias-loader.mjs",
-        "scripts/rehearsal-set-character.ts",
-        uid,
-        user.characterId,
-        fixture,
-        "3",
-      ],
-      { stdio: "inherit" }
-    );
-  }
+  reseedHero(SANDBOX_USERS.catalion);
+  reseedHero(SANDBOX_USERS.mandorlino);
 }
 
 async function seat(browser: Browser, email?: string): Promise<Page> {
