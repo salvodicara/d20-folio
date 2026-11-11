@@ -75,7 +75,6 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
                   <ChosenResistance
                     key={slot.choiceKey}
                     slot={slot}
-                    locale={locale}
                     readonly={readonly}
                   />
                 ))}
@@ -98,6 +97,12 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
                 )
               )}
             </div>
+            {kind === "resistance" &&
+              slots.map((slot) => (
+                <p key={slot.choiceKey} className="f-help">
+                  {`${localizeText(slot.label, locale)}: ${t("character.choiceResistanceHint")}`}
+                </p>
+              ))}
           </div>
         );
       })}
@@ -119,11 +124,9 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
 /** A chosen resistance: its pick as a chip; pressed, its options open in place. */
 function ChosenResistance({
   slot,
-  locale,
   readonly,
 }: {
   slot: ChoiceResistanceSlot;
-  locale: Locale;
   readonly: boolean;
 }) {
   const { t } = useTranslation();
@@ -138,9 +141,6 @@ function ChosenResistance({
       </Chip>
       {open && (
         <div className="f-note" data-c="ini" role="group">
-          <p className="f-help">
-            {`${localizeText(slot.label, locale)}: ${t("character.choiceResistanceHint")}`}
-          </p>
           <div className="f-chips">
             {slot.options.map((d) => (
               <Chip
