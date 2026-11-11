@@ -11,7 +11,7 @@
  * rolls each hero, and only a rest moves the clock.
  */
 import { execFileSync } from "node:child_process";
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 import {
   expectNoCrash,
   PLAYER_BARD,
@@ -19,6 +19,7 @@ import {
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 
