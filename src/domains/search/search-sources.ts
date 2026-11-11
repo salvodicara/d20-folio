@@ -212,19 +212,19 @@ export function originEntries(locale: Locale): SearchEntry[] {
       "class",
       classTables.map((c) => c.id),
       localizeClassName,
-      t("palette.kindClass")
+      t("character.class")
     ),
     ...rows(
       "species",
       SRD_RACES.map((r) => r.id),
       localizeRaceName,
-      t("palette.kindSpecies")
+      t("character.species")
     ),
     ...rows(
       "background",
       SRD_BACKGROUNDS.map((b) => b.id),
       localizeBackgroundName,
-      t("palette.kindBackground")
+      t("character.background")
     ),
   ];
 }
