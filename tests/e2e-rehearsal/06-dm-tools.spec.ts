@@ -82,7 +82,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
       .soft(
         page
           .locator("[role=status]")
-          .filter({ hasText: /Condition added to Goblin/ })
+          .filter({ hasText: /Condition\sadded\sto\sGoblin/ })
           .first(),
         "the condition lands"
       )
