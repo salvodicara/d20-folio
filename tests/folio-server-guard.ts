@@ -37,11 +37,17 @@ export default async function guardFolioServers(): Promise<void> {
   if (!raw) throw new Error(`folio-server-guard: no servers recorded (${URLS_ENV}).`);
   const { portEnv, urls } = JSON.parse(raw) as { portEnv: string; urls: string[] };
   for (const url of urls) {
+    const port = new URL(url).port;
     const html = await fetch(url)
       .then((response) => response.text())
-      .catch(() => "");
+      .catch((error: unknown) => {
+        // Unreachable is not "another app": say why, so the fix is the right one.
+        const cause = (error as { cause?: { code?: string; message?: string } }).cause;
+        throw new Error(
+          `e2e: ${url} did not answer (${cause?.code ?? cause?.message ?? String(error)}).`
+        );
+      });
     if (!FOLIO_MARKER.test(html)) {
-      const port = new URL(url).port;
       throw new Error(
         `e2e: port ${port} is held by another app (${url} is not d20 Folio); set ${portEnv} to a free port.`
       );
