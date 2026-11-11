@@ -240,7 +240,7 @@ export function standUp(t: TFunction, locale: Locale): void {
 /** Solo: a fresh fight (round 1, economy re-armed, initiative cleared). */
 export function startCombat(): void {
   if (!turnModelView().canStartCombat) return;
-  useCombatStore.getState().endCombat();
+  useCombatStore.getState().startCombat();
 }
 
 /**

@@ -121,6 +121,8 @@ export const CONDITION_APPLICATION_SCHEMA: ExactSchema = objectSchema(
     lifetime: CONDITION_LIFETIME,
     lifetimes: recordSchema("string", CONDITION_LIFETIME),
     ends: arraySchema(CONDITION_END),
+    // What the creature also suffers while it holds the condition (Speed 0).
+    whileHeld: arraySchema(objectSchema({ kind: literalSchema("speed-zero") })),
   }
 );
 

@@ -32,6 +32,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { SURFACES, MOBILE, seedUI, seedLang, freezeMotion } from "./surfaces";
 import { waitForStableLayout, waitForQuiescentWidth } from "./ready";
+import { visibleWithin } from "./visible-within";
 
 /** Strict page-level horizontal overflow in px (0 or negative = none). */
 async function pageOverflow(page: Page): Promise<number> {
@@ -268,7 +269,7 @@ test("guided wizard never overflows the page horizontally at narrow widths", asy
   await page.goto("/characters/new", { waitUntil: "networkidle" });
   // Switch to the Guided mode that renders the multi-step rail.
   const guided = page.getByRole("button", { name: /guidato|guided/i }).first();
-  if (await guided.isVisible({ timeout: 5000 }).catch(() => false)) {
+  if (await visibleWithin(guided, 5000)) {
     await guided.click();
   }
   await waitForStableLayout(page);

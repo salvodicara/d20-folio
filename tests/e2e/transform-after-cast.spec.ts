@@ -8,6 +8,7 @@
  */
 import { test, expect, type Page } from "@playwright/test";
 import { DESKTOP, MOBILE, freezeMotion, seedLang, seedUI } from "./surfaces";
+import { visibleWithin } from "./visible-within";
 
 test.describe.configure({ timeout: 120_000 });
 
@@ -38,7 +39,7 @@ async function chooseBaseSlot(page: Page, level: number): Promise<void> {
   const slot = page.getByRole("button", {
     name: new RegExp(`Slot di livello ${level} \\(base\\)`),
   });
-  if (await slot.isVisible({ timeout: 2_000 }).catch(() => false)) await slot.click();
+  if (await visibleWithin(slot, 2_000)) await slot.click();
 }
 
 for (const size of ["desktop", "mobile"] as const) {

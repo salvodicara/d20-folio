@@ -13,6 +13,8 @@ export interface PlayInitiativeRow {
   kind: FightRow["kind"];
   initiative: number | null;
   name: string;
+  /** A character's portrait from the fight, when it has one (else its initial). */
+  portrait: string | null;
   count: number;
   mine: boolean;
   current: boolean;
@@ -42,6 +44,7 @@ export function playInitiativeRows(
       initiative: r.initiative,
       // A compact list: a character by first name, a creature in full.
       name: r.kind === "pc" ? (r.name.split(/\s+/)[0] ?? r.name) : r.name,
+      portrait: r.kind === "pc" && r.art && "url" in r.art ? r.art.url : null,
       count: r.count,
       mine,
       current: r.current,

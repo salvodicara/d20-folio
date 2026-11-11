@@ -770,7 +770,7 @@ export interface ActionSummary {
    * the live number instead of leaving the formula to memory. Locale-free;
    * consumed by `buildWeaponFacts` (both weapon surfaces read it identically).
    */
-  masteryDetail?: { toppleDc?: number; grazeDamage?: number };
+  masteryDetail?: { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string };
   /**
    * RA-14 — the TRACKED ammunition this ranged weapon fires: the SRD gear row's
    * stable id (arrows / crossbow-bolts / sling-bullets / blowgun-needles) + the
@@ -7695,12 +7695,24 @@ interface CastSpellIdentity {
 export function masteryNumbers(
   tokens: ReadonlyArray<string>,
   mod: number,
-  pb: number
-): { toppleDc?: number; grazeDamage?: number } {
+  pb: number,
+  /** The row's own damage parts; absent under a damage override (Cleave then has
+   *  no number: the player's formula hides which part is the modifier). */
+  damage?: { die: string; damageMod: number }
+): { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string } {
   const lower = tokens.map((tk) => tk.toLowerCase());
   return {
     ...(lower.includes("topple") ? { toppleDc: 8 + mod + pb } : {}),
     ...(lower.includes("graze") ? { grazeDamage: Math.max(0, mod) } : {}),
+    // Cleave: the weapon's damage without the ability modifier, unless negative.
+    ...(lower.includes("cleave") && damage
+      ? {
+          cleaveDamage: appendAbilityModToDice(
+            damage.die,
+            damage.damageMod - Math.max(0, mod)
+          ),
+        }
+      : {}),
   };
 }
 
@@ -8182,7 +8194,10 @@ function resolveWeaponActions(
     const masteryDetail = masteryNumbers(
       [...(ownedMastery ? [ownedMastery] : []), ...reachMasteries],
       mod,
-      pb
+      pb,
+      weaponRef.damageOverride != null && weaponRef.damageOverride !== ""
+        ? undefined
+        : { die: damageDie, damageMod }
     );
 
     // RA-14 — TRACKED ammunition: a ranged weapon DECLARES the gear id it fires

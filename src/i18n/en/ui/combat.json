@@ -380,6 +380,7 @@
     "attackScope_strDex": "on Strength and Dexterity attacks",
     "attackScope_sorcery": "on Sorcerer spell attacks",
     "damageIfHurt": "{{dice}} / {{hurt}} if hurt",
+    "attackScope_otherThanSource": "vs creatures other than its caster",
     "attackScope_melee": "on melee attacks",
     "attackScope_ranged": "on ranged attacks",
     "attackScope_thrown": "if thrown",
@@ -425,7 +426,8 @@
       "sap": "{{name}}: Disadvantage on the target's next attack",
       "slow": "{{name}}: −{{distance}} Speed",
       "vex": "{{name}}: Advantage on your next attack",
-      "cleave": "{{name}}: extra attack on an adjacent creature (1/turn)"
+      "cleave": "{{name}}: extra attack on an adjacent creature (1/turn)",
+      "cleaveDamage": "{{name}}: extra attack on an adjacent creature, {{damage}} damage (1/turn)"
     },
     "effectReview": {
       "rubric": "Effect review",

@@ -15,6 +15,7 @@ import {
 } from "@/lib/owed-class-picks";
 import {
   className,
+  fightingStyleOptions,
   invocationOptions,
   maneuverOptions,
   metamagicOptions,
@@ -128,6 +129,16 @@ export function owedClassPickRows(build: Build, locale: Locale): OwedClassPickRo
         searchPlaceholder: t("levelUp.searchWeapons"),
         options: weaponMasteryOptions(locale)
           .filter((vm) => !mastered.has(vm.id))
+          .map((vm) => fromLevelUp(vm)),
+      };
+    }
+    if (pick === "fightingStyles") {
+      return {
+        ...base,
+        title: t("levelUp.chooseFightingStyle"),
+        searchPlaceholder: t("levelUp.searchFightingStyles"),
+        options: fightingStyleOptions(build.features ?? [], "", locale, classId)
+          .filter((vm) => !vm.disabled)
           .map((vm) => fromLevelUp(vm)),
       };
     }

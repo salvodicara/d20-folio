@@ -947,6 +947,8 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
           hidden: false,
           memberUid: "mock-uid",
           characterId,
+          // the hero's face in the top-bar pill and the initiative list
+          portraitUrl: DEV_HERO_PORTRAIT,
         },
         {
           id: "monster-1",
