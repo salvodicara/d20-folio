@@ -25,6 +25,7 @@ import {
   type ActionCta,
   type ActionTurnState,
 } from "@/lib/views/action-cta-view";
+import { attacksPerActionForCharacter } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 
 /** A turn with nothing taken yet (outside a fight every action is open). */
@@ -64,8 +65,16 @@ export interface PlayActionRow {
   cta: ActionCta;
 }
 
+/** The note beside a group's heading (prototype .agroup__note): the attacks one Attack
+ *  action makes, a bonus action or reaction already spent this turn, the one reaction
+ *  a round. */
+export type ActionGroupNote =
+  | { kind: "attacks"; count: number }
+  | { kind: "spent" }
+  | { kind: "per-round" };
+
 export interface PlayActionsView {
-  groups: { group: ActionGroup; rows: PlayActionRow[] }[];
+  groups: { group: ActionGroup; rows: PlayActionRow[]; note?: ActionGroupNote }[];
   counts: ActionFilterCounts;
 }
 
@@ -125,8 +134,29 @@ export function playActionsView(
   return {
     groups: ORDER.flatMap((group) => {
       const inGroup = rows.filter((r) => r.group === group).map((r) => r.row);
-      return inGroup.length > 0 ? [{ group, rows: inGroup }] : [];
+      if (inGroup.length === 0) return [];
+      const note = groupNote(doc, group, inGroup, turn);
+      return [note ? { group, rows: inGroup, note } : { group, rows: inGroup }];
     }),
     counts: actionFilterCounts(facts),
   };
+}
+
+function groupNote(
+  doc: CharacterDoc,
+  group: ActionGroup,
+  rows: readonly PlayActionRow[],
+  turn: ActionTurnState
+): ActionGroupNote | undefined {
+  if (group === "actions" && rows.some((r) => r.attack))
+    return { kind: "attacks", count: attacksPerActionForCharacter(doc) };
+  if (
+    group === "bonus" &&
+    turn.budget.bonus > 0 &&
+    turn.selected.bonus.length >= turn.budget.bonus
+  )
+    return { kind: "spent" };
+  if (group === "reactions")
+    return turn.reactionUsed ? { kind: "spent" } : { kind: "per-round" };
+  return undefined;
 }

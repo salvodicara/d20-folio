@@ -110,3 +110,27 @@ describe("playInitiativeRows", () => {
     expect(last.map((r) => r.next)).toEqual([true, false, false, false]);
   });
 });
+
+describe("playInitiativeRows — the face on a row", () => {
+  it("a character's portrait from the fight rides on its row; art that is not a picture does not", () => {
+    const out = playInitiativeRows(
+      [
+        row({ ids: ["pc-a"], kind: "pc", name: "Lyra Voss", art: { url: "/p.webp" } }),
+        row({
+          ids: ["pc-b"],
+          kind: "pc",
+          name: "Brann",
+          art: { kind: "class", id: "bard" },
+        }),
+        row({
+          ids: ["m-1"],
+          kind: "monster",
+          name: "Goblin",
+          art: { kind: "monster", id: "goblin" },
+        }),
+      ],
+      "pc-a"
+    );
+    expect(out.map((r) => r.portrait)).toEqual(["/p.webp", null, null]);
+  });
+});

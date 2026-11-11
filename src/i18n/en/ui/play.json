@@ -15,7 +15,11 @@
       "limited": "Limited use"
     },
     "group": {
-      "bonus": "Bonus actions"
+      "bonus": "Bonus actions",
+      "attacks_one": "{{count}} attack per action",
+      "attacks_other": "{{count}} attacks per action",
+      "perRound": "One per round",
+      "spent": "used this turn"
     },
     "playbookTitle": "What you should do",
     "spellLevel": "Level {{level}}",

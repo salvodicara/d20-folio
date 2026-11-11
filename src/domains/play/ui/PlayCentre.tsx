@@ -245,7 +245,7 @@ function ActionsPane({
         ))}
       </Filters>
       <TableHead />
-      {actions.groups.map(({ group, rows }) => {
+      {actions.groups.map(({ group, rows, note }) => {
         const kept = rows.filter((r) => keep(group, r));
         if (kept.length === 0) return null;
         return (
@@ -255,6 +255,15 @@ function ActionsPane({
                 <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
               )}
               {t(GROUP_KEY[group])}
+              {note && (
+                <span className="f-act-gn">
+                  {note.kind === "attacks"
+                    ? t("play.group.attacks", { count: note.count })
+                    : note.kind === "spent"
+                      ? t("play.group.spent")
+                      : t("play.group.perRound")}
+                </span>
+              )}
             </h3>
             {kept.map((row) => (
               <ActionLine key={row.id} row={row} locale={locale} />
