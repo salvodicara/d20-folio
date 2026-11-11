@@ -135,6 +135,10 @@ jobs:
       # the fixture exports in plain Node.
       - name: Folio Core package
         run: pnpm core:build
+      # The core imports no private pack (the full text comparison runs in the
+      # composed job below, where the pack is present).
+      - name: Folio Core SRD boundary
+        run: pnpm core:boundary
       # The eager-bundle/precache ceilings guard reads dist/,
       # so it runs after the build, in this same job.
       - name: Bundle budget
@@ -166,6 +170,10 @@ jobs:
         run: pnpm exec vite build
       - name: Bundle budget (composed)
         run: pnpm test:budget
+      # The published core must carry none of the pack: built SRD-only, then read
+      # against the emitted pack's text and art (skill srd-boundary). Logs name files only.
+      - name: Folio Core SRD boundary (against the pack)
+        run: pnpm core:build && pnpm core:boundary --require-pack
 
   # The design rules of the new UI (tests/e2e/ui-*.spec.ts) on every pull request,
   # on Linux: text width and wrapping depend on the OS's font rendering, so a Mac-only
