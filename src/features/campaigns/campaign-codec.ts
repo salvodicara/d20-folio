@@ -4,7 +4,7 @@
  * so can a Node script (the v0.26 compatibility survey) on the Admin SDK's data.
  */
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
-import { parseEncounterState } from "@/features/campaigns/encounter";
+import { parseEncounterState } from "@/lib/play/encounter";
 import { conformCombatEffectOps } from "@/lib/combat-effects";
 import { nonEmptyString } from "@/lib/non-empty-string";
 import { conformCampaignClock } from "@/lib/play/campaign-clock";

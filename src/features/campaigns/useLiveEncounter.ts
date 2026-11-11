@@ -29,7 +29,7 @@ import {
 } from "@/features/campaigns/useMemberCharacterDocs";
 import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
 import { derivePcLive } from "@/features/campaigns/party-stats";
-import { encounterRollFor } from "@/features/campaigns/encounter";
+import { encounterRollFor } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import type { CombatState } from "@/types/combat-state";

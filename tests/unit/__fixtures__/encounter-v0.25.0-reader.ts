@@ -1,6 +1,6 @@
 /**
  * FROZEN copy of the encounter reader shipped in v0.25.0 (live 9bb9a60c):
- * `parseEncounterState` from src/features/campaigns/encounter.ts and the checks it uses,
+ * `parseEncounterState` from src/lib/play/encounter.ts and the checks it uses,
  * verbatim except for the exports. Never edit it to match today's code: it exists so a
  * test can prove what a client still running v0.25.0 does with a fight a newer one wrote.
  */

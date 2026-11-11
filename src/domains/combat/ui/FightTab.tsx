@@ -35,7 +35,7 @@ import { sessionNumbers } from "@/domains/chronicle/diary-view";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { missingRollers } from "@/features/campaigns/combat-lifecycle";
-import { encounterRollFor } from "@/features/campaigns/encounter";
+import { encounterRollFor } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
 import { useMemberCharacterDocs } from "@/features/campaigns/useMemberCharacterDocs";

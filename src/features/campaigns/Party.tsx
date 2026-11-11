@@ -99,8 +99,9 @@ import {
   setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
-} from "@/features/campaigns/encounter";
-import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
+} from "@/lib/play/encounter";
+import { mayStepTurn } from "@/lib/play/encounter-lifecycle";
+import { partyOrder } from "@/features/campaigns/party-order";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
   addReinforcement,
@@ -313,22 +314,9 @@ export function Party() {
   // conformCampaignMembers), so a present `m.character` is provably a non-empty-named
   // snapshot and a null one renders the quiet "no character attached" state.
   //
-  // OWNER-1 — a DETERMINISTIC, STABLE resting order. `Object.entries` alone iterates
-  // Firestore object-key order (non-deterministic, re-derived every render → the
-  // "random + reorders" the owner saw). Sort a COPY by CHARACTER NAME A–Z (owner's
-  // pick; a member with no hero sorts by their player name within the same list), with
-  // a `uid` tiebreak for a TOTAL order so it never churns render-to-render. (In combat
-  // the order is initiative high-to-low via `buildEncounterView`; this is the rest one.)
-  const members = [...Object.entries(campaign.memberDetails)].sort(
-    ([uidA, a], [uidB, b]) => {
-      const keyA = a.character?.name ?? a.displayName;
-      const keyB = b.character?.name ?? b.displayName;
-      return (
-        keyA.localeCompare(keyB, locale, { sensitivity: "base", numeric: true }) ||
-        uidA.localeCompare(uidB)
-      );
-    }
-  );
+  // OWNER-1 — the stable resting order (A–Z by character name), shared with the new
+  // Gruppo panel. In combat the order is initiative via `buildEncounterView`.
+  const members = partyOrder(campaign.memberDetails, locale);
   const hasAttached = members.some(([, m]) => m.characterId && m.character);
   // Captured here (after the guard) so the render closures need no non-null assertion.
   const campaignId = campaign.id;

@@ -1,4 +1,6 @@
-import { useEffect, useId, useRef } from "react";
+import { useId, useRef } from "react";
+
+import { useScrollMore } from "./scroll-more";
 
 /** A row of tabs; it scrolls sideways when it does not fit. */
 export function Tabs<T extends string>({
@@ -14,25 +16,7 @@ export function Tabs<T extends string>({
 }) {
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
-  // a row that scrolls fades at its right edge, so the cut tab reads as "more"
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const mark = () => {
-      el.dataset.more = String(
-        el.scrollWidth > el.clientWidth + 4 &&
-          el.scrollLeft + el.clientWidth < el.scrollWidth - 4
-      );
-    };
-    mark();
-    const ro = new ResizeObserver(mark);
-    ro.observe(el);
-    el.addEventListener("scroll", mark, { passive: true });
-    return () => {
-      ro.disconnect();
-      el.removeEventListener("scroll", mark);
-    };
-  }, []);
+  useScrollMore(ref);
   return (
     <div ref={ref} className="f-tabs" role="tablist" aria-label={label}>
       {items.map((t) => (

@@ -213,6 +213,7 @@ import { itemResourceSpend } from "@/lib/item-resource-commands";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";
 import { PaymentPickerModal } from "@/components/sheet/PaymentPickerModal";
+import { weaponPickStep, type WeaponPick } from "@/domains/play/weapon-pick-view";
 import {
   ArcaneRecoveryModal,
   type ArcaneRecoveryRequest,
@@ -521,6 +522,14 @@ export function TurnEconomyProvider({
   // declared `alternateCost`) opens this picker (the same `.cl-opts` recipe), then
   // commits the chosen payment immediately with undo. The engine
   // (`getActionCostOptions`) enumerates every payment; the player picks.
+  // «Su quale arma?» on the classic sheet: an action that binds one weapon (Basic
+  // Poison's coat, Brew Poison, Magic Weapon, Shillelagh) with two or more eligible
+  // weapons asks first; cancelling spends nothing.
+  const [weaponPickRequest, setWeaponPickRequest] = useState<{
+    action: ResolvedAction;
+    intent: ExecuteActionIntent | undefined;
+    picks: WeaponPick[];
+  } | null>(null);
   const [paymentRequest, setPaymentRequest] = useState<{
     characterId: string | undefined;
     execution: ActionExecution;
@@ -637,7 +646,8 @@ export function TurnEconomyProvider({
       character.session.initiative,
       characterStore.combatTurnEconomy,
       key,
-      locale
+      locale,
+      characterStore.combatSoloFightStarted
     );
     if (fresh) {
       // Switching characters finalizes the previous character's turn: clear the
@@ -659,6 +669,7 @@ export function TurnEconomyProvider({
       const turnChanged = durableTurnChanged(state, prev);
       if (
         state.round === prev.round &&
+        state.fightStarted === prev.fightStarted &&
         state.initiative === prev.initiative &&
         !turnChanged
       )
@@ -667,13 +678,21 @@ export function TurnEconomyProvider({
       if (!cs.character) return;
       // Round + current-turn economy share one write. The exact turn key fences the
       // snapshot from every later actor/round while keeping group↔sheet navigation stable.
-      if (state.round !== prev.round || turnChanged) {
+      if (
+        state.round !== prev.round ||
+        state.fightStarted !== prev.fightStarted ||
+        turnChanged
+      ) {
         const key = turnEconomyKey(
           useCombatStatusStore.getState().status,
           cs.character.id,
           state.round
         );
-        cs.persistCombatTurnState(state.round, snapshotTurnEconomy(state, key));
+        cs.persistCombatTurnState(
+          state.round,
+          snapshotTurnEconomy(state, key),
+          state.fightStarted
+        );
       }
       // Initiative: mirror onto the session (its in-memory home) + persist op-wise to the
       // subdoc (only when it actually changed, so a round-only step costs no init write).
@@ -1087,7 +1106,9 @@ export function TurnEconomyProvider({
       nameLoc: action.nameLoc,
       slot,
       ...(economyCategory ? { economyCategory } : {}),
-      ...(action.maintainsActiveKey
+      // Entering a maintained state is this turn's upkeep too: SRD 5.2.1 Rage lasts
+      // until the end of your NEXT turn, so the turn it starts never asks to keep it.
+      ...(action.maintainsActiveKey || action.activatesKey
         ? { triggerEvents: ["bonus-extend"] as const }
         : action.summary.attackBonus != null || action.summary.saveAbility != null
           ? { triggerEvents: ["attack"] as const }
@@ -2992,6 +3013,20 @@ export function TurnEconomyProvider({
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
+    // The classic sheet asks which weapon a binding names (a screen that draws its
+    // own prompts asks before calling, and passes the weapon).
+    const doc = useCharacterStore.getState().character;
+    if (renderPrompts && !intent?.weapon && doc) {
+      const step = weaponPickStep(doc, action, locale);
+      if (step.kind === "bind") {
+        executeAction(action, { ...intent, weapon: step.weapon });
+        return;
+      }
+      if (step.kind === "ask") {
+        setWeaponPickRequest({ action, intent, picks: step.picks });
+        return;
+      }
+    }
     const base = executionFor(action, intent?.ritual === true, inEncounter());
     if (!base) return;
     // The weapon the cast names, and whom its area spares, ride the execution down.
@@ -3439,6 +3474,36 @@ export function TurnEconomyProvider({
             request={paymentPickRequest}
             onConfirm={confirmPayment}
             onCancel={() => setPaymentRequest(null)}
+          />
+          <PaymentPickerModal
+            request={
+              weaponPickRequest && {
+                actionName: weaponPickRequest.action.name,
+                title: t("play.weapon.which"),
+                rows: weaponPickRequest.picks.map((pick, index) => ({
+                  index,
+                  label: pick.name,
+                  remaining: null,
+                  affordable: true,
+                  primary: false,
+                  tag:
+                    pick.wielded === undefined
+                      ? ""
+                      : t(pick.wielded ? "play.weapon.wielded" : "play.weapon.packed"),
+                })),
+              }
+            }
+            onConfirm={(index) => {
+              const request = weaponPickRequest;
+              const pick = request?.picks[index];
+              setWeaponPickRequest(null);
+              if (request && pick)
+                executeAction(request.action, {
+                  ...request.intent,
+                  weapon: pick.address,
+                });
+            }}
+            onCancel={() => setWeaponPickRequest(null)}
           />
           <DivineInterventionModal
             pool={freeCastFromListRequest?.pool ?? null}

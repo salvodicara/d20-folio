@@ -14,7 +14,7 @@ vi.mock("@/features/campaigns/dm-readers", () => ({
 }));
 
 import { MONSTERS } from "@/data/monsters";
-import { addMonster, startEncounter } from "@/features/campaigns/encounter";
+import { addMonster, startEncounter } from "@/lib/play/encounter";
 import { toMonsterInput } from "@/features/campaigns/encounter-monster-input";
 import { applyAdversaryDamageParts } from "@/features/campaigns/encounter-world-command";
 import { monsterConditionImmunities } from "@/features/campaigns/encounter-view";

@@ -34,6 +34,7 @@ import {
   wornArmorDisadvantageClauses,
 } from "@/lib/smart-tracker";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { boundWeaponNames } from "@/domains/play/weapon-pick-view";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
@@ -649,7 +650,9 @@ export function ResourceRail() {
                   // S5 — gate the Bloodied boon toggles (Desperate Resilience /
                   // Furious Storm) on the SAME `isBloodied` predicate every surface
                   // reads; an unmet gate hints (override-first, never hard-locks).
-                  isBloodied(character)
+                  isBloodied(character),
+                  // A lit coat or blade binding names its weapon ("· Pugnale").
+                  boundWeaponNames(character, aggregate.weaponBindings, locale)
                 ).filter(
                   (toggle) => !concentrationStatusKeys(concentration).includes(toggle.key)
                 )}

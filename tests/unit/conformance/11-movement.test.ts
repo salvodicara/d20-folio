@@ -3,7 +3,7 @@ import { selfMoveFeet, turnMovementBudgetFt } from "@/lib/play/self-move";
 import { fallsIfProne } from "@/lib/play/flight";
 import { describe, expect } from "vitest";
 import { TRAVEL_PACE_REFERENCE } from "@/data/travel-pace";
-import { addMonster } from "@/features/campaigns/encounter";
+import { addMonster } from "@/lib/play/encounter";
 import { CONDITION_RULES } from "@/lib/condition";
 import type { Grant } from "@/lib/grants";
 import { deriveJumps } from "@/lib/jump";

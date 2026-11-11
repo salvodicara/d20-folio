@@ -59,7 +59,7 @@ import {
   type IncapacitationRow,
 } from "@/lib/combat-effects";
 import { combatEffectEndsEarlyOn } from "@/lib/resolve-grant-sources";
-import { encounterRollFor, viewerActiveEncounters } from "@/features/campaigns/encounter";
+import { encounterRollFor, viewerActiveEncounters } from "@/lib/play/encounter";
 import {
   observePartyWorldFights,
   type PartyFightSnapshot,
