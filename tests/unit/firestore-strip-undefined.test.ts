@@ -19,9 +19,24 @@ import { describe, expect, it } from "vitest";
 // transitively pulls in @/lib/firebase and crashes at module load in
 // CI where VITE_FIREBASE_API_KEY is unset. The function is identical;
 // firestore.ts re-exports it for runtime call sites.
+import { serverTimestamp } from "firebase/firestore";
 import { stripUndefined } from "@/lib/strip-undefined";
 
 describe("stripUndefined — Firestore write payload sanitizer", () => {
+  // 2026-11-11: a shared character's save sent its public sheet's `sourceUpdatedAt` as a
+  // plain-object copy of the serverTimestamp() sentinel, so the rules (which require a
+  // timestamp) refused every save of a shared character.
+  it("passes a Firestore sentinel through untouched", () => {
+    const stamp = serverTimestamp();
+    const out = stripUndefined({
+      sheet: { sourceUpdatedAt: stamp, gone: undefined },
+    }) as {
+      sheet: Record<string, unknown>;
+    };
+    expect(out.sheet.sourceUpdatedAt).toBe(stamp);
+    expect(out.sheet).not.toHaveProperty("gone");
+  });
+
   it("removes top-level undefined values", () => {
     expect(stripUndefined({ a: 1, b: undefined, c: "x" })).toEqual({ a: 1, c: "x" });
   });
