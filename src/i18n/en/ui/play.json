@@ -386,6 +386,14 @@
     },
     "familiar": {
       "summon": "Summon"
+    },
+    "hit": {
+      "title": "On a hit",
+      "add": "Add",
+      "added": "Added",
+      "mastery": "Mastery",
+      "askSolo": "Did {{name}} hit? Add to the hit:",
+      "done": "Done"
     }
   }
 }

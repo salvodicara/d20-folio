@@ -386,6 +386,14 @@
     },
     "familiar": {
       "summon": "Evoca"
+    },
+    "hit": {
+      "title": "Al colpo",
+      "add": "Aggiungi",
+      "added": "Aggiunto",
+      "mastery": "Padronanza",
+      "askSolo": "Hai colpito con {{name}}? Aggiungi al colpo:",
+      "done": "Fatto"
     }
   }
 }

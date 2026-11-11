@@ -12,6 +12,8 @@ import {
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { PlayCheck } from "@/domains/play/ui/PlayCheck";
+import { AfterHitNote } from "@/domains/play/ui/PlayAfterHit";
+import { useAfterHitStore } from "@/domains/play/after-hit-store";
 import { ensureSrdKind } from "@/i18n";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
@@ -742,6 +744,7 @@ function TurnStrip({
       )}
       {!fight && !campaign && solo.notes}
       <ReadiedNote locale={locale} />
+      {!fight && <AfterHitNote locale={locale} />}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
       {counterable.map((cast) => {
         const name = localizeText(cast.action, locale);
@@ -846,6 +849,7 @@ function ActionLine({
 }) {
   const { t } = useTranslation();
   const { executeAction } = useTurnEconomy();
+  const fight = useSheetCombat();
   const readonly = useSheetReadonly();
   const { cta } = row;
   const reason = cta.reason ? blockReasonLine(cta.reason, t, locale) : null;
@@ -897,7 +901,16 @@ function ActionLine({
           ? stateWeaponPickView(doc, row.action.activatesKey, locale)
           : [];
     if (choices.length > 0) setPicking(choices);
-    else executeAction(row.action);
+    else {
+      executeAction(row.action);
+      // Outside a shared fight no tray asks what the hit adds: the strip's note does.
+      if (row.action.weaponFacts && !fight && doc)
+        useAfterHitStore.getState().offerFor({
+          characterId: doc.id,
+          actionId: row.action.id,
+          round: useCombatStore.getState().round,
+        });
+    }
   };
   const sub = [
     // On the Spells tab the level is the group's header: not said again per row.
