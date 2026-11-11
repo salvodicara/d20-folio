@@ -7,6 +7,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { visibleWithin } from "./visible-within";
 
 test.describe("Equipment Page", () => {
   test.beforeEach(async ({ page }) => {
@@ -82,7 +83,7 @@ test.describe("Equipment Page", () => {
       .first()
       .locator("..");
     const useButton = potionRow.getByRole("button", { name: /use/i });
-    if (await useButton.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(useButton, 2000)) {
       await useButton.click();
       // Quantity should decrease from 3 to 2
       await expect(
