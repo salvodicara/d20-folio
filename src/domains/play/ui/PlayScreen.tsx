@@ -14,6 +14,7 @@ import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
 import { PlayInspiration } from "./PlayInspiration";
+import { PlayConcentration } from "./PlayConcentration";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
 import { PlayConcentrationSave } from "@/domains/play/ui/PlayConcentrationSave";
@@ -348,9 +349,7 @@ function PlayHeader({
                   <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
                 )}
                 {view.form && !readonly && <RevertForm />}
-                {view.concentration && (
-                  <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>
-                )}
+                <PlayConcentration doc={doc} locale={locale} />
               </div>
             )}
             <div className="f-chips f-chips-status">

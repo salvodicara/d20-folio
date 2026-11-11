@@ -1061,7 +1061,8 @@
 }
 .fui .f-row-t {
   font-weight: var(--fw-name);
-  text-wrap: balance;
+  /* never one word alone on the last line (owner, 2026-11-10) */
+  text-wrap: pretty;
   color: var(--strong);
 }
 .fui .f-row-s {
@@ -1735,7 +1736,8 @@
   text-transform: uppercase;
 }
 .fui .f-toast > span {
-  text-wrap: balance;
+  /* never one word alone on the last line (owner, 2026-11-10) */
+  text-wrap: pretty;
 }
 
 /* ---------- notes ---------- */
@@ -5725,6 +5727,50 @@
 .fui .f-sheet .f-playbook-h > .f-ic:first-child {
   width: 20px;
   height: 20px;
+}
+
+/* after a rest: what came back, label and before → after (D&D Beyond's Recover list) */
+.fui .f-rest-sum {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.fui .f-rest-sum > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-rest-sum > div:last-child {
+  border-bottom: 0;
+}
+.fui .f-rest-sum dt {
+  color: var(--muted);
+}
+.fui .f-rest-sum dd {
+  margin: 0;
+  font-weight: var(--fw-name);
+  color: var(--strong);
+  text-align: right;
+}
+
+/* the turn's start: a feature's heal or temporary HP, one quiet tap; a round-1 reminder */
+.fui .f-turn-start {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fui .f-turn-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+/* an «Effetti» row the character can end carries «Termina» at its end */
+.fui .f-fx-row:has(> .f-btn) {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) auto;
 }
 
 /* ── Play parity, round 2 (owner, 2026-11-10): the approved prototype's spacing, sizes and
