@@ -80,10 +80,13 @@ async function showsEffect(page: Page, name: string): Promise<boolean> {
     .getByRole("dialog")
     .or(page.locator("[aria-label='Effects']"))
     .last();
+  // `isVisible` never waits (its timeout is ignored): wait for the effect to arrive
+  // from the other player's sheet, up to 10 s, before saying it is not there.
   const found = await panel
     .getByText(name)
     .first()
-    .isVisible({ timeout: 10_000 })
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .then(() => true)
     .catch(() => false);
   await page.keyboard.press("Escape");
   return found;

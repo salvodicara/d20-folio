@@ -24,6 +24,7 @@ import type { DamageSource } from "@/data/types";
 import type { DamageType } from "@/types/damage";
 import { conformCombatEffectOp } from "@/lib/combat-effect-io";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
+import { getSpellById } from "@/data/spells";
 
 function combatantStackingKey(ref: CombatantRef): string {
   return ref.kind === "monster"
@@ -472,6 +473,17 @@ export function damageDefensesByEffects(
   return mergeDamageDefenseGrants(
     base,
     effects.flatMap((effect) => resolveCombatEffectGrants(effect))
+  );
+}
+
+/** Whether a live condition holds the target's Speed at 0 through the source that
+ *  applied it (Hypnotic Pattern's Charmed): the Speed 0 ends with the condition. */
+export function speedZeroByEffects(effects: ReadonlyArray<ActiveCombatEffect>): boolean {
+  return effects.some(
+    (effect) =>
+      effect.payload.kind === "condition" &&
+      effect.source.kind === "spell" &&
+      (getSpellById(effect.source.id)?.conditionApplication?.whileHeld?.length ?? 0) > 0
   );
 }
 

@@ -7,6 +7,7 @@
  * all read in Italian.
  */
 import { test, expect, type Page } from "@playwright/test";
+import { visibleWithin } from "../e2e/visible-within";
 
 const ID = "scn-true-polymorph-wizard";
 
@@ -58,7 +59,7 @@ test("one online visit in Italian, then the sheet, spells and bestiary work offl
   await page.getByRole("button", { name: /^tutti$/i }).click();
   await page.getByRole("button", { name: "Lancia: Metamorfosi pura" }).click();
   const base = page.getByRole("button", { name: /Slot di livello 9 \(base\)/ });
-  if (await base.isVisible({ timeout: 2_000 }).catch(() => false)) await base.click();
+  if (await visibleWithin(base, 2_000)) await base.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Scegli una forma")).toBeVisible({ timeout: 30_000 });
   await dialog.getByRole("searchbox").fill("golem di ferro");
