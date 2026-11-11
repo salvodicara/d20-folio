@@ -383,6 +383,9 @@
       "escapeOk": "you break free: no longer Grappled.",
       "hideWhat": "Dexterity (Stealth) check",
       "escapeWhat": "The better of Athletics and Acrobatics"
+    },
+    "familiar": {
+      "summon": "Summon"
     }
   }
 }

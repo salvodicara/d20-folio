@@ -383,6 +383,9 @@
       "escapeOk": "ti liberi: non sei più Afferrato.",
       "hideWhat": "Prova di Destrezza (Furtività)",
       "escapeWhat": "La migliore tra Atletica e Acrobazia"
+    },
+    "familiar": {
+      "summon": "Evoca"
     }
   }
 }

@@ -12,6 +12,10 @@ import {
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { PlayCheck } from "@/domains/play/ui/PlayCheck";
+import { ensureSrdKind } from "@/i18n";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
+
 import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
@@ -22,7 +26,7 @@ import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { turnMovementBudgetFt } from "@/lib/play/self-move";
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
@@ -86,6 +90,13 @@ import { PlayScrollPick } from "./PlayScrollPick";
 import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
+
+// The familiar's forms read the monster corpus: a lazy leaf, like the classic picker.
+const FamiliarPicker = lazy(() =>
+  Promise.all([import("./PlayFamiliarPicker"), ensureSrdKind("monster")]).then(([m]) => ({
+    default: m.PlayFamiliarPicker,
+  }))
+);
 
 type Filter = "all" | "attacks" | "actions" | "bonus" | "reactions" | "other" | "limited";
 const FILTERS: Filter[] = [
@@ -846,6 +857,7 @@ function ActionLine({
   // Help in a fight asks «Su chi?» then «Per chi?» (the effect needs the v0.26 rules).
   const [helping, setHelping] = useState<HelpView | null>(null);
   const [checking, setChecking] = useState<CheckEntry[] | null>(null);
+  const [familiar, setFamiliar] = useState(false);
   const cast = () => {
     const status = useCombatStatusStore.getState().status;
     if (row.action.id === "base-help" && combatEffectsV26On()) {
@@ -864,6 +876,11 @@ function ActionLine({
         : null;
     if (spare) {
       setSparing(spare);
+      return;
+    }
+    // Find Familiar asks the form (and its creature type), then casts.
+    if (row.spellId === FIND_FAMILIAR_SPELL_ID && doc) {
+      setFamiliar(true);
       return;
     }
     // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
@@ -971,6 +988,16 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {familiar && doc && (
+        <Suspense fallback={null}>
+          <FamiliarPicker
+            formIds={aggregateCharacterGrants(doc.character, doc.session).familiarFormIds}
+            locale={locale}
+            onClose={() => setFamiliar(false)}
+            onSummoned={() => executeAction(row.action)}
+          />
+        </Suspense>
       )}
       {checking && (
         <PlayCheck
