@@ -672,7 +672,8 @@ function TurnStrip({
           </Button>
         )}
         {!fight && !campaign && solo.controls}
-        {rollOffer && campaign && (
+        {/* whose turn it is has rolled already: «Fine turno» is the strip's one action */}
+        {rollOffer && campaign && !(fight && phase === "my-turn") && (
           <Button
             kind={fight ? "primary" : "ghost"}
             aria-haspopup="dialog"

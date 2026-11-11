@@ -127,10 +127,18 @@ export function PlayScreen() {
   const view = playHeaderView(doc, locale);
   const rests = (
     <>
-      <Button aria-haspopup="dialog" onClick={() => setResting("short")}>
+      <Button
+        icon="g-rest-short"
+        aria-haspopup="dialog"
+        onClick={() => setResting("short")}
+      >
         {t("play.rest.short")}
       </Button>
-      <Button aria-haspopup="dialog" onClick={() => setResting("long")}>
+      <Button
+        icon="g-rest-long"
+        aria-haspopup="dialog"
+        onClick={() => setResting("long")}
+      >
         {t("play.rest.long")}
       </Button>
       {totalLevel(doc.character) < 20 && (
@@ -270,7 +278,7 @@ function PlayHeader({
           hp={view.hp.current}
           max={view.hp.max}
           temp={view.hp.temp}
-          size={tiny ? 64 : narrow ? 88 : 120}
+          size={tiny ? 86 : narrow ? 88 : 120}
           portrait={view.portraitUrl ?? undefined}
           name={view.name}
           ornate
@@ -278,7 +286,10 @@ function PlayHeader({
       </div>
       <div className="f-char-id">
         <h1>{view.name}</h1>
-        <p className="f-hero-sub">{view.identity.join(" · ")}</p>
+        {/* the phone keeps the prototype's short line (x-play-m): classes and species */}
+        <p className="f-hero-sub">
+          {(tiny ? view.identityShort : view.identity).join(" · ")}
+        </p>
         {/* D&D Beyond's header buttons: the rests, the campaign. */}
         {(!readonly || campaign) && (
           <div className="f-char-acts">
@@ -372,13 +383,17 @@ function PlayHeader({
           {/* D&D Beyond's two buttons under the Hit Points; both open «Danni e cure». */}
           <div className="f-char-hp-acts">
             <Button
-              icon="u-damage"
+              icon="g-hp-damage"
               aria-haspopup="dialog"
               onClick={() => setHpOpen(true)}
             >
               {t("mechanics.cast.optionDamage")}
             </Button>
-            <Button icon="u-heal" aria-haspopup="dialog" onClick={() => setHpOpen(true)}>
+            <Button
+              icon="g-hp-heal"
+              aria-haspopup="dialog"
+              onClick={() => setHpOpen(true)}
+            >
               {t("combat.heal")}
             </Button>
           </div>
