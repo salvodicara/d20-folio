@@ -997,10 +997,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     options: arraySchema(stringSchema),
     type: literalSchema("choice-skill-proficiency"),
   }),
-  "choice-expertise": objectSchema({
-    amount: numberSchema,
-    type: literalSchema("choice-expertise"),
-  }),
+  "choice-expertise": objectSchema(
+    {
+      amount: numberSchema,
+      type: literalSchema("choice-expertise"),
+    },
+    // The skills the choice is limited to (Wizard Scholar's six); absent → any
+    // skill the character is proficient in (Skill Expert).
+    { options: arraySchema(stringSchema) }
+  ),
   "choice-skill-or-tool-proficiency": objectSchema({
     amount: numberSchema,
     type: literalSchema("choice-skill-or-tool-proficiency"),

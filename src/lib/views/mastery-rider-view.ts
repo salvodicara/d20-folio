@@ -59,6 +59,8 @@ export interface MasteryRiderVM {
   apply?: "next-attack-advantage" | "target-attack-disadvantage" | "target-speed-loss";
   /** Cleave: "no more than once per turn" (SRD 5.2.1); the others ride every hit. */
   oncePerTurn?: true;
+  /** Cleave: the second creature's damage formula (no positive ability modifier). */
+  damage?: string;
 }
 
 function isRiderId(id: string): id is MasteryRiderId {
@@ -101,6 +103,9 @@ export function buildMasteryRiders(
       ...(id === "sap" ? { apply: "target-attack-disadvantage" as const } : {}),
       ...(id === "slow" ? { apply: "target-speed-loss" as const } : {}),
       ...(id === "cleave" ? { oncePerTurn: true as const } : {}),
+      ...(id === "cleave" && detail?.cleaveDamage !== undefined
+        ? { damage: detail.cleaveDamage }
+        : {}),
     }));
 }
 
@@ -110,10 +115,12 @@ export function masteryRiderLine(
   rider: MasteryRiderVM,
   t: (key: string, options: Record<string, string | number>) => string
 ): string {
-  return t(`combat.masteryRider.${rider.id}`, {
+  const key = rider.id === "cleave" && rider.damage ? "cleaveDamage" : rider.id;
+  return t(`combat.masteryRider.${key}`, {
     name: rider.name,
     amount: rider.amount ?? 0,
     dc: rider.dc ?? "",
     distance: rider.distance ?? "",
+    damage: rider.damage ?? "",
   });
 }

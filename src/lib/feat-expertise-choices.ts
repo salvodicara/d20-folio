@@ -10,10 +10,13 @@ import type { Grant } from "@/lib/grants";
 import type { CharacterData } from "@/types/character";
 import { applyExpertisePicks } from "@/lib/expertise-pick";
 import { arePicksComplete } from "@/lib/feat-choices-common";
+import { ALL_SKILLS } from "@/lib/compute";
 
 export interface ExpertiseChoiceSlot {
   amount: number;
   slotId: string;
+  /** The skills this choice is limited to (Wizard Scholar); absent → any. */
+  options?: ReadonlyArray<string>;
 }
 
 export type ExpertiseChoicePicks = Record<string, ReadonlyArray<string>>;
@@ -26,10 +29,24 @@ export function pendingExpertiseSlotsForFeat(feat: {
   let idx = 0;
   for (const g of feat.grants ?? []) {
     if (g.type === "choice-expertise") {
-      slots.push({ amount: g.amount, slotId: `slot-${idx++}` });
+      slots.push({
+        amount: g.amount,
+        slotId: `slot-${idx++}`,
+        ...(g.options ? { options: g.options } : {}),
+      });
     }
   }
   return slots;
+}
+
+/** The skills a slot offers: proficient ones, within the slot's pool when it has one. */
+export function expertiseSlotOptions(
+  slot: ExpertiseChoiceSlot,
+  proficientSkillIds: ReadonlySet<string>
+): string[] {
+  return ALL_SKILLS.map((s) => s.id).filter(
+    (id) => proficientSkillIds.has(id) && (!slot.options || slot.options.includes(id))
+  );
 }
 
 /** Each slot must be filled to its required amount. */
