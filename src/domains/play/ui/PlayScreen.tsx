@@ -40,6 +40,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { totalLevel } from "@/lib/classes";
+import { xpProgress } from "@/lib/experience";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -54,6 +55,7 @@ import {
   type IconName,
   Menu,
   PhoneBar,
+  usePageMenuActions,
   useShellMenu,
   StatBadge,
   Toast,
@@ -104,6 +106,16 @@ export function PlayScreen() {
   const readonly = useSheetReadonly();
   const navigate = useNavigate();
   const levelling = useMatch("/characters/:characterId/level-up") !== null;
+  // «Sali di livello» lives in the menu (⋯), so the rest row stays one line (x-play)
+  const levelUp =
+    doc && doc.id === characterId && !readonly && totalLevel(doc.character) < 20
+      ? () => void navigate(`/characters/${doc.id}/level-up`)
+      : null;
+  usePageMenuActions(
+    levelUp
+      ? [{ label: t("levelUp.screen.levelUp"), icon: "g-create", onSelect: levelUp }]
+      : []
+  );
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -141,11 +153,6 @@ export function PlayScreen() {
       >
         {t("play.rest.long")}
       </Button>
-      {totalLevel(doc.character) < 20 && (
-        <Link className="f-btn" data-kind="ghost" to={`/characters/${doc.id}/level-up`}>
-          {t("levelUp.screen.levelUp")}
-        </Link>
-      )}
       {/* In a fight the rounds keep the time (prototype: exploration only). */}
       {!fight && (
         <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
@@ -182,7 +189,21 @@ export function PlayScreen() {
         locale={locale}
         campaign={campaign}
         rests={rests}
+        onLevelUp={levelUp}
       />
+      {/* an XP table that reached the next level: the note, its one action */}
+      {levelUp &&
+        doc.character.experience !== undefined &&
+        xpProgress(doc.character.experience, totalLevel(doc.character)).canLevelUp && (
+          <div className="f-note f-save-due" data-c="res" role="status">
+            <p>{t("character.levelUpReady")}</p>
+            <div className="f-acts">
+              <Button kind="primary" onClick={levelUp}>
+                {t("levelUp.screen.levelUp")}
+              </Button>
+            </div>
+          </div>
+        )}
       <PlaySpeciesChoices doc={doc} locale={locale} readonly={readonly} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
@@ -255,12 +276,14 @@ function PlayHeader({
   locale,
   campaign,
   rests,
+  onLevelUp,
 }: {
   doc: CharacterDoc;
   view: PlayHeaderView;
   locale: Locale;
   campaign: CampaignDoc | null;
   rests: ReactNode;
+  onLevelUp: (() => void) | null;
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
@@ -268,6 +291,7 @@ function PlayHeader({
   const fight = useCombatStatusStore((st) => st.status);
   const uid = useAuthStore((st) => st.user?.uid);
   const [hpOpen, setHpOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
   const tiny = useMediaQuery("(max-width: 400px)");
@@ -295,9 +319,14 @@ function PlayHeader({
           <div className="f-char-acts">
             {!readonly && rests}
             {campaign && (
-              <Link className="f-btn" data-kind="ghost" to={`/campaigns/${campaign.id}`}>
+              <Link
+                className="f-btn f-char-camp"
+                data-kind="ghost"
+                to={`/campaigns/${campaign.id}`}
+                title={campaign.name}
+              >
                 <Icon name="g-campaign" />
-                {campaign.name}
+                <span>{campaign.name}</span>
               </Link>
             )}
           </div>
@@ -423,6 +452,34 @@ function PlayHeader({
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
+      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
+      {onLevelUp && (
+        <>
+          <button
+            type="button"
+            className="f-btn f-char-more"
+            data-kind="ghost"
+            aria-label={t("shell.menu")}
+            aria-haspopup="dialog"
+            onClick={() => setMoreOpen(true)}
+          >
+            <Icon name="u-more" />
+          </button>
+          <Menu open={moreOpen} onClose={() => setMoreOpen(false)} title={view.name}>
+            <button
+              type="button"
+              className="f-menu-it"
+              onClick={() => {
+                setMoreOpen(false);
+                onLevelUp();
+              }}
+            >
+              <Icon name="g-create" />
+              {t("levelUp.screen.levelUp")}
+            </button>
+          </Menu>
+        </>
+      )}
     </section>
   );
 }

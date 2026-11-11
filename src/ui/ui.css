@@ -5767,6 +5767,17 @@
   .fui .f-sheet .f-badge[data-shape="hex"] > .f-lbl {
     margin-top: 4px;
   }
+  /* ⋯ in the header's top-right corner (D&D Beyond's header menu), off the rest row */
+  .fui .f-sheet .f-char-more {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    min-width: 40px;
+    padding-inline: 8px;
+  }
+  .fui .f-sheet .f-char {
+    position: relative;
+  }
 }
 .fui .f-sheet .f-char-hp-acts > .f-btn {
   font-size: var(--fs-prose);
@@ -5934,6 +5945,22 @@
   }
   .fui .f-sheet .f-char-chips .f-condwrap > .f-chip {
     width: 100%;
+  }
+  /* the phone's ⋯ is the top bar's */
+  .fui .f-sheet .f-char-more {
+    display: none;
+  }
+  /* the filters: one row that scrolls sideways, fading where it is cut (.pills.hmore) */
+  .fui .f-sheet .f-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .fui .f-sheet .f-filters > .f-chip {
+    flex: none;
+  }
+  .fui .f-sheet .f-filters[data-more="true"] {
+    mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
   }
   /* «9 m»: the unit at the figure's size, as the phone mock sets it */
   .fui .f-sheet .f-badge-frame b small {
