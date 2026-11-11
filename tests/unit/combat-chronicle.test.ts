@@ -11,11 +11,7 @@ import {
   undoConditionEvent,
   undoHpEvent,
 } from "@/features/campaigns/combat-chronicle";
-import {
-  addMonster,
-  setMonsterCondition,
-  setMonsterTempHp,
-} from "@/features/campaigns/encounter";
+import { addMonster, setMonsterCondition, setMonsterTempHp } from "@/lib/play/encounter";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
 function fight(): EncounterState {

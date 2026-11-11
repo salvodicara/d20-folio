@@ -33,7 +33,7 @@ import {
   rosterHpWriteBack,
   type MonsterInput,
   type RosterCombatantInput,
-} from "./encounter";
+} from "@/lib/play/encounter";
 import { readRoster, writeRosterHp } from "./roster-io";
 import { sessionLogStoreFor } from "./session-log-source";
 import {

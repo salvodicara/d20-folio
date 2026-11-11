@@ -17,11 +17,7 @@ import {
   planRemoveUntouched,
   planUndoBeats,
 } from "@/features/campaigns/combat-lifecycle";
-import {
-  addMonster,
-  beginEncounterTurns,
-  startEncounter,
-} from "@/features/campaigns/encounter";
+import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 
 const fight = (): EncounterState => {

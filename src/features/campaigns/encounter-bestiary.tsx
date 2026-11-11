@@ -32,7 +32,7 @@ import { monsterXp } from "@/lib/monster";
 import { EncounterBudgetReadout, type ApplyFn } from "./party-encounter";
 import { EncounterCustomMonsters } from "./encounter-custom-monsters";
 import { makeEncounterMonsterSpec } from "./encounter-monster-spec";
-import { setMonsterXp, type MonsterInput } from "./encounter";
+import { setMonsterXp, type MonsterInput } from "@/lib/play/encounter";
 import type { EncounterBudgetView } from "./encounter-view";
 
 /**

@@ -49,7 +49,7 @@ function resolveSpecifier(spec: string, fromFile: string): string | null {
 }
 
 /** Value-import specifiers of one module (type-only imports are erased). */
-function staticSpecifiers(file: string): string[] {
+export function staticSpecifiers(file: string): string[] {
   if (!/\.(tsx?|mts)$/.test(file)) return [];
   const source = ts.createSourceFile(
     file,
