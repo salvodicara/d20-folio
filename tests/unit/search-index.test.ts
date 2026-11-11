@@ -8,16 +8,8 @@
 import { packSpells } from "@pack";
 import { beforeAll, describe, expect, it } from "vitest";
 
-import type { SearchEntry } from "@/domains/search/global-search";
 import { createSearchIndex, type SearchIndex } from "@/domains/search/search-index";
-import {
-  campaignEntries,
-  characterEntries,
-  destinationEntries,
-  loadCompendiumEntries,
-  originEntries,
-  ruleEntries,
-} from "@/domains/search/search-sources";
+import { loadSearchIndex } from "@/domains/search/load-search-index";
 import i18n from "@/i18n";
 import type { Locale } from "@/lib/locale";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
@@ -28,24 +20,19 @@ const lyra = {
   id: "c-lyra",
 };
 
-async function everything(locale: Locale): Promise<SearchEntry[]> {
-  const t = i18n.getFixedT(locale);
-  return [
-    ...characterEntries([lyra], locale),
-    ...campaignEntries([{ id: "camp1", name: "Fireside Tales" }]),
-    ...destinationEntries(t, { isAdmin: false }),
-    ...ruleEntries(t, locale),
-    ...originEntries(locale),
-    ...(await loadCompendiumEntries(t, locale, { names: "all" })),
-  ];
-}
-
 let en: SearchIndex;
 let it_: SearchIndex;
 
 beforeAll(async () => {
-  en = createSearchIndex(await everything("en"));
-  it_ = createSearchIndex(await everything("it"));
+  const load = (locale: Locale) =>
+    loadSearchIndex({
+      t: i18n.getFixedT(locale),
+      locale,
+      characters: [lyra],
+      campaigns: [{ id: "camp1", name: "Fireside Tales" }],
+      isAdmin: false,
+    });
+  [en, it_] = await Promise.all([load("en"), load("it")]);
 });
 
 const labels = (index: SearchIndex, query: string, limit = 5) =>
