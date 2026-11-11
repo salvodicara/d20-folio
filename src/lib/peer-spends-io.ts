@@ -5,10 +5,20 @@
  * touches it. Peers append inside the hit's transaction; the owner removes what it
  * folded with `arrayRemove`, which keeps any entry appended meanwhile.
  */
-import { arrayRemove, doc, onSnapshot, updateDoc } from "firebase/firestore";
+import {
+  arrayRemove,
+  doc,
+  onSnapshot,
+  runTransaction,
+  updateDoc,
+} from "firebase/firestore";
 
 import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
-import { subscribeDevDocument, updateDevDocument } from "@/lib/dev-document-store";
+import {
+  readDevDocument,
+  subscribeDevDocument,
+  updateDevDocument,
+} from "@/lib/dev-document-store";
 import { db } from "@/lib/firebase";
 import type { PeerSpend } from "@/types/combat-state";
 
@@ -83,6 +93,20 @@ export function subscribePeerSpends(
     (snap) => cb(snap.exists() ? parsePeerSpends(snap.data()) : []),
     (err) => onError?.(err)
   );
+}
+
+/**
+ * The ledger as the server holds it now, read once. A remote hit's own snapshot can
+ * outrun a ledger listener that fell silent, so the owner's sheet reads it again
+ * (`useCharacterSubscription`). The read goes through a transaction because that is a
+ * direct lookup: `getDocFromServer` waits on a listener of its own, and that listener
+ * lags with the silent one (rehearsal 2026-11-11). An absent document is an empty ledger.
+ */
+export async function readPeerSpends(uid: string, charId: string): Promise<PeerSpend[]> {
+  if (devBypassEnabled())
+    return parsePeerSpends(readDevDocument(DEV_SPENDS_COLLECTION, `${uid}/${charId}`));
+  const snap = await runTransaction(db, (txn) => txn.get(peerSpendsRef(uid, charId)));
+  return snap.exists() ? parsePeerSpends(snap.data()) : [];
 }
 
 /** Remove the entries the owner's sheet has folded; a concurrent append stays. */
