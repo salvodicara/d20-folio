@@ -11,6 +11,7 @@ import {
   expectNoCrash,
   openFightTab,
   SANDBOX_USERS,
+  spaced,
   signInAs,
   test,
   watchErrors,
@@ -34,7 +35,7 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
   await actionRow(page, spell).getByRole("button").click();
   const dialog = page
     .locator("dialog[open]")
-    .filter({ hasText: new RegExp(`Cast ${spell}`, "i") });
+    .filter({ hasText: new RegExp(`Cast\\s${spaced(spell)}`, "i") });
   await expect(dialog).toBeVisible();
   for (let step = 0; step < 4 && (await dialog.count()) > 0; step++) {
     const chips = dialog.locator(".f-chips button");
@@ -64,7 +65,7 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
     .soft(
       page
         .locator("[role=status]")
-        .filter({ hasText: new RegExp(`${spell} (used|needs)`) })
+        .filter({ hasText: new RegExp(`${spaced(spell)}\\s(used|needs)`) })
         .first()
     )
     .toBeVisible({ timeout: 3_000 });
