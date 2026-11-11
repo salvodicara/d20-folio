@@ -10,6 +10,9 @@ import {
   resolveAttackDamageRiders,
 } from "@/lib/smart-tracker";
 import { SRD_WEAPONS } from "@/data/weapons";
+import { masteryRiderLine } from "@/lib/views/mastery-rider-view";
+import enCombat from "@/i18n/en/ui/combat.json";
+import itCombat from "@/i18n/it/ui/combat.json";
 import { getEquipment } from "@/data/equipment";
 import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import { consumableActionSlot } from "@/lib/srd-resolve";
@@ -230,6 +233,44 @@ describe("resolveActions — dual-wield", () => {
   // (= the attack ability modifier) resolve onto the mastery chips — the app
   // has the numbers, so the player never computes them (SRD "Mastery
   // Properties — Topple / Graze").
+  // Cleave (SRD 5.2.1): the second creature takes the weapon's damage without the
+  // ability modifier, unless that modifier is negative. Other bonuses still add.
+  it("Cleave's extra swing carries its damage: the weapon's, minus a positive ability modifier", () => {
+    const char = makeChar({ weapons: [{ srdId: "greataxe", quantity: 1 }] });
+    const entry = char.character.classes[0];
+    if (!entry) throw new Error("no class entry");
+    entry.weaponMasteries = ["greataxe"];
+    const axe = localizeActions(char, "en").find((a) => a.id === "weapon-greataxe");
+    // STR 16 (+3): the hit is 1d12+3, the cleave 1d12.
+    expect(axe?.summary.damage).toBe("1d12+3");
+    expect(axe?.summary.masteryDetail?.cleaveDamage).toBe("1d12");
+    const cleave = axe?.masteryRiders?.find((r) => r.id === "cleave");
+    expect(cleave?.damage).toBe("1d12");
+    // The rider line prints the number, in both languages.
+    for (const [rows, words] of [
+      [enCombat, "1d12 damage"],
+      [itCombat, "danni 1d12"],
+    ] as const) {
+      const t = (key: string, args: Record<string, string | number>) =>
+        Object.entries(args).reduce(
+          (line, [k, v]) => line.replace(`{{${k}}}`, String(v)),
+          String(Reflect.get(rows.combat.masteryRider, key.split(".").pop() ?? ""))
+        );
+      expect(cleave && masteryRiderLine(cleave, t)).toContain(words);
+    }
+
+    // STR 8 (−1): a negative modifier still applies to the cleave.
+    const weak = makeChar({
+      weapons: [{ srdId: "greataxe", quantity: 1 }],
+      abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    });
+    const weakEntry = weak.character.classes[0];
+    if (!weakEntry) throw new Error("no class entry");
+    weakEntry.weaponMasteries = ["greataxe"];
+    const weakAxe = localizeActions(weak, "en").find((a) => a.id === "weapon-greataxe");
+    expect(weakAxe?.summary.masteryDetail?.cleaveDamage).toBe("1d12-1");
+  });
+
   it("RA-13 — Topple/Graze chips carry the live resolved numbers", () => {
     const char = makeChar({
       weapons: [

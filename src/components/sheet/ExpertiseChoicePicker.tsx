@@ -5,11 +5,11 @@
  * in), passed in as `proficientSkillIds`.
  */
 import { useTranslation } from "react-i18next";
-import { ALL_SKILLS } from "@/lib/compute";
 import { WizardPickList } from "@/features/wizard/pick-list";
-import type {
-  ExpertiseChoicePicks,
-  ExpertiseChoiceSlot,
+import {
+  expertiseSlotOptions,
+  type ExpertiseChoicePicks,
+  type ExpertiseChoiceSlot,
 } from "@/lib/feat-expertise-choices";
 
 interface Props {
@@ -53,9 +53,9 @@ function ExpertiseSlotPicker({
   onChange: (ids: string[]) => void;
 }) {
   const { t } = useTranslation();
-  const options = ALL_SKILLS.filter((s) => proficientSkillIds.has(s.id)).map((s) => ({
-    id: s.id,
-    name: t(`skills.${s.id}`),
+  const options = expertiseSlotOptions(slot, proficientSkillIds).map((id) => ({
+    id,
+    name: t(`skills.${id}`),
   }));
 
   function toggle(id: string) {
