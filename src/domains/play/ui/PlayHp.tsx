@@ -33,6 +33,8 @@ export function PlayHp({
   const hp = useHpControls();
   const [text, setText] = useState("");
   const [type, setType] = useState<DamageType | undefined>(undefined);
+  // At 0 HP a Critical Hit is two death-save failures (the classic HP popover's toggle).
+  const [crit, setCrit] = useState(false);
   const [allTypes, setAllTypes] = useState(false);
   const [tempText, setTempText] = useState(String(hp.temp));
   const amount = /^\d+$/.test(text.trim()) ? Number(text.trim()) : null;
@@ -101,6 +103,16 @@ export function PlayHp({
           )}
         </div>
       </div>
+      {hp.atZero && !hp.dead && (
+        <div className="f-ask">
+          <div className="f-chips">
+            <Chip pressed={crit} onClick={() => setCrit((on) => !on)}>
+              {t("combat.critHit")}
+            </Chip>
+          </div>
+          {crit && <p className="f-quiet">{t("play.hp.critAtZero")}</p>}
+        </div>
+      )}
       <div className="f-hp-acts f-ask">
         <Button
           kind="danger"
@@ -108,7 +120,9 @@ export function PlayHp({
           disabled={!amount || hp.dead}
           onClick={() => {
             if (!amount) return;
-            hp.handleApplyDamage([{ amount, ...(type ? { type } : {}) }]);
+            hp.handleApplyDamage([{ amount, ...(type ? { type } : {}) }], {
+              crit: hp.atZero && crit,
+            });
             onClose();
           }}
         >

@@ -129,6 +129,27 @@ describe("surveyV026Compat", () => {
     });
   });
 
+  it("a combat child carrying a started solo fight reads as stored, with no rewrite", async () => {
+    const [parent, child] = character("users/u1/characters/a");
+    if (!parent || !child) throw new Error("fixture");
+    const survey = await surveyV026Compat({
+      documents: [
+        { path: "users/u1", data: {} },
+        parent,
+        { ...child, data: { ...child.data, soloFightStarted: true } },
+      ],
+      accounts: [{ uid: "u1", customClaims: {} }],
+      catalogue,
+    });
+    expect(survey.kinds.character).toMatchObject({
+      read: 1,
+      ok: 1,
+      defaulted: 0,
+      rejected: {},
+      rewrites: {},
+    });
+  });
+
   it("a spell carrying the source that granted it reads as stored, with no rewrite", async () => {
     const [parent, child] = character("users/u1/characters/a");
     if (!parent || !child) throw new Error("fixture");

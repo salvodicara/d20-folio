@@ -39,20 +39,26 @@ export interface EncounterFacts {
   sharedEncounter: boolean;
   /** The solo round counter (1 = no round has been advanced). */
   soloRound: number;
+  /** Solo: the player started a fight («Start combat»), on from round 1. */
+  soloFightStarted: boolean;
   /** The solo Initiative roll as typed ("" = not rolled). */
   soloInitiative: string;
 }
 
 /**
  * Whether a fight is on (owner decision 2026-10-16: actions work outside combat). A
- * campaign encounter always is; solo, the player starts one by rolling Initiative or
- * advancing a round, and End Combat (round 1, Initiative cleared) leaves it. With no
+ * campaign encounter always is; solo, the player starts one with «Start combat»
+ * (on from round 1), by rolling Initiative or by advancing a round, and End Combat
+ * (round 1, Initiative cleared, the started flag off) leaves it. With no
  * fight the turn economy only logs: no per-turn budget, nothing waits for End Turn,
  * like D&D Beyond and Foundry, which track turns only inside a combat.
  */
 export function encounterRunning(facts: EncounterFacts): boolean {
   return (
-    facts.sharedEncounter || facts.soloRound > 1 || facts.soloInitiative.trim() !== ""
+    facts.sharedEncounter ||
+    facts.soloFightStarted ||
+    facts.soloRound > 1 ||
+    facts.soloInitiative.trim() !== ""
   );
 }
 

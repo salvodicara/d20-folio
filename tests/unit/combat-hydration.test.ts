@@ -315,3 +315,38 @@ describe("Combat sync — remote reconcile (issue #41)", () => {
     expect(useCombatStore.getState().initiative).toBe("12");
   });
 });
+
+describe("Combat sync — a solo fight started with «Start combat»", () => {
+  beforeEach(() => {
+    useCombatStore.getState().endCombat();
+    useCombatStore.setState({ hydratedCharacterId: null });
+  });
+
+  const arrive = (id: string, started: boolean) =>
+    syncCombatFromSession(id, 1, "", undefined, undefined, "en", started);
+
+  it("a reload in round 1 keeps the fight on", () => {
+    expect(arrive("char-1", true)).toBe(true);
+    expect(useCombatStore.getState()).toMatchObject({ round: 1, fightStarted: true });
+  });
+
+  it("a later snapshot reconciles it both ways; a switch never inherits it", () => {
+    arrive("char-1", false);
+    arrive("char-1", true);
+    expect(useCombatStore.getState().fightStarted).toBe(true);
+    arrive("char-2", false);
+    expect(useCombatStore.getState().fightStarted).toBe(false);
+  });
+
+  it("End Combat clears it; startCombat sets it from the round-1 baseline", () => {
+    useCombatStore.setState({ round: 4, initiative: "12" });
+    useCombatStore.getState().startCombat();
+    expect(useCombatStore.getState()).toMatchObject({
+      round: 1,
+      initiative: "",
+      fightStarted: true,
+    });
+    useCombatStore.getState().endCombat();
+    expect(useCombatStore.getState().fightStarted).toBe(false);
+  });
+});
