@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { AppShell } from "@/ui/AppShell";
 import { initialOf } from "@/ui/initial";
 import { NewToasts } from "./NewToasts";
+import { CombatPip } from "@/domains/combat/ui/CombatPip";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { useAuthStore } from "@/stores/authStore";
 import { signOut } from "@/lib/auth";
@@ -41,6 +42,7 @@ export function NewAppShell() {
       ]}
       navLabel={t("nav.primary")}
       searchLabel={t("shell.search")}
+      status={<CombatPip />}
       onSearch={(q) =>
         void navigate(q ? `/compendium?q=${encodeURIComponent(q)}` : "/compendium")
       }
