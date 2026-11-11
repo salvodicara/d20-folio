@@ -118,11 +118,11 @@ export function PlayCheck({
             <span className="f-lbl">{t("combat.checkDcLabel")}</span>
             <div className="f-chips">
               <Chip pressed={dc === undefined} onClick={() => setDc(undefined)}>
-                —
+                {t("abilities.none")}
               </Chip>
               {TYPICAL_DCS.map((v) => (
                 <Chip key={v} pressed={dc === v} onClick={() => setDc(v)}>
-                  {String(v)}
+                  {`${t("play.check.dc")} ${String(v)}`}
                 </Chip>
               ))}
             </div>

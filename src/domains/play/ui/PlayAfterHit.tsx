@@ -54,12 +54,11 @@ function hasAfterHitOptions(
   );
 }
 
-/** Facts on one line each («TS COS · CD 19»): a fact never breaks inside, and a
- *  separator never starts a line. */
+/** Facts joined so a separator never starts a line («… Furtivo ·» / «TS COS»). */
 const facts = (parts: ReadonlyArray<string | null | undefined>) =>
   parts
     .filter((p): p is string => Boolean(p))
-    .map((p) => p.replace(/ /g, "\u00a0"))
+    .map((p) => p.replace(/ · /g, "\u00a0· "))
     .join("\u00a0· ");
 
 export function PlayAfterHit({

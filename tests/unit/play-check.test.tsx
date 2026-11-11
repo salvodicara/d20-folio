@@ -104,7 +104,7 @@ describe("PlayCheck", () => {
     fireEvent.click(
       screen.getByRole("button", { name: new RegExp(`^${second.id}`, "i") })
     );
-    fireEvent.click(screen.getByRole("button", { name: "20" }));
+    fireEvent.click(screen.getByRole("button", { name: "DC 20" }));
     face(10);
     expect(screen.getByRole("status").textContent).toContain(String(10 + second.bonus));
   });
