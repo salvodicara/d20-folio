@@ -18,10 +18,12 @@ const css = readFileSync(resolve(here, "../../src/styles/folio.css"), "utf8")
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .replace(/\s+/g, " ");
 
-const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector, body]) => ({
-  selector: selector.trim(),
-  body,
-}));
+const rules = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(
+  ([, selector = "", body = ""]) => ({
+    selector: selector.trim(),
+    body,
+  })
+);
 
 describe("reveal boxes keep to their column", () => {
   const reveals = rules.filter(
