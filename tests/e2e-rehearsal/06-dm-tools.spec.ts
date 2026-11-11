@@ -32,7 +32,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
     await expect(
       page
         .locator("[role=status]")
-        .filter({ hasText: /In the fight/ })
+        .filter({ hasText: /In\sthe\sfight/ })
         .first()
     ).toBeVisible();
     // The two goblins sit on one grouped row ("Goblin Minion ×2"); the search may
@@ -61,7 +61,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
       .soft(
         page
           .locator("[role=status]")
-          .filter({ hasText: /5 damage to 2 targets/ })
+          .filter({ hasText: /5\sdamage\sto\s2\stargets/ })
           .first(),
         "the hit lands on both goblins"
       )
