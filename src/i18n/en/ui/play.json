@@ -314,7 +314,9 @@
         "maneuvers_one": "{{count}} maneuver",
         "maneuvers_other": "{{count}} maneuvers",
         "weaponMasteries_one": "{{count}} Weapon Mastery",
-        "weaponMasteries_other": "{{count}} Weapon Masteries"
+        "weaponMasteries_other": "{{count}} Weapon Masteries",
+        "fightingStyles_one": "{{count}} Fighting Style",
+        "fightingStyles_other": "{{count}} Fighting Styles"
       }
     },
     "rollReaction": {

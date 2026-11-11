@@ -1,6 +1,6 @@
 /**
  * States the core rules put on a target, outside any spell or class feature
- * (edge-case family M17): Vex (a weapon mastery) and the Help action. An encounter
+ * (edge-case family M17): Vex, Sap and Slow (weapon masteries) and the Help action. An encounter
  * effect names one with `source: { kind: "feature", id }` and the state's
  * `activeKey`; `resolveCombatEffectGrantGroup` finds it here when no class feature
  * has that id.
@@ -24,6 +24,41 @@ export const RULE_TARGET_STATES: ReadonlyMap<
         consumedBy: "next-attack-by",
         duration: { kind: "turn-boundary", phase: "turn-end", turns: 1 },
         grants: [{ type: "incoming-attack-advantage" }],
+      },
+    ],
+  ],
+  [
+    // Sap: "that creature has Disadvantage on its next attack roll before the start of
+    // your next turn." Its own next attack spends it.
+    "mastery-sap",
+    [
+      {
+        type: "while-active",
+        activeKey: "sapped",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [
+          {
+            type: "disadvantage-on",
+            rollType: "attack",
+            scope: "all",
+            vs: "next-attack-roll",
+            consume: "next",
+          },
+        ],
+      },
+    ],
+  ],
+  [
+    // Slow: "that creature's Speed is reduced by 10 feet until the start of your next
+    // turn. If the creature is hit more than once by weapons that have this property,
+    // the Speed reduction doesn't exceed 10 feet."
+    "mastery-slow",
+    [
+      {
+        type: "while-active",
+        activeKey: "slowed",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [{ type: "speed", amount: -10 }],
       },
     ],
   ],

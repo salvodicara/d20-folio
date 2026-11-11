@@ -259,6 +259,7 @@ import {
   resolveItemBoundDamageRiders,
   attacksPerAction,
   maxTableExtraAttacks,
+  isArmorOrShieldEquipped,
   isHeavyArmorEquipped,
   heavyWeaponDisadvantage,
   type ResolvedWeaponDie,
@@ -612,6 +613,8 @@ export interface ActionSummary {
   saveDC?: number;
   /** Save ability: "DEX", "WIS" */
   saveAbility?: string;
+  /** The abilities the target picks from (2024 Grapple and Shove: STR or DEX). */
+  saveAbilities?: AbilityCode[];
   /** Range: "120 feet", "Touch", "Self" */
   range?: string;
   /** Duration (omitted if Instantaneous) */
@@ -764,7 +767,7 @@ export interface ActionSummary {
    * the live number instead of leaving the formula to memory. Locale-free;
    * consumed by `buildWeaponFacts` (both weapon surfaces read it identically).
    */
-  masteryDetail?: { toppleDc?: number; grazeDamage?: number };
+  masteryDetail?: { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string };
   /**
    * RA-14 — the TRACKED ammunition this ranged weapon fires: the SRD gear row's
    * stable id (arrows / crossbow-bolts / sling-bullets / blowgun-needles) + the
@@ -3161,8 +3164,26 @@ function resolveRiderFromRow(
  * automatically as the character levels up, with no Monk-specific code
  * in the consumer.
  */
-export function resolveActiveSpeedRiderBonus(character: CharacterDoc): number {
-  let total = 0;
+export function resolveActiveSpeedRiderBonus(
+  character: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined
+): number {
+  return activeSpeedRiderParts(character, resolveSrd).reduce(
+    (sum, p) => sum + p.value,
+    0
+  );
+}
+
+/** Each active speed rider as (feature id, feet). A `whileUnarmored` rider counts
+ *  only when no armor or Shield is worn (unknown without a resolver: counted). */
+function activeSpeedRiderParts(
+  character: CharacterDoc,
+  resolveSrd?: (id: string) => SrdEquipmentData | undefined
+): Array<{ featureId: string; value: number }> {
+  const armored = resolveSrd
+    ? isArmorOrShieldEquipped(character.character.equipment, resolveSrd)
+    : false;
+  const out: Array<{ featureId: string; value: number }> = [];
   for (const f of character.character.features) {
     if ("custom" in f) continue;
     const srdFeature = classFeatureIndex.get(f.srdId);
@@ -3170,12 +3191,13 @@ export function resolveActiveSpeedRiderBonus(character: CharacterDoc): number {
     const rider =
       "rider" in srdFeature.mechanics ? srdFeature.mechanics.rider : undefined;
     if (rider?.appliesTo !== "speed") continue;
+    if (rider.whileUnarmored && armored) continue;
     // R4 — read each rider's tier from its OWNING class at the character's level IN
     // that class (a multiclass Monk's Unarmored Movement uses the Monk level).
     const raw = featureClassRow(f.srdId, character)?.[rider.sourceKey];
-    if (typeof raw === "number" && raw > 0) total += raw;
+    if (typeof raw === "number" && raw > 0) out.push({ featureId: f.srdId, value: raw });
   }
-  return total;
+  return out;
 }
 
 /**
@@ -7667,12 +7689,24 @@ interface CastSpellIdentity {
 export function masteryNumbers(
   tokens: ReadonlyArray<string>,
   mod: number,
-  pb: number
-): { toppleDc?: number; grazeDamage?: number } {
+  pb: number,
+  /** The row's own damage parts; absent under a damage override (Cleave then has
+   *  no number: the player's formula hides which part is the modifier). */
+  damage?: { die: string; damageMod: number }
+): { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string } {
   const lower = tokens.map((tk) => tk.toLowerCase());
   return {
     ...(lower.includes("topple") ? { toppleDc: 8 + mod + pb } : {}),
     ...(lower.includes("graze") ? { grazeDamage: Math.max(0, mod) } : {}),
+    // Cleave: the weapon's damage without the ability modifier, unless negative.
+    ...(lower.includes("cleave") && damage
+      ? {
+          cleaveDamage: appendAbilityModToDice(
+            damage.die,
+            damage.damageMod - Math.max(0, mod)
+          ),
+        }
+      : {}),
   };
 }
 
@@ -8154,7 +8188,10 @@ function resolveWeaponActions(
     const masteryDetail = masteryNumbers(
       [...(ownedMastery ? [ownedMastery] : []), ...reachMasteries],
       mod,
-      pb
+      pb,
+      weaponRef.damageOverride != null && weaponRef.damageOverride !== ""
+        ? undefined
+        : { die: damageDie, damageMod }
     );
 
     // RA-14 — TRACKED ammunition: a ranged weapon DECLARES the gear id it fires
@@ -8684,6 +8721,8 @@ function resolveTemporaryHpActions(
               saveDC: unarmedStrikeDc,
               saveDcParts: unarmedStrikeDcParts,
               saveAbility: "STR",
+              // SRD 5.2.1 Unarmed Strike: the target picks STR or DEX.
+              saveAbilities: ["STR", "DEX"] satisfies AbilityCode[],
             }
           : {}),
         ...(ba.id === "base-grapple"
@@ -9786,7 +9825,9 @@ export function effectiveWalkingSpeedFt(
     facts.push("no-heavy-armor");
   }
   if (round === 1) facts.push("round-1");
-  const bonus = ruleNumber(agg.values, "speed:walk", facts);
+  const bonus =
+    ruleNumber(agg.values, "speed:walk", facts) +
+    resolveActiveSpeedRiderBonus(character, resolveSrd);
 
   const multiplied = Math.round((baseFt + bonus) * agg.speedMultiplier);
 
@@ -9853,6 +9894,13 @@ export function effectiveWalkingSpeedBreakdown(
   let running = baseFt;
   for (const { source, value } of ruleParts(agg.ruleOrigins, "speed:walk", facts)) {
     parts.push(named(source, "breakdown.featureBonus", value));
+    running += value;
+  }
+  // A class feature's speed rider (Monk Unarmored Movement), named.
+  for (const { featureId, value } of activeSpeedRiderParts(character, resolveSrd)) {
+    parts.push(
+      named({ kind: "class-feature", key: featureId }, "breakdown.featureBonus", value)
+    );
     running += value;
   }
 

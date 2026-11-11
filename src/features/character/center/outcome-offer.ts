@@ -14,6 +14,7 @@ import {
   stateEffectsFor,
   type UseOutcome,
 } from "@/lib/play/outcome-effects";
+import { masteryHitEffects } from "@/lib/play/mastery-hit-effects";
 import { standingEffectsForTargets } from "@/lib/play/standing-effects";
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
@@ -114,28 +115,26 @@ function stateWriter(
   };
 }
 
-/** Vex (a weapon mastery): a hit gives Advantage on the attacker's next attack
- *  against that creature, before the end of the attacker's next turn. Out of a fight,
- *  or before the v0.26.0 rules, the sheet keeps its own next-attack flag instead. */
+/** The weapon masteries that leave a state on the creature hit: Vex (Advantage on
+ *  the attacker's next attack against it), Sap (Disadvantage on its next attack roll)
+ *  and Slow (its Speed −10 ft), each until the attacker's next turn
+ *  (`masteryHitEffects`). Out of a fight, or before the v0.26.0 rules, the sheet keeps
+ *  its own next-attack flag for Vex instead, and Sap and Slow are the table's. */
 export function vexWriter(
   action: { id: string; masteryRiders?: ReadonlyArray<{ id: string }> },
   characterId: string
 ): ((targetId: string) => ActiveCombatEffect[]) | undefined {
-  if (!action.masteryRiders?.some((rider) => rider.id === "vex")) return undefined;
+  const masteries = (action.masteryRiders ?? []).map((rider) => rider.id);
+  if (!masteries.some((id) => id === "vex" || id === "sap" || id === "slow")) {
+    return undefined;
+  }
   const status = useCombatStatusStore.getState().status;
   if (!status || !combatEffectsV26On()) return undefined;
   const actor = selfRef(status, characterId);
   return (targetId) =>
-    outcomeEffects({
-      source: { kind: "feature", id: "mastery-vex", actionId: action.id },
-      effects: [
-        {
-          kind: "next-attack-advantage",
-          until: { phase: "turn-end", anchor: "actor" },
-          activeKey: "vexed",
-        },
-      ],
-      outcome: "hit",
+    masteryHitEffects({
+      masteries,
+      actionId: action.id,
       actor,
       target: targetRef(status, targetId),
       round: status.round,

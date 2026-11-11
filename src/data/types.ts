@@ -927,6 +927,9 @@ export interface CombatConditionApplication {
   /** Per-condition overrides for spells such as Symbol whose mutually exclusive
    * outcomes have different maximum lifetimes. */
   lifetimes?: Partial<Record<ConditionId, CombatConditionLifetime>>;
+  /** What the creature also suffers while it holds the condition this applied
+   *  (Hypnotic Pattern: a Speed of 0 while Charmed). Ends with the condition. */
+  whileHeld?: ReadonlyArray<{ kind: "speed-zero" }>;
 }
 
 export interface CombatTargeting {
@@ -2170,6 +2173,9 @@ export interface SrdClassFeatureData {
        *    a number.
        */
       appliesTo?: "speed";
+      /** The active modifier holds only with no armor and no Shield worn
+       *  (Monk Unarmored Movement). */
+      whileUnarmored?: true;
       /**
        * Additional rider chips on the SAME feature card, each reading its own
        * `classSpecific[sourceKey]` and rendered by the SAME chip consumer as the
@@ -3566,6 +3572,8 @@ export interface SrdFeatData {
     spellcasting?: boolean;
     /** Requires training with this armor kind ("Medium Armor Training", …). */
     armorTraining?: ArmorCategory;
+    /** Requires another feat (its id), held already. */
+    feat?: string;
   };
   /** Mechanical effects (for feats with tracked resources or actions) */
   mechanics?: {

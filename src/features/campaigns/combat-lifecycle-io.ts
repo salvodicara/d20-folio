@@ -34,18 +34,22 @@ import {
   type MonsterInput,
   type RosterCombatantInput,
 } from "./encounter";
-import { readRoster, writeRosterEntry } from "./roster-io";
+import { readRoster, writeRosterHp } from "./roster-io";
 import { sessionLogStoreFor } from "./session-log-source";
 import {
   planCancel,
   planEnd,
   planAddMonsters,
   planAddRoster,
+  planCombatantHidden,
   planMonsterCondition,
   planMonsterHp,
   planMonsterInitiative,
+  planMonsterRevealed,
+  planMonsterSide,
   planPcDamageBeat,
   planRemoveUntouched,
+  planReorder,
   planUndoBeats,
   planReopen,
   planRoll,
@@ -457,6 +461,82 @@ export async function setMonsterConditionMove(
     })) === true;
 }
 
+/** The DM hides a combatant from the players, or shows it again; the undo inverts it. */
+export async function setCombatantHiddenMove(
+  campaignId: string,
+  input: { uid: string; id: string; hidden: boolean }
+): Promise<CombatUndo | null> {
+  const done = await applyMove(campaignId, (campaign) => {
+    const patch = planCombatantHidden(campaign, input);
+    return patch && { patch, result: true };
+  });
+  if (done === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planCombatantHidden(campaign, { ...input, hidden: !input.hidden });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** The DM shows the players a monster's exact Hit Points, or hides them; the undo inverts it. */
+export async function setMonsterRevealedMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string; revealed: boolean }
+): Promise<CombatUndo | null> {
+  const done = await applyMove(campaignId, (campaign) => {
+    const patch = planMonsterRevealed(campaign, input);
+    return patch && { patch, result: true };
+  });
+  if (done === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planMonsterRevealed(campaign, {
+        ...input,
+        revealed: !input.revealed,
+      });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** The DM switches a creature between enemy and ally; the undo puts the old side back. */
+export async function setMonsterSideMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string; side: "ally" | "enemy" }
+): Promise<CombatUndo | null> {
+  const previous = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterSide(campaign, input);
+    return planned && { patch: planned.patch, result: planned.previous };
+  });
+  if (previous === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const planned = planMonsterSide(campaign, { ...input, side: previous });
+      return planned && { patch: planned.patch, result: true };
+    })) === true;
+}
+
+/** The DM moves a combatant in the turn order; the undo puts it back where it was. */
+export async function reorderCombatantMove(
+  campaignId: string,
+  input: { uid: string; id: string; beforeId: string | null }
+): Promise<CombatUndo | null> {
+  const previousBefore = await applyMove(campaignId, (campaign) => {
+    const planned = planReorder(campaign, input);
+    return (
+      planned && { patch: planned.patch, result: { before: planned.previousBefore } }
+    );
+  });
+  if (previousBefore === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const planned = planReorder(campaign, {
+        ...input,
+        beforeId: previousBefore.before,
+      });
+      return planned && { patch: planned.patch, result: true };
+    })) === true;
+}
+
 /** The DM sets a monster's initiative; the undo puts the old value back. */
 export async function setMonsterInitiativeMove(
   campaignId: string,
@@ -571,10 +651,9 @@ async function writeBackRosterHp(
   try {
     const roster = await readRoster(campaignId);
     await Promise.all(
-      rosterHpWriteBack(fight, roster).flatMap(({ rosterId, hp }) => {
-        const entry = roster[rosterId];
-        return entry ? [writeRosterEntry(campaignId, rosterId, { ...entry, hp })] : [];
-      })
+      rosterHpWriteBack(fight, roster).flatMap(({ rosterId, hp }) =>
+        roster[rosterId] ? [writeRosterHp(campaignId, rosterId, hp)] : []
+      )
     );
   } catch (error) {
     diagnosticsLog("warn", "campaign.roster-writeback-failed", {

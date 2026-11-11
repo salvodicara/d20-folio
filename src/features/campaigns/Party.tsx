@@ -53,14 +53,10 @@ import { useTurnAdvanceShortcut } from "@/hooks/useTurnAdvanceShortcut";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
 import {
-  attachMemberCharacter,
-  listSharedCampaigns,
   advanceEncounterTurn,
   persistBeginTurns,
   persistStartEncounter,
   persistEndEncounter,
-  setEncounterParticipation,
-  appendChronicleChapter,
 } from "@/features/campaigns/campaign-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
@@ -68,12 +64,11 @@ import {
   EndEncounterDialog,
   type EncounterClose,
 } from "@/features/campaigns/party-chronicle";
-import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { feedHp, undoableBeatId } from "@/features/campaigns/chronicle-feed";
 import { useSessionLog, type SessionDraft } from "@/features/campaigns/useSessionLog";
+import { saveFightToChronicle } from "@/domains/combat/fight-write-up";
 import {
   attributionCorrection,
-  encounterCloseDrafts,
   encounterFeed,
   hideCombatants,
   noteDraft,
@@ -83,6 +78,12 @@ import {
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { undoAdversaryChronicleEvent } from "@/features/campaigns/encounter-world-command";
 import { useGatheringScrollAnchor } from "@/features/campaigns/gathering-scroll-anchor";
+import {
+  dmSeat,
+  participatingIds as participatingIdsOf,
+  setFightParticipation,
+  skippedAtBegin,
+} from "@/domains/combat/fight-participation";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
 import {
   useMemberCharacterDocs,
@@ -99,6 +100,8 @@ import {
   startEncounter,
   type EncounterPcSeed,
 } from "@/features/campaigns/encounter";
+import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
+import { partyOrder } from "@/features/campaigns/party-order";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
   addReinforcement,
@@ -129,20 +132,15 @@ import {
   type ApplyFn,
   type ReorderRow,
 } from "@/features/campaigns/party-encounter";
-import type {
-  CampaignDoc,
-  EncounterMonster,
-  EncounterState,
-  MemberCharacterSnapshot,
-} from "@/types/campaign";
+import type { CampaignDoc, EncounterMonster, EncounterState } from "@/types/campaign";
 import type { CombatState } from "@/types/combat-state";
 
 /** A member's `memberDetails` entry — the per-uid record on the campaign doc. */
 type CampaignDocMemberDetails = CampaignDoc["memberDetails"];
 type CampaignMember = CampaignDocMemberDetails[string];
 import type { RosterCharacterDoc } from "@/lib/character-cache";
+import { attachChoices, attachCharacter } from "@/domains/campaign/attach-character";
 import {
-  buildMemberSnapshot,
   snapshotClasses,
   snapshotTotalLevel,
 } from "@/features/campaigns/member-snapshot";
@@ -253,99 +251,11 @@ export function Party() {
       }
     : undefined;
 
-  // D29 — attach (or detach, "") the current member's character: write the
-  // snapshot the party reads, optimistically into the store + (in prod) Firestore.
+  // D29 — attach (or detach, "") the current member's character: one campaign per
+  // character, an atomic claim, reverted when refused (`attachCharacter`).
   async function attachMyCharacter(characterId: string): Promise<void> {
-    if (!campaign || !currentUid) return;
-    // ONE-CAMPAIGN-PER-CHARACTER invariant: a hero attaches to at most one campaign.
-    // Reject attaching one already attached to ANOTHER campaign (a swap WITHIN this
-    // campaign, or a detach "", is always allowed). The check reuses the same
-    // membership-scoped `listSharedCampaigns` read the rest of the app uses — never an
-    // enumeration — and the same `memberDetails[uid].characterId` predicate as the
-    // attached-sheet fan-out. On rejection nothing is written and a friendly toast fires.
-    if (characterId) {
-      // The pre-check read can reject (offline pop, or the bounded read timing out on
-      // a wedged SDK) and this function is invoked fire-and-forget (`void attach…`) —
-      // surface the failure as the same attach-failed toast instead of letting the
-      // rejection vanish into the void. Nothing was written yet, so no revert needed.
-      let mine: Awaited<ReturnType<typeof listSharedCampaigns>>;
-      try {
-        mine = await listSharedCampaigns(currentUid);
-      } catch {
-        useToastStore.getState().showToast({
-          message: t("campaignHub.attachFailed"),
-          duration: 5000,
-        });
-        return;
-      }
-      const elsewhere = mine.find(
-        (c) =>
-          c.id !== campaign.id && c.memberDetails[currentUid]?.characterId === characterId
-      );
-      if (elsewhere) {
-        // Owner-reported (2026-07-02): NAME the blocking campaign — a nameless "already
-        // in another campaign" reads like corrupted data when the player can't tell
-        // WHERE the hero is attached.
-        useToastStore.getState().showToast({
-          message: t("campaignHub.attachAlreadyElsewhere", { campaign: elsewhere.name }),
-          duration: 6000,
-        });
-        return;
-      }
-    }
-    const doc = roster.find((c) => c.id === characterId);
-    // Build the snapshot through the ONE seam (rule 6): AC is DERIVED via the
-    // same grant-aware `effectiveAC` the cockpit renders — never the stored
-    // `character.ac`, which can be a stale 0 for a hero never opened in the cockpit.
-    const snapshot: MemberCharacterSnapshot | null = doc
-      ? buildMemberSnapshot(doc)
-      : null;
-    const mine = campaign.memberDetails[currentUid];
-    // The previously-attached character (captured BEFORE the optimistic store
-    // update) — on a swap the attach transaction releases its claim.
-    const prevCharId = mine?.characterId ?? null;
-    if (mine) {
-      setCampaign({
-        ...campaign,
-        memberDetails: {
-          ...campaign.memberDetails,
-          [currentUid]: {
-            ...mine,
-            characterId: characterId || null,
-            character: snapshot,
-          },
-        },
-      });
-    }
-    // B07 — CLAIM the hero for this campaign ATOMICALLY: the transaction closes the
-    // two-device D9 race the client pre-check above cannot. On "conflict" (a concurrent
-    // attach won the race) or a hard write failure (offline), revert the optimistic
-    // store change and tell the player. The claim (`attachedCampaignId`) IS the whole
-    // cross-user access story: firestore.rules derive the DM's + peers' access LIVE
-    // from it + the campaign roster — there is no reader-list ACL to recompute anymore.
-    void attachMemberCharacter(
-      campaign.id,
-      currentUid,
-      prevCharId,
-      characterId || null,
-      snapshot
-    )
-      .then((outcome) => {
-        if (outcome === "conflict") {
-          setCampaign(campaign);
-          useToastStore.getState().showToast({
-            message: t("campaignHub.attachRaceLost"),
-            duration: 6000,
-          });
-        }
-      })
-      .catch(() => {
-        setCampaign(campaign);
-        useToastStore.getState().showToast({
-          message: t("campaignHub.attachFailed"),
-          duration: 5000,
-        });
-      });
+    if (!currentUid) return;
+    await attachCharacter(characterId, currentUid, roster, t);
   }
 
   // DM-only — promote the attached party members into a fresh encounter (pure
@@ -404,22 +314,9 @@ export function Party() {
   // conformCampaignMembers), so a present `m.character` is provably a non-empty-named
   // snapshot and a null one renders the quiet "no character attached" state.
   //
-  // OWNER-1 — a DETERMINISTIC, STABLE resting order. `Object.entries` alone iterates
-  // Firestore object-key order (non-deterministic, re-derived every render → the
-  // "random + reorders" the owner saw). Sort a COPY by CHARACTER NAME A–Z (owner's
-  // pick; a member with no hero sorts by their player name within the same list), with
-  // a `uid` tiebreak for a TOTAL order so it never churns render-to-render. (In combat
-  // the order is initiative high-to-low via `buildEncounterView`; this is the rest one.)
-  const members = [...Object.entries(campaign.memberDetails)].sort(
-    ([uidA, a], [uidB, b]) => {
-      const keyA = a.character?.name ?? a.displayName;
-      const keyB = b.character?.name ?? b.displayName;
-      return (
-        keyA.localeCompare(keyB, locale, { sensitivity: "base", numeric: true }) ||
-        uidA.localeCompare(uidB)
-      );
-    }
-  );
+  // OWNER-1 — the stable resting order (A–Z by character name), shared with the new
+  // Gruppo panel. In combat the order is initiative via `buildEncounterView`.
+  const members = partyOrder(campaign.memberDetails, locale);
   const hasAttached = members.some(([, m]) => m.characterId && m.character);
   // Captured here (after the guard) so the render closures need no non-null assertion.
   const campaignId = campaign.id;
@@ -430,12 +327,10 @@ export function Party() {
   // WITHOUT a character is filtered OUT of the card grid (the banner represents
   // them); a DM WITH a character (a DMPC) still renders as a normal gold combatant
   // card AND keeps the banner above it.
-  const dmUid = campaign.dmUid;
-  const dmDetails = campaign.memberDetails[dmUid];
-  const dmName = dmDetails?.displayName || t("campaignHub.unnamedPlayer");
-  const dmIsMe = dmUid === currentUid;
-  const dmHasNoChar = !dmDetails?.character;
-  const gridMembers = members.filter(([, m]) => !(m.role === "dm" && !m.character));
+  const { dmName, dmIsMe, dmPlays, gridUids } = dmSeat(campaign, currentUid, t);
+  const dmHasNoChar = !dmPlays;
+  const dmDetails = campaign.memberDetails[campaign.dmUid];
+  const gridMembers = members.filter(([uid]) => gridUids.includes(uid));
 
   // Aggregated party info — the at-a-glance line under the heading.
   const heroes = members
@@ -505,21 +400,7 @@ export function Party() {
           memberDetails={campaign.memberDetails}
           skipped={campaign.encounterSkipped ?? {}}
           onParticipationChange={(participating) => {
-            if (!currentUid) return;
-            const encounterSkipped = participating
-              ? Object.fromEntries(
-                  Object.entries(campaign.encounterSkipped ?? {}).filter(
-                    ([uid]) => uid !== currentUid
-                  )
-                )
-              : { ...(campaign.encounterSkipped ?? {}), [currentUid]: true };
-            setCampaign({ ...campaign, encounterSkipped });
-            void setEncounterParticipation(campaign.id, currentUid, participating).catch(
-              (error: unknown) => {
-                console.error("Encounter participation write failed", error);
-                setCampaign(campaign);
-              }
-            );
+            if (currentUid) setFightParticipation(campaign, currentUid, participating);
           }}
           onEnd={endEncounter}
         />
@@ -639,10 +520,7 @@ function CombatLayer({
   // The FULL live turn order INCLUDING hidden (hidden is a display filter, not a turn
   // filter), so the DM and a player step the identical order and a staged ambush still
   // takes its turn.
-  const participatingIds = view.turnOrderIds.filter((id) => {
-    const combatant = encounter.combatants.find((candidate) => candidate.id === id);
-    return combatant?.kind !== "pc" || !skipped[combatant.memberUid];
-  });
+  const participatingIds = participatingIdsOf(encounter, view.turnOrderIds, skipped);
   const empty = encounter.combatants.length === 0;
   // The "gathering initiative" phase — players roll, then the DM begins the turn order. A
   // NULLISH pointer (null OR a legacy doc's missing field) is gathering (see `initLocked`).
@@ -794,8 +672,7 @@ function CombatLayer({
   // re-reads the encounter fresh, re-validates the caller may advance, and writes ONLY
   // `{currentCombatantId, round}` — so two concurrent advances never double-step and a
   // player's write satisfies the `turnFieldsOnlyChanged` member rule.
-  const isMyTurn = !!ctx.currentUid && view.currentId === `pc-${ctx.currentUid}`;
-  const canAdvance = (isDm || isMyTurn) && !gathering;
+  const canAdvance = mayStepTurn(encounter, { uid: ctx.currentUid, isDm }) && !gathering;
   // Disarm the turn buttons while an advance is in flight (the UX half of the
   // double-click fix; the CAS in `advanceEncounterTurn` is the correctness half).
   const [advancing, setAdvancing] = useState(false);
@@ -841,12 +718,7 @@ function CombatLayer({
     if (!apply || rolledIds.length === 0) return;
     // Starting with a partial table is the DM's explicit skip: unrolled PCs remain in
     // the encounter for targeting/late correction but do not enter the frozen order.
-    const skippedAtStart = { ...skipped };
-    for (const combatant of encounter.combatants) {
-      if (combatant.kind === "pc" && !rolledIds.includes(combatant.id)) {
-        skippedAtStart[combatant.memberUid] = true;
-      }
-    }
+    const skippedAtStart = skippedAtBegin(encounter, skipped, rolledIds);
     // Thief's Reflexes: each holder's round-1 second turn, slotted at its Initiative
     // minus 10 (the classes and totals the DM's view already reads live).
     const extraTurns = thiefsReflexesTurns(rolledIds, view.rows);
@@ -969,38 +841,17 @@ function CombatLayer({
   // Save the DM's finished chronicle chapter — the SINGLE persisted Chronicle write per
   // fight. Resolves → the caller clears the encounter (the dialog unmounts); rejects
   // (offline) → the dialog stays open + the fight running for a retry.
-  const saveChronicle = ({ chapter, note, outcome }: EncounterClose): Promise<void> => {
-    // The session report keeps the DM's note and the outcome. Not awaited: offline, the
-    // writes queue in order and land with the next connection.
-    writeLog(encounterCloseDrafts(encounterId, note, outcome));
-    // DEV ONLY — under bypass `appendChronicleChapter` is a no-op (no Firestore) and there
-    // is no listener echo, so mirror the append into the chronicle store optimistically so
-    // the saved chapter shows in the dev/e2e Chronicle exactly as the live echo would.
-    if (DEV_BYPASS_AUTH) {
-      useChronicleStore
-        .getState()
-        .appendChapter(chapter, ctx.currentUid ?? "", new Date());
-    }
-    return appendChronicleChapter(ctx.campaignId, {
-      chapter,
-      editedBy: ctx.currentUid ?? "",
-    })
-      .then(() => {
-        useToastStore.getState().showToast({
-          message: t("combatChronicle.savedToast"),
-          duration: 3000,
-        });
-        onEnd();
-      })
-      .catch((e: unknown) => {
-        console.error("Chronicle append failed", e);
-        useToastStore.getState().showToast({
-          message: t("combatChronicle.saveFailedToast"),
-          duration: 6000,
-        });
-        throw e;
-      });
-  };
+  const saveChronicle = (close: EncounterClose): Promise<void> =>
+    saveFightToChronicle(
+      {
+        campaignId: ctx.campaignId,
+        uid: ctx.currentUid ?? "",
+        encounterId,
+        close,
+        writeLog,
+      },
+      t
+    ).then(onEnd);
 
   return (
     <div className="encounter-command-stack flex flex-col gap-4">
@@ -1445,6 +1296,7 @@ function MemberCard({
     </span>
   );
 
+  const choices = attachChoices(m, ctx.roster, { isMe, inCombat });
   const attachSelect = (
     <Select
       value={m.characterId ?? ""}
@@ -1452,18 +1304,12 @@ function MemberCard({
       aria-label={t("campaignHub.attachCharacter")}
       className="text-xs"
     >
-      {/* With a hero attached the blank option IS the detach action — name it so. */}
-      <option value="">
-        {m.characterId ? t("campaignHub.detachCharacter") : t("campaignHub.attachNone")}
-      </option>
-      {/* An attached id missing from the roster (a since-deleted hero, a stale doc)
-          still shows AS the selected value — never a lying "Detach character" face. */}
-      {m.characterId && char && !ctx.roster.some((c) => c.id === m.characterId) ? (
-        <option value={m.characterId}>{char.name}</option>
-      ) : null}
-      {ctx.roster.map((c) => (
+      {/* With a hero attached the blank option IS the detach action — name it so; an
+          attached id missing from the roster still shows as itself (`attachChoices`). */}
+      <option value="">{t(choices.blank)}</option>
+      {choices.options.map((c) => (
         <option key={c.id} value={c.id}>
-          {c.character.name}
+          {c.name}
         </option>
       ))}
     </Select>

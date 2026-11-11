@@ -22,6 +22,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SURFACE_ROUTES, type SurfaceRoute } from "./surface-census";
 import { firstWord, teamFixtureName } from "./team-fixture";
+import { visibleWithin } from "./visible-within";
 
 export type Theme = "dark" | "light";
 export type SheetMode = "play" | "edit";
@@ -188,7 +189,7 @@ const FAMILIAR_ROW = /^(familiar|famiglio)\s+imp\b/i;
 async function openResourcesDisclosure(page: Page): Promise<void> {
   const toggle = page.getByRole("button", { name: /^(resources|risorse)$/i }).first();
   if (
-    (await toggle.isVisible({ timeout: 500 }).catch(() => false)) &&
+    (await visibleWithin(toggle, 500)) &&
     (await toggle.getAttribute("aria-expanded")) !== "true"
   ) {
     await toggle.click();
@@ -474,7 +475,7 @@ async function advanceBardToSwap(page: Page): Promise<void> {
   await next.click(); // hp → spells
   await learnFirst();
   const cantripTab = page.locator(".wiz-fork-tab").last();
-  if (await cantripTab.isVisible({ timeout: 2000 }).catch(() => false)) {
+  if (await visibleWithin(cantripTab, 2000)) {
     await cantripTab.click();
     await learnFirst();
   }
@@ -774,7 +775,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyByName,
     prepare: async (page) => {
       const trigger = page.locator(".vital .glossary-term").first();
-      if (await trigger.isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (await visibleWithin(trigger, 5000)) {
         await trigger.click().catch(() => {});
         await page
           .locator(".glossary-pop")
@@ -809,7 +810,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
         .filter({ has: page.getByRole("button", { name: rePickCta }) })
         .last();
       const trigger = section.getByRole("button", { name: rePickCta }).first();
-      if (await trigger.isVisible({ timeout: 5000 }).catch(() => false)) {
+      if (await visibleWithin(trigger, 5000)) {
         await trigger.click().catch(() => {});
         await page
           .getByRole("dialog")
@@ -931,11 +932,11 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       // hp → boon (the footer CTA), then flip the boon fork to the feat list —
       // locale-invariant by position (.wiz-pager next / third fork tab).
       const next = page.locator(".wiz-pager-btn.next");
-      if (await next.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(next, 4000)) {
         await next.click().catch(() => {});
       }
       const featTab = page.locator(".wiz-fork-tab").nth(2);
-      if (await featTab.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(featTab, 4000)) {
         await featTab.click().catch(() => {});
       }
       await page.waitForTimeout(200);
@@ -964,11 +965,11 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyText(/Seraphine/),
     prepare: async (page) => {
       const next = page.locator(".wiz-pager-btn.next");
-      if (await next.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(next, 4000)) {
         await next.click().catch(() => {}); // hp → subclass
       }
       const plaque = page.locator(".wiz-card").first();
-      if (await plaque.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(plaque, 4000)) {
         await plaque.click().catch(() => {});
       }
       await page.waitForTimeout(250);
@@ -1348,7 +1349,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       const trigger = page
         .getByRole("button", { name: /search the folio|cerca nel folio/i })
         .first();
-      if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(trigger, 4000)) {
         await trigger.click().catch(() => {});
         await page
           .getByRole("dialog")
@@ -1369,7 +1370,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyByH1,
     prepare: async (page) => {
       const userDisclosure = page.locator('main button[aria-expanded="false"]').first();
-      if (await userDisclosure.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(userDisclosure, 4000)) {
         await userDisclosure.click();
         await page
           .locator('main button[aria-expanded="true"]')
@@ -1387,7 +1388,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyByName,
     prepare: async (page) => {
       const trigger = page.getByRole("button", { name: /account/i }).first();
-      if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(trigger, 4000)) {
         await trigger.click().catch(() => {});
         await page
           .getByRole("menu")
@@ -1408,7 +1409,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
       const trigger = page
         .getByRole("button", { name: /more actions|altre azioni/i })
         .first();
-      if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(trigger, 4000)) {
         await trigger.click().catch(() => {});
         await page
           .getByRole("menu")
@@ -1429,7 +1430,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     ready: readyByName,
     prepare: async (page) => {
       const trigger = page.getByRole("button", { name: /account/i }).first();
-      if (await trigger.isVisible({ timeout: 4000 }).catch(() => false)) {
+      if (await visibleWithin(trigger, 4000)) {
         await trigger.click().catch(() => {});
         const report = page
           .getByRole("menuitem", { name: /report a bug|segnala un problema/i })

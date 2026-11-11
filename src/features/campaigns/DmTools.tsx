@@ -22,16 +22,14 @@ import { InfoCard } from "@/components/shared/InfoCard";
 import { Select } from "@/components/shared/Select";
 import { useAuthStore } from "@/stores/authStore";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import { useToastStore } from "@/stores/toastStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import {
-  deleteCampaign,
-  removeMember,
-  yieldDmRole,
-} from "@/features/campaigns/campaign-io";
-import { removeCombatant } from "@/features/campaigns/encounter";
+  deleteCampaignForGood,
+  handOverDm,
+  removeCampaignMember,
+} from "@/domains/campaign/campaign-admin";
 
 export function DmTools() {
   const { t } = useTranslation();
@@ -39,14 +37,12 @@ export function DmTools() {
   const uid = useAuthStore((s) => s.user?.uid);
   const isAdmin = useIsAdmin();
   const campaign = useCampaignStore((s) => s.campaign);
-  const setCampaign = useCampaignStore((s) => s.setCampaign);
   const [yieldTo, setYieldTo] = useState("");
   const [removeTo, setRemoveTo] = useState("");
 
   // D29 — the DM tools render for the campaign's DM OR the admin (the owner
   // always overrides every campaign, even ones they don't run).
   if (!campaign || (campaign.dmUid !== uid && !isAdmin)) return null;
-  const campaignId = campaign.id;
 
   // Members who could be promoted to DM (everyone except the current DM).
   const otherMembers = Object.entries(campaign.memberDetails).filter(
@@ -54,11 +50,7 @@ export function DmTools() {
   );
 
   // D29 — transfer the DM crown to another member (the current DM, or the admin acting
-  // on their behalf). Optimistic store update, then AWAIT the write so a failure can be
-  // handled (B10): the panel hides for the ex-DM the instant local `dmUid` flips, so an
-  // unhandled write failure used to strand the party with NO DM until a reload. On
-  // rejection revert the optimistic flip + surface an error toast; the success toast +
-  // ACL reconcile fire only after the write commits.
+  // on their behalf), once confirmed: `handOverDm` (optimistic, reverted on refusal).
   async function confirmYieldDm(): Promise<void> {
     if (!campaign || !yieldTo) return;
     const target = campaign.memberDetails[yieldTo];
@@ -71,50 +63,11 @@ export function DmTools() {
       confirmLabel: t("campaignHub.yieldDmConfirm"),
     });
     if (!ok) return;
-    const oldDmUid = campaign.dmUid;
-    const newDmUid = yieldTo;
-    const md = campaign.memberDetails;
-    const oldDm = md[oldDmUid];
-    const newDm = md[newDmUid];
-    if (!oldDm || !newDm) return;
-    const prevCampaign = campaign; // revert anchor if the persisted write fails
-    setCampaign({
-      ...campaign,
-      dmUid: newDmUid,
-      memberDetails: {
-        ...md,
-        [newDmUid]: { ...newDm, role: "dm" },
-        [oldDmUid]: { ...oldDm, role: "player" },
-      },
-    });
-    try {
-      await yieldDmRole(campaignId, oldDmUid, newDmUid);
-    } catch {
-      // The role flip never landed — undo the optimistic mutation so the party is not
-      // left locked out of DM Tools with no DM, and tell the DM to retry.
-      setCampaign(prevCampaign);
-      useToastStore.getState().showToast({
-        message: t("campaignHub.yieldDmError"),
-        duration: 5000,
-      });
-      return;
-    }
-    setYieldTo("");
-    // No ACL reconcile: cross-user access derives LIVE from the campaign doc's `dmUid`
-    // in firestore.rules, so the role flip above IS the whole convergence.
-    useToastStore.getState().showToast({
-      message: t("campaignHub.yieldDmToast", {
-        name: targetName,
-      }),
-      duration: 3000,
-    });
+    if (await handOverDm(yieldTo, t)) setYieldTo("");
   }
 
-  // Remove a player from the campaign (DM, or admin acting for them). Optimistic store
-  // update, then AWAIT the write (B10 — mirror confirmYieldDm): on rejection revert +
-  // error toast. B03 — the optimistic update also prunes the removed member's `pc-<uid>`
-  // combatant from a running encounter (through the SAME `removeCombatant` reducer the
-  // persisted `removeMember` uses), so the view never shows an orphan row.
+  // Remove a player from the campaign (DM, or admin acting for them), once confirmed:
+  // `removeCampaignMember` (optimistic, reverted on refusal; prunes their fight row).
   async function confirmRemoveMember(): Promise<void> {
     if (!campaign || !removeTo) return;
     const target = campaign.memberDetails[removeTo];
@@ -126,39 +79,7 @@ export function DmTools() {
       tone: "danger",
     });
     if (!ok) return;
-    const prevCampaign = campaign; // revert anchor if the persisted write fails
-    const remaining = Object.fromEntries(
-      Object.entries(campaign.memberDetails).filter(([id]) => id !== removeTo)
-    );
-    const combatantId = `pc-${removeTo}`;
-    const prunedEncounter =
-      campaign.encounter &&
-      campaign.encounter.combatants.some((c) => c.id === combatantId)
-        ? removeCombatant(campaign.encounter, combatantId)
-        : campaign.encounter;
-    setCampaign({
-      ...campaign,
-      members: campaign.members.filter((m) => m !== removeTo),
-      memberDetails: remaining,
-      ...(prunedEncounter !== campaign.encounter ? { encounter: prunedEncounter } : {}),
-    });
-    try {
-      await removeMember(campaignId, removeTo);
-    } catch {
-      setCampaign(prevCampaign);
-      useToastStore.getState().showToast({
-        message: t("campaignHub.removeMemberError"),
-        duration: 5000,
-      });
-      return;
-    }
-    setRemoveTo("");
-    // No ACL reconcile: cross-user access derives LIVE from the campaign roster in
-    // firestore.rules, so the roster write above IS the whole convergence.
-    useToastStore.getState().showToast({
-      message: t("campaignHub.removeMemberToast", { name: targetName }),
-      duration: 3000,
-    });
+    if (await removeCampaignMember(removeTo, t)) setRemoveTo("");
   }
 
   async function confirmDeleteCampaign(): Promise<void> {
@@ -169,19 +90,7 @@ export function DmTools() {
       tone: "danger",
     });
     if (!ok) return;
-    try {
-      await deleteCampaign(campaignId);
-      useToastStore.getState().showToast({
-        message: t("campaignHub.deletedToast"),
-        duration: 3000,
-      });
-    } catch {
-      useToastStore.getState().showToast({
-        message: t("campaignHub.deleteError"),
-        duration: 3000,
-      });
-      return;
-    }
+    if (!(await deleteCampaignForGood(t))) return;
     void navigate("/campaigns");
   }
 

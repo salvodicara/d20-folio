@@ -147,6 +147,7 @@ import {
   localizeTrackerUnit,
 } from "@/lib/views/tracker-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
+import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { useTurnEconomy } from "../useTurnEconomy";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
@@ -235,7 +236,7 @@ function combatGloss(
   }
   if (summary.saveDC != null && summary.saveAbility) {
     parts.push(
-      `${t("stats.dc")} ${summary.saveDC} ${t(`abilities.${summary.saveAbility}_short`)}`
+      `${t("stats.dc")} ${summary.saveDC} ${saveAbilityShort(summary.saveAbility, summary.saveAbilities, t)}`
     );
   }
   // Expanded crit range (Champion Improved/Superior Critical) — "crit 19-20".
@@ -1164,7 +1165,7 @@ function combatFacts(
       ? {
           label: t("spells.save"),
           icon: Shield,
-          value: `${t(`abilities.${summary.saveAbility}_short`)} · ${t("stats.dc")} ${summary.saveDC}`,
+          value: `${saveAbilityShort(summary.saveAbility, summary.saveAbilities, t)} · ${t("stats.dc")} ${summary.saveDC}`,
         }
       : null,
     summary.damage && summary.damageType

@@ -17,8 +17,8 @@ describe("buildSituationalRulesView (Rules-reference presenter)", () => {
     // Distances are kept as raw numbers for the view's D3 formatting.
     expect(fast?.perMinuteFt).toBe(400);
     expect(fast?.perDayMiles).toBe(30);
-    expect(fast?.effect).toContain("passive Perception");
-    expect(v.travel.find((p) => p.id === "normal")?.effect).toBeNull();
+    expect(fast?.effect).toContain("Perception or Survival");
+    expect(v.travel.find((p) => p.id === "normal")?.effect).toContain("Stealth");
   });
 
   it("localizes every topic into IT", () => {

@@ -997,10 +997,15 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
     options: arraySchema(stringSchema),
     type: literalSchema("choice-skill-proficiency"),
   }),
-  "choice-expertise": objectSchema({
-    amount: numberSchema,
-    type: literalSchema("choice-expertise"),
-  }),
+  "choice-expertise": objectSchema(
+    {
+      amount: numberSchema,
+      type: literalSchema("choice-expertise"),
+    },
+    // The skills the choice is limited to (Wizard Scholar's six); absent → any
+    // skill the character is proficient in (Skill Expert).
+    { options: arraySchema(stringSchema) }
+  ),
   "choice-skill-or-tool-proficiency": objectSchema({
     amount: numberSchema,
     type: literalSchema("choice-skill-or-tool-proficiency"),
@@ -2140,6 +2145,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           literalSchema("mounted"),
           literalSchema("strDex"),
           literalSchema("sorcery"),
+          literalSchema("otherThanSource"),
         ]),
         type: literalSchema("disadvantage-on"),
         vs: stringSchema,
@@ -2430,7 +2436,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("choice-grant-bundle"),
     },
     {
-      choiceFrequency: unionSchema([literalSchema("creation"), literalSchema("rest")]),
+      choiceFrequency: unionSchema([
+        literalSchema("creation"),
+        literalSchema("rest"),
+        literalSchema("cast"),
+        literalSchema("once"),
+      ]),
       label: LOCALE_TEXT_SCHEMA,
     }
   ),

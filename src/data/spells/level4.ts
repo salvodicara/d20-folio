@@ -318,6 +318,7 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-fire-shield",
+            choiceFrequency: "cast",
             options: [
               { id: "warm", grants: [{ type: "damage-resistance", damageType: "cold" }] },
               {
