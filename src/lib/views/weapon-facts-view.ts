@@ -136,7 +136,7 @@ export interface WeaponFactsInput {
    * ("Topple · DC 14", "Graze · 3") so the number never lives in memory; the
    * chip's glossary tip keeps the full rule. Absent → plain mastery labels.
    */
-  masteryDetail?: { toppleDc?: number; grazeDamage?: number };
+  masteryDetail?: { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string };
   /** Pre-localized per-source damage breakdown lines (from
    *  `localizeDamageBreakdown`) — surfaced on the damage label. */
   breakdown?: ReadonlyArray<BreakdownLine> | null;

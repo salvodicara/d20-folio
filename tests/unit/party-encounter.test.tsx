@@ -20,7 +20,7 @@ import {
   EncounterBudgetReadout,
   EncounterRoundBar,
 } from "@/features/campaigns/party-encounter";
-import { addMonster, applyHp, startEncounter } from "@/features/campaigns/encounter";
+import { addMonster, applyHp, startEncounter } from "@/lib/play/encounter";
 import { monsterPortraitUrl } from "@/data/monster-art";
 import enGlossary from "@/i18n/en/ui/glossary.json";
 import itGlossary from "@/i18n/it/ui/glossary.json";

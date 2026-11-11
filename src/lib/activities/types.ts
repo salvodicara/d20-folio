@@ -304,6 +304,9 @@ export type ActivityEffect =
         /** The dice while the actor itself is Bloodied, same type (a swarm's "or 2
          *  (1d4) Piercing damage if the swarm is Bloodied"). */
         whileBloodied?: ActivityDice;
+        /** The die face that replaces the base one when the target is missing any of
+         *  its Hit Points (Toll the Dead: d8 → d12). */
+        dieIfHurt?: string;
       })
   | (EffectBase & {
       kind: "heal";

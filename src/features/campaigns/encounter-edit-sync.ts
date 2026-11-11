@@ -1,0 +1,204 @@
+/**
+ * The DM's encounter edit log (`encounter-edit-log.ts`) wired to the campaign store and
+ * the server, for the open campaign:
+ *
+ * - `editEncounter` logs a pure reducer and shows the result at once;
+ * - a short pause later every waiting edit goes out as ONE transaction, replayed onto
+ *   the server's newest fight (`rebaseEncounterEdits`), so a burst of clicks is one
+ *   write and a concurrent change is kept;
+ * - `encounterFromServer` puts the waiting edits back over every snapshot, so the
+ *   screen never drops one;
+ * - with no network, or when the transaction fails, the fight is written whole, as the
+ *   old autosave did: queued offline, never an error on screen.
+ */
+import { diagnosticsLog } from "@/lib/diagnostics/logger";
+import type { EncounterState } from "@/types/campaign";
+
+import {
+  readServerEncounter,
+  rebaseEncounterEdits,
+  writeWholeEncounter,
+} from "./campaign-io";
+import { useCampaignStore } from "./campaignStore";
+import {
+  beginSend,
+  logEdit,
+  logSnapshot,
+  openEditLog,
+  replayEdits,
+  sendDone,
+  shownFight,
+  type EncounterEditLog,
+} from "./encounter-edit-log";
+
+/** Long enough to gather a burst of clicks into one write, short enough to feel live. */
+const SEND_DELAY_MS = 300;
+
+interface EditSync {
+  campaignId: string;
+  log: EncounterEditLog;
+  /** The fight last put in the store by this log. */
+  shown: EncounterState | null | undefined;
+  timer: ReturnType<typeof setTimeout> | null;
+  /** Bumped when the log is reopened, so a send from before is ignored. */
+  generation: number;
+}
+
+let sync: EditSync | null = null;
+
+function storeFight(campaignId: string): EncounterState | null | undefined {
+  const campaign = useCampaignStore.getState().campaign;
+  return campaign?.id === campaignId ? (campaign.encounter ?? null) : undefined;
+}
+
+function show(s: EditSync): void {
+  const fight = shownFight(s.log);
+  s.shown = fight;
+  if (storeFight(s.campaignId) === undefined) return;
+  if (storeFight(s.campaignId) !== fight) useCampaignStore.getState().setEncounter(fight);
+}
+
+function syncFor(campaignId: string): EditSync {
+  if (sync?.campaignId !== campaignId) {
+    if (sync) closeEncounterEdits(sync.campaignId);
+    sync = {
+      campaignId,
+      log: openEditLog(storeFight(campaignId) ?? null),
+      shown: undefined,
+      timer: null,
+      generation: 0,
+    };
+  }
+  return sync;
+}
+
+function schedule(s: EditSync): void {
+  if (s.timer) clearTimeout(s.timer);
+  s.timer = setTimeout(() => {
+    s.timer = null;
+    void send(s);
+  }, SEND_DELAY_MS);
+}
+
+async function send(s: EditSync): Promise<void> {
+  const begun = beginSend(s.log);
+  if (!begun) return;
+  s.log = begun.log;
+  const { generation } = s;
+  const base = begun.log.server;
+  let written: EncounterState | null;
+  try {
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      throw new Error("offline");
+    }
+    written = await rebaseEncounterEdits(s.campaignId, begun.batch);
+  } catch (error) {
+    // The old way: the whole fight as this device sees it, queued while offline.
+    written = replayEdits(base, begun.batch);
+    diagnosticsLog("warn", "campaign.encounter-edit-fallback", {
+      message: String(error),
+    });
+    if (written) {
+      writeWholeEncounter(s.campaignId, written).catch((failure: unknown) => {
+        diagnosticsLog("error", "campaign.encounter-write-failed", {
+          message: String(failure),
+        });
+      });
+    }
+  }
+  if (sync !== s || s.generation !== generation) return;
+  const done = sendDone(s.log, written);
+  s.log = done.log;
+  show(s);
+  if (done.recheck) {
+    readServerEncounter(s.campaignId)
+      .then((fight) => {
+        if (sync !== s || s.generation !== generation) return;
+        s.log = logSnapshot(s.log, fight);
+        show(s);
+      })
+      .catch(() => {
+        // The next snapshot brings the server's fight anyway.
+      });
+  }
+  if (s.log.waiting.length > 0) schedule(s);
+}
+
+/**
+ * The DM changes the fight: `apply` is the same pure reducer the screen used before,
+ * shown at once and sent shortly after with whatever else is waiting.
+ */
+export function editEncounter(
+  campaignId: string,
+  apply: (fight: EncounterState) => EncounterState
+): void {
+  const s = syncFor(campaignId);
+  const live = storeFight(campaignId);
+  if (!live) return;
+  // The fight changed outside the log (a new fight, a turn passed): start from it.
+  if (live !== s.shown) reopen(s, live);
+  const before = shownFight(s.log);
+  if (!before || apply(before) === before) return;
+  s.log = logEdit(s.log, { epoch: before.epoch, apply });
+  show(s);
+  schedule(s);
+}
+
+function reopen(s: EditSync, fight: EncounterState | null): void {
+  if (s.timer) clearTimeout(s.timer);
+  s.timer = null;
+  s.log = openEditLog(fight);
+  s.shown = undefined;
+  s.generation += 1;
+}
+
+/**
+ * The fight on screen changed outside the log and outside a snapshot (a turn passed, a
+ * fight started, a writer not on the log yet). That change was made over the fight on
+ * screen, so it holds every waiting edit, and the old autosave writes it whole: the log
+ * lets go of them, never sending one twice.
+ */
+export function handOverEncounterEdits(campaignId: string): void {
+  if (sync?.campaignId === campaignId) reopen(sync, storeFight(campaignId) ?? null);
+}
+
+/** A server snapshot of the fight → the fight to show (the waiting edits over it). */
+export function encounterFromServer(
+  campaignId: string,
+  fight: EncounterState | null
+): EncounterState | null {
+  if (sync?.campaignId !== campaignId) return fight;
+  sync.log = logSnapshot(sync.log, fight);
+  const shown = shownFight(sync.log);
+  sync.shown = shown;
+  return shown;
+}
+
+/** Whether `fight` is the one this log put on screen: the old autosave must not write it. */
+export function isEditLogFight(
+  campaignId: string,
+  fight: EncounterState | null | undefined
+): boolean {
+  return (
+    sync?.campaignId === campaignId && sync.shown !== undefined && fight === sync.shown
+  );
+}
+
+/**
+ * The campaign closes (navigation, page hidden): whatever still waits is written whole
+ * right away, queued if offline, as the old autosave's flush did.
+ */
+export function closeEncounterEdits(campaignId: string): void {
+  if (sync?.campaignId !== campaignId) return;
+  const s = sync;
+  sync = null;
+  if (s.timer) clearTimeout(s.timer);
+  if (s.log.waiting.length === 0) return;
+  const fight = shownFight(s.log);
+  if (!fight) return;
+  writeWholeEncounter(campaignId, fight).catch((failure: unknown) => {
+    diagnosticsLog("error", "campaign.encounter-write-failed", {
+      message: String(failure),
+    });
+  });
+}

@@ -183,6 +183,7 @@
       "invocation": "Supplica occulta",
       "maneuver": "Manovra",
       "hoverHint": "Passa sopra un'opzione per leggere cosa fa."
-    }
+    },
+    "searchFightingStyles": "Cerca Stili di Combattimento"
   }
 }

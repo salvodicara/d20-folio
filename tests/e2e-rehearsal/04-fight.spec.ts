@@ -5,13 +5,15 @@
  * a hit the DM calls landing through the bond, Cutting Words as a reaction, the end
  * of the fight; Warding Bond (1 hour, no Concentration) outlives it.
  */
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 import {
   actionRow,
   expectNoCrash,
   openFightTab,
   SANDBOX_USERS,
+  spaced,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 
@@ -33,7 +35,7 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
   await actionRow(page, spell).getByRole("button").click();
   const dialog = page
     .locator("dialog[open]")
-    .filter({ hasText: new RegExp(`Cast ${spell}`, "i") });
+    .filter({ hasText: new RegExp(`Cast\\s${spaced(spell)}`, "i") });
   await expect(dialog).toBeVisible();
   for (let step = 0; step < 4 && (await dialog.count()) > 0; step++) {
     const chips = dialog.locator(".f-chips button");
@@ -63,7 +65,7 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
     .soft(
       page
         .locator("[role=status]")
-        .filter({ hasText: new RegExp(`${spell} (used|needs)`) })
+        .filter({ hasText: new RegExp(`${spaced(spell)}\\s(used|needs)`) })
         .first()
     )
     .toBeVisible({ timeout: 3_000 });
@@ -80,10 +82,13 @@ async function showsEffect(page: Page, name: string): Promise<boolean> {
     .getByRole("dialog")
     .or(page.locator("[aria-label='Effects']"))
     .last();
+  // `isVisible` never waits (its timeout is ignored): wait for the effect to arrive
+  // from the other player's sheet, up to 10 s, before saying it is not there.
   const found = await panel
     .getByText(name)
     .first()
-    .isVisible({ timeout: 10_000 })
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .then(() => true)
     .catch(() => false);
   await page.keyboard.press("Escape");
   return found;

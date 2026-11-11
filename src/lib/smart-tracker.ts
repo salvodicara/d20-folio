@@ -31,9 +31,11 @@ import { characterScalarBindings } from "@/lib/scalar-bindings";
 import type { IntegerBindings } from "@/lib/integer-expression";
 import { baseActionState, baseActionText } from "@/lib/base-action-states";
 import { HELP_ACTION_ID } from "@/lib/play/help";
+import { hurtDice } from "@/lib/play/hurt-target-damage";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
   POTION_TIMER_PREFIX,
+  spentGearStateSources,
   potionDurationRounds,
   potionTimerKey,
   resolvePotionStateSources,
@@ -464,6 +466,8 @@ export interface ActionSummary {
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
+  /** The formula against a target missing any Hit Points (`damageForTarget` picks). */
+  damageIfHurt?: string;
   /** One observed incoming damage instance reduced by a physical roll plus a
    * deterministic bonus. The resolver applies the remainder through defenses. */
   damageReduction?: {
@@ -637,7 +641,14 @@ export interface ActionSummary {
    */
   extraMasteries?: string[];
   /** Tracker uses remaining: { current: 2, total: 4, isPool?: true, unit?: "hp" } */
-  uses?: { current: number; total: number; isPool?: boolean; unit?: TrackerUnit };
+  uses?: {
+    current: number;
+    total: number;
+    isPool?: boolean;
+    unit?: TrackerUnit;
+    /** The copies carried (a potion, a vial): read as "×2", never a "2/2" ratio. */
+    stock?: true;
+  };
   /** Feature die: "d6", "d8", "d10" */
   die?: string;
   /** The roll `die` is spent on: the triggering attack's damage or its attack
@@ -767,7 +778,7 @@ export interface ActionSummary {
    * the live number instead of leaving the formula to memory. Locale-free;
    * consumed by `buildWeaponFacts` (both weapon surfaces read it identically).
    */
-  masteryDetail?: { toppleDc?: number; grazeDamage?: number };
+  masteryDetail?: { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string };
   /**
    * RA-14 — the TRACKED ammunition this ranged weapon fires: the SRD gear row's
    * stable id (arrows / crossbow-bolts / sling-bullets / blowgun-needles) + the
@@ -5845,6 +5856,7 @@ function resolveEquipmentActions(
     const total = tracker ? resolveTrackerTotal(tracker.total, character) : 0;
     const used = trackerId ? (character.session.trackers[trackerId]?.used ?? 0) : 0;
     for (const [index, action] of item.mechanics.actions.entries()) {
+      const copies = ref.quantity ?? 1;
       const summary: RawActionSummary = {
         effect: srdEffectText("equipment", item.id),
         ...(tracker
@@ -5856,7 +5868,10 @@ function resolveEquipmentActions(
                 unit: tracker.unit,
               },
             }
-          : {}),
+          : item.isConsumable
+            ? // The copies left (Basic Poison's vials), as a potion's card counts them.
+              { uses: { current: copies, total: copies, stock: true } }
+            : {}),
       };
       applyActionEffectSummary(
         summary,
@@ -5872,8 +5887,10 @@ function resolveEquipmentActions(
         name: srdText("equipment", item.id, "name"),
         description: srdText("equipment", item.id, "description"),
         type: action.type,
-        ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
-        ...actionTurnConstraints(action),
+        // The state the item's action lights (Basic Poison's coat), as a feature's.
+        ...featureActionRowFacts(action, item.id, featureActivation(item.grants)),
+        // A consumable with no use pool of its own spends one copy per use.
+        ...(!tracker && item.isConsumable ? { costEquipment: item.id } : {}),
         source: "feature",
         spellLevel: null,
         concentration: false,
@@ -7103,6 +7120,9 @@ function resolveSpellActions(
           ? appendAbilityModToDice(dmgDice, abilityModifier(spellCastScore))
           : dmgDice;
       }
+      if (summary.damage && spell.damageDieIfHurt) {
+        summary.damageIfHurt = hurtDice(summary.damage, spell.damageDieIfHurt);
+      }
 
       // S12b — a multi-instance spell (Magic Missile 3 darts, Scorching Ray 3
       // rays) carries its instance COUNT so the card shows "N × {damage}". Resolved
@@ -7689,12 +7709,24 @@ interface CastSpellIdentity {
 export function masteryNumbers(
   tokens: ReadonlyArray<string>,
   mod: number,
-  pb: number
-): { toppleDc?: number; grazeDamage?: number } {
+  pb: number,
+  /** The row's own damage parts; absent under a damage override (Cleave then has
+   *  no number: the player's formula hides which part is the modifier). */
+  damage?: { die: string; damageMod: number }
+): { toppleDc?: number; grazeDamage?: number; cleaveDamage?: string } {
   const lower = tokens.map((tk) => tk.toLowerCase());
   return {
     ...(lower.includes("topple") ? { toppleDc: 8 + mod + pb } : {}),
     ...(lower.includes("graze") ? { grazeDamage: Math.max(0, mod) } : {}),
+    // Cleave: the weapon's damage without the ability modifier, unless negative.
+    ...(lower.includes("cleave") && damage
+      ? {
+          cleaveDamage: appendAbilityModToDice(
+            damage.die,
+            damage.damageMod - Math.max(0, mod)
+          ),
+        }
+      : {}),
   };
 }
 
@@ -7769,6 +7801,12 @@ function resolveWeaponActions(
       // only while the spell's toggle is lit (auto-lit on cast, retracts on
       // concentration drop). Cast-time damage stays on the spell's own card.
       ...resolveGrantSourcesForSpells(charData.spells),
+      // An item's lit state carries weapon riders too (Basic Poison's coat): the
+      // carried item's, or the lit key's once the last copy is spent.
+      ...resolveGrantSourcesForEquipment(charData.equipment).filter(
+        (source) => source.ref?.kind === "equipment"
+      ),
+      ...spentGearStateSources(sessionActiveKeys(character.session), charData.equipment),
     ],
     sessionActiveKeys(character.session),
     // Bundle-gated weapon riders (Hunter Colossus Slayer) only apply once the
@@ -8176,7 +8214,10 @@ function resolveWeaponActions(
     const masteryDetail = masteryNumbers(
       [...(ownedMastery ? [ownedMastery] : []), ...reachMasteries],
       mod,
-      pb
+      pb,
+      weaponRef.damageOverride != null && weaponRef.damageOverride !== ""
+        ? undefined
+        : { die: damageDie, damageMod }
     );
 
     // RA-14 — TRACKED ammunition: a ranged weapon DECLARES the gear id it fires
@@ -8572,7 +8613,9 @@ function resolveWeaponActions(
 
     // A healing potion shows its heal verdict; any other potion (Giant Strength,
     // Fire Breath, …) shows a short effect from its SRD description (LocaleText data).
-    const summary: RawActionSummary = { uses: { current: qty, total: qty } };
+    const summary: RawActionSummary = {
+      uses: { current: qty, total: qty, stock: true },
+    };
     if (potionFormula) {
       summary.healing = potionFormula;
     } else if (!isCustomItem && srdEn("magic-item", itemRef.srdId, "description")) {

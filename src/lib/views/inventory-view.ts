@@ -80,6 +80,7 @@ import { appendAbilityModToDice } from "@/lib/utils";
 import { buildWeaponFacts, type WeaponFactsVM } from "@/lib/views/weapon-facts-view";
 import { resolveItemConsumable } from "@/lib/srd-resolve";
 import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
+import type { ActionType } from "@/data/types";
 import {
   buildItemResourceViewModels,
   type ItemResourceVM,
@@ -208,6 +209,8 @@ export interface ItemRowVM {
   isConsumable: boolean;
   isPotion: boolean;
   potionFormula: string | undefined;
+  /** The economy the item's own use action declares (Basic Poison: Bonus). */
+  useType?: ActionType;
   isPool: boolean;
   unit: string | undefined;
   /** Typed counters owned by this exact physical copy. Never collapsed by item id. */
@@ -501,7 +504,7 @@ function buildItemVM(
 
   // Consumable / potion / heal-formula display DERIVES from the SRD entry (golden
   // rule 6 — the same resolver the combat board uses).
-  const { isPotion, potionFormula, isConsumable } = resolveItemConsumable(ref);
+  const { isPotion, potionFormula, isConsumable, useType } = resolveItemConsumable(ref);
   const tracked = isConsumable || (ref.tracked ?? false);
 
   // Per-unit weight: bundle items (ammunition) list weight per bundle, so divide.
@@ -559,6 +562,7 @@ function buildItemVM(
     isConsumable,
     isPotion,
     potionFormula,
+    ...(useType ? { useType } : {}),
     isPool: ref.isPool ?? false,
     unit: ref.unit,
     resources,

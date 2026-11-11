@@ -24,7 +24,7 @@ import {
   beginEncounterTurns,
   parseEncounterState,
   prevTurn,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import type { EncounterState } from "@/types/campaign";
 
 const reflexesText =

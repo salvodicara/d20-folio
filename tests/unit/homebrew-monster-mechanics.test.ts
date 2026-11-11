@@ -20,7 +20,7 @@ import {
   rollMonsterRecharge,
   spendMonsterUse,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   regenerationSuppressedBy,
   regenerationTurnStart,

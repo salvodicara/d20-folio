@@ -44,6 +44,13 @@ test("Catalion: a Short Rest spends a Hit Die and heals", async ({ page }) => {
   // The player rolls the die at the table and types the total.
   await dialog.getByRole("textbox").fill("5");
   await dialog.getByRole("button", { name: "Complete rest" }).click();
+  // The rest ends on its summary (what came back): the Hit Die spent is listed.
+  const summary = page
+    .locator("dialog[open]")
+    .filter({ hasText: /Short\sRest\sSummary/ });
+  await expect(summary).toBeVisible();
+  await expect(summary).toContainText(/Hit\sDice\sSpent/);
+  await summary.getByRole("button", { name: "Done" }).click();
   await expect(dialog).toHaveCount(0);
   await expectNoCrash(page);
   expect(errors).toEqual([]);
@@ -55,8 +62,12 @@ test("the Wizard: a Long Rest offers the prepared-spells step", async ({ page })
   await page.getByRole("button", { name: "Long rest" }).first().click();
   const dialog = page.locator("dialog[open]");
   await expect(dialog).toBeVisible();
-  // The rest first, then the step that offers to change the prepared spells (#903).
+  // The rest first, its summary, then the step that offers to change the prepared
+  // spells (#903).
   await dialog.getByRole("button", { name: "Complete rest" }).click();
+  const summary = page.locator("dialog[open]").filter({ hasText: /Long\sRest\sSummary/ });
+  await expect(summary).toBeVisible();
+  await summary.getByRole("button", { name: "Done" }).click();
   await expect(
     page
       .locator("dialog[open]")

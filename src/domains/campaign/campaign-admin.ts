@@ -16,7 +16,7 @@ import {
   yieldDmRole,
 } from "@/features/campaigns/campaign-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import { removeCombatant } from "@/features/campaigns/encounter";
+import { removeCombatant } from "@/lib/play/encounter";
 import { inviteLinkFromCode } from "@/features/campaigns/invite-code";
 import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";

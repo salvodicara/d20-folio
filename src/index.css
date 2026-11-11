@@ -1,17 +1,15 @@
 @import "tailwindcss";
 @import "./styles/folio.css";
 
-/* New UI (src/ui): the BG3 pairing (owner, 2026-11-08) with tuned metrics. Alegreya SC's
-   capitals are smaller than Cinzel's, so its labels are scaled up to keep 12 px labels at
-   8 px capitals; both faces keep the old line box, so a title never touches its subtitle. */
+/* New UI (src/ui): the BG3 pairing (owner, 2026-11-08), drawn as the approved prototype
+   draws it: Alegreya SC at its own metrics (owner, 2026-11-10: "the mock's font is nicer"),
+   3 % larger so 12 px labels keep 8 px capitals; label digits stay full height. */
 @font-face {
   font-family: "Folio Label";
   font-weight: 500;
   font-display: swap;
-  size-adjust: 110%;
-  ascent-override: 80%;
-  descent-override: 22%;
-  line-gap-override: 0%;
+  /* 3 % up from the prototype: its 12 px labels reach the 8 px capitals floor */
+  size-adjust: 103%;
   src: url("../node_modules/@fontsource/alegreya-sc/files/alegreya-sc-latin-500-normal.woff2")
     format("woff2");
 }
@@ -19,10 +17,8 @@
   font-family: "Folio Label";
   font-weight: 600 900;
   font-display: swap;
-  size-adjust: 110%;
-  ascent-override: 80%;
-  descent-override: 22%;
-  line-gap-override: 0%;
+  /* 3 % up from the prototype: its 12 px labels reach the 8 px capitals floor */
+  size-adjust: 103%;
   src: url("../node_modules/@fontsource/alegreya-sc/files/alegreya-sc-latin-700-normal.woff2")
     format("woff2");
 }

@@ -46,7 +46,7 @@ import { useToastStore } from "@/stores/toastStore";
 
 import { writeCampaignCombatEffect } from "./campaign-io";
 import { recordCondition, recordPcHp } from "./combat-chronicle";
-import { setMonsterCondition } from "./encounter";
+import { setMonsterCondition } from "@/lib/play/encounter";
 import type { EncounterCombatantView } from "./encounter-view";
 import { applyAdversaryDamage, landRetaliations } from "./encounter-world-command";
 import type { ApplyFn, MonsterActionsContext } from "./party-encounter";

@@ -85,6 +85,7 @@ import {
   skippedAtBegin,
 } from "@/domains/combat/fight-participation";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
+import { editEncounter } from "@/features/campaigns/encounter-edit-sync";
 import {
   useMemberCharacterDocs,
   type MemberCharacterRef,
@@ -99,7 +100,9 @@ import {
   setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
+import { mayStepTurn } from "@/lib/play/encounter-lifecycle";
+import { partyOrder } from "@/features/campaigns/party-order";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
   addReinforcement,
@@ -174,7 +177,6 @@ export function Party() {
   const { language: locale } = useLocale();
   const campaign = useCampaignStore((s) => s.campaign);
   const setCampaign = useCampaignStore((s) => s.setCampaign);
-  const setEncounter = useCampaignStore((s) => s.setEncounter);
   const currentUid = useAuthStore((s) => s.user?.uid);
   const isAdmin = useIsAdmin();
   // My live Google photo — a fallback for my OWN avatar so it shows even if I joined
@@ -239,14 +241,12 @@ export function Party() {
     [encounter, pcLiveById]
   );
 
-  // Apply a pure reducer to the LIVE encounter (read through getState so a rapid burst
-  // of immediate-commit edits never races a stale closure). DM-only; absent for a
-  // player (whose path performs no writes — firestore.rules enforce this too).
+  // Apply a pure reducer to the live encounter through the DM's edit log: shown at once,
+  // written shortly after in one transaction replayed onto the server's newest fight
+  // (`encounter-edit-sync.ts`). DM-only; absent for a player (whose path performs no
+  // writes — firestore.rules enforce this too).
   const apply: ApplyFn | undefined = isDm
-    ? (fn) => {
-        const live = useCampaignStore.getState().campaign?.encounter;
-        if (live) setEncounter(fn(live));
-      }
+    ? (fn) => editEncounter(campaign.id, fn)
     : undefined;
 
   // D29 — attach (or detach, "") the current member's character: one campaign per
@@ -312,22 +312,9 @@ export function Party() {
   // conformCampaignMembers), so a present `m.character` is provably a non-empty-named
   // snapshot and a null one renders the quiet "no character attached" state.
   //
-  // OWNER-1 — a DETERMINISTIC, STABLE resting order. `Object.entries` alone iterates
-  // Firestore object-key order (non-deterministic, re-derived every render → the
-  // "random + reorders" the owner saw). Sort a COPY by CHARACTER NAME A–Z (owner's
-  // pick; a member with no hero sorts by their player name within the same list), with
-  // a `uid` tiebreak for a TOTAL order so it never churns render-to-render. (In combat
-  // the order is initiative high-to-low via `buildEncounterView`; this is the rest one.)
-  const members = [...Object.entries(campaign.memberDetails)].sort(
-    ([uidA, a], [uidB, b]) => {
-      const keyA = a.character?.name ?? a.displayName;
-      const keyB = b.character?.name ?? b.displayName;
-      return (
-        keyA.localeCompare(keyB, locale, { sensitivity: "base", numeric: true }) ||
-        uidA.localeCompare(uidB)
-      );
-    }
-  );
+  // OWNER-1 — the stable resting order (A–Z by character name), shared with the new
+  // Gruppo panel. In combat the order is initiative via `buildEncounterView`.
+  const members = partyOrder(campaign.memberDetails, locale);
   const hasAttached = members.some(([, m]) => m.characterId && m.character);
   // Captured here (after the guard) so the render closures need no non-null assertion.
   const campaignId = campaign.id;
@@ -683,8 +670,7 @@ function CombatLayer({
   // re-reads the encounter fresh, re-validates the caller may advance, and writes ONLY
   // `{currentCombatantId, round}` — so two concurrent advances never double-step and a
   // player's write satisfies the `turnFieldsOnlyChanged` member rule.
-  const isMyTurn = !!ctx.currentUid && view.currentId === `pc-${ctx.currentUid}`;
-  const canAdvance = (isDm || isMyTurn) && !gathering;
+  const canAdvance = mayStepTurn(encounter, { uid: ctx.currentUid, isDm }) && !gathering;
   // Disarm the turn buttons while an advance is in flight (the UX half of the
   // double-click fix; the CAS in `advanceEncounterTurn` is the correctness half).
   const [advancing, setAdvancing] = useState(false);

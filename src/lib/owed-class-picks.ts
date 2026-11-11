@@ -24,6 +24,11 @@
 import { getClassTable } from "@/data/classes";
 import { getSpellById, spells as allSpells } from "@/data/spells";
 import { isWeaponProficient } from "@/lib/compute";
+import {
+  isFightingStylePlaceholder,
+  listAllFightingStyles,
+  listFightingStyles,
+} from "@/lib/fighting-style";
 import { eligibleInvocations, invocationsKnownAt } from "@/lib/invocation-pick";
 import { applyClassPicks } from "@/lib/level-up-commit";
 import {
@@ -43,7 +48,8 @@ export type ClassPickKind =
   | "cantrips"
   | "metamagic"
   | "maneuvers"
-  | "weaponMasteries";
+  | "weaponMasteries"
+  | "fightingStyles";
 
 export interface OwedClassPick {
   classId: string;
@@ -67,6 +73,7 @@ const ORDER: readonly ClassPickKind[] = [
   "invocations",
   "maneuvers",
   "weaponMasteries",
+  "fightingStyles",
   "cantrips",
 ];
 
@@ -125,6 +132,18 @@ function cantripsOwed(build: BuildForClassPicks): Map<string, number> {
   return left;
 }
 
+/** The styles the character holds: a style feat (Defense, Archery…) or a concrete
+ *  `<placeholder>-<style>` feature. */
+function heldFightingStyles(build: BuildForClassPicks): string[] {
+  const styles = new Set(listAllFightingStyles().map((s) => s.id));
+  const ids = (build.features ?? []).flatMap((f) => ("srdId" in f ? [f.srdId] : []));
+  return ids.filter(
+    (id) =>
+      styles.has(id) ||
+      ids.some((other) => isFightingStylePlaceholder(other) && id.startsWith(`${other}-`))
+  );
+}
+
 /** Every class pick the character owes, per class, in a stable order. */
 export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
   const out: OwedClassPick[] = [];
@@ -132,6 +151,9 @@ export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
     (f) => "srdId" in f && isManeuverPlaceholder(f.srdId)
   );
   const cantrips = cantripsOwed(build);
+  // Styles held (style feats among the features), set against each class's
+  // Fighting Style slots in class order.
+  let stylesHeld = heldFightingStyles(build).length;
   const seen = new Set<string>();
   for (const e of entries(build)) {
     if (seen.has(e.classId)) continue;
@@ -153,7 +175,18 @@ export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
       weaponMasteries:
         weaponMasteryCountForClass(e.classId, level) - (e.weaponMasteries?.length ?? 0),
       cantrips: cantrips.get(e.classId) ?? 0,
+      fightingStyles: 0,
     };
+    // The slots the sheet holds open (`<class>-fighting-style` placeholders).
+    const styleSlots = (build.features ?? []).filter(
+      (f) =>
+        "srdId" in f &&
+        isFightingStylePlaceholder(f.srdId) &&
+        f.srdId.startsWith(`${e.classId}-`)
+    ).length;
+    const covered = Math.min(styleSlots, stylesHeld);
+    stylesHeld -= covered;
+    due.fightingStyles = styleSlots - covered;
     for (const pick of ORDER) {
       if (due[pick] > 0) out.push({ classId: e.classId, pick, owed: due[pick] });
     }
@@ -177,6 +210,11 @@ export function applyOwedClassPicks(
     if (!debt) continue;
     const ids = [...new Set(answer.ids)].slice(0, debt.owed);
     if (ids.length === 0) continue;
+    if (answer.pick === "fightingStyles") {
+      for (const id of ids)
+        next = applyClassPicks(next, answer.classId, { fightingStyle: id });
+      continue;
+    }
     const entry = next.classes.find((e) => e.classId === answer.classId);
     next = applyClassPicks(next, answer.classId, {
       invocations: answer.pick === "invocations" ? ids : [],
@@ -218,6 +256,10 @@ export function classPickPool(
     case "weaponMasteries": {
       const mastered = new Set(entry?.weaponMasteries ?? []);
       return ids(listMasterableWeapons().filter((w) => !mastered.has(w.id)));
+    }
+    case "fightingStyles": {
+      const held = new Set(heldFightingStyles(build));
+      return ids(listFightingStyles(classId).filter((s) => !held.has(s.id)));
     }
     case "cantrips": {
       const known = new Set(

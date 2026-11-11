@@ -6,6 +6,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { visibleWithin } from "./visible-within";
 
 test.describe("Spells Page", () => {
   test.beforeEach(async ({ page }) => {
@@ -41,7 +42,7 @@ test.describe("Spells Page", () => {
   test("can filter spells by level", async ({ page }) => {
     // Look for filter chips/buttons
     const levelFilter = page.getByRole("button", { name: /cantrip|0/i }).first();
-    if (await levelFilter.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(levelFilter, 2000)) {
       await levelFilter.click();
       // Only cantrips should be visible
       await expect(page.getByText(/Vicious Mockery/i).first()).toBeVisible();
@@ -50,7 +51,7 @@ test.describe("Spells Page", () => {
 
   test("can search spells by name", async ({ page }) => {
     const searchInput = page.getByPlaceholder(/search|filter/i).first();
-    if (await searchInput.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(searchInput, 2000)) {
       await searchInput.fill("Hyp");
       // Only Hypnotic Pattern should match
       await expect(page.getByText(/Hypnotic Pattern/i).first()).toBeVisible();
@@ -86,7 +87,7 @@ test.describe("Spells Page", () => {
     const concIndicator = parent
       .locator("[title*='oncentration'], [aria-label*='oncentration']")
       .or(parent.getByText(/C|conc/i).first());
-    if (await concIndicator.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(concIndicator, 2000)) {
       await expect(concIndicator.first()).toBeVisible();
     } else {
       // Concentration might be shown differently — just verify the spell is there
