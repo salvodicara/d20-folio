@@ -19,8 +19,22 @@ const damage = vi.hoisted(() => ({
     ...(enc as object),
     damaged: true,
   })),
+  undoAdversaryHit: vi.fn((enc: unknown) => ({
+    ...(enc as object),
+    damaged: undefined,
+  })),
 }));
 vi.mock("@/features/campaigns/encounter-world-command", () => damage);
+// The DM's edit log, applied straight to the store (its sending is tested on its own).
+vi.mock("@/features/campaigns/encounter-edit-sync", async () => {
+  const { useCampaignStore: store } = await import("@/features/campaigns/campaignStore");
+  return {
+    editEncounter: (_campaignId: string, apply: (fight: never) => unknown) => {
+      const fight = store.getState().campaign?.encounter;
+      if (fight) store.getState().setEncounter(apply(fight as never) as never);
+    },
+  };
+});
 vi.mock("@/lib/firebase", () => ({
   app: {},
   auth: {},
@@ -131,8 +145,13 @@ describe("monster zones", () => {
       expect.anything(),
       "c1",
       "m-gob",
-      [{ amount: 13, type: "radiant" }]
+      [{ amount: 13, type: "radiant" }],
+      "z1:m-gob"
     );
+    expect(useCampaignStore.getState().campaign?.encounter).toEqual({
+      combatants: [],
+      damaged: true,
+    });
     const [message, undo] = onToast.mock.calls[0] as [string, () => void];
     expect(message).toBe("13 damage to Goblin");
     undo();
