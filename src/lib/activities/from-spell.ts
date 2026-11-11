@@ -130,6 +130,7 @@ function spellEffects(spell: SrdSpellData): ActivityEffect[] {
         onSave: spell.damageOnSave,
         onMiss: spell.damageOnMiss,
         notVsCreatureTypes: spell.damageNotVsCreatureTypes,
+        dieIfHurt: spell.damageDieIfHurt,
       })
     );
   }
