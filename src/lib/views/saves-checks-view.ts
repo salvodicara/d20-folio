@@ -108,6 +108,8 @@ export interface SaveCheckSkillRow {
   breakdownParts: RawBreakdownPart[] | null;
   /** Physical dice on this skill's checks (Guidance on the chosen skill: +1d4). */
   dieAdjustments: RollDieAdjustmentClause[];
+  /** Its Expertise is a Long Rest pick (Versatile Merc): it lasts until the next. */
+  untilLongRest?: true;
 }
 
 /** One passive score row (Perception/Insight/Investigation). */
@@ -354,6 +356,7 @@ export function deriveSavesAndChecks(
         untilLongRest: restPicked.includes(skill.id),
       }),
       dieAdjustments: checkDiceFor(skill.id),
+      ...(restPicked.includes(skill.id) ? { untilLongRest: true as const } : {}),
     };
   });
 
