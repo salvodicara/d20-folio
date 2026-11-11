@@ -15,6 +15,7 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   expectNoCrash,
   PLAYER_BARD,
+  rollEachHero,
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
   signInAs,
@@ -101,23 +102,7 @@ test("classic UI: the DM's hit spends a claimed Uncanny Dodge, and the player's 
       await dm.getByRole("dialog").getByRole("button", { name: "Skip" }).click();
     }
     await dm.getByRole("button", { name: "Run encounter" }).click();
-    // A hero's own-sheet roll arrives after the cards: never wait on a button that went.
-    await expect(
-      dm.getByRole("button", { name: /^Begin (turns|with)/ }).first()
-    ).toBeVisible();
-    await dm.waitForTimeout(1_500);
-    for (let i = 0; i < 4; i++) {
-      const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
-      if (!(await roll.isVisible())) break;
-      const opened = await roll.click({ timeout: 3_000 }).then(
-        () => true,
-        () => false
-      );
-      if (!opened) continue;
-      const input = dm.locator("input.init-edit-input:focus");
-      await input.fill(String(15 - i));
-      await input.press("Enter");
-    }
+    await rollEachHero(dm);
     await dm
       .getByRole("button", { name: /^Begin (turns|with)/ })
       .first()
