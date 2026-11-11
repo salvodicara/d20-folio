@@ -57,6 +57,7 @@ import {
   type AsiChoice,
 } from "@/lib/level-up-choices";
 import { applySpellSwap, type SpellSwapChoice } from "@/lib/spell-swap";
+import { applyFeatSpellChange } from "@/lib/feat-spell-change";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
 
@@ -86,6 +87,9 @@ export interface LevelUpPicks {
   swap: SpellSwapChoice;
   /** A cantrip swapped for another (Bard, Sorcerer, Warlock); absent: none. */
   cantripSwap?: SpellSwapChoice;
+  /** A feat's Spell Change (Magic Initiate): its pick replaced, keeping what the
+   *  feat gave it (free cast, ability, always prepared). Absent: none. */
+  featSpellChanges?: ReadonlyArray<SpellSwapChoice>;
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -426,6 +430,15 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
       ...updated,
       spells: applySignatureSpellsPicks(updated.spells, signatureSpellsPicks),
     };
+  }
+
+  for (const change of picks.featSpellChanges ?? []) {
+    if (change.removeId != null && change.replaceId != null) {
+      updated = {
+        ...updated,
+        spells: applyFeatSpellChange(updated.spells, change.removeId, change.replaceId),
+      };
+    }
   }
 
   for (const swap of [swapChoice, picks.cantripSwap]) {

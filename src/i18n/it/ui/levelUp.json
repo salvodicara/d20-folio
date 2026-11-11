@@ -94,6 +94,7 @@
     "titleChoices": "Completa i tuoi nuovi poteri",
     "titleSpells": "Impara i tuoi incantesimi",
     "titleSwap": "Sostituisci un incantesimo",
+    "featSpellChange": "{{feat}}: cambiare un incantesimo?",
     "titleReview": "Rivedi e conferma",
     "hintHp": "Prendi la media per una crescita costante, oppure tira il tuo <g>dado vita</g> e inserisci il risultato.",
     "hintBoon": "Il livello {{level}} concede un dono: aumenta le tue caratteristiche o impara un <g>talento</g>.",
