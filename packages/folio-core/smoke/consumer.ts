@@ -33,6 +33,7 @@ import {
   applyMove,
   emptyPurse,
   lootMoves,
+  mayStepTurn,
   parseNote,
   rollInitiative,
   sheetNumbers,
@@ -54,6 +55,11 @@ export function startFight(now: number): EncounterState {
     attachedUids: ["u1"],
     now,
   });
+}
+
+/** Once a roll started the fight, any player may pass the turn. */
+export function anyoneMayPass(now: number): boolean {
+  return mayStepTurn(startFight(now), { uid: "u2", isDm: false });
 }
 
 export function lootToChest(): boolean {

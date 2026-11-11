@@ -161,6 +161,7 @@ import { Party } from "@/features/campaigns/Party";
 import { advanceTurn, prevTurn } from "@/lib/play/encounter";
 import { mayStepTurn } from "@/lib/play/encounter-lifecycle";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { handOverEncounterEdits } from "@/features/campaigns/encounter-edit-sync";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { makeDevCampaign } from "@/features/campaigns/dev-fixture";
@@ -280,6 +281,9 @@ beforeEach(() => {
 });
 afterEach(() => {
   window.localStorage.removeItem("d20-dev-encounter");
+  // The DM's edit log is per open campaign; each test opens its own.
+  const open = useCampaignStore.getState().campaign?.id;
+  if (open) handOverEncounterEdits(open);
 });
 
 // ─── Dashboard · DM ───────────────────────────────────────────────────────────

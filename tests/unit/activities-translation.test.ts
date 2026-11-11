@@ -193,6 +193,7 @@ function spellFromActivity(activity: Activity): Record<string, unknown> {
     cantripInstances: activity.repeats?.cantrip,
     damageDice: primary?.dice?.dice,
     damageDicePerUpcast: primary?.dice?.perUpcast,
+    damageDieIfHurt: primary?.kind === "damage" ? primary.dieIfHurt : undefined,
     damageAddsCastMod: has(primary?.dice, "spell-mod") || undefined,
     damageType: !primary?.choose && types?.length === 1 ? types[0] : undefined,
     damageTypes: !primary?.choose && (types?.length ?? 0) > 1 ? types : undefined,

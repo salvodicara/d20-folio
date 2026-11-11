@@ -379,6 +379,7 @@
     "attackScope_strength": "agli attacchi con Forza",
     "attackScope_strDex": "agli attacchi con Forza e Destrezza",
     "attackScope_sorcery": "agli attacchi con incantesimi da Stregone",
+    "damageIfHurt": "{{dice}} / {{hurt}} se ferito",
     "attackScope_otherThanSource": "contro creature diverse da chi l'ha lanciato",
     "attackScope_melee": "agli attacchi in mischia",
     "attackScope_ranged": "agli attacchi a distanza",

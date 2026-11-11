@@ -21,10 +21,19 @@ function isTimestampLike(value: unknown): boolean {
   return ctor?.name === "Timestamp";
 }
 
+function isPlainObject(value: object): boolean {
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+}
+
 export function stripUndefined(obj: unknown): unknown {
   if (obj === null || obj === undefined) return null;
   if (Array.isArray(obj)) return obj.map(stripUndefined);
   if (obj instanceof Date || isTimestampLike(obj)) return obj;
+  // Only plain objects are rebuilt. Anything else (a serverTimestamp() / deleteField()
+  // sentinel, a DocumentReference) must reach the SDK as the same instance: a plain copy
+  // is written as a map, and the rules then refuse it.
+  if (typeof obj === "object" && !isPlainObject(obj)) return obj;
   if (typeof obj === "object") {
     const result: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {

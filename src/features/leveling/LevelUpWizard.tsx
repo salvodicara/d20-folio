@@ -65,7 +65,7 @@ import {
   type MulticlassFilterReport,
 } from "@/lib/multiclass";
 import { MulticlassFilteredCause } from "./multiclass-cause";
-import type { CharacterData, ClassEntry } from "@/types/character";
+import type { CharacterData, ClassEntry, SrdSpellRef } from "@/types/character";
 import { SRD_FEATS } from "@/data/feats";
 import { featAsi } from "@/lib/feat-asi";
 import { featGateCtx } from "@/lib/feat-prereq";
@@ -158,6 +158,7 @@ import { WizardSpellList, type SpellListSlot } from "@/features/wizard/spell-lis
 import { WizardPickList, type WizardPickOption } from "@/features/wizard/pick-list";
 import { SocketSeal } from "@/features/wizard/seals";
 import { WizardSpellSwap } from "@/features/wizard/spell-swap";
+import { featSpellChanges } from "@/lib/feat-spell-change";
 import { WizardAsiCartouches } from "@/features/wizard/point-buy";
 import { SpellLevelSeal } from "@/features/wizard/seals";
 import { togglePick } from "@/features/wizard/pick-utils";
@@ -204,6 +205,10 @@ export function LevelUpWizard() {
   const [newSpells, setNewSpells] = useState<string[]>([]);
   const [newCantrips, setNewCantrips] = useState<string[]>([]);
   const [swapChoice, setSwapChoice] = useState<SpellSwapChoice>(emptySwapChoice());
+  // A feat's Spell Change (Magic Initiate): one optional replacement per feat.
+  const [featSwaps, setFeatSwaps] = useState<Readonly<Record<string, SpellSwapChoice>>>(
+    {}
+  );
   const [fightingStyleChoice, setFightingStyleChoice] = useState<string | null>(null);
   const [expertisePicks, setExpertisePicks] = useState<string[]>([]);
   const [weaponMasteryPicks, setWeaponMasteryPicks] = useState<string[]>([]);
@@ -388,6 +393,7 @@ export function LevelUpWizard() {
     setNewSpells([]);
     setNewCantrips([]);
     setSwapChoice(emptySwapChoice());
+    setFeatSwaps({});
     setFightingStyleChoice(null);
     setExpertisePicks([]);
     setWeaponMasteryPicks([]);
@@ -453,7 +459,9 @@ export function LevelUpWizard() {
   const hasSpellsStep = spellsKnownDiff > 0 || cantripsKnownDiff > 0;
   // B5/A2 — the spell SWAP is its OWN step (its own orb), present ONLY when the
   // class actually offers a swap at this level. It never piggybacks another step.
-  const hasSwapStep = canSwapSpell && knownNonCantripRefs.length > 0;
+  const classSwap = canSwapSpell && knownNonCantripRefs.length > 0;
+  const featChanges = charData ? featSpellChanges(charData.spells) : [];
+  const hasSwapStep = classSwap || featChanges.length > 0;
 
   const steps: Array<WizardStepDef & { id: StepId }> = [
     { id: "hp", label: t("levelUp.stepHp"), glyph: Heart },
@@ -516,7 +524,10 @@ export function LevelUpWizard() {
   const spellsComplete =
     (spellsKnownDiff === 0 || newSpells.length === spellsKnownDiff) &&
     (cantripsKnownDiff === 0 || newCantrips.length === cantripsKnownDiff);
-  const swapComplete = !isSwapIncomplete(swapChoice);
+  const featSwapOf = (featId: string) => featSwaps[featId] ?? emptySwapChoice();
+  const swapComplete =
+    !isSwapIncomplete(swapChoice) &&
+    featChanges.every((change) => !isSwapIncomplete(featSwapOf(change.featId)));
   const subclassComplete = !needsSubclass || subclassChoice !== null;
 
   const stepComplete: Record<StepId, boolean> = {
@@ -673,6 +684,7 @@ export function LevelUpWizard() {
         spellMastery: needsSpellMastery ? spellMasteryPicks : null,
         signatureSpells: needsSignatureSpells ? signatureSpellsPicks : null,
         swap: swapChoice,
+        featSpellChanges: featChanges.map((change) => featSwapOf(change.featId)),
         bundlePicks: needsBundles ? bundlePicks : {},
       });
       const updated = updatedDoc.character;
@@ -1459,13 +1471,45 @@ export function LevelUpWizard() {
 
         {/* B5 — the spell swap is its OWN step (only when the class offers one). */}
         {step === "swap" && (
-          <WizardSpellSwap
-            classId={classId}
-            allowedLists={widenedSpellLists}
-            knownSpells={knownNonCantripRefs}
-            value={swapChoice}
-            onChange={setSwapChoice}
-          />
+          <div className="flex flex-col gap-8">
+            {classSwap && (
+              <WizardSpellSwap
+                classId={classId}
+                allowedLists={widenedSpellLists}
+                knownSpells={knownNonCantripRefs}
+                value={swapChoice}
+                onChange={setSwapChoice}
+              />
+            )}
+            {/* A feat's Spell Change (Magic Initiate): optional, its own pick only,
+                replaced from the feat's list at the same level. Skip keeps it. */}
+            {featChanges.map((change) => {
+              const pick = charData.spells.find(
+                (spell): spell is SrdSpellRef =>
+                  !("custom" in spell) && spell.srdId === change.spellId
+              );
+              if (!pick) return null;
+              return (
+                <section key={change.featId} className="flex flex-col gap-3">
+                  <h3 className="on-art text-center font-display text-base text-text-primary">
+                    {t("levelUp.featSpellChange", {
+                      feat: localizeSrd("feat", change.featId, "name", locale),
+                    })}
+                  </h3>
+                  <WizardSpellSwap
+                    classId={change.lists[0] ?? classId}
+                    allowedLists={new Set(change.lists)}
+                    knownSpells={[pick]}
+                    alsoKnown={new Set(existingSpellIds)}
+                    value={featSwapOf(change.featId)}
+                    onChange={(choice) =>
+                      setFeatSwaps((prev) => ({ ...prev, [change.featId]: choice }))
+                    }
+                  />
+                </section>
+              );
+            })}
+          </div>
         )}
 
         {step === "review" && (
@@ -1651,6 +1695,19 @@ export function LevelUpWizard() {
                     value: t("levelUp.swap.summary", {
                       old: spellName(swapChoice.removeId, locale),
                       new: spellName(swapChoice.replaceId, locale),
+                    }),
+                  });
+                }
+                for (const change of featChanges) {
+                  const choice = featSwapOf(change.featId);
+                  if (choice.removeId == null || choice.replaceId == null) continue;
+                  rows.push({
+                    key: `feat-swap-${change.featId}`,
+                    step: "swap",
+                    label: localizeSrd("feat", change.featId, "name", locale),
+                    value: t("levelUp.swap.summary", {
+                      old: spellName(choice.removeId, locale),
+                      new: spellName(choice.replaceId, locale),
                     }),
                   });
                 }

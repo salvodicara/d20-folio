@@ -187,6 +187,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
   instantaneous: booleanSchema,
   damageType: DAMAGE_TYPE_SCHEMA,
   damageDice: stringSchema,
+  damageDieIfHurt: stringSchema,
   damageAddsCastMod: booleanSchema,
   damageDicePerUpcast: stringSchema,
   bonusDamageAgainst: objectSchema({

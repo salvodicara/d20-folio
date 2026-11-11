@@ -309,13 +309,22 @@ export function applyAdversaryDamageParts(
   encounter: EncounterState,
   campaignId: string,
   monsterId: string,
-  parts: ReadonlyArray<DamageInstance>
+  parts: ReadonlyArray<DamageInstance>,
+  /** Names the hit so {@link undoAdversaryHit} finds it on any copy of the fight. */
+  actionSeed?: string
 ): EncounterState {
   const monster = encounter.combatants.find(({ id }) => id === monsterId);
   if (!monster || monster.kind !== "monster") return encounter;
   const defenses = monsterDamageDefenses(monster.defenses) ?? NO_DEFENSES;
   const intake = resolveDamageIntake(parts, defenses);
-  const next = applyAdversaryDamage(encounter, campaignId, monsterId, intake.netTotal);
+  const next = applyAdversaryDamage(
+    encounter,
+    campaignId,
+    monsterId,
+    intake.netTotal,
+    undefined,
+    actionSeed
+  );
   return stampLandedDamageTypes(
     next,
     encounter.events?.length ?? 0,
@@ -323,6 +332,33 @@ export function applyAdversaryDamageParts(
     landedDamageTypes(intake.parts),
     encounter.currentCombatantId
   );
+}
+
+/**
+ * Take back the hit `applyAdversaryDamageParts` landed with `actionSeed`: its beats come
+ * off and the monster's Hit Points return, whatever else changed since. The beats are
+ * found by the seeded engine action, not by their numbers, so the undo works on the
+ * server's copy of the fight as on the screen's.
+ */
+export function undoAdversaryHit(
+  encounter: EncounterState,
+  campaignId: string,
+  monsterId: string,
+  actionSeed: string
+): EncounterState {
+  const actionId = correlatedActionId(actionSeed, "damage", monsterId);
+  const ids = (encounter.events ?? [])
+    .filter((event) => event.engineActionId === actionId)
+    .map((event) => event.id);
+  let next = encounter;
+  for (const id of ids.reverse()) {
+    const undone = undoAdversaryChronicleEvent(next, campaignId, id);
+    next = {
+      ...undone,
+      events: (undone.events ?? []).filter((event) => event.id !== id),
+    };
+  }
+  return next;
 }
 
 /** The damage types of the parts that landed (net above 0), first-seen order. */

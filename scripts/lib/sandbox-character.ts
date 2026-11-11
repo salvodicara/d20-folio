@@ -35,3 +35,20 @@ export function sandboxCharacterDocuments(
     throw new Error(`Sandbox character ${charId} has no planned pair`);
   return { parent, child };
 }
+
+/**
+ * The campaign's copy of a sandbox hero (`memberDetails[uid].character`), the one the
+ * DM's party card reads. Whatever (re)seeds a hero writes this too, so the campaign
+ * never shows a hero an earlier seed left.
+ */
+export function sandboxMemberCharacter(envelope: {
+  build: { name?: unknown; race?: unknown; classes?: unknown };
+}): RawMap {
+  const { name, race, classes } = envelope.build;
+  return {
+    name,
+    ...(race ? { race } : {}),
+    ...(classes ? { classes } : {}),
+    portraitUrl: null,
+  };
+}

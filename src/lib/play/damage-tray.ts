@@ -32,6 +32,7 @@ import type {
   SpellRevive,
 } from "@/data/types";
 import { hitPointThresholdOutcome, revivalHitPoints } from "@/lib/play/spell-outcomes";
+import { damageForTarget } from "@/lib/play/hurt-target-damage";
 
 export type { AttackOutcome } from "@/types/combat-log";
 /** Foundry dnd5e's chat card order: Hit · Miss · Critical. */
@@ -52,6 +53,9 @@ export interface DamageTrayPlan {
   effect: TrayEffect | null;
   /** The one damage type, when the action deals exactly one (for defenses). */
   damageType?: DamageType;
+  /** A bigger die against a target missing any Hit Points (Toll the Dead): each
+   *  row reads its own die from its target's Hit Points. */
+  hurtDice?: { base: string; hurt: string };
   /** Every damage type, when the action deals more than one (a fire + radiant smite):
    *  the tray can then take one total per type, each meeting its own defense
    *  ({@link rowAmountByType}). */
@@ -243,6 +247,9 @@ export function damageTrayPlan(
     ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),
+    ...(effect === "damage" && s.damage && s.damageIfHurt
+      ? { hurtDice: { base: s.damage, hurt: s.damageIfHurt } }
+      : {}),
     ...dieFloorOf(action),
     ...(s.ignoresResistance?.length
       ? { ignoresResistance: [...s.ignoresResistance] }
@@ -404,6 +411,8 @@ export interface TrayRow {
   onRoll20Defense?: Partial<Record<DamageType, TargetDefense>>;
   /** What the spell does to this target from its own Hit Points, when it hangs on them. */
   outcome?: TrayOutcome;
+  /** The die this target takes, when the spell's die hangs on its Hit Points. */
+  dice?: string;
   /** The attacker chose to knock this target out (`canKnockOut`): 1 HP, Unconscious. */
   knockOut?: true;
   /** The target's own defense against each part's type, when the hit has several
@@ -572,7 +581,9 @@ export function initialTrayRow(
   creatureType?: CreatureType,
   hp?: { current: number; max: number },
   /** The target's conditions, when the tray knows them. */
-  targetConditions?: readonly string[]
+  targetConditions?: readonly string[],
+  /** Known to be missing Hit Points without the exact numbers (a Bloodied band). */
+  knownHurt?: boolean
 ): TrayRow {
   const defense =
     plan.effect === "damage"
@@ -611,6 +622,20 @@ export function initialTrayRow(
     ...(Object.keys(onRoll20Defense).length > 0 ? { onRoll20Defense } : {}),
     ...(hasPartDefense ? { partDefense } : {}),
     ...trayOutcome(plan, hp),
+    ...(plan.hurtDice
+      ? {
+          dice: !hp
+            ? // Hidden Hit Points: a Bloodied band proves the target is hurt; otherwise
+              // the player can't tell, so both dice ("ask the DM"), never a wrong one.
+              knownHurt
+              ? plan.hurtDice.hurt
+              : `${plan.hurtDice.base} / ${plan.hurtDice.hurt}`
+            : damageForTarget(
+                { damage: plan.hurtDice.base, damageIfHurt: plan.hurtDice.hurt },
+                { currentHp: hp.current, maxHp: hp.max }
+              ),
+        }
+      : {}),
     multiplier: factsMultiplier(facts, plan),
     conditions: initialConditions(plan.conditions, targetConditions),
   };
