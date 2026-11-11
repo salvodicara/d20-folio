@@ -8,6 +8,7 @@ import { resolveActions, type ResolvedAction } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
 import { shouldResolveCombatAction } from "@/lib/combat-resolution";
 import { damageTrayPlan, initialTrayRow } from "@/lib/play/damage-tray";
+import { initialTrayRowFor } from "@/components/shared/damage-tray-target";
 import { makeCharacterDoc } from "./_helpers";
 
 const doc = makeCharacterDoc({
@@ -45,5 +46,14 @@ describe("the tray's die per target", () => {
     expect(
       initialTrayRow(own, "orc", undefined, undefined, { current: 6, max: 15 }).dice
     ).toBe(undefined);
+  });
+
+  it("hidden Hit Points: a Bloodied band still says the target is hurt", () => {
+    const plan = damageTrayPlan(tolling, ["orc"], "pc-me");
+    if (!plan) throw new Error("no tray");
+    const row = (band: "healthy" | "bloodied") =>
+      initialTrayRowFor(plan, { id: "orc", name: "Orc", kind: "monster", band }).dice;
+    expect(row("healthy")).toBe("2d8");
+    expect(row("bloodied")).toBe("2d12");
   });
 });

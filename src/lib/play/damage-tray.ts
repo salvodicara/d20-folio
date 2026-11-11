@@ -581,7 +581,9 @@ export function initialTrayRow(
   creatureType?: CreatureType,
   hp?: { current: number; max: number },
   /** The target's conditions, when the tray knows them. */
-  targetConditions?: readonly string[]
+  targetConditions?: readonly string[],
+  /** Known to be missing Hit Points without the exact numbers (a Bloodied band). */
+  knownHurt?: boolean
 ): TrayRow {
   const defense =
     plan.effect === "damage"
@@ -622,10 +624,13 @@ export function initialTrayRow(
     ...trayOutcome(plan, hp),
     ...(plan.hurtDice
       ? {
-          dice: damageForTarget(
-            { damage: plan.hurtDice.base, damageIfHurt: plan.hurtDice.hurt },
-            hp && { currentHp: hp.current, maxHp: hp.max }
-          ),
+          dice:
+            !hp && knownHurt
+              ? plan.hurtDice.hurt
+              : damageForTarget(
+                  { damage: plan.hurtDice.base, damageIfHurt: plan.hurtDice.hurt },
+                  hp && { currentHp: hp.current, maxHp: hp.max }
+                ),
         }
       : {}),
     multiplier: factsMultiplier(facts, plan),
