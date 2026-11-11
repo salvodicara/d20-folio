@@ -43,6 +43,10 @@ describe("playHeaderView", () => {
     ]);
   });
 
+  it("the phone's short identity: each class with its level, then the species (x-play-m)", () => {
+    expect(view.identityShort).toEqual(["Chierico 5", "Umano"]);
+  });
+
   it("the six abilities in order, with modifier, score and save proficiency", () => {
     expect(view.abilities.map((a) => [a.id, a.mod, a.score, a.save])).toEqual([
       ["STR", 3, 16, false],
