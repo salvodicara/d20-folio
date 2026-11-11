@@ -126,6 +126,9 @@ interface CombatState {
   awaitingOwnTurn: boolean;
   /** Current round number */
   round: number;
+  /** SOLO: a fight was started («Start combat»): it is on from round 1, before any
+   *  Initiative roll or round advance. End Combat clears it. Persisted with the round. */
+  fightStarted: boolean;
   /** Initiative roll value */
   initiative: string;
   /**
@@ -238,6 +241,7 @@ interface CombatState {
 
   // Actions
   setRound: (round: number) => void;
+  setFightStarted: (started: boolean) => void;
   setInitiative: (value: string) => void;
   /** Set movement used this turn (clamped 0..speed by the caller). */
   setMovementUsed: (ft: number) => void;
@@ -356,6 +360,9 @@ interface CombatState {
    * so it can never echo into shared encounter state.
    */
   endCombat: () => void;
+  /** Start a fresh solo fight: the {@link endCombat} baseline, then the fight is on
+   *  from round 1 ({@link fightStarted}). */
+  startCombat: () => void;
   /**
    * End the turn — PURE BOOKKEEPING (immediate-commit model). Resources are
    * deducted at use-time, not here, so this only advances the round, clears the
@@ -415,6 +422,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   ownTurnKey: null,
   awaitingOwnTurn: false,
   round: 1,
+  fightStarted: false,
   initiative: "",
   selected: emptySelected(),
   budget: { ...DEFAULT_BUDGET },
@@ -440,6 +448,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   timeStopTurns: null,
 
   setRound: (round) => set({ round }),
+  setFightStarted: (started) => set({ fightStarted: started }),
   setInitiative: (value) => set({ initiative: value }),
   setDifficultTerrain: (on) => {
     if (sheetReadonly()) return;
@@ -833,7 +842,13 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       reflexesTaken: false,
       timeStopTurns: null,
       initiative: "",
+      fightStarted: false,
     }),
+
+  startCombat: () => {
+    get().endCombat();
+    set({ fightStarted: true });
+  },
 
   endTurn: () => {
     if (sheetReadonly()) return;

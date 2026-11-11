@@ -52,7 +52,12 @@ import { SectionHeader } from "@/components/shared/SectionHeader";
 import { Button } from "@/components/ui/button";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { NumberStepper } from "@/components/ui/input";
-import { weaponSealIcon, magicItemSealIcon } from "@/components/shared/item-icons";
+import {
+  equipmentSealIconById,
+  magicItemSealIcon,
+  weaponSealIcon,
+} from "@/components/shared/item-icons";
+import { getEquipment } from "@/data/equipment";
 import { getMagicItem } from "@/data/magic-items";
 import { ThisTurnTracker } from "../ThisTurnTracker";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
@@ -155,6 +160,7 @@ import {
   combatVerdict,
   combatVerdictOutcome,
   combatCtaState,
+  usesGloss,
 } from "./combat-card-helpers";
 
 type FilterType = "pinned" | "all" | "action" | "bonus" | "reaction" | "free";
@@ -317,9 +323,7 @@ function combatGloss(
   }
   if (concentrating) parts.push(t("combat.concentration"));
   if (summary.uses) {
-    const { current, total, unit } = summary.uses;
-    const unitLabel = localizeTrackerUnit(unit, t);
-    parts.push(`${current}/${total}${unitLabel ? ` ${unitLabel}` : ""}`);
+    parts.push(usesGloss(summary.uses, localizeTrackerUnit(summary.uses.unit, t)));
   }
   return parts.join(" · ");
 }
@@ -1554,7 +1558,13 @@ function CombatActionCard({
       kind={kind}
       sealIcon={
         itemPoolSeal ??
-        (action.source === "weapon" ? weaponSealIcon(action.weaponId) : undefined)
+        (action.source === "weapon"
+          ? weaponSealIcon(action.weaponId)
+          : // A card that spends a copy of plain gear shows that item's glyph (the
+            // vial of Basic Poison), as the inventory does.
+            action.costEquipment && getEquipment(action.costEquipment)
+            ? equipmentSealIconById(action.costEquipment)
+            : undefined)
       }
       name={action.name}
       nameTerm={nameTerm}

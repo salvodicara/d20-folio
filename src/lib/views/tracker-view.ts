@@ -787,7 +787,9 @@ export function activatableToggles(
   locale: Locale,
   /** Rounds left per status key (`statusRoundCounts(deriveStatuses(doc))`). */
   roundCounts?: Readonly<Record<string, { roundsLeft: number }>>,
-  bloodied = false
+  bloodied = false,
+  /** The weapon a lit binding state rides, by key: its label names it. */
+  boundWeapons?: Readonly<Record<string, string>>
 ): ActivatableToggleVM[] {
   const seen = new Set<string>();
   const out: ActivatableToggleVM[] = [];
@@ -803,7 +805,9 @@ export function activatableToggles(
     out.push({
       key: g.key,
       active: g.active,
-      label: localizeText(g.label, locale),
+      label: [localizeText(g.label, locale), g.active ? boundWeapons?.[g.key] : undefined]
+        .filter(Boolean)
+        .join(" · "),
       ...(roundsLeft !== undefined ? { roundsLeft } : {}),
       ...(bloodiedGateUnmet ? { bloodiedGateUnmet: true } : {}),
     });
