@@ -1729,6 +1729,9 @@ export interface AggregatedGrants {
     activeKey: string;
     grant: Extract<Grant, { type: "weapon-binding" }>;
   }>;
+  /** Expertise picked at each Long Rest (`rest-expertise`): the option-choice key
+   *  that holds the pick. Read by `restExpertiseSkills`, cleared by a Long Rest. */
+  restExpertise: ReadonlyArray<{ sourceId: string; choiceKey: string }>;
   /**
    * Number of EXTRA weapon attacks granted with a single Attack action (the
    * "Extra Attack" feature). 0 when no source grants it. MAX across `extra-attack`
@@ -2381,6 +2384,7 @@ export function emptyAggregate(): AggregatedGrants {
     resources: [],
     zeroHpFloors: [],
     weaponBindings: [],
+    restExpertise: [],
     extraAttacks: 0,
     extraActions: [],
     turnEconomyBlocked: false,
@@ -2663,6 +2667,7 @@ export function evaluateGrants(
   const resources: AggregatedGrants["resources"][number][] = [];
   const zeroHpFloors: AggregatedGrants["zeroHpFloors"][number][] = [];
   const weaponBindings: AggregatedGrants["weaponBindings"][number][] = [];
+  const restExpertise: AggregatedGrants["restExpertise"][number][] = [];
   const extraActions: AggregatedGrants["extraActions"][number][] = [];
   // Save, concentration, initiative and spell DC/attack bonuses fold through `lib/rules`.
   const abilityCheckBonuses: {
@@ -3094,6 +3099,9 @@ export function evaluateGrants(
         if (activeKey) {
           zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
         }
+        break;
+      case "rest-expertise":
+        restExpertise.push({ sourceId, choiceKey: g.choiceKey });
         break;
       case "weapon-binding":
         // Only a lit state binds: outside a `while-active` there is no key to
@@ -4278,6 +4286,7 @@ export function evaluateGrants(
     resources,
     zeroHpFloors,
     weaponBindings,
+    restExpertise,
     extraAttacks: Math.max(0, ruleValue(values, "attack:extra") ?? 0),
     extraActions,
     turnEconomyBlocked: ruleFlag(values, "block:turn-economy"),

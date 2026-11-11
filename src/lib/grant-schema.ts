@@ -2882,6 +2882,12 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
    * ability instead of Strength; `damageTypeChoice` offers other damage types,
    * the pick stored at its own `choiceKey`.
    */
+  /** Expertise in one proficient skill, picked at each Long Rest and held until the
+   *  next; the pick lives in the session's option choices under `choiceKey`. */
+  "rest-expertise": objectSchema({
+    choiceKey: stringSchema,
+    type: literalSchema("rest-expertise"),
+  }),
   "weapon-binding": objectSchema(
     {
       choiceKey: stringSchema,
