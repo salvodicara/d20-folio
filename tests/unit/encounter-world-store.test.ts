@@ -32,7 +32,7 @@ import {
   removeCombatant,
   setMonsterTempHp,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   applyAdversaryCondition,
   applyAdversaryDamage,

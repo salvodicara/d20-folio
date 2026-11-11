@@ -17,7 +17,7 @@ import {
   parseEncounterState,
   removeCombatant,
   rosterHpWriteBack,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import type { RosterEntry } from "@/lib/play/campaign-roster";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 

@@ -10,7 +10,7 @@ import {
   rollMonsterRecharge,
   spendMonsterUse,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
 /**
