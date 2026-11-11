@@ -6,7 +6,7 @@
  * encounter-building budgets the classic `EncounterBudgetReadout` uses). Pure.
  */
 import { customMonsterToInput } from "@/features/campaigns/encounter-monster-input";
-import type { MonsterInput } from "@/features/campaigns/encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 import { totalLevel } from "@/lib/classes";
 import {
   budgetVerdict,

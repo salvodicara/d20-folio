@@ -54,12 +54,8 @@ import { db } from "@/lib/firebase";
 // builds see a literal false there and drop the branch with its fixtures (a helper
 // function hid the literal from the optimizer). Tests keep the live, mockable binding.
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
-import { removeCombatant, parseEncounterState } from "@/features/campaigns/encounter";
-import {
-  mayStepTurn,
-  passTurn,
-  turnBack,
-} from "@/features/campaigns/encounter-lifecycle";
+import { removeCombatant, parseEncounterState } from "@/lib/play/encounter";
+import { mayStepTurn, passTurn, turnBack } from "@/lib/play/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
 import { peerDamageHit, peerHit } from "@/lib/play/peer-damage";

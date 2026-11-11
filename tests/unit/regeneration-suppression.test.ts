@@ -16,7 +16,7 @@ import {
   advanceTurn,
   beginEncounterTurns,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   REGENERATION_ACTION,
   REGENERATION_SUPPRESSED_ACTION,

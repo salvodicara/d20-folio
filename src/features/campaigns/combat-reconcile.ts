@@ -33,7 +33,7 @@
  * `advanceTurn` reducer — no React, no store, no Firebase (mirrors `encounter.ts`).
  */
 
-import { advanceTurn } from "@/features/campaigns/encounter";
+import { advanceTurn } from "@/lib/play/encounter";
 import type {
   GlobalCombat,
   PendingTurn,

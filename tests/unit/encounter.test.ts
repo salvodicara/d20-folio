@@ -17,7 +17,7 @@ import {
   startEncounter,
   toggleCondition,
   type MonsterInput,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
 const goblins: MonsterInput = {

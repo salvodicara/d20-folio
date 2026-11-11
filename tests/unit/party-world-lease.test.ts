@@ -47,11 +47,7 @@ import { runMechanicsCausalAction } from "@/lib/mechanics-coordinator";
 import { conformMechanicsProgram } from "@/lib/mechanics-program-authoring";
 import { conformMechanicsProgramAuthorityReceipt } from "@/lib/mechanics-program-receipt";
 import { beginMechanicsCausalState } from "@/lib/mechanics-world";
-import {
-  addMonster,
-  beginEncounterTurns,
-  startEncounter,
-} from "@/features/campaigns/encounter";
+import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/encounter";
 import { applyAdversaryDamage } from "@/features/campaigns/encounter-world-command";
 import {
   observePartyWorldFights,

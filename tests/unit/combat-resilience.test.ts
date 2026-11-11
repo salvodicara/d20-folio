@@ -29,7 +29,7 @@ import {
   setHidden,
   setHp,
   toggleCondition,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import { sessionToCombatState, applyLegacyCombatToSession } from "@/lib/combat-state";
 import { timestampsToDates } from "@/lib/timestamps-to-dates";
 import type { EncounterState } from "@/types/campaign";
