@@ -30,14 +30,15 @@ describe("the tray's die per target", () => {
   const plan = damageTrayPlan(tolling, ["orc", "ogre", "mystery"], "pc-me");
   if (!plan) throw new Error("no tray");
 
-  it("full Hit Points: the base die; missing any: the bigger one; unknown: the base", () => {
+  it("full Hit Points: the base die; missing any: the bigger one; unknown: both", () => {
     expect(
       initialTrayRow(plan, "ogre", undefined, undefined, { current: 59, max: 59 }).dice
     ).toBe("2d8");
     expect(
       initialTrayRow(plan, "orc", undefined, undefined, { current: 6, max: 15 }).dice
     ).toBe("2d12");
-    expect(initialTrayRow(plan, "mystery").dice).toBe("2d8");
+    // Unknown: the player can't tell, so both dice ("ask the DM"), never a wrong one.
+    expect(initialTrayRow(plan, "mystery").dice).toBe("2d8 / 2d12");
   });
 
   it("a spell without the rule names no per-target die", () => {
@@ -53,7 +54,8 @@ describe("the tray's die per target", () => {
     if (!plan) throw new Error("no tray");
     const row = (band: "healthy" | "bloodied") =>
       initialTrayRowFor(plan, { id: "orc", name: "Orc", kind: "monster", band }).dice;
-    expect(row("healthy")).toBe("2d8");
+    // "In forze" can't tell full from a scratch: both dice.
+    expect(row("healthy")).toBe("2d8 / 2d12");
     expect(row("bloodied")).toBe("2d12");
   });
 });

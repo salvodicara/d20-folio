@@ -624,13 +624,16 @@ export function initialTrayRow(
     ...trayOutcome(plan, hp),
     ...(plan.hurtDice
       ? {
-          dice:
-            !hp && knownHurt
+          dice: !hp
+            ? // Hidden Hit Points: a Bloodied band proves the target is hurt; otherwise
+              // the player can't tell, so both dice ("ask the DM"), never a wrong one.
+              knownHurt
               ? plan.hurtDice.hurt
-              : damageForTarget(
-                  { damage: plan.hurtDice.base, damageIfHurt: plan.hurtDice.hurt },
-                  hp && { currentHp: hp.current, maxHp: hp.max }
-                ),
+              : `${plan.hurtDice.base} / ${plan.hurtDice.hurt}`
+            : damageForTarget(
+                { damage: plan.hurtDice.base, damageIfHurt: plan.hurtDice.hurt },
+                { currentHp: hp.current, maxHp: hp.max }
+              ),
         }
       : {}),
     multiplier: factsMultiplier(facts, plan),
