@@ -16,7 +16,10 @@ import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { parseCombatState } from "@/lib/combat-state-codec";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { verifyParentCutoverCorpus } from "../../scripts/migrate-character-parents";
-import { sandboxCharacterDocuments } from "../../scripts/lib/sandbox-character";
+import {
+  sandboxCharacterDocuments,
+  sandboxMemberCharacter,
+} from "../../scripts/lib/sandbox-character";
 
 const STAMP = new Timestamp(1_760_000_000, 0);
 const TEAM = resolve(__dirname, "../../content-pack/fixtures/team");
@@ -64,4 +67,33 @@ describe("the sandbox seed's character documents", () => {
       }
     );
   }
+});
+
+describe("the campaign's copy of a sandbox hero", () => {
+  // A spec that reseeds a hero (another fixture, another name) must leave the campaign
+  // showing the hero it seeded: the DM's party card reads this copy (rehearsal
+  // 2026-11-11: the journey after the peer-spend spec found «Chiaviddu» on Catalion's card).
+  it("carries the fixture's name, race and classes, at the level it was seeded", () => {
+    const envelope = {
+      build: {
+        name: "Catalion di Sancaldo",
+        race: "elf",
+        classes: [{ classId: "bard", level: 3 }],
+      },
+      state: {},
+    };
+    expect(sandboxMemberCharacter(envelope)).toEqual({
+      name: "Catalion di Sancaldo",
+      race: "elf",
+      classes: [{ classId: "bard", level: 3 }],
+      portraitUrl: null,
+    });
+  });
+
+  it("leaves out what the fixture lacks", () => {
+    expect(sandboxMemberCharacter({ build: { name: "Nobody" } })).toEqual({
+      name: "Nobody",
+      portraitUrl: null,
+    });
+  });
 });
