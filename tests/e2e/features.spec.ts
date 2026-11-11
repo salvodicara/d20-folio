@@ -7,6 +7,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { visibleWithin } from "./visible-within";
 
 test.describe("Features Page", () => {
   test.beforeEach(async ({ page }) => {
@@ -58,12 +59,12 @@ test.describe("Features Page", () => {
     // Expand by clicking the uc-head row (which expands the detail via the chevron
     // button overlay).
     const chevron = actionSurgeRow.getByRole("button", { name: /expand/i });
-    if (await chevron.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(chevron, 2000)) {
       await chevron.click();
     }
     // After expansion the tracker's Spend/Use button is interactive.
     const surgeUse = actionSurgeRow.getByRole("button", { name: /use|spend/i });
-    if (await surgeUse.isVisible({ timeout: 2000 }).catch(() => false)) {
+    if (await visibleWithin(surgeUse, 2000)) {
       await surgeUse.click();
       // Should mark one use consumed — verified by the tracker updating
     }
