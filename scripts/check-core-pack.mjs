@@ -8,7 +8,7 @@
  * - The version is a real semver, never 0.0.0.
  * - `exports["."]` is the only entry, and its `import` and `types` (and `main` /
  *   `types`) are files the tarball carries.
- * - The tarball carries the build, the README, the NOTICE and the LICENSE, and nothing
+ * - The tarball carries the build, the README, the CHANGELOG, the NOTICE and the LICENSE, and nothing
  *   else: no sources, fixtures or smoke files.
  */
 import { execFileSync } from "node:child_process";
@@ -49,7 +49,7 @@ for (const [label, file] of [
     problems.push(`${label} (${file}) is not in the tarball`);
 }
 
-const META = ["package.json", "README.md", "NOTICE", "LICENSE"];
+const META = ["package.json", "README.md", "CHANGELOG.md", "NOTICE", "LICENSE"];
 for (const required of [...META, "dist/index.js"]) {
   if (!files.has(required)) problems.push(`${required} is not in the tarball`);
 }
