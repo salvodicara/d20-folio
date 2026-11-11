@@ -7,7 +7,10 @@
  * suggestion: the member ends it, nothing ends silently. «Tira per chi manca» is the
  * DM's alone (only the DM may write other players' rolls), while anyone is missing.
  */
-import { encounterEndReason } from "@/features/campaigns/encounter-lifecycle";
+import {
+  encounterEndReason,
+  mayStepTurn,
+} from "@/features/campaigns/encounter-lifecycle";
 import type { EncounterEndReason, EncounterState } from "@/types/campaign";
 
 export interface FightControls {
@@ -44,8 +47,7 @@ export function fightControls(
       reopen: ended !== null,
       suggestEnd: null,
     };
-  const mine = fight.currentCombatantId === `pc-${me.uid}`;
-  const turns = fight.clock !== undefined || me.isDm || mine;
+  const turns = mayStepTurn(fight, me);
   return {
     roll: me.hasCharacter && !me.rolled,
     rollMissing,
