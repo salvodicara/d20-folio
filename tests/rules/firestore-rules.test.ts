@@ -2288,6 +2288,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
         initiativeRoll: 15,
         deathSaves: { successes: 0, failures: 0 },
         round: 1,
+        soloFightStarted: true,
         recentActions: [],
         playState: { version: 1, state: { usedSlots: { "1": 1 } } },
         updatedAt: Timestamp.now(),
@@ -2296,6 +2297,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     const stored = await getDoc(ref);
     expect(stored.data()).not.toHaveProperty("actionRevision");
     expect(stored.data()).not.toHaveProperty("actionLifecycles");
+    expect(stored.data()?.soloFightStarted).toBe(true);
     const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertSucceeds(
       updateDoc(doc(admin, ...COMBAT_PATH), {
@@ -2341,6 +2343,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
       { actionHead: "peer-command" },
       { "actionLifecycles.attack-2": actionLifecycle() },
       { round: 99 },
+      { soloFightStarted: true },
       { recentActions: [] },
       { turnEconomy: { key: "stolen-turn" } },
       { initiativeRoll: 20 },
