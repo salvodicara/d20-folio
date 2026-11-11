@@ -358,6 +358,31 @@
     },
     "roll": {
       "surprised": "Sorpreso"
+    },
+    "defense": {
+      "temporary": "temporanea",
+      "remove": "Togli {{name}}",
+      "add": "Aggiungi",
+      "choose": "Scegli",
+      "addTitle": "Difesa temporanea",
+      "addHelp": "Da una pozione o un incantesimo: finisce quando la togli, senza toccare il personaggio.",
+      "kind": {
+        "resistance": "Resistenza",
+        "immunity": "Immunità",
+        "vulnerability": "Vulnerabilità",
+        "conditionImmunity": "Condizione"
+      }
+    },
+    "check": {
+      "dc": "CD",
+      "face": "Il d20 che hai tirato",
+      "noDc": "nessuna CD: decide il DM.",
+      "fail": "fallita contro CD {{dc}}.",
+      "ok": "riuscita contro CD {{dc}}.",
+      "hideOk": "riuscita. Sei Invisibile; chi ti cerca deve superare {{total}}.",
+      "escapeOk": "ti liberi: non sei più Afferrato.",
+      "hideWhat": "Prova di Destrezza (Furtività)",
+      "escapeWhat": "La migliore tra Atletica e Acrobazia"
     }
   }
 }

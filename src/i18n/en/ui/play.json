@@ -358,6 +358,31 @@
     },
     "roll": {
       "surprised": "Surprised"
+    },
+    "defense": {
+      "temporary": "temporary",
+      "remove": "Remove {{name}}",
+      "add": "Add",
+      "choose": "Choose",
+      "addTitle": "Temporary defense",
+      "addHelp": "From a potion or a spell: it ends when you remove it, without touching the character.",
+      "kind": {
+        "resistance": "Resistance",
+        "immunity": "Immunity",
+        "vulnerability": "Vulnerability",
+        "conditionImmunity": "Condition"
+      }
+    },
+    "check": {
+      "dc": "DC",
+      "face": "The d20 you rolled",
+      "noDc": "no DC: the DM decides.",
+      "fail": "fails against DC {{dc}}.",
+      "ok": "succeeds against DC {{dc}}.",
+      "hideOk": "success. You are Invisible; whoever searches for you must beat {{total}}.",
+      "escapeOk": "you break free: no longer Grappled.",
+      "hideWhat": "Dexterity (Stealth) check",
+      "escapeWhat": "The better of Athletics and Acrobatics"
     }
   }
 }

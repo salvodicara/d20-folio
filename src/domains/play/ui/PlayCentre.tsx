@@ -6,6 +6,13 @@
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
 import { RollDialog } from "@/domains/combat/ui/FightActions";
+import {
+  checkEntriesFor,
+  skillBonusFor,
+  type CheckEntry,
+} from "@/domains/play/check-entry";
+import { PlayCheck } from "@/domains/play/ui/PlayCheck";
+import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlayTurnStart } from "./PlayTurnStart";
@@ -270,6 +277,7 @@ function ActionsPane({
             {kept.map((row) => (
               <ActionLine key={row.id} row={row} locale={locale} />
             ))}
+            {group === "reactions" && <OtherReactionRow />}
           </section>
         );
       })}
@@ -722,6 +730,7 @@ function TurnStrip({
         <PlayTurnStart doc={doc} round={fight ? round : solo.round} locale={locale} />
       )}
       {!fight && !campaign && solo.notes}
+      <ReadiedNote locale={locale} />
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
       {counterable.map((cast) => {
         const name = localizeText(cast.action, locale);
@@ -836,6 +845,7 @@ function ActionLine({
   const [sparing, setSparing] = useState<SpareView | null>(null);
   // Help in a fight asks «Su chi?» then «Per chi?» (the effect needs the v0.26 rules).
   const [helping, setHelping] = useState<HelpView | null>(null);
+  const [checking, setChecking] = useState<CheckEntry[] | null>(null);
   const cast = () => {
     const status = useCombatStatusStore.getState().status;
     if (row.action.id === "base-help" && combatEffectsV26On()) {
@@ -854,6 +864,12 @@ function ActionLine({
         : null;
     if (spare) {
       setSparing(spare);
+      return;
+    }
+    // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
+    const checks = doc ? checkEntriesFor(row.action, skillBonusFor(doc)) : [];
+    if (checks.length > 0) {
+      setChecking(checks);
       return;
     }
     const choices = !doc
@@ -955,6 +971,13 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {checking && (
+        <PlayCheck
+          action={row.action}
+          entries={checking}
+          onClose={() => setChecking(null)}
+        />
       )}
       {helping && doc && (
         <PlayHelp
