@@ -24,10 +24,20 @@ export interface MonsterTurnModifiers {
 
 export function monsterTurnModifiers(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
-  monsterId: string
+  monsterId: string,
+  /** The creature it attacks: a state that holds only against others reads it. */
+  attackTargetId?: string
 ): MonsterTurnModifiers {
   const effects = effectsForTarget(operations, monsterId);
-  const modes = new Set(activeRollModeAdjustments(effects, "attack").map((a) => a.mode));
+  const modes = new Set(
+    activeRollModeAdjustments(effects, "attack")
+      .filter(
+        (a) =>
+          a.exceptAgainst === undefined ||
+          (attackTargetId !== undefined && attackTargetId !== a.exceptAgainst)
+      )
+      .map((a) => a.mode)
+  );
   const attack =
     modes.size === 1 ? (modes.has("advantage") ? "advantage" : "disadvantage") : null;
   return {
