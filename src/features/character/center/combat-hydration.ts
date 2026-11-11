@@ -184,13 +184,15 @@ export function syncCombatFromSession(
   sessionInit: string,
   turnEconomy?: CombatState["turnEconomy"],
   currentTurnKey?: string,
-  locale: Locale = "en"
+  locale: Locale = "en",
+  soloFightStarted = false
 ): boolean {
   const store = useCombatStore.getState();
   if (store.hydratedCharacterId === characterId) {
     // Reconcile both from the authoritative `combat/state` subdoc (their sole home).
     if (store.initiative !== sessionInit) store.setInitiative(sessionInit);
     if (store.round !== combatRound) store.setRound(combatRound);
+    if (store.fightStarted !== soloFightStarted) store.setFightStarted(soloFightStarted);
     // Covers the char-doc-first / combat-subdoc-second load ordering without ever
     // overwriting a newer local commit: a late snapshot hydrates only a baseline turn.
     if (currentTurnKey && turnEconomy?.key === currentTurnKey && turnIsBaseline()) {
@@ -208,6 +210,7 @@ export function syncCombatFromSession(
   });
   if (combatRound > 1) store.setRound(combatRound);
   if (sessionInit !== "") store.setInitiative(sessionInit);
+  if (soloFightStarted) store.setFightStarted(true);
   if (currentTurnKey && turnEconomy?.key === currentTurnKey) {
     restoreTurnEconomy(turnEconomy, locale);
   }

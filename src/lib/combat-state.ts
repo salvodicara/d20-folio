@@ -119,7 +119,8 @@ export function sessionToCombatState(
   appliedEncounterEffects?: CombatState["appliedEncounterEffects"],
   turnEconomy?: CombatState["turnEconomy"],
   activeEffects?: CombatState["activeEffects"],
-  pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"]
+  pendingConcentrationSaves?: CombatState["pendingConcentrationSaves"],
+  soloFightStarted = false
 ): CombatState {
   return {
     hp: { current: session.hp.current, temp: session.hp.temp },
@@ -129,6 +130,7 @@ export function sessionToCombatState(
     bardicInspirationDie: session.bardicInspirationDie ?? "",
     heroicInspiration: session.inspiration,
     round,
+    ...(soloFightStarted ? { soloFightStarted: true } : {}),
     playState: sessionToPlayStateV1(session),
     ...(activeEffects?.length ? { activeEffects } : {}),
     ...(appliedEncounterEffects ? { appliedEncounterEffects } : {}),

@@ -754,6 +754,36 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Thief's Reflexes: round 1 offers a one-tap second turn (economy refreshed, round stays 1); the encounter shows a second row at Initiative − 10.",
   },
+  // New-UI parity shots (dev only). `/characters/scn-heroic-rally`: a level-18 Champion,
+  // Bloodied, so the start of each turn offers Heroic Rally's Hit Points (one tap).
+  // `/characters/scn-rage-on`: a Barbarian already Raging, so End Turn without an
+  // attack or damage asks whether Rage keeps going.
+  "heroic-rally": {
+    name: "Aldric, the Unbroken",
+    raceId: "human",
+    classId: "fighter",
+    subclassId: "champion",
+    level: 18,
+    background: "soldier",
+    abilityScores: { STR: 20, DEX: 14, CON: 16, INT: 10, WIS: 12, CHA: 10 },
+    weapons: [{ srdId: "longsword", quantity: 1 }],
+    sessionHpCurrent: 60,
+    exercises:
+      "Heroic Rally (Survivor): Bloodied at the start of a turn, the turn strip offers 5 + CON Hit Points as a one-tap apply with undo.",
+  },
+  "rage-on": {
+    name: "Brakka, Stormborn",
+    raceId: "orc",
+    classId: "barbarian",
+    subclassId: "berserker",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 18, DEX: 14, CON: 16, INT: 8, WIS: 12, CHA: 10 },
+    weapons: [{ srdId: "greataxe", quantity: 1 }],
+    activeFeatures: ["barbarian-rage"],
+    exercises:
+      "Rage kept going: End Turn with no attack and no damage taken asks «Ira termina. Mantenerlo attivo?» (Mantieni / Termina).",
+  },
   "time-stop": {
     name: "Orrin, Keeper of Hours",
     raceId: "human",

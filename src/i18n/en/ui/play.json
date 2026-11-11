@@ -15,7 +15,11 @@
       "limited": "Limited use"
     },
     "group": {
-      "bonus": "Bonus actions"
+      "bonus": "Bonus actions",
+      "attacks_one": "{{count}} attack per action",
+      "attacks_other": "{{count}} attacks per action",
+      "perRound": "One per round",
+      "spent": "used this turn"
     },
     "playbookTitle": "What you should do",
     "spellLevel": "Level {{level}}",
@@ -63,7 +67,8 @@
       "fromTemp": "It takes {{temp}} temporary hit points first, then you go from {{from}} to {{to}}.",
       "tempOnly": "Your temporary hit points take it all: you stay at {{from}}.",
       "plain": "You go from {{from}} to {{to}} hit points.",
-      "concentration": "Make a concentration save for {{spell}} (DC {{dc}})."
+      "concentration": "Make a concentration save for {{spell}} (DC {{dc}}).",
+      "critAtZero": "At 0 Hit Points a critical hit counts as two failures."
     },
     "form": {
       "tempHp": "You gain {{amount}} Temporary Hit Points, and they stay when you return to your form.",
@@ -104,7 +109,9 @@
       "blockedDead": "A dead character can't rest.",
       "changeOne": "You can change 1 spell.",
       "changeAny": "You can change as many as you like.",
-      "keepPrepared": "Keep them"
+      "keepPrepared": "Keep them",
+      "diceSpent_one": "{{count}} die → +{{hp}} HP",
+      "diceSpent_other": "{{count}} dice → +{{hp}} HP"
     },
     "mixing": {
       "title": "Mixing potions",
@@ -256,7 +263,10 @@
       "addAfter": "After the roll",
       "addBardic": "+ Bardic Inspiration ({{die}})",
       "secondFace": "The second d20",
-      "dieFace": "What did the {{die}} show?"
+      "dieFace": "What did the {{die}} show?",
+      "dust": "The body turned to dust.",
+      "threeFailures_one": "{{count}} failed death saving throw.",
+      "threeFailures_other": "{{count}} failed death saving throws."
     },
     "conditions": {
       "cantSeeSource": "I can't see the source",
@@ -306,7 +316,9 @@
         "maneuvers_one": "{{count}} maneuver",
         "maneuvers_other": "{{count}} maneuvers",
         "weaponMasteries_one": "{{count}} Weapon Mastery",
-        "weaponMasteries_other": "{{count}} Weapon Masteries"
+        "weaponMasteries_other": "{{count}} Weapon Masteries",
+        "fightingStyles_one": "{{count}} Fighting Style",
+        "fightingStyles_other": "{{count}} Fighting Styles"
       }
     },
     "rollReaction": {
@@ -328,6 +340,24 @@
       "fromDm": "The DM grants it",
       "received": "Received",
       "receivedDie": "Die received from an ally"
+    },
+    "turnStart": "Start of the turn",
+    "solo": {
+      "start": "Start combat",
+      "ammo_one": "You can recover {{count}} piece of ammunition after the fight.",
+      "ammo_other": "You can recover {{count}} pieces of ammunition after the fight.",
+      "endingName": "{{name}} is about to end:",
+      "endingWhyAttack": "this turn you didn't attack or force an enemy to make a saving throw.",
+      "extendBonus": "Extend (Bonus Action)",
+      "letEnd": "Let it end"
+    },
+    "pip": {
+      "gathering": "Initiative: roll",
+      "mine": "Round {{round}} · your turn",
+      "theirs": "Round {{round}} · {{name}}"
+    },
+    "roll": {
+      "surprised": "Surprised"
     }
   }
 }

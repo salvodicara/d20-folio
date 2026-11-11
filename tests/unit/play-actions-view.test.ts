@@ -147,3 +147,44 @@ describe("playActionsView — the buttons", () => {
     });
   });
 });
+
+describe("playActionsView group notes (prototype x-play .agroup__note)", () => {
+  const fighter = (level: number) =>
+    makeCharacterDoc({
+      classId: "fighter",
+      level,
+      equipment: [{ srdId: "longsword", equipped: true }],
+    });
+
+  it("the Actions group says how many attacks one Attack action makes", () => {
+    const at = (level: number) =>
+      playActionsView(fighter(level), "en").groups.find((g) => g.group === "actions")
+        ?.note;
+    expect(at(1)).toEqual({ kind: "attacks", count: 1 });
+    expect(at(5)).toEqual({ kind: "attacks", count: 2 });
+  });
+
+  it("a spent bonus action or reaction says so; fresh, only the reaction's one a round", () => {
+    const doc = buildDevScenario("twf-extra-attack");
+    if (!doc) throw new Error("fixture missing");
+    const fresh = playActionsView(doc, "en");
+    expect(fresh.groups.find((g) => g.group === "bonus")?.note).toBeUndefined();
+    const freshReactions = fresh.groups.find((g) => g.group === "reactions");
+    if (freshReactions) expect(freshReactions.note).toEqual({ kind: "per-round" });
+    const spent: ActionTurnState = {
+      selected: { action: [], bonus: [{ id: "x" }], free: [] },
+      budget: { action: 1, bonus: 1 },
+      attackBudget: 1,
+      attacksUsed: 0,
+      attackSwingIds: [],
+      reactionUsed: true,
+      reactionUsedId: "y",
+      movementUsedFt: 0,
+      warMagicMax: -1,
+    };
+    const used = playActionsView(doc, "en", spent);
+    expect(used.groups.find((g) => g.group === "bonus")?.note).toEqual({ kind: "spent" });
+    const reactions = used.groups.find((g) => g.group === "reactions");
+    if (reactions) expect(reactions.note).toEqual({ kind: "spent" });
+  });
+});
