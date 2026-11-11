@@ -22,7 +22,7 @@ import {
   sortByInitiative,
   type MonsterInput,
   monsterInstanceName,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import type { CreatureType } from "@/data/types";
 import { totalLevel } from "@/lib/classes";
 import {
@@ -261,7 +261,7 @@ export function buildEncounterView(
   // as players roll (spec §3). Once Begin-turns FREEZES the order, the display follows THAT
   // frozen sequence — NOT a live re-sort — so a player's locked initiative can never silently
   // reshuffle the table ("20 but sitting 3rd"), and the DM's drag-to-reorder ({@link
-  // "@/features/campaigns/encounter".reorderCombatant}) is reflected immediately. A combatant
+  // "@/lib/play/encounter".reorderCombatant}) is reflected immediately. A combatant
   // missing from the frozen order (a freshly-added reinforcement not yet re-slotted) is
   // appended in its live-sorted position so it is never dropped from the view.
   const liveSorted = applyInitiativeSwaps(

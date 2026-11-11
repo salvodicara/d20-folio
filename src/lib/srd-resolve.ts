@@ -37,6 +37,8 @@ export function resolveItemConsumable(ref: SrdEquipmentRef | CustomEquipment): {
   isPotion: boolean;
   potionFormula: string | undefined;
   isConsumable: boolean;
+  /** The economy the catalogue's own use action declares (Basic Poison: Bonus). */
+  useType?: ActionType;
 } {
   if (checkCustomEquipment(ref)) {
     const isPotion = ref.isPotion ?? false;
@@ -58,7 +60,8 @@ export function resolveItemConsumable(ref: SrdEquipmentRef | CustomEquipment): {
     srdItem?.potionFormula ?? magicItem?.potionFormula ?? ref.potionFormula;
   const isConsumable =
     isPotion || (srdItem?.isConsumable ?? false) || (ref.isConsumable ?? false);
-  return { isPotion, potionFormula, isConsumable };
+  const useType = srdItem?.mechanics?.actions?.[0]?.type;
+  return { isPotion, potionFormula, isConsumable, ...(useType ? { useType } : {}) };
 }
 
 /**
@@ -73,10 +76,13 @@ export function consumableActionSlot(
   c: {
     isPotion: boolean;
     isConsumable: boolean;
+    /** The item's declared use action (Basic Poison's Bonus Action) wins. */
+    useType?: ActionType;
   },
   rules: TableRules = RAW_TABLE_RULES
 ): ActionType {
   if (c.isPotion) return rules.potions.drink;
+  if (c.useType) return c.useType;
   if (c.isConsumable) return "action";
   return "free";
 }

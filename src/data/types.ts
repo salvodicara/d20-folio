@@ -3680,6 +3680,9 @@ export interface SrdEquipmentData {
     tracker?: TrackerSpec;
     actions?: ReadonlyArray<SrdActionDef>;
   };
+  /** The state an item's action lights (Basic Poison's coat): a `while-active` the
+   *  action enters. It holds after the last copy is spent, like a drunk potion's. */
+  grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /**
    * Healing potion roll (e.g. "2d4+2"). Structured here so EVERY reference to the
    * item renders the same heal verdict — display is derived from SRD data, never

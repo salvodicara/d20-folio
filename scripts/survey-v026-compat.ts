@@ -127,7 +127,7 @@ const engine = {
     "toCampaignDoc"
   ),
   parseEncounterState: await engineFunction(
-    "features/campaigns/encounter.ts",
+    "lib/play/encounter.ts",
     "parseEncounterState"
   ),
   parseRosterEntry: await engineFunction(

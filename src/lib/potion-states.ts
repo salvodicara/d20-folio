@@ -10,6 +10,7 @@
  * end-on-act seams see its lit key, per physical copy.
  */
 import { getMagicItem, SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { SRD_GEAR } from "@/data/gear";
 import { spells } from "@/data/spells";
 import type { SrdMagicItemData } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
@@ -216,5 +217,35 @@ export function resolvePotionStateSources(
         : { ref: { kind: "magic-item", key: itemId } }),
     });
   }
-  return sources;
+  return [...sources, ...spentGearStateSources(activeKeys, copies)];
+}
+
+/**
+ * A lit item state whose last copy is spent (the last vial of Basic Poison coated
+ * the blade): the lit key holds the state, as a drunk potion's does. While a copy
+ * is still carried, the equipment source already carries it.
+ */
+export function spentGearStateSources(
+  activeKeys: Iterable<string>,
+  copies: ReadonlyArray<ItemCopy>
+): GrantSource[] {
+  const lit = new Set(activeKeys);
+  return SRD_GEAR.flatMap((item) => {
+    const states = (item.grants ?? []).filter(
+      (grant) => grant.type === "while-active" && lit.has(grant.activeKey)
+    );
+    if (states.length === 0) return [];
+    const carried = copies.some(
+      (copy) => !("custom" in copy) && copy.srdId === item.id && (copy.quantity ?? 1) > 0
+    );
+    return carried
+      ? []
+      : [
+          {
+            id: item.id,
+            grants: states,
+            ref: { kind: "equipment" as const, key: item.id },
+          },
+        ];
+  });
 }

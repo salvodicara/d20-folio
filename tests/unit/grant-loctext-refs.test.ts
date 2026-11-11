@@ -25,6 +25,7 @@ import { SRD_FEATS } from "@/data/feats";
 import { raceFeatureEntries } from "@/data/races";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
+import { SRD_EQUIPMENT } from "@/data/equipment";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { spells } from "@/data/spells";
 import {
@@ -146,6 +147,15 @@ describe("R6+R3 7c — every grant LocText `srd` ref resolves in the catalogue",
 
   it("maneuvers: each maneuver's runtime granted-action resolves in EN + IT", () => {
     checkAggregate(resolveGrantSourcesForManeuvers(SRD_MANEUVERS.map((m) => m.id)));
+  });
+
+  it("equipment: each item's use-state grants resolve in EN + IT", () => {
+    for (const item of SRD_EQUIPMENT) {
+      if (!item.grants?.length) continue;
+      checkAggregate([
+        { id: item.id, grants: item.grants, ref: { kind: "equipment", key: item.id } },
+      ]);
+    }
   });
 
   it("magic items: each item's grants resolve in EN + IT", () => {

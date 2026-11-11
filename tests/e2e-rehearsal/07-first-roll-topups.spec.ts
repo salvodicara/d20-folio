@@ -6,13 +6,14 @@
  * spent (the emulators only), then rolls from its own sheet with no fight running.
  */
 import { execFileSync } from "node:child_process";
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   expectNoCrash,
   openFightTab,
   PLAYER_BARD,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 

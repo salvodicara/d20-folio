@@ -35,7 +35,9 @@ Small partial gaps on modeled entries: Armor Training doesn't block casting; Cur
 changes nothing); Flying (no fall cue at Speed 0 or Incapacitated); Heavily/Lightly Obscured
 (fog and foliage are not light levels); Climbing/Swimming (speed modifiers skip climb, fly and swim
 speeds); Concentration (Extended Spell's Advantage); Long Rest (once per 24 hours not enforced);
-Jumping (feet not charged automatically); Experience Points (no DM award at fight end).
+Jumping (feet not charged automatically); Experience Points (no DM award at fight end). Basic
+Poison and Brew Poison coat a chosen weapon, not up to three pieces of ammunition: a ranged weapon
+stands in for its ammunition until the binding has an ammunition target.
 
 ## Every entry
 

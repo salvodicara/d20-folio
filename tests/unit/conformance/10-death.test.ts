@@ -8,7 +8,7 @@ import {
   advanceTurn,
   beginEncounterTurns,
   setHp as setMonsterHp,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   deathSaveD20Context,
   resolveCharacterDeathSave,

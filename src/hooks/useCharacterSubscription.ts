@@ -38,7 +38,11 @@ import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { subscribeCombatState, writeCombatState } from "@/lib/combat-state-io";
 import { createCombatStateWriter } from "@/lib/combat-state-writer";
 import { storedSessionChanged } from "@/lib/session-overlays";
-import { removeFoldedPeerSpends, subscribePeerSpends } from "@/lib/peer-spends-io";
+import {
+  readPeerSpends,
+  removeFoldedPeerSpends,
+  subscribePeerSpends,
+} from "@/lib/peer-spends-io";
 import type { PeerSpend } from "@/lib/play/peer-spends";
 import { combatTrioRootsChanged, sessionToCombatState } from "@/lib/combat-state";
 import { loadLogFromIDB } from "@/lib/log-persistence";
@@ -516,6 +520,27 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       });
     };
 
+    // A hit from another device writes this sheet's vitals and appends to the ledger in
+    // one transaction, but the ledger listener can fall silent while the combat/state
+    // one still delivers (rehearsal 2026-11-11: two open sheets missed a spent Uncanny
+    // Dodge for 15 s+). So a remote change to the vitals reads the ledger once more.
+    // What it finds joins the listener's entries rather than replacing them: an id
+    // only one source has seen stays folded, so nothing is applied twice.
+    const rereadLedger = (): void => {
+      readPeerSpends(user.uid, characterId)
+        .then((entries) => {
+          if (quarantined) return;
+          const known = new Set(ledger.map((entry) => entry.id));
+          ledger = [...ledger, ...entries.filter((entry) => !known.has(entry.id))];
+          foldLedger();
+        })
+        .catch((error: unknown) => {
+          diagnosticsLog("warn", "combat.peer-spends-reread-failed", {
+            message: String(error),
+          });
+        });
+    };
+
     const publishResolvedPair = (): void => {
       if (quarantined) return;
       // The RESOLVED pair: each domain's unacknowledged local payload when it has one,
@@ -636,8 +661,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         if (!meta.hasPendingWrites) {
           const change = remoteCombatChange(combat);
           if (change.kind === "everything") useUndoStore.getState().clear();
-          else if (change.kind === "vitals")
+          else if (change.kind === "vitals") {
             useUndoStore.getState().markRemoteTouched(change.roots);
+            rereadLedger();
+          }
         }
         writer.observe(combat);
         reconciler.receiveChild(combat, meta);

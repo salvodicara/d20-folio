@@ -31,8 +31,8 @@ import {
   type EncounterPcSeed,
   type MonsterInput,
   type RosterCombatantInput,
-} from "./encounter";
-import { endCombat, reopenCombat, rollInitiative } from "./encounter-lifecycle";
+} from "@/lib/play/encounter";
+import { endCombat, reopenCombat, rollInitiative } from "@/lib/play/encounter-lifecycle";
 import { recordCondition, recordPcHp, undoHpEvent } from "./combat-chronicle";
 import {
   applyAdversaryDamageParts,

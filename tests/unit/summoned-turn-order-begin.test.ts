@@ -6,11 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import {
-  addMonster,
-  beginEncounterTurns,
-  startEncounter,
-} from "@/features/campaigns/encounter";
+import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/encounter";
 import type { EncounterState } from "@/types/campaign";
 
 function fight(): { enc: EncounterState; caster: string } {

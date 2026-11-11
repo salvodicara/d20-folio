@@ -109,7 +109,7 @@ export {
   touch,
   turnBack,
   type RollInitiativeInput,
-} from "@/features/campaigns/encounter-lifecycle";
+} from "@/lib/play/encounter-lifecycle";
 export type {
   EncounterClock,
   EncounterEndReason,

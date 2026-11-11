@@ -16,7 +16,7 @@ import {
 import { MONSTERS } from "@/data/monsters";
 import { monsterPortraitUrl } from "@/data/monster-art";
 import { toMonsterInput } from "@/features/campaigns/encounter-monster-input";
-import type { MonsterInput } from "@/features/campaigns/encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";

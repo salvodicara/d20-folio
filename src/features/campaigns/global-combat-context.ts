@@ -17,7 +17,7 @@
 import { create } from "zustand";
 import { setEncounterRoundSource } from "@/stores/characterStore";
 import type { EncounterView } from "@/features/campaigns/encounter-view";
-import type { ViewerEncounter } from "@/features/campaigns/encounter";
+import type { ViewerEncounter } from "@/lib/play/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import type { SeenRound } from "@/lib/session-log";
 

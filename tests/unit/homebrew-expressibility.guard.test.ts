@@ -91,7 +91,7 @@ import { SRD_MONSTERS_L_M } from "@/data/monsters/l-m";
 import { SRD_MONSTERS_N_P } from "@/data/monsters/n-p";
 import { SRD_MONSTERS_Q_S } from "@/data/monsters/q-s";
 import { SRD_MONSTERS_T_Z } from "@/data/monsters/t-z";
-import { monsterLimitedUses } from "@/features/campaigns/encounter";
+import { monsterLimitedUses } from "@/lib/play/encounter";
 import {
   HOMEBREW_MONSTER_FIELD_SCHEMAS,
   homebrewMonsterMechanics,
