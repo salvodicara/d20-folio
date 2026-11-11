@@ -15,7 +15,11 @@
       "limited": "Uso limitato"
     },
     "group": {
-      "bonus": "Azioni bonus"
+      "bonus": "Azioni bonus",
+      "attacks_one": "{{count}} attacco per azione",
+      "attacks_other": "{{count}} attacchi per azione",
+      "perRound": "Una per round",
+      "spent": "già usata in questo turno"
     },
     "playbookTitle": "Cosa ti conviene fare",
     "spellLevel": "{{level}}° livello",

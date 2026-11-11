@@ -112,7 +112,8 @@ function Initiative({
   return (
     <Panel color="ini" title={t("fight.listTitle", { round: fight.round })}>
       {rows.map((row) => {
-        const portrait = row.kind === "pc" ? portraitOf(row.ids[0] ?? "") : undefined;
+        const portrait =
+          row.kind === "pc" ? (portraitOf(row.ids[0] ?? "") ?? row.portrait) : undefined;
         return (
           <div
             key={row.key}

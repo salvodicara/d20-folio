@@ -5959,6 +5959,13 @@
   .fui .f-sheet .f-filters > .f-chip {
     flex: none;
   }
+  /* 32 px from the filters to the first group (x-play-m: 30) */
+  .fui .f-sheet .f-centre .f-filters {
+    margin-bottom: 0;
+  }
+  .fui .f-sheet .f-act-head + .f-act-group > .f-act-gh {
+    margin-top: 8px;
+  }
   .fui .f-sheet .f-filters[data-more="true"] {
     mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
   }
@@ -5983,5 +5990,28 @@
   .fui .f-sheet .f-char-stats .f-lbl {
     font-weight: 600;
     letter-spacing: 0.04em;
+  }
+}
+
+/* a group's note (prototype .agroup__note): the attacks an Attack action makes, a spent
+   bonus action or reaction; after a dot on a laptop, on its own line on a phone */
+.fui .f-act-gh {
+  flex-wrap: wrap;
+}
+.fui .f-act-gn {
+  font: 400 var(--fs-sm) var(--font-text);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-3);
+}
+.fui .f-act-gn::before {
+  content: "· ";
+}
+@media (max-width: 640px) {
+  .fui .f-act-gn {
+    flex-basis: 100%;
+  }
+  .fui .f-act-gn::before {
+    content: none;
   }
 }
