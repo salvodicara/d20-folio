@@ -425,7 +425,8 @@
       "sap": "{{name}}: Disadvantage on the target's next attack",
       "slow": "{{name}}: −{{distance}} Speed",
       "vex": "{{name}}: Advantage on your next attack",
-      "cleave": "{{name}}: extra attack on an adjacent creature (1/turn)"
+      "cleave": "{{name}}: extra attack on an adjacent creature (1/turn)",
+      "cleaveDamage": "{{name}}: extra attack on an adjacent creature, {{damage}} damage (1/turn)"
     },
     "effectReview": {
       "rubric": "Effect review",
