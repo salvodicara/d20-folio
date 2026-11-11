@@ -28,6 +28,7 @@ export function WizardSpellSwap({
   classId,
   allowedLists,
   knownSpells,
+  alsoKnown,
   value,
   onChange,
 }: {
@@ -43,6 +44,9 @@ export function WizardSpellSwap({
   allowedLists?: ReadonlySet<string>;
   /** The character's known non-cantrip SRD spells. */
   knownSpells: ReadonlyArray<SrdSpellRef>;
+  /** Spells the character knows beyond `knownSpells`, never offered as the
+   *  replacement (a feat's Spell Change offers only its pick to replace). */
+  alsoKnown?: ReadonlySet<string>;
   value: SpellSwapChoice;
   onChange: (choice: SpellSwapChoice) => void;
 }) {
@@ -78,7 +82,7 @@ export function WizardSpellSwap({
     value.removeId != null
       ? (removable.find((s) => s.id === value.removeId)?.level ?? null)
       : null;
-  const knownIds = new Set(knownSpells.map((s) => s.srdId));
+  const knownIds = new Set([...knownSpells.map((s) => s.srdId), ...(alsoKnown ?? [])]);
   const allowed = allowedLists ?? new Set([classId.toLowerCase()]);
   const replacements =
     removeLevel != null

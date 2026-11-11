@@ -10,11 +10,11 @@
  *
  * Runs after the classic journey: it rewrites Catalion's sheet as a Rogue 5.
  */
-import { execFileSync } from "node:child_process";
 import { expect, type Page } from "@playwright/test";
 import {
   expectNoCrash,
   PLAYER_BARD,
+  reseedHero,
   rollEachHero,
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
@@ -67,20 +67,11 @@ test("classic UI: the DM's hit spends a claimed Uncanny Dodge, and the player's 
   browser,
 }) => {
   test.setTimeout(300_000);
-  execFileSync(
-    "node",
-    [
-      "--import",
-      "./scripts/alias-loader.mjs",
-      "scripts/rehearsal-set-character.ts",
-      PLAYER_BARD,
-      SANDBOX_USERS.catalion.characterId,
-      "chiaviddu-rogue.json",
-      "5",
-      DODGE,
-    ],
-    { stdio: "inherit" }
-  );
+  reseedHero(SANDBOX_USERS.catalion, {
+    fixture: "chiaviddu-rogue.json",
+    level: 5,
+    active: [DODGE],
+  });
   const dm = await (await browser.newContext()).newPage();
   const errors = watchErrors(dm);
   const owner = await (await browser.newContext()).newPage();

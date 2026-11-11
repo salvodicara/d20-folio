@@ -102,7 +102,10 @@ export function combatVerdict(
     const damage =
       summary.instances && summary.instances > 1
         ? t("spells.multiInstance", { count: summary.instances, dice: summary.damage })
-        : summary.damage;
+        : summary.damageIfHurt
+          ? // A bigger die against a hurt target reads both ("1d8 / 1d12 if hurt").
+            t("combat.damageIfHurt", { dice: summary.damage, hurt: summary.damageIfHurt })
+          : summary.damage;
     if (summary.damageType) {
       // Curated bilingual short word — the SAME lookup the Spells page uses
       // (srd.damageShort_* → "Prc"/"Psy"/"Thndr", falling back to srd.damage_*),

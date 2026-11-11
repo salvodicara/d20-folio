@@ -17,7 +17,10 @@ import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
 
-import { sandboxCharacterDocuments } from "./lib/sandbox-character.ts";
+import {
+  sandboxCharacterDocuments,
+  sandboxMemberCharacter,
+} from "./lib/sandbox-character.ts";
 
 const PROJECT_ID = env.GCLOUD_PROJECT ?? env.GOOGLE_CLOUD_PROJECT ?? "";
 const CAMPAIGN_ID = "SANDBOX";
@@ -186,14 +189,7 @@ async function run(): Promise<void> {
       photoURL: null,
       characterId: player.characterId,
       role: "player",
-      character: {
-        name: player.envelope.build.name,
-        ...(player.envelope.build.race ? { race: player.envelope.build.race } : {}),
-        ...(player.envelope.build.classes
-          ? { classes: player.envelope.build.classes }
-          : {}),
-        portraitUrl: null,
-      },
+      character: sandboxMemberCharacter(player.envelope),
     };
   }
   await db.doc(`campaigns/${CAMPAIGN_ID}`).set({
