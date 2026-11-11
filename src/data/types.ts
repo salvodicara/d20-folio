@@ -1260,6 +1260,9 @@ export interface SrdSpellData {
    * type word. Omit when the spell deals no dice-based damage.
    */
   damageDice?: string;
+  /** The die face against a target missing any of its Hit Points ("d12"): the same
+   *  count, a bigger die (a cantrip that tolls for the wounded). */
+  damageDieIfHurt?: string;
   /** The spell's own damage formula adds the caster's spellcasting modifier. */
   damageAddsCastMod?: boolean;
   /**
