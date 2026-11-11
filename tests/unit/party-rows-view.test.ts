@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildMemberSnapshot } from "@/features/campaigns/member-snapshot";
 import { derivePartyMemberStats } from "@/features/campaigns/party-stats";
-import { partyNames, partyRows } from "@/domains/campaign/party-rows-view";
+import { partyNames, partyRows, type PartyRow } from "@/domains/campaign/party-rows-view";
 import { concentrationValue } from "@/lib/concentration";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import type { CampaignDoc } from "@/types/campaign";
@@ -43,14 +43,21 @@ const details = {
 } as unknown as CampaignDoc["memberDetails"];
 const campaign = { members: ["dm", "a", "b"], memberDetails: details };
 
+function rowOf(uid: string, rows: PartyRow[]): PartyRow {
+  const row = rows.find((r) => r.uid === uid);
+  if (!row) throw new Error(`no row for ${uid}`);
+  return row;
+}
+
 describe("partyRows", () => {
-  it("one row per character, in member order; a DM without a character has none", () => {
-    expect(partyRows(campaign, {}, "it").map((r) => r.uid)).toEqual(["a", "b"]);
+  it("one row per character, A–Z by character name as on the classic Party; a DM without a character has none", () => {
+    // Kaela (b) before Selene (a), whatever order the members joined in (OWNER-1).
+    expect(partyRows(campaign, {}, "it").map((r) => r.uid)).toEqual(["b", "a"]);
   });
 
   it("live numbers come from the hydrated doc, as the sheet derives them", () => {
     const stats = derivePartyMemberStats(cleric);
-    const [row] = partyRows(campaign, { a: cleric }, "it");
+    const row = rowOf("a", partyRows(campaign, { a: cleric }, "it"));
     expect(row).toMatchObject({
       name: "Selene",
       player: "Nico",
@@ -61,8 +68,8 @@ describe("partyRows", () => {
   });
 
   it("Concentration first, then each condition, localized", () => {
-    const [row] = partyRows(campaign, { a: cleric }, "it");
-    expect(row?.chips).toEqual([
+    const row = rowOf("a", partyRows(campaign, { a: cleric }, "it"));
+    expect(row.chips).toEqual([
       { kind: "conc", label: "Benedizione" },
       { kind: "cond", label: conditionLabel("prone", "it") },
     ]);
@@ -74,18 +81,18 @@ describe("partyRows", () => {
       level: 6,
       name: "Selene la Saggia" as never,
     });
-    expect(partyRows(campaign, { a: renamed }, "en")[0]).toMatchObject({
+    expect(rowOf("a", partyRows(campaign, { a: renamed }, "en"))).toMatchObject({
       name: "Selene la Saggia",
       classLine: "Wizard 6",
     });
   });
 
   it("the class line names each class with its level", () => {
-    expect(partyRows(campaign, { b: null }, "en")[1]?.classLine).toBe("Rogue 5");
+    expect(rowOf("b", partyRows(campaign, { b: null }, "en")).classLine).toBe("Rogue 5");
   });
 
   it("when the live doc can't be read: AC and Perception from the party card, HP unknown, no chips", () => {
-    const row = partyRows(campaign, { a: null }, "it")[0];
+    const row = rowOf("a", partyRows(campaign, { a: null }, "it"));
     expect(row).toMatchObject({
       loading: false,
       hp: null,
@@ -96,7 +103,9 @@ describe("partyRows", () => {
   });
 
   it("while the live doc is loading the row says so, so the screen never shows a name that then changes", () => {
-    const [loading, ready] = partyRows(campaign, { b: rogue }, "en");
+    const rows = partyRows(campaign, { b: rogue }, "en");
+    const loading = rowOf("a", rows);
+    const ready = rowOf("b", rows);
     expect(loading).toMatchObject({ uid: "a", loading: true });
     expect(ready).toMatchObject({ uid: "b", loading: false, name: "Kaela" });
   });

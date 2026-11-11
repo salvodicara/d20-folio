@@ -1,5 +1,6 @@
 /**
- * The new campaign Gruppo panel's rows: one per character, in member order, with the
+ * The new campaign Gruppo panel's rows: one per character, in the party order (A–Z by
+ * character name, as on the classic Party: {@link partyOrder}), with the
  * class line, the player, HP, AC, passive Perception and the status chips
  * (Concentration first, then each condition).
  *
@@ -11,6 +12,7 @@
  */
 import { derivePartyMemberStats } from "@/features/campaigns/party-stats";
 import { memberCardView } from "@/features/campaigns/member-card-view";
+import { partyOrder } from "@/features/campaigns/party-order";
 import { localizeSrd } from "@/i18n/resolver";
 import { getClasses } from "@/lib/classes";
 import type { Locale } from "@/lib/locale";
@@ -44,9 +46,9 @@ export function partyRows(
   locale: Locale
 ): PartyRow[] {
   const rows: PartyRow[] = [];
-  for (const uid of campaign.members) {
-    const member = campaign.memberDetails[uid];
-    if (!member?.character) continue;
+  const members = new Set(campaign.members);
+  for (const [uid, member] of partyOrder(campaign.memberDetails, locale)) {
+    if (!members.has(uid) || !member.character) continue;
     const card = memberCardView(member);
     const doc = live[uid];
     const stats = doc ? derivePartyMemberStats(doc) : null;
