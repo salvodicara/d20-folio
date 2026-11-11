@@ -35,8 +35,7 @@ function Solo() {
 }
 
 /** Mounts the solo strip, starts the fight as a player would, and returns its round
- *  (round 2 unless `round` says otherwise: round 1 with no initiative rolled is not a
- *  running fight for the economy yet). */
+ *  (round 2 unless `round` says otherwise; a started fight runs from round 1). */
 function renderSolo(at = 2): number {
   render(
     <MemoryRouter>
@@ -104,12 +103,14 @@ describe("solo End Turn with Rage lit", () => {
     expect(screen.queryByText(/is about to end/)).toBeNull();
   });
 
-  it("round 1, no initiative: «Extend» ends the turn instead of waiting", () => {
+  it("round 1 after «Start combat», no initiative: «Extend» spends this turn's Bonus Action too", async () => {
     const start = renderSolo(1);
+    expect(start).toBe(1);
     fireEvent.click(screen.getByRole("button", { name: "End turn" }));
     fireEvent.click(screen.getByRole("button", { name: "Extend (Bonus Action)" }));
+    await waitFor(() => expect(round()).toBe(start + 1));
+    expect([...bonusRounds]).toEqual([start]);
     expect(raging()).toContain(RAGE);
-    expect(round()).toBe(start + 1);
   });
 
   it("«Let it end» drops Rage, then ends the turn", () => {
