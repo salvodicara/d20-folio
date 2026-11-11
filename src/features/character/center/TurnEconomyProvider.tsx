@@ -637,7 +637,8 @@ export function TurnEconomyProvider({
       character.session.initiative,
       characterStore.combatTurnEconomy,
       key,
-      locale
+      locale,
+      characterStore.combatSoloFightStarted
     );
     if (fresh) {
       // Switching characters finalizes the previous character's turn: clear the
@@ -659,6 +660,7 @@ export function TurnEconomyProvider({
       const turnChanged = durableTurnChanged(state, prev);
       if (
         state.round === prev.round &&
+        state.fightStarted === prev.fightStarted &&
         state.initiative === prev.initiative &&
         !turnChanged
       )
@@ -667,13 +669,21 @@ export function TurnEconomyProvider({
       if (!cs.character) return;
       // Round + current-turn economy share one write. The exact turn key fences the
       // snapshot from every later actor/round while keeping group↔sheet navigation stable.
-      if (state.round !== prev.round || turnChanged) {
+      if (
+        state.round !== prev.round ||
+        state.fightStarted !== prev.fightStarted ||
+        turnChanged
+      ) {
         const key = turnEconomyKey(
           useCombatStatusStore.getState().status,
           cs.character.id,
           state.round
         );
-        cs.persistCombatTurnState(state.round, snapshotTurnEconomy(state, key));
+        cs.persistCombatTurnState(
+          state.round,
+          snapshotTurnEconomy(state, key),
+          state.fightStarted
+        );
       }
       // Initiative: mirror onto the session (its in-memory home) + persist op-wise to the
       // subdoc (only when it actually changed, so a round-only step costs no init write).
@@ -1087,7 +1097,9 @@ export function TurnEconomyProvider({
       nameLoc: action.nameLoc,
       slot,
       ...(economyCategory ? { economyCategory } : {}),
-      ...(action.maintainsActiveKey
+      // Entering a maintained state is this turn's upkeep too: SRD 5.2.1 Rage lasts
+      // until the end of your NEXT turn, so the turn it starts never asks to keep it.
+      ...(action.maintainsActiveKey || action.activatesKey
         ? { triggerEvents: ["bonus-extend"] as const }
         : action.summary.attackBonus != null || action.summary.saveAbility != null
           ? { triggerEvents: ["attack"] as const }

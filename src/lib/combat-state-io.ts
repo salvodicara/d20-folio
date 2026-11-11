@@ -131,6 +131,7 @@ export function combatStateWriteData(state: CombatState): Record<string, unknown
       failures: state.deathSaves.failures,
     },
     round: state.round,
+    ...(state.soloFightStarted ? { soloFightStarted: true } : {}),
     ...(state.activeEffects?.length ? { activeEffects: state.activeEffects } : {}),
     ...(state.appliedEncounterEffects
       ? { appliedEncounterEffects: state.appliedEncounterEffects }
