@@ -31,6 +31,7 @@ import {
   createDebouncedSave,
   setCharacterSharing,
 } from "@/lib/firestore";
+import { assertNonEmptyString } from "@/lib/non-empty-string";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "../unit/_helpers";
 
@@ -86,7 +87,11 @@ beforeEach(async () => {
     await setDoc(doc(ctx.firestore(), "users", OWNER), { status: "active" });
   });
   asOwner();
-  const fresh = makeCharacterDoc({ name: "Bren", classId: "fighter", level: 3 });
+  const fresh = makeCharacterDoc({
+    name: assertNonEmptyString("Bren"),
+    classId: "fighter",
+    level: 3,
+  });
   const id = await createCharacter(OWNER, fresh);
   hero = { ...fresh, id, revision: 0, shared: false };
 });
@@ -105,7 +110,7 @@ describe("a shared character saves through the app's own writes", () => {
       ...hero,
       shared: true,
       revision: 2,
-      character: { ...hero.character, name: "Bren the Bold" },
+      character: { ...hero.character, name: assertNonEmptyString("Bren the Bold") },
     };
 
     expect(await autosave(edited)).toBeNull();
