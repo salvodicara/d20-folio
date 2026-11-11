@@ -94,6 +94,7 @@
     "titleChoices": "Complete Your New Powers",
     "titleSpells": "Learn Your Spells",
     "titleSwap": "Replace a Spell",
+    "featSpellChange": "{{feat}}: change a spell?",
     "titleReview": "Review & Confirm",
     "hintHp": "Take the average for steady growth, or roll your <g>hit die</g> and enter the result.",
     "hintBoon": "Level {{level}} grants one boon: raise your abilities, or learn a <g>feat</g>.",
@@ -182,6 +183,7 @@
       "invocation": "Eldritch Invocation",
       "maneuver": "Maneuver",
       "hoverHint": "Point at an option to read what it does."
-    }
+    },
+    "searchFightingStyles": "Search Fighting Styles"
   }
 }

@@ -10,7 +10,7 @@ import {
   missingRollers,
   type CombatPatch,
 } from "@/features/campaigns/combat-lifecycle";
-import { addMonster, setInitiative } from "@/features/campaigns/encounter";
+import { addMonster, setInitiative } from "@/lib/play/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 
 const member = (characterId: string | null) => ({

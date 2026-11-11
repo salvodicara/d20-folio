@@ -55,7 +55,7 @@ import {
   setHp,
   setMonsterCondition,
   setMonsterTempHp,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import { monsterDamageDefenses } from "@/features/campaigns/encounter-view";
 import {
   NO_DEFENSES,

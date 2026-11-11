@@ -927,6 +927,9 @@ export interface CombatConditionApplication {
   /** Per-condition overrides for spells such as Symbol whose mutually exclusive
    * outcomes have different maximum lifetimes. */
   lifetimes?: Partial<Record<ConditionId, CombatConditionLifetime>>;
+  /** What the creature also suffers while it holds the condition this applied
+   *  (Hypnotic Pattern: a Speed of 0 while Charmed). Ends with the condition. */
+  whileHeld?: ReadonlyArray<{ kind: "speed-zero" }>;
 }
 
 export interface CombatTargeting {
@@ -1260,6 +1263,9 @@ export interface SrdSpellData {
    * type word. Omit when the spell deals no dice-based damage.
    */
   damageDice?: string;
+  /** The die face against a target missing any of its Hit Points ("d12"): the same
+   *  count, a bigger die (a cantrip that tolls for the wounded). */
+  damageDieIfHurt?: string;
   /** The spell's own damage formula adds the caster's spellcasting modifier. */
   damageAddsCastMod?: boolean;
   /**
@@ -3549,6 +3555,9 @@ export interface SrdFeatData {
   category: FeatCategory;
   /** Whether this feat can be taken multiple times */
   repeatable: boolean;
+  /** Spell Change (Magic Initiate): on each new level, one spell chosen for the feat
+   *  may be replaced with another of the same level from its list. */
+  spellChangeOnLevelUp?: true;
   /**
    * Structured prerequisite FACTS for eligibility gating (2024 RAW), verified
    * against dnd2024.wikidot.com. LEVEL gates are NOT stored here — they derive
@@ -3674,6 +3683,9 @@ export interface SrdEquipmentData {
     tracker?: TrackerSpec;
     actions?: ReadonlyArray<SrdActionDef>;
   };
+  /** The state an item's action lights (Basic Poison's coat): a `while-active` the
+   *  action enters. It holds after the last copy is spent, like a drunk potion's. */
+  grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /**
    * Healing potion roll (e.g. "2d4+2"). Structured here so EVERY reference to the
    * item renders the same heal verdict — display is derived from SRD data, never

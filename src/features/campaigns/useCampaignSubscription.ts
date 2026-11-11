@@ -14,11 +14,17 @@
  * `createCampaign` / `joinCampaign` / DM tools).
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { useDocumentSubscription } from "@/app/_data/firestore-subscriptions";
 import { useCampaignStore, type CampaignState } from "@/features/campaigns/campaignStore";
+import {
+  closeEncounterEdits,
+  encounterFromServer,
+  handOverEncounterEdits,
+  isEditLogFight,
+} from "@/features/campaigns/encounter-edit-sync";
 import {
   createCampaignSave,
   createDevCampaignSave,
@@ -52,7 +58,13 @@ function selectCampaignSave(
   const next = state.campaign;
   const before = prev.campaign;
   if (!next || !before || next.id !== before.id) return null;
-  if (next.name !== before.name || next.encounter !== before.encounter) {
+  // A fight the DM's edit log put on screen is written by the log itself, as one
+  // transaction replayed onto the server's newest fight (encounter-edit-sync.ts).
+  const encounterChanged =
+    next.encounter !== before.encounter && !isEditLogFight(next.id, next.encounter);
+  if (encounterChanged) handOverEncounterEdits(next.id);
+  if (next.name !== before.name && !encounterChanged) return { name: next.name };
+  if (encounterChanged) {
     return {
       name: next.name,
       // The DM's live encounter rides this debounced writer — every immediate-commit
@@ -82,7 +94,10 @@ export function useCampaignSubscription(campaignId: string | undefined): void {
   const applySnapshot = useCallback(
     (doc: CampaignDoc | null) => {
       if (doc) {
-        setCampaign(doc);
+        // The DM's waiting fight edits stay on screen over every snapshot.
+        const fight = doc.encounter ?? null;
+        const shown = encounterFromServer(doc.id, fight);
+        setCampaign(shown === fight ? doc : { ...doc, encounter: shown });
         setError(null);
       } else {
         setCampaign(null);
@@ -115,6 +130,18 @@ export function useCampaignSubscription(campaignId: string | undefined): void {
     },
     [setError, setLoading]
   );
+
+  // The DM's waiting fight edits are written when the campaign closes or the page is
+  // hidden, as the old autosave's flush did.
+  useEffect(() => {
+    if (!campaignId) return;
+    const close = () => closeEncounterEdits(campaignId);
+    window.addEventListener("pagehide", close);
+    return () => {
+      window.removeEventListener("pagehide", close);
+      close();
+    };
+  }, [campaignId]);
 
   useDocumentSubscription<CampaignDoc, CampaignState, CampaignWritable>({
     uid,

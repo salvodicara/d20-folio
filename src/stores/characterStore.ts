@@ -272,6 +272,8 @@ interface CharacterState {
    * (a local turn advance), so every whole-object combat write carries the current round.
    */
   combatRound: number;
+  /** SOLO: a fight was started («Start combat»), mirrored like {@link combatRound}. */
+  combatSoloFightStarted: boolean;
   /** Effective local effects consumed by the sheet: legacy occurrences plus the
    * authored ledger fold. This derived array is never persisted as a whole. */
   combatActiveEffects: ActiveCombatEffect[];
@@ -376,7 +378,8 @@ interface CharacterState {
   /** Persist the current turn's spent economy together with its solo-round mirror. */
   persistCombatTurnState: (
     round: number,
-    turnEconomy: NonNullable<CombatState["turnEconomy"]>
+    turnEconomy: NonNullable<CombatState["turnEconomy"]>,
+    soloFightStarted: boolean
   ) => void;
   setTempHP: (temp: number) => void;
   /**
@@ -912,7 +915,8 @@ function persistCombat(get: () => CharacterState): void {
       get().combatAppliedEncounterEffects,
       get().combatTurnEconomy,
       get().combatLegacyActiveEffects,
-      get().combatPendingConcentrationSaves
+      get().combatPendingConcentrationSaves,
+      get().combatSoloFightStarted
     )
   );
 }
@@ -951,6 +955,7 @@ type CombatHydrationPatch = Pick<
   CharacterState,
   | "character"
   | "combatRound"
+  | "combatSoloFightStarted"
   | "combatActiveEffects"
   | "combatLegacyActiveEffects"
   | "combatAppliedEncounterEffects"
@@ -1004,6 +1009,7 @@ function projectCombatHydration(
   return {
     character: hydrated,
     combatRound: combat.round,
+    combatSoloFightStarted: combat.soloFightStarted === true,
     combatActiveEffects: activeEffects,
     combatLegacyActiveEffects: legacyActiveEffects,
     combatAppliedEncounterEffects: combat.appliedEncounterEffects,
@@ -1393,6 +1399,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   damageTransferSink: null,
   stateEndingActSink: null,
   combatRound: 1,
+  combatSoloFightStarted: false,
   combatActiveEffects: [],
   combatLegacyActiveEffects: [],
   combatAppliedEncounterEffects: undefined,
@@ -2929,9 +2936,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     persistCombat(get);
   },
 
-  persistCombatTurnState: (round, turnEconomy) => {
+  persistCombatTurnState: (round, turnEconomy, soloFightStarted) => {
     if (get().readonly || !get().character) return;
-    set({ combatRound: round, combatTurnEconomy: turnEconomy });
+    set({
+      combatRound: round,
+      combatTurnEconomy: turnEconomy,
+      combatSoloFightStarted: soloFightStarted,
+    });
     // The play owner is written as ONE complete, coalesced child write; the turn
     // economy rides it like every other play fact.
     persistCombat(get);

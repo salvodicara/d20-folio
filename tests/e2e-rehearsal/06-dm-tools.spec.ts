@@ -32,10 +32,12 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
     await expect(
       page
         .locator("[role=status]")
-        .filter({ hasText: /In the fight/ })
+        .filter({ hasText: /In\sthe\sfight/ })
         .first()
     ).toBeVisible();
-    await expect(page.getByText(/Goblin/).nth(1)).toBeVisible();
+    // The two goblins sit on one grouped row ("Goblin Minion ×2"); the search may
+    // put any goblin first, so the row is matched by its count, not by a name.
+    await expect(page.getByText(/Goblin.*×\s*\u2060?\s*2/).first()).toBeVisible();
   });
 
   await test.step("the DM damages both goblins at once", async () => {
@@ -59,7 +61,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
       .soft(
         page
           .locator("[role=status]")
-          .filter({ hasText: /5 damage to 2 targets/ })
+          .filter({ hasText: /5\sdamage\sto\s2\stargets/ })
           .first(),
         "the hit lands on both goblins"
       )
@@ -80,7 +82,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
       .soft(
         page
           .locator("[role=status]")
-          .filter({ hasText: /Condition added to Goblin/ })
+          .filter({ hasText: /Condition\sadded\sto\sGoblin/ })
           .first(),
         "the condition lands"
       )

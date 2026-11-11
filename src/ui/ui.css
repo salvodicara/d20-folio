@@ -10,8 +10,8 @@
 .fui {
   /* One family, as Baldur's Gate 3 (owner's pick, 2026-11-08): Alegreya for titles and
      text, Alegreya SC for labels and panel titles, names and buttons at a lighter 500. */
-  --font-title:
-    "Folio Title Figures", "Folio Title Text", "Alegreya Variable", Georgia, serif;
+  /* the prototype's tokens (css/tokens.css), face for face */
+  --font-title: "Folio Title Figures", "Alegreya Variable", Georgia, serif;
   --font-label: "Folio Label Figures", "Folio Label", "Alegreya SC", Georgia, serif;
   --font-text: "Folio Text Figures", "Alegreya Variable", Georgia, serif;
   --font-num: "Folio Title Text", "Alegreya Variable", Georgia, serif;
@@ -32,6 +32,18 @@
   --gold: #d7b67a;
   --gold-line: #a8834a;
   --gold-hi: #f4d38a;
+  /* the prototype's shield edge, damage and heal icons */
+  --gold-edge: #f0d391;
+  /* the prototype's 15 px reading size (.res__name, .hp__actions, .log__entry) */
+  --fs-prose: 15px;
+  --hp-hi: #ee6a55;
+  --heal: #6fcf8a;
+  /* the prototype's strip fill (.bn), initiative number and tab-band rule */
+  --strip-fill: rgb(255 255 255 / 0.024);
+  --gold-ini: #d4af66;
+  --text-hi: #f4ead6;
+  --text-3: #a89a82;
+  --r-panel: 8px;
 
   /* one colour per meaning (panel caps) */
   --c-res: #b07be6;
@@ -1049,7 +1061,8 @@
 }
 .fui .f-row-t {
   font-weight: var(--fw-name);
-  text-wrap: balance;
+  /* never one word alone on the last line (owner, 2026-11-10) */
+  text-wrap: pretty;
   color: var(--strong);
 }
 .fui .f-row-s {
@@ -1723,7 +1736,8 @@
   text-transform: uppercase;
 }
 .fui .f-toast > span {
-  text-wrap: balance;
+  /* never one word alone on the last line (owner, 2026-11-10) */
+  text-wrap: pretty;
 }
 
 /* ---------- notes ---------- */
@@ -1837,44 +1851,39 @@
 }
 .fui .f-badge-frame {
   position: relative;
-  width: 56px;
-  height: 64px;
+  width: 58px;
+  height: 58px;
   display: grid;
   place-items: center;
 }
 .fui .f-badge[data-shape="shield"] .f-badge-frame {
-  width: 72px;
-  height: 80px;
+  width: 58px;
+  height: 64px;
 }
-/* the frame: a gold shape with the same shape, 2 px smaller, dark on top */
-.fui .f-badge-frame::before,
-.fui .f-badge-frame::after {
-  content: "";
+/* the frame: the prototype's SVG, a gold edge over a dark fill and a bronze inner line */
+.fui .f-badge-frame > svg {
   position: absolute;
   inset: 0;
-  clip-path: var(--badge-shape);
+  width: 100%;
+  height: 100%;
 }
-.fui .f-badge-frame::before {
-  background: var(--gold-line);
+.fui .f-badge-outer {
+  fill: var(--panel-2);
+  stroke: var(--gold-line);
+  stroke-width: 1.5;
 }
-.fui .f-badge-frame::after {
-  inset: 2px;
-  background: color-mix(in srgb, var(--gold) 6%, var(--sunk));
+.fui .f-badge[data-shape="shield"] .f-badge-outer {
+  stroke: var(--gold-edge);
+  stroke-width: 2;
 }
-.fui .f-badge {
-  --badge-shape: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+.fui .f-badge-inner {
+  fill: none;
+  stroke: var(--frame);
+  stroke-width: 1;
 }
-.fui .f-badge[data-shape="shield"] {
-  --badge-shape: polygon(
-    50% 0,
-    100% 12%,
-    100% 52%,
-    88% 78%,
-    50% 100%,
-    12% 78%,
-    0 52%,
-    0 12%
-  );
+.fui .f-badge-frame b small {
+  font: 700 var(--fs-sm) var(--font-text);
+  color: var(--muted);
 }
 .fui .f-badge-frame b {
   position: relative;
@@ -2205,7 +2214,7 @@
 .fui .f-row-main > .f-act-m {
   display: none;
 }
-.fui .f-playbook-h[aria-expanded="true"] .f-ic {
+.fui .f-playbook-h[aria-expanded="true"] .f-ic:last-child {
   transform: rotate(180deg);
 }
 @media (max-width: 640px) {
@@ -2366,8 +2375,10 @@
 }
 /* the header (prototype .hero), framed as every hero is («Lume») */
 .fui .f-sheet .f-char {
-  gap: 32px 24px;
-  padding: 40px 56px;
+  /* the abilities sit 16 px under the chips, as in the prototype's .hero__id */
+  gap: 16px 24px;
+  /* the prototype's hero is 34 px 56 px; 32 keeps the 8 px grid */
+  padding: 32px 56px;
 }
 .fui .f-sheet .f-char-id h1 {
   font: 700 36px/1 var(--font-title);
@@ -2382,15 +2393,35 @@
   letter-spacing: 0.08em;
   color: var(--muted);
 }
+.fui .f-sheet .f-char-stats {
+  gap: 12px;
+}
+.fui .f-sheet .f-char-stats .f-lbl {
+  letter-spacing: 0.03em;
+}
+/* the hexes are the prototype's .badge--hex .badge__shape: 58 × 58 (the phone's are
+   plain numbers) */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-char-stats .f-badge[data-shape="hex"] .f-badge-frame {
+    width: 58px;
+    height: 58px;
+  }
+}
 .fui .f-sheet .f-badge-frame b {
   font: 700 24px/1 var(--font-title);
   color: var(--text);
 }
-.fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
-  /* the scale draws 10 px past the box: room for it above the label */
-  margin-bottom: 10px;
-  transform: scale(1.25);
-  filter: drop-shadow(0 0 8px var(--glow-ac));
+/* the prototype's .badge__shape: a 58 × 64 shield drawn at 1.25 (shared .badge-wrap);
+   the phone's is a plain number */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame {
+    width: 58px;
+    height: 64px;
+    /* the scale draws 8 px past the box: room for it above the label */
+    margin-bottom: 8px;
+    transform: scale(1.25);
+    filter: drop-shadow(0 0 8px var(--glow-ac));
+  }
 }
 .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame b {
   font-size: var(--fs-ac);
@@ -2728,21 +2759,9 @@
   flex-wrap: wrap;
   gap: 8px;
 }
-.fui .f-char-acts {
-  margin-left: -8px;
-  gap: 0;
-}
+/* the rests and the campaign: the prototype's small bordered buttons (.hero__btns .btn) */
 .fui .f-sheet .f-char-acts > .f-btn {
-  padding-inline: 8px;
-  border-color: transparent;
-  background: none;
-  box-shadow: none;
-  font-size: var(--fs-sm);
   text-decoration: none;
-  color: var(--muted);
-}
-.fui .f-sheet .f-char-acts > .f-btn:hover {
-  color: var(--hover-gold);
 }
 /* the phone's own top bar: back, then who */
 .fui .f-tb-page {
@@ -2850,14 +2869,16 @@
     display: none;
   }
   /* the states stay chips in a row, not full-width pills */
-  .fui .f-sheet .f-char-id > .f-chips {
+  .fui .f-sheet .f-char-id > .f-char-chips {
     grid-area: chips;
+    margin-top: 12px;
+  }
+  .fui .f-sheet .f-char-chips > .f-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
   }
-  .fui .f-sheet .f-char-id > .f-chips > .f-chip {
+  .fui .f-sheet .f-char-chips .f-chip {
     border-radius: var(--r-pill);
   }
   .fui .f-sheet .f-char-hp-open {
@@ -2909,8 +2930,7 @@
     transform: none;
     filter: none;
   }
-  .fui .f-sheet .f-char-stats .f-badge-frame::before,
-  .fui .f-sheet .f-char-stats .f-badge-frame::after {
+  .fui .f-sheet .f-char-stats .f-badge-frame > svg {
     display: none;
   }
   .fui .f-sheet .f-char-stats .f-badge-frame b,
@@ -5622,4 +5642,422 @@
 .fui .f-roll-entry {
   display: grid;
   gap: 16px;
+}
+
+/* dead: the verdict in place of the tracker (BG3's skull, D&D Beyond's death saves) */
+.fui .f-down-verdict {
+  margin: 0;
+  font: 700 var(--fs-lg) var(--font-label);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hp-r);
+}
+
+/* the fight in the top bar (D&D Beyond's initiative flag): whose turn, with its art */
+.fui .f-pip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 12px 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  color: var(--text);
+  font: var(--fw-name) var(--fs-sm) var(--font-text);
+  text-decoration: none;
+  white-space: nowrap;
+  --slot-ink: #dfc495;
+  --slot-bg: #120e0a;
+}
+.fui .f-pip > .f-act-slot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+}
+.fui .f-pip[data-mine] {
+  border-color: var(--turn);
+  color: var(--gold-hi);
+  box-shadow: 0 0 0 1px var(--turn);
+}
+@media (max-width: 640px) {
+  .fui .f-pip > .f-pip-t {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+  .fui .f-pip {
+    padding: 0 4px;
+  }
+}
+
+/* the header's chips: one row on a laptop (prototype x-play .hero__chips); on a phone
+   a form or held spell on its own line, then the status chips (x-play-m) */
+.fui .f-char-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fui .f-char-chips > .f-chips {
+  display: contents;
+}
+
+/* Play parity with the approved prototype (x-play), from its computed styles */
+/* «Fine turno ›»: the label, then the chevron (.ft) */
+.fui .f-sheet .f-turn .f-btn[data-end-turn] {
+  flex-direction: row-reverse;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: var(--r-lg);
+}
+/* «Fine scontro», quiet, after it */
+.fui .f-sheet .f-turn .f-btn[data-end-turn] + .f-btn {
+  margin-left: 0;
+}
+.fui .f-sheet .f-turn .f-btn[data-end-turn] .f-ic {
+  width: 14px;
+  height: 14px;
+}
+/* «Cosa ti conviene fare»: the compass, the line, the chevron at the end (.tip__head) */
+.fui .f-sheet .f-playbook-h > span {
+  flex: 1;
+}
+.fui .f-sheet .f-playbook-h > .f-ic:first-child {
+  width: 20px;
+  height: 20px;
+}
+
+/* after a rest: what came back, label and before → after (D&D Beyond's Recover list) */
+.fui .f-rest-sum {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.fui .f-rest-sum > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-rest-sum > div:last-child {
+  border-bottom: 0;
+}
+.fui .f-rest-sum dt {
+  color: var(--muted);
+}
+.fui .f-rest-sum dd {
+  margin: 0;
+  font-weight: var(--fw-name);
+  color: var(--strong);
+  text-align: right;
+}
+
+/* the turn's start: a feature's heal or temporary HP, one quiet tap; a round-1 reminder */
+.fui .f-turn-start {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.fui .f-turn-offer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+/* an «Effetti» row the character can end carries «Termina» at its end */
+.fui .f-fx-row:has(> .f-btn) {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) auto;
+}
+
+/* ── Play parity, round 2 (owner, 2026-11-10): the approved prototype's spacing, sizes and
+   type, read element by element from its computed styles. The «Lume» fade and the cyan
+   «Fine turno» stay; the ornaments stay out. ── */
+.fui .f-sheet .f-btn {
+  border-radius: var(--r-lg);
+}
+@media (min-width: 641px) {
+  /* header: abilities (.abils / .abil), badges (.badge), Hit Points buttons (.hp__actions) */
+  .fui .f-sheet .f-char-abil {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    max-width: 440px;
+    gap: 4px;
+  }
+  .fui .f-sheet .f-ability {
+    padding: 4px 0;
+    border-radius: var(--r-lg);
+  }
+  /* the big Hit Points figure clears its label */
+  .fui .f-sheet .f-char-hp-v {
+    margin-top: 4px;
+  }
+  /* the value sits on its score without their glyph boxes touching */
+  .fui .f-sheet .f-ability b {
+    line-height: 1;
+  }
+  .fui .f-sheet .f-ability dd {
+    gap: 4px;
+  }
+  .fui .f-sheet .f-badge {
+    gap: 0;
+  }
+  .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame b {
+    margin-top: -4px;
+  }
+  .fui .f-sheet .f-badge[data-shape="shield"] > .f-lbl {
+    margin-top: 6px;
+  }
+  .fui .f-sheet .f-badge[data-shape="hex"] > .f-lbl {
+    margin-top: 4px;
+  }
+  /* ⋯ in the header's top-right corner (D&D Beyond's header menu), off the rest row */
+  .fui .f-sheet .f-char-more {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    min-width: 40px;
+    padding-inline: 8px;
+  }
+  .fui .f-sheet .f-char {
+    position: relative;
+  }
+}
+.fui .f-sheet .f-char-hp-acts > .f-btn {
+  font-size: var(--fs-prose);
+  line-height: 1.45;
+}
+.fui .f-char-hp-acts > .f-btn:first-child .f-ic {
+  color: var(--hp-hi);
+}
+.fui .f-char-hp-acts > .f-btn:last-child .f-ic {
+  color: var(--heal);
+}
+.fui .f-sheet .f-char-hp-acts .f-ic {
+  width: 18px;
+  height: 18px;
+}
+/* panels (.pnl): 8 px corners, the titles tracked as the prototype's .ftitle */
+.fui .f-sheet .f-pn {
+  border-radius: var(--r-panel);
+}
+.fui .f-sheet .f-pnh {
+  letter-spacing: 0.08em;
+}
+/* resources (.res) */
+.fui .f-sheet .f-res {
+  gap: 12px 8px;
+  border-radius: var(--r-lg);
+}
+.fui .f-sheet .f-res-t {
+  font-size: var(--fs-prose);
+  line-height: 1.25;
+}
+/* the centre's tab band is a panel header like the others (.boxtabs) */
+.fui .f-sheet .f-centre > .f-tabs {
+  background:
+    linear-gradient(90deg, transparent, var(--c) 30%, transparent) top / 100% 1px
+      no-repeat,
+    radial-gradient(
+      70% 140% at 30% 0,
+      color-mix(in srgb, var(--c) 30%, transparent),
+      transparent 75%
+    ),
+    linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, transparent), transparent);
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-sheet .f-centre > .f-tabs > button {
+  min-height: 0;
+  color: var(--muted);
+}
+.fui .f-sheet .f-centre > .f-tabs > button[aria-selected="true"] {
+  color: var(--white);
+}
+/* the turn strip (.bn): a filled band with 8 px corners, 16 × 20 padding */
+.fui .f-sheet .f-turn {
+  margin: 16px 0;
+  padding: 16px 20px;
+  gap: 16px;
+  border-bottom: 0;
+  border-radius: var(--r-panel);
+  background: var(--strip-fill);
+  font-weight: 600;
+}
+.fui .f-sheet .f-turn-t {
+  letter-spacing: 0.06em;
+}
+.fui .f-sheet .f-turn .f-turn-slots li {
+  gap: 4px;
+}
+/* «Cosa ti conviene fare» (.tip): no rule under it, 48 px */
+.fui .f-sheet .f-playbook-h > span {
+  font-weight: 700;
+}
+.fui .f-sheet .f-playbook {
+  padding-bottom: 0;
+  border-bottom: 0;
+  border-radius: var(--r-lg);
+}
+/* filters (.pills) and the table (.atable) */
+.fui .f-sheet .f-centre .f-filters {
+  margin: 0 0 8px;
+  padding: 12px 20px 12px 0;
+}
+.fui .f-sheet .f-act-group > .f-act-gh:first-child {
+  margin-top: 16px;
+}
+.fui .f-sheet .f-act.f-act-head {
+  padding: 0 8px 8px;
+}
+.fui .f-sheet .f-act:not(.f-act-head, :last-child) {
+  border-bottom: 1px solid var(--row-rule);
+}
+/* Iniziativa (.ir) and Resoconto (.log) */
+.fui .f-sheet .f-ir {
+  margin-bottom: 2px;
+  font-weight: 600;
+  border-radius: var(--r-lg);
+}
+.fui .f-sheet .f-ir-i {
+  color: var(--gold-ini);
+}
+.fui .f-sheet .f-ir-name {
+  font-weight: 600;
+}
+.fui .f-sheet .f-ir-now {
+  min-height: 0;
+  margin-left: 4px;
+  padding: 0 4px;
+  border-radius: var(--r-sm);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.08em;
+}
+.fui .f-sheet .f-ir .f-ir-s {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-3);
+}
+.fui .f-sheet .f-ir-acts .f-wide {
+  padding: 4px 8px;
+  font-weight: 600;
+  color: var(--advice);
+}
+.fui .f-sheet .f-tl {
+  padding: 0;
+  gap: 8px;
+  font-size: var(--fs-prose);
+  line-height: 1.45;
+}
+@media (max-width: 640px) {
+  /* the phone (x-play-m): Danni and Cura outlined (.r3 .b) */
+  .fui .f-sheet .f-char-hp-acts > .f-btn {
+    padding: 12px;
+    border-color: var(--frame);
+    background: none;
+    color: var(--text-hi);
+  }
+  .fui .f-sheet .f-turn {
+    padding: 12px 16px;
+    gap: 8px 12px;
+  }
+  .fui .f-sheet .f-turn-t {
+    font-size: var(--fs-prose);
+  }
+  .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
+    min-height: 44px;
+  }
+  .fui .f-sheet .f-act-slot {
+    width: 44px;
+    height: 44px;
+  }
+  /* the phone header (x-play-m .ph): a 26 px name, the states filling their rows,
+     the abilities' labels at 600 */
+  .fui .f-sheet .f-char-id h1 {
+    font-size: var(--fs-title-phone);
+    line-height: normal;
+  }
+  .fui .f-sheet .f-char-chips > .f-chips {
+    flex: 1 1 100%;
+  }
+  .fui .f-sheet .f-char-chips > .f-chips > * {
+    flex: 1 1 0;
+    justify-content: center;
+  }
+  .fui .f-sheet .f-char-chips .f-chip {
+    justify-content: center;
+    padding: 4px 12px;
+  }
+  .fui .f-sheet .f-char-chips .f-condwrap > .f-chip {
+    width: 100%;
+  }
+  /* the phone's ⋯ is the top bar's */
+  .fui .f-sheet .f-char-more {
+    display: none;
+  }
+  /* the filters: one row that scrolls sideways, fading where it is cut (.pills.hmore) */
+  .fui .f-sheet .f-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .fui .f-sheet .f-filters > .f-chip {
+    flex: none;
+  }
+  /* 32 px from the filters to the first group (x-play-m: 30) */
+  .fui .f-sheet .f-centre .f-filters {
+    margin-bottom: 0;
+  }
+  .fui .f-sheet .f-act-head + .f-act-group > .f-act-gh {
+    margin-top: 8px;
+  }
+  .fui .f-sheet .f-filters[data-more="true"] {
+    mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
+  }
+  /* «9 m»: the unit at the figure's size, as the phone mock sets it */
+  .fui .f-sheet .f-badge-frame b small {
+    margin-left: 0.25em;
+    font: inherit;
+    color: inherit;
+  }
+  .fui .f-sheet .f-char-temp {
+    margin-top: 4px;
+  }
+  /* each ability 47 px tall: the value, 4 px, its label (.ab > div) */
+  .fui .f-sheet .f-ability {
+    gap: 4px;
+    padding: 4px 0;
+  }
+  .fui .f-sheet .f-char {
+    padding: 20px 12px;
+  }
+  .fui .f-sheet .f-ability dt,
+  .fui .f-sheet .f-char-stats .f-lbl {
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+}
+
+/* a group's note (prototype .agroup__note): the attacks an Attack action makes, a spent
+   bonus action or reaction; after a dot on a laptop, on its own line on a phone */
+.fui .f-act-gh {
+  flex-wrap: wrap;
+}
+.fui .f-act-gn {
+  font: 400 var(--fs-sm) var(--font-text);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-3);
+}
+.fui .f-act-gn::before {
+  content: "· ";
+}
+@media (max-width: 640px) {
+  .fui .f-act-gn {
+    flex-basis: 100%;
+  }
+  .fui .f-act-gn::before {
+    content: none;
+  }
 }

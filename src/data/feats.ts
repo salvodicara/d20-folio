@@ -17,6 +17,7 @@ const PUBLIC_FEATS: SrdFeatData[] = [
     id: "magic-initiate-cleric",
     category: "origin",
     repeatable: false,
+    spellChangeOnLevelUp: true,
     mechanics: {
       tracker: { total: "1", recovery: "long-rest" },
     },
@@ -52,6 +53,7 @@ const PUBLIC_FEATS: SrdFeatData[] = [
     id: "magic-initiate-druid",
     category: "origin",
     repeatable: false,
+    spellChangeOnLevelUp: true,
     mechanics: {
       tracker: { total: "1", recovery: "long-rest" },
     },
@@ -84,6 +86,7 @@ const PUBLIC_FEATS: SrdFeatData[] = [
     id: "magic-initiate-wizard",
     category: "origin",
     repeatable: false,
+    spellChangeOnLevelUp: true,
     mechanics: {
       tracker: { total: "1", recovery: "long-rest" },
     },

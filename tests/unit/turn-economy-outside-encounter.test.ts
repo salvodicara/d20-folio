@@ -1,8 +1,8 @@
 /**
  * Actions work outside combat (owner decision 2026-10-16): with no encounter running the
  * turn economy only LOGS, it never gates, and nothing waits for End Turn. Inside an
- * encounter (a campaign fight, or a solo fight the player started by rolling Initiative
- * or advancing a round) the per-turn budget still holds.
+ * encounter (a campaign fight, or a solo fight the player started with «Start combat»,
+ * by rolling Initiative or by advancing a round) the per-turn budget still holds.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -18,7 +18,12 @@ const bonus = (id: string) =>
 const action = (id: string) =>
   ({ id, source: "feature", type: "action" }) as ResolvedAction;
 
-const OUT_OF_COMBAT = { sharedEncounter: false, soloRound: 1, soloInitiative: "" };
+const OUT_OF_COMBAT = {
+  sharedEncounter: false,
+  soloRound: 1,
+  soloInitiative: "",
+  soloFightStarted: false,
+};
 
 describe("encounterRunning", () => {
   it("is false for a sheet at round 1 with no Initiative and no campaign encounter", () => {
@@ -29,6 +34,9 @@ describe("encounterRunning", () => {
   });
   it("is true once the solo player rolled Initiative", () => {
     expect(encounterRunning({ ...OUT_OF_COMBAT, soloInitiative: "14" })).toBe(true);
+  });
+  it("is true from round 1 once the solo player started a fight", () => {
+    expect(encounterRunning({ ...OUT_OF_COMBAT, soloFightStarted: true })).toBe(true);
   });
   it("is true once a solo round advanced", () => {
     expect(encounterRunning({ ...OUT_OF_COMBAT, soloRound: 2 })).toBe(true);

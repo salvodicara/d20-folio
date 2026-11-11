@@ -478,7 +478,7 @@ describe("WeaponFacts component — rows + glossed chips", () => {
     await i18n.changeLanguage("it");
     render(<WeaponFacts facts={COMPONENT_VM} />);
     fireEvent.click(screen.getByRole("button", { name: "Scopri cosa significa Sap" }));
-    expect(screen.getByRole("dialog")).toHaveTextContent("Maestria nelle armi");
+    expect(screen.getByRole("dialog")).toHaveTextContent("Padronanza d'Armi");
   });
 });
 

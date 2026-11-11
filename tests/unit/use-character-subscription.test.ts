@@ -121,9 +121,16 @@ vi.mock("@/lib/combat-state-io", () => ({
   writeCombatTurnEconomy: vi.fn(() => Promise.resolve()),
 }));
 // The spends ledger: empty here (its fold is pinned in peer-spends-store.test.ts).
+const { readPeerSpendsMock, removeFoldedPeerSpendsMock } = vi.hoisted(() => ({
+  readPeerSpendsMock: vi.fn<
+    (uid: string, charId: string) => Promise<import("@/types/combat-state").PeerSpend[]>
+  >(() => Promise.resolve([])),
+  removeFoldedPeerSpendsMock: vi.fn(() => Promise.resolve()),
+}));
 vi.mock("@/lib/peer-spends-io", () => ({
   subscribePeerSpends: vi.fn(() => () => {}),
-  removeFoldedPeerSpends: vi.fn(() => Promise.resolve()),
+  readPeerSpends: readPeerSpendsMock,
+  removeFoldedPeerSpends: removeFoldedPeerSpendsMock,
 }));
 vi.mock("@/features/campaigns/refresh-attached-sheets", () => ({
   createAttachedCampaignTracker: createTrackerMock,
@@ -598,6 +605,61 @@ describe("useCharacterSubscription — remote writes and the undo history", () =
     act(() => combatCb()(combat));
 
     expect(useUndoStore.getState().past).toHaveLength(0);
+  });
+});
+
+// A hit from another device writes the PC's HP and appends to its spends ledger in
+// one transaction. The ledger listener can fall silent while the combat/state one
+// still delivers (rehearsal, 2026-11-11: both open sheets missed a spent Uncanny
+// Dodge for 15 s+), so a remote change to the vitals re-reads the ledger once.
+describe("useCharacterSubscription — a remote hit re-reads the spends ledger", () => {
+  const dodge = {
+    id: "spend-1",
+    kind: "state-end" as const,
+    key: "rogue-uncanny-dodge",
+  };
+
+  beforeEach(() => {
+    readPeerSpendsMock.mockClear();
+    removeFoldedPeerSpendsMock.mockClear();
+  });
+
+  it("a DM's hit folds what it spent, even when the ledger listener says nothing", async () => {
+    readPeerSpendsMock.mockResolvedValueOnce([dodge]);
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+
+    act(() => combatCb()(v1Combat({ hp: { current: 30, temp: 0 } })));
+    await flushPlayWrite();
+
+    expect(readPeerSpendsMock).toHaveBeenCalledTimes(1);
+    expect(readPeerSpendsMock).toHaveBeenCalledWith("u1", "char1");
+    expect(useCharacterStore.getState().character?.session.foldedPeerSpends).toEqual([
+      "spend-1",
+    ]);
+    expect(removeFoldedPeerSpendsMock).toHaveBeenCalledWith("u1", "char1", [dodge]);
+  });
+
+  it("the sheet's own write coming back reads nothing", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+
+    act(() =>
+      combatCb({ hasPendingWrites: true })(v1Combat({ hp: { current: 30, temp: 0 } }))
+    );
+    await flushPlayWrite();
+
+    expect(readPeerSpendsMock).not.toHaveBeenCalled();
+  });
+
+  it("a snapshot that changes no vitals reads nothing", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+
+    act(() => combatCb()(v1Combat()));
+    await flushPlayWrite();
+
+    expect(readPeerSpendsMock).not.toHaveBeenCalled();
   });
 });
 

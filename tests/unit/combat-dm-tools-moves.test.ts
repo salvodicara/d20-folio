@@ -13,7 +13,7 @@ import {
   setMonsterSideMove,
 } from "@/features/campaigns/combat-lifecycle-io";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import { addMonster } from "@/features/campaigns/encounter";
+import { addMonster } from "@/lib/play/encounter";
 import { planRoll } from "@/features/campaigns/combat-lifecycle";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 

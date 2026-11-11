@@ -10,7 +10,7 @@ import { monsterSpec } from "@/features/compendium/picker/specs/monster";
 import type { CompendiumPickerSpec, TFn } from "@/features/compendium/picker/types";
 import type { MonsterStatBlock } from "@/data/types";
 import { toMonsterInput } from "./encounter-monster-input";
-import type { MonsterInput } from "./encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 
 /**
  * Derive the encounter's ADD-mode monster spec from the browse `monsterSpec` by

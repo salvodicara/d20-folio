@@ -8,7 +8,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { addMonster, startEncounter } from "@/features/campaigns/encounter";
+import { addMonster, startEncounter } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { encounterTrackerView } from "@/features/campaigns/encounter-tracker-view";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";

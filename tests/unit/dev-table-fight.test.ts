@@ -7,7 +7,7 @@
 import { describe, expect, it } from "vitest";
 
 import { makeDevTableFight } from "@/features/campaigns/dev-fixture";
-import { sortByInitiative } from "@/features/campaigns/encounter";
+import { sortByInitiative } from "@/lib/play/encounter";
 
 describe("makeDevTableFight", () => {
   const fight = makeDevTableFight();
