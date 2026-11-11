@@ -160,21 +160,32 @@ describe("the DM's fight edits, kept and sent", () => {
 });
 
 describe("a change made outside the edit log", () => {
-  it("takes over the waiting edits: the old autosave writes them whole, the log never sends them", async () => {
+  it("sends the waiting edits at once, then starts over from the fight on screen", async () => {
     editEncounter("c1", hide("pc-a"));
-    // A turn passed on this screen: built over the fight shown, edit included.
-    const passed = { ...(shown() as EncounterState), round: 2 };
-    useCampaignStore.getState().setCampaign(campaign(passed));
+    // A member removed on this screen: built over the fight shown (edit included), but
+    // its own write carries only the removal, so the hide must still be sent.
+    const removed = { ...(shown() as EncounterState), round: 2 };
+    useCampaignStore.getState().setCampaign(campaign(removed));
     handOverEncounterEdits("c1");
-    server = passed; // what the old autosave writes
+    expect(rebaseMock).toHaveBeenCalledTimes(1);
     await vi.runAllTimersAsync();
-    expect(rebaseMock).not.toHaveBeenCalled();
-    // The next edit starts from what is on screen.
+    expect(hiddenOn(server, "pc-a")).toBe(true);
+    // The screen keeps the fight it shows, the hide counted once.
+    expect(shown()?.round).toBe(2);
+    expect(hiddenOn(shown(), "pc-a")).toBe(true);
+    // The next edit starts from what is on screen and goes out alone.
     editEncounter("c1", hide("pc-b"));
     await vi.runAllTimersAsync();
-    expect(rebaseMock).toHaveBeenCalledTimes(1);
-    expect(rebaseMock.mock.calls[0]?.[1]).toHaveLength(1);
-    expect(hiddenOn(shown(), "pc-a")).toBe(true);
-    expect(shown()?.round).toBe(2);
+    expect(rebaseMock).toHaveBeenCalledTimes(2);
+    expect(rebaseMock.mock.calls[1]?.[1]).toHaveLength(1);
+  });
+
+  it("an edit from a fight that has ended is not sent", async () => {
+    editEncounter("c1", hide("pc-a"));
+    useCampaignStore.getState().setCampaign(campaign(null));
+    handOverEncounterEdits("c1");
+    await vi.runAllTimersAsync();
+    // Sent and replayed onto the server's fight; the log itself shows the ended fight.
+    expect(shown()).toBeNull();
   });
 });

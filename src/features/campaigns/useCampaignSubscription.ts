@@ -40,16 +40,13 @@ function campaignStoreSubscribe(
 }
 
 /**
- * Pure: persist the shared artifacts when (and only when) they change for the
- * same campaign. Identity comparison is enough — the store mutations replace the
- * `name` / `encounter` references on every edit.
+ * Pure: persist the campaign's name when it changes for the same campaign. Everything
+ * else has its own writer: the fight goes through the DM's edit log or a transactional
+ * move (`encounter-edit-sync.ts`, `combat-lifecycle-io.ts`), the treasury through the
+ * atomic `applyTreasuryDelta` (B06), shared notes through their own subcollection.
  *
- * TREASURY is deliberately NOT here anymore (B06): the whole-map / whole-log
- * last-write-wins debounce silently corrupted the shared total and dropped ledger
- * rows under concurrent edits, so treasury now persists through the ATOMIC,
- * composing `applyTreasuryDelta` / `undoTreasuryEntry` path (campaign-io) fired
- * directly from `Treasury`. Shared NOTES are likewise not here — a per-note
- * subcollection written through immediately by `SharedNotes`.
+ * A fight on screen that the edit log did not put there (a fight started or ended, a
+ * turn passed) was written by its own move: the log starts over from it.
  */
 function selectCampaignSave(
   state: CampaignState,
@@ -58,24 +55,9 @@ function selectCampaignSave(
   const next = state.campaign;
   const before = prev.campaign;
   if (!next || !before || next.id !== before.id) return null;
-  // A fight the DM's edit log put on screen is written by the log itself, as one
-  // transaction replayed onto the server's newest fight (encounter-edit-sync.ts).
-  const encounterChanged =
-    next.encounter !== before.encounter && !isEditLogFight(next.id, next.encounter);
-  if (encounterChanged) handOverEncounterEdits(next.id);
-  if (next.name !== before.name && !encounterChanged) return { name: next.name };
-  if (encounterChanged) {
-    return {
-      name: next.name,
-      // The DM's live encounter rides this debounced writer — every immediate-commit
-      // structural mutation replaces the `encounter` reference. `stripUndefined`
-      // (updateCampaign) cleans optional combatant fields; `null` ends the encounter.
-      // The turn pointer is reconciled from the live store at write time so a queued
-      // structural write can never revert a concurrent advance (B04).
-      encounter: next.encounter,
-    };
-  }
-  return null;
+  if (next.encounter !== before.encounter && !isEditLogFight(next.id, next.encounter))
+    handOverEncounterEdits(next.id);
+  return next.name !== before.name ? { name: next.name } : null;
 }
 
 /**

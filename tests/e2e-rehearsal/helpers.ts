@@ -3,6 +3,7 @@
  * as its DM (`owner@sandbox.dev`, a real Auth-emulator account); `?devActAs=<uid>`
  * presents a tab as a campaign member while the real token stays the DM's.
  */
+import { execFileSync } from "node:child_process";
 import { test as base, expect, type Page } from "@playwright/test";
 import { visibleWithin } from "../e2e/visible-within";
 
@@ -144,9 +145,53 @@ export async function levelUp(
 
 /** The sandbox players (scripts/dev-seed-sandbox.ts), each a real Auth-emulator account. */
 export const SANDBOX_USERS = {
-  catalion: { email: "catalion@sandbox.dev", characterId: "sandbox-catalion" },
-  mandorlino: { email: "mandorlino@sandbox.dev", characterId: "sandbox-mandorlino" },
+  catalion: {
+    uid: PLAYER_BARD,
+    email: "catalion@sandbox.dev",
+    characterId: "sandbox-catalion",
+    fixture: "catalion-bard.json",
+  },
+  mandorlino: {
+    uid: "dev-player-mandorlino",
+    email: "mandorlino@sandbox.dev",
+    characterId: "sandbox-mandorlino",
+    fixture: "mandorlino-paladin.json",
+  },
 } as const;
+
+type SandboxHero = (typeof SANDBOX_USERS)[keyof typeof SANDBOX_USERS];
+
+/**
+ * Put a sandbox hero back the way a spec needs it: by default as the sandbox seed made
+ * it (its own fixture, level 3), so a spec never depends on what an earlier spec, or an
+ * earlier run, left on the sheet. `fixture`, `level`, `active` (claimed states) and
+ * `state` (play-state fields) override it. The campaign's copy of the hero follows.
+ */
+export function reseedHero(
+  hero: SandboxHero,
+  options: {
+    fixture?: string;
+    level?: number;
+    active?: readonly string[];
+    state?: Record<string, unknown>;
+  } = {}
+): void {
+  execFileSync(
+    "node",
+    [
+      "--import",
+      "./scripts/alias-loader.mjs",
+      "scripts/rehearsal-set-character.ts",
+      hero.uid,
+      hero.characterId,
+      options.fixture ?? hero.fixture,
+      String(options.level ?? 3),
+      ...(options.active ?? []),
+      ...(options.state ? [`--state=${JSON.stringify(options.state)}`] : []),
+    ],
+    { stdio: "inherit" }
+  );
+}
 
 /**
  * Sign this page's browser context in as a sandbox player with a real token (not the
