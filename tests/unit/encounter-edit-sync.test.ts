@@ -13,6 +13,8 @@ const { rebaseMock, wholeMock, readMock } = vi.hoisted(() => ({
   ),
   readMock: vi.fn(),
 }));
+// The campaign I/O is mocked whole; Firebase itself is stubbed too, so nothing loads it.
+vi.mock("@/lib/firebase", () => ({ db: {} }));
 vi.mock("@/features/campaigns/campaign-io", () => ({
   rebaseEncounterEdits: rebaseMock,
   writeWholeEncounter: wholeMock,
