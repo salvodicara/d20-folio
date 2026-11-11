@@ -99,8 +99,8 @@ import {
   setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
-} from "@/features/campaigns/encounter";
-import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
+} from "@/lib/play/encounter";
+import { mayStepTurn } from "@/lib/play/encounter-lifecycle";
 import { partyOrder } from "@/features/campaigns/party-order";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {

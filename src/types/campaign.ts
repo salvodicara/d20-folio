@@ -330,7 +330,7 @@ export interface EncounterState {
   currentCombatantId: string | null;
   /**
    * The FROZEN turn order — combatant ids in the sequence turns proceed, snapshotted
-   * ONCE when the DM presses "Begin turns" ({@link "@/features/campaigns/encounter".beginEncounterTurns}).
+   * ONCE when the DM presses "Begin turns" ({@link "@/lib/play/encounter".beginEncounterTurns}).
    *
    * This is the SINGLE HOME of "what order do turns take" (the disease it cures: the
    * order used to be recomputed LIVE at every caller from each member's
@@ -344,7 +344,7 @@ export interface EncounterState {
    * never a turn-order filter, so a staged ambush still takes its turn.
    *
    * Absent or empty means "turns not begun yet" (the gathering phase), so a fresh
-   * {@link "@/features/campaigns/encounter".startEncounter} leaves it unset. A member advancing
+   * {@link "@/lib/play/encounter".startEncounter} leaves it unset. A member advancing
    * the turn writes ONLY `{currentCombatantId, round}` (never `order`), so the frozen
    * order stays DM-only by construction (firestore.rules `turnFieldsOnlyChanged`).
    */

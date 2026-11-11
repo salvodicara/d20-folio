@@ -28,6 +28,7 @@ import type {
 import { getSrdFeatureSource, srdRefForFeatureSource } from "@/lib/srd-feature-lookup";
 import { attunementSatisfied } from "@/lib/attunement";
 import { getMagicItem } from "@/data/magic-items";
+import { getEquipment } from "@/data/equipment";
 import { getSpellById } from "@/data/spells";
 import { getRace, raceFeatureIndex, rawRaceTraitCatKey } from "@/data/races";
 import { SRD_INVOCATIONS } from "@/data/invocations";
@@ -172,7 +173,22 @@ export function resolveGrantSourcesForEquipment(
   itemResources?: Readonly<Record<string, ItemResourceState>>
 ): GrantSource[] {
   const sources: GrantSource[] = [];
+  const carriedStates = new Set<string>();
   for (const e of equipment) {
+    // A carried item whose action lights a state (Basic Poison's coat): carried, not
+    // worn, is enough; the evaluator keeps the state off until its key is lit.
+    const gear = "custom" in e ? undefined : getEquipment(e.srdId);
+    if (gear?.grants?.length) {
+      if ((e.quantity ?? 1) > 0 && !carriedStates.has(gear.id)) {
+        carriedStates.add(gear.id);
+        sources.push({
+          id: gear.id,
+          grants: gear.grants,
+          ref: { kind: "equipment", key: gear.id },
+        });
+      }
+      continue;
+    }
     if (e.equipped !== true) continue; // only worn/wielded items are active
     if (!attunementSatisfied(e)) continue; // attunement-required, not yet attuned
     if ("custom" in e) {

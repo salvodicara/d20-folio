@@ -158,8 +158,8 @@ vi.mock("@/stores/confirmStore", () => ({
 }));
 
 import { Party } from "@/features/campaigns/Party";
-import { advanceTurn, prevTurn } from "@/features/campaigns/encounter";
-import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
+import { advanceTurn, prevTurn } from "@/lib/play/encounter";
+import { mayStepTurn } from "@/lib/play/encounter-lifecycle";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";

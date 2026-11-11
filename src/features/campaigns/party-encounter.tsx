@@ -24,7 +24,7 @@
  * PCs are NEVER a separate combat row — every PC renders through its live member card
  * (single source of truth — golden rule 6); only monsters get a {@link MonsterCard}.
  *
- * Every mutation is a PURE reducer from {@link "@/features/campaigns/encounter"}
+ * Every mutation is a PURE reducer from {@link "@/lib/play/encounter"}
  * applied to the live `campaign.encounter` through `campaignStore.setEncounter` — the
  * SAME optimistic-set + debounced-writer path as `setName` / `setTreasury`. The
  * read-only player path performs NO writes (firestore.rules' `encounterUnchanged`
@@ -138,7 +138,7 @@ import {
   setRevealed,
   setMonsterCondition,
   monsterInstanceName,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   recordCondition,
   recordMonsterAc,
@@ -223,7 +223,7 @@ export interface MonsterActionsContext {
  * grip (mouse + touch + pen, one path) lift the card into a floating clone that follows the
  * pointer while the others FLIP-slide apart. The keyboard path (ArrowUp / ArrowDown on the
  * focused grip) is unchanged. Both resolve to
- * {@link "@/features/campaigns/encounter".reorderCombatant}. Pure presentation — the
+ * {@link "@/lib/play/encounter".reorderCombatant}. Pure presentation — the
  * persistence (a DM structural write) lives in the Party closure.
  */
 export interface ReorderRow {

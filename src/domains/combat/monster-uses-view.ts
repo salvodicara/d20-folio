@@ -6,17 +6,14 @@
  * `restoreMonsterUse`, `rollMonsterRecharge`.
  */
 import type { MonsterStatBlock } from "@/data/types";
-import {
-  monsterLimitedUses,
-  type MonsterLimitedUse,
-} from "@/features/campaigns/encounter";
+import { monsterLimitedUses, type MonsterLimitedUse } from "@/lib/play/encounter";
 import type { EncounterMonster } from "@/types/campaign";
 
 export {
   restoreMonsterUse,
   rollMonsterRecharge,
   spendMonsterUse,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 
 export interface MonsterUseRow extends MonsterLimitedUse {
   left: number;

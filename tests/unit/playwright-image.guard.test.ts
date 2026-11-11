@@ -26,7 +26,21 @@ const images = readdirSync(WORKFLOWS)
     ].map((m) => ({ name, version: m[1], distro: m[2] }))
   );
 
+const aptInstalls = readdirSync(WORKFLOWS)
+  .filter((name) => /\.ya?ml$/.test(name))
+  .flatMap((name) =>
+    readFileSync(join(WORKFLOWS, name), "utf8")
+      .split("\n")
+      .flatMap((line, index) =>
+        /playwright install\b.*--with-deps/.test(line) ? [`${name}:${index + 1}`] : []
+      )
+  );
+
 describe("the Playwright container image", () => {
+  it("no workflow installs the browser through apt (--with-deps): the image has it", () => {
+    expect(aptInstalls).toEqual([]);
+  });
+
   it("finds the lockfile's version and at least one job in the image", () => {
     expect(lockedVersion).toMatch(/^\d+\.\d+\.\d+$/);
     expect(images.length).toBeGreaterThan(0);

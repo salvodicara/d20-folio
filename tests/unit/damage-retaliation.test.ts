@@ -10,11 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import { getSpellById } from "@/data/spells";
 
-import {
-  addMonster,
-  beginEncounterTurns,
-  startEncounter,
-} from "@/features/campaigns/encounter";
+import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/encounter";
 import { landRetaliations } from "@/features/campaigns/encounter-world-command";
 import { defaultCombatState } from "@/lib/combat-state";
 import { MOCK_CHARACTER } from "@/lib/mock";

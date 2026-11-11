@@ -13,7 +13,7 @@ import {
   setInitiativeSwap,
   spendMonsterUse,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import { effectiveAC } from "@/lib/aggregate-character";
 import { metamagicOptionsForCast } from "@/lib/cast-options";
 import { economyActionCategory } from "@/lib/combat-economy";
