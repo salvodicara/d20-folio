@@ -70,7 +70,11 @@ describe("monsterTurnModifiers", () => {
   });
 
   it("nothing on the monster: a straight roll and its own Speed", () => {
-    expect(monsterTurnModifiers([], "orc-1")).toEqual({ attack: null, speedDeltaFt: 0 });
+    expect(monsterTurnModifiers([], "orc-1")).toEqual({
+      attack: null,
+      speedDeltaFt: 0,
+      speedZero: false,
+    });
   });
 
   it("Vex is about attacks against it, not its own", () => {
