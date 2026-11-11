@@ -22,6 +22,8 @@ export interface FeatSpellChange {
   spellId: string;
   /** What it may become: same level, same list, not already known. */
   pool: string[];
+  /** The spell lists the feat draws from (Magic Initiate (Wizard): wizard). */
+  lists: string[];
 }
 
 /** The feat's leveled pick and its replacements, or null when the sheet has none. */
@@ -33,7 +35,7 @@ export function featSpellChange(
   const pick = spells.find(
     (s): s is SrdSpellRef => !("custom" in s) && s.freeCastSource?.sourceId === featId
   );
-  if (!feat || !pick) return null;
+  if (!feat?.spellChangeOnLevelUp || !pick) return null;
   const slot = pendingSpellChoicesForFeat(feat).find((s) => s.kind === "spell");
   const level = ALL_SPELLS.find((s) => s.id === pick.srdId)?.level;
   if (!slot || level === undefined) return null;
@@ -45,7 +47,7 @@ export function featSpellChange(
       !known.has(s.id) &&
       (!lists || s.classes.some((c) => (lists as ReadonlySet<string>).has(c)))
   ).map((s) => s.id);
-  return { spellId: pick.srdId, pool };
+  return { spellId: pick.srdId, pool, lists: lists ? [...lists] : [] };
 }
 
 /** Replace the feat's pick: the new spell keeps everything the feat gave the old one
@@ -58,4 +60,19 @@ export function applyFeatSpellChange(
   return spells.map((s) =>
     "custom" in s || s.srdId !== fromId ? s : { ...s, srdId: toId }
   );
+}
+
+/** Every Spell Change the sheet offers: one per feat that has it and a pick on it. */
+export function featSpellChanges(
+  spells: ReadonlyArray<SpellEntry>
+): Array<FeatSpellChange & { featId: string }> {
+  const featIds = new Set(
+    spells.flatMap((s) =>
+      "custom" in s || !s.freeCastSource ? [] : [s.freeCastSource.sourceId]
+    )
+  );
+  return [...featIds].flatMap((featId) => {
+    const change = featSpellChange(featId, spells);
+    return change ? [{ ...change, featId }] : [];
+  });
 }

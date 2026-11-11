@@ -3549,6 +3549,9 @@ export interface SrdFeatData {
   category: FeatCategory;
   /** Whether this feat can be taken multiple times */
   repeatable: boolean;
+  /** Spell Change (Magic Initiate): on each new level, one spell chosen for the feat
+   *  may be replaced with another of the same level from its list. */
+  spellChangeOnLevelUp?: true;
   /**
    * Structured prerequisite FACTS for eligibility gating (2024 RAW), verified
    * against dnd2024.wikidot.com. LEVEL gates are NOT stored here — they derive

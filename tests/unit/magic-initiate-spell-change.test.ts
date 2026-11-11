@@ -5,7 +5,11 @@
  * casts for free (its free-cast key names the feat); the replacement keeps that.
  */
 import { describe, expect, it } from "vitest";
-import { applyFeatSpellChange, featSpellChange } from "@/lib/feat-spell-change";
+import {
+  applyFeatSpellChange,
+  featSpellChange,
+  featSpellChanges,
+} from "@/lib/feat-spell-change";
 import type { SrdSpellRef } from "@/types/character";
 
 const missile: SrdSpellRef = {
@@ -39,5 +43,15 @@ describe("Magic Initiate: Spell Change", () => {
 
   it("no feat pick on the sheet: nothing to change", () => {
     expect(featSpellChange("magic-initiate-wizard", [{ srdId: "fire-bolt" }])).toBeNull();
+  });
+
+  it("only a feat with Spell Change offers one (another feat's free-cast pick does not)", () => {
+    const other: SrdSpellRef = {
+      srdId: "bless",
+      freeCastSource: { sourceId: "another-feat", rest: "long", usesPerRest: 1 },
+    };
+    expect(featSpellChanges([...spells, other]).map((c) => c.featId)).toEqual([
+      "magic-initiate-wizard",
+    ]);
   });
 });

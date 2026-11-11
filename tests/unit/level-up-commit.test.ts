@@ -39,6 +39,44 @@ const none = (classId: string): LevelUpPicks => ({
 });
 
 describe("commitLevelUp", () => {
+  it("Magic Initiate's Spell Change replaces the feat's pick and keeps its free cast", () => {
+    const base = makeCharacterDoc({ classId: "fighter", level: 3 });
+    const freeCastSource = {
+      sourceId: "magic-initiate-wizard",
+      rest: "long" as const,
+      usesPerRest: 1,
+    };
+    const doc = {
+      ...base,
+      character: {
+        ...base.character,
+        spells: [
+          {
+            srdId: "magic-missile",
+            prepared: true,
+            alwaysPrepared: true,
+            spellAbilityOverride: "INT" as const,
+            freeCastSource,
+          },
+        ],
+      },
+    };
+    const next = commitLevelUp(doc, {
+      ...none("fighter"),
+      hpGain: 6,
+      featSpellChanges: [{ removeId: "magic-missile", replaceId: "sleep" }],
+    });
+    expect(next.character.spells).toEqual([
+      {
+        srdId: "sleep",
+        prepared: true,
+        alwaysPrepared: true,
+        spellAbilityOverride: "INT",
+        freeCastSource,
+      },
+    ]);
+  });
+
   it("advances the class a level, raises max and current HP by the same gain", () => {
     const doc = makeCharacterDoc({ classId: "fighter", level: 3 });
     const next = commitLevelUp(doc, { ...none("fighter"), hpGain: 7 });
