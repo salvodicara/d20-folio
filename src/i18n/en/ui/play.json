@@ -109,7 +109,9 @@
       "blockedDead": "A dead character can't rest.",
       "changeOne": "You can change 1 spell.",
       "changeAny": "You can change as many as you like.",
-      "keepPrepared": "Keep them"
+      "keepPrepared": "Keep them",
+      "diceSpent_one": "{{count}} die → +{{hp}} HP",
+      "diceSpent_other": "{{count}} dice → +{{hp}} HP"
     },
     "mixing": {
       "title": "Mixing potions",
@@ -339,6 +341,7 @@
       "received": "Received",
       "receivedDie": "Die received from an ally"
     },
+    "turnStart": "Start of the turn",
     "solo": {
       "start": "Start combat",
       "ammo_one": "You can recover {{count}} piece of ammunition after the fight.",
@@ -352,6 +355,9 @@
       "gathering": "Initiative: roll",
       "mine": "Round {{round}} · your turn",
       "theirs": "Round {{round}} · {{name}}"
+    },
+    "roll": {
+      "surprised": "Surprised"
     }
   }
 }

@@ -14,7 +14,12 @@ export function Toast({
   return (
     <div className="f-toast" role="status">
       <Icon name="u-check" size={20} />
-      <span>{children}</span>
+      {/* the last two words together: a toast never ends on one alone */}
+      <span>
+        {typeof children === "string"
+          ? children.replace(/ (\S+)$/, "\u00a0$1")
+          : children}
+      </span>
       {action && (
         <button type="button" className="f-btn" data-kind="quiet" onClick={onAction}>
           {action}

@@ -13,11 +13,14 @@ import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 import type { Locale } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
-import { Chip, Panel } from "@/ui";
+import { Button, Chip, Panel } from "@/ui";
+import { effectRowAction, runEffectRowAction } from "@/domains/play/concentration-model";
+import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { ActionGlyph } from "./ActionIcon";
 
 export function PlayEffects({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const { t } = useTranslation();
+  const readonly = useSheetReadonly();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const rows = useCombatStatusStore((s) => s.status?.view.rows);
@@ -80,6 +83,16 @@ export function PlayEffects({ doc, locale }: { doc: CharacterDoc; locale: Locale
                   {row.gist && <span className="f-fx-gist">{row.gist}</span>}
                   {line(row) && <span className="f-row-s">{line(row)}</span>}
                 </div>
+                {(() => {
+                  const action = readonly ? null : effectRowAction(row);
+                  return (
+                    action && (
+                      <Button kind="quiet" onClick={() => runEffectRowAction(action)}>
+                        {t("combat.maintainedEndAction")}
+                      </Button>
+                    )
+                  );
+                })()}
               </div>
             ))}
           </Panel>
