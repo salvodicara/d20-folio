@@ -55,6 +55,7 @@ import { db } from "@/lib/firebase";
 // function hid the literal from the optimizer). Tests keep the live, mockable binding.
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { removeCombatant, parseEncounterState } from "@/lib/play/encounter";
+import { replayEdits, type EncounterEdit } from "./encounter-edit-log";
 import { mayStepTurn, passTurn, turnBack } from "@/lib/play/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
@@ -2104,6 +2105,72 @@ export async function updateCampaign(
   await updateDoc(campaignDoc(campaignId), {
     ...(stripUndefined(campaignWritableForWrite(data)) as Record<string, unknown>),
     updatedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * Replay the DM's waiting fight edits onto the fight the server holds now, in one
+ * transaction (the encounter edit log, `encounter-edit-log.ts`): a change someone else
+ * made meanwhile stays. Resolves with the fight as written (unchanged when every edit
+ * was a no-op or belonged to another fight). Rejects offline, like any transaction.
+ */
+export async function rebaseEncounterEdits(
+  campaignId: string,
+  edits: readonly EncounterEdit[]
+): Promise<EncounterState | null> {
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    const fresh = readDevCampaign(campaignId).encounter ?? null;
+    const next = replayEdits(fresh, edits);
+    if (next !== fresh) {
+      updateDevDocument(
+        DEV_CAMPAIGN_COLLECTION,
+        campaignId,
+        resolveDevCampaign(campaignId),
+        (current) => ({ ...current, encounter: next, updatedAt: new Date() })
+      );
+    }
+    return next;
+  }
+  const ref = campaignDoc(campaignId);
+  return runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    const fresh = snap.exists()
+      ? (toCampaignDoc(snap.id, snap.data()).encounter ?? null)
+      : null;
+    const next = replayEdits(fresh, edits);
+    if (next && next !== fresh) {
+      txn.update(ref, {
+        encounter: stripUndefined(encounterForWrite(next)),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return next;
+  });
+}
+
+/**
+ * The whole fight written as this device sees it: the edit log's fallback when a
+ * transaction cannot run (offline, or it failed). Like the old autosave it queues
+ * offline and lands when the device is back.
+ */
+export function writeWholeEncounter(
+  campaignId: string,
+  encounter: EncounterState
+): Promise<void> {
+  return updateCampaign(campaignId, { encounter });
+}
+
+/** The fight the server holds now, read directly (a transaction read never waits on a
+ *  listener). */
+export async function readServerEncounter(
+  campaignId: string
+): Promise<EncounterState | null> {
+  if (import.meta.env.DEV && DEV_BYPASS)
+    return readDevCampaign(campaignId).encounter ?? null;
+  const ref = campaignDoc(campaignId);
+  return runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    return snap.exists() ? (toCampaignDoc(snap.id, snap.data()).encounter ?? null) : null;
   });
 }
 
