@@ -35,6 +35,7 @@
  * proven app-wide, not just on the one reported tab.
  */
 import { test, expect, type Page } from "@playwright/test";
+import { visibleWithin } from "./visible-within";
 
 /**
  * Simulate Google-Translate-style mutation on the CURRENTLY rendered tree:
@@ -162,11 +163,11 @@ test.describe("external-text-mutation resilience (issue #24)", () => {
       '[role="tabpanel"][aria-labelledby$="-tab-features"]'
     );
     const searchToggle = featuresPanel.locator(".csearch-lens");
-    if (await searchToggle.isVisible({ timeout: 1500 }).catch(() => false)) {
+    if (await visibleWithin(searchToggle, 1500)) {
       await searchToggle.click().catch(() => {});
     }
     const searchBox = featuresPanel.locator(".csearch-input");
-    if (await searchBox.isVisible({ timeout: 1500 }).catch(() => false)) {
+    if (await visibleWithin(searchBox, 1500)) {
       await searchBox.fill("zzzznomatch");
       await expect(errorBoundary(page)).toHaveCount(0);
       await searchBox.fill("");

@@ -35,7 +35,9 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
         .filter({ hasText: /In the fight/ })
         .first()
     ).toBeVisible();
-    await expect(page.getByText(/Goblin/).nth(1)).toBeVisible();
+    // The two goblins sit on one grouped row ("Goblin Minion ×2"); the search may
+    // put any goblin first, so the row is matched by its count, not by a name.
+    await expect(page.getByText(/Goblin.*×\s*\u2060?\s*2/).first()).toBeVisible();
   });
 
   await test.step("the DM damages both goblins at once", async () => {
