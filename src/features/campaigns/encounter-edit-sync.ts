@@ -28,6 +28,7 @@ import {
   replayEdits,
   sendDone,
   shownFight,
+  type EncounterEdit,
   type EncounterEditLog,
 } from "./encounter-edit-log";
 
@@ -80,32 +81,43 @@ function schedule(s: EditSync): void {
   }, SEND_DELAY_MS);
 }
 
-async function send(s: EditSync): Promise<void> {
-  const begun = beginSend(s.log);
-  if (!begun) return;
-  s.log = begun.log;
-  const { generation } = s;
-  const base = begun.log.server;
-  let written: EncounterState | null;
+/**
+ * Write a batch: one transaction replayed onto the server's newest fight; with no
+ * network, or when it fails, the whole fight as this device sees it (`base` with the
+ * batch), queued while offline as the old autosave was. Resolves with what was written.
+ */
+async function writeBatch(
+  campaignId: string,
+  base: EncounterState | null,
+  batch: readonly EncounterEdit[]
+): Promise<EncounterState | null> {
   try {
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       throw new Error("offline");
     }
-    written = await rebaseEncounterEdits(s.campaignId, begun.batch);
+    return await rebaseEncounterEdits(campaignId, batch);
   } catch (error) {
-    // The old way: the whole fight as this device sees it, queued while offline.
-    written = replayEdits(base, begun.batch);
     diagnosticsLog("warn", "campaign.encounter-edit-fallback", {
       message: String(error),
     });
+    const written = replayEdits(base, batch);
     if (written) {
-      writeWholeEncounter(s.campaignId, written).catch((failure: unknown) => {
+      writeWholeEncounter(campaignId, written).catch((failure: unknown) => {
         diagnosticsLog("error", "campaign.encounter-write-failed", {
           message: String(failure),
         });
       });
     }
+    return written;
   }
+}
+
+async function send(s: EditSync): Promise<void> {
+  const begun = beginSend(s.log);
+  if (!begun) return;
+  s.log = begun.log;
+  const { generation } = s;
+  const written = await writeBatch(s.campaignId, begun.log.server, begun.batch);
   if (sync !== s || s.generation !== generation) return;
   const done = sendDone(s.log, written);
   s.log = done.log;
@@ -144,19 +156,28 @@ export function editEncounter(
   schedule(s);
 }
 
+/**
+ * Start over from `fight`. The waiting edits are sent first, replayed onto the server's
+ * fight like any batch (an edit from a fight that has ended changes nothing there); a
+ * batch already out still lands, and its answer no longer moves the screen.
+ */
 function reopen(s: EditSync, fight: EncounterState | null): void {
   if (s.timer) clearTimeout(s.timer);
   s.timer = null;
+  const waiting = s.log.waiting;
+  if (waiting.length > 0) {
+    void writeBatch(s.campaignId, shownFight({ ...s.log, waiting: [] }), waiting);
+  }
   s.log = openEditLog(fight);
   s.shown = undefined;
   s.generation += 1;
 }
 
 /**
- * The fight on screen changed outside the log and outside a snapshot (a turn passed, a
- * fight started, a writer not on the log yet). That change was made over the fight on
- * screen, so it holds every waiting edit, and the old autosave writes it whole: the log
- * lets go of them, never sending one twice.
+ * The fight on screen changed outside the log and outside a snapshot: a fight started
+ * or ended, a member removed, a turn passed (each written by its own move). That change
+ * was made over the fight on screen, so the screen keeps it; the log sends its waiting
+ * edits, which the move's own write does not carry, and starts over from it.
  */
 export function handOverEncounterEdits(campaignId: string): void {
   if (sync?.campaignId === campaignId) reopen(sync, storeFight(campaignId) ?? null);

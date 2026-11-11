@@ -19,8 +19,11 @@ import {
   revokePersistentCombatEffect,
   writeCampaignCombatEffect,
 } from "@/features/campaigns/campaign-io";
-import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import { applyAdversaryDamageParts } from "@/features/campaigns/encounter-world-command";
+import { editEncounter } from "@/features/campaigns/encounter-edit-sync";
+import {
+  applyAdversaryDamageParts,
+  undoAdversaryHit,
+} from "@/features/campaigns/encounter-world-command";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import {
   useZoneHitStore,
@@ -206,16 +209,19 @@ function ZoneHit({
     const target = rows.find((r) => r.id === hit.creatureId);
     if (!target || amount <= 0) return;
     if (target.kind === "monster") {
-      const store = useCampaignStore.getState();
-      const before = store.campaign?.encounter;
-      if (!before) return;
-      store.setEncounter(
-        applyAdversaryDamageParts(before, campaignId, target.id, [
-          { amount, ...(damage.damageType ? { type: damage.damageType } : {}) },
-        ])
+      // Through the DM's edit log (one writer for the fight). The hit is seeded with
+      // the question's key, so its undo takes back exactly this hit, on any copy of
+      // the fight, and leaves whatever else changed since.
+      const parts = [
+        { amount, ...(damage.damageType ? { type: damage.damageType } : {}) },
+      ];
+      editEncounter(campaignId, (fight) =>
+        applyAdversaryDamageParts(fight, campaignId, target.id, parts, hit.key)
       );
       onToast(t("fight.zone.applied", { amount, name: hit.creatureName }), () =>
-        useCampaignStore.getState().setEncounter(before)
+        editEncounter(campaignId, (fight) =>
+          undoAdversaryHit(fight, campaignId, target.id, hit.key)
+        )
       );
       return;
     }
