@@ -1609,6 +1609,22 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     await assertSucceeds(updateDoc(ref, { build: { name: "Mara II" }, revision: 4 }));
   });
 
+  it("a build carrying a spell's optional grantedBy saves like any other build", async () => {
+    const owner = testEnv.authenticatedContext("member").firestore();
+    const ref = doc(owner, "users", "member", "characters", "char-member");
+    await assertSucceeds(
+      updateDoc(ref, {
+        build: {
+          name: "Mara II",
+          spells: [
+            { srdId: "guidance", prepared: true, grantedBy: "magic-initiate-cleric" },
+          ],
+        },
+        revision: 4,
+      })
+    );
+  });
+
   it("a metadata-only write may leave the generation alone OR advance it by exactly one", async () => {
     // A whole-document ceremony (sharing publish, snapshot restore) rewrites the parent
     // with values that often diff to nothing, yet legitimately advances the generation.
