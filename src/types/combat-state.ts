@@ -141,6 +141,9 @@ export interface CombatState {
    *  to — this subdoc is its SOLE persisted home (an encounter uses the shared doc). `1`
    *  when combat has not advanced. */
   round: number;
+  /** SOLO: the player started a fight («Start combat»), so it is on from round 1 before
+   *  any Initiative roll or round advance. Absent = not started (additive, optional). */
+  soloFightStarted?: boolean;
   /** Source-owned effects applied to this character outside a campaign encounter.
    * They use the same occurrence model and lifetime algebra as shared encounters.
    * (A branch-era `effectOps` mirror ledger existed here briefly; it never had a

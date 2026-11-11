@@ -92,6 +92,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `panel:features/character/center/tabs/PlayTab`                     | Character  | todo   |
 | `panel:features/character/center/tabs/SpellsTab`                   | Character  | todo   |
 | `picker:components/sheet/BeastFormPicker`                          | Character  | todo   |
+| `dialog:domains/play/ui/PlayConcentration`                         | Character  | todo   |
 | `dialog:domains/play/ui/PlayConditions`                            | Character  | todo   |
 | `dialog:domains/play/ui/PlayEffects`                               | Character  | todo   |
 | `dialog:domains/play/ui/PlayInspiration`                           | Character  | todo   |
