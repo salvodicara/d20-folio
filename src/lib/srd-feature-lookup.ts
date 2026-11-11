@@ -14,6 +14,7 @@ import type { SrdClassFeatureData, SrdFeatData } from "@/data/types";
 import { classFeatureIndex } from "@/data/classes";
 import { FEATS_BY_ID } from "@/data/feats";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
+import { getEquipment } from "@/data/equipment";
 import { getSpellById } from "@/data/spells";
 import { raceFeatureIndex, raceTraitCatKey, type RaceFeatureEntry } from "@/data/races";
 import type { SrdKind } from "@/i18n/srd-en";
@@ -73,6 +74,8 @@ export function featureNameLoc(sourceId: string | undefined): LocText {
   // spell (Shillelagh's die on a staff) from the spell catalogue.
   if (!src) {
     if (MAGIC_ITEMS_BY_ID.has(sourceId)) return srdText("magic-item", sourceId, "name");
+    // A plain item's use state (Basic Poison's coat) names itself from the equipment.
+    if (getEquipment(sourceId)) return srdText("equipment", sourceId, "name");
     return getSpellById(sourceId)
       ? srdText("spell", sourceId, "name")
       : customText(sourceId);

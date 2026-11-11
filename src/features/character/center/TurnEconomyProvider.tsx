@@ -213,6 +213,7 @@ import { itemResourceSpend } from "@/lib/item-resource-commands";
 import { actionAtCastLevel } from "@/lib/cast-resolution";
 import { applyCastSourceOverridesToAction } from "@/lib/cast-source-profile";
 import { PaymentPickerModal } from "@/components/sheet/PaymentPickerModal";
+import { weaponPickStep, type WeaponPick } from "@/domains/play/weapon-pick-view";
 import {
   ArcaneRecoveryModal,
   type ArcaneRecoveryRequest,
@@ -521,6 +522,14 @@ export function TurnEconomyProvider({
   // declared `alternateCost`) opens this picker (the same `.cl-opts` recipe), then
   // commits the chosen payment immediately with undo. The engine
   // (`getActionCostOptions`) enumerates every payment; the player picks.
+  // «Su quale arma?» on the classic sheet: an action that binds one weapon (Basic
+  // Poison's coat, Brew Poison, Magic Weapon, Shillelagh) with two or more eligible
+  // weapons asks first; cancelling spends nothing.
+  const [weaponPickRequest, setWeaponPickRequest] = useState<{
+    action: ResolvedAction;
+    intent: ExecuteActionIntent | undefined;
+    picks: WeaponPick[];
+  } | null>(null);
   const [paymentRequest, setPaymentRequest] = useState<{
     characterId: string | undefined;
     execution: ActionExecution;
@@ -3004,6 +3013,20 @@ export function TurnEconomyProvider({
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
+    // The classic sheet asks which weapon a binding names (a screen that draws its
+    // own prompts asks before calling, and passes the weapon).
+    const doc = useCharacterStore.getState().character;
+    if (renderPrompts && !intent?.weapon && doc) {
+      const step = weaponPickStep(doc, action, locale);
+      if (step.kind === "bind") {
+        executeAction(action, { ...intent, weapon: step.weapon });
+        return;
+      }
+      if (step.kind === "ask") {
+        setWeaponPickRequest({ action, intent, picks: step.picks });
+        return;
+      }
+    }
     const base = executionFor(action, intent?.ritual === true, inEncounter());
     if (!base) return;
     // The weapon the cast names, and whom its area spares, ride the execution down.
@@ -3451,6 +3474,36 @@ export function TurnEconomyProvider({
             request={paymentPickRequest}
             onConfirm={confirmPayment}
             onCancel={() => setPaymentRequest(null)}
+          />
+          <PaymentPickerModal
+            request={
+              weaponPickRequest && {
+                actionName: weaponPickRequest.action.name,
+                title: t("play.weapon.which"),
+                rows: weaponPickRequest.picks.map((pick, index) => ({
+                  index,
+                  label: pick.name,
+                  remaining: null,
+                  affordable: true,
+                  primary: false,
+                  tag:
+                    pick.wielded === undefined
+                      ? ""
+                      : t(pick.wielded ? "play.weapon.wielded" : "play.weapon.packed"),
+                })),
+              }
+            }
+            onConfirm={(index) => {
+              const request = weaponPickRequest;
+              const pick = request?.picks[index];
+              setWeaponPickRequest(null);
+              if (request && pick)
+                executeAction(request.action, {
+                  ...request.intent,
+                  weapon: pick.address,
+                });
+            }}
+            onCancel={() => setWeaponPickRequest(null)}
           />
           <DivineInterventionModal
             pool={freeCastFromListRequest?.pool ?? null}
