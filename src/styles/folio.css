@@ -12117,6 +12117,9 @@ button.uc-chevron::before {
   /* clip, not hidden: never scrollable, so a click mid-reveal lands (.section-detail). */
   overflow: clip;
   display: flow-root;
+  /* A clip box (unlike hidden) keeps a grid item's min-content width: without this, a
+     long one-line preview widens the whole card past its column. */
+  min-width: 0;
   /* min-height:0 lets the 0fr grid track clip the content so the height
      transition runs both ways (no display:none snapping). padding/background
      transition alongside height — both are 0/transparent when collapsed and
@@ -12836,6 +12839,9 @@ h6.bm-heading {
   /* clip, not hidden: never scrollable, so a click mid-reveal lands (.section-detail). */
   overflow: clip;
   display: flow-root;
+  /* A clip box (unlike hidden) keeps a grid item's min-content width: without this, a
+     long one-line preview widens the whole card past its column. */
+  min-width: 0;
   padding-left: 28px;
 }
 .sess-item[data-open] .sess-body {
@@ -12952,6 +12958,9 @@ textarea.input.sess-notes-edit {
      containment that hidden gave. */
   overflow: clip;
   display: flow-root;
+  /* A clip box (unlike hidden) keeps a grid item's min-content width: without this, a
+     long one-line preview widens the whole card past its column. */
+  min-width: 0;
 }
 /* The reveal gap exists only when OPEN — a padding on the collapsed child
    resists the 0fr compression and left every closed section ~12px of ghost
@@ -20334,6 +20343,9 @@ button.econ-tok-filter:active .econ-disc {
   /* clip, not hidden: never scrollable, so a click mid-reveal lands (.section-detail). */
   overflow: clip;
   display: flow-root;
+  /* A clip box (unlike hidden) keeps a grid item's min-content width: without this, a
+     long one-line preview widens the whole card past its column. */
+  min-width: 0;
 }
 
 /* ── The reading body (spell rows) ─────────────────────────────────────────── */
