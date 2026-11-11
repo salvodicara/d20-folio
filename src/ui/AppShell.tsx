@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router";
 import { Icon } from "./Icon";
 import { Menu } from "./Menu";
-import { PageBarSlot } from "./shell-bar";
+import { PageBarSlot, type PageMenuAction } from "./shell-bar";
 import type { IconName } from "./icon-names";
 
 /** A page's own phone top bar: on phone it replaces the logo, ☰ and the account. */
@@ -36,6 +36,7 @@ export function AppShell({
   nav,
   navLabel,
   searchLabel,
+  status,
   onSearch,
   menuLabel,
   account,
@@ -48,6 +49,8 @@ export function AppShell({
   nav: ShellLink[];
   navLabel: string;
   searchLabel: string;
+  /** Live status beside the search (the fight's round and whose turn). */
+  status?: ReactNode;
   onSearch: (query: string) => void;
   menuLabel: string;
   account: {
@@ -62,6 +65,7 @@ export function AppShell({
 }) {
   const [open, setOpen] = useState<"nav" | "account" | null>(null);
   const [pageBar, setPageBar] = useState<HTMLElement | null>(null);
+  const [pageActions, setPageActions] = useState<PageMenuAction[]>([]);
   const close = () => setOpen(null);
   const submit = (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -95,6 +99,7 @@ export function AppShell({
           {links}
         </nav>
         <div className="f-tb-r">
+          {status}
           <div className="f-tb-srch">{search}</div>
           <button
             type="button"
@@ -116,11 +121,27 @@ export function AppShell({
           </button>
         </div>
       </header>
-      <PageBarSlot.Provider value={{ slot: pageBar, openMenu: () => setOpen("nav") }}>
+      <PageBarSlot.Provider
+        value={{ slot: pageBar, openMenu: () => setOpen("nav"), setPageActions }}
+      >
         {children}
       </PageBarSlot.Provider>
       <footer className="f-foot">{footer}</footer>
       <Menu open={open === "nav"} onClose={close} title={menuLabel}>
+        {pageActions.map((a) => (
+          <button
+            key={a.label}
+            type="button"
+            className="f-menu-it"
+            onClick={() => {
+              close();
+              a.onSelect();
+            }}
+          >
+            <Icon name={a.icon} />
+            {a.label}
+          </button>
+        ))}
         <nav className="f-menu-nav" aria-label={navLabel}>
           {links}
         </nav>

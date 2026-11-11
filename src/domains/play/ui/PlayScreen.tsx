@@ -40,6 +40,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { totalLevel } from "@/lib/classes";
+import { xpProgress } from "@/lib/experience";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -54,6 +55,7 @@ import {
   type IconName,
   Menu,
   PhoneBar,
+  usePageMenuActions,
   useShellMenu,
   StatBadge,
   Toast,
@@ -104,6 +106,16 @@ export function PlayScreen() {
   const readonly = useSheetReadonly();
   const navigate = useNavigate();
   const levelling = useMatch("/characters/:characterId/level-up") !== null;
+  // «Sali di livello» lives in the menu (⋯), so the rest row stays one line (x-play)
+  const levelUp =
+    doc && doc.id === characterId && !readonly && totalLevel(doc.character) < 20
+      ? () => void navigate(`/characters/${doc.id}/level-up`)
+      : null;
+  usePageMenuActions(
+    levelUp
+      ? [{ label: t("levelUp.screen.levelUp"), icon: "g-create", onSelect: levelUp }]
+      : []
+  );
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -127,17 +139,20 @@ export function PlayScreen() {
   const view = playHeaderView(doc, locale);
   const rests = (
     <>
-      <Button aria-haspopup="dialog" onClick={() => setResting("short")}>
+      <Button
+        icon="g-rest-short"
+        aria-haspopup="dialog"
+        onClick={() => setResting("short")}
+      >
         {t("play.rest.short")}
       </Button>
-      <Button aria-haspopup="dialog" onClick={() => setResting("long")}>
+      <Button
+        icon="g-rest-long"
+        aria-haspopup="dialog"
+        onClick={() => setResting("long")}
+      >
         {t("play.rest.long")}
       </Button>
-      {totalLevel(doc.character) < 20 && (
-        <Link className="f-btn" data-kind="ghost" to={`/characters/${doc.id}/level-up`}>
-          {t("levelUp.screen.levelUp")}
-        </Link>
-      )}
       {/* In a fight the rounds keep the time (prototype: exploration only). */}
       {!fight && (
         <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
@@ -174,7 +189,21 @@ export function PlayScreen() {
         locale={locale}
         campaign={campaign}
         rests={rests}
+        onLevelUp={levelUp}
       />
+      {/* an XP table that reached the next level: the note, its one action */}
+      {levelUp &&
+        doc.character.experience !== undefined &&
+        xpProgress(doc.character.experience, totalLevel(doc.character)).canLevelUp && (
+          <div className="f-note f-save-due" data-c="res" role="status">
+            <p>{t("character.levelUpReady")}</p>
+            <div className="f-acts">
+              <Button kind="primary" onClick={levelUp}>
+                {t("levelUp.screen.levelUp")}
+              </Button>
+            </div>
+          </div>
+        )}
       <PlaySpeciesChoices doc={doc} locale={locale} readonly={readonly} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
@@ -247,12 +276,14 @@ function PlayHeader({
   locale,
   campaign,
   rests,
+  onLevelUp,
 }: {
   doc: CharacterDoc;
   view: PlayHeaderView;
   locale: Locale;
   campaign: CampaignDoc | null;
   rests: ReactNode;
+  onLevelUp: (() => void) | null;
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
@@ -260,6 +291,7 @@ function PlayHeader({
   const fight = useCombatStatusStore((st) => st.status);
   const uid = useAuthStore((st) => st.user?.uid);
   const [hpOpen, setHpOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
   const tiny = useMediaQuery("(max-width: 400px)");
@@ -270,7 +302,7 @@ function PlayHeader({
           hp={view.hp.current}
           max={view.hp.max}
           temp={view.hp.temp}
-          size={tiny ? 64 : narrow ? 88 : 136}
+          size={tiny ? 86 : narrow ? 88 : 120}
           portrait={view.portraitUrl ?? undefined}
           name={view.name}
           ornate
@@ -278,15 +310,23 @@ function PlayHeader({
       </div>
       <div className="f-char-id">
         <h1>{view.name}</h1>
-        <p className="f-hero-sub">{view.identity.join(" · ")}</p>
+        {/* the phone keeps the prototype's short line (x-play-m): classes and species */}
+        <p className="f-hero-sub">
+          {(tiny ? view.identityShort : view.identity).join(" · ")}
+        </p>
         {/* D&D Beyond's header buttons: the rests, the campaign. */}
         {(!readonly || campaign) && (
           <div className="f-char-acts">
             {!readonly && rests}
             {campaign && (
-              <Link className="f-btn" data-kind="ghost" to={`/campaigns/${campaign.id}`}>
+              <Link
+                className="f-btn f-char-camp"
+                data-kind="ghost"
+                to={`/campaigns/${campaign.id}`}
+                title={campaign.name}
+              >
                 <Icon name="g-campaign" />
-                {campaign.name}
+                <span>{campaign.name}</span>
               </Link>
             )}
           </div>
@@ -298,16 +338,26 @@ function PlayHeader({
           view.conditions > 0 ||
           doc.session.inspiration ||
           Boolean(doc.session.bardicInspirationDie)) && (
-          <div className="f-chips">
-            {/* In a form the sheet is the beast's: say so first (the source, then it). */}
-            {view.form && (
-              <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
+          <div className="f-char-chips">
+            {/* What the character is now (a form, a held spell) on its own line, then
+                the three status chips always on one line, so the row never reflows. */}
+            {(view.form || view.concentration) && (
+              <div className="f-chips">
+                {/* In a form the sheet is the beast's: say so first (the source, then it). */}
+                {view.form && (
+                  <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
+                )}
+                {view.form && !readonly && <RevertForm />}
+                {view.concentration && (
+                  <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>
+                )}
+              </div>
             )}
-            {view.form && !readonly && <RevertForm />}
-            {view.concentration && <Chip kind="conc">{`◉ ${view.concentration}`}</Chip>}
-            <PlayInspiration doc={doc} />
-            <PlayEffects doc={doc} locale={locale} />
-            <PlayConditions doc={doc} locale={locale} />
+            <div className="f-chips f-chips-status">
+              <PlayInspiration doc={doc} />
+              <PlayEffects doc={doc} locale={locale} />
+              <PlayConditions doc={doc} locale={locale} />
+            </div>
           </div>
         )}
       </div>
@@ -362,13 +412,17 @@ function PlayHeader({
           {/* D&D Beyond's two buttons under the Hit Points; both open «Danni e cure». */}
           <div className="f-char-hp-acts">
             <Button
-              icon="u-damage"
+              icon="g-hp-damage"
               aria-haspopup="dialog"
               onClick={() => setHpOpen(true)}
             >
               {t("mechanics.cast.optionDamage")}
             </Button>
-            <Button icon="u-heal" aria-haspopup="dialog" onClick={() => setHpOpen(true)}>
+            <Button
+              icon="g-hp-heal"
+              aria-haspopup="dialog"
+              onClick={() => setHpOpen(true)}
+            >
               {t("combat.heal")}
             </Button>
           </div>
@@ -398,6 +452,34 @@ function PlayHeader({
         </div>
       )}
       {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
+      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
+      {onLevelUp && (
+        <>
+          <button
+            type="button"
+            className="f-btn f-char-more"
+            data-kind="ghost"
+            aria-label={t("shell.menu")}
+            aria-haspopup="dialog"
+            onClick={() => setMoreOpen(true)}
+          >
+            <Icon name="u-more" />
+          </button>
+          <Menu open={moreOpen} onClose={() => setMoreOpen(false)} title={view.name}>
+            <button
+              type="button"
+              className="f-menu-it"
+              onClick={() => {
+                setMoreOpen(false);
+                onLevelUp();
+              }}
+            >
+              <Icon name="g-create" />
+              {t("levelUp.screen.levelUp")}
+            </button>
+          </Menu>
+        </>
+      )}
     </section>
   );
 }
