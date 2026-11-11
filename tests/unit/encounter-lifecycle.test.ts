@@ -15,6 +15,7 @@ import {
   canAdvanceTurn,
   endCombat,
   encounterEndReason,
+  mayStepTurn,
   passTurn,
   reopenCombat,
   rollInitiative,
@@ -238,5 +239,27 @@ describe("the stored clock", () => {
     expect(parseEncounterState(structuredClone(ended)).ended).toEqual(ended.ended);
     const badEnd = { ...structuredClone(ended), ended: { reason: "boredom", at: 1 } };
     expect(parseEncounterState(badEnd).ended).toBeUndefined();
+  });
+});
+
+describe("who may move the turn", () => {
+  const dm = { uid: "dm", isDm: true };
+  const ana = { uid: "u1", isDm: false };
+  const bo = { uid: "u2", isDm: false };
+
+  it("in a fight a roll started, anyone at the table", () => {
+    const fight = started();
+    expect(fight.currentCombatantId).toBe("pc-u1");
+    expect(mayStepTurn(fight, dm)).toBe(true);
+    expect(mayStepTurn(fight, ana)).toBe(true);
+    expect(mayStepTurn(fight, bo)).toBe(true);
+  });
+
+  it("in a fight the DM started by hand, the DM or whoever's turn it is", () => {
+    const byHand: EncounterState = { ...started(), clock: undefined };
+    expect(mayStepTurn(byHand, dm)).toBe(true);
+    expect(mayStepTurn(byHand, ana)).toBe(true);
+    expect(mayStepTurn(byHand, bo)).toBe(false);
+    expect(mayStepTurn(byHand, { uid: undefined, isDm: false })).toBe(false);
   });
 });

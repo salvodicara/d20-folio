@@ -100,6 +100,7 @@ import {
   startEncounter,
   type EncounterPcSeed,
 } from "@/features/campaigns/encounter";
+import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
   addReinforcement,
@@ -683,8 +684,7 @@ function CombatLayer({
   // re-reads the encounter fresh, re-validates the caller may advance, and writes ONLY
   // `{currentCombatantId, round}` — so two concurrent advances never double-step and a
   // player's write satisfies the `turnFieldsOnlyChanged` member rule.
-  const isMyTurn = !!ctx.currentUid && view.currentId === `pc-${ctx.currentUid}`;
-  const canAdvance = (isDm || isMyTurn) && !gathering;
+  const canAdvance = mayStepTurn(encounter, { uid: ctx.currentUid, isDm }) && !gathering;
   // Disarm the turn buttons while an advance is in flight (the UX half of the
   // double-click fix; the CAS in `advanceEncounterTurn` is the correctness half).
   const [advancing, setAdvancing] = useState(false);

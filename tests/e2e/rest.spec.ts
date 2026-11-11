@@ -14,6 +14,7 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
+import { visibleWithin } from "./visible-within";
 
 /** The open rest modal. */
 function restDialog(page: Page) {
@@ -106,7 +107,7 @@ test.describe("Rest Flow", () => {
 
     // Cancel — if no cancel button visible, the rest might not have a cancel flow
     const cancelButton = dialog.getByRole("button", { name: /cancel|annulla/i }).first();
-    if (await cancelButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await visibleWithin(cancelButton, 3000)) {
       await cancelButton.click();
       // Should return to rest choice page (the long-rest card is visible again)
       await expect(dialog.getByRole("button", { name: /long rest/i })).toBeVisible();
