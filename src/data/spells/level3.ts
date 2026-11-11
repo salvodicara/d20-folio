@@ -374,6 +374,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
       options: ["charmed", "incapacitated"],
       on: "failed-save",
       lifetime: { kind: "source" },
+      whileHeld: [{ kind: "speed-zero" }],
     },
     grants: [
       {
