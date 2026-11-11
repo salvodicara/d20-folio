@@ -29,17 +29,22 @@ describe("conditions that repeat a save at the end of the target's turns", () =>
 });
 
 describe("conditions that end when the target takes damage", () => {
-  it.each(["sleep", "hypnotic-pattern", "modify-memory", "sequester"])("%s", (id) => {
+  it.each(["hypnotic-pattern", "modify-memory", "sequester"])("%s", (id) => {
     expect(text(id)).toMatch(/takes (any )?damage/i);
     expect(endsOf(id)).toEqual([{ on: "target-damaged" }]);
   });
 });
 
 describe("conditions that end when the caster's side deals damage", () => {
-  it.each(["charm-person", "charm-monster", "animal-friendship"])("%s", (id) => {
-    expect(text(id)).toMatch(/(you or (one of )?your allies (deals? damage|damage it))/i);
-    expect(endsOf(id)).toEqual([{ on: "target-damaged", by: "actor-side" }]);
-  });
+  it.each(["charm-person", "charm-monster", "animal-friendship", "suggestion"])(
+    "%s",
+    (id) => {
+      expect(text(id)).toMatch(
+        /(you or (one of )?your allies (deals? damage|damage it))/i
+      );
+      expect(endsOf(id)).toEqual([{ on: "target-damaged", by: "actor-side" }]);
+    }
+  );
 });
 
 describe("repeat saves outside the end of the target's turn", () => {
@@ -132,5 +137,37 @@ describe("a save track that settles into a condition", () => {
         track: { successes: 3, failures: 3, settlesInto: "petrified" },
       },
     ]);
+  });
+});
+
+describe("Sleep (2024): Incapacitated, then Unconscious on a second failed save", () => {
+  it("one repeat at the end of its next turn settles it; damage ends it", () => {
+    expect(text("sleep")).toMatch(
+      /have the Incapacitated condition until the end of its next turn/i
+    );
+    expect(text("sleep")).toMatch(
+      /fails the second save, the target has the Unconscious condition/i
+    );
+    expect(getSpellById("sleep")?.conditionApplication?.options).toEqual([
+      "incapacitated",
+    ]);
+    expect(endsOf("sleep")).toEqual([
+      { on: "target-damaged" },
+      {
+        on: "repeat-save",
+        ability: "WIS",
+        at: "target-turn-end",
+        track: { successes: 1, failures: 1, settlesInto: "unconscious" },
+      },
+    ]);
+  });
+});
+
+describe("Suggestion (2024): Charmed until the caster's side deals damage", () => {
+  it("applies Charmed on a failed save", () => {
+    expect(getSpellById("suggestion")?.conditionApplication).toMatchObject({
+      options: ["charmed"],
+      on: "failed-save",
+    });
   });
 });

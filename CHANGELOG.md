@@ -1,5 +1,42 @@
 # Changelog
 
+## 0.26.1
+
+**Regole del 2024 più fedeli sulla scheda: il Monaco con la Velocità giusta, Sonno e Suggestione
+corretti, il Riposo Breve che rispetta il Periapto, e chiunque al tavolo può passare il turno.**
+Interfaccia classica; la nuova interfaccia resta spenta.
+
+### Added
+
+- Fendere: la riga mostra quanto danno fa il secondo bersaglio
+- «Scelte da completare» chiede lo Stile di Combattimento se manca
+- Uno svantaggio che vale solo contro creature diverse da chi te l'ha dato (un incantesimo di
+  duello) si legge come tale sulla scheda
+
+### Changed
+
+- Monaco: la Velocità include da sola il Movimento Senza Armatura, finché non indossi armatura né
+  scudo (la Velocità salvata dei Monaci è stata riallineata prima del rilascio)
+- Monaco: Difesa Paziente con un punto Focus ti mette in Schivata; Passo del Vento conta lo Scatto;
+  Colpo Stordente una volta per turno
+- Paladino: Percezione Divina è la riga di Incanalare Divinità e ne spende l'uso
+- Gruppo: in uno scontro iniziato tirando l'iniziativa, chiunque al tavolo può passare il turno
+- Sonno incapacita e un secondo fallimento fa addormentare; Suggestione affascina
+- Lotta e Spinta: il bersaglio sceglie il tiro salvezza su FOR o DES
+- Il ritmo di viaggio usa vantaggio e svantaggio del 2024
+- In italiano «Weapon Mastery» è «Padronanza d'Armi» ovunque
+
+### Fixed
+
+- Riposo Breve: il Periapto della Chiusura delle Ferite raddoppia di nuovo la guarigione dei Dadi
+  Vita
+- Le schede del gruppo mostrano la stessa Velocità della scheda, bonus compresi
+- Barbaro: il Movimento Veloce vale solo senza armatura pesante
+- Mago Studioso: la Maestria si sceglie solo tra le sei abilità previste
+- Un talento che ne richiede un altro compare solo se hai già quello richiesto
+- Schivata finisce se sei Incapacitato o con Velocità 0; un Pietrificato è immune ad Avvelenato
+- Le Padronanze Fiaccare e Rallentare lasciano il loro effetto sul bersaglio colpito
+
 ## 0.26.0
 
 **La scheda applica da sola molte più regole: reazioni ai tiri degli altri, effetti lanciati

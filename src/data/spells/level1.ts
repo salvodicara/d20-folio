@@ -1040,9 +1040,19 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "control",
     saveAbility: "WIS",
     area: true,
+    // 2024: Incapacitated until the end of its next turn, then a repeat save; a
+    // second failure makes it Unconscious for the duration, a success ends it.
     conditionApplication: {
-      ends: [{ on: "target-damaged" }],
-      options: ["unconscious"],
+      ends: [
+        { on: "target-damaged" },
+        {
+          on: "repeat-save",
+          ability: "WIS",
+          at: "target-turn-end",
+          track: { successes: 1, failures: 1, settlesInto: "unconscious" },
+        },
+      ],
+      options: ["incapacitated"],
       on: "failed-save",
       lifetime: { kind: "source" },
     },

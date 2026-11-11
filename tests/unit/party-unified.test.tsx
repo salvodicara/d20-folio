@@ -159,6 +159,7 @@ vi.mock("@/stores/confirmStore", () => ({
 
 import { Party } from "@/features/campaigns/Party";
 import { advanceTurn, prevTurn } from "@/features/campaigns/encounter";
+import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -265,8 +266,7 @@ beforeEach(() => {
   advanceEncounterTurnMock.mockImplementation((_campId, dir, caller) => {
     const enc = useCampaignStore.getState().campaign?.encounter;
     if (enc && enc.currentCombatantId !== null) {
-      const ownsTurn = enc.currentCombatantId === `pc-${caller.uid}`;
-      if (caller.isDm || ownsTurn) {
+      if (mayStepTurn(enc, caller)) {
         // The reducer reads the FROZEN `order` off the encounter doc (no caller-supplied
         // orderedIds any more), exactly as the real transaction does.
         const next = dir === "next" ? advanceTurn(enc) : prevTurn(enc);
@@ -986,6 +986,21 @@ describe("Party combat — player (read-only)", () => {
     expect(
       screen.queryByRole("button", { name: /previous turn/i })
     ).not.toBeInTheDocument();
+  });
+
+  it("in a fight a roll started (it has a clock), any player may pass the turn", async () => {
+    // The same permission as the Play screen's Scontro tab (`mayStepTurn`): a lifecycle
+    // fight is everyone's to pass, so member-bren gets the controls off-turn too.
+    authUid.value = "member-bren";
+    const campaign = encounterCampaign();
+    const encounter = campaign.encounter;
+    if (!encounter) throw new Error("no seeded encounter");
+    const clock = { startedAt: 1, lastActivityAt: 1, turnStartedAt: 1, turnsBegun: true };
+    setCampaign({ ...campaign, encounter: { ...encounter, clock } });
+    renderParty();
+    await screen.findAllByLabelText(/^Armor Class:/);
+    expect(screen.getByRole("button", { name: /next turn/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /previous turn/i })).toBeInTheDocument();
   });
 });
 

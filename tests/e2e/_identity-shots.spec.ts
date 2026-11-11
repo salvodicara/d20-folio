@@ -19,6 +19,7 @@ import {
   type Locale,
 } from "./surfaces";
 import { waitForStableLayout } from "./ready";
+import { visibleWithin } from "./visible-within";
 
 const OUT = process.env.SHOT_DIR ?? "";
 const shot = (name: string) => path.join(OUT, `${name}.png`);
@@ -107,7 +108,7 @@ test("identity — modal chrome (dark+light)", async ({ page }) => {
         name: /new campaign|nuova campagna|create campaign|crea campagna/i,
       })
       .first();
-    if (await createBtn.isVisible({ timeout: 3000 }).catch(() => false)) {
+    if (await visibleWithin(createBtn, 3000)) {
       await createBtn.click();
       await page.getByRole("dialog").waitFor({ timeout: 5000 });
       await waitForStableLayout(page);

@@ -17,6 +17,7 @@ import {
 } from "@/lib/reconcile-build";
 import { fightingStyleOptions } from "@/lib/views/level-up-view";
 import { buildScenario, DEV_SCENARIOS, type ScenarioSpec } from "@/lib/dev-scenarios";
+import { listAllFightingStyles } from "@/lib/fighting-style";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { classTableIndex } from "@/data/classes";
 import { primaryClassEntry, totalLevel } from "@/lib/classes";
@@ -388,8 +389,16 @@ describe("reconcileBuildChoices — LEVEL DOWN clamps per-level pick entitlement
 // level edit would wrongly clamp it away. fail-before: pre-fix `fightingStyleEntitlement`
 // only walked the base table → a Champion L7 was owed 1 (the base L1 style) not 2.
 describe("reconcileBuildChoices — Champion gets a 2nd Fighting Style at L7", () => {
-  const championAt = (level: number): CharacterData =>
-    build({ ...spec("champion"), level });
+  // Built with no style chosen yet (a scenario fills owed picks, styles included),
+  // so each case picks its own.
+  const STYLES = new Set(listAllFightingStyles().map((style) => style.id));
+  const championAt = (level: number): CharacterData => {
+    const built = build({ ...spec("champion"), level });
+    return {
+      ...built,
+      features: built.features.filter((f) => !("srdId" in f && STYLES.has(f.srdId))),
+    };
+  };
 
   it("a Champion is OWED two fighting-style slots at L7, one at L6 (sub-L7)", () => {
     expect(fightingStyleEntitlement(primaryClassEntry(championAt(7)))).toBe(2);

@@ -927,6 +927,9 @@ export interface CombatConditionApplication {
   /** Per-condition overrides for spells such as Symbol whose mutually exclusive
    * outcomes have different maximum lifetimes. */
   lifetimes?: Partial<Record<ConditionId, CombatConditionLifetime>>;
+  /** What the creature also suffers while it holds the condition this applied
+   *  (Hypnotic Pattern: a Speed of 0 while Charmed). Ends with the condition. */
+  whileHeld?: ReadonlyArray<{ kind: "speed-zero" }>;
 }
 
 export interface CombatTargeting {
@@ -3677,6 +3680,9 @@ export interface SrdEquipmentData {
     tracker?: TrackerSpec;
     actions?: ReadonlyArray<SrdActionDef>;
   };
+  /** The state an item's action lights (Basic Poison's coat): a `while-active` the
+   *  action enters. It holds after the last copy is spent, like a drunk potion's. */
+  grants?: ReadonlyArray<import("@/lib/grants").Grant>;
   /**
    * Healing potion roll (e.g. "2d4+2"). Structured here so EVERY reference to the
    * item renders the same heal verdict — display is derived from SRD data, never

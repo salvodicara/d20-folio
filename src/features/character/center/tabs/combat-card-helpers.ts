@@ -188,3 +188,13 @@ export {
   type BlockedReason,
   type CombatCtaState,
 } from "@/lib/views/action-cta-view";
+
+/** A card's use counter: carried copies (a potion, a vial) read as the inventory's
+ *  "×2"; a pool or tracker reads "2/3", with its unit when it has one. */
+export function usesGloss(
+  uses: { current: number; total: number; stock?: true },
+  unitLabel?: string | null
+): string {
+  if (uses.stock) return `×${uses.current}`;
+  return `${uses.current}/${uses.total}${unitLabel ? ` ${unitLabel}` : ""}`;
+}

@@ -20,19 +20,47 @@ const turn = (over: Partial<TurnBarInput> = {}): TurnBarInput => ({
 });
 
 describe("playMode", () => {
-  it("is combat in a campaign encounter, or solo once Initiative or a round is in", () => {
-    expect(playMode({ sharedEncounter: true, soloRound: 1, soloInitiative: "" })).toBe(
-      "combat"
-    );
-    expect(playMode({ sharedEncounter: false, soloRound: 2, soloInitiative: "" })).toBe(
-      "combat"
-    );
-    expect(playMode({ sharedEncounter: false, soloRound: 1, soloInitiative: "14" })).toBe(
-      "combat"
-    );
-    expect(playMode({ sharedEncounter: false, soloRound: 1, soloInitiative: " " })).toBe(
-      "exploration"
-    );
+  it("is combat in a campaign encounter, or solo once started, Initiative or a round is in", () => {
+    expect(
+      playMode({
+        sharedEncounter: false,
+        soloRound: 1,
+        soloInitiative: "",
+        soloFightStarted: true,
+      })
+    ).toBe("combat");
+    expect(
+      playMode({
+        sharedEncounter: true,
+        soloRound: 1,
+        soloInitiative: "",
+        soloFightStarted: false,
+      })
+    ).toBe("combat");
+    expect(
+      playMode({
+        sharedEncounter: false,
+        soloRound: 2,
+        soloInitiative: "",
+        soloFightStarted: false,
+      })
+    ).toBe("combat");
+    expect(
+      playMode({
+        sharedEncounter: false,
+        soloRound: 1,
+        soloInitiative: "14",
+        soloFightStarted: false,
+      })
+    ).toBe("combat");
+    expect(
+      playMode({
+        sharedEncounter: false,
+        soloRound: 1,
+        soloInitiative: " ",
+        soloFightStarted: false,
+      })
+    ).toBe("exploration");
   });
 });
 
