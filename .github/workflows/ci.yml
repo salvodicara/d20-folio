@@ -175,8 +175,13 @@ jobs:
   # per merge in verify.yml.
   design-rules:
     name: design rules (Linux)
-    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
+    # The official Playwright image (Ubuntu 24.04 «noble», its browser and fonts
+    # inside), at the lockfile's Playwright version: no apt at run time, so an apt
+    # mirror outage cannot fail the job (2026-11-11, azure.archive.ubuntu.com
+    # unresolvable). playwright-image.guard.test.ts keeps the tag on the lockfile's.
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
     timeout-minutes: 15
     env:
       VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -197,14 +202,6 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: playwright-${{ runner.os }}-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
       - name: Design rules
         run: pnpm exec playwright test tests/e2e/ui- tests/e2e/fight-smoke --project=chromium --project=new-ui
 
