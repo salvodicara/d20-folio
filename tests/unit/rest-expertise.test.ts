@@ -6,7 +6,12 @@
  */
 import { describe, expect, it } from "vitest";
 import { evaluateGrants, type GrantSource } from "@/lib/grants";
-import { clearRestExpertise, restExpertiseSkills } from "@/lib/rest-expertise";
+import { buildSkillBreakdown } from "@/lib/compute";
+import {
+  clearRestExpertise,
+  restExpertiseRows,
+  restExpertiseSkills,
+} from "@/lib/rest-expertise";
 
 const source: GrantSource = {
   id: "a-feat",
@@ -37,5 +42,56 @@ describe("rest-expertise", () => {
     expect(
       clearRestExpertise(agg.restExpertise, { "merc-expertise": "stealth", other: "x" })
     ).toEqual({ other: "x" });
+  });
+
+  it("the stored pick reaches the sheet's Expertise set", () => {
+    const picked = evaluateGrants(
+      [source],
+      new Set(),
+      new Map([["merc-expertise", "stealth"]])
+    );
+    expect([...picked.expertiseSkills]).toEqual(["stealth"]);
+    expect([...agg.expertiseSkills]).toEqual([]);
+  });
+
+  it("the Long Rest select lists proficient skills without Expertise, preselecting last time's pick", () => {
+    expect(
+      restExpertiseRows(agg.restExpertise, { "merc-expertise": "stealth" }, skills)
+    ).toEqual([
+      {
+        sourceId: "a-feat",
+        choiceKey: "merc-expertise",
+        options: ["stealth"],
+        current: "stealth",
+      },
+    ]);
+    expect(restExpertiseRows(agg.restExpertise, {}, { perception: "expertise" })).toEqual(
+      [{ sourceId: "a-feat", choiceKey: "merc-expertise", options: [], current: null }]
+    );
+  });
+
+  it("a skill with Expertise from another rule is not offered", () => {
+    const [row] = restExpertiseRows(
+      agg.restExpertise,
+      {},
+      { stealth: "proficient", arcana: "proficient" },
+      new Set(["arcana"])
+    );
+    expect(row?.options).toEqual(["stealth"]);
+  });
+
+  it("the skill's breakdown says the Expertise lasts until the next Long Rest", () => {
+    const parts = buildSkillBreakdown({
+      ability: "DEX",
+      abilityScore: 14,
+      level: 5,
+      proficiency: "expertise",
+      untilLongRest: true,
+    });
+    expect(
+      parts.find(
+        (p) => "term" in p.label && p.label.term === "character.proficiencyBonus"
+      )
+    ).toMatchObject({ value: 6, note: { term: "breakdown.untilLongRest" } });
   });
 });
