@@ -31,6 +31,8 @@ import { Art, Button } from "@/ui";
 
 interface Row {
   key: string;
+  /** The family heading (Cunning Strike, Mastery, riders), said once above its rows. */
+  group: string;
   name: string;
   detail: string;
   art: ReactNode;
@@ -52,12 +54,23 @@ function hasAfterHitOptions(
   );
 }
 
+/** Facts on one line each («TS COS · CD 19»): a fact never breaks inside, and a
+ *  separator never starts a line. */
+const facts = (parts: ReadonlyArray<string | null | undefined>) =>
+  parts
+    .filter((p): p is string => Boolean(p))
+    .map((p) => p.replace(/ /g, "\u00a0"))
+    .join("\u00a0· ");
+
 export function PlayAfterHit({
   action,
   locale,
+  titled = true,
 }: {
   action: CombatAction;
   locale: Locale;
+  /** The «Al colpo» label; off where the question above already says it. */
+  titled?: boolean;
 }) {
   const { t } = useTranslation();
   const doc = useCharacterStore((s) => s.character);
@@ -76,21 +89,21 @@ export function PlayAfterHit({
   const rows: Row[] = [
     ...options.cunningStrike.map((o) => ({
       key: `cs:${o.optionId}`,
-      name: `${t("combat.cunningStrike")}: ${o.name}`,
-      detail: [
+      group: t("combat.cunningStrike"),
+      name: o.name,
+      detail: facts([
         t("combat.cunningStrikeCost", { count: o.cost }),
         o.save ? t("combat.cunningStrikeSave", o.save) : null,
         o.condition,
-      ]
-        .filter(Boolean)
-        .join(" · "),
+      ]),
       art: <Art kind="feature" id={o.sourceId} fallback={featureGlyph} />,
       disabled: !o.legal,
       apply: () => applyCunningStrike(action, o),
     })),
     ...options.mastery.map((m) => ({
       key: `m:${m.id}`,
-      name: `${t("play.hit.mastery")}: ${m.name}`,
+      group: t("play.hit.mastery"),
+      name: m.name,
       detail: masteryRiderLine(m, t),
       art: weaponArt(
         <ActionGlyph icon={{ kind: "weapon", id: action.weaponId ?? "" }} />
@@ -109,6 +122,7 @@ export function PlayAfterHit({
       .filter((r) => r.spend !== null)
       .map((r) => ({
         key: `r:${r.id}`,
+        group: t("combat.ridersOnHit"),
         name: riderName(r, t),
         detail: riderToken(r, t).text,
         art: featureGlyph,
@@ -117,36 +131,46 @@ export function PlayAfterHit({
       })),
   ];
   if (rows.length === 0) return null;
+  const groups = [...new Set(rows.map((r) => r.group))];
   return (
     <div className="f-ask" role="group" aria-label={t("play.hit.title")}>
-      <span className="f-lbl">{t("play.hit.title")}</span>
-      {rows.map((row) => {
-        const done = added.has(row.key);
-        const verb = done ? t("play.hit.added") : t("play.hit.add");
-        return (
-          <div key={row.key} className="f-act">
-            <ActionIcon icon={{ kind: "feature" }} art={row.art} />
-            <div className="f-row-main">
-              <div className="f-row-t">{row.name.replace(/ (\S+)$/, " $1")}</div>
-              <div className="f-row-s">{row.detail}</div>
-            </div>
-            {!readonly && (
-              <Button
-                kind={done ? "quiet" : "ghost"}
-                {...(done ? { icon: "u-check" as const } : {})}
-                disabled={done || row.disabled}
-                aria-label={`${verb}: ${row.name}`}
-                onClick={() => {
-                  row.apply();
-                  setAdded((s) => new Set(s).add(row.key));
-                }}
-              >
-                {verb}
-              </Button>
-            )}
-          </div>
-        );
-      })}
+      {titled && <span className="f-lbl">{t("play.hit.title")}</span>}
+      {groups.map((group) => (
+        <div key={group} className="f-ask">
+          <p className="f-help">{group}</p>
+          {rows
+            .filter((r) => r.group === group)
+            .map((row) => {
+              const done = added.has(row.key);
+              const verb = done ? t("play.hit.added") : t("play.hit.add");
+              return (
+                <div key={row.key} className="f-act">
+                  <ActionIcon icon={{ kind: "feature" }} art={row.art} />
+                  <div className="f-row-main">
+                    <div className="f-row-t">
+                      {row.name.replace(/ (\S+)$/, "\u00a0$1")}
+                    </div>
+                    <div className="f-row-s">{row.detail}</div>
+                  </div>
+                  {!readonly && (
+                    <Button
+                      kind={done ? "quiet" : "ghost"}
+                      {...(done ? { icon: "u-check" as const } : {})}
+                      disabled={done || row.disabled}
+                      aria-label={`${verb}: ${row.group}: ${row.name}`}
+                      onClick={() => {
+                        row.apply();
+                        setAdded((st) => new Set(st).add(row.key));
+                      }}
+                    >
+                      {verb}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -166,6 +190,7 @@ export function AfterHitNote({ locale }: { locale: Locale }) {
     <div className="f-note f-save-due" data-c="act" role="group">
       <p>{t("play.hit.askSolo", { name: action.name })}</p>
       <PlayAfterHit
+        titled={false}
         key={`${offer.actionId}-${String(offer.round)}`}
         action={action}
         locale={locale}

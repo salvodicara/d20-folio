@@ -107,7 +107,8 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
         ) : (
           <div className="f-chips">
             <Chip pressed={false} onClick={() => setAdding(true)}>
-              {`+ ${t("play.defense.add")}`}
+              <Icon name="u-add" />
+              {t("play.defense.add")}
             </Chip>
           </div>
         ))}
@@ -132,7 +133,8 @@ function ChosenResistance({
   return (
     <>
       <Chip pressed={open} onClick={() => setOpen(!open)}>
-        {`${picked || t("play.defense.choose")} ▾`}
+        {picked || t("play.defense.choose")}
+        <Icon name="u-expand" />
       </Chip>
       {open && (
         <div className="f-note" data-c="ini" role="group">

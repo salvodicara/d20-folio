@@ -74,7 +74,7 @@ describe("PlayAfterHit", () => {
     const poison = within(list).getByRole("button", {
       name: /^Add: Cunning Strike: Poison/,
     });
-    expect(list.textContent).toMatch(/Costs 1 Sneak Attack die/);
+    expect(list.textContent).toMatch(/Costs\s1\sSneak\sAttack\sdie/);
     fireEvent.click(poison);
     expect(live().session.trackers[SNEAK]?.used ?? 0).toBe(1);
     expect(

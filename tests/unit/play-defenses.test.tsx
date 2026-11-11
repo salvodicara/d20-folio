@@ -55,7 +55,7 @@ describe("PlayDefenses", () => {
 
   it("adds a temporary defense by kind and type, and removes it with ×", () => {
     render(<Live />);
-    fireEvent.click(screen.getByRole("button", { name: "+ Add" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
     fireEvent.click(screen.getByRole("button", { name: "Immunity" }));
     fireEvent.click(screen.getByRole("button", { name: "Poison" }));
     fireEvent.click(screen.getByRole("button", { name: "Add" }));
@@ -69,7 +69,7 @@ describe("PlayDefenses", () => {
   it("a type already held is offered disabled", () => {
     useCharacterStore.getState().addSessionDefense("resistance", "cold");
     render(<Live />);
-    fireEvent.click(screen.getByRole("button", { name: "+ Add" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add" }));
     expect(
       screen.getByRole("button", { name: "Cold" }).getAttribute("aria-disabled")
     ).toBe("true");

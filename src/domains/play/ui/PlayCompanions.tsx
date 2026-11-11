@@ -162,7 +162,8 @@ function CompanionForms({
   return (
     <div className="f-chips" role="group" aria-label={t("play.companions.form")}>
       <Chip pressed={open} onClick={() => setOpen(!open)}>
-        {`${current?.label ?? t("play.defense.choose")} ▾`}
+        {current?.label ?? t("play.defense.choose")}
+        <Icon name="u-expand" />
       </Chip>
       {open &&
         forms.options

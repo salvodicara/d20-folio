@@ -36,7 +36,7 @@ export function ReadiedNote({ locale }: { locale: Locale }) {
   return (
     <div className="f-note f-save-due" data-c="res" role="group">
       <p>
-        <b>{t("combat.readiedSpellName", { name: readied.name })}</b>{" "}
+        <b>{`${t("combat.readiedSpellName", { name: readied.name })}.`}</b>{" "}
         {t("combat.readiedSpellGloss")}
       </p>
       {!readonly && (
