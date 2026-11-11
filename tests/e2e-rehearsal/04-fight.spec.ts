@@ -10,9 +10,10 @@ import {
   actionRow,
   expectNoCrash,
   openFightTab,
+  reseedHero,
   SANDBOX_USERS,
-  spaced,
   signInAs,
+  spaced,
   test,
   watchErrors,
 } from "./helpers";
@@ -120,6 +121,8 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   browser,
 }) => {
   test.setTimeout(600_000);
+  // Catalion as the seed made him; Mandorlino comes from 03 (level 5, Warding Bond).
+  reseedHero(SANDBOX_USERS.catalion);
   const dm = await seat(browser);
   const bard = await seat(browser, SANDBOX_USERS.catalion.email);
   const paladin = await seat(browser, SANDBOX_USERS.mandorlino.email);
