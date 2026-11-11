@@ -13,6 +13,23 @@ import { TIME_STOP_ID } from "@/lib/play/extra-turns";
 import type { SessionRecorder } from "./recorder";
 import type { CombatantId, PlayEvent } from "./types";
 
+/** What the tray declared on a use: the attack's shared result, or the targets' saves
+ *  with the one result they share (an older reader shows that one). */
+function declaredResults(
+  event: Extract<CombatEvent, { kind: "action-use" | "reaction-use" }>
+): Pick<Extract<PlayEvent, { kind: "action" }>, "outcome" | "saves" | "noEffect"> {
+  if (event.outcome) return { outcome: event.outcome };
+  if (!event.saves) return {};
+  const results = Object.values(event.saves);
+  const first = results[0];
+  const shared = first && results.every((result) => result === first) ? first : undefined;
+  return {
+    ...(shared ? { outcome: shared } : {}),
+    saves: event.saves,
+    ...(event.noEffect ? { noEffect: true as const } : {}),
+  };
+}
+
 /** Sheet line → play event, with the character as actor (or target of what it took);
  *  `null` for what the session already knows (turn ends) or cannot express yet. */
 export function combatEventToPlayEvent(
@@ -27,7 +44,7 @@ export function combatEventToPlayEvent(
         source: event.action,
         slot: event.slot,
         ...(event.targets?.length ? { targets: event.targets } : {}),
-        ...(event.outcome ? { outcome: event.outcome } : {}),
+        ...declaredResults(event),
       };
     case "reaction-use":
       return {
@@ -36,7 +53,7 @@ export function combatEventToPlayEvent(
         source: event.action,
         slot: "reaction",
         ...(event.targets?.length ? { targets: event.targets } : {}),
-        ...(event.outcome ? { outcome: event.outcome } : {}),
+        ...declaredResults(event),
       };
     case "rider-use":
       return { kind: "action", actor: me, source: event.rider };
