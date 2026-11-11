@@ -1,8 +1,13 @@
 /**
- * The variants re-chosen at a rest (Circle of the Land's terrain, Starry Form's
- * constellation, Fire Shield's warm or chill), as the classic ResourceRail lists them
- * and the new Play screen's rest model reads them: the `rest`-frequency grant bundles
- * (the `creation` ones, such as a lineage, belong to the Bio tab), one per choice.
+ * The variant choosers a sheet offers (`choice-grant-bundle`), by when their rule lets
+ * the choice change (`GrantBundle.choiceFrequency`):
+ *
+ * - at a rest, the rest screens offer the `rest` ones (Circle of the Land's terrain,
+ *   Hunter's Prey);
+ * - the resource rail (classic) shows those, the `cast` ones (Fire Shield's warm or
+ *   chill), and a `once` choice only while it is unmade (Primal Order, an item's type),
+ *   so it can be made but not swapped; the `creation` ones (a lineage) are the Bio
+ *   tab's.
  */
 import type { GrantBundle } from "@/lib/grants";
 
@@ -17,9 +22,19 @@ export function uniqueGrantBundles(bundles: ReadonlyArray<GrantBundle>): GrantBu
   });
 }
 
-/** The rest-frequency variants, one per choice. */
+/** The choices re-made at a rest, one per choice. */
 export function restGrantBundles(bundles: ReadonlyArray<GrantBundle>): GrantBundle[] {
   return uniqueGrantBundles(
     bundles.filter((bundle) => bundle.choiceFrequency === "rest")
+  );
+}
+
+/** The choosers the resource rail shows, one per choice. */
+export function railGrantBundles(bundles: ReadonlyArray<GrantBundle>): GrantBundle[] {
+  return uniqueGrantBundles(bundles).filter(
+    (bundle) =>
+      bundle.choiceFrequency === "rest" ||
+      bundle.choiceFrequency === "cast" ||
+      (bundle.choiceFrequency === "once" && bundle.selected === null)
   );
 }

@@ -57,31 +57,36 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
   }
   await expect(dialog).toHaveCount(0);
   // The confirmation toast can be gone by the time a slow runner looks: the slot spent
-  // and the effect on the target are what count; the toast is checked softly.
+  // and the effect on the target are what count; the toast is checked softly. A spell
+  // with a costly component shows that note in the same toast slot instead.
   await expect
     .soft(
       page
         .locator("[role=status]")
-        .filter({ hasText: new RegExp(`${spell} used`) })
+        .filter({ hasText: new RegExp(`${spell} (used|needs)`) })
         .first()
     )
     .toBeVisible({ timeout: 3_000 });
 }
 
-/** Whether the sheet's Conditions panel lists an effect by name (opens and closes it). */
+/** Whether the sheet's Effects panel lists an effect by name (opens and closes it).
+ *  What an ally cast on the character sits under «Effects» (#903). */
 async function showsEffect(page: Page, name: string): Promise<boolean> {
   await page
-    .getByRole("button", { name: /Conditions/ })
+    .getByRole("button", { name: /Effects/ })
     .first()
     .click();
   const panel = page
     .getByRole("dialog")
-    .or(page.locator("[aria-label='Conditions']"))
+    .or(page.locator("[aria-label='Effects']"))
     .last();
+  // `isVisible` never waits (its timeout is ignored): wait for the effect to arrive
+  // from the other player's sheet, up to 10 s, before saying it is not there.
   const found = await panel
     .getByText(name)
     .first()
-    .isVisible({ timeout: 10_000 })
+    .waitFor({ state: "visible", timeout: 10_000 })
+    .then(() => true)
     .catch(() => false);
   await page.keyboard.press("Escape");
   return found;
@@ -129,8 +134,15 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   await test.step("a player rolls initiative (and starts the fight if the DM could not)", async () => {
     await openFightTab(bard);
     const roll = bard.getByRole("button", { name: "Roll initiative" });
-    if (await roll.isVisible()) {
-      await roll.click();
+    // The DM's «Roll for the missing» may roll for Catalion first: the button then
+    // goes away between the look and the click, and there is nothing left to roll.
+    const opened =
+      (await roll.isVisible()) &&
+      (await roll.click({ timeout: 5_000 }).then(
+        () => true,
+        () => false
+      ));
+    if (opened) {
       const dialog = bard.locator("dialog[open]");
       await dialog
         .getByRole("textbox")
@@ -185,14 +197,9 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
         "the DM can add a monster to the fight"
       )
       .toBeVisible({ timeout: 5_000 });
-    const pcRow = dm.locator(".f-split").getByText("Catalion di Sancaldo").first();
     await expect
       .soft(
-        dm
-          .locator(".f-split")
-          .filter({ has: pcRow })
-          .getByRole("button", { name: /damage|danni/i })
-          .first(),
+        dm.getByRole("button", { name: /^Damage and healing: Catalion/ }).first(),
         "the DM can damage a PC from the fight"
       )
       .toBeVisible({ timeout: 5_000 });

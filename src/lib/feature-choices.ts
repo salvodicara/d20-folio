@@ -155,7 +155,7 @@ export function collectGrantBundles(
     for (let i = 0; i < grants.length; i++) {
       const g = grants[i];
       if (!g || g.type !== "choice-grant-bundle") continue;
-      if ((g.choiceFrequency ?? "rest") === "creation") continue;
+      if (g.choiceFrequency === "creation") continue;
       if (seen.has(g.bundleKey)) continue;
       seen.add(g.bundleKey);
       // Key the labels under the SAME catalogue path the aggregate uses, so the
@@ -170,7 +170,7 @@ export function collectGrantBundles(
           label: grantField(bundleOptionRef(gref, o.id), "label", o.label),
         })),
         selected: bundleChoices.get(g.bundleKey) ?? null,
-        choiceFrequency: g.choiceFrequency ?? "rest",
+        choiceFrequency: g.choiceFrequency ?? "once",
       });
     }
   }

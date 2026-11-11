@@ -10,6 +10,7 @@ import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
+import { rollInitiativeFromSheet } from "@/domains/play/sheet-initiative-roll";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
@@ -75,6 +76,7 @@ import { PlayHelp } from "./PlayHelp";
 import { PlayPrepare } from "./PlayPrepare";
 import { PlayCompanions } from "./PlayCompanions";
 import { PlayScrollPick } from "./PlayScrollPick";
+import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
 
@@ -704,10 +706,15 @@ function TurnStrip({
           }}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>
-            move(
-              moves.roll(campaign.id, uid, d20, rollOffer.bonuses),
-              t("fight.rollDone", { total: d20 + rollOffer.bonus })
-            )
+            rollInitiativeFromSheet({
+              send: () =>
+                move(
+                  moves.roll(campaign.id, uid, d20, rollOffer.bonuses),
+                  t("fight.rollDone", { total: d20 + rollOffer.bonus })
+                ),
+              t,
+              locale,
+            })
           }
         />
       )}
@@ -880,7 +887,9 @@ function ActionLine({
       : row.saveDc !== undefined
         ? [
             t("play.dc", { dc: row.saveDc }),
-            row.saveAbility ? t(`abilities.${row.saveAbility}_short`) : null,
+            row.saveAbility
+              ? saveAbilityShort(row.saveAbility, row.saveAbilities, t)
+              : null,
           ]
             .filter(Boolean)
             .join(" ")

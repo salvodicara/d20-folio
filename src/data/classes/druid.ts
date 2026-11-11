@@ -434,6 +434,7 @@ export const DRUID_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-grant-bundle",
         bundleKey: "druid-land-terrain",
+        choiceFrequency: "rest",
         options: [
           {
             id: "arid",
@@ -525,6 +526,7 @@ export const DRUID_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-grant-bundle",
         bundleKey: "druid-land-terrain",
+        choiceFrequency: "rest",
         options: [
           {
             id: "arid",

@@ -108,7 +108,7 @@ import { ResourceConversions } from "./ResourceConversions";
 import { TableClockControl } from "./TableClockControl";
 import { ItemResourceRailRow } from "./ItemResourceRailRow";
 import { GrantBundleSelector } from "@/components/sheet/GrantBundleSelector";
-import { restGrantBundles } from "@/lib/play/rest-bundles";
+import { railGrantBundles } from "@/lib/play/rest-bundles";
 import { ActivatableFeaturesBar } from "./ActivatableFeaturesBar";
 import {
   WEAPON_PROFICIENCY_CATEGORIES,
@@ -302,10 +302,10 @@ export function ResourceRail() {
     [statuses, locale, character]
   );
 
-  // REST-frequency variant bundles (re-chosen each rest per RAW) — the
-  // creation-frequency ones (lineages) are owned by the Bio tab.
-  const restBundles = useMemo(
-    () => (aggregate ? restGrantBundles(aggregate.grantBundles) : []),
+  // The variant choosers the rules let you make here (src/lib/play/rest-bundles.ts):
+  // re-chosen at a rest or at each cast, or a fixed choice still unmade.
+  const railBundles = useMemo(
+    () => (aggregate ? railGrantBundles(aggregate.grantBundles) : []),
     [aggregate]
   );
 
@@ -634,7 +634,7 @@ export function ResourceRail() {
           mounted; surfaced here so its `while-active` grants can be flipped on/off
           (the section hides for characters with none, e.g. the Bard mock). ── */}
       {(aggregate.activatableGroups.length > 0 ||
-        restBundles.length > 0 ||
+        railBundles.length > 0 ||
         concentration) && (
         <RailSection rubric={t("character.activeFeatures")}>
           <div className="flex flex-col gap-2">
@@ -665,14 +665,13 @@ export function ResourceRail() {
                 }
               />
             )}
-            {/* AX exposure audit — REST-frequency variant choosers (Starry Form
-                constellation, Circle of the Land terrain, Fire Shield warm/chill)
-                previously had NO play-surface affordance (only the level-up modal
-                mounted the selector). RAW re-picks them on a rest, so they live
-                with the Active Features toggles. Reuses the ONE selector. */}
-            {restBundles.length > 0 && (
+            {/* The variant choosers the rules let you make on play (Circle of the
+                Land terrain at a rest, Fire Shield warm/chill at each cast, a fixed
+                choice still unmade), with the Active Features toggles. Reuses the
+                ONE selector. */}
+            {railBundles.length > 0 && (
               <GrantBundleSelector
-                bundles={restBundles}
+                bundles={railBundles}
                 locale={locale}
                 onSelect={(key, optionId) =>
                   useCharacterStore.getState().setGrantBundleChoice(key, optionId)

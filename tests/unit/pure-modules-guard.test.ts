@@ -151,8 +151,11 @@ function resolveImport(fromFile: string, spec: string): string | null {
   return null;
 }
 
+const DIRECT_CACHE = new Map<string, string[]>();
 /** A file's DIRECT in-`src` import targets (resolved + memoized per file). */
 function directImports(file: string): string[] {
+  const memo = DIRECT_CACHE.get(file);
+  if (memo !== undefined) return memo;
   const out: string[] = [];
   const importRegex = /from\s+["']([^"']+)["']/g;
   const source = read(file);
@@ -163,7 +166,26 @@ function directImports(file: string): string[] {
     const resolved = resolveImport(file, spec);
     if (resolved) out.push(resolved);
   }
+  DIRECT_CACHE.set(file, out);
   return out;
+}
+
+const OFFENDER_CACHE = new Map<string, string[]>();
+/** A file's value-import lines that pull Firebase (type-only imports are erased),
+ *  scanned once per file however many trees reach it. */
+function firebaseLines(file: string): string[] {
+  const memo = OFFENDER_CACHE.get(file);
+  if (memo !== undefined) return memo;
+  const lines = read(file)
+    .split("\n")
+    .filter(
+      (line) =>
+        !/^\s*(?:import|export)\s+type\b/.test(line) &&
+        FORBIDDEN_IMPORT_PATTERNS.some((pattern) => pattern.test(line))
+    )
+    .map((line) => line.trim());
+  OFFENDER_CACHE.set(file, lines);
+  return lines;
 }
 
 /**
@@ -339,41 +361,38 @@ describe("R2 — lib/views presenter layer is framework-free (no React/stores/Fi
   }
 });
 
-describe("test files don't transitively import Firebase (CI-safety guard)", () => {
-  const testFiles = listTestFiles(TESTS_UNIT);
-  for (const testFile of testFiles) {
-    const relPath = testFile.replace(REPO_ROOT + "/", "");
-    it(`${relPath} has no Firebase imports (or mocks them via vi.mock)`, () => {
-      const testSource = read(testFile);
-      if (mocksFirebase(testSource)) return; // Explicitly mocked → safe in CI.
-      const reached = collectTransitiveImports(testFile);
-      const offenders: { file: string; line: string }[] = [];
-      for (const file of reached) {
-        const source = read(file);
-        for (const line of source.split("\n")) {
-          // Type-only imports are erased at compile time and can never pull
-          // the Firebase runtime into CI; only value imports crash it.
-          if (/^\s*(?:import|export)\s+type\b/.test(line)) continue;
-          for (const pattern of FORBIDDEN_IMPORT_PATTERNS) {
-            if (pattern.test(line)) {
-              offenders.push({
-                file: file.replace(REPO_ROOT + "/", ""),
-                line: line.trim(),
-              });
-            }
-          }
-        }
-      }
-      if (offenders.length > 0) {
-        const lines = offenders.map((o) => `  ${o.file}: ${o.line}`).join("\n");
-        throw new Error(
-          `Test ${relPath} transitively imports Firebase; this crashes CI with auth/invalid-api-key.\n` +
-            `Offending imports:\n${lines}\n\n` +
-            `Fix: import the pure helper instead (see src/lib/strip-undefined.ts as a template), ` +
-            `or add vi.mock("@/lib/firebase") at the top of the test.`
+// The first tree a worker walks reads most of /src cold; under a loaded CI runner
+// that alone took 7 s (2026-11-11). Every later tree is served from the caches.
+describe(
+  "test files don't transitively import Firebase (CI-safety guard)",
+  { timeout: 20_000 },
+  () => {
+    const testFiles = listTestFiles(TESTS_UNIT);
+    for (const testFile of testFiles) {
+      const relPath = testFile.replace(REPO_ROOT + "/", "");
+      it(`${relPath} has no Firebase imports (or mocks them via vi.mock)`, () => {
+        const testSource = read(testFile);
+        if (mocksFirebase(testSource)) return; // Explicitly mocked → safe in CI.
+        const reached = collectTransitiveImports(testFile);
+        // Type-only imports are erased at compile time and can never pull the
+        // Firebase runtime into CI; only value imports crash it (`firebaseLines`).
+        const offenders = [...reached].flatMap((file) =>
+          firebaseLines(file).map((line) => ({
+            file: file.replace(REPO_ROOT + "/", ""),
+            line,
+          }))
         );
-      }
-      expect(offenders).toEqual([]);
-    });
+        if (offenders.length > 0) {
+          const lines = offenders.map((o) => `  ${o.file}: ${o.line}`).join("\n");
+          throw new Error(
+            `Test ${relPath} transitively imports Firebase; this crashes CI with auth/invalid-api-key.\n` +
+              `Offending imports:\n${lines}\n\n` +
+              `Fix: import the pure helper instead (see src/lib/strip-undefined.ts as a template), ` +
+              `or add vi.mock("@/lib/firebase") at the top of the test.`
+          );
+        }
+        expect(offenders).toEqual([]);
+      });
+    }
   }
-});
+);

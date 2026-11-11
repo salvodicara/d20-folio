@@ -33,6 +33,19 @@ import {
   type EncounterPcSeed,
 } from "./encounter";
 
+/**
+ * Who may move the turn (pass or step back): the DM, the player whose turn it is, and in
+ * a fight a roll started (one with a `clock`) anyone at the table. The one rule the
+ * classic Party, the Scontro tab and the turn transaction all ask.
+ */
+export function mayStepTurn(
+  encounter: EncounterState,
+  caller: { uid: string | undefined; isDm: boolean }
+): boolean {
+  if (caller.isDm || encounter.clock !== undefined) return true;
+  return caller.uid !== undefined && encounter.currentCombatantId === `pc-${caller.uid}`;
+}
+
 /** How long a fight may go with nothing happening before it ends by itself. */
 export const IDLE_END_MS = 60 * 60_000;
 

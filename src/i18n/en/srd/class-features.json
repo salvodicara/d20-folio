@@ -700,6 +700,15 @@
     "description": "You can take the Disengage action as a Bonus Action. If you spend 1 Focus Point when you do so, you can also take the Dodge action as part of that Bonus Action.",
     "name": "Patient Defense"
   },
+  "monk-patient-defense.grants.0": {
+    "label": "Patient Defense"
+  },
+  "monk-patient-defense.grants.0.grants.0": {
+    "description": "Attacks against you have Disadvantage (Dodge)"
+  },
+  "monk-patient-defense.grants.0.grants.1": {
+    "description": "Dexterity saving throws (Dodge)"
+  },
   "monk-patient-defense.mechanics.actions.0": {
     "description": "Disengage as a Bonus Action without spending Focus.",
     "label": "Patient Defense",
@@ -807,6 +816,12 @@
   "paladin-channel-divinity": {
     "description": "You can channel divine energy to fuel magical effects. You start with Divine Sense as a Channel Divinity option. You have 2 uses, regain one on a Short Rest, and regain all on a Long Rest. You gain an additional use at level 11.",
     "name": "Channel Divinity"
+  },
+  "paladin-channel-divinity.grants.0": {
+    "label": "Divine Sense"
+  },
+  "paladin-channel-divinity.mechanics.actions.0": {
+    "description": "Sense Celestials, Fiends and Undead for 10 minutes."
   },
   "paladin-devotion-aura-of-devotion": {
     "description": "You and friendly creatures within 10 feet of you can't be charmed while you are conscious. At 18th level, the range increases to 30 feet.",

@@ -135,6 +135,7 @@ vi.mock("@/lib/storage", () => ({
   deleteCampaignBanner: vi.fn(() => Promise.resolve()),
 }));
 
+import { conc } from "./__helpers__/concentration";
 import {
   advanceEncounterTurn,
   appendPersistentCombatEffect,
@@ -154,6 +155,7 @@ import {
   undoTreasuryEntry,
   updateCampaign,
   writeCampaignCombatEffect,
+  endPeerConcentration,
   deliverDamageTransfers,
   removeMember,
   revokePersistentCombatEffect,
@@ -2381,4 +2383,51 @@ describe("a hit from another device records what it spent (the spends ledger)", 
     expect(writes.has(SPENDS)).toBe(false);
     expect(writes.get(STATE)).toMatchObject({ hp: { current: 20, temp: 0 } });
   });
+
+  it("a state that ends Concentration on another PC appends its end to the ledger", async () => {
+    const doc = makeCharacterDoc({}, { concentration: conc("bless") });
+    hydrateTarget.mockResolvedValueOnce(doc);
+    const writes = transaction(null);
+    const entries = await endPeerConcentration("a", "char-a");
+    expect(entries).toEqual([
+      expect.objectContaining({
+        kind: "concentration-end",
+        spell: doc.session.concentration,
+      }),
+    ]);
+    expect(writes.get(SPENDS)?.entries).toEqual(entries);
+  });
+
+  it("with the ledger off, ending another PC's Concentration writes nothing", async () => {
+    vi.stubEnv("VITE_PEER_SPENDS_LEDGER", "");
+    expect(await endPeerConcentration("a", "char-a")).toEqual([]);
+    expect(runTransactionMock).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["with this release's rules, reads", "true", true],
+    ["without them, leaves out", "", false],
+  ])(
+    "a hit %s the effects the campaign left on the target out of a fight",
+    async (_label, v26, reads) => {
+      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", v26);
+      getDocMock
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({ attachedCampaignId: "camp-1" }),
+        })
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({ gameClock: { minute: 5 } }),
+        });
+      if (reads) getDocsMock.mockResolvedValueOnce({ docs: [] });
+      hydrateTarget.mockResolvedValueOnce(warded());
+      transaction(null);
+      await hit(10);
+      const effectsRead = collectionMock.mock.calls.some(
+        (call) => call.slice(1).join("/") === "campaigns/camp-1/effects"
+      );
+      expect(effectsRead).toBe(reads);
+    }
+  );
 });

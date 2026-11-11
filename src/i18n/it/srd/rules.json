@@ -13,14 +13,15 @@
   },
   "travel-pace.fast": {
     "name": "Veloce",
-    "effect": "−5 alla Percezione passiva."
+    "effect": "Svantaggio alle prove di Saggezza (Percezione o Sopravvivenza)."
   },
   "travel-pace.normal": {
-    "name": "Normale"
+    "name": "Normale",
+    "effect": "Svantaggio alle prove di Destrezza (Furtività)."
   },
   "travel-pace.slow": {
     "name": "Lenta",
-    "effect": "Può muoversi furtivamente."
+    "effect": "Vantaggio alle prove di Saggezza (Percezione o Sopravvivenza)."
   },
   "mounted.eligible-mount": {
     "name": "Cavalcatura Idonea",

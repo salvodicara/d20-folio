@@ -63,6 +63,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-alter-self",
+            choiceFrequency: "cast",
             options: [
               {
                 id: "aquatic-adaptation",
@@ -308,6 +309,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-enhance-ability",
+            choiceFrequency: "cast",
             options: [
               {
                 id: "str",
@@ -368,6 +370,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
           {
             type: "choice-grant-bundle",
             bundleKey: "spell-enlarge-reduce",
+            choiceFrequency: "cast",
             options: [
               {
                 id: "enlarge",
@@ -945,6 +948,14 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     duration: { kind: "hours", amount: 8 },
     effectTag: "control",
     saveAbility: "WIS",
+    // 2024: Charmed for the duration or until you or your allies damage it.
+    conditionApplication: {
+      ends: [{ on: "target-damaged", by: "actor-side" }],
+      options: ["charmed"],
+      on: "failed-save",
+      lifetime: timedConditionLifetime(8 * 60),
+    },
+    targeting: { affinity: "enemy", maxTargets: 1 },
     source: "SRD",
   },
   {

@@ -26,16 +26,14 @@ import { Switch } from "@/components/ui/selection";
 import { CopyButton } from "@/components/shared/CopyButton";
 import { ShareButton } from "@/components/shared/ShareButton";
 import { InfoCard } from "@/components/shared/InfoCard";
-import { useToastStore } from "@/stores/toastStore";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
-import { setJoinsLocked } from "@/features/campaigns/campaign-io";
+import { setInviteLocked } from "@/domains/campaign/campaign-admin";
 import { inviteLinkFromCode } from "@/features/campaigns/invite-code";
 
 export function CampaignInvite({ canManage }: { canManage: boolean }) {
   const { t } = useTranslation();
   const campaign = useCampaignStore((s) => s.campaign);
-  const setCampaign = useCampaignStore((s) => s.setCampaign);
   if (!campaign) return null;
 
   const inviteLink = inviteLinkFromCode(campaign.inviteCode);
@@ -46,13 +44,7 @@ export function CampaignInvite({ canManage }: { canManage: boolean }) {
   // link (moved here from DM Tools so it sits with the link it disables). Optimistic store
   // flip + persisted write + a confirming toast; current members are unaffected.
   function toggleJoinsLocked(next: boolean): void {
-    if (!campaign) return;
-    setCampaign({ ...campaign, joinsLocked: next });
-    void setJoinsLocked(campaign.id, next);
-    useToastStore.getState().showToast({
-      message: t(next ? "campaignHub.joinsLockedToast" : "campaignHub.joinsOpenedToast"),
-      duration: 3000,
-    });
+    setInviteLocked(next, t);
   }
 
   return (

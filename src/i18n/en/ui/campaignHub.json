@@ -34,7 +34,6 @@
     "editBanner": "Change art",
     "chronicleEmpty": "No chronicle yet. Record what befell the party; everyone at the table can add to the story.",
     "chronicleWriteFirst": "Write the first entry",
-    "chronicleLastEdited": "Last written {{when}}",
     "chronicleLastEditedBy": "Last written by {{name}} · {{when}}",
     "chronicleAuthorSelf": "you",
     "chronicleWipeTitle": "Remove this much of the story?",

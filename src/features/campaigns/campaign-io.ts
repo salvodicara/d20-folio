@@ -55,7 +55,11 @@ import { db } from "@/lib/firebase";
 // function hid the literal from the optimizer). Tests keep the live, mockable binding.
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
 import { removeCombatant, parseEncounterState } from "@/features/campaigns/encounter";
-import { passTurn, turnBack } from "@/features/campaigns/encounter-lifecycle";
+import {
+  mayStepTurn,
+  passTurn,
+  turnBack,
+} from "@/features/campaigns/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
 import { peerDamageHit, peerHit } from "@/lib/play/peer-damage";
@@ -729,16 +733,6 @@ export async function advanceEncounterTurn(
     });
     return next.currentCombatantId;
   });
-}
-
-/** Who may move the turn: the DM, the player whose turn it is, and in a lifecycle fight
- *  (one with a clock, owner 2026-10-23) anyone at the table. */
-function mayStepTurn(
-  encounter: EncounterState,
-  caller: { uid: string | undefined; isDm: boolean }
-): boolean {
-  if (caller.isDm || encounter.clock !== undefined) return true;
-  return encounter.currentCombatantId === `pc-${caller.uid}`;
 }
 
 /** A lifecycle fight's clock after a pass or a step back (none for a hand-run fight). */

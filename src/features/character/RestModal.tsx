@@ -16,9 +16,15 @@
  * to that legacy flow alone.
  */
 
-import { hitDiceLabel, hitDicePool, hitDiceTotalRange } from "@/lib/play/hit-dice";
+import {
+  hitDiceLabel,
+  hitDiceLeft,
+  hitDicePool,
+  hitDiceTotal,
+  hitDiceTotalRange,
+} from "@/lib/play/hit-dice";
+import { shortRestHeal as shortRestHealFor } from "@/lib/play/short-rest-healing";
 import { useState, useMemo, useId } from "react";
-import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
 import {
   Moon,
@@ -113,16 +119,15 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const restCharacter = character;
   const { character: charData, session } = restCharacter;
   const restEligible = canCharacterRest(restCharacter.status, session);
-  const level = totalLevel(charData);
   // A multiclass pool mixes die sizes (Fighter d10s + Wizard d6s).
   const hitDice = hitDicePool(charData);
   const hitDieSizes = hitDiceLabel(hitDice).sizes;
   const hitDiceText = (count: number) =>
     hitDiceLabel(hitDice, count).dice ??
     t("rest.hitDiceMixed", { count, sizes: hitDieSizes });
-  const hitDiceMax = charData.hitDiceTotalOverride ?? level;
+  const hitDiceMax = hitDiceTotal(charData);
   const hitDiceUsed = session.hitDice.used;
-  const hitDiceAvailable = Math.max(0, hitDiceMax - hitDiceUsed);
+  const hitDiceAvailable = hitDiceLeft(charData, session);
   const hpCurrent = session.hp.current;
   // D1 — rest restores up to the EFFECTIVE max (stored base + hp-flat boons + Aid),
   // matching the store's `longRest`/`applyHealing` clamp, so the summary readout +
@@ -142,19 +147,14 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   );
   // The total is checked against the largest dice the pool holds.
   const rollRange = hitDiceTotalRange(hitDice, hitDiceToSpend);
-  const roll = Number(diceTotal);
-  const rollValid =
-    diceTotal.trim() !== "" &&
-    Number.isInteger(roll) &&
-    roll >= rollRange.min &&
-    roll <= rollRange.max;
+  // The engine's heal, the same as the Play screen's: the entered roll plus CON per
+  // die, and the items that change Hit Point Dice healing (Periapt of Wound Closure).
+  const { heal: shortRestHeal, valid: rollValid } = shortRestHealFor(
+    restCharacter,
+    hitDiceToSpend,
+    diceTotal
+  );
   const diceCountValid = hitDiceToSpend <= hitDiceAvailable;
-  const shortRestHeal =
-    hitDiceToSpend === 0
-      ? 0
-      : rollValid
-        ? Math.max(hitDiceToSpend, roll + hitDiceToSpend * conMod)
-        : null;
   const hpAfterRest =
     shortRestHeal === null ? null : Math.min(hpCurrent + shortRestHeal, hpMax);
 

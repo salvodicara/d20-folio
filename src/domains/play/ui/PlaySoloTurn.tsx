@@ -4,17 +4,21 @@
  * «Inizia il combattimento» while exploring; then the round, the lit «Fine Turno»
  * (BG3's End Turn at the end of the action area), «Rialzati» when Prone, and
  * «Fine Combattimento» tucked behind a confirm (D&D Beyond's End Combat behind NEXT).
- * What End Turn hands back waits under the strip as notes, each with its one action:
- * a maintained state to keep or end (Rage), the extra turn on offer, the Time Stop
- * turns to enter, the Wish follow-up, the ammunition to recover after the fight.
+ * A maintained state not kept going this turn (Rage) is asked about BEFORE the turn
+ * ends (BG3), so «Extend (Bonus Action)» spends this turn's Bonus Action; once each is
+ * answered the turn ends. Under the strip wait the other notes, each with its one
+ * action: the extra turn on offer, the Time Stop turns to enter, the Wish follow-up,
+ * the ammunition to recover after the fight.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
+  canExtendWithBonus,
   endCombat,
   endMaintainedEffect,
   endTurn,
+  maintenanceDue,
   recoverAmmunition,
   setTimeStopTurns,
   standUp,
@@ -23,6 +27,8 @@ import {
   turnModelView,
   type MaintainedPrompt,
 } from "@/domains/play/turn-model";
+import { useExtendMaintained } from "@/domains/play/ui/use-extend-maintained";
+import { sheetInEncounter } from "@/features/character/center/sheet-in-encounter";
 import { TIME_STOP_ID } from "@/lib/play/extra-turns";
 import { WISH_DUPLICATE_MAX_LEVEL } from "@/lib/play/wish";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
@@ -39,6 +45,7 @@ export function useSoloTurn(locale: Locale) {
   useCombatStore((s) => s.round);
   useCombatStore((s) => s.timeStopTurns);
   useCombatStore((s) => s.reflexesTaken);
+  useCombatStore((s) => s.selected);
   const doc = useCharacterStore((s) => s.character);
   const alive = doc ? isCharacterAlive(doc.status, doc.session) : false;
   const view = turnModelView();
@@ -47,7 +54,40 @@ export function useSoloTurn(locale: Locale) {
   const [ammo, setAmmo] = useState(0);
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [turns, setTurns] = useState("");
+  const extend = useExtendMaintained(locale);
   const solo = view.mode === "solo";
+
+  // End Turn asks first; the turn ends once nothing is left to answer. A state kept
+  // without its extend action stays lit (the player owns the call): End Turn's own
+  // re-ask is dropped.
+  const askOrEnd = (left: MaintainedPrompt[]) => {
+    setPrompts(left);
+    if (left.length === 0) endTurn(t);
+  };
+  const answer = (m: MaintainedPrompt) =>
+    askOrEnd(prompts.filter((x) => x.activeKey !== m.activeKey));
+  // «Extend» commits through the economy asynchronously: the turn ends only once the
+  // Bonus Action has landed on THIS turn (a declined commit leaves the question open,
+  // and the button live to try again).
+  // Listening starts in the click itself, so a commit that lands at once is not missed.
+  const stopWaiting = useRef<(() => void) | null>(null);
+  useEffect(() => () => stopWaiting.current?.(), []);
+  const extendThenEnd = (m: MaintainedPrompt) => {
+    const landed = () => !maintenanceDue().some((x) => x.activeKey === m.activeKey);
+    const done = () => {
+      stopWaiting.current?.();
+      stopWaiting.current = null;
+      answer(m);
+    };
+    stopWaiting.current?.();
+    stopWaiting.current = useCombatStore.subscribe(() => {
+      if (landed()) done();
+    });
+    if (!extend(m.activeKey)) {
+      stopWaiting.current();
+      stopWaiting.current = null;
+    } else if (landed()) done();
+  };
   const active = solo && (fighting || view.round > 1);
 
   const controls = solo && alive && view.canStartCombat && (
@@ -67,7 +107,7 @@ export function useSoloTurn(locale: Locale) {
             kind="primary"
             icon="u-next"
             data-end-turn=""
-            onClick={() => setPrompts(endTurn(t).maintenancePrompts)}
+            onClick={() => askOrEnd(maintenanceDue())}
           >
             {t("play.endTurn")}
           </Button>
@@ -92,34 +132,41 @@ export function useSoloTurn(locale: Locale) {
 
   const notes = solo && (
     <>
-      {prompts.map((m) => (
-        <div key={m.activeKey} className="f-note f-save-due" data-c="res" role="group">
-          {/* the 2024 reason it ends (Rage: no attack and no forced save this turn) */}
-          <p>
-            {t("play.solo.endingName", { name: grantSourceLabel(m.sourceId, locale) })}
-            {m.maintainedBy.includes("attack") && ` ${t("play.solo.endingWhyAttack")}`}
-          </p>
-          <div className="f-acts">
-            <Button
-              kind="primary"
-              onClick={() => setPrompts((all) => all.filter((x) => x !== m))}
-            >
-              {m.maintainedBy.includes("bonus-extend")
-                ? t("play.solo.extendBonus")
-                : t("combat.maintainedKeepAction")}
-            </Button>
-            <Button
-              kind="ghost"
-              onClick={() => {
-                endMaintainedEffect(m.activeKey, t);
-                setPrompts((all) => all.filter((x) => x !== m));
-              }}
-            >
-              {t("play.solo.letEnd")}
-            </Button>
+      {prompts.map((m) => {
+        const bonus = m.maintainedBy.includes("bonus-extend");
+        return (
+          <div key={m.activeKey} className="f-note f-save-due" data-c="res" role="group">
+            {/* the 2024 reason it ends (Rage: no attack and no forced save this turn) */}
+            <p>
+              {t("play.solo.endingName", { name: grantSourceLabel(m.sourceId, locale) })}
+              {m.maintainedBy.includes("attack") && ` ${t("play.solo.endingWhyAttack")}`}
+            </p>
+            <div className="f-acts">
+              <Button
+                kind="primary"
+                disabled={bonus && !canExtendWithBonus(m.activeKey, locale).ok}
+                onClick={() => {
+                  if (!bonus) answer(m);
+                  // outside a running fight the economy only logs: nothing will land
+                  else if (sheetInEncounter()) extendThenEnd(m);
+                  else if (extend(m.activeKey)) answer(m);
+                }}
+              >
+                {bonus ? t("play.solo.extendBonus") : t("combat.maintainedKeepAction")}
+              </Button>
+              <Button
+                kind="ghost"
+                onClick={() => {
+                  endMaintainedEffect(m.activeKey, t);
+                  answer(m);
+                }}
+              >
+                {t("play.solo.letEnd")}
+              </Button>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
       {view.extraTurnOffer && (
         <div className="f-note f-save-due" data-c="ini" role="group">
           <p>

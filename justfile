@@ -78,6 +78,11 @@ e2e-pack:
 e2e-rehearsal *args:
     bash scripts/e2e-rehearsal.sh {{args}}
 
+# Merge app PRs the way main's ruleset requires (up to date, the 8 CI checks green on that
+# head), one after the other. A PR that needs a pack PR: scripts/lockstep-merge.sh.
+merge-pr +prs:
+    bash scripts/merge-pr.sh {{prs}}
+
 # ─── Build ────────────────────────────────────────────────
 
 # Production build
