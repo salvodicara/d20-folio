@@ -11,7 +11,7 @@
  * Runs after the classic journey: it rewrites Catalion's sheet as a Rogue 5.
  */
 import { execFileSync } from "node:child_process";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 import {
   expectNoCrash,
   PLAYER_BARD,
@@ -19,6 +19,7 @@ import {
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 

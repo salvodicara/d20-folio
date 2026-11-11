@@ -5,13 +5,14 @@
  * a hit the DM calls landing through the bond, Cutting Words as a reaction, the end
  * of the fight; Warding Bond (1 hour, no Concentration) outlives it.
  */
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 import {
   actionRow,
   expectNoCrash,
   openFightTab,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 

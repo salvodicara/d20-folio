@@ -3,8 +3,29 @@
  * as its DM (`owner@sandbox.dev`, a real Auth-emulator account); `?devActAs=<uid>`
  * presents a tab as a campaign member while the real token stays the DM's.
  */
-import { expect, type Page } from "@playwright/test";
+import { test as base, expect, type Page } from "@playwright/test";
 import { visibleWithin } from "../e2e/visible-within";
+
+/**
+ * The rehearsal's `test`: the browser contexts a test opens itself (a DM, a player)
+ * close when it ends. Playwright closes only the ones its fixtures made, so the next
+ * spec used to run beside every earlier spec's open tabs, still listening and writing.
+ */
+export const test = base.extend<{ closeOpenedContexts: undefined }>({
+  closeOpenedContexts: [
+    async ({ browser }, use) => {
+      const before = new Set(browser.contexts());
+      await use(undefined);
+      await Promise.all(
+        browser
+          .contexts()
+          .filter((context) => !before.has(context))
+          .map((context) => context.close())
+      );
+    },
+    { auto: true },
+  ],
+});
 
 export const SANDBOX_CAMPAIGN = "SANDBOX";
 export const PLAYER_BARD = "dev-player-catalion";
