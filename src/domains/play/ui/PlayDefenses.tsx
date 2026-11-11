@@ -7,6 +7,7 @@
  * (D&D Beyond's kind + type pair); one already held is offered disabled.
  */
 import { useState } from "react";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -100,7 +101,7 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
             {kind === "resistance" &&
               slots.map((slot) => (
                 <p key={slot.choiceKey} className="f-help">
-                  {`${localizeText(slot.label, locale)}: ${t("character.choiceResistanceHint")}`}
+                  {repickLine(slot, locale, t)}
                 </p>
               ))}
           </div>
@@ -119,6 +120,17 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
         ))}
     </div>
   );
+}
+
+/** When the chosen resistance can change, from the feature's own rule: «Fuoco:
+ *  Resilienza Immonda, scegli di nuovo il tipo dopo ogni Riposo Breve o Lungo.» */
+function repickLine(slot: ChoiceResistanceSlot, locale: Locale, t: TFunction): string {
+  const source = localizeText(slot.label, locale);
+  const picked = slot.picked.map((d) => t(`srd.damage_${d}`)).join(", ");
+  const rule = slot.choiceFrequency
+    ? t(`play.defense.repick.${slot.choiceFrequency}`, { source })
+    : `${source}: ${t("character.choiceResistanceHint")}`;
+  return picked ? `${picked}: ${rule}` : rule;
 }
 
 /** A chosen resistance: its pick as a chip; pressed, its options open in place. */

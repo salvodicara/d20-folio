@@ -372,6 +372,11 @@
         "immunity": "Immunity",
         "vulnerability": "Vulnerability",
         "conditionImmunity": "Condition"
+      },
+      "repick": {
+        "short-or-long-rest": "{{source}}, choose the type again after every Short or Long Rest.",
+        "long-rest": "{{source}}, choose the type again after every Long Rest.",
+        "cast": "{{source}}, choose the type each time you cast the spell."
       }
     },
     "check": {

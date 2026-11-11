@@ -372,6 +372,11 @@
         "immunity": "Immunità",
         "vulnerability": "Vulnerabilità",
         "conditionImmunity": "Condizione"
+      },
+      "repick": {
+        "short-or-long-rest": "{{source}}, scegli di nuovo il tipo dopo ogni Riposo Breve o Lungo.",
+        "long-rest": "{{source}}, scegli di nuovo il tipo dopo ogni Riposo Lungo.",
+        "cast": "{{source}}, scegli il tipo ogni volta che lanci l'incantesimo."
       }
     },
     "check": {

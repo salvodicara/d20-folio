@@ -53,6 +53,18 @@ describe("PlayDefenses", () => {
     expect(within(group).getByRole("button", { name: /Fire/ })).toBeTruthy();
   });
 
+  it("says when the chosen resistance can change, from the feature's rule", () => {
+    useCharacterStore
+      .getState()
+      .setGrantBundleChoice("warlock-fiend-patron-fiendish-resilience", "fire");
+    render(<Live />);
+    expect(
+      screen.getByText(
+        "Fire: Fiendish Resilience, choose the type again after every Short or Long Rest."
+      )
+    ).toBeTruthy();
+  });
+
   it("adds a temporary defense by kind and type, and removes it with ×", () => {
     render(<Live />);
     fireEvent.click(screen.getByRole("button", { name: "Add" }));

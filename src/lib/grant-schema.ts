@@ -486,6 +486,13 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       type: literalSchema("choice-resistance"),
     },
     {
+      // When the pick may change (the feature's own rule): after any rest, after a
+      // Long Rest, or each time the spell is cast. Absent: the rule isn't recorded.
+      choiceFrequency: unionSchema([
+        literalSchema("short-or-long-rest"),
+        literalSchema("long-rest"),
+        literalSchema("cast"),
+      ]),
       label: LOCALE_TEXT_SCHEMA,
     }
   ),

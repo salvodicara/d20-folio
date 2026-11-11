@@ -808,6 +808,8 @@ export interface ChoiceResistance {
   options: ReadonlyArray<DamageType>;
   amount: number;
   selected: ReadonlyArray<DamageType>;
+  /** When the pick may change, per the feature's rule; absent when not recorded. */
+  choiceFrequency?: "short-or-long-rest" | "long-rest" | "cast";
 }
 
 /**
@@ -3888,6 +3890,7 @@ export function evaluateGrants(
           options: g.options,
           amount: g.amount,
           selected: picks,
+          ...(g.choiceFrequency ? { choiceFrequency: g.choiceFrequency } : {}),
         });
         break;
       }
