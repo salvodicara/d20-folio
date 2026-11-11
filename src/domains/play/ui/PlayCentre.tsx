@@ -64,7 +64,8 @@ import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
-import { Art, Button, Chip, Icon, Tabs } from "@/ui";
+import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 
@@ -233,7 +234,7 @@ function ActionsPane({
   return (
     <>
       <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
-      <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+      <Filters label={t("play.filterLabel")}>
         {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
           <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
             {SHAPE[f] && (
@@ -242,7 +243,7 @@ function ActionsPane({
             {t(FILTER_KEY[f])}
           </Chip>
         ))}
-      </div>
+      </Filters>
       <TableHead />
       {actions.groups.map(({ group, rows }) => {
         const kept = rows.filter((r) => keep(group, r));
@@ -543,13 +544,13 @@ function SpellsPane({
       {managing && (
         <PlayPrepare doc={doc} locale={locale} onClose={() => setManaging(false)} />
       )}
-      <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+      <Filters label={t("play.filterLabel")}>
         {filters.map((f) => (
           <Chip key={String(f)} pressed={filter === f} onClick={() => setFilter(f)}>
             {filterLabel(f)}
           </Chip>
         ))}
-      </div>
+      </Filters>
       <TableHead />
       {view.groups.map(({ level, slots, spells }) => {
         const kept = spells.filter((s) => keep(level, s));
@@ -743,6 +744,7 @@ function Playbook({
     mode: fight ? "combat" : "exploration",
     round,
   });
+  const phone = useMediaQuery("(max-width: 640px)");
   // Closed, only its line, as in the prototype (x-play .tip); open, the steps and why.
   const lines = open ? view.steps : [];
   if (view.steps.length === 0 && view.plan.length === 0) return null;
@@ -754,7 +756,8 @@ function Playbook({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <Icon name="g-compass" />
+        {/* each mock's own compass: game-icons on a laptop, Phosphor on the phone */}
+        <Icon name={phone ? "u-compass" : "g-compass"} />
         <span>{t("play.playbookTitle")}</span>
         <Icon name="u-expand" />
       </button>

@@ -860,7 +860,7 @@ window.__audit = (opts) => {
         !n.textContent.trim() ||
         !vis(p) ||
         p.closest(
-          "svg,script,style,.frz,[aria-hidden=true],.sr,.f-sr,.tabs,.f-tabs,.pills,.boxtabs"
+          "svg,script,style,.frz,[aria-hidden=true],.sr,.f-sr,.tabs,.f-tabs,.pills,.boxtabs,[data-hscroll]"
         )
       )
         continue;

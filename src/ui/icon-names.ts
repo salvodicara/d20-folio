@@ -36,6 +36,7 @@ export const ICON_NAMES = [
   "u-back",
   "u-check",
   "u-close",
+  "u-compass",
   "u-copy",
   "u-damage",
   "u-delete",
