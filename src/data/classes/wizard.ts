@@ -209,13 +209,15 @@ export const WIZARD_FEATURES: SrdClassFeatureData[] = [
     id: "wizard-scholar",
     class: "wizard",
     level: 2,
-    // 2024 RAW (wizard:main, Level 2: Scholar): Expertise in ONE of {Arcana,
-    // History, Investigation, Medicine, Nature, Religion} you're proficient in.
-    // `choice-expertise` (consumed by feat-expertise-choices.ts) offers every
-    // proficient skill — it can't constrain to the six-skill pool, but the grant
-    // kind is correct (the prior 2014 "school of magic" Arcana-expertise text
-    // was wrong, and the feature carried no grant so no picker ever surfaced).
-    grants: [{ type: "choice-expertise", amount: 1 }],
+    // SRD 5.2.1 Scholar: Expertise in ONE of these six skills you're proficient
+    // in; the picker offers only the proficient ones from the pool.
+    grants: [
+      {
+        type: "choice-expertise",
+        amount: 1,
+        options: ["arcana", "history", "investigation", "medicine", "nature", "religion"],
+      },
+    ],
     source: "SRD",
   },
   {
