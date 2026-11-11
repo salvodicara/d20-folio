@@ -15,6 +15,7 @@ import {
   type PlayCompanionAttack,
   type ReviveOffer,
 } from "@/domains/play/play-companions-view";
+import { pickSummonForm } from "@/domains/play/forms-defenses-view";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { isDead } from "@/features/character/center/target-step";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
@@ -102,6 +103,7 @@ export function PlayCompanions({ doc, locale }: { doc: CharacterDoc; locale: Loc
               })}
             </span>
           </h3>
+          {c.forms && <CompanionForms forms={c.forms} readonly={readonly} />}
           {c.fallen && !c.revive && (
             <p className="f-help">{t("play.companions.fallen")}</p>
           )}
@@ -141,6 +143,43 @@ export function PlayCompanions({ doc, locale }: { doc: CharacterDoc; locale: Loc
         />
       )}
     </>
+  );
+}
+
+/** The companion's form (Beast of the Land / Sea / Sky): the one in use as a chip;
+ *  pressed, the others open in place (the «Difese» pick's pattern). Undoable. */
+function CompanionForms({
+  forms,
+  readonly,
+}: {
+  forms: NonNullable<PlayCompanion["forms"]>;
+  readonly: boolean;
+}) {
+  const { t } = useTranslation();
+  const [open, setOpen] = useState(false);
+  const current = forms.options.find((o) => o.id === forms.selected);
+  if (readonly) return current ? <Chip>{current.label}</Chip> : null;
+  return (
+    <div className="f-chips" role="group" aria-label={t("play.companions.form")}>
+      <Chip pressed={open} onClick={() => setOpen(!open)}>
+        {`${current?.label ?? t("play.defense.choose")} ▾`}
+      </Chip>
+      {open &&
+        forms.options
+          .filter((o) => o.id !== forms.selected)
+          .map((o) => (
+            <Chip
+              key={o.id}
+              pressed={false}
+              onClick={() => {
+                pickSummonForm(forms.formKey, o.id, o.label, t);
+                setOpen(false);
+              }}
+            >
+              {o.label}
+            </Chip>
+          ))}
+    </div>
   );
 }
 

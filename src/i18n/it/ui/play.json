@@ -250,7 +250,8 @@
       "revived": "{{name}} torna in vita",
       "reviveTooLate": "Troppo tardi: la caduta risale a {{minutes}} min fa (il limite è {{limit}} min).",
       "reviveInTime": "In tempo: caduta {{minutes}} min fa, limite {{limit}} min.",
-      "reviveUnknown": "Momento della caduta sconosciuto: il limite è {{limit}} min."
+      "reviveUnknown": "Momento della caduta sconosciuto: il limite è {{limit}} min.",
+      "form": "Forma"
     },
     "down": {
       "title": "A 0 punti ferita: tiri salvezza contro la morte",
