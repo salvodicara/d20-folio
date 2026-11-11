@@ -186,10 +186,21 @@ export async function expectToast(page: Page, text: RegExp): Promise<void> {
 }
 
 /** A row of the Play screen's action list by its name, and its action button. */
+/**
+ * A name as a regex source where any space also matches a non-breaking one: the new
+ * UI ties the last two words of row names, toasts and dialog titles together
+ * («Warding\u00a0Bond»), so a typed space must not decide the match.
+ */
+export function spaced(name: string): string {
+  return name.replace(/ /g, "\\s");
+}
+
 export function actionRow(page: Page, name: string) {
   return page
     .locator(".f-act")
-    .filter({ has: page.locator(".f-row-main", { hasText: new RegExp(`^${name}`) }) })
+    .filter({
+      has: page.locator(".f-row-main", { hasText: new RegExp(`^${spaced(name)}`) }),
+    })
     .first();
 }
 
