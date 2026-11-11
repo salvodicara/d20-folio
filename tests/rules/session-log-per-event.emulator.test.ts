@@ -27,7 +27,14 @@ import {
 } from "firebase/firestore";
 
 import type { LogItem } from "@/lib/session-log";
-import { createFirestoreSessionLogStore, perEventItemDoc } from "@/lib/session-log-io";
+import { createFirestoreSessionLogStore } from "@/lib/session-log-io";
+
+/** The document a per-event item is stored as (step 3's writer will own it): the item,
+ *  stamped with the server's time. */
+const perEventItemDoc = (item: LogItem): Record<string, unknown> => ({
+  ...item,
+  serverAt: serverTimestamp(),
+});
 
 let testEnv: RulesTestEnvironment;
 
