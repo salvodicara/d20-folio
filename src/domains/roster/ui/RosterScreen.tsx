@@ -61,7 +61,8 @@ export function RosterScreen() {
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
   return (
     <>
-      <Room room="study" />
+      {/* a working page: the short band, the cards come first */}
+      <Room room="study" band />
       <main id="main" className="f-page f-roster">
         <ImportCharacterHost />
         <header className="f-ph">
