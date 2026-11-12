@@ -17,7 +17,11 @@ import { useTranslation } from "react-i18next";
 import { spells as allSpells } from "@/data/spells";
 import { isSwapIncomplete, type SpellSwapChoice } from "@/lib/spell-swap";
 import type { SrdSpellRef } from "@/types/character";
-import { spellPickVM, type SpellPickVM } from "@/lib/views/spell-pick-view";
+import {
+  byLevelThenName,
+  spellPickVM,
+  type SpellPickVM,
+} from "@/lib/views/spell-pick-view";
 import { spellName } from "@/lib/views/level-up-view";
 import { asLocale } from "@/lib/locale";
 import { SpellLevelSeal } from "./seals";
@@ -94,6 +98,7 @@ export function WizardSpellSwap({
               !knownIds.has(s.id)
           )
           .map((s) => spellPickVM(s, locale))
+          .sort(byLevelThenName(locale))
       : [];
 
   const incomplete = isSwapIncomplete(value);

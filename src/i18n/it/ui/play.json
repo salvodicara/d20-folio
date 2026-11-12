@@ -91,6 +91,7 @@
     "rest": {
       "short": "Riposo breve",
       "long": "Riposo lungo",
+      "inFight": "Durante uno scontro non si riposa",
       "shortTitle": "Riposo breve · 1 ora",
       "longTitle": "Riposo lungo · 8 ore",
       "spend": "Spendi i Dadi Vita",

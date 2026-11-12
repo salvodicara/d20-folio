@@ -227,6 +227,35 @@ describe("out of a fight: the party («Il gruppo»)", () => {
   it("in a fight the groups stay allies and enemies", () => {
     expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });
+
+  it("Charm Person, Hold Person and Dominate Person offer only Humanoids; an unknown type stays", () => {
+    const typed: TargetRoster = {
+      ...FIGHT,
+      rows: [
+        ...FIGHT.rows.filter((row) => row.kind === "pc"),
+        {
+          id: "m-gob1",
+          kind: "monster",
+          side: "enemy",
+          name: "Goblin",
+          creatureType: "humanoid",
+        },
+        {
+          id: "m-zomb",
+          kind: "monster",
+          side: "enemy",
+          name: "Zombie",
+          creatureType: "undead",
+        },
+        { id: "m-odd", kind: "monster", side: "enemy", name: "Shade" },
+      ],
+    };
+    for (const id of ["charm-person", "hold-person", "dominate-person"]) {
+      expect(ids(spellAction(id), typed), id).toEqual(["m-gob1", "m-odd"]);
+    }
+    // A spell with no type limit still offers the Zombie.
+    expect(ids(spellAction("command"), typed)).toContain("m-zomb");
+  });
 });
 
 describe("withSelfRecipient: Invisibility's state belongs to its target", () => {
