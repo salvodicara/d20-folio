@@ -23,7 +23,6 @@ import {
   rowAmount,
   rowConditions,
   rowNeedsTotal,
-  rowTakesState,
   setAttackOutcome,
   setMultiplier,
   sharedAttackOutcome,
@@ -195,18 +194,8 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     expect(damageTrayPlan(lay, [], ME)).toBeNull();
   });
 
-  it("a save with nothing else to apply still asks who saved (Command)", () => {
-    const command = plan(action("spell-command"));
-    expect(command).toMatchObject({
-      effect: null,
-      targets: [FOE],
-      save: { ability: "WIS", onSave: "none", bySpell: true },
-      leavesState: { on: "failed-save", name: "Command" },
-    });
-    // A failed save reads «Under Command»; a success, «No effect».
-    expect(rowTakesState(command, initialTrayRow(command, FOE))).toBe(true);
-    // Cast with no creature named, there is nobody to ask.
-    expect(damageTrayPlan(action("spell-command"), [], ME)).toBeNull();
+  it("a save with nothing else to apply opens no tray: no tap added (Command)", () => {
+    expect(damageTrayPlan(action("spell-command"), [FOE], ME)).toBeNull();
   });
 
   it("a failed save's push rides the tray (Thunderwave)", () => {
