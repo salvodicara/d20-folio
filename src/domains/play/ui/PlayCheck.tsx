@@ -21,6 +21,8 @@ import { Button, Chip, Dialog, Field, StatBadge } from "@/ui";
 import { useLocale } from "@/hooks/useLocale";
 import { keptFace, paidAdvantageFor } from "@/domains/play/paid-advantage";
 import { useCharacterStore } from "@/stores/characterStore";
+import { recordedD20Faces } from "@/lib/play/tracker-rolls";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
 
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 /** «14 + 5 = 19», with a true minus for a penalty. */
@@ -43,6 +45,10 @@ export function PlayCheck({
   const { executeAction } = useTurnEconomy();
   const entry = entries[0];
   const [faceText, setFaceText] = useState("");
+  // A recorded d20 put in place of the roll (Portent); typing another face drops it.
+  const [foretold, setForetold] = useState<{ trackerId: string; index: number } | null>(
+    null
+  );
   const [skill, setSkill] = useState(entry?.kind === "check" ? entry.skills[0]?.id : "");
   const [dc, setDc] = useState<number | undefined>(
     entry?.kind === "hide" ? entry.dc : entry?.kind === "escape" ? ESCAPE_DC : undefined
@@ -92,6 +98,8 @@ export function PlayCheck({
   const apply = () => {
     if (face === null) return;
     if (paid) paidAdvantage?.onPay(paid);
+    if (foretold && !paid)
+      useCharacterStore.getState().spendTrackerRoll(foretold.trackerId, foretold.index);
     if (entry.kind === "check") {
       executeAction(withCheckResult(action, { skill: skillId, face, bonus }, dc));
     } else {
@@ -188,11 +196,34 @@ export function PlayCheck({
           autoFocus
           className="f-in f-in-big f-in-short"
           value={faceText}
-          onChange={(e) => setFaceText(e.target.value)}
+          onChange={(e) => {
+            setFaceText(e.target.value);
+            setForetold(null);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter") apply();
           }}
         />
+        {!paid && doc && recordedD20Faces(doc).length > 0 && (
+          <div className="f-chips" role="group" aria-label={t("play.down.foretold")}>
+            {recordedD20Faces(doc).map((r) => {
+              const on =
+                foretold?.trackerId === r.trackerId && foretold.index === r.index;
+              return (
+                <Chip
+                  key={`${r.trackerId}:${String(r.index)}`}
+                  pressed={on}
+                  onClick={() => {
+                    setFaceText(String(r.face));
+                    setForetold(on ? null : { trackerId: r.trackerId, index: r.index });
+                  }}
+                >
+                  {`${grantSourceLabel(r.trackerId, locale)} ${String(r.face)}`}
+                </Chip>
+              );
+            })}
+          </div>
+        )}
         {paid && (
           <Field
             label={t("combat.d20SecondAria")}

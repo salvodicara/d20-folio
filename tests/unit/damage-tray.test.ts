@@ -458,3 +458,25 @@ describe("one total per target when each target took its own share", () => {
     for (const a of areas) expect(plan(a, FOES).perTarget, a.id).toBeUndefined();
   });
 });
+
+describe("the tray says what to roll", () => {
+  // The Potion of Healing (on 7 live sheets): «Roll 2d4+2 at the table», so the
+  // player never forgets the +2.
+  it("a healing potion's tray carries its formula", () => {
+    const rogue = makeCharacterDoc({
+      classes: [{ classId: "rogue", level: 3 }],
+      equipment: [{ srdId: "potion-of-healing", quantity: 1 }],
+    });
+    const potion = localizeActions(rogue, "en").find(
+      (a) => a.id === "item-potion-of-healing"
+    );
+    if (!potion) throw new Error("no potion row");
+    expect(damageTrayPlan(potion, [], ME)?.dice).toBe("2d4+2");
+  });
+
+  it("a damage spell's tray carries its dice", () => {
+    expect(plan(action("spell-fireball"), FOES).dice).toBe(
+      action("spell-fireball").summary.damage
+    );
+  });
+});

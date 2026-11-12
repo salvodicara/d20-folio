@@ -222,9 +222,12 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
               {...(form.totalInvalid
                 ? { error: t("play.trayTotalHint") }
                 : {
+                    // What to roll at the table (a potion's 2d4+2), when the use says.
                     help: plan.dieFloor
                       ? `${t("play.trayTotalHint")} · ${floorRule(plan.dieFloor, t)}`
-                      : t("play.trayTotalHint"),
+                      : plan.dice
+                        ? t("combat.damageTray.totalHintDice", { dice: plan.dice })
+                        : t("play.trayTotalHint"),
                   })}
               onChange={(e) => setTotal(e.target.value)}
               onKeyDown={(e) => {

@@ -14,25 +14,30 @@
 # update-branch`), its checks are awaited on the new head and the pair is verified
 # again; the same happens if main moves while Verify runs. At most 4 rounds.
 #
-# The app PR names its pack PR with a line in its body:   Pack: #114
+# The app PR names its pack PR with ONE line in its body:   Pack: #114
+# (two or more refuse, unless the pack PR is passed as the second argument).
 #
-# Usage: scripts/lockstep-merge.sh <app PR number>
+# Usage: scripts/lockstep-merge.sh <app PR number> [pack PR number]
 # Needs: gh (authenticated with access to both repos). Never touches production.
 set -euo pipefail
 
 APP_REPO="salvodicara/d20-folio"
 PACK_REPO="salvodicara/d20-folio-content"
-app="${1:?usage: lockstep-merge.sh <app PR number>}"
+app="${1:?usage: lockstep-merge.sh <app PR number> [pack PR number]}"
+# shellcheck source=lib/lockstep-pack.sh
+source "$(dirname "$0")/lib/lockstep-pack.sh"
 
 body="$(gh pr view "$app" --repo "$APP_REPO" --json body --jq .body)"
-pack="$(grep -oE '^Pack: #[0-9]+' <<<"$body" | head -1 | grep -oE '[0-9]+' || true)"
-if [ -z "$pack" ]; then
-  echo "✗ #$app names no pack PR (add a line 'Pack: #<number>' to its description)." >&2
-  exit 1
-fi
+# Exactly one pack: a body with two `Pack:` lines (one pasted from another PR) once
+# paired an app with the wrong pack (2026-11-12).
+pack="$(resolve_pack_pr "$body" "${2:-}")" || exit 1
 branch="$(gh pr view "$app" --repo "$APP_REPO" --json headRefName --jq .headRefName)"
 packBranch="$(gh pr view "$pack" --repo "$PACK_REPO" --json headRefName --jq .headRefName)"
 echo "App #$app (branch $branch) ↔ pack #$pack (branch $packBranch)"
+
+# The pack PR must pass what the pack's pre-commit checks (a changeset, formatted
+# files), even if a commit was made without the hook.
+"$(dirname "$0")/pack-pr-check.sh" "$pack" || exit 1
 
 behindMain() { # repo, branch → commits the branch lacks from that repo's main
   local main

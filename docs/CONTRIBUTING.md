@@ -20,6 +20,9 @@ the exact Node and pnpm pins; use it in a fresh checkout or worktree. In a workt
 `content-pack` its own pack worktree (`.pack-wt/<name>` in the main checkout, git-ignored, from the pack's
 `origin/main`), so a lane switching branches never changes the pack under another lane's tests;
 the shared pack checkout stays on `main`, and pack PR branches live in their own pack worktrees.
+It also installs the pack's pre-commit: the pack repo has no toolchain, so its hook lives here
+(`scripts/pack-hooks/pre-commit`: a staged changeset, the staged files formatted with the app's
+Prettier) and the pack repo's `core.hooksPath` points at the main checkout's copy.
 
 The toolchain is pinned via **asdf** (`.tool-versions`): **Node 24.16.0** (matches the Cloud
 Functions runtime) and **Temurin 25** (the JDK the Firestore emulator needs — no Homebrew JDK
@@ -237,6 +240,11 @@ commit (`verify.yml` input `pack_sha`), and only when that is green and nothing 
 meanwhile merges the pack and then the app, seconds apart. Merging either one first and
 verifying after leaves main composing a pack and an app that don't match.
 
+**Any pack PR, before it merges:** `scripts/pack-pr-check.sh <pack PR>` refuses it when what
+lands (the pack squash-merges: the PR's whole diff) adds no changeset or changes a file Prettier
+would reformat, so a commit made without the hook is caught before merge. The lockstep script
+runs it for a pair; run it by hand before merging a pack PR on its own.
+
 ## Reading order (especially for AI agents)
 
 1. **`CLAUDE.md` / `AGENTS.md`** — the short shared router, authority model, invariants, and tool
@@ -245,7 +253,7 @@ verifying after leaves main composing a pack and an app that don't match.
    data, the product brief (`docs/strategy/2026-10-16-product-brief.md`)/Design for UI, or the
    relevant operations runbook. Verify claims against code, config, git, and runtime evidence
    before acting.
-3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage (its counts are test-pinned).
+3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage; `pnpm rules:coverage` writes the counted page (never committed).
 
 ## Common recipes
 
@@ -313,8 +321,9 @@ verifying after leaves main composing a pack and an app that don't match.
 8. `pnpm changeset`. Commit; open a pull request.
 ```
 
-> **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`, checked by the
-> `rules-coverage-*` tests; a new feature lands with its row.
+> **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`; a new feature lands
+> with its row. Catalogue counts are not typed there: `pnpm rules:coverage` writes them, from the
+> same rules the `rules-coverage-*` tests check, to a page that is never committed.
 
 ### I'm fixing a bug
 

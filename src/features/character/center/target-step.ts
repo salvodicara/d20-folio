@@ -12,6 +12,7 @@ import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
 import type { CreatureType } from "@/data/types";
 import { combatResolutionSpec, shouldResolveCombatAction } from "@/lib/combat-resolution";
+import { getSpellById } from "@/data/spells";
 
 /** One creature the sheet knows about: the encounter's visible rows. */
 export interface TargetRosterRow {
@@ -148,6 +149,22 @@ export function withSelfRecipient(
   selfId: string
 ): ResolvedAction {
   const standing = action.standingEffect;
+  // A state that ends on its holder's own acts (Invisibility: "after the target makes
+  // an attack roll, deals damage, or casts a spell") belongs to the target. Cast on
+  // someone else, the caster lights none, so the caster's attack can't end it.
+  if (
+    !standing &&
+    action.activatesKey &&
+    targets.length > 0 &&
+    !targets.includes(selfId) &&
+    stateEndsOnHolderActs(action)
+  ) {
+    const rest = { ...action };
+    delete rest.activatesKey;
+    delete rest.activeDurationRounds;
+    delete rest.activeTurnBoundary;
+    return rest;
+  }
   if (!standing || !recipientStateKey(action) || !targets.includes(selfId)) return action;
   return {
     ...action,
@@ -155,4 +172,18 @@ export function withSelfRecipient(
     activeDurationRounds: standing.maxRounds,
     activeTurnBoundary: standing.turnBoundary,
   };
+}
+
+/** Whether the spell's own state ends early on its holder's acts (attack, damage, a
+ *  spell): the state of the creature it was cast on. */
+function stateEndsOnHolderActs(action: ResolvedAction): boolean {
+  const spell = action.spellId ? getSpellById(action.spellId) : undefined;
+  return (spell?.grants ?? []).some(
+    (g) =>
+      g.type === "while-active" &&
+      g.activeKey === action.activatesKey &&
+      g.duration !== undefined &&
+      "endsEarlyOn" in g.duration &&
+      (g.duration.endsEarlyOn?.length ?? 0) > 0
+  );
 }

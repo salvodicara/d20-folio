@@ -32,7 +32,15 @@ export function PlayTurnStart({
   return (
     <div className="f-turn-start" role="group" aria-label={t("play.turnStart")}>
       {notes.map((note) => {
-        const name = grantSourceLabel(note.sourceId, locale);
+        const name =
+          note.kind === "burning" ? "" : grantSourceLabel(note.sourceId, locale);
+        // Burning: its damage at the turn's start, entered in «Danni e cure» (no roll)
+        if (note.kind === "burning")
+          return (
+            <p key={note.id} className="f-note" data-c="ini">
+              {t("play.fire.turnStart", { dice: note.dice })}
+            </p>
+          );
         if (note.kind === "death-strike")
           return (
             <p key={note.id} className="f-note" data-c="ini">

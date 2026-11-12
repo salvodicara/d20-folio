@@ -10,6 +10,7 @@ import {
   type Status,
 } from "@/lib/status";
 import { castSourceActiveKey, potionTimerKey } from "@/lib/smart-tracker";
+import { OUT_OF_AURA_PREFIX } from "@/lib/play/aura-source";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
@@ -62,6 +63,12 @@ describe("deriveStatuses — one read of today's status fields", () => {
 
   it("is empty when nothing is active", () => {
     expect(deriveStatuses(scenario("scn-barbarian-extra-attack"))).toEqual([]);
+  });
+
+  it("standing outside a paladin's aura is where the character is, not a status", () => {
+    const doc = scenario("scn-barbarian-extra-attack");
+    doc.session.activeFeatures = [`${OUT_OF_AURA_PREFIX}pal`];
+    expect(deriveStatuses(doc)).toEqual([]);
   });
 
   it("reads Rage as a round countdown that maintenance, its triggers and a short rest end", () => {
