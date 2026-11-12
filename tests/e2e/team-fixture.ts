@@ -11,6 +11,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { DEV_HERO_NAMES } from "../../src/lib/dev-hero-names";
 
 const TEAM_DIR = resolve(
   dirname(fileURLToPath(import.meta.url)),
@@ -28,10 +29,13 @@ export function teamFixtureFile(role: string): string | null {
   return key ? resolve(TEAM_DIR, `${key}.json`) : null;
 }
 
-/** The role's stored character name, or null when the pack is absent. */
+/** The name the role's sheet SHOWS in dev (the made-up DEV_HERO_NAMES, never the
+ *  player's real character name), or null when the pack is absent. */
 export function teamFixtureName(role: string): string | null {
   const file = teamFixtureFile(role);
   if (!file || !existsSync(file)) return null;
+  const shown = DEV_HERO_NAMES[role];
+  if (shown) return shown;
   const parsed = JSON.parse(readFileSync(file, "utf8")) as {
     build?: { name?: string };
   };

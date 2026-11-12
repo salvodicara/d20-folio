@@ -17,6 +17,7 @@ import type { CharacterDoc } from "@/types/character";
 import { applyCombatToSession } from "@/lib/combat-state";
 import { packFixtures } from "@pack";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
+import { DEV_HERO_NAMES } from "@/lib/dev-hero-names";
 
 /** Route-id prefix that maps to a team fixture by its role (`team-bard`). */
 const DEV_FIXTURE_PREFIX = "team-";
@@ -43,20 +44,9 @@ function fixtureName(id: string): string {
   return `${ROLE_KEY}${role}`;
 }
 
-/**
- * The made-up name each role's sheet shows in dev. The fixtures are real players'
- * characters, and the dev screens reach every screenshot a session takes, so a live
- * character's name never shows (owner, 2026-11-12). The bard and the paladin keep the
- * names the dev campaign's member snapshots already use for them.
- */
-export const DEV_HERO_NAMES: Readonly<Record<string, string>> = {
-  barbarian: "Torva Rocciadura",
-  bard: "Coralino di Sanvaldo",
-  monk: "Kai Ventoquieto",
-  paladin: "Bren Ironbeard of the Thunderhold",
-  rogue: "Nessa Mezzanotte",
-  wizard: "Ilario Lumevera",
-};
+// The made-up name each role's sheet shows in dev: its own dependency-free module, so
+// the e2e specs read the same names the screens show.
+export { DEV_HERO_NAMES } from "@/lib/dev-hero-names";
 
 /** True when the route id names one of the team fixtures. */
 export function isDevFixtureId(id: string): boolean {
