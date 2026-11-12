@@ -656,6 +656,10 @@
     "useHitPointDice": "{{source}}: you can spend up to {{max}} of your Hit Point Dice.",
     "rerollOffer": "{{name}}: reroll",
     "rerollOfferBonus": "{{name}}: reroll +{{bonus}}",
-    "oncePerTurnTaken": "{{name}}: already used this turn"
+    "oncePerTurnTaken": "{{name}}: already used this turn",
+    "rerollActive": "Rerolling with {{name}}: enter the new roll",
+    "rerollActiveBonus": "Rerolling with {{name}} (+{{bonus}}): enter the new roll",
+    "rerollSuccessToast": "{{name}}: Concentration maintained (total {{total}})",
+    "rerollFailureToast": "{{name}}: Concentration broken (total {{total}})"
   }
 }
