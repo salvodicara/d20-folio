@@ -78,7 +78,8 @@
       "details": "About {{name}}",
       "none": "No spell matches.",
       "unpick": "Remove",
-      "ritual": "ritual"
+      "ritual": "ritual",
+      "searchHint": "Search by name…"
     }
   }
 }
