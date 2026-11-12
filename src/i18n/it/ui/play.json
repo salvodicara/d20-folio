@@ -372,6 +372,36 @@
     },
     "roll": {
       "surprised": "Sorpreso"
+    },
+    "defense": {
+      "temporary": "temporanea",
+      "remove": "Togli {{name}}",
+      "addTitle": "Difesa temporanea",
+      "addHelp": "Da una pozione o un incantesimo: finisce quando la togli, senza toccare il personaggio.",
+      "repick": {
+        "short-or-long-rest": "{{source}}, scegli di nuovo il tipo dopo ogni Riposo Breve o Lungo.",
+        "long-rest": "{{source}}, scegli di nuovo il tipo dopo ogni Riposo Lungo.",
+        "cast": "{{source}}, scegli il tipo ogni volta che lanci l'incantesimo."
+      }
+    },
+    "check": {
+      "face": "Il d20 che hai tirato",
+      "noDc": "nessuna CD: decide il DM.",
+      "fail": "fallita contro CD {{dc}}.",
+      "ok": "riuscita contro CD {{dc}}.",
+      "hideOk": "riuscita. Sei Invisibile; chi ti cerca deve superare {{total}}.",
+      "escapeOk": "ti liberi: non sei più Afferrato.",
+      "hideWhat": "Prova di Destrezza (Furtività)",
+      "escapeWhat": "La migliore tra Atletica e Acrobazia"
+    },
+    "familiar": {
+      "summon": "Evoca"
+    },
+    "hit": {
+      "title": "Al colpo",
+      "mastery": "Padronanza",
+      "askSolo": "Hai colpito con {{name}}?",
+      "askSoloAdd": "Aggiungi al colpo:"
     }
   }
 }

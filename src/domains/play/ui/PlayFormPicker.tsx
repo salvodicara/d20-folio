@@ -8,23 +8,15 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { formPickerView, type SpeedMode } from "@/domains/play/form-picker-view";
+import { formFacts } from "@/domains/play/form-facts";
+import { formPickerView } from "@/domains/play/form-picker-view";
 import { getBeast } from "@/data/beasts";
 import { useFormActions } from "@/features/character/center/tabs/spells/use-form-actions";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { formSourceKind, selfFormRule } from "@/lib/polymorph";
-import { localeDistance } from "@/lib/utils";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Choice, Dialog, Field } from "@/ui";
-
-const SPEED_KEY: Record<SpeedMode, string> = {
-  walk: "polymorph.speedWalk",
-  fly: "character.speed_fly",
-  swim: "character.speed_swim",
-  climb: "character.speed_climb",
-  burrow: "character.speed_burrow",
-};
 
 export function PlayFormPicker({
   doc,
@@ -103,19 +95,7 @@ export function PlayFormPicker({
               >
                 <span className="f-choice-main">
                   <span className="f-row-t">{r.name}</span>
-                  <span className="f-choice-s">
-                    {[
-                      t("polymorph.crShort", { cr: r.cr }),
-                      `${t("character.armorClassShort")} ${String(r.ac)}`,
-                      `${t("units.hp")} ${String(r.hp)}`,
-                      ...r.speeds.map(
-                        (s) => `${t(SPEED_KEY[s.mode])} ${localeDistance(s.ft, locale)}`
-                      ),
-                    ]
-                      // Each fact stays on one line («Camminata 12 m»).
-                      .map((fact) => fact.replace(/ /g, " "))
-                      .join("\u00a0· ")}
-                  </span>
+                  <span className="f-choice-s">{formFacts(r, t, locale)}</span>
                 </span>
               </Choice>
             ))}
