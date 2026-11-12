@@ -16,6 +16,7 @@ import {
   isInferredFight,
 } from "@/lib/session-log";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
+import { isAttackSource } from "@/lib/session-log/attack-source";
 
 const DM = "dm-uid";
 const MIN = 60_000;
@@ -39,6 +40,32 @@ const fights = (items: LogItem[]) =>
   );
 
 describe("inferring a fight nobody started", () => {
+  it("the party's attacks with no target and nobody hurt are a fight, read from the catalogue", () => {
+    const uses = (
+      actor: string,
+      kind: "equipment" | "spell",
+      key: string
+    ): PlayEvent => ({
+      kind: "action",
+      actor,
+      slot: "action",
+      source: { srd: { kind, key, field: "name" } },
+    });
+    const items = [
+      line("heal", "ben", 0, uses("pc-ben", "spell", "cure-wounds")),
+      line("a1", "ana", 20, uses("pc-ana", "equipment", "longsword")),
+      line("b1", "ben", 21, uses("pc-ben", "spell", "fire-bolt")),
+      line("a2", "ana", 22, uses("pc-ana", "equipment", "longsword")),
+    ];
+    const read = (isAttack?: typeof isAttackSource) =>
+      buildReport(inferFights(foldSession(items, { dmUid: DM }), { isAttack })).map(
+        (s) => s.kind
+      );
+    expect(read(isAttackSource)).toEqual(["outside", "encounter"]);
+    // Without the catalogue, an untargeted use is not a blow.
+    expect(read()).toEqual(["outside"]);
+  });
+
   it("a run of attacks and damage by two players is one fight; the walk around it is not", () => {
     expect(
       fights([

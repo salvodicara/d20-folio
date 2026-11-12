@@ -7,7 +7,19 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { surveySessionReports } from "../../scripts/survey-session-reports";
+import { foldSession, inferFights } from "@/lib/session-log";
+import { isAttackSource } from "@/lib/session-log/attack-source";
+import {
+  surveySessionReports,
+  type ReportEngine,
+} from "../../scripts/survey-session-reports";
+
+/** The report's own fold and inference, as the survey's run() loads them. */
+const engine = {
+  foldSession,
+  inferFights,
+  isAttackSource,
+} as unknown as ReportEngine;
 
 const event = (by: string, e: Record<string, unknown>, extra: object = {}) => ({
   id: `${by}-${String(e.kind)}-${Math.random()}`,
@@ -179,6 +191,28 @@ describe("the session-report survey", () => {
       "5-15m": 0,
       "15-60m": 0,
       ">60m": 1,
+    });
+  });
+
+  it("counts the fights the report itself infers, and where the lines land", () => {
+    const sword = { srd: { kind: "equipment", key: "longsword", field: "name" } };
+    const at = (min: number) => ({ at: min * 60_000 });
+    const survey = surveySessionReports(
+      [
+        head([
+          event("ana", { kind: "rest", rest: "long", actor: "pc-ana" }, at(0)),
+          event("ana", { kind: "action", actor: "pc-ana", source: sword }, at(30)),
+          event("ben", { kind: "damage", amount: 4, target: "pc-ben" }, at(31)),
+          event("ben", { kind: "heal", amount: 2, target: "pc-ben" }, at(32)),
+          event("ana", { kind: "action", actor: "pc-ana", source: sword }, at(33)),
+        ]),
+      ],
+      engine
+    );
+    expect(survey).toMatchObject({
+      inferredFights: 1,
+      linesInsideInferredFights: 4,
+      linesStillOutside: 1,
     });
   });
 

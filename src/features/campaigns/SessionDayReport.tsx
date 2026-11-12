@@ -13,6 +13,7 @@ import { Icon } from "@/components/ui/icon";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { SessionLog } from "@/features/campaigns/useSessionReports";
 import { buildReport, foldSession, inferFights } from "@/lib/session-log";
+import { isAttackSource } from "@/lib/session-log/attack-source";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
   renderSessionReport,
@@ -70,7 +71,10 @@ export function SessionDayReport({
     date: date.toLocaleDateString(i18n.language),
   });
   // A fight nobody started in the app is worked out from the blows (read-time only).
-  const sections = useMemo(() => buildReport(inferFights(entries)), [entries]);
+  const sections = useMemo(
+    () => buildReport(inferFights(entries, { isAttack: isAttackSource })),
+    [entries]
+  );
   const markdown = open ? renderSessionReport(sections, title, t, names) : "";
   // The copy carries the page's notes too: one paste gives an AI the whole evening.
   const copied = open ? renderSessionReport(sections, title, t, names, { notes }) : "";

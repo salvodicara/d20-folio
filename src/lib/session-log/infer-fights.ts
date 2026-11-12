@@ -5,7 +5,8 @@
  * from the DM's open campaign page and only once someone starts an encounter.
  *
  * Read-time only, nothing is written. Among the lines outside every real fight, a run of
- * combat lines (an attack or spell on a target, damage, a creature down, a death save),
+ * combat lines (an attack or a damaging spell, even with no target, damage, a creature
+ * down, a death save),
  * each within {@link INFERRED_FIGHT_IDLE_MS} of the one before and with no rest between,
  * recorded by two players or more, is one fight. Every line inside the run's span joins
  * it (the heal between two blows belongs to the fight). A real fight's markers always
@@ -17,7 +18,16 @@
 
 import type { SessionEntry } from "./fold";
 import type { ReportSection } from "./report";
+import type { LocText } from "@/lib/loc-text";
+
 import type { PlayEvent } from "./types";
+
+export interface InferFightsOptions {
+  /** Whether an action line's name is a blow (a weapon attack, a damaging, attacking or
+   *  saving-throw spell), from the catalogue: `isAttackSource` in `attack-source.ts`.
+   *  Without it only an action with a target or a result counts. */
+  isAttack?: (source: LocText | undefined) => boolean;
+}
 
 /** Combat lines further apart than this belong to two fights (or none). From the
  *  production survey (2026-11-12, 92 gaps between combat lines): 79% under 5 minutes,
@@ -26,14 +36,18 @@ export const INFERRED_FIGHT_IDLE_MS = 15 * 60 * 1000;
 
 const PREFIX = "inferred-";
 
-function isCombatLine(event: PlayEvent): boolean {
+function isCombatLine(event: PlayEvent, options: InferFightsOptions): boolean {
   switch (event.kind) {
     case "damage":
     case "down":
     case "death-save":
       return true;
     case "action":
-      return (event.targets?.length ?? 0) > 0 || event.outcome !== undefined;
+      return (
+        (event.targets?.length ?? 0) > 0 ||
+        event.outcome !== undefined ||
+        options.isAttack?.(event.source) === true
+      );
     default:
       return false;
   }
@@ -49,7 +63,10 @@ export function isInferredFight(section: ReportSection): boolean {
  * and its lines placed in it, ready for `buildReport`. Entries in a real fight, and
  * every entry when no fight is inferred, come back unchanged.
  */
-export function inferFights(entries: readonly SessionEntry[]): SessionEntry[] {
+export function inferFights(
+  entries: readonly SessionEntry[],
+  options: InferFightsOptions = {}
+): SessionEntry[] {
   // Runs of combat lines outside real fights, as index spans into `entries`.
   const runs: { from: number; to: number; writers: Set<string>; blows: number }[] = [];
   let run: (typeof runs)[number] | null = null;
@@ -68,7 +85,7 @@ export function inferFights(entries: readonly SessionEntry[]): SessionEntry[] {
       close();
       return;
     }
-    if (!isCombatLine(event)) return;
+    if (!isCombatLine(event, options)) return;
     if (run && entry.at - lastAt > INFERRED_FIGHT_IDLE_MS) close();
     run ??= { from: index, to: index, writers: new Set(), blows: 0 };
     run.to = index;
