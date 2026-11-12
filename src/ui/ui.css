@@ -2336,6 +2336,11 @@
 .fui .f-act-why {
   color: var(--cond);
 }
+/* an attack's result chips (Hit · Miss · Critical, the damage): a line of their own
+   under the whole row, so the three results stay together beside no button */
+.fui .f-act > .encounter-feed-pick {
+  grid-column: 1 / -1;
+}
 .fui .f-row-main > .f-act-m {
   display: none;
 }
@@ -2521,6 +2526,10 @@
     grid-template-columns: subgrid;
     /* the table's gap, not the row's own (a subgrid's own gap pads its cells) */
     column-gap: normal;
+  }
+  /* on the table the result line starts under the name, after the icon's column */
+  .fui .f-sheet .f-act-table .f-act > .encounter-feed-pick {
+    grid-column: 2 / -1;
   }
 }
 /* the row button is a small capsule (14 px): the prototype's 92 px column, on the grid */

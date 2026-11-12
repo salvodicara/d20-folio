@@ -2663,7 +2663,6 @@ export function TurnEconomyProvider({
   // End Turn: the sequence is `runEndTurn` (lib/play/end-turn); this wires its
   // ports to the stores, the shared turn and this provider's toasts and prompt.
   function handleEndTurn() {
-    useAttackOutcomeStore.getState().clear();
     endTurnWithStores({
       setMaintenancePrompts,
       announce: (sourceIds) => {
