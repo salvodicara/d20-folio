@@ -47,21 +47,31 @@
   color: var(--text-primary);
 }
 
-/* The damage number beside its label: a short field, not a full-width one. */
+/* The sheet's weight: the label reads at the situation chips' strength. */
+.encounter-feed-pick[data-weight="status"] {
+  gap: 6px 8px;
+}
+.encounter-feed-pick[data-weight="status"] .encounter-feed-pick-label {
+  color: var(--text-secondary);
+}
+
+/* The damage number beside the chips: sized for three digits and its word. */
 .attack-outcome-amount {
   display: inline-block;
-  width: 5.5rem;
+  width: 6.5rem;
 }
 
 /* A finger needs about 44 px: the chips keep their compact look and grow an invisible
    hit area on touch screens. */
 @media (pointer: coarse) {
   .encounter-feed-chip,
-  .encounter-feed-pick-quiet {
+  .encounter-feed-pick-quiet,
+  .line-chip-status {
     position: relative;
   }
   .encounter-feed-chip::after,
-  .encounter-feed-pick-quiet::after {
+  .encounter-feed-pick-quiet::after,
+  .line-chip-status::after {
     content: "";
     position: absolute;
     inset: -12px -6px;
