@@ -284,8 +284,17 @@ async function probeBaseline(
 ): Promise<ProbeResult[]> {
   const probe = join(root, "scripts/lib/derived-probe.ts");
   const hooks = join(root, "scripts/lib/vite-env-hooks.mjs");
+  // The release may track its own copies: keep them, and put them back afterwards
+  // (removing them left the release checkout with two deleted files, 2026-11-12).
+  const kept = await Promise.all(
+    [probe, hooks].map((file) => readFile(file).catch(() => null))
+  );
   await copyFile(new URL("./lib/derived-probe.ts", import.meta.url), probe);
   await copyFile(new URL("./lib/vite-env-hooks.mjs", import.meta.url), hooks);
+  const restore = async (file: string, original: Buffer | null): Promise<void> => {
+    if (original) await writeFile(file, original);
+    else await rm(file, { force: true });
+  };
   try {
     await run$(
       process.execPath,
@@ -297,8 +306,8 @@ async function probeBaseline(
     );
     return JSON.parse(await readFile(outFile, "utf8")) as ProbeResult[];
   } finally {
-    await rm(probe, { force: true });
-    await rm(hooks, { force: true });
+    await restore(probe, kept[0] ?? null);
+    await restore(hooks, kept[1] ?? null);
   }
 }
 
