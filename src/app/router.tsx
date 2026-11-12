@@ -152,7 +152,12 @@ const SettingsScreen = NEW_UI
     )
   : null;
 
-// The new legal page and the unknown page, in the same build.
+// The invite link, the new legal page and the unknown page, in the same build.
+const JoinScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/campaign/ui/JoinScreen").then((m) => ({ default: m.JoinScreen }))
+    )
+  : null;
 const LegalScreen = NEW_UI
   ? lazy(() =>
       import("@/domains/legal/ui/LegalScreen").then((m) => ({ default: m.LegalScreen }))
@@ -304,6 +309,7 @@ const router = createBrowserRouter(
                 <Route path="/campaigns" element={<CampaignsScreen />} />
               )}
               {SettingsScreen && <Route path="/settings" element={<SettingsScreen />} />}
+              {JoinScreen && <Route path="/join/:code" element={<JoinScreen />} />}
               {NotFoundScreen && <Route path="*" element={<NotFoundScreen />} />}
             </Route>
           </Route>
@@ -350,7 +356,7 @@ const router = createBrowserRouter(
               element={<MemberSheetView />}
             />
             {/* Shareable invite link (#33) — auto-joins, then redirects to the hub. */}
-            <Route path="/join/:code" element={<JoinCampaignRoute />} />
+            {!JoinScreen && <Route path="/join/:code" element={<JoinCampaignRoute />} />}
             {/* Compendium */}
             {!CompendiumScreen && (
               <Route path="/compendium" element={<CompendiumPage />} />
