@@ -17,8 +17,19 @@
  * «by-hand» verdict with no test it can cite reads «unproven»; a verdict waiting on an
  * open change names what a screen will call (`waitsFor`), and turns into «re-check»
  * once a screen calls it. Entries proven only by a pack test live in the pack's own
- * verdicts file (read at run time), never here.
+ * verdicts file, never here: `content-pack/coverage/verdicts.json`, read when the pack
+ * is linked ({@link packVerdicts}).
  */
+import { existsSync, readFileSync } from "node:fs";
+
+/** The pack's verdicts file, inside the linked pack. */
+export const PACK_VERDICTS_FILE = "content-pack/coverage/verdicts.json";
+
+/** The pack's verdicts, or none when the pack is not linked or has no file. */
+export function packVerdicts(): CoverageVerdict[] {
+  if (!existsSync(PACK_VERDICTS_FILE)) return [];
+  return JSON.parse(readFileSync(PACK_VERDICTS_FILE, "utf8")) as CoverageVerdict[];
+}
 
 export type Verdict = "auto" | "by-hand" | "missing" | "impossible" | "wrong";
 
@@ -139,6 +150,8 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     verdict: "missing",
     evidence: [],
     note: "the grant is collected and shown as a note; no roll is floored to 10",
+    until: "#1093",
+    waitsFor: ["skillFaceFloorFor"],
   },
   { id: "rogue-uncanny-dodge", verdict: "auto", evidence: ["damage-stages.test.ts"] },
   // Barbarian

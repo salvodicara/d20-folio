@@ -13,6 +13,7 @@ import { getFeat } from "@/data/feats";
 
 import { aScreenCalls } from "./__helpers__/coverage-report";
 import {
+  packVerdicts,
   PUBLIC_VERDICTS,
   shownVerdict,
   type CoverageVerdict,
@@ -98,6 +99,31 @@ describe("the public verdicts file", () => {
       if (v.until) expect(v.waitsFor?.length, v.id).toBeGreaterThan(0);
       expect(shownVerdict(v, aScreenCalls), `${v.id}: re-check it`).not.toBe("re-check");
     }
+  });
+
+  // The pack's own file (composed builds only). Its messages name a row by its index,
+  // never its id: a pack id must not reach a CI log.
+  it("the pack's verdicts cite pack tests that exist and run, and none is due a re-check", () => {
+    packVerdicts().forEach((v, i) => {
+      const row = `pack verdict ${i + 1}`;
+      for (const file of v.packEvidence ?? []) {
+        const where = `content-pack/tests/unit/${file}`;
+        expect(existsSync(where), `${row}: a cited pack test is missing`).toBe(true);
+        const idle = /\.(skip|todo)\(|\bit\.fails\(/.test(readFileSync(where, "utf8"));
+        expect(idle, `${row}: a cited pack test skips`).toBe(false);
+      }
+      for (const file of v.evidence)
+        expect(existsSync(`tests/unit/${file}`), `${row}: a cited test is missing`).toBe(
+          true
+        );
+      if (v.until)
+        expect(v.waitsFor?.length ?? 0, `${row}: until without waitsFor`).toBeGreaterThan(
+          0
+        );
+      expect(shownVerdict(v, aScreenCalls) === "re-check", `${row}: re-check it`).toBe(
+        false
+      );
+    });
   });
 
   it("a verdict with no test reads unproven; a landed change reads re-check", () => {

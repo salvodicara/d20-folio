@@ -15,6 +15,7 @@ import { localizeSrd } from "@/i18n/resolver";
 
 import { aScreenCalls } from "./coverage-report";
 import {
+  packVerdicts,
   PUBLIC_VERDICTS,
   shownVerdict,
   type CoverageVerdict,
@@ -133,7 +134,9 @@ export function playedCoverage(
   extraVerdicts: readonly CoverageVerdict[] = []
 ): PlayedSection[] {
   const verdicts = new Map(
-    [...PUBLIC_VERDICTS, ...extraVerdicts].map((v) => [v.id, v] as const)
+    [...PUBLIC_VERDICTS, ...packVerdicts(), ...extraVerdicts].map(
+      (v) => [v.id, v] as const
+    )
   );
   const judge = (row: PlayedRow): PlayedRow => {
     const checked = verdicts.get(row.id);
