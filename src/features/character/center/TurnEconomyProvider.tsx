@@ -895,6 +895,27 @@ export function TurnEconomyProvider({
 
   /** The steps of a use on the sheet and the turn, unsealed (the caller seals them);
    *  returns the use's log line id. */
+  // What a use does ends what its acts end: an attack roll or a Verbal spell ends a
+  // Hide, Invisibility ends on an attack, damage or a spell. Each condition an act
+  // took away (a Hide's or Invisibility's Invisible) is logged. Called inside the
+  // use's or the cast's own undo, BEFORE the use lights its own state (casting
+  // Invisibility must not end itself).
+  function endStatesOnActsOf(action: ResolvedAction): void {
+    for (const act of actsOfUse(action)) {
+      const held = (): string[] => {
+        const session = useCharacterStore.getState().character?.session;
+        return session ? effectiveSessionConditions(session) : [];
+      };
+      const before = held();
+      if (!useCharacterStore.getState().performAct(act)) continue;
+      const after = new Set(held());
+      for (const conditionId of before) {
+        if (after.has(conditionId)) continue;
+        useCharacterStore.getState().logEvent({ kind: "condition-loss", conditionId });
+      }
+    }
+  }
+
   function applyUse(
     action: ResolvedAction,
     trackerAmount?: number,
@@ -969,19 +990,7 @@ export function TurnEconomyProvider({
     // ends a Hide, a potion's Invisibility ends on an attack or a spell. Inside the
     // use's own undo, so undoing the use brings them back.
     // Each condition an act took away (a Hide's or Invisibility's Invisible) is logged.
-    for (const act of actsOfUse(action)) {
-      const held = (): string[] => {
-        const session = useCharacterStore.getState().character?.session;
-        return session ? effectiveSessionConditions(session) : [];
-      };
-      const before = held();
-      if (!useCharacterStore.getState().performAct(act)) continue;
-      const after = new Set(held());
-      for (const conditionId of before) {
-        if (after.has(conditionId)) continue;
-        useCharacterStore.getState().logEvent({ kind: "condition-loss", conditionId });
-      }
-    }
+    endStatesOnActsOf(action);
     // A STRUCTURED action-use line (no localized text): effect → glyph, slot → colour.
     const loggedId = cs.logEvent({
       kind: "action-use",
@@ -1516,6 +1525,8 @@ export function TurnEconomyProvider({
         const cs = useCharacterStore.getState();
         const spends = castOptionSpends(opt, metamagicIds);
         paySpends(spends);
+        // Casting is an act: it ends a Hide (Verbal) and an Invisibility held now.
+        if (!readies) endStatesOnActsOf(castAction);
         applyActionConcentration(heldAction, opt.level);
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
         // activate with one tap and expire by themselves); a readied spell has no effect
@@ -2497,6 +2508,8 @@ export function TurnEconomyProvider({
           // name behind the `custom:` marker, never a bare SRD name.
           const castLevel =
             cast?.option.level ?? action.slotLevel ?? action.spellLevel ?? undefined;
+          // Casting is an act, a reaction spell too (Shield from hiding is Verbal).
+          endStatesOnActsOf(action);
           applyActionConcentration(action, castLevel);
           // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
           // its standing state on use.

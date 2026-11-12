@@ -410,7 +410,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "advantage",
     saveAbility: "DEX",
     area: true,
-    targeting: { affinity: "enemy" },
+    // "Each creature in a 20-foot Cube": friend or foe, the caster included.
+    targeting: { affinity: "any" },
     grants: [
       {
         type: "while-active",

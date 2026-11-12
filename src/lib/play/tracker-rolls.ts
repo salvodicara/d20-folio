@@ -109,3 +109,30 @@ export function topUpTracker(
       : { ...doc.session.trackers, [trackerId]: { used: appliedUsed } };
   return { ...doc.session, trackers };
 }
+
+/** A d20 a feature recorded in advance (a Portent roll), offered as a save's face. */
+export interface RecordedD20Face {
+  trackerId: string;
+  /** The slot the roll sits in: spending it spends exactly this one. */
+  index: number;
+  face: number;
+}
+
+/** Every recorded d20 the sheet holds (a d20-range recorded roll), in slot order. */
+export function recordedD20Faces(doc: CharacterDoc): RecordedD20Face[] {
+  return resolveTrackers(doc).flatMap((tracker) => {
+    if (tracker.recordedRolls?.min !== 1 || tracker.recordedRolls.max !== 20) return [];
+    const rolls = doc.session.trackers[tracker.id]?.rolls ?? [];
+    return rolls.flatMap((face, index) =>
+      typeof face === "number"
+        ? [
+            {
+              trackerId: tracker.id,
+              index,
+              face,
+            },
+          ]
+        : []
+    );
+  });
+}
