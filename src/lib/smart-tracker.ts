@@ -7399,6 +7399,9 @@ function resolveSpellActions(
       stampConditionSource(summary, activity);
     }
     stampTargetStates(summary, activity);
+    // A push a failed save takes (Thunderwave): the card's rider line.
+    const spellRiders = activity.effects.filter(isRiderEffect);
+    if (spellRiders.length > 0) summary.effectRiders = spellRiders;
     if (effectsOfKind(activity, "stabilize").length > 0) summary.stabilize = true;
     const [revive] = effectsOfKind(activity, "revive");
     if (revive) {

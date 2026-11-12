@@ -26,6 +26,7 @@ vi.mock("@/features/campaigns/campaign-io", async (importOriginal) => ({
 import { PlayTab } from "@/features/character/center/tabs/PlayTab";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
+import { useSaveOutcomeStore } from "@/features/character/center/save-outcome-store";
 import { setPlayLogSink, useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -381,6 +382,31 @@ describe("Magic Missile split across two goblins", () => {
       expect.objectContaining({ target: "monster-1", amount: 7, effect: "damage" }),
       expect.objectContaining({ target: "monster-2", amount: 2, effect: "damage" }),
     ]);
+  });
+});
+
+describe("Command on a goblin: the save on the cast's line, no tray", () => {
+  beforeEach(() => {
+    setCharacter("cleric", 3, ["command"], [{ level: 1, total: 2 }]);
+    useSaveOutcomeStore.getState().clear();
+    encounter([
+      { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+      monster("monster-1", "Goblin"),
+    ] as Rows);
+  });
+
+  it("no tray opens; the row asks the goblin's save, and Failed writes the cast's line", async () => {
+    renderPlay();
+    cast("Command");
+    const picker = await screen.findByRole("dialog", { name: /on whom/i });
+    fireEvent.click(within(picker).getByRole("button", { name: /goblin/i }));
+    const save = await screen.findByRole("group", { name: "Goblin" });
+    expect(screen.queryByTestId("damage-tray")).toBeNull();
+    const line = () =>
+      live().session.logEntries.find((e) => e.event.kind === "action-use")?.event;
+    expect(line()).not.toHaveProperty("saves");
+    fireEvent.click(within(save).getByRole("button", { name: "Failed" }));
+    expect(line()).toMatchObject({ saves: { "monster-1": "failed" } });
   });
 });
 

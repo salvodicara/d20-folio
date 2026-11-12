@@ -16,6 +16,7 @@
 import type { CharacterDoc } from "@/types/character";
 import { applyCombatToSession } from "@/lib/combat-state";
 import { packFixtures } from "@pack";
+import { assertNonEmptyString } from "@/lib/non-empty-string";
 
 /** Route-id prefix that maps to a team fixture by its role (`team-bard`). */
 const DEV_FIXTURE_PREFIX = "team-";
@@ -42,6 +43,21 @@ function fixtureName(id: string): string {
   return `${ROLE_KEY}${role}`;
 }
 
+/**
+ * The made-up name each role's sheet shows in dev. The fixtures are real players'
+ * characters, and the dev screens reach every screenshot a session takes, so a live
+ * character's name never shows (owner, 2026-11-12). The bard and the paladin keep the
+ * names the dev campaign's member snapshots already use for them.
+ */
+export const DEV_HERO_NAMES: Readonly<Record<string, string>> = {
+  barbarian: "Torva Rocciadura",
+  bard: "Coralino di Sanvaldo",
+  monk: "Kai Ventoquieto",
+  paladin: "Bren Ironbeard of the Thunderhold",
+  rogue: "Nessa Mezzanotte",
+  wizard: "Ilario Lumevera",
+};
+
 /** True when the route id names one of the team fixtures. */
 export function isDevFixtureId(id: string): boolean {
   return fixtureName(id) in packFixtures;
@@ -55,7 +71,18 @@ export async function loadDevFixture(id: string): Promise<CharacterDoc | null> {
   const { importCharacter } = await import("@/lib/character-io");
   const res = importCharacter(raw);
   if (!res.success) return null;
-  const doc = { id, createdAt: new Date(0), updatedAt: new Date(0), ...res.doc };
+  const role = fixtureName(id).slice(ROLE_KEY.length);
+  const name = DEV_HERO_NAMES[role];
+  const doc = {
+    id,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+    ...res.doc,
+    character: {
+      ...res.doc.character,
+      ...(name ? { name: assertNonEmptyString(name) } : {}),
+    },
+  };
   // The fixtures (like every MIGRATED live doc) carry NO combat trio in `state`, and in
   // DEV_BYPASS there is no `combat/state` subdoc to hydrate from — so the parsed session
   // reads HP `current: 0`. Seed the trio to its absent-subdoc DEFAULT (full effective
