@@ -1,6 +1,7 @@
 import { vitalConditions } from "@/lib/character-vitals";
 import { conditionGrantedImmunities, withImpliedConditions } from "@/lib/condition";
 import { potionStateConditions } from "@/lib/potion-states";
+import { resolveCombatEffectGrants } from "@/lib/resolve-grant-sources";
 import type { SessionState } from "@/types/character";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
@@ -8,12 +9,17 @@ import type { ActiveCombatEffect } from "@/types/combat-effect";
 export function projectedEncounterConditions(
   effects: ReadonlyArray<ActiveCombatEffect> | undefined
 ): string[] {
-  return (effects ?? []).flatMap((effect) =>
+  return (effects ?? []).flatMap((effect) => {
     // A source's Exhaustion is a level (`effectiveExhaustion`), not a chip.
-    effect.payload.kind === "condition" && effect.payload.conditionId !== "exhaustion"
-      ? [effect.payload.conditionId]
-      : []
-  );
+    if (effect.payload.kind === "condition")
+      return effect.payload.conditionId !== "exhaustion"
+        ? [effect.payload.conditionId]
+        : [];
+    // A state's own condition (Haste's lethargy: Incapacitated).
+    return resolveCombatEffectGrants(effect).flatMap((grant) =>
+      grant.type === "state-condition" ? [grant.condition] : []
+    );
+  });
 }
 
 type ConditionSession = Pick<
