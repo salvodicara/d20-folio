@@ -14,7 +14,7 @@ vi.mock("@/features/campaigns/dm-readers", () => ({
 
 import { EncounterCustomMonsters } from "@/features/campaigns/encounter-custom-monsters";
 import { useLibraryStore } from "@/stores/libraryStore";
-import type { MonsterInput } from "@/features/campaigns/encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 
 beforeEach(() => {
   // Hydrate the library LOADED with a no-op persist, so saves actually land in memory.

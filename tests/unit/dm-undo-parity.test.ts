@@ -11,7 +11,7 @@ import {
   beginEncounterTurns,
   setMonsterTempHp,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   applyAdversaryDamage,
   applyAdversaryHeal,

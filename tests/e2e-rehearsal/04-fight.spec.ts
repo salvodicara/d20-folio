@@ -5,13 +5,16 @@
  * a hit the DM calls landing through the bond, Cutting Words as a reaction, the end
  * of the fight; Warding Bond (1 hour, no Concentration) outlives it.
  */
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 import {
   actionRow,
   expectNoCrash,
   openFightTab,
+  reseedHero,
   SANDBOX_USERS,
   signInAs,
+  spaced,
+  test,
   watchErrors,
 } from "./helpers";
 
@@ -33,7 +36,7 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
   await actionRow(page, spell).getByRole("button").click();
   const dialog = page
     .locator("dialog[open]")
-    .filter({ hasText: new RegExp(`Cast ${spell}`, "i") });
+    .filter({ hasText: new RegExp(`Cast\\s${spaced(spell)}`, "i") });
   await expect(dialog).toBeVisible();
   for (let step = 0; step < 4 && (await dialog.count()) > 0; step++) {
     const chips = dialog.locator(".f-chips button");
@@ -63,7 +66,7 @@ async function cast(page: Page, spell: string, targets: string[]): Promise<void>
     .soft(
       page
         .locator("[role=status]")
-        .filter({ hasText: new RegExp(`${spell} (used|needs)`) })
+        .filter({ hasText: new RegExp(`${spaced(spell)}\\s(used|needs)`) })
         .first()
     )
     .toBeVisible({ timeout: 3_000 });
@@ -118,6 +121,8 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   browser,
 }) => {
   test.setTimeout(600_000);
+  // Catalion as the seed made him; Mandorlino comes from 03 (level 5, Warding Bond).
+  reseedHero(SANDBOX_USERS.catalion);
   const dm = await seat(browser);
   const bard = await seat(browser, SANDBOX_USERS.catalion.email);
   const paladin = await seat(browser, SANDBOX_USERS.mandorlino.email);

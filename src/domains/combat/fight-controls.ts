@@ -7,10 +7,7 @@
  * suggestion: the member ends it, nothing ends silently. «Tira per chi manca» is the
  * DM's alone (only the DM may write other players' rolls), while anyone is missing.
  */
-import {
-  encounterEndReason,
-  mayStepTurn,
-} from "@/features/campaigns/encounter-lifecycle";
+import { encounterEndReason, mayStepTurn } from "@/lib/play/encounter-lifecycle";
 import type { EncounterEndReason, EncounterState } from "@/types/campaign";
 
 export interface FightControls {

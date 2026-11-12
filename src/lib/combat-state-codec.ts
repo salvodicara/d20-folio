@@ -266,6 +266,7 @@ function parseStoredCombatState(
     // Absence-safe: a subdoc written before `round` moved here (or a fresh one) reads as
     // round 1 — a natural default, never a permanent read-shim (rule 10).
     round: num(data.round, 1),
+    ...(data.soloFightStarted === true ? { soloFightStarted: true } : {}),
     ...(activeEffects.length ? { activeEffects } : {}),
     ...(applied ? { appliedEncounterEffects: applied } : {}),
     ...(turnEconomy ? { turnEconomy } : {}),

@@ -54,7 +54,7 @@ import {
   saveCustomMonster,
   type MonsterEntry,
 } from "@/domains/combat/custom-monsters";
-import type { MonsterInput } from "./encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 
 // The portrait editor pulls the crop UI (react-easy-crop); load it only when a saved
 // monster's DETAIL opens, so the common list + create-form paths stay light.

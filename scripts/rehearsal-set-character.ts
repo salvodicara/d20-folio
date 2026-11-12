@@ -15,9 +15,12 @@ import { argv, env } from "node:process";
 import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { initializeApp } from "firebase-admin/app";
-import { FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
+import { FieldPath, FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
 
-import { sandboxCharacterDocuments } from "./lib/sandbox-character.ts";
+import {
+  sandboxCharacterDocuments,
+  sandboxMemberCharacter,
+} from "./lib/sandbox-character.ts";
 
 const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), "..");
 const PROJECT_ID = env.GCLOUD_PROJECT ?? env.GOOGLE_CLOUD_PROJECT ?? "";
@@ -67,4 +70,11 @@ const { parent, child } = sandboxCharacterDocuments(
 const path = `users/${uid}/characters/${characterId}`;
 await db.doc(path).set(parent);
 await db.doc(`${path}/combat/state`).set(child);
+// The campaign's copy of the hero, so the DM's card shows the hero just seeded.
+await db
+  .doc("campaigns/SANDBOX")
+  .update(
+    new FieldPath("memberDetails", uid, "character"),
+    sandboxMemberCharacter(envelope)
+  );
 console.log(`set ${path} from ${fixture} at level ${levelArg}`);

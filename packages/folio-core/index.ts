@@ -97,19 +97,21 @@ export {
 } from "@/lib/attunement-guard";
 
 /** Shared combat that starts on the first initiative roll and never blocks: anyone
- *  passes the turn, a pass goes back, an ended fight reopens. */
+ *  passes the turn, a pass goes back, an ended fight reopens. `mayStepTurn` is who may
+ *  move the turn: the DM, the player whose turn it is, and anyone once a roll started it. */
 export {
   canAdvanceTurn,
   encounterEndReason,
   endCombat,
   IDLE_END_MS,
+  mayStepTurn,
   passTurn,
   reopenCombat,
   rollInitiative,
   touch,
   turnBack,
   type RollInitiativeInput,
-} from "@/features/campaigns/encounter-lifecycle";
+} from "@/lib/play/encounter-lifecycle";
 export type {
   EncounterClock,
   EncounterEndReason,

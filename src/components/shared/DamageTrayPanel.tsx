@@ -26,7 +26,6 @@ import type { Locale } from "@/lib/locale";
 import {
   ATTACK_OUTCOMES,
   TRAY_MULTIPLIERS,
-  initialTrayRow,
   parseRolledTotal,
   previewHp,
   rowAmount,
@@ -53,6 +52,7 @@ import {
   incomingSaveLabel,
   trayRubric,
   type TrayTarget,
+  initialTrayRowFor,
 } from "./damage-tray-target";
 import { combatTermName } from "./combat-glossary";
 import { GlossaryTip } from "./GlossaryTip";
@@ -98,7 +98,9 @@ export function DamageTrayPanel({
   const fieldRef = useRef<HTMLInputElement>(null);
   const firstRowFieldRef = useRef<HTMLInputElement>(null);
   const rows = targets.map(
-    (target) => byId.get(target.id) ?? initialTrayRow(plan, target.id, target.defenses)
+    // The full first row: defenses, type, Hit Points (a die that hangs on them) and
+    // conditions, the same as the new screen's tray.
+    (target) => byId.get(target.id) ?? initialTrayRowFor(plan, target)
   );
   const rowText = (id: string) => rowTexts.get(id) ?? "";
   const total = parseRolledTotal(text);
@@ -289,6 +291,15 @@ function TrayTargetRow({
             {bandLabel(target.band, t)}
           </span>
         ) : null}
+        {row.dice && (
+          // The die this target takes when the spell's die hangs on its Hit Points.
+          <span
+            className="shrink-0 rounded border border-border-medium px-1.5 font-mono text-xs tabular-nums text-text-primary"
+            data-testid="damage-tray-die"
+          >
+            {row.dice}
+          </span>
+        )}
         <span
           className="ml-auto shrink-0 font-mono text-sm font-semibold tabular-nums"
           data-testid="damage-tray-preview"

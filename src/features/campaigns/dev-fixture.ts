@@ -26,7 +26,7 @@ import type {
 } from "@/features/campaigns/global-combat-context";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import type { PartyRoster } from "@/features/campaigns/party-roster";
-import { sortByInitiative } from "@/features/campaigns/encounter";
+import { sortByInitiative } from "@/lib/play/encounter";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { asRaceId } from "@/data/srd-names";
@@ -947,6 +947,8 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
           hidden: false,
           memberUid: "mock-uid",
           characterId,
+          // the hero's face in the top-bar pill and the initiative list
+          portraitUrl: DEV_HERO_PORTRAIT,
         },
         {
           id: "monster-1",

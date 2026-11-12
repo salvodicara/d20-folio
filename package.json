@@ -1,7 +1,7 @@
 {
   "name": "d20-folio",
   "private": true,
-  "version": "0.26.0",
+  "version": "0.26.1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/salvodicara/d20-folio.git"
@@ -27,7 +27,8 @@
     "test:functions": "npm --prefix functions test",
     "test:srd-only": "VITE_CONTENT_PACK=0 vitest run --project fast --project slow",
     "typecheck:srd-only": "tsc -p tsconfig.srd-only.json",
-    "core:build": "VITE_CONTENT_PACK=0 vite build -c packages/folio-core/vite.config.ts && tsc -p packages/folio-core/tsconfig.json && node scripts/core-dts-paths.mjs && tsc -p packages/folio-core/smoke/tsconfig.json && node scripts/core-smoke.mjs",
+    "core:build": "VITE_CONTENT_PACK=0 vite build -c packages/folio-core/vite.config.ts && tsc -p packages/folio-core/tsconfig.json && node scripts/core-dts-paths.mjs && tsc -p packages/folio-core/smoke/tsconfig.json && node scripts/core-smoke.mjs && node scripts/check-core-pack.mjs",
+    "core:boundary": "node --import ./scripts/alias-loader.mjs scripts/check-core-boundary.ts",
     "srd:catalogue": "VITE_CONTENT_PACK=0 node --import ./scripts/alias-loader.mjs scripts/export-srd-catalogue.ts dist/srd/v1",
     "build:srd-only": "pnpm typecheck:srd-only && VITE_CONTENT_PACK=0 vite build",
     "test:e2e": "playwright test --project=chromium",

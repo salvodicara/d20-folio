@@ -21,7 +21,7 @@ import {
   setMonsterCondition,
   setMonsterTempHp,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   endMonsterConcentration,
   monsterConcentrationSave,

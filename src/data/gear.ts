@@ -229,6 +229,33 @@ export const SRD_GEAR: SrdEquipmentData[] = [
     cost: { amount: 100, unit: "gp" },
     source: "SRD",
     isConsumable: true,
+    // SRD 5.2.1: a Bonus Action coats one weapon or up to three pieces of
+    // ammunition; a creature it deals Piercing or Slashing damage to takes an extra
+    // 1d4 Poison. It holds for 1 minute or until its damage is dealt (the coat seam
+    // of the Poisoner's Brew Poison: the coated weapon's damage ends it).
+    mechanics: { actions: [{ id: "coat", type: "bonus" }] },
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "item-poison-basic",
+        duration: {
+          kind: "timed",
+          minutes: 1,
+          maxRounds: 10,
+          endsEarlyOn: ["deal-damage"],
+          earlyEndFrom: { "deal-damage": "bound-weapon" },
+        },
+        grants: [
+          { type: "weapon-binding", choiceKey: "poison-basic-coated-weapon" },
+          {
+            type: "damage-rider",
+            appliesTo: "weapon",
+            dice: "1d4",
+            damageType: "poison",
+          },
+        ],
+      },
+    ],
   },
   // NOTE: "Potion of Healing" is NOT here — it is a MAGIC item (magic-items.ts),
   // so it only appears under the Add-Item → Magic Items tab. It used to be

@@ -6,6 +6,9 @@
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
 import { RollDialog } from "@/domains/combat/ui/FightActions";
+import { useSoloTurn } from "./PlaySoloTurn";
+import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
+import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import { rollInitiativeFromSheet } from "@/domains/play/sheet-initiative-roll";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
@@ -62,7 +65,8 @@ import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
-import { Art, Button, Chip, Icon, Tabs } from "@/ui";
+import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
+import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 
@@ -232,7 +236,7 @@ function ActionsPane({
   return (
     <>
       <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
-      <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+      <Filters label={t("play.filterLabel")}>
         {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
           <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
             {SHAPE[f] && (
@@ -241,9 +245,9 @@ function ActionsPane({
             {t(FILTER_KEY[f])}
           </Chip>
         ))}
-      </div>
+      </Filters>
       <TableHead />
-      {actions.groups.map(({ group, rows }) => {
+      {actions.groups.map(({ group, rows, note }) => {
         const kept = rows.filter((r) => keep(group, r));
         if (kept.length === 0) return null;
         return (
@@ -253,6 +257,15 @@ function ActionsPane({
                 <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
               )}
               {t(GROUP_KEY[group])}
+              {note && (
+                <span className="f-act-gn">
+                  {note.kind === "attacks"
+                    ? t("play.group.attacks", { count: note.count })
+                    : note.kind === "spent"
+                      ? t("play.group.spent")
+                      : t("play.group.perRound")}
+                </span>
+              )}
             </h3>
             {kept.map((row) => (
               <ActionLine key={row.id} row={row} locale={locale} />
@@ -542,13 +555,13 @@ function SpellsPane({
       {managing && (
         <PlayPrepare doc={doc} locale={locale} onClose={() => setManaging(false)} />
       )}
-      <div className="f-filters" role="group" aria-label={t("play.filterLabel")}>
+      <Filters label={t("play.filterLabel")}>
         {filters.map((f) => (
           <Chip key={String(f)} pressed={filter === f} onClick={() => setFilter(f)}>
             {filterLabel(f)}
           </Chip>
         ))}
-      </div>
+      </Filters>
       <TableHead />
       {view.groups.map(({ level, slots, spells }) => {
         const kept = spells.filter((s) => keep(level, s));
@@ -604,6 +617,7 @@ function TurnStrip({
   const markCountered = useMarkCountered(locale);
   const counterable = readonly ? [] : counterableCasts(doc.session.logEntries);
   const fight = useSheetCombat();
+  const solo = useSoloTurn(locale);
   const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
@@ -628,14 +642,16 @@ function TurnStrip({
     extraMovementFt,
   });
   const slots = turnBarView({
-    mode: fight ? "combat" : "exploration",
+    mode: fight || (solo.active && !campaign) ? "combat" : "exploration",
     selected,
     budget,
     reaction: { used: reactionUsed },
     movement: { usedFt: movementUsedFt, speedFt },
   });
   const title = !fight
-    ? t("diary.explore")
+    ? solo.active && !campaign
+      ? [t("combatChronicle.round", { n: solo.round }), t("play.turnMine")].join(" · ")
+      : t("diary.explore")
     : [
         t("combatChronicle.round", { n: round }),
         phase === "my-turn" || phase === "solo"
@@ -665,11 +681,13 @@ function TurnStrip({
           ))}
         </ul>
         {fight && (phase === "my-turn" || phase === "solo") && (
-          <Button kind="primary" icon="u-next" onClick={handleEndTurn}>
+          <Button kind="primary" icon="u-next" data-end-turn="" onClick={handleEndTurn}>
             {t("play.endTurn")}
           </Button>
         )}
-        {rollOffer && campaign && (
+        {!fight && !campaign && solo.controls}
+        {/* whose turn it is has rolled already: «Fine turno» is the strip's one action */}
+        {rollOffer && campaign && !(fight && phase === "my-turn") && (
           <Button
             kind={fight ? "primary" : "ghost"}
             aria-haspopup="dialog"
@@ -682,6 +700,10 @@ function TurnStrip({
       {rolling && rollOffer && campaign && (
         <RollDialog
           bonus={rollOffer.bonus}
+          roll={{
+            ...initiativeRollModel(doc),
+            onSurprise: () => toggleSurprise(t),
+          }}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>
             rollInitiativeFromSheet({
@@ -696,6 +718,10 @@ function TurnStrip({
           }
         />
       )}
+      {((solo.active && !campaign) || (fight && phase === "my-turn")) && (
+        <PlayTurnStart doc={doc} round={fight ? round : solo.round} locale={locale} />
+      )}
+      {!fight && !campaign && solo.notes}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
       {counterable.map((cast) => {
         const name = localizeText(cast.action, locale);
@@ -734,8 +760,10 @@ function Playbook({
     mode: fight ? "combat" : "exploration",
     round,
   });
-  const lines = open ? view.steps : view.plan;
-  if (lines.length === 0) return null;
+  const phone = useMediaQuery("(max-width: 640px)");
+  // Closed, only its line, as in the prototype (x-play .tip); open, the steps and why.
+  const lines = open ? view.steps : [];
+  if (view.steps.length === 0 && view.plan.length === 0) return null;
   return (
     <div className="f-playbook">
       <button
@@ -744,33 +772,37 @@ function Playbook({
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
+        {/* each mock's own compass: game-icons on a laptop, Phosphor on the phone */}
+        <Icon name={phone ? "u-compass" : "g-compass"} />
         <span>{t("play.playbookTitle")}</span>
         <Icon name="u-expand" />
       </button>
-      <ul className="f-playbook-lines">
-        {lines.map((l) => (
-          <li key={l.stepId} data-status={l.status}>
-            <span data-prose="">
-              {l.before}
-              {l.strong &&
-                (l.opens === "short-rest" && onShortRest ? (
-                  <button
-                    type="button"
-                    className="f-link"
-                    aria-haspopup="dialog"
-                    onClick={onShortRest}
-                  >
-                    {l.strong}
-                  </button>
-                ) : (
-                  <b>{l.strong}</b>
-                ))}
-              {l.after}
-            </span>
-            {open && l.why && <span className="f-tl-by">{l.why}</span>}
-          </li>
-        ))}
-      </ul>
+      {open && (
+        <ul className="f-playbook-lines">
+          {lines.map((l) => (
+            <li key={l.stepId} data-status={l.status}>
+              <span data-prose="">
+                {l.before}
+                {l.strong &&
+                  (l.opens === "short-rest" && onShortRest ? (
+                    <button
+                      type="button"
+                      className="f-link"
+                      aria-haspopup="dialog"
+                      onClick={onShortRest}
+                    >
+                      {l.strong}
+                    </button>
+                  ) : (
+                    <b>{l.strong}</b>
+                  ))}
+                {l.after}
+              </span>
+              {l.why && <span className="f-tl-by">{l.why}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -877,7 +909,8 @@ function ActionLine({
     <div className="f-act" data-blocked={row.blocked || undefined}>
       <ActionIcon icon={actionIcon(row)} art={rowArt(row)} />
       <div className="f-row-main">
-        <div className="f-row-t">{row.name}</div>
+        {/* the last two words together: a long name never ends on one alone */}
+        <div className="f-row-t">{row.name.replace(/ (\S+)$/, "\u00a0$1")}</div>
         {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
         {/* the phone reads the numbers under the name (D&D Beyond's phone row) */}
         {(hit || effect) && (

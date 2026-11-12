@@ -1,5 +1,6 @@
 /**
- * Payment Picker Modal — folio chrome.
+ * Payment Picker Modal — folio chrome. The same dialog also asks «Su quale arma?»
+ * on the classic sheet (a weapon per row, `title` + row `tag`).
  *
  * Opens when a resolved action offers MORE THAN ONE legal way to pay (a primary
  * cost PLUS a declared `alternateCost` — e.g. a Psi Warrior maneuver: spend the
@@ -30,6 +31,9 @@ export interface PaymentRow {
   affordable: boolean;
   /** Whether this is the action's primary (default) cost — gets the gold tint. */
   primary: boolean;
+  /** The row's tag in place of Primary / Alternate (a weapon's "in hand"); an
+   *  empty string shows none. */
+  tag?: string;
 }
 
 export interface PaymentPickerModalProps {
@@ -38,6 +42,9 @@ export interface PaymentPickerModalProps {
     actionName: string;
     /** The legal payment rows (≥ 2 when the modal opens). */
     rows: PaymentRow[];
+    /** The same dialog asking another "which one?" (Which weapon?): its title, and
+     *  the action named above it. Absent: the payment question. */
+    title?: string;
   } | null;
   onConfirm: (index: number) => void;
   onCancel: () => void;
@@ -60,9 +67,11 @@ export function PaymentPickerModal({
       {request && (
         <DialogContent
           size="sm"
-          rubric={t("combat.paymentPickerHint")}
-          title={t("combat.paymentPickerTitle", { name: request.actionName })}
-          description={t("combat.paymentPickerHint")}
+          rubric={request.title ? request.actionName : t("combat.paymentPickerHint")}
+          title={
+            request.title ?? t("combat.paymentPickerTitle", { name: request.actionName })
+          }
+          description={request.title ?? t("combat.paymentPickerHint")}
           closeLabel={t("common.cancel")}
         >
           <DialogBody>
@@ -75,11 +84,14 @@ export function PaymentPickerModal({
                   disabled={!row.affordable}
                   onClick={() => onConfirm(row.index)}
                 >
-                  <span className="cl-tag">
-                    {row.primary
-                      ? t("combat.paymentPrimary")
-                      : t("combat.paymentAlternate")}
-                  </span>
+                  {row.tag !== "" && (
+                    <span className="cl-tag">
+                      {row.tag ??
+                        (row.primary
+                          ? t("combat.paymentPrimary")
+                          : t("combat.paymentAlternate"))}
+                    </span>
+                  )}
                   <span className="cl-name">{row.label}</span>
                   {row.remaining && <span className="cl-count">{row.remaining}</span>}
                 </button>

@@ -15,13 +15,20 @@ import type { TFunction } from "i18next";
 
 import { compendiumArt } from "@/domains/compendium/compendium-art";
 import { compendiumGist } from "@/domains/compendium/compendium-gist";
+import { SRD_BACKGROUNDS } from "@/data/backgrounds";
+import { classTables } from "@/data/classes";
 import { SRD_CONDITIONS } from "@/data/conditions";
+import { SRD_RACES } from "@/data/races";
 import i18n, { ensureSrdKind } from "@/i18n";
 import { localizeSrd } from "@/i18n/resolver";
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { LOCALES, SOURCE_LOCALE, type Locale } from "@/lib/locale";
 import { ALL_SKILLS } from "@/lib/skills";
-import { localizeClassName } from "@/lib/views/srd-i18n";
+import {
+  localizeBackgroundName,
+  localizeClassName,
+  localizeRaceName,
+} from "@/lib/views/srd-i18n";
 import type { ClassEntry } from "@/types/character";
 
 import type { SearchEntry } from "./global-search";
@@ -129,7 +136,8 @@ export function ruleEntries(t: TFunction, locale: Locale): SearchEntry[] {
  */
 export async function loadCompendiumEntries(
   t: TFunction,
-  locale: Locale
+  locale: Locale,
+  options: { names?: "shown" | "all" } = {}
 ): Promise<SearchEntry[]> {
   const [{ COMPENDIUM_SPECS }] = await Promise.all([
     import("@/features/compendium/picker/specs"),
@@ -138,11 +146,22 @@ export async function loadCompendiumEntries(
   const ctx = { t, locale, character: null, mode: "browse" } as Parameters<
     (typeof COMPENDIUM_SPECS)[number]["getName"]
   >[1];
+  // The ⌘K index ranks every language's name (`names: "all"`); the classic palette
+  // ranks the shown one only.
+  const others =
+    options.names === "all"
+      ? LOCALES.filter((l) => l !== locale).map((l) => ({
+          ...ctx,
+          t: i18n.getFixedT(l),
+          locale: l,
+        }))
+      : [];
   return COMPENDIUM_SPECS.flatMap((spec) => {
     const typeLabel = spec.label(t);
     return spec.data.map((entry): SearchEntry => {
       const id = spec.getId(entry);
       const label = spec.getName(entry, ctx);
+      const otherNames = others.map((other) => spec.getName(entry, other));
       return {
         kind: "compendium",
         id: `cmp:${spec.id}:${id}`,
@@ -154,12 +173,58 @@ export async function loadCompendiumEntries(
           kind: "navigate",
           route: `/compendium?type=${spec.id}&sel=${encodeURIComponent(id)}`,
         },
-        // Ranked by the shown name only; the other languages' names live in the
-        // text (`searchText` holds `nameText`), so they surface as capped hints,
-        // as in the classic palette.
-        names: [label],
+        // By default ranked by the shown name only; the other languages' names live
+        // in the text (`searchText` holds `nameText`), so they surface as capped
+        // hints, as in the classic palette.
+        names: [...new Set([label, ...otherNames])],
         text: spec.searchText(entry, ctx),
       };
     });
   });
+}
+
+/**
+ * Classes, species and backgrounds (the build composes the pack's through the `@pack`
+ * seam), each named in every language and explained in place: the compendium has no
+ * page of their own.
+ */
+export function originEntries(locale: Locale): SearchEntry[] {
+  const t = i18n.getFixedT(locale);
+  const rows = (
+    type: "class" | "species" | "background",
+    ids: ReadonlyArray<string>,
+    nameIn: (id: string, locale: Locale) => string,
+    sub: string
+  ) =>
+    ids.map((id): SearchEntry => {
+      const label = nameIn(id, locale);
+      return {
+        kind: "compendium",
+        id: `${type}:${id}`,
+        label,
+        sub,
+        action: { kind: "explain" },
+        names: allNames(label, (l) => nameIn(id, l)),
+      };
+    });
+  return [
+    ...rows(
+      "class",
+      classTables.map((c) => c.id),
+      localizeClassName,
+      t("character.class")
+    ),
+    ...rows(
+      "species",
+      SRD_RACES.map((r) => r.id),
+      localizeRaceName,
+      t("character.species")
+    ),
+    ...rows(
+      "background",
+      SRD_BACKGROUNDS.map((b) => b.id),
+      localizeBackgroundName,
+      t("character.background")
+    ),
+  ];
 }

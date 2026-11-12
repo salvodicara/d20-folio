@@ -28,7 +28,7 @@ import {
   setMonsterCondition,
   setMonsterSpeed,
   setMonsterTempHp,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 
 /** A chronicle event WITHOUT its append-time-stamped fields (id + round). Distributive
  *  so each union member keeps its own discriminated shape. */

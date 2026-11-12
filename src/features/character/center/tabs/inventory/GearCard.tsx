@@ -162,7 +162,7 @@ export const GearCard = memo(function GearCard({
       kind={vm.isPotion ? "potion" : "gear"}
       sealIcon={itemSeal(vm)}
       slot={consumableActionSlot(
-        { isPotion: vm.isPotion, isConsumable: vm.isConsumable },
+        { isPotion: vm.isPotion, isConsumable: vm.isConsumable, useType: vm.useType },
         tableRules ?? RAW_TABLE_RULES
       )}
       name={displayName}

@@ -4,17 +4,22 @@
  * banner for the choices his sheet still owes, finishes them, and the banner goes. He
  * then levels 3 → 5 and prepares Warding Bond, which the fight needs (2nd-level slots).
  */
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   classLevel,
   expectNoCrash,
   levelUp,
+  reseedHero,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 
 const { email, characterId } = SANDBOX_USERS.mandorlino;
+
+// Mandorlino as the seed made him (level 3, his choices still owed), every run.
+test.beforeEach(() => reseedHero(SANDBOX_USERS.mandorlino));
 
 test("«Scelte da completare» lists the owed choices and clears once they are made", async ({
   page,
@@ -56,7 +61,8 @@ test("Mandorlino levels 3 → 5 and prepares Warding Bond", async ({ page }) => 
     const [, cur, max] = label?.match(/(\d+) \/ (\d+)/) ?? [];
     return { cur: Number(cur), max: Number(max) };
   };
-  for (let level = (await classLevel(page, "Paladin")) + 1; level <= 5; level++) {
+  expect(await classLevel(page, "Paladin"), "he starts at level 3").toBe(3);
+  for (let level = 4; level <= 5; level++) {
     await test.step(`level ${level}`, async () => {
       const before = await hp();
       await levelUp(page, characterId, {

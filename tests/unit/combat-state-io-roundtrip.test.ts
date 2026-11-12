@@ -275,6 +275,19 @@ describe("combat-state IO — full persistence contract", () => {
     expect(parseState(combatStateWriteData(state))).toEqual(state);
   });
 
+  it("a started solo fight round-trips; absent, or anything but true, reads as not started", () => {
+    const session = makeCharacterDoc().session;
+    const started = sessionToCombatState(session, 1, undefined, undefined, [], [], true);
+    expect(combatStateWriteData(started)).toMatchObject({ soloFightStarted: true });
+    expect(parseState(combatStateWriteData(started)).soloFightStarted).toBe(true);
+    const idle = combatStateWriteData(sessionToCombatState(session));
+    expect(idle).not.toHaveProperty("soloFightStarted");
+    expect(parseState(idle)).not.toHaveProperty("soloFightStarted");
+    expect(parseState({ ...idle, soloFightStarted: "yes" })).not.toHaveProperty(
+      "soloFightStarted"
+    );
+  });
+
   it("the strict reader requires the v1 play owner; only the migration reader is lenient", () => {
     const state = sessionToCombatState(makeCharacterDoc().session);
     expect(parseCombatState(combatStateWriteData(state))).toMatchObject({

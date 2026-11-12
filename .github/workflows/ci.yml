@@ -135,6 +135,10 @@ jobs:
       # the fixture exports in plain Node.
       - name: Folio Core package
         run: pnpm core:build
+      # The core imports no private pack (the full text comparison runs in the
+      # composed job below, where the pack is present).
+      - name: Folio Core SRD boundary
+        run: pnpm core:boundary
       # The eager-bundle/precache ceilings guard reads dist/,
       # so it runs after the build, in this same job.
       - name: Bundle budget
@@ -166,6 +170,10 @@ jobs:
         run: pnpm exec vite build
       - name: Bundle budget (composed)
         run: pnpm test:budget
+      # The published core must carry none of the pack: built SRD-only, then read
+      # against the emitted pack's text and art (skill srd-boundary). Logs name files only.
+      - name: Folio Core SRD boundary (against the pack)
+        run: pnpm core:build && pnpm core:boundary --require-pack
 
   # The design rules of the new UI (tests/e2e/ui-*.spec.ts) on every pull request,
   # on Linux: text width and wrapping depend on the OS's font rendering, so a Mac-only
@@ -175,8 +183,13 @@ jobs:
   # per merge in verify.yml.
   design-rules:
     name: design rules (Linux)
-    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
+    # The official Playwright image (Ubuntu 24.04 «noble», its browser and fonts
+    # inside), at the lockfile's Playwright version: no apt at run time, so an apt
+    # mirror outage cannot fail the job (2026-11-11, azure.archive.ubuntu.com
+    # unresolvable). playwright-image.guard.test.ts keeps the tag on the lockfile's.
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
     timeout-minutes: 15
     env:
       VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
@@ -197,14 +210,6 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: playwright-${{ runner.os }}-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
       - name: Design rules
         run: pnpm exec playwright test tests/e2e/ui- tests/e2e/fight-smoke --project=chromium --project=new-ui
 

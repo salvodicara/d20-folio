@@ -18,7 +18,7 @@ import {
   beginEncounterTurns,
   viewerActiveEncounters,
   type ViewerEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 
 /** A ViewerEncounter with sensible defaults, overridable per case. */
