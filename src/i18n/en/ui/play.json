@@ -91,6 +91,7 @@
     "rest": {
       "short": "Short rest",
       "long": "Long rest",
+      "inFight": "No resting during a fight",
       "shortTitle": "Short rest · 1 hour",
       "longTitle": "Long rest · 8 hours",
       "spend": "Spend Hit Point Dice",
