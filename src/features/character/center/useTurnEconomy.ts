@@ -17,6 +17,7 @@ import type { ResolvedAction, ActiveMaintainedEffect } from "@/lib/smart-tracker
 import type { RiderVM } from "@/lib/views/rider-view";
 import type { CunningStrikeVM } from "@/lib/views/cunning-strike-view";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
+import type { RollReactionPlan } from "@/lib/play/roll-reactions";
 
 type CommitEffect = () => (() => void) | undefined;
 export interface PreparedCommitArtifact {
@@ -64,6 +65,9 @@ export interface TurnEconomyApi {
   handleSelect: (action: ResolvedAction, onCommitted?: CommitEffect) => void;
   /** Use a reaction (immediate-commit on another creature's turn). */
   handleUseReaction: (action: ResolvedAction, onCommitted?: CommitEffect) => void;
+  /** Use a reaction on a roll already rolled (Cutting Words): the toast names the
+   *  die, what it does, the roll and the target; the log line names the target. */
+  commitRollReaction: (action: ResolvedAction, plan: RollReactionPlan) => void;
   /**
    * Spend a CONSUMABLE on-hit rider on an attack card (Psi Warrior Psionic
    * Strike → a Psionic Energy Die; Lifedrinker → a Hit Point Die). Debits the

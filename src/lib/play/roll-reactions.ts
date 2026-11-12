@@ -123,11 +123,17 @@ export interface FailedRollMoment {
 /** The rerolls the sheet can offer on a failed roll (Indomitable, Countercharm),
  *  each with its action (to spend it) and what it does. A reroll limited to some
  *  conditions needs the moment to name one of them. */
+/** One reroll the sheet can offer: the use (to spend it) and what it does. */
+export interface RerollOffer<A> {
+  action: A;
+  reaction: Extract<RollReaction, { kind: "reroll" }>;
+}
+
 export function rerollOffers<A extends { summary: { rollEffect?: ActionRollEffect } }>(
   doc: CharacterDoc,
   actions: ReadonlyArray<A>,
   moment: FailedRollMoment
-): Array<{ action: A; reaction: Extract<RollReaction, { kind: "reroll" }> }> {
+): Array<RerollOffer<A>> {
   return actions.flatMap((action) => {
     const reaction = rollReactionOf(action, doc);
     if (reaction?.kind !== "reroll") return [];
@@ -154,5 +160,32 @@ export function rerollPlanCopy(
   return {
     key: `play.rollReaction.toastReroll${mode}${plan.target ? "" : "NoTarget"}`,
     values: plan.target ? { target: plan.target.name } : {},
+  };
+}
+
+/** The i18n key naming a roll ("Tiro per colpire"). */
+export function rollLabelKey(roll: ReactableRoll): string {
+  return roll === "initiative" ? "monster.initiative" : `play.rollReaction.roll_${roll}`;
+}
+
+/** The i18n key of an operation's chip ("Aggiungi" / "Sottrai"). */
+export function operationLabelKey(operation: "add" | "subtract"): string {
+  return operation === "add" ? "common.add" : "play.rollReaction.subtract";
+}
+
+/** The toast for a planned use on a roll, as an i18n key and its values: the die to
+ *  roll at the table, what it does, to which roll (`rollKey`, localized by the
+ *  caller) and on whom. Null for no plan, or a reroll. */
+export function rollPlanCopy(plan: RollReactionPlan | undefined): {
+  key: string;
+  rollKey: string;
+  values: { die: string; target?: string };
+} | null {
+  if (!plan || !("die" in plan)) return null;
+  const op = plan.operation === "add" ? "Add" : "Subtract";
+  return {
+    key: `play.rollReaction.toast${op}${plan.target ? "" : "NoTarget"}`,
+    rollKey: rollLabelKey(plan.roll),
+    values: { die: plan.die, ...(plan.target ? { target: plan.target.name } : {}) },
   };
 }

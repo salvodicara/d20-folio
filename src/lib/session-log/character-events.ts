@@ -45,6 +45,7 @@ export function combatEventToPlayEvent(
         slot: event.slot,
         ...(event.targets?.length ? { targets: event.targets } : {}),
         ...declaredResults(event),
+        ...(event.check ? { check: event.check } : {}),
       };
     case "reaction-use":
       return {
@@ -115,6 +116,15 @@ export function combatEventToPlayEvent(
               ? { outcome: event.outcome }
               : {}),
           };
+    case "concentration-save":
+      return {
+        kind: "concentration-save",
+        actor: me,
+        spell: event.spell,
+        dc: event.dc,
+        ...(event.total !== undefined ? { total: event.total } : {}),
+        passed: event.passed,
+      };
     case "concentration-start":
     case "concentration-end":
       return {

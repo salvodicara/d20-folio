@@ -47,6 +47,8 @@ export type PlayEvent =
        *  target agrees), and whether nothing came of it. */
       saves?: SaveResults;
       noEffect?: true;
+      /** The check entered with the use (Search: Perception 17 vs DC 15). */
+      check?: { skill: string; total: number; dc?: number };
     }
   | {
       kind: "damage" | "heal" | "temp-hp";
@@ -77,6 +79,16 @@ export type PlayEvent =
       kind: "concentration";
       spell: ConcentrationRef;
       started: boolean;
+      actor?: CombatantId;
+    }
+  /** A Concentration save entered on the sheet: kept or lost, its DC and total. An
+   *  older reader shows a neutral line. */
+  | {
+      kind: "concentration-save";
+      spell: ConcentrationRef;
+      dc: number;
+      total?: number;
+      passed: boolean;
       actor?: CombatantId;
     }
   | {

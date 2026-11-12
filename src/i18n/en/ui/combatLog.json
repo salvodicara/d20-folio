@@ -13,6 +13,8 @@
     "conditionGain": "Gained {{condition}}",
     "conditionLoss": "Lost {{condition}}",
     "concentrationStart": "Started concentrating on {{spell}}",
+    "concentrationSaveKept": "Concentration save passed: {{spell}} ({{total}} vs DC {{dc}})",
+    "concentrationSaveLost": "Concentration save failed: {{spell}} ({{total}} vs DC {{dc}})",
     "deathSaveSuccess": "Death save succeeded ({{successes}} ✓ / {{failures}} ✗)",
     "deathSaveFailure": "Death save failed ({{successes}} ✓ / {{failures}} ✗)",
     "shortRest": "Took a Short Rest",
