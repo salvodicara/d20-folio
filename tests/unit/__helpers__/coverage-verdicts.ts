@@ -342,9 +342,13 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   },
   {
     id: "wizard-spellcasting",
-    verdict: "missing",
-    evidence: ["multiclass-slots.test.ts", "slot-gated-prepared.test.ts"],
-    note: "spellbook not modelled: level 1 gets 4 (prepared count) not 6; level-up gives no 2 free spellbook spells",
+    verdict: "auto",
+    evidence: [
+      "multiclass-slots.test.ts",
+      "slot-gated-prepared.test.ts",
+      "wizard-spellbook.test.ts",
+    ],
+    note: "spellbook: 6 at level 1, 2 per level; a short book owes the gap in «Scelte da completare»; a spell copied by hand counts toward the free picks",
   },
   {
     id: "rogue-thieves-cant",
