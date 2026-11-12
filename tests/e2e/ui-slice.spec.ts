@@ -141,8 +141,9 @@ test("the English page has no Italian left over", async ({ page }) => {
   await open(page, "it", "base");
   const italian = new Set(await visibleTexts(page));
   await open(page, "en", "base");
-  // Names, numbers and dice are the same in both languages, and so are these words.
-  const shared = new Set(["Folio", "Menu"]);
+  // Names, numbers and dice are the same in both languages, and so are these words
+  // (a key name on the search field is the keyboard's, in every language).
+  const shared = new Set(["Folio", "Menu", "Ctrl K"]);
   const same = (await visibleTexts(page)).filter(
     (t) =>
       italian.has(t) && /[a-zà-ù]{3,}/i.test(t) && !/^d\d+$/.test(t) && !shared.has(t)

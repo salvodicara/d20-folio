@@ -101,6 +101,8 @@
       "regained_one": "{{actor}} recupera un uso di {{resource}}",
       "regained_other": "{{actor}} recupera {{count}} usi di {{resource}}"
     },
-    "dealt": "{{amount}} danni"
+    "dealt": "{{amount}} danni",
+    "upcast": "(slot di {{level}}° livello)",
+    "upcastPact": "(slot di Magia del Patto, {{level}}° livello)"
   }
 }
