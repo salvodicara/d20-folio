@@ -339,3 +339,97 @@ describe("an encounter end without its start (a log from before a fix, 2026-10-1
     expect(report[0]?.kind === "encounter" && report[0].outcome).toBeFalsy();
   });
 });
+
+describe("a save spell's line says the targets' saves (owner, 2026-11-11)", () => {
+  const party: Record<string, string> = {
+    "pc-ana": "Lara",
+    "monster-1": "Goblin",
+    "monster-2": "Orc",
+  };
+  const faerieFire = {
+    srd: { kind: "spell", key: "faerie-fire", field: "name" },
+  } as const;
+
+  async function line(lng: "en" | "it", event: PlayEvent): Promise<string | null> {
+    const i18n = i18next.createInstance();
+    await i18n.init({
+      lng,
+      resources: { en: { translation: en }, it: { translation: it_ } },
+      interpolation: { escapeValue: false },
+    });
+    return localizePlayEvent(
+      event,
+      (k, a) => i18n.t(k, a),
+      (id) => (id ? (party[id] ?? id) : "?"),
+      {
+        ...names,
+        action: (text) =>
+          "srd" in text ? "Faerie Fire" : "custom" in text ? text.custom : "?",
+        locale: lng,
+      }
+    );
+  }
+
+  const cast = (
+    saves: Record<string, "saved" | "failed">,
+    extra: Partial<Extract<PlayEvent, { kind: "action" }>> = {}
+  ): PlayEvent => ({
+    kind: "action",
+    actor: "pc-ana",
+    source: faerieFire,
+    targets: Object.keys(saves),
+    saves,
+    ...extra,
+  });
+
+  it("all targets saved and nothing came of it", async () => {
+    const event = cast(
+      { "monster-1": "saved", "monster-2": "saved" },
+      { noEffect: true }
+    );
+    expect(await line("en", event)).toBe(
+      "Lara casts Faerie Fire on Goblin, Orc — all targets save: no effect"
+    );
+    expect(await line("it", event)).toBe(
+      "Lara lancia Faerie Fire su Goblin, Orc — tutti superano il tiro salvezza: nessun effetto"
+    );
+  });
+
+  it("all saved against a save for half: the saves, not «no effect»", async () => {
+    expect(await line("en", cast({ "monster-1": "saved", "monster-2": "saved" }))).toBe(
+      "Lara casts Faerie Fire on Goblin, Orc — all targets save"
+    );
+  });
+
+  it("one target reads as that target", async () => {
+    expect(await line("it", cast({ "monster-1": "saved" }, { noEffect: true }))).toBe(
+      "Lara lancia Faerie Fire su Goblin — Goblin supera: nessun effetto"
+    );
+  });
+
+  it("all failed, and a mixed result target by target", async () => {
+    expect(await line("it", cast({ "monster-1": "failed", "monster-2": "failed" }))).toBe(
+      "Lara lancia Faerie Fire su Goblin, Orc — tutti falliscono il tiro salvezza"
+    );
+    const mixed = cast({ "monster-1": "failed", "monster-2": "saved" });
+    expect(await line("en", mixed)).toBe(
+      "Lara casts Faerie Fire on Goblin, Orc — Goblin fails, Orc saves"
+    );
+    expect(await line("it", mixed)).toBe(
+      "Lara lancia Faerie Fire su Goblin, Orc — Goblin fallisce, Orc supera"
+    );
+  });
+
+  it("nobody marked anything: the line stays as it was, but a spell is cast", async () => {
+    const event: PlayEvent = {
+      kind: "action",
+      actor: "pc-ana",
+      source: faerieFire,
+      targets: ["monster-1"],
+    };
+    expect(await line("en", event)).toBe("Lara casts Faerie Fire on Goblin");
+    expect(await line("en", { ...event, source: { custom: "Stunning Strike" } })).toBe(
+      "Lara uses Stunning Strike on Goblin"
+    );
+  });
+});

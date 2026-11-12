@@ -231,6 +231,7 @@ export function LeftHud() {
       auto: skill.auto,
       displayBonus: skill.bonus,
       name: t(`skills.${skill.id}`),
+      untilLongRest: skill.untilLongRest === true,
     }))
     .sort((a, b) => a.name.localeCompare(b.name, locale));
 
@@ -466,10 +467,21 @@ export function LeftHud() {
                   className="pr-dot"
                   data-state={skill.proficiency ? DOT_STATE[skill.proficiency] : "none"}
                   aria-hidden
+                  // A Long Rest pick's Expertise (Versatile Merc) says how long it lasts.
+                  title={
+                    skill.untilLongRest
+                      ? t("character.hud.expertiseUntilLongRest")
+                      : undefined
+                  }
                 />
               )}
               <span className="min-w-0 flex-1 truncate text-text-primary">
                 {skill.name}
+                {skill.untilLongRest && (
+                  <span className="ml-1.5 text-[0.7rem] italic text-text-muted">
+                    {t("character.hud.untilLongRestShort")}
+                  </span>
+                )}
               </span>
               <span className="font-mono text-[10px] uppercase tracking-wider text-text-secondary">
                 {t(`abilities.${skill.ability}_short`)}

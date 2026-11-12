@@ -18,6 +18,47 @@ const entry = (id: string, ts: number, event: CombatEvent): LogEntry => ({
 });
 
 describe("combatEventToPlayEvent", () => {
+  const faerieFire = (results: Record<string, "saved" | "failed">): CombatEvent => ({
+    kind: "action-use",
+    action: { srd: { kind: "spell", key: "faerie-fire", field: "name" } },
+    effect: "spell-cast",
+    slot: "action",
+    targets: Object.keys(results),
+    saves: results,
+    noEffect: true,
+  });
+
+  it("a save spell carries each target's save and the result they share", () => {
+    expect(
+      combatEventToPlayEvent(
+        faerieFire({ "monster-1": "saved", "monster-2": "saved" }),
+        ME
+      )
+    ).toEqual({
+      kind: "action",
+      actor: ME,
+      source: { srd: { kind: "spell", key: "faerie-fire", field: "name" } },
+      slot: "action",
+      targets: ["monster-1", "monster-2"],
+      outcome: "saved",
+      saves: { "monster-1": "saved", "monster-2": "saved" },
+      noEffect: true,
+    });
+    expect(
+      combatEventToPlayEvent(
+        faerieFire({ "monster-1": "failed", "monster-2": "failed" }),
+        ME
+      )
+    ).toMatchObject({ outcome: "failed" });
+    // Mixed: no shared result, an older reader shows the plain line.
+    expect(
+      combatEventToPlayEvent(
+        faerieFire({ "monster-1": "failed", "monster-2": "saved" }),
+        ME
+      )
+    ).not.toHaveProperty("outcome");
+  });
+
   it("records what the sheet knows, with the character as actor or target", () => {
     expect(
       combatEventToPlayEvent({ kind: "hp-damage", amount: 14, current: 6, max: 20 }, ME)

@@ -4,7 +4,8 @@
  * re-exports, nothing deeper (`package.json` exports only "."). The list lives in
  * `packages/folio-core/api.txt`, so adding, renaming or dropping a public name shows in
  * the diff as a change to that file, never by accident. To accept a deliberate change:
- * `pnpm exec vitest run tests/unit/folio-core-api.test.ts -u`, then update the README.
+ * `pnpm exec vitest run tests/unit/folio-core-api.test.ts -u`, then update the README and
+ * release it in `CHANGELOG.md` (`folio-core-changelog.test.ts`).
  *
  * What the surface may reach is fenced separately (`folio-core-imports.guard.test.ts`).
  */
