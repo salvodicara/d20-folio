@@ -245,17 +245,14 @@ interface SpellReactionRow {
 // "reaction"; structured data now carries the actual 2024 trigger instead.
 const CORRECTED_SPELL_TRIGGERS: Readonly<Record<string, string>> = {
   shield: "an attack hits you or Magic Missile targets you",
-  // Pack spells the parser never read. Moment of Prescience answers a failed D20
-  // Test or a hit (the first token is the line compared); Reweave Fate a failed one.
-  "moment-of-prescience": "a creature fails a D20 Test",
-  "reweave-fate": "a creature fails a D20 Test",
 };
 
 // Every reaction spell — the smart-tracker derives a `"reaction"` action TYPE from
 // a `castingTime` that includes "reaction", which is exactly when it consulted the
-// retired parser. Mirror that gate here so the oracle runs on the same set.
+// retired parser. Mirror that gate here so the oracle runs on the same set. SRD spells
+// only: the pack's reaction spells are checked by the pack's own tests (srd-boundary).
 const SPELL_ROWS: SpellReactionRow[] = spells
-  .filter((s) => s.castingTime.toLowerCase().includes("reaction"))
+  .filter((s) => s.source === "SRD" && s.castingTime.toLowerCase().includes("reaction"))
   .map((s) => ({
     spellId: s.id,
     expectedEn: CORRECTED_SPELL_TRIGGERS[s.id] ?? oracleSpellTrigger(s.castingTime),
@@ -266,11 +263,9 @@ const SPELL_ROWS: SpellReactionRow[] = spells
 
 describe("structured SPELL reaction trigger — equivalence with the retired parser", () => {
   it("enumerates every reaction spell (guards against a vacuous pass)", () => {
-    // 5 reaction spells live in the pack-composed data today (feather-fall,
-    // hellish-rebuke, shield, backlash, counterspell — backlash is PACK content,
-    // leaving 4 in the public SRD subset); never expect FEWER. New reaction
-    // spells only raise this.
-    expect(SPELL_ROWS.length).toBeGreaterThanOrEqual(PACK_COMPOSED ? 5 : 4);
+    // 4 SRD reaction spells today (feather-fall, hellish-rebuke, shield,
+    // counterspell); never expect FEWER. New reaction spells only raise this.
+    expect(SPELL_ROWS.length).toBeGreaterThanOrEqual(4);
   });
 
   it("at least one reaction spell carries a structured trigger token", () => {
