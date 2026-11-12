@@ -168,8 +168,9 @@ function ChargesFields({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <label className="flex flex-col gap-1 text-[0.65rem] text-text-secondary">
+    // One per row on a phone (a select is at least 160 px wide), three across wider.
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+      <label className="flex min-w-0 flex-col gap-1 text-[0.65rem] text-text-secondary">
         {t("custom.totalUses")}
         <Input
           type="number"
@@ -182,7 +183,7 @@ function ChargesFields({
           className="num w-full"
         />
       </label>
-      <label className="flex flex-col gap-1 text-[0.65rem] text-text-secondary">
+      <label className="flex min-w-0 flex-col gap-1 text-[0.65rem] text-text-secondary">
         {t("custom.recovery")}
         <Select
           value={value.recovery}
@@ -198,7 +199,7 @@ function ChargesFields({
         </Select>
       </label>
       {value.recovery !== "none" && (
-        <label className="flex flex-col gap-1 text-[0.65rem] text-text-secondary">
+        <label className="flex min-w-0 flex-col gap-1 text-[0.65rem] text-text-secondary">
           {t("custom.chargesReturn")}
           <Input
             type="text"

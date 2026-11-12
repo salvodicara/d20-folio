@@ -27,11 +27,14 @@ async function openForm(page: Page, size: "phone" | "desktop") {
     .click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("button", { name: "Personalizzati" }).click();
-  await dialog
-    .getByRole("button", { name: /crea equipaggiamento/i })
-    .first()
-    .click();
-  await expect(dialog.getByRole("button", { name: "Aggiungi effetto" })).toBeVisible();
+  // An empty library opens straight on the form; a filled one lists it first.
+  const effects = dialog.getByRole("button", { name: "Aggiungi effetto" });
+  if (!(await effects.isVisible().catch(() => false)))
+    await dialog
+      .getByRole("button", { name: /crea equipaggiamento personalizzato/i })
+      .first()
+      .click();
+  await expect(effects).toBeVisible();
   return dialog;
 }
 
@@ -50,7 +53,7 @@ for (const size of ["phone", "desktop"] as const) {
     await page.screenshot({ path: shotPath(`homebrew-item-empty-${size}.png`) });
 
     // A +1 weapon that needs attunement.
-    await dialog.getByText("Questa è un'arma").click();
+    await dialog.getByRole("checkbox", { name: "Questa è un'arma", exact: true }).click();
     await addEffect(dialog, "Richiede sintonia");
     await addEffect(dialog, "Bonus magico");
     await dialog.getByRole("textbox").first().fill("Lama di Luna");
