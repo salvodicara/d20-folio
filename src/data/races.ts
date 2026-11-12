@@ -149,9 +149,12 @@ const PUBLIC_RACES: SrdRaceData[] = [
                 id: "high-elf",
                 grants: [
                   {
+                    // "Whenever you finish a Long Rest, you can replace that cantrip
+                    // with a different cantrip from the Wizard spell list."
                     type: "always-prepared-spell",
                     spellId: "prestidigitation",
                     spellAbilitySource: "species",
+                    longRestSwap: { choiceKey: "high-elf-cantrip", spellList: "wizard" },
                   },
                   {
                     type: "always-prepared-spell",

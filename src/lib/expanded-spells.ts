@@ -196,9 +196,14 @@ export function getAlwaysPreparedFromGrants(
   const seen = new Set<string>();
 
   const pushSpell = (
-    g: Extract<Grant, { type: "always-prepared-spell" }>,
+    grant: Extract<Grant, { type: "always-prepared-spell" }>,
     sourceId: string | undefined
   ) => {
+    // A cantrip replaced after a Long Rest (High Elf): the session's pick, if any.
+    const swapped = grant.longRestSwap
+      ? bundleChoices?.get(grant.longRestSwap.choiceKey)
+      : undefined;
+    const g = swapped ? { ...grant, spellId: swapped } : grant;
     if (seen.has(g.spellId)) return;
     // minLevel gate — skip spells the character hasn't reached yet.
     if (g.minLevel != null && level != null && level < g.minLevel) return;
