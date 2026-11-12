@@ -1,6 +1,6 @@
 /**
  * A save spell with nothing for the app to apply asks each creature's save on the row
- * just used (Italian, dark, phone): Command on the Goblin, then Calm Emotions on the Ogre
+ * just used (Italian, dark, phone): Command on the Goblin, then Calm Emotions on the Goblin Chief (a Humanoid)
  * creatures. No tray opens; ignoring the chips costs nothing. Review shots land under
  * REVIEW_SHOTS when set, else in the test output dir.
  */
@@ -68,10 +68,10 @@ test("Command, then Calm Emotions: the saves on the row, no tray (it, dark, phon
   await goblin.scrollIntoViewIfNeeded();
   await page.screenshot({ path: shotPath("save-line-command-phone.png") });
 
-  await castOn(page, "Calmare Emozioni", ["Ogre"]);
+  await castOn(page, "Calmare Emozioni", ["Goblin Chief"]);
   await expect(page.getByTestId("damage-tray")).toHaveCount(0);
-  await expect(page.getByRole("group", { name: "Ogre" })).toBeVisible();
-  await page.getByRole("group", { name: "Ogre" }).scrollIntoViewIfNeeded();
+  await expect(page.getByRole("group", { name: "Goblin Chief" })).toBeVisible();
+  await page.getByRole("group", { name: "Goblin Chief" }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: shotPath("save-line-calm-emotions-phone.png") });
 
   const overflow = await page.evaluate(

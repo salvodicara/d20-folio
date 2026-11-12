@@ -226,4 +226,12 @@ describe("out of a fight: the party («Il gruppo»)", () => {
   it("in a fight the groups stay allies and enemies", () => {
     expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });
+
+  it("Calm Emotions reaches every Humanoid in its sphere, friend or foe", () => {
+    expect(combatResolutionSpec(spellAction("calm-emotions"))).toMatchObject({
+      targetAffinity: "any",
+      targetCreatureTypes: ["humanoid"],
+      targetCap: Infinity,
+    });
+  });
 });
