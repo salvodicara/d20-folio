@@ -7,7 +7,12 @@
  * `in-aura:<characterId>` state on their sheet). The paladin's own half is the
  * class feature's `save-bonus`.
  */
+import { abilityModifier } from "@/lib/ability";
+import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
+import { INCAPACITATING_CONDITIONS } from "@/lib/combat-test-context";
+import { aggregateAbilityScores } from "@/lib/compute";
 import type { GrantSource } from "@/lib/grants";
+import type { CharacterDoc } from "@/types/character";
 
 /** A party member who may hold the aura, as the ally's sheet sees them. */
 export interface AuraSource {
@@ -59,4 +64,66 @@ export function auraSaveSource(aura: { from: string; bonus: number }): GrantSour
     ref: { kind: "class-feature", key: "paladin-aura-of-protection" },
     grants: [{ type: "save-bonus", amount: aura.bonus }],
   };
+}
+
+// ── Published by the paladin's own sheet, read by the allies' sheets ───────────────
+
+/** What the paladin's sheet publishes for its party: the bonus and the reach. */
+export interface PublishedAura {
+  bonus: number;
+  reachFt: number;
+}
+
+/** A party member's published aura, with when it was last written (ms). */
+export interface PartyAura {
+  characterId: string;
+  name: string;
+  aura: PublishedAura & { at: number };
+}
+
+/** How long a published aura counts as in play: a paladin whose sheet has not
+ *  written for longer is not at the table tonight. */
+export const AURA_FRESH_MS = 6 * 60 * 60 * 1000;
+
+/** The ally says they stand outside this paladin's aura (until tapped again or a rest). */
+export const outOfAuraKey = (characterId: string): string => `out-of-aura:${characterId}`;
+
+/** The aura the paladin's sheet publishes, or null: below level 6, at 0 HP, or
+ *  Incapacitated, there is none («while you aren't Incapacitated»). */
+export function publishedAura(doc: CharacterDoc): PublishedAura | null {
+  const level =
+    doc.character.classes.find((entry) => entry.classId === "paladin")?.level ?? 0;
+  if (level < 6 || doc.session.hp.current <= 0) return null;
+  const conditions = new Set<string>(effectiveConditions(doc));
+  if (INCAPACITATING_CONDITIONS.some((condition) => conditions.has(condition)))
+    return null;
+  const aggregate = aggregateCharacterGrants(doc.character, doc.session);
+  const cha = aggregateAbilityScores(
+    doc.character.abilityScores,
+    aggregate,
+    doc.character.abilityScoreOverrides
+  ).CHA;
+  return { bonus: Math.max(1, abilityModifier(cha)), reachFt: level >= 18 ? 30 : 10 };
+}
+
+/** The one aura bonus an ally's saves take: the best fresh aura of another member the
+ *  ally doesn't stand outside of. On by default; null when there is none. */
+export function allyAura(
+  party: ReadonlyArray<PartyAura>,
+  selfCharacterId: string,
+  nowMs: number,
+  activeFeatures: ReadonlyArray<string>
+): { from: string; name: string; bonus: number } | null {
+  const out = new Set(activeFeatures);
+  const best = party
+    .filter(
+      (member) =>
+        member.characterId !== selfCharacterId &&
+        nowMs - member.aura.at <= AURA_FRESH_MS &&
+        !out.has(outOfAuraKey(member.characterId))
+    )
+    .sort((a, b) => b.aura.bonus - a.aura.bonus)[0];
+  return best
+    ? { from: best.characterId, name: best.name, bonus: best.aura.bonus }
+    : null;
 }
