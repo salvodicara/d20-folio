@@ -885,19 +885,19 @@ export function ResourceRail() {
               aria-pressed={inspiration}
               aria-label={t("character.heroicInspiration")}
               onClick={() => {
+                const sheet = useCharacterStore.getState();
+                const held = (value: boolean) => () =>
+                  useCharacterStore.getState().setHeroicInspiration(value);
                 if (!inspiration) {
                   // Receiving the boon — a plain toggle (not an undoable spend).
-                  useCharacterStore.getState().setHeroicInspiration(true);
+                  sheet.changeResourceByHand(held(true), held(false));
                   return;
                 }
                 // Spending it — immediate-commit with undo (onto the stack).
                 const message = t("character.heroicInspirationSpent");
                 registerUndoableToast(
                   { message },
-                  () => {
-                    useCharacterStore.getState().setHeroicInspiration(false);
-                    return () => useCharacterStore.getState().setHeroicInspiration(true);
-                  },
+                  () => sheet.changeResourceByHand(held(false), held(true)),
                   { turnScoped: false }
                 );
               }}
@@ -1677,16 +1677,20 @@ function RailSlot({
     const message = t("combat.slotSpend", { level: slot.level });
     registerUndoableToast(
       { message },
-      () => {
-        spendSlot(slot.level, slot.pactMagic);
-        return () => restoreSlot(slot.level, slot.pactMagic);
-      },
+      () =>
+        useCharacterStore.getState().changeResourceByHand(
+          () => spendSlot(slot.level, slot.pactMagic),
+          () => restoreSlot(slot.level, slot.pactMagic)
+        ),
       { turnScoped: false }
     );
   }
   function restore() {
     if (used <= 0) return;
-    restoreSlot(slot.level, slot.pactMagic);
+    useCharacterStore.getState().changeResourceByHand(
+      () => restoreSlot(slot.level, slot.pactMagic),
+      () => spendSlot(slot.level, slot.pactMagic)
+    );
   }
 
   return (
@@ -2087,7 +2091,11 @@ function ExhaustionTrack({ value }: { value: number }) {
   // action is the ONE exhaustion mutation seam: it writes the persisted engine
   // world first and degrades to the legacy session write fail-closed.
   function setLevel(target: number) {
-    setExhaustion(target);
+    // By hand: the change writes its play-log line («Exhaustion 1 → 2»).
+    useCharacterStore.getState().changeResourceByHand(
+      () => setExhaustion(target),
+      () => setExhaustion(value)
+    );
   }
 
   // #16 — ungate from 0: a fresh character has 0 exhaustion, but the early
