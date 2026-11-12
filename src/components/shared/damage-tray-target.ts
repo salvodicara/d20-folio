@@ -15,7 +15,8 @@ import {
 } from "@/lib/play/damage-tray";
 import type { CreatureType } from "@/data/types";
 import { conditionLabel } from "@/lib/views/tracker-view";
-import { localizeSrd } from "@/i18n/resolver";
+import { hasSrd, localizeSrd } from "@/i18n/resolver";
+import type { MonsterTurnModifiers } from "@/lib/play/monster-turn-modifiers";
 
 /** One target as the tray shows it. */
 export interface TrayTarget {
@@ -151,4 +152,34 @@ function chipParts(
   );
   const mode = t(chip.mode === "advantage" ? "common.advantage" : "common.disadvantage");
   return { mode, source };
+}
+
+/** What the states on an attacking monster do to its attack roll, for the DM:
+ *  «Disadvantage (Vicious Mockery)», «−1d4 (Bane)». */
+export function monsterAttackNotes(
+  mods: MonsterTurnModifiers,
+  t: ReturnType<typeof useTranslation>["t"],
+  locale: Locale
+): string[] {
+  const name = (source: { kind: "spell" | "feature"; id: string }): string => {
+    const kind = source.kind === "spell" ? "spell" : "class-feature";
+    return hasSrd(kind, source.id, "name", locale)
+      ? localizeSrd(kind, source.id, "name", locale)
+      : "";
+  };
+  const line = (mode: string, source: { kind: "spell" | "feature"; id: string }) => {
+    const sourceName = name(source);
+    return sourceName
+      ? t("combat.damageTray.incoming", { mode, source: sourceName })
+      : mode;
+  };
+  const mode = mods.attack
+    ? t(mods.attack === "advantage" ? "common.advantage" : "common.disadvantage")
+    : null;
+  return [
+    ...(mode ? mods.attackModeSources.map((source) => line(mode, source)) : []),
+    ...mods.attackDice.map((die) =>
+      line(`${die.operation === "subtract" ? "−" : "+"}${die.dice}`, die.source)
+    ),
+  ];
 }
