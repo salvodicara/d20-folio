@@ -51,6 +51,9 @@ export interface PlayCompanion {
   /** A fallen companion that can be brought back, and what can pay for it. */
   revive?: ReviveOffer;
   attacks: PlayCompanionAttack[];
+  /** The forms it can take (Beast of the Land / Sea / Sky), with the one in use;
+   *  absent for a single-form companion. Picked with `pickSummonForm(formKey, …)`. */
+  forms?: { formKey: string; options: { id: string; label: string }[]; selected: string };
 }
 
 /** Bringing a dead companion back: a Magic action and a spell slot of at least the
@@ -130,6 +133,15 @@ export function playCompanions(
         ac: card.ac,
         fallen: card.fallen === true,
         ...reviveOf(card.fallen === true, block, doc, locale, card.featureId),
+        ...(card.variants && card.variants.length > 1
+          ? {
+              forms: {
+                formKey: sourceId,
+                options: card.variants.map((v) => ({ id: v.variantId, label: v.label })),
+                selected: card.selectedVariantId ?? card.variants[0]?.variantId ?? "",
+              },
+            }
+          : {}),
         attacks: card.attacks.map((attack) => {
           const catalogue = active?.attacks?.find((a) => a.id === attack.id) ?? null;
           return {

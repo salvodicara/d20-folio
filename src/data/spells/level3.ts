@@ -499,6 +499,7 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
           {
             type: "choice-resistance",
             choiceKey: "spell-protection-from-energy",
+            choiceFrequency: "cast",
             options: ["acid", "cold", "fire", "lightning", "thunder"],
             amount: 1,
           },

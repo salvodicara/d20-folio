@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { hpEntryNote } from "@/domains/play/hp-entry-view";
+import { PlayDefenses } from "@/domains/play/ui/PlayDefenses";
 import { useHpControls } from "@/features/character/molecules/use-hp-controls";
 import type { Locale } from "@/lib/locale";
 import { concentrationLabel } from "@/lib/views/concentration-label";
@@ -24,11 +25,15 @@ export function PlayHp({
   doc,
   locale,
   onClose,
+  intent = "damage",
 }: {
   doc: CharacterDoc;
   locale: Locale;
   onClose: () => void;
+  /** The button that opened it: its action leads (filled) and colours the header. */
+  intent?: "damage" | "heal";
 }) {
+  const healing = intent === "heal";
   const { t } = useTranslation();
   const hp = useHpControls();
   const [text, setText] = useState("");
@@ -70,7 +75,7 @@ export function PlayHp({
     <Dialog
       open
       onClose={onClose}
-      color="ini"
+      color={healing ? "cmp" : "ini"}
       title={t("play.hp.title")}
       closeLabel={t("common.close")}
     >
@@ -115,7 +120,7 @@ export function PlayHp({
       )}
       <div className="f-hp-acts f-ask">
         <Button
-          kind="danger"
+          kind={healing ? "ghost" : "danger"}
           wide
           disabled={!amount || hp.dead}
           onClick={() => {
@@ -129,7 +134,7 @@ export function PlayHp({
           {t("mechanics.cast.optionDamage")}
         </Button>
         <Button
-          kind="primary"
+          kind={healing ? "primary" : "ghost"}
           wide
           disabled={!amount || hp.dead}
           onClick={() => {
@@ -170,6 +175,7 @@ export function PlayHp({
           </Button>
         </div>
       </div>
+      <PlayDefenses doc={doc} locale={locale} />
     </Dialog>
   );
 }

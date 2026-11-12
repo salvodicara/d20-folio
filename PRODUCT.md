@@ -81,7 +81,7 @@ improves without it.
 ## Accessibility & Inclusion
 
 WCAG AA is the floor, enforced by a self-enforcing gate (`tests/e2e/a11y.spec.ts`) across every
-surface in both dark and light themes — the app is axe-clean, re-checked after any token change.
+surface in the dark theme (the new UI ships dark-only for its first release, owner 2026-11-11; a light F4 comes later, on request; the classic UI keeps both themes) — the app is axe-clean, re-checked after any token change.
 Every interactive component ships default/hover/focus/active/disabled (+ loading/error where
 relevant) states with a visible keyboard focus ring. All animation respects `prefers-reduced-motion`
 via a single OS-driven kill-switch (no in-app animations toggle). Bilingual EN + IT for every
