@@ -8,6 +8,28 @@ import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import type { CampaignDoc } from "@/types/campaign";
 
+function namesWith(
+  pc: (id: string) => string | undefined,
+  locale: Locale
+): SessionReportNames {
+  return {
+    pc,
+    condition: (id) =>
+      hasSrd("condition", id, "name", locale)
+        ? localizeSrd("condition", id, "name", locale)
+        : id,
+    action: (text) => localizeText(text, locale),
+    spell: (ref) => concentrationLabel(ref, locale),
+    source: (id) => grantSourceLabel(id, locale),
+    locale,
+  };
+}
+
+/** A character's own report (no campaign): every `pc-…` is the character itself. */
+export function useOwnReportNames(name: string, locale: Locale): SessionReportNames {
+  return useMemo(() => namesWith(() => name || undefined, locale), [name, locale]);
+}
+
 /** How the report names people, conditions, spells and sources, in the reader's language. */
 export function useReportNames(
   campaign: CampaignDoc,
@@ -16,21 +38,12 @@ export function useReportNames(
   party: Readonly<Record<string, string>>
 ): SessionReportNames {
   return useMemo(
-    () => ({
-      pc: (id) => {
+    () =>
+      namesWith((id) => {
         const uid = id.replace(/^pc-/, "");
         const member = campaign.memberDetails[uid];
         return party[uid] || member?.character?.name || member?.displayName || undefined;
-      },
-      condition: (id) =>
-        hasSrd("condition", id, "name", locale)
-          ? localizeSrd("condition", id, "name", locale)
-          : id,
-      action: (text) => localizeText(text, locale),
-      spell: (ref) => concentrationLabel(ref, locale),
-      source: (id) => grantSourceLabel(id, locale),
-      locale,
-    }),
+      }, locale),
     [campaign.memberDetails, locale, party]
   );
 }
