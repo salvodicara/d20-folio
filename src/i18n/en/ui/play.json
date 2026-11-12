@@ -402,6 +402,15 @@
       "mastery": "Mastery",
       "askSolo": "Did {{name}} hit?",
       "askSoloAdd": "Add to the hit:"
+    },
+    "aura": {
+      "source": "{{name}}'s Aura",
+      "chip": "{{name}}'s Aura +{{bonus}}",
+      "group": "Paladin auras",
+      "onHint": "Counts on your saves; tap if you stand outside {{name}}'s aura",
+      "offHint": "You stand outside {{name}}'s aura; tap when you are back in it",
+      "outToast": "Outside {{name}}'s aura",
+      "inToast": "Back in {{name}}'s aura"
     }
   }
 }

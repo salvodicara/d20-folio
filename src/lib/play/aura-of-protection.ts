@@ -13,6 +13,8 @@ import { INCAPACITATING_CONDITIONS } from "@/lib/combat-test-context";
 import { aggregateAbilityScores } from "@/lib/compute";
 import type { GrantSource } from "@/lib/grants";
 import type { CharacterDoc } from "@/types/character";
+export { partyAuraSource } from "./aura-source";
+import { OUT_OF_AURA_PREFIX } from "./aura-source";
 
 /** A party member who may hold the aura, as the ally's sheet sees them. */
 export interface AuraSource {
@@ -85,8 +87,30 @@ export interface PartyAura {
  *  written for longer is not at the table tonight. */
 export const AURA_FRESH_MS = 6 * 60 * 60 * 1000;
 
+/** How often an unchanged published aura is written again while the sheet is open,
+ *  so it stays fresh for the allies through a long session. */
+export const AURA_HEARTBEAT_MS = 2 * 60 * 60 * 1000;
+
+/** What the paladin's sheet writes now: the aura set (new, changed or due for its
+ *  heartbeat), cleared (it ended), or nothing. Unchanged and recent: nothing, so a
+ *  re-render never writes. */
+export function auraWrite(
+  published: PublishedAura | null,
+  stored: (PublishedAura & { at: number }) | undefined,
+  nowMs: number
+): { kind: "set"; aura: PublishedAura & { at: number } } | { kind: "clear" } | null {
+  if (!published) return stored ? { kind: "clear" } : null;
+  const same =
+    stored !== undefined &&
+    stored.bonus === published.bonus &&
+    stored.reachFt === published.reachFt;
+  if (same && nowMs - stored.at <= AURA_HEARTBEAT_MS) return null;
+  return { kind: "set", aura: { ...published, at: nowMs } };
+}
+
 /** The ally says they stand outside this paladin's aura (until tapped again or a rest). */
-export const outOfAuraKey = (characterId: string): string => `out-of-aura:${characterId}`;
+export const outOfAuraKey = (characterId: string): string =>
+  `${OUT_OF_AURA_PREFIX}${characterId}`;
 
 /** The aura the paladin's sheet publishes, or null: below level 6, at 0 HP, or
  *  Incapacitated, there is none («while you aren't Incapacitated»). */
@@ -104,6 +128,28 @@ export function publishedAura(doc: CharacterDoc): PublishedAura | null {
     doc.character.abilityScoreOverrides
   ).CHA;
   return { bonus: Math.max(1, abilityModifier(cha)), reachFt: level >= 18 ? 30 : 10 };
+}
+
+/** Every fresh aura of another member, each marked on (the default) or off (the ally
+ *  stands outside it): the chips the ally's sheet shows. */
+export function allyAuraOffers(
+  party: ReadonlyArray<PartyAura>,
+  selfCharacterId: string,
+  nowMs: number,
+  activeFeatures: ReadonlyArray<string>
+): Array<{ characterId: string; name: string; bonus: number; on: boolean }> {
+  const out = new Set(activeFeatures);
+  return party
+    .filter(
+      (member) =>
+        member.characterId !== selfCharacterId && nowMs - member.aura.at <= AURA_FRESH_MS
+    )
+    .map((member) => ({
+      characterId: member.characterId,
+      name: member.name,
+      bonus: member.aura.bonus,
+      on: !out.has(outOfAuraKey(member.characterId)),
+    }));
 }
 
 /** The one aura bonus an ally's saves take: the best fresh aura of another member the

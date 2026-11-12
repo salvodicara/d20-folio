@@ -25,6 +25,7 @@
  * primary live-encounter listeners; a user NOT in combat pays just the shared query.
  */
 
+import { usePartyAura } from "@/features/campaigns/use-party-aura";
 import { effectsOnTarget } from "@/lib/play/effective-doc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -338,6 +339,9 @@ export function GlobalCombatMount(): null {
       ? campaigns.find((c) => c.memberDetails[uid]?.characterId === openCharacterId)
       : undefined;
   useCampaignClockProjection(openCharacterId ?? undefined, clockCampaign);
+  // Aura of Protection across the party: published from a paladin's own sheet, read
+  // onto every ally's saves, both through the campaign doc this sheet already reads.
+  usePartyAura(clockCampaign, uid, openCharacterId);
   const catchUpTo = useCharacterStore(clockCatchUpTarget);
   useEffect(() => {
     if (catchUpTo !== null) catchUpCampaignClock();

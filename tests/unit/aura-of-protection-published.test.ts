@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
 import {
   allyAura,
   AURA_FRESH_MS,
+  AURA_HEARTBEAT_MS,
+  auraWrite,
   outOfAuraKey,
   publishedAura,
   type PartyAura,
@@ -63,5 +65,70 @@ describe("allyAura: the bonus an ally's saves take", () => {
   });
   it("not one the ally stands outside of", () => {
     expect(allyAura([aura("a", 3)], "me", now, [outOfAuraKey("a")])).toBeNull();
+  });
+});
+
+describe("an ally's sheet with a received aura", () => {
+  it("adds the bonus to every saving throw, as its own named part", async () => {
+    const { deriveSavesAndChecks } = await import("@/lib/views/saves-checks-view");
+    const ally = makeCharacterDoc({ classes: [{ classId: "fighter", level: 5 }] });
+    const plain = deriveSavesAndChecks(ally.character, ally.session).saves;
+    const withAura = deriveSavesAndChecks(ally.character, {
+      ...ally.session,
+      partyAura: { from: "pal", name: "Aldric", bonus: 3 },
+    }).saves;
+    for (const [i, row] of withAura.entries()) {
+      expect(row.bonus - (plain[i]?.bonus ?? 0)).toBe(3);
+    }
+    // The bonus is its own named part, not a bigger «feature bonus».
+    expect(withAura[0]?.breakdownParts).toContainEqual(
+      expect.objectContaining({
+        label: { loc: { ui: "play.aura.source", params: { name: "Aldric" } } },
+        value: 3,
+      })
+    );
+  });
+});
+
+describe("auraWrite: when the paladin's sheet writes its aura", () => {
+  const now = 50_000_000;
+  const published = { bonus: 3, reachFt: 10 };
+
+  it("an unchanged, recently written aura writes nothing (no loops, no quota)", () => {
+    expect(auraWrite(published, { ...published, at: now - 60_000 }, now)).toBeNull();
+    expect(auraWrite(null, undefined, now)).toBeNull();
+  });
+  it("a new or changed aura is written with the time", () => {
+    expect(auraWrite(published, undefined, now)).toEqual({
+      kind: "set",
+      aura: { ...published, at: now },
+    });
+    expect(auraWrite({ bonus: 4, reachFt: 10 }, { ...published, at: now }, now)).toEqual({
+      kind: "set",
+      aura: { bonus: 4, reachFt: 10, at: now },
+    });
+  });
+  it("an aura that ends (0 HP, Incapacitated) is cleared at once", () => {
+    expect(auraWrite(null, { ...published, at: now }, now)).toEqual({ kind: "clear" });
+  });
+  it("an unchanged aura is refreshed after the heartbeat", () => {
+    expect(
+      auraWrite(published, { ...published, at: now - AURA_HEARTBEAT_MS - 1 }, now)
+    ).toEqual({
+      kind: "set",
+      aura: { ...published, at: now },
+    });
+  });
+});
+
+describe("standing outside an aura lasts until the next rest", () => {
+  it("a Short or Long Rest clears it", async () => {
+    const { longRestCharacter, shortRestCharacter } = await import("@/lib/play/rests");
+    const doc = makeCharacterDoc(
+      {},
+      { activeFeatures: [outOfAuraKey("pal"), "keep-me"] }
+    );
+    expect(shortRestCharacter(doc).session.activeFeatures).toEqual(["keep-me"]);
+    expect(longRestCharacter(doc).session.activeFeatures).toEqual(["keep-me"]);
   });
 });

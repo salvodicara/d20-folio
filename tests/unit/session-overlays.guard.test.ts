@@ -26,6 +26,7 @@ function documentedOverlays(): string[] {
 }
 
 const VALUES: Record<(typeof RUNTIME_SESSION_OVERLAYS)[number], unknown> = {
+  partyAura: { from: "pal", name: "Aldric", bonus: 3 },
   encounterEffects: [],
   tableRules: {},
   campaignClock: { campaignId: "camp", clock: { minute: 90 } },

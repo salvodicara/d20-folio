@@ -314,6 +314,11 @@ interface CharacterState {
   setTableRules: (characterId: string, rules: TableRules | null) => void;
   /** Project the campaign's clock onto the open character (`null`: a solo sheet). */
   setCampaignClock: (characterId: string, clock: ProjectedCampaignClock | null) => void;
+  /** Project a party paladin's Aura of Protection onto the open character (`null`: none). */
+  setPartyAura: (
+    characterId: string,
+    aura: { from: string; name: string; bonus: number } | null
+  ) => void;
   /** Inject (or clear) the combat-state persistence seam — the subscription lifecycle. */
   setCombatPersistence: (persistence: CombatPersistence | null) => void;
   /** Persist the current complete play owner through the injected seam. */
@@ -1479,6 +1484,19 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const session = { ...character.session };
     if (rules) session.tableRules = rules;
     else delete session.tableRules;
+    set({ character: { ...character, session } });
+  },
+
+  setPartyAura: (characterId, aura) => {
+    const { character } = get();
+    if (!character || character.id !== characterId) return;
+    // Idempotent, as `setTableRules`: an unchanged aura publishes nothing.
+    if (JSON.stringify(character.session.partyAura ?? null) === JSON.stringify(aura)) {
+      return;
+    }
+    const session = { ...character.session };
+    if (aura) session.partyAura = aura;
+    else delete session.partyAura;
     set({ character: { ...character, session } });
   },
 

@@ -488,6 +488,9 @@ export interface CampaignDoc {
       /** D29 — the attached character's denormalized snapshot (see
        *  {@link MemberCharacterSnapshot}); null/absent until one is attached. */
       character?: MemberCharacterSnapshot | null;
+      /** Aura of Protection the member's paladin publishes for the party (written by
+       *  their own sheet: on change, plus a heartbeat); absent when it has none. */
+      aura?: { bonus: number; reachFt: number; at: number };
     }
   >;
   status: "active" | "archived";
