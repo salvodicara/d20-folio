@@ -5382,6 +5382,9 @@
   .fui .f-cmp-grid {
     grid-template-columns: 264px minmax(0, 1fr) 440px;
   }
+  .fui .f-cmp-grid[data-nofilters] {
+    grid-template-columns: minmax(0, 1fr) 440px;
+  }
 }
 @media (max-width: 960px) {
   .fui .f-cmp-grid {
@@ -5396,6 +5399,14 @@
     top: 88px;
     max-height: calc(100vh - 112px);
     overflow-y: auto;
+  }
+  /* the filter panel scrolls when its groups outgrow the screen: its foot fades,
+     and the last group scrolls clear of the fade */
+  .fui .f-cmp-filters {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+  }
+  .fui .f-cmp-filters .f-cmp-facets {
+    padding-bottom: 40px;
   }
 }
 .fui .f-cmp-facets {
