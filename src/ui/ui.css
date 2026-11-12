@@ -6205,7 +6205,7 @@
   .fui .f-av,
   .fui .f-tb-back,
   .fui .f-close,
-  .fui .f-btn:has(> .f-ic:only-child) {
+  .fui .f-btn {
     min-width: 44px;
     min-height: 44px;
   }
