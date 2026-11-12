@@ -113,9 +113,27 @@ describe("castFollowUps", () => {
     }
   });
 
-  it("a condition that lands without a save (Invisibility) is not asked", () => {
+  it("a condition that lands by itself on a picked ally (Invisibility) is written on it", () => {
+    // SRD 5.2.1: "A creature you touch has the Invisible condition until the spell
+    // ends." No save, no attack: the line lands on the pick.
     expect(
       castFollowUps(action("spell-invisibility"), [ALLY], ME).filter(
+        (l) => l.kind === "condition"
+      )
+    ).toEqual([
+      { kind: "condition", targetId: ALLY, conditionIds: ["invisible"], pickOne: false },
+    ]);
+    // With nobody picked it is not guessed.
+    expect(
+      castFollowUps(action("spell-invisibility"), [], ME).filter(
+        (l) => l.kind === "condition"
+      )
+    ).toEqual([]);
+  });
+
+  it("a damaging or saving spell's automatic rider is not written by itself (Heat Metal)", () => {
+    expect(
+      castFollowUps(action("spell-heat-metal"), [ALLY], ME).filter(
         (l) => l.kind === "condition"
       )
     ).toEqual([]);

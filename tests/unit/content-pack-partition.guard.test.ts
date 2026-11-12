@@ -110,6 +110,12 @@ const PI_TERMS = [
   "guida del dungeon master",
 ] as const;
 
+/** Any PI term at all: a cheap first pass before the line-by-line one. */
+const PI_ANY = new RegExp(
+  PI_TERMS.map((t) => `\\b${t.replace(/ /g, "\\s")}\\b`).join("|"),
+  "i"
+);
+
 const PI_RES = PI_TERMS.map(
   (t) => [t, new RegExp(`\\b${t.replace(/ /g, "\\s")}\\b`, "i")] as const
 );
@@ -226,11 +232,10 @@ describe("content-pack partition — public-side licensing invariants", () => {
         for (const term of piHits(line)) {
           offenders.push(`${file.slice(REPO_ROOT.length + 1)}:${i + 1}: PI "${term}"`);
         }
-        for (const [term, re] of IDENTITY_RES) {
+        for (const [, re] of IDENTITY_RES) {
           if (re.test(line)) {
-            offenders.push(
-              `${file.slice(REPO_ROOT.length + 1)}:${i + 1}: identity "${term}"`
-            );
+            // The location only: a public CI log must never carry the value.
+            offenders.push(`${file.slice(REPO_ROOT.length + 1)}:${i + 1}: identity`);
           }
         }
       });
@@ -252,6 +257,103 @@ describe("content-pack partition — public-side licensing invariants", () => {
     }
     // Sanity: the crawl actually saw the tags.
     expect(count).toBeGreaterThan(700);
+    expect(offenders).toEqual([]);
+  });
+  // ── 4. The whole public tree carries no identity value ─────────────────────
+  // Live players' character names, uids, sandbox slugs and the owner's email are
+  // private (owner, 2026-11-12): not in code, ids, test titles, fixtures' names or
+  // changesets either, since a public CI log prints them. Names match whole-word
+  // and case-blind here, so a slug such as `team-<name>-bard` is caught too. The
+  // one sanctioned value is the privacy policy's data-controller contact.
+  const TREE_ROOTS = ["src", "tests", "scripts", ".changeset", ".github", "docs", "e2e"];
+  const TREE_EXTS = [
+    ".ts",
+    ".tsx",
+    ".js",
+    ".mjs",
+    ".json",
+    ".md",
+    ".yml",
+    ".yaml",
+    ".css",
+    ".html",
+    ".sh",
+  ];
+  const SANCTIONED = new Set(["src/i18n/en/ui/legal.json", "src/i18n/it/ui/legal.json"]);
+  const TREE_RES = IDENTITY_TERMS.map((t) => {
+    const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return /^[A-Za-zÀ-ÿ]+$/.test(t)
+      ? new RegExp(`(?<![A-Za-zÀ-ÿ])${escaped}(?![A-Za-zÀ-ÿ])`, "i")
+      : new RegExp(escaped, "i");
+  });
+
+  function treeFiles(): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(REPO_ROOT)) {
+      if (TREE_EXTS.some((ext) => entry.endsWith(ext))) out.push(join(REPO_ROOT, entry));
+    }
+    for (const root of TREE_ROOTS) {
+      const dir = join(REPO_ROOT, root);
+      if (existsSync(dir)) out.push(...walk(dir, TREE_EXTS));
+    }
+    return out;
+  }
+
+  it("no identity value appears anywhere in the public tree", () => {
+    const offenders: string[] = [];
+    for (const file of treeFiles()) {
+      const rel = file.slice(REPO_ROOT.length + 1);
+      if (SANCTIONED.has(rel)) continue;
+      const text = readFileSync(file, "utf8");
+      // One pass over the whole file first: only a file with a hit is read by line.
+      if (!TREE_RES.some((re) => re.test(text))) continue;
+      text.split("\n").forEach((line, i) => {
+        // The location only: a public CI log must never carry the value.
+        if (TREE_RES.some((re) => re.test(line))) offenders.push(`${rel}:${i + 1}`);
+      });
+    }
+    expect(offenders).toEqual([]);
+  });
+  // ── 5. No PI term in public code, tests, scripts or changesets ─────────────
+  // The audited lexicon (public, so this runs in SRD-only PR CI too) also stays out
+  // of comments, test titles and changesets, which reach the CHANGELOG. The few
+  // sanctioned lines name a non-SRD id ON PURPOSE: a provenance tag's type, and the
+  // checks that such content is ABSENT from the public catalogue. Pack-composed
+  // corrections still keyed by pack ids are listed until they move to the pack.
+  const CODE_ROOTS = ["src", "tests", "scripts", ".changeset"];
+  const CODE_EXTS = [".ts", ".tsx", ".js", ".mjs", ".md", ".css", ".sh"];
+  const PI_SANCTIONED: ReadonlyArray<readonly [string, RegExp]> = [
+    // The provenance tags a pack entry may carry (the type, not content).
+    ["src/data/types.ts", /^\s*\| "[A-Z][a-z]+"$/],
+    // Non-SRD spells must be absent from the public catalogue.
+    [
+      "tests/unit/spell-data-integrity.test.ts",
+      /getSpellById\("[a-z-]+"\)\)\.toBeUndefined\(\)/,
+    ],
+    // Pack-composed rows still keyed by pack ids (to move pack-side).
+    ["tests/unit/reaction-trigger-structured.test.ts", /^\s*"[a-z-]+": "/],
+    ["tests/unit/pack-grant-extensions.test.ts", /monsterIds/],
+  ];
+
+  it("no PI term appears in public code, tests, scripts or changesets", () => {
+    const offenders: string[] = [];
+    for (const root of CODE_ROOTS) {
+      const dir = join(REPO_ROOT, root);
+      if (!existsSync(dir)) continue;
+      for (const file of walk(dir, CODE_EXTS)) {
+        const rel = file.slice(REPO_ROOT.length + 1);
+        if (rel === "tests/unit/content-pack-partition.guard.test.ts") continue;
+        const text = readFileSync(file, "utf8");
+        // One pass over the whole file first: only a file with a hit is read by line.
+        if (!PI_ANY.test(text)) continue;
+        text.split("\n").forEach((line, i) => {
+          if (isAllowlistedDocLine(line)) return;
+          if (PI_SANCTIONED.some(([f, re]) => f === rel && re.test(line))) return;
+          for (const term of piHits(line))
+            offenders.push(`${rel}:${i + 1}: PI "${term}"`);
+        });
+      }
+    }
     expect(offenders).toEqual([]);
   });
 });

@@ -368,10 +368,25 @@ export function computeACDetailed(
     };
 
     if ("custom" in item) {
+      // The armor form once saved its «AC» as `acBonus` with no `ac`: that number is
+      // the armor's own AC (or the shield's), never a bonus on top of it.
+      const formAc =
+        item.armorCategory && !item.ac && item.acBonus !== undefined
+          ? item.acBonus
+          : undefined;
+      const ownAc =
+        item.ac ??
+        (formAc !== undefined && item.armorCategory && item.armorCategory !== "shield"
+          ? {
+              base: formAc,
+              dexBonus: item.armorCategory !== "heavy",
+              ...(item.armorCategory === "medium" ? { maxDex: 2 } : {}),
+            }
+          : undefined);
       if (item.armorCategory === "shield") {
-        shieldBonus = Math.max(shieldBonus, item.ac?.base ?? 2);
-      } else if (item.ac && item.armorCategory) {
-        const c = armorComposition(item.ac.base, item.armorCategory, item.ac);
+        shieldBonus = Math.max(shieldBonus, item.ac?.base ?? formAc ?? 2);
+      } else if (ownAc && item.armorCategory) {
+        const c = armorComposition(ownAc.base, item.armorCategory, ownAc);
         if (c.effective > bestArmorAC) {
           bestArmorAC = c.effective;
           baseValue = c.base;
@@ -383,7 +398,7 @@ export function computeACDetailed(
         }
         armorEquipped = true;
       }
-      if (item.acBonus && !requiresAttunementButNotAttuned) {
+      if (item.acBonus && formAc === undefined && !requiresAttunementButNotAttuned) {
         itemBonuses += item.acBonus;
       }
     } else if ("srdId" in item) {
@@ -1105,6 +1120,9 @@ export function buildSaveBreakdown(args: {
   exhaustion?: Exhaustion;
   pbOverride?: number | null;
   saveBonus?: number;
+  /** A party paladin's Aura of Protection inside `saveBonus`, shown as its own part
+   *  («Aura di Aldric +3») rather than in the features' bonus. */
+  aura?: { name: string; bonus: number };
 }): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [
     abilityPart(args.ability, abilityModifier(args.abilityScore)),
@@ -1117,7 +1135,16 @@ export function buildSaveBreakdown(args: {
       )
     );
   }
-  if (args.saveBonus) parts.push(termPart("breakdown.featureBonus", args.saveBonus));
+  const featureBonus = (args.saveBonus ?? 0) - (args.aura?.bonus ?? 0);
+  if (featureBonus) parts.push(termPart("breakdown.featureBonus", featureBonus));
+  if (args.aura) {
+    parts.push(
+      locPart(
+        { ui: "play.aura.source", params: { name: args.aura.name } },
+        args.aura.bonus
+      )
+    );
+  }
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
   return args.override != null ? withOverride(parts, args.override + exPenalty) : parts;

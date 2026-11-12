@@ -1150,7 +1150,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     // The attached hero's first name, derived from the pack fixture at runtime
     // (no name literal ships publicly); a never-matching sentinel when absent.
     ready: readyText(
-      new RegExp(firstWord(teamFixtureName("catalion-bard")) || "__pack-absent__", "i")
+      new RegExp(firstWord(teamFixtureName("bard")) || "__pack-absent__", "i")
     ),
   },
   // The unified Party section running an encounter — the INLINE initiative tracker

@@ -79,7 +79,7 @@ for (const vp of VIEWPORTS) {
   test(`Play row avatars fill their slots (${vp.name})`, async ({ page }) => {
     await page.setViewportSize({ width: vp.width, height: vp.height });
     await seedLang(page, "it");
-    await page.goto("/characters/team-catalion-bard");
+    await page.goto("/characters/team-bard");
     expect(await spills(page, "main")).toEqual([]);
   });
 }

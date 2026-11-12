@@ -3,6 +3,8 @@
  * is on drops to 0 Hit Points, the spell's trigger rule offers its move-the-mark
  * Bonus Action. This module says which offers a change in the fight raises for you.
  */
+import type { ActionType } from "@/data/types";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { foldCombatEffectOps, type IncapacitationRow } from "@/lib/combat-effects";
 import { firedTriggerOffers } from "@/lib/smart-tracker";
 import type { CombatEffectOp } from "@/types/combat-effect";
@@ -16,6 +18,9 @@ export interface MarkOffer {
   sourceKind: "spell" | "feature";
   /** Its catalogue action that moves the mark (`move-mark`). */
   actionId: string;
+  /** What the move costs: a Bonus Action (Hex, Hunter's Mark), or no action at all
+   *  (`free`: Vow of Enmity). */
+  slot: ActionType;
   /** The combatant that dropped. */
   targetId: string;
 }
@@ -43,7 +48,15 @@ export function markDropOffers(
     (e) => e.payload.kind === "target-mark" && e.actor.combatantId === myId
   );
   if (marks.length === 0) return [];
-  const offers = firedTriggerOffers(doc, "reduced-to-zero", { targetMarked: true });
+  const granted = aggregateCharacterGrants(doc.character, doc.session).grantedActions;
+  const offers = firedTriggerOffers(doc, "reduced-to-zero", { targetMarked: true }).map(
+    (offer) => ({
+      ...offer,
+      slot:
+        granted.find((g) => g.sourceId === offer.sourceId && g.id === offer.actionId)
+          ?.slot ?? ("bonus" as const),
+    })
+  );
   return dropped.flatMap((row) =>
     offers.flatMap((offer) => {
       const mark = marks.find(

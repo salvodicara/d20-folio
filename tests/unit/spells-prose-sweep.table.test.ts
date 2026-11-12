@@ -63,7 +63,8 @@ const STANDING_SPELLS = [
   {
     id: "faerie-fire",
     recipient: "selected",
-    targeting: { affinity: "enemy" },
+    // "Each creature in a 20-foot Cube": friend or foe.
+    targeting: { affinity: "any" },
   },
   {
     id: "longstrider",

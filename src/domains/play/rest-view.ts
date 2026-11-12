@@ -7,7 +7,7 @@
  */
 import { canCharacterRest, isCharacterAlive } from "@/lib/character-status";
 import type { Locale } from "@/lib/locale";
-import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, effectiveMaxHp } from "@/lib/aggregate-character";
 import { hitDicePool, type HitDieSize } from "@/lib/play/hit-dice";
 import { longRestCharacter } from "@/lib/play/rests";
 import { restPreview, type RestKind } from "@/lib/play/rest-preview";
@@ -88,4 +88,9 @@ export function restView(doc: CharacterDoc, kind: RestKind, locale: Locale): Res
         ? "zero-hp"
         : "dead",
   };
+}
+
+/** The floor on this character's Hit Point Die faces, when it has one. */
+export function hitDieFloorOf(doc: CharacterDoc) {
+  return aggregateCharacterGrants(doc.character, doc.session).hitDieFloor;
 }
