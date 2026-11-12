@@ -32,6 +32,7 @@ import { sessionReportSections } from "@/lib/session-log/session-report-sections
 import { renderSessionReport } from "@/lib/views/session-report-view";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { Button, Chip, Icon, initialOf, Panel } from "@/ui";
@@ -287,8 +288,8 @@ function Report({
 /** A fight of the character's own (no campaign): the round, and its turn. */
 function SoloInitiative() {
   const { t } = useTranslation();
-  const started = useCharacterStore((s) => s.combatSoloFightStarted);
-  const round = useCharacterStore((s) => s.combatRound);
+  const started = useCombatStore((s) => s.fightStarted);
+  const round = useCombatStore((s) => s.round);
   const name = useCharacterStore((s) => s.character?.character.name ?? "");
   if (!started) return null;
   return (

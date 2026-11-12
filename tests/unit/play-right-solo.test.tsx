@@ -18,6 +18,7 @@ vi.mock("@/lib/firebase", () => ({
 
 import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { makeCharacterDoc } from "./_helpers";
 
 function mount() {
@@ -31,11 +32,8 @@ function mount() {
 describe("PlayRight, no campaign", () => {
   beforeEach(() => {
     useCharacterStore.getState().setCharacter(makeCharacterDoc({}));
-    useCharacterStore.setState({
-      readonly: false,
-      combatSoloFightStarted: false,
-      combatRound: 1,
-    });
+    useCharacterStore.setState({ readonly: false });
+    useCombatStore.setState({ fightStarted: false, round: 1 });
   });
 
   it("is empty with nothing logged and no fight", () => {
@@ -56,7 +54,7 @@ describe("PlayRight, no campaign", () => {
   });
 
   it("shows the round of a fight of its own", () => {
-    useCharacterStore.setState({ combatSoloFightStarted: true, combatRound: 3 });
+    useCombatStore.setState({ fightStarted: true, round: 3 });
     mount();
     expect(screen.getByText("Initiative · round 3")).toBeTruthy();
   });
