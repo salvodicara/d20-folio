@@ -148,13 +148,26 @@ function Prompt({
         entry.spend
       );
     if (!committed) return;
+    // A recorded d20 used as the roll (Portent) is spent with it, in the same undo.
+    const unspend = entry.foretold
+      ? useCharacterStore
+          .getState()
+          .spendTrackerRoll(entry.foretold.trackerId, entry.foretold.index)
+      : null;
     const message = t(
       committed.result.reviewedOutcome.status === "success"
         ? "combat.concentrationSaveSuccessToast"
         : "combat.concentrationSaveFailureToast",
       { total: committed.result.total }
     );
-    registerUndoableResult({ message }, committed.undo, () => apply(entry));
+    registerUndoableResult(
+      { message },
+      () => {
+        unspend?.();
+        return committed.undo();
+      },
+      () => apply(entry)
+    );
   };
   /** Cast the saver as a Reaction: its slot and the Reaction are spent, the d20 counts
    *  as its face, and one undo takes all of it back (the classic banner). */

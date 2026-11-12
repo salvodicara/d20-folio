@@ -263,6 +263,7 @@
       "stable": "Stabile: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
       "stableFor": "Stabile da {{minutes}} min: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
       "addAfter": "Dopo il tiro",
+      "foretold": "Al posto del d20",
       "addBardic": "+ Ispirazione Bardica ({{die}})",
       "secondFace": "Il secondo d20",
       "dieFace": "Quanto hai fatto col {{die}}?",
