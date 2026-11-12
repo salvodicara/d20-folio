@@ -9231,7 +9231,7 @@ button.create-need:focus-visible .create-need-chev {
 }
 .rr-die {
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: var(--text-2xl);
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
@@ -9282,7 +9282,7 @@ button.create-need:focus-visible .create-need-chev {
   background: var(--bg-surface-1);
   color: var(--text-secondary);
   font-family: var(--font-numeric);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -9308,7 +9308,7 @@ button.create-need:focus-visible .create-need-chev {
 .rr-result {
   margin: var(--sp-4) 0 0;
   font-family: var(--font-body);
-  font-size: 15px;
+  font-size: var(--text-base);
   font-weight: 600;
   line-height: 1.35;
   color: var(--gold-leaf-300);
