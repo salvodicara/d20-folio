@@ -373,7 +373,8 @@
     "roll": {
       "surprised": "Surprised",
       "paidAdvantage": "{{name}} on Initiative",
-      "paidAdvantageHint": "Roll two d20s for Initiative and enter the higher"
+      "paidAdvantageHint": "Roll two d20s for Initiative and enter the higher",
+      "paidAdvantageCheck": "{{name}} on the check"
     },
     "defense": {
       "temporary": "temporary",
