@@ -20,6 +20,7 @@ import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZon
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
+import { MonsterUses } from "@/domains/combat/ui/MonsterUses";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
@@ -280,6 +281,16 @@ function LiveFight({
                 }
               />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* the DM's limited uses on the monster's line (Recharge, N/Day) */}
+              {isDm && (
+                <MonsterUses
+                  campaignId={campaign.id}
+                  encounter={encounter}
+                  ids={row.ids}
+                  locale={locale}
+                  onToast={onToast}
+                />
+              )}
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
                 <MonsterZoneHits

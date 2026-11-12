@@ -73,6 +73,13 @@
       "conditionOn": "Condizione aggiunta a {{name}}",
       "conditionOff": "Condizione tolta a {{name}}",
       "addN": "Aggiungi {{count}}"
-    }
+    },
+    "uses": "Usi di {{name}}",
+    "rechargeAsk": "Il d6 per la ricarica ({{min}}–6):",
+    "rechargeFace": "Il d6 mostra {{face}}",
+    "rechargeBack": "{{name}}: {{face}} sul d6, di nuovo pronto",
+    "rechargeNot": "{{name}}: {{face}} sul d6, non si ricarica",
+    "rechargeRoll": "tira il d6",
+    "useSpent": "{{name}}: usato"
   }
 }

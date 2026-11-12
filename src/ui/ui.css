@@ -4115,6 +4115,24 @@
   }
 }
 
+/* the DM's monster uses under its line (board A1): a row of chips, the recharge d6
+   inline when one is due */
+.fui .f-mon-uses {
+  display: grid;
+  gap: 8px;
+  padding: 0 0 12px calc(var(--slot-size) + 48px);
+}
+.fui .f-mon-roll {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+@media (max-width: 640px) {
+  .fui .f-mon-uses {
+    padding-left: 0;
+  }
+}
 /* «Entra nella zona»: who walked in, as chips under the zone. */
 .fui .f-zone-enter {
   display: grid;

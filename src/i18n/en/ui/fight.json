@@ -73,6 +73,13 @@
       "conditionOn": "Condition added to {{name}}",
       "conditionOff": "Condition removed from {{name}}",
       "addN": "Add {{count}}"
-    }
+    },
+    "uses": "{{name}}'s uses",
+    "rechargeAsk": "The recharge d6 ({{min}}–6):",
+    "rechargeFace": "The d6 shows {{face}}",
+    "rechargeBack": "{{name}}: {{face}} on the d6, ready again",
+    "rechargeNot": "{{name}}: {{face}} on the d6, no recharge",
+    "rechargeRoll": "roll the d6",
+    "useSpent": "{{name}}: used"
   }
 }
