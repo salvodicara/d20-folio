@@ -7,7 +7,7 @@
  * the face; the sheet adds its bonus and applies the outcome in one undoable step.
  */
 import type { TFunction } from "i18next";
-import { effectiveConditions } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, effectiveConditions } from "@/lib/aggregate-character";
 import { vitalExhaustion } from "@/lib/character-vitals";
 import {
   ESCAPE_GRAPPLE_ACTION_ID,
@@ -21,9 +21,8 @@ import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableResult } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 
-/** A skill's bonus as the sheet shows it (the one shared skills derivation). */
-export function skillBonusFor(doc: CharacterDoc): (skillId: string) => number {
-  const rows = deriveSavesAndChecks(doc.character, {
+function skillRows(doc: CharacterDoc) {
+  return deriveSavesAndChecks(doc.character, {
     exhaustion: vitalExhaustion(doc.session),
     ...(doc.session.tableRules ? { tableRules: doc.session.tableRules } : {}),
     activeFeatures: doc.session.activeFeatures,
@@ -32,18 +31,49 @@ export function skillBonusFor(doc: CharacterDoc): (skillId: string) => number {
     fadingPenalties: doc.session.fadingPenalties,
     activeForm: doc.session.activeForm,
   }).skills;
+}
+
+/** A skill's bonus as the sheet shows it (the one shared skills derivation). */
+export function skillBonusFor(doc: CharacterDoc): (skillId: string) => number {
+  const rows = skillRows(doc);
   return (skillId) => rows.find((r) => r.id === skillId)?.bonus ?? 0;
 }
 
+/**
+ * The lowest d20 face a check with this skill counts (Reliable Talent: a 9 or lower
+ * counts as 10 on a skill you are proficient in; Expertise counts, half proficiency
+ * does not). 1 when nothing raises it.
+ */
+export function skillFaceFloorFor(doc: CharacterDoc): (skillId: string) => number {
+  const rows = skillRows(doc);
+  const floors = aggregateCharacterGrants(doc.character, doc.session).rollFloors.filter(
+    (f) => f.rollType === "check" && f.floor > 1
+  );
+  return (skillId) => {
+    const row = rows.find((r) => r.id === skillId);
+    if (!row) return 1;
+    const proficient =
+      row.proficiency === "proficient" || row.proficiency === "expertise";
+    return floors.reduce(
+      (best, f) =>
+        (f.appliesTo === "all" || proficient) && (!f.ability || f.ability === row.ability)
+          ? Math.max(best, f.floor)
+          : best,
+      1
+    );
+  };
+}
+
 export type CheckEntry =
-  | { kind: "hide"; dc: number; skill: string; bonus: number }
-  | { kind: "escape"; skill: string; bonus: number }
-  | { kind: "check"; skills: Array<{ id: string; bonus: number }> };
+  | { kind: "hide"; dc: number; skill: string; bonus: number; floor: number }
+  | { kind: "escape"; skill: string; bonus: number; floor: number }
+  | { kind: "check"; skills: Array<{ id: string; bonus: number; floor: number }> };
 
 /** The check entries one action carries, in the classic card's order. */
 export function checkEntriesFor(
   action: Pick<ResolvedAction, "id" | "summary">,
-  bonusFor: (skillId: string) => number
+  bonusFor: (skillId: string) => number,
+  floorFor: (skillId: string) => number = () => 1
 ): CheckEntry[] {
   const entries: CheckEntry[] = [];
   const { skillCheck, checkSkills } = action.summary;
@@ -53,14 +83,17 @@ export function checkEntriesFor(
       dc: skillCheck.dc,
       skill: skillCheck.skill,
       bonus: bonusFor(skillCheck.skill),
+      floor: floorFor(skillCheck.skill),
     });
   if (checkSkills)
     entries.push({
       kind: "check",
-      skills: checkSkills.map((id) => ({ id, bonus: bonusFor(id) })),
+      skills: checkSkills.map((id) => ({ id, bonus: bonusFor(id), floor: floorFor(id) })),
     });
-  if (action.id === ESCAPE_GRAPPLE_ACTION_ID)
-    entries.push({ kind: "escape", ...escapeGrappleSkill(bonusFor) });
+  if (action.id === ESCAPE_GRAPPLE_ACTION_ID) {
+    const escape = escapeGrappleSkill(bonusFor);
+    entries.push({ kind: "escape", ...escape, floor: floorFor(escape.skill) });
+  }
   return entries;
 }
 

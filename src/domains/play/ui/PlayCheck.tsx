@@ -15,7 +15,7 @@ import {
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
-import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
+import { countedFace, TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
 import type { CombatAction } from "@/lib/views/combat-action-view";
 import { Button, Chip, Dialog, Field, StatBadge } from "@/ui";
 
@@ -46,17 +46,19 @@ export function PlayCheck({
   );
   const [dcText, setDcText] = useState(String(ESCAPE_DC));
   if (!entry) return null;
-  const face = /^\d{1,2}$/.test(faceText.trim()) ? Number(faceText.trim()) : null;
-  const valid = face !== null && face >= 1 && face <= 20;
-  const bonus =
-    entry.kind === "check"
-      ? (entry.skills.find((s) => s.id === skill)?.bonus ?? 0)
-      : entry.bonus;
+  const rolled = /^\d{1,2}$/.test(faceText.trim()) ? Number(faceText.trim()) : null;
+  const valid = rolled !== null && rolled >= 1 && rolled <= 20;
+  const picked =
+    entry.kind === "check" ? entry.skills.find((s) => s.id === skill) : entry;
+  const bonus = picked?.bonus ?? 0;
+  // Reliable Talent: a 9 or lower on a proficient skill counts as 10.
+  const face = valid ? countedFace(rolled, picked?.floor ?? 1) : null;
+  const floored = valid && face !== rolled;
   const skillId = entry.kind === "check" ? (skill ?? "") : entry.skill;
-  const total = valid ? face + bonus : null;
+  const total = face !== null ? face + bonus : null;
   const passed = total !== null && dc !== undefined ? total >= dc : undefined;
   const verdict =
-    total === null || !valid
+    total === null || face === null
       ? null
       : `${sum(face, bonus)}: ${
           passed === undefined
@@ -70,7 +72,7 @@ export function PlayCheck({
                   : t("play.check.ok", { dc })
         }`;
   const apply = () => {
-    if (!valid) return;
+    if (face === null) return;
     if (entry.kind === "check") {
       executeAction(withCheckResult(action, { skill: skillId, face, bonus }, dc));
     } else {
@@ -177,6 +179,9 @@ export function PlayCheck({
         <p className="f-note f-ask" data-c="res" role="status">
           {verdict}
         </p>
+      )}
+      {floored && (
+        <p className="f-help f-ask">{t("play.check.floored", { rolled, face })}</p>
       )}
       {entry.kind !== "check" && (
         <p className="f-help f-ask">

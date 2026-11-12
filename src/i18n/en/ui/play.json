@@ -392,7 +392,8 @@
       "hideOk": "success. You are Invisible; whoever searches for you must beat {{total}}.",
       "escapeOk": "you break free: no longer Grappled.",
       "hideWhat": "Dexterity (Stealth) check",
-      "escapeWhat": "The better of Athletics and Acrobatics"
+      "escapeWhat": "The better of Athletics and Acrobatics",
+      "floored": "Your {{rolled}} counts as {{face}}."
     },
     "familiar": {
       "summon": "Summon"

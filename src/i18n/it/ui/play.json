@@ -392,7 +392,8 @@
       "hideOk": "riuscita. Sei Invisibile; chi ti cerca deve superare {{total}}.",
       "escapeOk": "ti liberi: non sei più Afferrato.",
       "hideWhat": "Prova di Destrezza (Furtività)",
-      "escapeWhat": "La migliore tra Atletica e Acrobazia"
+      "escapeWhat": "La migliore tra Atletica e Acrobazia",
+      "floored": "Il tuo {{rolled}} conta come {{face}}."
     },
     "familiar": {
       "summon": "Evoca"
