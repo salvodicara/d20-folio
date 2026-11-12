@@ -228,6 +228,14 @@ describe("out of a fight: the party («Il gruppo»)", () => {
     expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });
 
+  it("Calm Emotions reaches every Humanoid in its sphere, friend or foe", () => {
+    expect(combatResolutionSpec(spellAction("calm-emotions"))).toMatchObject({
+      targetAffinity: "any",
+      targetCreatureTypes: ["humanoid"],
+      targetCap: Infinity,
+    });
+  });
+
   it("Charm Person, Hold Person and Dominate Person offer only Humanoids; an unknown type stays", () => {
     const typed: TargetRoster = {
       ...FIGHT,
@@ -255,6 +263,11 @@ describe("out of a fight: the party («Il gruppo»)", () => {
     }
     // A spell with no type limit still offers the Zombie.
     expect(ids(spellAction("command"), typed)).toContain("m-zomb");
+    // Calm Emotions: every Humanoid, friend or foe; never the Zombie.
+    const calm = ids(spellAction("calm-emotions"), typed) ?? [];
+    expect(calm).toContain("m-gob1");
+    expect(calm).toContain("pc-bren");
+    expect(calm).not.toContain("m-zomb");
   });
 });
 

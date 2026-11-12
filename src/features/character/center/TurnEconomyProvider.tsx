@@ -127,8 +127,9 @@ import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
 import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
 import { DamageTray } from "@/features/character/center/DamageTray";
-import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
+import { damageTrayPlan, rollsToHit, savesOnTheLine } from "@/lib/play/damage-tray";
 import { useAttackOutcomeStore } from "./attack-outcome-store";
+import { useSaveOutcomeStore } from "./save-outcome-store";
 import { useLocale } from "@/hooks/useLocale";
 import {
   resolveTrackers,
@@ -1003,6 +1004,7 @@ export function TurnEconomyProvider({
     // An attack with no target in Folio asks its result on its own row (no modal):
     // the newest use takes the chips, anything else retires them.
     offerAttackOutcome(action, targets, loggedId);
+    offerSaveOutcome(action, targets, loggedId);
     offerFollowUps(action, targets, loggedId, occurrenceId);
     // A use that makes a form (Wild Shape) asks which one next.
     if (action.assumesForm) setFormPickerSpellId(action.assumesForm);
@@ -1026,6 +1028,30 @@ export function TurnEconomyProvider({
           dc: check.dc,
           verdict: t(succeeded ? "combatLog.checkSuccess" : "combatLog.checkFailure"),
         });
+  }
+
+  /** A save spell with nothing to apply (Command) asks each creature's save on the
+   *  row just used; any other use takes the chips away. */
+  function offerSaveOutcome(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>,
+    loggedId: string | null
+  ): void {
+    const store = useSaveOutcomeStore.getState();
+    const asked = loggedId ? savesOnTheLine(action, targets, selfCombatantId()) : [];
+    if (!loggedId || asked.length === 0) {
+      store.clear();
+      return;
+    }
+    const rows = targetRoster().rows;
+    store.offer({
+      logId: loggedId,
+      actionId: action.id,
+      targets: asked.map((id) => ({
+        id,
+        name: rows.find((row) => row.id === id)?.name ?? id,
+      })),
+    });
   }
 
   /** Open the damage tray when the use has something to apply to its targets. */
@@ -1554,6 +1580,7 @@ export function TurnEconomyProvider({
         }
         const undo = seal?.() ?? null;
         if (!readies) offerAttackOutcome(action, targets, loggedId);
+        if (!readies) offerSaveOutcome(action, targets, loggedId);
         if (!readies) offerFollowUps(action, targets, loggedId);
         if (!readies) offerDispel(action.spellId, opt.level, targets);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.

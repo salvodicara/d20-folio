@@ -326,6 +326,23 @@ export function damageTrayPlan(
   };
 }
 
+/**
+ * The creatures whose save a cast asks on its own line (Command, Calm Emotions): a
+ * save spell aimed at others that leaves the app nothing to apply, so no tray opens.
+ * Empty when the tray asks it, or there is no save or nobody else to ask.
+ */
+export function savesOnTheLine(
+  action: ResolvedAction,
+  targets: ReadonlyArray<string>,
+  selfId: string
+): string[] {
+  const others = targets.filter((id) => id !== selfId);
+  if (others.length === 0) return [];
+  if (combatResolutionSpec(action).kind !== "save") return [];
+  if (!action.summary.saveAbility && action.summary.saveDC === undefined) return [];
+  return damageTrayPlan(action, targets, selfId) ? [] : others;
+}
+
 /** The weapon's floor on low damage-die faces, when one applies. */
 function dieFloorOf(action: ResolvedAction): Pick<DamageTrayPlan, "dieFloor"> {
   const floor = action.summary.dieModifiers?.find((m) => m.mode === "floor");
