@@ -19,7 +19,6 @@ const NOT_YET_MOVED = new Set([
   "/admin", // owner-only, after the go/no-go
   "/admin/users/:uid/characters/:charId", // owner-only, after the go/no-go
   "/campaigns/:campaignId/sheets/:memberUid", // the DM's read-only member sheet
-  "/join/:code", // the invite landing
   "/view/:uid/:charId", // the public share view
 ]);
 
@@ -30,6 +29,9 @@ const NOT_PAGES = new Set([
   "/_specimens",
   "/ui",
   "/login",
+  // a redirect to the campaign it joins; its bad-invite state cannot be reached with the
+  // dev account (every code joins) and still renders the old frame: moved with /legal
+  "/join/:code",
   "/characters/:characterId/level-up/classic",
 ]);
 
@@ -38,7 +40,6 @@ const SAMPLE: Record<string, string> = {
   characterId: "mock-1",
   campaignId: "mock-1",
   memberUid: "member-bren",
-  code: "mock-1",
   uid: "mock-uid",
   charId: "mock-1",
 };
@@ -86,22 +87,37 @@ test("roster → campaigns → a campaign → settings → back never shows the 
   await seedLang(page, "it");
   await page.goto("/characters");
   await settle(page);
-  const steps: Array<[string, () => Promise<unknown>]> = [
-    ["campaigns", () => page.getByRole("link", { name: "Campagne" }).first().click()],
-    ["a campaign", () => page.locator(".f-ccard-link").first().click()],
+  // each step: what the player taps, and the page it lands on
+  const steps: Array<[string, () => Promise<unknown>, RegExp]> = [
+    [
+      "campaigns",
+      () =>
+        page
+          .getByRole("navigation", { name: "Principale" })
+          .getByRole("link", { name: "Campagne" })
+          .click(),
+      /\/campaigns$/,
+    ],
+    [
+      "a campaign",
+      // the campaign list's own card (the roster's stays on screen while the list loads)
+      () => page.locator(".f-camps .f-ccard-link").first().click(),
+      /\/campaigns\/[^/]+$/,
+    ],
     [
       "settings",
       async () => {
         await page.getByRole("button", { name: "Il tuo account" }).click();
         await page.getByRole("button", { name: "Impostazioni" }).click();
       },
+      /\/settings$/,
     ],
-    ["back", () => page.goBack()],
+    ["back", () => page.goBack(), /\/campaigns\/[^/]+$/],
   ];
-  for (const [name, go] of steps) {
+  for (const [name, go, lands] of steps) {
     await go();
+    await expect(page, name).toHaveURL(lands, { timeout: 30_000 });
     await settle(page);
     expect(await oldFrame(page), name).toBe(0);
   }
-  await expect(page).toHaveURL(/\/campaigns\/mock-1/);
 });

@@ -98,6 +98,7 @@ export default defineConfig({
         /ui-long-text\.spec\.ts/,
         /ui-pips\.spec\.ts/,
         /ui-table-columns\.spec\.ts/,
+        /ui-no-old-frame\.spec\.ts/,
         ...OFF_LANES,
       ],
     },
