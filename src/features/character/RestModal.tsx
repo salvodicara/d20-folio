@@ -35,9 +35,13 @@ import {
   RotateCcw,
   TrendingDown,
   Focus,
+  Star,
 } from "lucide-react";
 import { restSummary, type RestSummary } from "@/lib/play/rest-summary";
 import { useCharacterStore } from "@/stores/characterStore";
+import { restExpertiseRows } from "@/lib/rest-expertise";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
+import { Select } from "@/components/shared/Select";
 import { useUIStore } from "@/stores/uiStore";
 import { useRestCommit } from "./use-rest-commit";
 import { canCharacterRest } from "@/lib/character-status";
@@ -97,6 +101,9 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   const [summary, setSummary] = useState<RestSummary | null>(null);
   const [hitDiceToSpend, setHitDiceToSpend] = useState(0);
   const [diceTotal, setDiceTotal] = useState("");
+  // A Long Rest's re-picked Expertise (Versatile Merc), by choice key; absent:
+  // last time's pick, preselected.
+  const [restPicks, setRestPicks] = useState<Readonly<Record<string, string | null>>>({});
   const inputId = useId();
 
   // Count spent spell slots
@@ -118,6 +125,22 @@ function RestFlow({ onClose }: { onClose: () => void }) {
 
   const restCharacter = character;
   const { character: charData, session } = restCharacter;
+  // Expertise picked at each Long Rest: proficient skills with no Expertise from
+  // another rule, last time's pick preselected.
+  const restAggregate = aggregateCharacterGrants(charData, session);
+  const restLastPicks = new Set(
+    restAggregate.restExpertise.flatMap(
+      ({ choiceKey }) => session.grantBundleChoices?.[choiceKey] ?? []
+    )
+  );
+  const expertiseRows = restExpertiseRows(
+    restAggregate.restExpertise,
+    session.grantBundleChoices,
+    charData.skills,
+    new Set([...restAggregate.expertiseSkills].filter((id) => !restLastPicks.has(id)))
+  );
+  const restPickOf = (row: (typeof expertiseRows)[number]) =>
+    row.choiceKey in restPicks ? (restPicks[row.choiceKey] ?? null) : row.current;
   const restEligible = canCharacterRest(restCharacter.status, session);
   // A multiclass pool mixes die sizes (Fighter d10s + Wizard d6s).
   const hitDice = hitDicePool(charData);
@@ -197,6 +220,15 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     // The rest routes through the canonical mechanics runtime (`useRestCommit`).
     const prepared = await rest.longRest(restCharacter);
     if (!prepared) return;
+    // The Long Rest ends last time's Expertise and starts this one's.
+    if (expertiseRows.length > 0) {
+      useCharacterStore.getState().dispatch({
+        kind: "set-bundle-choices",
+        choices: Object.fromEntries(
+          expertiseRows.map((row) => [row.choiceKey, restPickOf(row)])
+        ),
+      });
+    }
 
     const after = useCharacterStore.getState().character ?? restCharacter;
     setSummary(
@@ -529,6 +561,42 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               <Focus className="h-4 w-4 text-accent-text" />
               {t("rest.longRestConditionsItem")}
             </li>
+            {expertiseRows.map((row) => {
+              const source = grantSourceLabel(row.sourceId, locale);
+              return (
+                <li key={row.choiceKey}>
+                  <Star className="h-4 w-4 text-accent-text" />
+                  {row.options.length === 0 ? (
+                    t("rest.longRestExpertiseNone", { source })
+                  ) : (
+                    <label className="flex flex-wrap items-center gap-2">
+                      {t("rest.longRestExpertiseItem", { source })}
+                      <Select
+                        size="sm"
+                        value={restPickOf(row) ?? ""}
+                        onChange={(e) =>
+                          setRestPicks((prev) => ({
+                            ...prev,
+                            [row.choiceKey]: e.target.value || null,
+                          }))
+                        }
+                      >
+                        <option value="">{t("rest.longRestExpertiseSkip")}</option>
+                        {[...row.options]
+                          .sort((a, b) =>
+                            t(`skills.${a}`).localeCompare(t(`skills.${b}`), locale)
+                          )
+                          .map((id) => (
+                            <option key={id} value={id}>
+                              {t(`skills.${id}`)}
+                            </option>
+                          ))}
+                      </Select>
+                    </label>
+                  )}
+                </li>
+              );
+            })}
           </ul>
 
           <div className="rest-action-row">

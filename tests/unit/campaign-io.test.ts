@@ -146,7 +146,6 @@ import {
   conformCombatEffectOps,
   joinChronicleText,
   createCampaign,
-  createCampaignSave,
   joinCampaign,
   listSharedCampaigns,
   persistBeginTurns,
@@ -168,15 +167,8 @@ import {
   deleteCampaign,
   revertPeerEffect,
 } from "@/features/campaigns/campaign-io";
-import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { deleteCampaignBanner } from "@/lib/storage";
-import type {
-  CampaignDoc,
-  EncounterCombatant,
-  EncounterMonster,
-  EncounterState,
-  TreasuryLogEntry,
-} from "@/types/campaign";
+import type { EncounterState, TreasuryLogEntry } from "@/types/campaign";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 
 beforeEach(() => {
@@ -1971,106 +1963,6 @@ describe("campaign-io — persistBeginTurns immediate write (B15)", () => {
     expect(data["encounter.currentCombatantId"]).toBe("pc-a");
     expect(data["encounter.round"]).toBe(1);
     expect(data.updatedAt).toEqual({ __serverTimestamp: true });
-  });
-});
-
-describe("campaign-io — debounced encounter write reconciles the turn pointer (B04)", () => {
-  const pcA: EncounterCombatant = {
-    kind: "pc",
-    id: "pc-a",
-    memberUid: "a",
-    characterId: "char-a",
-  };
-  const goblin: EncounterMonster = {
-    kind: "monster",
-    id: "monster-1",
-    name: "Goblin",
-    ac: 13,
-    initiative: 8,
-    conditions: [],
-    hp: { current: 7, temp: 0, max: 7 },
-  };
-  const baseEncounter: EncounterState = {
-    combatants: [pcA, goblin],
-    nextMonsterOrdinal: 2,
-    round: 1,
-    currentCombatantId: "pc-a",
-    order: ["pc-a", "monster-1"],
-    epoch: 42,
-    status: "active",
-  };
-
-  function campaignWith(enc: EncounterState): CampaignDoc {
-    return {
-      id: "c1",
-      name: "C",
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: "u1",
-      dmUid: "u1",
-      members: ["u1"],
-      memberDetails: {},
-      status: "active",
-      inviteCode: "c1",
-      treasury: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
-      treasuryLog: [],
-      encounter: enc,
-    };
-  }
-
-  afterEach(() => useCampaignStore.setState({ campaign: null }));
-
-  it("merges the LIVE (advanced) pointer over a stale pending structural write", async () => {
-    // The live store already reflects a concurrent advance (its snapshot was applied): the
-    // pointer moved to monster-1, round 2.
-    useCampaignStore.setState({
-      campaign: campaignWith({
-        ...baseEncounter,
-        currentCombatantId: "monster-1",
-        round: 2,
-      }),
-    });
-    const writer = createCampaignSave("u1", "c1");
-    // A DM's STALE monster-edit payload still carries the pre-advance pointer (pc-a /
-    // round 1) but a bumped monster HP — this is what used to flush and rewind the turn.
-    const bloodiedGoblin: EncounterMonster = {
-      ...goblin,
-      hp: { current: 3, temp: 0, max: 7 },
-    };
-    writer.save({
-      name: "C",
-      encounter: { ...baseEncounter, combatants: [pcA, bloodiedGoblin] },
-    });
-    await writer.flush();
-
-    expect(updateDocMock).toHaveBeenCalledTimes(1);
-    const data = updateDocMock.mock.calls[0]?.[1] as { encounter: EncounterState };
-    // The pointer + round are RECONCILED to the live advanced values (never reverted)…
-    expect(data.encounter.currentCombatantId).toBe("monster-1");
-    expect(data.encounter.round).toBe(2);
-    // …while the DM's structural edit (the monster HP) is preserved.
-    const mon = data.encounter.combatants.find((c) => c.id === "monster-1");
-    expect(mon?.kind === "monster" ? mon.hp : null).toEqual({
-      current: 3,
-      temp: 0,
-      max: 7,
-    });
-  });
-
-  it("leaves the payload untouched across a DIFFERENT fight (epoch mismatch)", async () => {
-    useCampaignStore.setState({
-      campaign: campaignWith({
-        ...baseEncounter,
-        epoch: 99,
-        currentCombatantId: "monster-1",
-      }),
-    });
-    const writer = createCampaignSave("u1", "c1");
-    writer.save({ name: "C", encounter: baseEncounter }); // epoch 42 ≠ live 99
-    await writer.flush();
-    const data = updateDocMock.mock.calls[0]?.[1] as { encounter: EncounterState };
-    // Different fight → no cross-fight pointer merge; the payload stands as-is.
-    expect(data.encounter.currentCombatantId).toBe("pc-a");
   });
 });
 

@@ -6,7 +6,7 @@ import {
   buildEncounterView,
   type PcLive,
 } from "@/features/campaigns/encounter-view";
-import { addMonster, startEncounter } from "@/features/campaigns/encounter";
+import { addMonster, startEncounter } from "@/lib/play/encounter";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
 const pcLive: PcLive = {

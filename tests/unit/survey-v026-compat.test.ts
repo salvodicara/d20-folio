@@ -16,11 +16,7 @@ vi.mock("@/lib/firebase", () => ({ db: {}, functions: {} }));
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { combatStateWriteData } from "@/lib/combat-state-io";
-import {
-  addMonster,
-  beginEncounterTurns,
-  startEncounter,
-} from "@/features/campaigns/encounter";
+import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/encounter";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { RawMap } from "../../scripts/lib/migration-kit";
@@ -137,6 +133,31 @@ describe("surveyV026Compat", () => {
         { path: "users/u1", data: {} },
         parent,
         { ...child, data: { ...child.data, soloFightStarted: true } },
+      ],
+      accounts: [{ uid: "u1", customClaims: {} }],
+      catalogue,
+    });
+    expect(survey.kinds.character).toMatchObject({
+      read: 1,
+      ok: 1,
+      defaulted: 0,
+      rejected: {},
+      rewrites: {},
+    });
+  });
+
+  it("a spell carrying the source that granted it reads as stored, with no rewrite", async () => {
+    const [parent, child] = character("users/u1/characters/a");
+    if (!parent || !child) throw new Error("fixture");
+    const build = parent.data.build as RawMap;
+    const spells = [
+      { srdId: "guidance", prepared: true, grantedBy: "magic-initiate-cleric" },
+    ];
+    const survey = await surveyV026Compat({
+      documents: [
+        { path: "users/u1", data: {} },
+        { ...parent, data: { ...parent.data, build: { ...build, spells } } },
+        child,
       ],
       accounts: [{ uid: "u1", customClaims: {} }],
       catalogue,
@@ -321,7 +342,7 @@ describe("the survey script", () => {
       "src/lib/combat-state-codec.ts",
       "src/lib/session-state-codec.ts",
       "src/features/campaigns/campaign-codec.ts",
-      "src/features/campaigns/encounter.ts",
+      "src/lib/play/encounter.ts",
       "src/lib/play/campaign-roster.ts",
       "src/lib/session-log-io.ts",
     ]) {

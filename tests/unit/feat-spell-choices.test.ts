@@ -269,3 +269,38 @@ describe("2024 Magic Initiate — player-chosen casting ability (Int/Wis/Cha)", 
     ).toBe("WIS");
   });
 });
+
+describe("a pick records the source that granted it (grantedBy)", () => {
+  const slots = pendingSpellChoicesForFeat(
+    FEATS_BY_ID.get("magic-initiate-cleric") ?? {}
+  ).map((slot) => ({ ...slot, sourceId: "magic-initiate-cleric" }));
+  const cantrip = slots.find((s) => s.kind === "cantrip");
+  const leveled = slots.find((s) => s.kind === "spell");
+  if (!cantrip || !leveled) throw new Error("expected both slots");
+
+  it("a new cantrip and a new leveled spell name the feat", () => {
+    const out = applySpellChoicePicks(
+      [],
+      { [cantrip.slotId]: ["guidance"], [leveled.slotId]: ["bless"] },
+      slots
+    ) as SrdSpellRef[];
+    expect(out.map((s) => [s.srdId, s.grantedBy])).toEqual([
+      ["guidance", "magic-initiate-cleric"],
+      ["bless", "magic-initiate-cleric"],
+    ]);
+  });
+
+  it("a spell already on the sheet is not claimed by the feat", () => {
+    const out = applySpellChoicePicks(
+      [{ srdId: "guidance", prepared: true }],
+      { [cantrip.slotId]: ["guidance"] },
+      slots
+    ) as SrdSpellRef[];
+    expect(out[0]?.grantedBy).toBeUndefined();
+  });
+
+  it("a slot with no source writes none", () => {
+    const out = applySpellChoicePicks([], { "slot-0": ["guidance"] }) as SrdSpellRef[];
+    expect(out[0]).not.toHaveProperty("grantedBy");
+  });
+});

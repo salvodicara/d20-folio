@@ -31,6 +31,7 @@ import { characterScalarBindings } from "@/lib/scalar-bindings";
 import type { IntegerBindings } from "@/lib/integer-expression";
 import { baseActionState, baseActionText } from "@/lib/base-action-states";
 import { HELP_ACTION_ID } from "@/lib/play/help";
+import { hurtDice } from "@/lib/play/hurt-target-damage";
 import { actionCheckSkills, type CheckResult } from "@/lib/play/checks";
 import {
   POTION_TIMER_PREFIX,
@@ -465,6 +466,8 @@ export interface ActionSummary {
   conditionApplication?: CombatConditionApplication;
   /** Damage formula: "8d6", "1d8+5", "3×(1d4+1)" */
   damage?: string;
+  /** The formula against a target missing any Hit Points (`damageForTarget` picks). */
+  damageIfHurt?: string;
   /** One observed incoming damage instance reduced by a physical roll plus a
    * deterministic bonus. The resolver applies the remainder through defenses. */
   damageReduction?: {
@@ -7116,6 +7119,9 @@ function resolveSpellActions(
         summary.damage = addsSpellMod(primary.dice)
           ? appendAbilityModToDice(dmgDice, abilityModifier(spellCastScore))
           : dmgDice;
+      }
+      if (summary.damage && spell.damageDieIfHurt) {
+        summary.damageIfHurt = hurtDice(summary.damage, spell.damageDieIfHurt);
       }
 
       // S12b — a multi-instance spell (Magic Missile 3 darts, Scorching Ray 3

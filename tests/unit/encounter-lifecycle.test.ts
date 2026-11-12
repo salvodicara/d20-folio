@@ -9,7 +9,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { addMonster, parseEncounterState } from "@/features/campaigns/encounter";
+import { addMonster, parseEncounterState } from "@/lib/play/encounter";
 import {
   IDLE_END_MS,
   canAdvanceTurn,
@@ -20,7 +20,7 @@ import {
   reopenCombat,
   rollInitiative,
   turnBack,
-} from "@/features/campaigns/encounter-lifecycle";
+} from "@/lib/play/encounter-lifecycle";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 
 const seeds = { u1: { characterId: "c1" }, u2: { characterId: "c2" } };

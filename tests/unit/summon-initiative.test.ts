@@ -25,7 +25,7 @@ import {
   parseEncounterState,
   removeCombatant,
   startEncounter,
-} from "@/features/campaigns/encounter";
+} from "@/lib/play/encounter";
 import {
   linkSummon,
   summonedTurnOrder,

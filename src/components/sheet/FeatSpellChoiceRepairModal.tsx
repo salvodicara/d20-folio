@@ -51,7 +51,8 @@ export function FeatSpellChoiceRepairModal({
     const spells = applySpellChoicePicks(
       current.character.spells,
       picks,
-      slots,
+      // Each new pick names the feat that granted it.
+      slots.map((slot) => ({ ...slot, sourceId: featId })),
       current.character.abilityScores
     );
     useCharacterStore.getState().setCharacter({

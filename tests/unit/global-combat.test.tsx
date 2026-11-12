@@ -63,7 +63,7 @@ import { useToastStore } from "@/stores/toastStore";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { buildEncounterView } from "@/features/campaigns/encounter-view";
-import { addMonster, setHp } from "@/features/campaigns/encounter";
+import { addMonster, setHp } from "@/lib/play/encounter";
 import { monsterZoneEffect } from "@/lib/zones";
 import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
 import { useZoneHitStore } from "@/features/campaigns/zone-hit-store";

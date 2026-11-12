@@ -1918,6 +1918,8 @@ export function buildSkillBreakdown(args: {
   exhaustion?: Exhaustion;
   pbOverride?: number | null;
   checkBonus?: number;
+  /** The Expertise is a Long Rest pick (Versatile Merc): it lasts until the next. */
+  untilLongRest?: boolean;
 }): RawBreakdownPart[] {
   const profPart = proficiencyContribution(
     args.proficiency,
@@ -1926,7 +1928,14 @@ export function buildSkillBreakdown(args: {
   const parts: RawBreakdownPart[] = [
     abilityPart(args.ability, abilityModifier(args.abilityScore)),
   ];
-  if (profPart !== 0) parts.push(termPart("character.proficiencyBonus", profPart));
+  if (profPart !== 0)
+    parts.push(
+      termPart(
+        "character.proficiencyBonus",
+        profPart,
+        args.untilLongRest ? { term: "breakdown.untilLongRest" } : undefined
+      )
+    );
   if (args.checkBonus) parts.push(termPart("breakdown.featureBonus", args.checkBonus));
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));

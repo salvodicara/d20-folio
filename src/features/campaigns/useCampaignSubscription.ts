@@ -14,11 +14,17 @@
  * `createCampaign` / `joinCampaign` / DM tools).
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { useDocumentSubscription } from "@/app/_data/firestore-subscriptions";
 import { useCampaignStore, type CampaignState } from "@/features/campaigns/campaignStore";
+import {
+  closeEncounterEdits,
+  encounterFromServer,
+  handOverEncounterEdits,
+  isEditLogFight,
+} from "@/features/campaigns/encounter-edit-sync";
 import {
   createCampaignSave,
   createDevCampaignSave,
@@ -34,16 +40,13 @@ function campaignStoreSubscribe(
 }
 
 /**
- * Pure: persist the shared artifacts when (and only when) they change for the
- * same campaign. Identity comparison is enough — the store mutations replace the
- * `name` / `encounter` references on every edit.
+ * Pure: persist the campaign's name when it changes for the same campaign. Everything
+ * else has its own writer: the fight goes through the DM's edit log or a transactional
+ * move (`encounter-edit-sync.ts`, `combat-lifecycle-io.ts`), the treasury through the
+ * atomic `applyTreasuryDelta` (B06), shared notes through their own subcollection.
  *
- * TREASURY is deliberately NOT here anymore (B06): the whole-map / whole-log
- * last-write-wins debounce silently corrupted the shared total and dropped ledger
- * rows under concurrent edits, so treasury now persists through the ATOMIC,
- * composing `applyTreasuryDelta` / `undoTreasuryEntry` path (campaign-io) fired
- * directly from `Treasury`. Shared NOTES are likewise not here — a per-note
- * subcollection written through immediately by `SharedNotes`.
+ * A fight on screen that the edit log did not put there (a fight started or ended, a
+ * turn passed) was written by its own move: the log starts over from it.
  */
 function selectCampaignSave(
   state: CampaignState,
@@ -52,18 +55,9 @@ function selectCampaignSave(
   const next = state.campaign;
   const before = prev.campaign;
   if (!next || !before || next.id !== before.id) return null;
-  if (next.name !== before.name || next.encounter !== before.encounter) {
-    return {
-      name: next.name,
-      // The DM's live encounter rides this debounced writer — every immediate-commit
-      // structural mutation replaces the `encounter` reference. `stripUndefined`
-      // (updateCampaign) cleans optional combatant fields; `null` ends the encounter.
-      // The turn pointer is reconciled from the live store at write time so a queued
-      // structural write can never revert a concurrent advance (B04).
-      encounter: next.encounter,
-    };
-  }
-  return null;
+  if (next.encounter !== before.encounter && !isEditLogFight(next.id, next.encounter))
+    handOverEncounterEdits(next.id);
+  return next.name !== before.name ? { name: next.name } : null;
 }
 
 /**
@@ -82,7 +76,10 @@ export function useCampaignSubscription(campaignId: string | undefined): void {
   const applySnapshot = useCallback(
     (doc: CampaignDoc | null) => {
       if (doc) {
-        setCampaign(doc);
+        // The DM's waiting fight edits stay on screen over every snapshot.
+        const fight = doc.encounter ?? null;
+        const shown = encounterFromServer(doc.id, fight);
+        setCampaign(shown === fight ? doc : { ...doc, encounter: shown });
         setError(null);
       } else {
         setCampaign(null);
@@ -115,6 +112,18 @@ export function useCampaignSubscription(campaignId: string | undefined): void {
     },
     [setError, setLoading]
   );
+
+  // The DM's waiting fight edits are written when the campaign closes or the page is
+  // hidden, as the old autosave's flush did.
+  useEffect(() => {
+    if (!campaignId) return;
+    const close = () => closeEncounterEdits(campaignId);
+    window.addEventListener("pagehide", close);
+    return () => {
+      window.removeEventListener("pagehide", close);
+      close();
+    };
+  }, [campaignId]);
 
   useDocumentSubscription<CampaignDoc, CampaignState, CampaignWritable>({
     uid,

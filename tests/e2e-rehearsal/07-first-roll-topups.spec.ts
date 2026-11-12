@@ -5,14 +5,15 @@
  * you have fewer than that». The sandbox Bard is rewritten at level 18 with every use
  * spent (the emulators only), then rolls from its own sheet with no fight running.
  */
-import { execFileSync } from "node:child_process";
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
 import {
   expectNoCrash,
   openFightTab,
   PLAYER_BARD,
+  reseedHero,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 
@@ -50,20 +51,10 @@ test("the Bard's first roll from the new sheet regains Bardic Inspiration", asyn
   });
 
   await test.step("the Bard is level 18 with every use spent", async () => {
-    execFileSync(
-      "node",
-      [
-        "--import",
-        "./scripts/alias-loader.mjs",
-        "scripts/rehearsal-set-character.ts",
-        PLAYER_BARD,
-        SANDBOX_USERS.catalion.characterId,
-        "catalion-bard.json",
-        "18",
-        `--state=${JSON.stringify({ trackers: { [TRACKER]: USES } })}`,
-      ],
-      { stdio: "inherit" }
-    );
+    reseedHero(SANDBOX_USERS.catalion, {
+      level: 18,
+      state: { trackers: { [TRACKER]: USES } },
+    });
     expect(await usedInspiration()).toBe(USES);
   });
 

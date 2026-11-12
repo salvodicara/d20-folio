@@ -3,7 +3,30 @@
  * as its DM (`owner@sandbox.dev`, a real Auth-emulator account); `?devActAs=<uid>`
  * presents a tab as a campaign member while the real token stays the DM's.
  */
-import { expect, type Page } from "@playwright/test";
+import { execFileSync } from "node:child_process";
+import { test as base, expect, type Page } from "@playwright/test";
+import { visibleWithin } from "../e2e/visible-within";
+
+/**
+ * The rehearsal's `test`: the browser contexts a test opens itself (a DM, a player)
+ * close when it ends. Playwright closes only the ones its fixtures made, so the next
+ * spec used to run beside every earlier spec's open tabs, still listening and writing.
+ */
+export const test = base.extend<{ closeOpenedContexts: undefined }>({
+  closeOpenedContexts: [
+    async ({ browser }, use) => {
+      const before = new Set(browser.contexts());
+      await use(undefined);
+      await Promise.all(
+        browser
+          .contexts()
+          .filter((context) => !before.has(context))
+          .map((context) => context.close())
+      );
+    },
+    { auto: true },
+  ],
+});
 
 export const SANDBOX_CAMPAIGN = "SANDBOX";
 export const PLAYER_BARD = "dev-player-catalion";
@@ -122,9 +145,53 @@ export async function levelUp(
 
 /** The sandbox players (scripts/dev-seed-sandbox.ts), each a real Auth-emulator account. */
 export const SANDBOX_USERS = {
-  catalion: { email: "catalion@sandbox.dev", characterId: "sandbox-catalion" },
-  mandorlino: { email: "mandorlino@sandbox.dev", characterId: "sandbox-mandorlino" },
+  catalion: {
+    uid: PLAYER_BARD,
+    email: "catalion@sandbox.dev",
+    characterId: "sandbox-catalion",
+    fixture: "catalion-bard.json",
+  },
+  mandorlino: {
+    uid: "dev-player-mandorlino",
+    email: "mandorlino@sandbox.dev",
+    characterId: "sandbox-mandorlino",
+    fixture: "mandorlino-paladin.json",
+  },
 } as const;
+
+type SandboxHero = (typeof SANDBOX_USERS)[keyof typeof SANDBOX_USERS];
+
+/**
+ * Put a sandbox hero back the way a spec needs it: by default as the sandbox seed made
+ * it (its own fixture, level 3), so a spec never depends on what an earlier spec, or an
+ * earlier run, left on the sheet. `fixture`, `level`, `active` (claimed states) and
+ * `state` (play-state fields) override it. The campaign's copy of the hero follows.
+ */
+export function reseedHero(
+  hero: SandboxHero,
+  options: {
+    fixture?: string;
+    level?: number;
+    active?: readonly string[];
+    state?: Record<string, unknown>;
+  } = {}
+): void {
+  execFileSync(
+    "node",
+    [
+      "--import",
+      "./scripts/alias-loader.mjs",
+      "scripts/rehearsal-set-character.ts",
+      hero.uid,
+      hero.characterId,
+      options.fixture ?? hero.fixture,
+      String(options.level ?? 3),
+      ...(options.active ?? []),
+      ...(options.state ? [`--state=${JSON.stringify(options.state)}`] : []),
+    ],
+    { stdio: "inherit" }
+  );
+}
 
 /**
  * Sign this page's browser context in as a sandbox player with a real token (not the
@@ -164,10 +231,21 @@ export async function expectToast(page: Page, text: RegExp): Promise<void> {
 }
 
 /** A row of the Play screen's action list by its name, and its action button. */
+/**
+ * A name as a regex source where any space also matches a non-breaking one: the new
+ * UI ties the last two words of row names, toasts and dialog titles together
+ * («Warding\u00a0Bond»), so a typed space must not decide the match.
+ */
+export function spaced(name: string): string {
+  return name.replace(/ /g, "\\s");
+}
+
 export function actionRow(page: Page, name: string) {
   return page
     .locator(".f-act")
-    .filter({ has: page.locator(".f-row-main", { hasText: new RegExp(`^${name}`) }) })
+    .filter({
+      has: page.locator(".f-row-main", { hasText: new RegExp(`^${spaced(name)}`) }),
+    })
     .first();
 }
 
@@ -185,4 +263,30 @@ export async function openFightTab(page: Page): Promise<void> {
 export async function classLevel(page: Page, className: string): Promise<number> {
   const text = await page.locator("main").innerText();
   return Number(text.match(new RegExp(`${className}\\s+(\\d+)`))?.[1] ?? 0);
+}
+
+/**
+ * The classic campaign hub: the DM types an initiative for each hero still missing one.
+ * A hero's own-sheet roll can land meanwhile and redraw the cards, taking the field the
+ * DM just opened; then the loop opens the next one instead of typing into nothing.
+ */
+export async function rollEachHero(dm: Page): Promise<void> {
+  await expect(
+    dm.getByRole("button", { name: /^Begin (turns|with)/ }).first()
+  ).toBeVisible();
+  await dm.waitForTimeout(1_500);
+  for (let i = 0; i < 6; i++) {
+    const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
+    if (!(await roll.isVisible())) break;
+    const opened = await roll.click({ timeout: 3_000 }).then(
+      () => true,
+      () => false
+    );
+    if (!opened) continue;
+    // A committed roll keeps its field on the card: the one just opened has focus.
+    const input = dm.locator("input.init-edit-input:focus");
+    if (!(await visibleWithin(input, 5_000))) continue;
+    await input.fill(String(15 - i));
+    await input.press("Enter");
+  }
 }

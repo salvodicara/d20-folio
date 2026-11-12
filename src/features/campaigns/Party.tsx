@@ -85,6 +85,7 @@ import {
   skippedAtBegin,
 } from "@/domains/combat/fight-participation";
 import { campaignPartySize, useCampaignStore } from "@/features/campaigns/campaignStore";
+import { editEncounter } from "@/features/campaigns/encounter-edit-sync";
 import {
   useMemberCharacterDocs,
   type MemberCharacterRef,
@@ -99,8 +100,8 @@ import {
   setInitiativeSwap,
   startEncounter,
   type EncounterPcSeed,
-} from "@/features/campaigns/encounter";
-import { mayStepTurn } from "@/features/campaigns/encounter-lifecycle";
+} from "@/lib/play/encounter";
+import { mayStepTurn } from "@/lib/play/encounter-lifecycle";
 import { partyOrder } from "@/features/campaigns/party-order";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import {
@@ -176,7 +177,6 @@ export function Party() {
   const { language: locale } = useLocale();
   const campaign = useCampaignStore((s) => s.campaign);
   const setCampaign = useCampaignStore((s) => s.setCampaign);
-  const setEncounter = useCampaignStore((s) => s.setEncounter);
   const currentUid = useAuthStore((s) => s.user?.uid);
   const isAdmin = useIsAdmin();
   // My live Google photo — a fallback for my OWN avatar so it shows even if I joined
@@ -241,14 +241,12 @@ export function Party() {
     [encounter, pcLiveById]
   );
 
-  // Apply a pure reducer to the LIVE encounter (read through getState so a rapid burst
-  // of immediate-commit edits never races a stale closure). DM-only; absent for a
-  // player (whose path performs no writes — firestore.rules enforce this too).
+  // Apply a pure reducer to the live encounter through the DM's edit log: shown at once,
+  // written shortly after in one transaction replayed onto the server's newest fight
+  // (`encounter-edit-sync.ts`). DM-only; absent for a player (whose path performs no
+  // writes — firestore.rules enforce this too).
   const apply: ApplyFn | undefined = isDm
-    ? (fn) => {
-        const live = useCampaignStore.getState().campaign?.encounter;
-        if (live) setEncounter(fn(live));
-      }
+    ? (fn) => editEncounter(campaign.id, fn)
     : undefined;
 
   // D29 — attach (or detach, "") the current member's character: one campaign per

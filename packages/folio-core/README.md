@@ -36,10 +36,16 @@ Since 0.24.1, also the pure core the new app is built on:
   items, three unless a feature raises it, and one copy of an item), `attuneItem` (with
   `force` the player's override; no other attunement ends) and `unattuneItem`.
 - Shared combat: `rollInitiative` (the first roll starts the fight), `passTurn` /
-  `turnBack`, `encounterEndReason`, `endCombat` / `reopenCombat`.
+  `turnBack`, `mayStepTurn` (who may move the turn: the DM, the player whose turn it is,
+  anyone once a roll started the fight), `encounterEndReason`, `endCombat` /
+  `reopenCombat`.
 - The treasury: `lootMoves`, `applyMove` / `reverseMove`, `campaignHoldings`, and
   `applyItemMove` / `reverseItemMove` for items.
 - Notes in play: `parseNote` (@who, #where, !important), `noteLines`, and the private
   notes (`privateNoteDraft`, `authorDiarioNotes`).
+
+The whole public surface is listed in [`api.txt`](api.txt): import only from
+`@d20-folio/core`, never a deeper path. A change to that list is a change to the API,
+released as a semver step in [`CHANGELOG.md`](CHANGELOG.md).
 
 Build: `pnpm core:build` (from the repository root). Not published yet.

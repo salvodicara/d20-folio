@@ -303,6 +303,7 @@ const SRD_SPELL_KEYS = [
   "speciesSpellAbility",
   "featSpellAbility",
   "freeCastSource",
+  "grantedBy",
 ] as const;
 
 function parseSrdSpellRef(obj: Record<string, unknown>, path: string): SrdSpellRef {
@@ -355,6 +356,8 @@ function parseSrdSpellRef(obj: Record<string, unknown>, path: string): SrdSpellR
       obj.freeCastSource,
       `${path}.freeCastSource`
     );
+  if (obj.grantedBy !== undefined)
+    ref.grantedBy = opt(obj.grantedBy, isString, `${path}.grantedBy`);
   const unknown = leftover(obj, SRD_SPELL_KEYS);
   if (unknown) ref.unknown = unknown;
   return ref;

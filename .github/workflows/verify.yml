@@ -165,8 +165,11 @@ jobs:
   e2e:
     name: e2e (shard ${{ matrix.shard }}/8)
     needs: pack
-    # Pinned: Playwright cannot install Chromium on ubuntu-latest = 26.04 (2026-11).
     runs-on: ubuntu-24.04
+    # The official Playwright image at the lockfile's version (see ci.yml design-rules):
+    # no apt at run time, so an apt mirror outage cannot fail the job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
     # Green shards already take up to 29 minutes (2026-11-05), so a slow runner
     # hit the old 30-minute cap and cancelled whole runs with no failing test.
     timeout-minutes: 45
@@ -197,14 +200,6 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: playwright-${{ runner.os }}-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
       # One worker per runner (measured — playwright.config.ts); parallelism
       # comes from the shards. The blob reporter feeds the merged report below.
       - name: E2E shard
@@ -227,6 +222,10 @@ jobs:
     name: e2e (rehearsal, real emulators)
     needs: pack
     runs-on: ubuntu-24.04
+    # The official Playwright image at the lockfile's version (see ci.yml design-rules):
+    # no apt at run time, so an apt mirror outage cannot fail the job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -251,14 +250,6 @@ jobs:
         with:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators-${{ runner.os }}-15.28.1
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: playwright-${{ runner.os }}-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
       - name: Rehearsal
         run: bash scripts/e2e-rehearsal.sh
       - name: Upload the failure traces
@@ -280,6 +271,10 @@ jobs:
     name: e2e (offline)
     needs: pack
     runs-on: ubuntu-24.04
+    # The official Playwright image at the lockfile's version (see ci.yml design-rules):
+    # no apt at run time, so an apt mirror outage cannot fail the job.
+    container:
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -293,14 +288,6 @@ jobs:
           node-version-file: ".tool-versions"
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: playwright-${{ runner.os }}-
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
       - name: Offline e2e
         run: pnpm test:e2e:offline
       - name: Upload the failure trace

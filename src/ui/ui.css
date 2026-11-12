@@ -1599,6 +1599,9 @@
 .fui .f-tl i {
   color: var(--strong);
 }
+.fui .f-tl > span {
+  min-width: 0;
+}
 .fui .f-tl-by {
   color: var(--muted);
 }
@@ -1800,6 +1803,7 @@
 }
 .fui .f-char-id {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   min-width: 0;
 }
@@ -3704,10 +3708,12 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
   padding: 24px 56px 16px 24px;
 }
 .fui .f-ccard-id {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 4px;
   min-width: 0;
 }
@@ -4028,10 +4034,12 @@
 /* The campaign's «Regole» (table rules): each rule, what RAW does, its choices. */
 .fui .f-rules-group {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   margin-top: 16px;
 }
 .fui .f-rule {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line-soft);
@@ -5030,6 +5038,7 @@
   position: sticky;
   top: 24px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
   padding: 20px;
   border: 1px solid var(--line-strong);
@@ -5040,6 +5049,9 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+.fui .f-lvl-sum-h > * {
+  min-width: 0;
 }
 .fui .f-lvl-sum-h b {
   display: block;
