@@ -226,14 +226,15 @@ function CampaignCardView({
             <span className="f-ccard-name">{card.name}</span>
             <span className="f-ccard-class">
               {card.dm
-                ? t("campaigns.cardDm", { name: card.dm })
+                ? t("campaignScreen.master", { name: card.dm })
                 : t("campaigns.cardNoDm")}
               {card.started && ` · ${t("campaigns.cardStarted", { date: card.started })}`}
             </span>
             <span className="f-ccard-sub">
               {[
-                `${t("campaigns.cardParty")} ${String(card.party)}`,
-                card.levels && `${t("campaigns.cardLevels")} ${card.levels}`,
+                // the campaign page's own words: «2 personaggi · livello 8»
+                t("roster.count", { count: card.party }),
+                card.levels && t("campaignHub.partyLevel", { level: card.levels }),
                 card.potGp > 0 &&
                   `${t("campaigns.cardPot")} ${String(card.potGp)} ${t("equipment.currencyAbbr.gp")}`,
               ]
