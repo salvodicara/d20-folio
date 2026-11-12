@@ -16,11 +16,7 @@ vi.mock("@/lib/firebase", () => ({ db: {}, functions: {} }));
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { combatStateWriteData } from "@/lib/combat-state-io";
-import {
-  addMonster,
-  beginEncounterTurns,
-  startEncounter,
-} from "@/features/campaigns/encounter";
+import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/encounter";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { RawMap } from "../../scripts/lib/migration-kit";
@@ -346,7 +342,7 @@ describe("the survey script", () => {
       "src/lib/combat-state-codec.ts",
       "src/lib/session-state-codec.ts",
       "src/features/campaigns/campaign-codec.ts",
-      "src/features/campaigns/encounter.ts",
+      "src/lib/play/encounter.ts",
       "src/lib/play/campaign-roster.ts",
       "src/lib/session-log-io.ts",
     ]) {

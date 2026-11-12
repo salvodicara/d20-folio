@@ -6,7 +6,7 @@
  */
 import { beforeAll, describe, expect, it } from "vitest";
 
-import { addMonster, damageMonster } from "@/features/campaigns/encounter";
+import { addMonster, damageMonster } from "@/lib/play/encounter";
 import i18n from "@/i18n";
 import { localizeCombatEvent } from "@/lib/views/combat-log-view";
 import type { EncounterState } from "@/types/campaign";

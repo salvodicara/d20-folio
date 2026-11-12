@@ -54,12 +54,9 @@ import { db } from "@/lib/firebase";
 // builds see a literal false there and drop the branch with its fixtures (a helper
 // function hid the literal from the optimizer). Tests keep the live, mockable binding.
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
-import { removeCombatant, parseEncounterState } from "@/features/campaigns/encounter";
-import {
-  mayStepTurn,
-  passTurn,
-  turnBack,
-} from "@/features/campaigns/encounter-lifecycle";
+import { removeCombatant, parseEncounterState } from "@/lib/play/encounter";
+import { replayEdits, type EncounterEdit } from "./encounter-edit-log";
+import { mayStepTurn, passTurn, turnBack } from "@/lib/play/encounter-lifecycle";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { hydrateStoredCharacter } from "@/lib/firestore";
 import { peerDamageHit, peerHit } from "@/lib/play/peer-damage";
@@ -490,7 +487,10 @@ export async function yieldDmRole(
  * caller prunes the store optimistically).
  */
 export async function removeMember(campaignId: string, uid: string): Promise<void> {
-  if (import.meta.env.DEV && DEV_BYPASS) return;
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    writeDevFight(campaignId);
+    return;
+  }
   const ref = campaignDoc(campaignId);
   const combatantId = `pc-${uid}`;
   await runTransaction(db, async (txn) => {
@@ -633,6 +633,7 @@ export async function advanceEncounterTurn(
     const clock = steppedClock(encounter, dir, Date.now());
     const next = clock ? { ...stepped, clock } : stepped;
     useCampaignStore.getState().setEncounter(next);
+    writeDevFight(campaignId);
     if (dir === "next") {
       const position = encounterPosition(next);
       for (const effect of expiredCombatEffects(encounter.effectOps, position)) {
@@ -1880,6 +1881,28 @@ function currentDevEncounter(campaignId: string): EncounterState | null {
   return campaign?.id === campaignId ? storedEncounter(campaign.encounter) : null;
 }
 
+/**
+ * Local development: the fight as the store now holds it (with its roll tables), written
+ * to the local replica. The dev branches update the store first; this keeps the replica
+ * with it, as the server's write would.
+ */
+function writeDevFight(campaignId: string): void {
+  const campaign = useCampaignStore.getState().campaign;
+  if (campaign?.id !== campaignId) return;
+  updateDevDocument(
+    DEV_CAMPAIGN_COLLECTION,
+    campaignId,
+    resolveDevCampaign(campaignId),
+    (current) => ({
+      ...current,
+      encounter: campaign.encounter ?? null,
+      encounterInit: campaign.encounterInit ?? {},
+      encounterSkipped: campaign.encounterSkipped ?? {},
+      updatedAt: new Date(),
+    })
+  );
+}
+
 function appendPersistentCombatEffectOpOptimistic(
   campaignId: string,
   operation: CombatEffectOp
@@ -1918,6 +1941,7 @@ function appendPersistentCombatEffectOpOptimistic(
     );
   }
   store.setEncounter({ ...next, effectOps: nextOps });
+  writeDevFight(campaignId);
 }
 
 /**
@@ -2017,7 +2041,10 @@ export async function persistStartEncounter(
   campaignId: string,
   encounter: EncounterState
 ): Promise<void> {
-  if (import.meta.env.DEV && DEV_BYPASS) return;
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    writeDevFight(campaignId);
+    return;
+  }
   await updateDoc(campaignDoc(campaignId), {
     encounter: stripUndefined(
       encounterForWrite(encounter) as unknown as Record<string, unknown>
@@ -2035,7 +2062,10 @@ export async function persistStartEncounter(
  * clears the store optimistically.
  */
 export async function persistEndEncounter(campaignId: string): Promise<void> {
-  if (import.meta.env.DEV && DEV_BYPASS) return;
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    writeDevFight(campaignId);
+    return;
+  }
   await updateDoc(campaignDoc(campaignId), {
     encounter: null,
     encounterInit: {},
@@ -2112,56 +2142,83 @@ export async function updateCampaign(
 }
 
 /**
- * B04 — reconcile a PENDING debounced encounter write's TURN POINTER against the live
- * store at WRITE time (called inside the debounced writer's flush, not at arm time).
- *
- * The debounced writer packages the whole `encounter` when a DM makes a STRUCTURAL edit
- * (monster HP / condition / add-remove / reorder). During the ~2s window a concurrent
- * {@link advanceEncounterTurn} transaction can commit a new `{currentCombatantId, round}`;
- * the resulting snapshot updates the store but the loop guard deliberately does NOT re-arm
- * the pending payload — so, left alone, the stale whole-object write would land later and
- * REWIND the just-committed turn. Since the store is always reconciled from the newest
- * snapshot, at write time it holds the FRESH pointer: copy it onto the pending payload so
- * the structural write preserves the advance instead of reverting it. Only reconciled
- * within the SAME fight (matching `epoch`); a different/absent live encounter (a new or
- * ended fight) leaves the payload untouched. Pure aside from the single store read.
+ * Replay the DM's waiting fight edits onto the fight the server holds now, in one
+ * transaction (the encounter edit log, `encounter-edit-log.ts`): a change someone else
+ * made meanwhile stays. Resolves with the fight as written (unchanged when every edit
+ * was a no-op or belonged to another fight). Rejects offline, like any transaction.
  */
-function reconcileEncounterPointer(data: CampaignWritable): CampaignWritable {
-  const pending = data.encounter;
-  if (!pending) return data; // no encounter in this write (or it is being ended)
-  const live = useCampaignStore.getState().campaign?.encounter ?? null;
-  if (!live || live.epoch !== pending.epoch) return data; // different / no live fight
-  if (
-    live.currentCombatantId === pending.currentCombatantId &&
-    live.round === pending.round &&
-    live.extraTurns === pending.extraTurns
-  ) {
-    return data; // pointer already current — nothing to reconcile
+export async function rebaseEncounterEdits(
+  campaignId: string,
+  edits: readonly EncounterEdit[]
+): Promise<EncounterState | null> {
+  if (import.meta.env.DEV && DEV_BYPASS) {
+    const fresh = readDevCampaign(campaignId).encounter ?? null;
+    const next = replayEdits(fresh, edits);
+    if (next !== fresh) {
+      updateDevDocument(
+        DEV_CAMPAIGN_COLLECTION,
+        campaignId,
+        resolveDevCampaign(campaignId),
+        (current) => ({ ...current, encounter: next, updatedAt: new Date() })
+      );
+    }
+    return next;
   }
-  const encounter: EncounterState = {
-    ...pending,
-    currentCombatantId: live.currentCombatantId,
-    round: live.round,
-  };
-  // The second-turn `started` flags move with the pointer, so they follow it too.
-  if (live.extraTurns) encounter.extraTurns = live.extraTurns;
-  return { ...data, encounter };
+  const ref = campaignDoc(campaignId);
+  return runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    const fresh = snap.exists()
+      ? (toCampaignDoc(snap.id, snap.data()).encounter ?? null)
+      : null;
+    const next = replayEdits(fresh, edits);
+    if (next && next !== fresh) {
+      txn.update(ref, {
+        encounter: stripUndefined(encounterForWrite(next)),
+        updatedAt: serverTimestamp(),
+      });
+    }
+    return next;
+  });
 }
 
 /**
- * Build the debounced writer for a campaign's shared artifacts. `uid` is accepted
- * for the shared-abstraction `createSave(uid, docId)` signature; the campaign path
- * is `/campaigns/{id}` and does not need it. The write closure reconciles the
- * encounter turn pointer from the live store first (B04 — see
- * {@link reconcileEncounterPointer}) so a queued structural write can never revert a
- * concurrently-advanced turn.
+ * The whole fight written as this device sees it: the edit log's fallback when a
+ * transaction cannot run (offline, or it failed). Like the old autosave it queues
+ * offline and lands when the device is back.
+ */
+export function writeWholeEncounter(
+  campaignId: string,
+  encounter: EncounterState
+): Promise<void> {
+  return updateCampaign(campaignId, { encounter });
+}
+
+/** The fight the server holds now, read directly (a transaction read never waits on a
+ *  listener). */
+export async function readServerEncounter(
+  campaignId: string
+): Promise<EncounterState | null> {
+  if (import.meta.env.DEV && DEV_BYPASS)
+    return readDevCampaign(campaignId).encounter ?? null;
+  const ref = campaignDoc(campaignId);
+  return runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    return snap.exists() ? (toCampaignDoc(snap.id, snap.data()).encounter ?? null) : null;
+  });
+}
+
+/**
+ * Build the debounced writer for a campaign's ambient fields (its name). `uid` is
+ * accepted for the shared-abstraction `createSave(uid, docId)` signature; the campaign
+ * path is `/campaigns/{id}` and does not need it. The fight is never written here: it
+ * has its own writers (`encounter-edit-sync.ts`, `combat-lifecycle-io.ts`).
  */
 export function createCampaignSave(
   _uid: string,
   campaignId: string
 ): DebouncedWriter<CampaignWritable> {
   return createDebouncedWriter<CampaignWritable>((data) =>
-    updateCampaign(campaignId, reconcileEncounterPointer(data))
+    updateCampaign(campaignId, data)
   );
 }
 
@@ -2171,7 +2228,7 @@ export function createDevCampaignSave(
   campaignId: string
 ): DebouncedWriter<CampaignWritable> {
   return createDebouncedWriter<CampaignWritable>((data) => {
-    const pending = campaignWritableForWrite(reconcileEncounterPointer(data));
+    const pending = campaignWritableForWrite(data);
     updateDevDocument(
       DEV_CAMPAIGN_COLLECTION,
       campaignId,

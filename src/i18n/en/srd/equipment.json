@@ -475,7 +475,11 @@
   },
   "poison-basic": {
     "description": "As a Bonus Action, coat one weapon or up to three pieces of ammunition. A creature that takes Piercing or Slashing damage from the poisoned weapon/ammo takes an extra 1d4 Poison damage. Lasts 1 minute or until damage is dealt.",
-    "name": "Poison, Basic"
+    "name": "Poison, Basic",
+    "summary": "Spend a vial: poisoned weapon for 1 minute"
+  },
+  "poison-basic.grants.0": {
+    "label": "Poisoned weapon"
   },
   "poisoners-kit": {
     "description": "A Poisoner's Kit includes the vials, chemicals, and other equipment necessary for the creation of poisons. Proficiency with it lets you add your Proficiency Bonus to the checks you make to craft poisons.",

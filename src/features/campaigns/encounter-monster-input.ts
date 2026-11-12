@@ -14,7 +14,7 @@ import { monsterXp, xpForCr } from "@/lib/monster";
 import type { MonsterStatBlock } from "@/data/types";
 import type { Locale } from "@/lib/locale";
 import type { CombatDefenseSnapshot, CustomMonster } from "@/types/campaign";
-import type { MonsterInput } from "./encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 
 /**
  * Pre-fill a picker-added monster group from its statblock: the ACTIVE-locale name

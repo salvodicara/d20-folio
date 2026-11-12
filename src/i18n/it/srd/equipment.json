@@ -593,7 +593,11 @@
   "poison-basic": {
     "description": "Come Azione Bonus, rivesti un'arma o fino a tre munizioni. Una creatura che subisce danni Perforanti o Taglienti dall'arma/munizione avvelenata subisce 1d4 danni da Veleno extra. Dura 1 minuto o fino a quando il danno viene inflitto.",
     "gist": "Azione Bonus: rivesti un'arma o 3 munizioni; un colpo infligge +1d4 danni da Veleno",
-    "name": "Veleno Base"
+    "name": "Veleno Base",
+    "summary": "Spendi una fiala: arma avvelenata per 1 minuto"
+  },
+  "poison-basic.grants.0": {
+    "label": "Arma avvelenata"
   },
   "poisoners-kit": {
     "description": "Le Sostanze da Avvelenatore includono le fiale, i prodotti chimici e gli altri strumenti necessari per la creazione di veleni. La competenza con esse ti permette di aggiungere il Bonus di Competenza alle prove per fabbricare veleni.",

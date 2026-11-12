@@ -22,6 +22,25 @@ import { describe, expect, it } from "vitest";
 import { stripUndefined } from "@/lib/strip-undefined";
 
 describe("stripUndefined — Firestore write payload sanitizer", () => {
+  // 2026-11-11: a shared character's save sent its public sheet's `sourceUpdatedAt` as a
+  // plain-object copy of the serverTimestamp() sentinel, so the rules (which require a
+  // timestamp) refused every save of a shared character.
+  it("passes a Firestore sentinel through untouched", () => {
+    // Stands in for the SDK's serverTimestamp() sentinel (a class instance); this
+    // module must stay free of Firebase imports.
+    class ServerTimestampSentinel {
+      readonly _methodName = "serverTimestamp";
+    }
+    const stamp = new ServerTimestampSentinel();
+    const out = stripUndefined({
+      sheet: { sourceUpdatedAt: stamp, gone: undefined },
+    }) as {
+      sheet: Record<string, unknown>;
+    };
+    expect(out.sheet.sourceUpdatedAt).toBe(stamp);
+    expect(out.sheet).not.toHaveProperty("gone");
+  });
+
   it("removes top-level undefined values", () => {
     expect(stripUndefined({ a: 1, b: undefined, c: "x" })).toEqual({ a: 1, c: "x" });
   });

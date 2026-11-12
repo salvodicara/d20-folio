@@ -56,7 +56,9 @@ export function initialTrayRowFor(plan: DamageTrayPlan, target: TrayTarget): Tra
     target.defenses,
     target.creatureType,
     target.hp,
-    target.row?.conditions
+    target.row?.conditions,
+    // A Bloodied (or worse) band says the target is missing Hit Points.
+    target.band === "bloodied" || target.band === "nearDeath"
   );
 }
 

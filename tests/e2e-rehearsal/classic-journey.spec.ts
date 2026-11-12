@@ -10,17 +10,29 @@
  * the rest. The classic UI has no "roll for the missing" and no clock control: the DM
  * rolls each hero, and only a rest moves the clock.
  */
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, type Browser, type Page } from "@playwright/test";
 import {
   expectNoCrash,
   PLAYER_BARD,
+  reseedHero,
+  rollEachHero,
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
   signInAs,
+  test,
   watchErrors,
 } from "./helpers";
 
 const errors: string[][] = [];
+
+/**
+ * Put both heroes back as the seed holds them (level 3), so this journey never depends
+ * on what the new-UI run did before it: `--project=classic` passes alone.
+ */
+function reseedHeroes(): void {
+  reseedHero(SANDBOX_USERS.catalion);
+  reseedHero(SANDBOX_USERS.mandorlino);
+}
 
 async function seat(browser: Browser, email?: string): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
@@ -48,26 +60,6 @@ async function endEncounter(page: Page): Promise<boolean> {
  * brings that roll a moment after the cards appear, and its «Roll initiative» button
  * goes: so wait for the cards to settle, and never wait on a button that went.
  */
-async function rollEachHero(dm: Page): Promise<void> {
-  await expect(
-    dm.getByRole("button", { name: /^Begin (turns|with)/ }).first()
-  ).toBeVisible();
-  await dm.waitForTimeout(1_500);
-  for (let i = 0; i < 4; i++) {
-    const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
-    if (!(await roll.isVisible())) break;
-    const opened = await roll.click({ timeout: 3_000 }).then(
-      () => true,
-      () => false
-    );
-    if (!opened) continue;
-    // A committed roll keeps its field on the card: the one just opened has focus.
-    const input = dm.locator("input.init-edit-input:focus");
-    await input.fill(String(15 - i));
-    await input.press("Enter");
-  }
-}
-
 /** The HP chip of a hero's card in the encounter ("24 of 24 hit points: …"). */
 const hpChip = (page: Page, uid: string) =>
   page
@@ -83,6 +75,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
   browser,
 }) => {
   test.setTimeout(420_000);
+  reseedHeroes();
   const dm = await seat(browser);
   const bard = await seat(browser, SANDBOX_USERS.catalion.email);
 
@@ -132,11 +125,12 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
   await test.step("the turns move; Catalion ends a turn from the classic sheet", async () => {
     await bard.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
     // Advance one turn at a time, and only once the last move has reached the player's
-    // sheet: a fixed pause could click past Catalion's turn before the sheet showed it.
+    // sheet: the round pip says "Your turn" on the player's own turn, so the loop reads it (never the
+    // turn panel, which settles a moment after the pip) before pressing Next again.
     const pip = bard.getByRole("link", { name: /^Round \d+ · / });
     for (let i = 0; i < 4; i++) {
-      if (await bard.locator('.turn[data-phase="my-turn"]').isVisible()) break;
-      const shown = await pip.getAttribute("aria-label");
+      const shown = (await pip.getAttribute("aria-label")) ?? "";
+      if (/· Your turn ·/.test(shown)) break;
       await dm.getByRole("button", { name: "Next turn" }).click();
       await expect
         .poll(() => pip.getAttribute("aria-label"), {
@@ -146,8 +140,10 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
         .not.toBe(shown);
     }
     const endTurn = bard.getByRole("button", { name: "End Turn" });
-    await expect.soft(endTurn, "Catalion's turn reaches the sheet").toBeEnabled();
-    if (await endTurn.isEnabled().catch(() => false)) await endTurn.click();
+    await expect(endTurn, "Catalion's turn reaches the sheet").toBeEnabled({
+      timeout: 15_000,
+    });
+    await endTurn.click();
   });
 
   await test.step("the DM ends the encounter", async () => {
@@ -173,8 +169,20 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     await paladin.getByRole("button", { name: /^Level up to level/ }).click();
     await expect(paladin).toHaveURL(/\/level-up$/);
     const next = paladin.locator(".wiz-pager-btn.next");
+    // Level 4 asks a boon (+2 Charisma; "+2 to One" is the default mode) and a spell.
+    const boon = paladin.locator(".wiz-asi-boon");
     for (let i = 0; i < 10; i++) {
       if (await paladin.locator(".wiz-done").isVisible()) break;
+      if (await boon.isVisible()) {
+        await boon.locator(".wiz-asi-tile").filter({ hasText: "CHA" }).click();
+      }
+      // A spell to learn: open the first entry not yet learned and learn it.
+      if (await paladin.getByText(/^Pick \d+ more$/).isVisible()) {
+        const row = paladin.locator(".wiz-list .wiz-row[aria-expanded=false]").first();
+        const name = (await row.locator(".wiz-row-name").innerText()).trim();
+        await row.click();
+        await paladin.getByRole("button", { name: `Learn ${name}` }).click();
+      }
       await expect(next, "each step can go on (no pick left open)").toBeEnabled();
       await next.click();
       await paladin.waitForTimeout(300);

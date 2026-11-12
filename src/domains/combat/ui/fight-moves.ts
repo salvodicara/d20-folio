@@ -24,7 +24,7 @@ import {
   type CombatUndo,
 } from "@/features/campaigns/combat-lifecycle-io";
 import { diagnosticsLog } from "@/lib/diagnostics";
-import type { MonsterInput } from "@/features/campaigns/encounter";
+import type { MonsterInput } from "@/lib/play/encounter";
 import type { EncounterEndReason, EncounterState } from "@/types/campaign";
 
 export type Toaster = (message: string, undo?: () => void) => void;

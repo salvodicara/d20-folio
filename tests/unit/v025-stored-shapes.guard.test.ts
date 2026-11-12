@@ -12,7 +12,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { toCampaignDoc } from "@/features/campaigns/campaign-codec";
-import { parseEncounterState } from "@/features/campaigns/encounter";
+import { parseEncounterState } from "@/lib/play/encounter";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { hydrateStoredCharacter } from "@/lib/character-read";
 import { parseCombatState } from "@/lib/combat-state-codec";
