@@ -40,7 +40,8 @@ export type CatalogueEffect = Extract<
       | "damage-roll-penalty"
       | "hit-point-dice"
       | "dispel"
-      | "self-move";
+      | "self-move"
+      | "forced-movement";
   }
 >;
 
@@ -135,6 +136,14 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   dispel: objectSchema(
     { kind: literalSchema("dispel"), autoMaxLevel: numberSchema },
     { ...BASE, perUpcast: numberSchema }
+  ),
+  "forced-movement": objectSchema(
+    {
+      kind: literalSchema("forced-movement"),
+      direction: unionSchema([literalSchema("push"), literalSchema("pull")]),
+      feet: numberSchema,
+    },
+    BASE
   ),
   "self-move": objectSchema(
     { kind: literalSchema("self-move"), fraction: numberSchema },

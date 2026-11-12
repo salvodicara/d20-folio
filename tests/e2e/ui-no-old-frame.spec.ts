@@ -16,8 +16,6 @@ test.describe.configure({ timeout: 240_000 });
 const NOT_YET_MOVED = new Set([
   "/admin", // owner-only, after the go/no-go
   "/admin/users/:uid/characters/:charId", // owner-only, after the go/no-go
-  "/campaigns/:campaignId/sheets/:memberUid", // the DM's read-only member sheet
-  "/view/:uid/:charId", // the public share view
 ]);
 
 /** Not player pages: dev probes, the sign-in, the classic level-up kept on purpose. */

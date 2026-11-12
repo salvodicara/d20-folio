@@ -45,6 +45,9 @@ export type TrayMultiplier = "0" | "0.25" | "0.5" | "1" | "2";
 export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.25", "0.5", "1", "2"];
 
 export interface DamageTrayPlan {
+  /** What a failed save also does, as the card says it (Thunderwave: «Pushed up to
+   *  10 ft away»): each failed row shows it; the app moves no token. */
+  failNotes?: string[];
   /** The use lands only on a target that succeeds (`appliesOnSuccess`): each row
    *  is marked «Successo» (the row's `saved`), and only marked rows take the amount,
    *  the conditions and the states. */
@@ -316,8 +319,28 @@ export function damageTrayPlan(
     ...(spec.hitPointThreshold
       ? { hitPointThreshold: { ...spec.hitPointThreshold } }
       : {}),
+    ...(hasSave && !attacks && s.effectRiders?.length
+      ? { failNotes: s.effectRiders.map((line) => line.text) }
+      : {}),
     targets: planTargets,
   };
+}
+
+/**
+ * The creatures whose save a cast asks on its own line (Command, Calm Emotions): a
+ * save spell aimed at others that leaves the app nothing to apply, so no tray opens.
+ * Empty when the tray asks it, or there is no save or nobody else to ask.
+ */
+export function savesOnTheLine(
+  action: ResolvedAction,
+  targets: ReadonlyArray<string>,
+  selfId: string
+): string[] {
+  const others = targets.filter((id) => id !== selfId);
+  if (others.length === 0) return [];
+  if (combatResolutionSpec(action).kind !== "save") return [];
+  if (!action.summary.saveAbility && action.summary.saveDC === undefined) return [];
+  return damageTrayPlan(action, targets, selfId) ? [] : others;
 }
 
 /** The weapon's floor on low damage-die faces, when one applies. */

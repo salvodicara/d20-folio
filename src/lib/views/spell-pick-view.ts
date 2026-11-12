@@ -87,6 +87,18 @@ export function spellPickVM(spell: SrdSpellData, locale: Locale): SpellPickVM {
   };
 }
 
+/**
+ * The order every spell picker lists by: level, then the name the reader sees, with
+ * the locale's collator (Italian lists «Allarme, Ape Ronzante, Charme…», not the
+ * English catalogue order).
+ */
+export function byLevelThenName(
+  locale: Locale
+): (a: { level: number; name: string }, b: { level: number; name: string }) => number {
+  const collator = new Intl.Collator(locale, { sensitivity: "base" });
+  return (a, b) => a.level - b.level || collator.compare(a.name, b.name);
+}
+
 /** Filter facts for one learnable pool (cantrips OR leveled spells). */
 export interface SpellPoolFilter {
   /** Class list gate ("bard") — used when `allowedLists` is absent. */
@@ -120,5 +132,6 @@ export function learnableSpellVMs(
       if (filter.cantripsOnly) return s.level === 0;
       return s.level > 0 && s.level <= filter.maxLevel;
     })
-    .map((s) => spellPickVM(s, locale));
+    .map((s) => spellPickVM(s, locale))
+    .sort(byLevelThenName(locale));
 }

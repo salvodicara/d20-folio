@@ -26,6 +26,7 @@
  */
 
 import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
+import { SaveOutcomeChips } from "@/features/character/center/SaveOutcomeChips";
 import {} from "@/lib/compute";
 import { conditionFactsFor } from "@/lib/condition-sources";
 import { useConditionEncounter } from "@/features/character/condition-encounter";
@@ -1640,7 +1641,12 @@ function CombatActionCard({
       }
       name={action.name}
       nameTerm={nameTerm}
-      followUp={<AttackOutcomeChips actionId={action.id} />}
+      followUp={
+        <>
+          <AttackOutcomeChips actionId={action.id} />
+          <SaveOutcomeChips actionId={action.id} />
+        </>
+      }
       slot={action.type}
       spellLevel={action.source === "spell" ? (action.spellLevel ?? 0) : undefined}
       cantripSealLabel={t("spells.cantripSeal")}
