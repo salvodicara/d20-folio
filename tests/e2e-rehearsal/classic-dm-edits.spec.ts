@@ -5,7 +5,7 @@
  * put the server's fight back on screen, and the DM's next edit was saved over it, so
  * the first edit was lost.
  */
-import { expect } from "@playwright/test";
+import { expect, type Locator } from "@playwright/test";
 import { rollEachHero, SANDBOX_CAMPAIGN, test, watchErrors } from "./helpers";
 
 const CAMPAIGN = `http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents/campaigns/${SANDBOX_CAMPAIGN}`;
@@ -69,6 +69,22 @@ async function someoneElseWrites(): Promise<void> {
   if (!response.ok) throw new Error(`campaign write ${response.status}`);
 }
 
+/**
+ * Click a fight control until its edit is on the DM's screen (`flipped` appears). A
+ * click that lands while the row is still opening reaches nothing; clicking again is
+ * safe because nothing changed, and once `flipped` shows, the edit exists and this
+ * returns.
+ */
+async function editOnScreen(row: Locator, label: string, flipped: string): Promise<void> {
+  await expect(async () => {
+    if (await row.getByRole("button", { name: flipped }).isVisible()) return;
+    await row.getByRole("button", { name: label }).click();
+    await expect(row.getByRole("button", { name: flipped })).toBeVisible({
+      timeout: 1_000,
+    });
+  }).toPass({ timeout: 10_000 });
+}
+
 test("classic UI: the DM's fight edits survive another device's write between them", async ({
   browser,
 }) => {
@@ -107,12 +123,16 @@ test("classic UI: the DM's fight edits survive another device's write between th
   await test.step("reveal its HP, another write lands, then hide it: both stay", async () => {
     const row = dm.locator("li", { hasText: GOBLIN }).first();
     await row.getByRole("button", { name: GOBLIN, exact: true }).click();
-    await row.getByRole("button", { name: "Reveal HP" }).click();
+    // Each edit is on the DM's screen before the next step: what this test guards is
+    // that an edit MADE is never lost. Verify 43203056381 clicked «Reveal HP» 80 ms
+    // after the row began to open; the click reached nothing, the edit was never made
+    // (no write was sent), and the failure read as a lost write.
+    await editOnScreen(row, "Reveal HP", "Hide HP");
     await someoneElseWrites();
     // Long enough for the snapshot to reach the DM's screen, well inside the old 2 s
     // autosave window.
     await dm.waitForTimeout(600);
-    await row.getByRole("button", { name: "Hide combatant" }).click();
+    await editOnScreen(row, "Hide combatant", "Reveal combatant");
     await expect
       .poll(async () => (await serverMonsters()).find((m) => m.name === GOBLIN), {
         message: "both edits are on the server",
