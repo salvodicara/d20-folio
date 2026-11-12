@@ -128,13 +128,14 @@ describe("sortActions — D8 within-group ordering", () => {
     expect(actionSortTier({ source: "feature" } as ResolvedAction)).toBe(3);
   });
 
-  it("weapons are tier-0 and alpha-sorted, including the universal Unarmed Strike", () => {
+  it("weapons are tier-0 and alpha-sorted, including the universal Unarmed Strike and improvised weapon", () => {
     const weapons = sorted.filter((a) => a.source === "weapon").map((a) => a.name);
     // The dual-wield "Dagger (off-hand)" sits alpha-adjacent to "Dagger" in the
     // pure list; the board hides it until a Light-weapon attack commits (a stateful
     // DOM fact kept in the render test). Filter it out for the static order check.
     expect(weapons.filter((n) => n !== "Dagger (off-hand)")).toEqual([
       "Dagger",
+      "Improvised Weapon",
       "Quarterstaff",
       "Rapier",
       "Shortbow",
