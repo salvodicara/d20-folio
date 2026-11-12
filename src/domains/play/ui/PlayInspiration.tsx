@@ -47,10 +47,11 @@ export function PlayInspiration({ doc }: { doc: CharacterDoc }) {
   const spendHeroic = () =>
     registerUndoableToast(
       { message: t("character.heroicInspirationSpent") },
-      () => {
-        store().setHeroicInspiration(false);
-        return () => store().setHeroicInspiration(true);
-      },
+      () =>
+        store().changeResourceByHand(
+          () => store().setHeroicInspiration(false),
+          () => store().setHeroicInspiration(true)
+        ),
       { turnScoped: false }
     );
   const spendDie = (die: string) =>
@@ -95,7 +96,14 @@ export function PlayInspiration({ doc }: { doc: CharacterDoc }) {
                     {t("common.use")}
                   </Button>
                 ) : (
-                  <Button onClick={() => store().setHeroicInspiration(true)}>
+                  <Button
+                    onClick={() =>
+                      store().changeResourceByHand(
+                        () => store().setHeroicInspiration(true),
+                        () => store().setHeroicInspiration(false)
+                      )
+                    }
+                  >
                     {t("play.insp.received")}
                   </Button>
                 ))}
