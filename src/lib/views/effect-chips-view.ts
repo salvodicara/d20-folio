@@ -12,7 +12,6 @@ import { deriveStatuses, statusRoundsLeft } from "@/lib/status";
 import type { CharacterDoc } from "@/types/character";
 import { conditionChips, grantSourceLabel } from "./tracker-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
-import { OUT_OF_AURA_PREFIX } from "@/lib/play/aura-source";
 
 const ROUNDS_PER_MINUTE = 10;
 
@@ -37,18 +36,14 @@ export function remainingOf(roundsLeft: number | undefined): EffectChip["remaini
 }
 
 export function effectChipsView(doc: CharacterDoc, locale: Locale): EffectChip[] {
-  // «Outside a paladin's aura» says where the character stands, not an effect on it:
-  // the aura's own row carries it.
-  const buffs: EffectChip[] = deriveStatuses(doc)
-    .filter((status) => !status.key.startsWith(OUT_OF_AURA_PREFIX))
-    .map((status) => ({
-      id: status.key,
-      name: grantSourceLabel(status.source, locale),
-      kind: "buff",
-      remaining: remainingOf(statusRoundsLeft(status)),
-      source: status.source,
-      concentration: status.concentration,
-    }));
+  const buffs: EffectChip[] = deriveStatuses(doc).map((status) => ({
+    id: status.key,
+    name: grantSourceLabel(status.source, locale),
+    kind: "buff",
+    remaining: remainingOf(statusRoundsLeft(status)),
+    source: status.source,
+    concentration: status.concentration,
+  }));
   const conditions: EffectChip[] = conditionChips(doc.session.conditions, locale).map(
     (chip) => ({
       id: chip.id,
