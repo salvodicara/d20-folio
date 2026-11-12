@@ -29,7 +29,23 @@ one at a time onto `main`, never a base to resume. Its docs describe that branch
 - Behaviour changes are test-first (`tdd`); bugs go through `diagnosing-bugs`. A test takes its
   cases from the thing it checks and is proven by breaking the code on purpose.
 - UI is verified in a real browser (`playwright-cli`), with before/after screenshots shown in chat.
-  A visible change reaches `main` only after the owner approves it.
+  Every UI change names the product screen it copies ("Pattern source") next to our build. A visible
+  change with no such precedent reaches `main` only after the owner approves it.
+
+## Finishing work
+
+Stay on a task until what was asked is done. Status notes are welcome, but carry on with every part
+that does not depend on an answer; do not end a turn by offering to continue or by listing what is
+left when you could do it. Errors, timeouts, red CI, a stale PR head, a locked file or a flaky test
+are ordinary obstacles: diagnose them, then wait and retry, fix the request or use another tool.
+Stop only when the work cannot move without the owner, or when the blocker is deliberate (the gated
+list below, a guardrail, access withheld on purpose): leave it alone and say plainly what you found.
+
+These steps need no approval: retrying a failed command or CI job, rebasing or updating a branch,
+`just merge-pr` on a green PR, fixing red CI on your own PR, closing a superseded PR, local and
+emulator checks, and building a screen or control that follows a proven pattern from D&D Beyond,
+Baldur's Gate 3, Foundry, Roll20 or Solasta (owner, 2026-11-12: build it, then show it; ask first
+only when no precedent exists or two established patterns would change how the player works).
 
 ## Owner-gated, always
 
