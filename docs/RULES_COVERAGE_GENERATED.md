@@ -19,7 +19,7 @@ edge cases below, through the functions a screen calls.
 | --- | --- | --- |
 | Spells | 339 | 58 / 201 / 80 / 0 |
 | Class features | 218 | 123 / 88 / 7 / 0 |
-| Species traits | 33 | 21 / 9 / 3 / 0 |
+| Species traits | 33 | 22 / 9 / 2 / 0 |
 | Feats | 19 | 9 / 6 / 4 / 0 |
 | Magic items | 258 | 114 / 97 / 47 / 0 |
 | Monster entries (330 stat blocks) | 1326 | 0 / 653 / 673 / 0 |
