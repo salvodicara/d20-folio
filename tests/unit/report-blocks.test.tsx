@@ -21,6 +21,7 @@ const fight = (patch: Partial<Extract<DiaryBlock, { kind: "fight" }>>): DiaryBlo
   rounds: 3,
   foes: ["Goblin"],
   names: {},
+  inferred: false,
   ...patch,
 });
 const heading = (block: DiaryBlock) => {
@@ -43,5 +44,21 @@ describe("a fight's heading", () => {
 
   it("a fight still running shows its start alone", () => {
     expect(heading(fight({}))).toMatch(/3 rounds · 07:41.PM$/i);
+  });
+});
+
+describe("a progress block's heading", () => {
+  it("reads «Progress», not exploration", () => {
+    expect(heading({ kind: "progress", at: at(41), entries: [] })).toMatch(
+      /^Progress · 07:41.PM$/i
+    );
+  });
+});
+
+describe("an inferred fight's heading", () => {
+  it("says the app worked it out: «Goblin (inferred)»", () => {
+    expect(heading(fight({ inferred: true, endedAt: at(47) }))).toMatch(
+      /^Fight with Goblin \(inferred\) · 3 rounds · 07:41.PM–07:47.PM$/i
+    );
   });
 });

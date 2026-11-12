@@ -22,6 +22,8 @@
     "pasteChronicle": "Incolla la cronaca",
     "saveFailed": "Non salvata: controlla la connessione e riprova.",
     "saved": "Cronaca della sessione salvata.",
-    "victory": "Vittoria"
+    "victory": "Vittoria",
+    "progress": "Progressi",
+    "inferredFight": "{{title}} (dedotto)"
   }
 }
