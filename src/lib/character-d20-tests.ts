@@ -27,7 +27,7 @@ import {
 } from "@/lib/compute";
 import type { D20RerollClause } from "@/lib/grants";
 import type { CharacterDoc } from "@/types/character";
-import type { ActionRollEffect } from "@/data/types";
+import type { ReactableRoll, ActionRollEffect } from "@/data/types";
 import { STANDARD_DIE_SIDES, type DieSides } from "@/types/dice-formula";
 import type {
   D20EnteredModifierRule,
@@ -183,7 +183,9 @@ function oneDieRule(sourceId: string, sides: DieSides): D20EnteredModifierRule {
  */
 export function postRollSources(
   character: CharacterDoc,
-  actions: ReadonlyArray<PostRollAction> = []
+  actions: ReadonlyArray<PostRollAction> = [],
+  /** The roll the entry takes (a save the app judges, or the initiative roll). */
+  roll: ReactableRoll = "save"
 ): PostRollSources {
   const held = /^d(\d+)$/.exec(character.session.bardicInspirationDie ?? "");
   const sides = STANDARD_DIE_SIDES.find((s) => s === Number(held?.[1]));
@@ -192,7 +194,7 @@ export function postRollSources(
       sides === undefined ? [] : [oneDieRule(BARDIC_INSPIRATION_DIE_SOURCE, sides)],
     advantageOptIns: actions.flatMap((action) =>
       action.summary.rollEffect?.kind === "advantage" &&
-      action.summary.rollEffect.rolls.includes("save")
+      action.summary.rollEffect.rolls.includes(roll)
         ? [action.id]
         : []
     ),

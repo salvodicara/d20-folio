@@ -55,6 +55,10 @@
     "shareMine": "Your share: it comes to your sheet.",
     "shareWaiting": "Waiting on their sheet.",
     "moved": "The chest has already changed: look again and retry.",
-    "tooLate": "Too late to undo: it is already on the sheet."
+    "tooLate": "Too late to undo: it is already on the sheet.",
+    "putInBy": "{{who}} puts into the chest",
+    "tookOutBy": "{{who}} takes from the chest",
+    "cameInPlain": "Into the chest",
+    "wentOutPlain": "Out of the chest"
   }
 }

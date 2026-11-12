@@ -2,10 +2,12 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import { ConcentrationSaveBanner } from "@/features/character/ConcentrationSaveBanner";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function loadConcentrator({ advantage = false } = {}) {
   const character = makeCharacterDoc(
@@ -95,5 +97,77 @@ describe("ConcentrationSaveBanner", () => {
     });
     expect(useCharacterStore.getState().character?.session.concentration).toBe("");
     expect(screen.queryByText(/con save dc/i)).not.toBeInTheDocument();
+  });
+});
+
+describe("a failed Concentration save a Reaction spell turns into a 20", () => {
+  const omen = {
+    custom: true as const,
+    name: "Omen of Twenty",
+    level: 8,
+    school: "divination",
+    castingTime: "reaction",
+    range: "self",
+    components: { v: true, s: false, m: false },
+    duration: "instantaneous",
+    concentration: false,
+    description: "A failed roll becomes a 20.",
+    instanceId: customInstanceId("omen-of-twenty"),
+    mechanics: { failedD20Becomes: 20 },
+  };
+
+  function loadSeer() {
+    const character = makeCharacterDoc(
+      {
+        classes: [{ classId: "wizard", level: 17 }],
+        spells: [omen as never, { srdId: "bless", prepared: true }],
+        spellSlots: [{ level: 8, total: 1 }],
+      },
+      { hp: { current: 44, temp: 0 }, concentration: conc("bless") }
+    );
+    useCharacterStore.getState().setCharacter(character);
+    useCombatStore.setState({ reactionUsed: false });
+  }
+
+  it("offers it on a failing roll; using it keeps Concentration and spends the slot and the Reaction; undo gives both back", () => {
+    loadSeer();
+    act(() => {
+      useCharacterStore.getState().applyDamage(30);
+    });
+    render(<ConcentrationSaveBanner />);
+    const roll = screen.getByLabelText(/concentration-save d20 result/i);
+    fireEvent.change(roll, { target: { value: "15" } });
+    expect(screen.queryByRole("button", { name: /the d20 becomes 20/i })).toBeNull();
+    fireEvent.change(roll, { target: { value: "2" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: /^Omen of Twenty: the d20 becomes 20$/i })
+    );
+    const after = useCharacterStore.getState();
+    expect(after.character?.session.concentration).toBe(conc("bless"));
+    expect(after.character?.session.spellSlots["8"]?.used).toBe(1);
+    expect(after.combatPendingConcentrationSaves).toHaveLength(0);
+    expect(useCombatStore.getState().reactionUsed).toBe(true);
+
+    act(() => {
+      useUndoStore.getState().undo();
+    });
+    expect(
+      useCharacterStore.getState().character?.session.spellSlots["8"]?.used ?? 0
+    ).toBe(0);
+    expect(useCharacterStore.getState().combatPendingConcentrationSaves).toHaveLength(1);
+    expect(useCombatStore.getState().reactionUsed).toBe(false);
+  });
+
+  it("not offered once the Reaction is spent", () => {
+    loadSeer();
+    useCombatStore.setState({ reactionUsed: true });
+    act(() => {
+      useCharacterStore.getState().applyDamage(30);
+    });
+    render(<ConcentrationSaveBanner />);
+    fireEvent.change(screen.getByLabelText(/concentration-save d20 result/i), {
+      target: { value: "2" },
+    });
+    expect(screen.queryByRole("button", { name: /the d20 becomes 20/i })).toBeNull();
   });
 });

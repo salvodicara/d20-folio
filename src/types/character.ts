@@ -1098,6 +1098,10 @@ export interface SessionState {
    *  table varies them; absent: RAW 2024. A composed read field like
    *  `encounterEffects`: the codec never serializes it. */
   tableRules?: import("@/lib/table-rules").TableRules;
+  /** The Aura of Protection a party member's paladin grants this sheet's saves now
+   *  (the best fresh one the player hasn't stepped out of), from the campaign doc.
+   *  A composed read field like `encounterEffects`: the codec never serializes it. */
+  partyAura?: { from: string; name: string; bonus: number };
   /** Conditions owned by the current solo concentration. `conditions` remains
    * the manual/base layer; consumers read their union through the shared projection. */
   concentrationConditions?: ReadonlyArray<string>;

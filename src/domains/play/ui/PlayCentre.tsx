@@ -5,10 +5,12 @@
  * Lancia, Usa, Reagisci) commits through the engine's one turn flow (`executeAction`);
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
+import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
   checkEntriesFor,
   skillBonusFor,
+  skillFaceFloorFor,
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { PlayCheck } from "@/domains/play/ui/PlayCheck";
@@ -23,7 +25,10 @@ import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
-import { rollInitiativeFromSheet } from "@/domains/play/sheet-initiative-roll";
+import {
+  initiativePaidAdvantage,
+  rollInitiativeFromSheet,
+} from "@/domains/play/sheet-initiative-roll";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
@@ -370,7 +375,7 @@ function InventoryPane({
       {coins.length > 0 && (
         <p className="f-coins">
           {coins.map((c) => (
-            <span key={c} className="f-coin" data-c={c}>
+            <span key={c} className="f-coin" data-coin={c}>
               <b>{view.coins[c]}</b> {t(`equipment.currencyAbbr.${c}`)}
             </span>
           ))}
@@ -735,6 +740,7 @@ function TurnStrip({
           roll={{
             ...initiativeRollModel(doc),
             onSurprise: () => toggleSurprise(t),
+            paidAdvantage: initiativePaidAdvantage(doc, locale, t),
           }}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>
@@ -913,7 +919,9 @@ function ActionLine({
       return;
     }
     // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
-    const checks = doc ? checkEntriesFor(row.action, skillBonusFor(doc)) : [];
+    const checks = doc
+      ? checkEntriesFor(row.action, skillBonusFor(doc), skillFaceFloorFor(doc))
+      : [];
     if (checks.length > 0) {
       setChecking(checks);
       return;
@@ -957,7 +965,8 @@ function ActionLine({
       ? signed(row.attackBonus)
       : row.saveDc !== undefined
         ? [
-            t("play.dc", { dc: row.saveDc }),
+            // «CD 14» stays together; only the ability may go to the next line
+            t("play.dc", { dc: row.saveDc }).replace(/ /g, "\u00a0"),
             row.saveAbility
               ? saveAbilityShort(row.saveAbility, row.saveAbilities, t)
               : null,
@@ -1026,6 +1035,19 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {/* an attack with no target is completed on the row just used (Hit · Miss ·
+          Critical, the damage), the classic sheet's chips: a line of its own under the
+          row. A Miss also closes the «Did it hit?» panel for this attack. */}
+      {!readonly && (
+        <AttackOutcomeChips
+          actionId={row.action.id}
+          onOutcome={(outcome) => {
+            const afterHit = useAfterHitStore.getState();
+            if (outcome === "miss" && afterHit.offer?.actionId === row.action.id)
+              afterHit.clear();
+          }}
+        />
       )}
       {familiar && doc && (
         <Suspense fallback={null}>

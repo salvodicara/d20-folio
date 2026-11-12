@@ -24,12 +24,9 @@ export type {
   CombatOutcomeTarget,
   ReviewedCombatTargetOutcome,
 } from "@/types/combat-outcome";
+import { isRecord } from "@/lib/is-record";
 
 const ABILITIES = new Set<CombatAbilityCode>(["STR", "DEX", "CON", "INT", "WIS", "CHA"]);
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 function nonEmpty(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;

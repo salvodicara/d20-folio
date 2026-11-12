@@ -11,7 +11,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { firstWord, teamFixtureName } from "./team-fixture";
 
 // Derived from the pack fixture at runtime — no name literal ships publicly.
-const HERO_NAME = teamFixtureName("catalion-bard");
+const HERO_NAME = teamFixtureName("bard");
 const HERO_FIRST = firstWord(HERO_NAME);
 import { seedLang } from "./surfaces";
 import { settledBox } from "./ready";
@@ -191,7 +191,7 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await page.setViewportSize({ width: 1130, height: 800 });
     await seedLang(page, "it");
     test.skip(!HERO_NAME, "pack fixtures absent (SRD-only tree)");
-    await page.goto("/characters/team-catalion-bard/level-up");
+    await page.goto("/characters/team-bard/level-up");
     await expect(page.getByText(HERO_FIRST).first()).toBeVisible({ timeout: 20000 });
     await nextBtn(page).click(); // hp → boon
     await page.locator(".wiz-fork-tab").nth(2).click(); // feat mode
@@ -232,7 +232,7 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await page.setViewportSize({ width: 1130, height: 800 });
     await seedLang(page, "it");
     test.skip(!HERO_NAME, "pack fixtures absent (SRD-only tree)");
-    await page.goto("/characters/team-catalion-bard/level-up");
+    await page.goto("/characters/team-bard/level-up");
     await expect(page.getByText(HERO_FIRST).first()).toBeVisible({ timeout: 20000 });
     await nextBtn(page).click(); // hp → boon
     await page.locator(".wiz-fork-tab").nth(2).click(); // feat mode
@@ -271,7 +271,7 @@ test.describe("fb3: asks-column ledger + chrome rhythm + mobile nav", () => {
     await page.setViewportSize({ width: 1130, height: 800 });
     await seedLang(page, "it");
     test.skip(!HERO_NAME, "pack fixtures absent (SRD-only tree)");
-    await page.goto("/characters/team-catalion-bard/level-up");
+    await page.goto("/characters/team-bard/level-up");
     await expect(page.getByText(HERO_FIRST).first()).toBeVisible({ timeout: 20000 });
     const foots = page.locator(".wiz-card-foot");
     const n = await foots.count();

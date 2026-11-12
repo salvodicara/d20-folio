@@ -2133,6 +2133,8 @@ export interface AggregatedGrants {
   d20Rerolls: ReadonlyArray<D20RerollClause>;
   /** Held spells whose Concentration taking damage can't break (Relentless Hunter). */
   concentrationDamageProof: ReadonlyArray<ConcentrationDamageProofClause>;
+  /** The floor on a Hit Point Die's face, the most generous one (a feature that counts a low face higher). */
+  hitDieFloor?: { floorBelow: number; floorTo: number };
   /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
   rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
   /**
@@ -2737,6 +2739,7 @@ export function evaluateGrants(
   const rollFloors: RollFloorClause[] = [];
   const d20Rerolls: D20RerollClause[] = [];
   const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
+  let hitDieFloor: { floorBelow: number; floorTo: number } | undefined;
   const concentrationSaveSchoolBonuses: Array<
     AggregatedGrants["concentrationSaveSchoolBonuses"][number]
   > = [];
@@ -3584,6 +3587,10 @@ export function evaluateGrants(
       case "d20-reroll":
         d20Rerolls.push({ sourceId, faces: g.faces });
         break;
+      case "hit-die-floor":
+        if (!hitDieFloor || g.floorTo > hitDieFloor.floorTo)
+          hitDieFloor = { floorBelow: g.floorBelow, floorTo: g.floorTo };
+        break;
       case "concentration-damage-proof":
         concentrationDamageProof.push({
           sourceId,
@@ -4383,6 +4390,7 @@ export function evaluateGrants(
     rollFloors,
     d20Rerolls,
     concentrationDamageProof,
+    ...(hitDieFloor ? { hitDieFloor } : {}),
     rollDieAdjustments,
     incomingAttackAdvantages,
     incomingAttackDisadvantages,

@@ -8,7 +8,11 @@
  *   write and a concurrent change is kept;
  * - `encounterFromServer` puts the waiting edits back over every snapshot, so the
  *   screen never drops one;
- * - with no network, or when the transaction fails, the fight is written whole, as the
+ * - a transaction that fails while online is tried again (`TRANSACTION_RETRIES`, the
+ *   wait doubling each time): a whole-fight write is last-writer-wins, and written from
+ *   this device's view it can erase what the server gained since (another device's
+ *   change, or this DM's own confirmed edit);
+ * - with no network, or when every try has failed, the fight is written whole, as the
  *   old autosave did: queued offline, never an error on screen.
  */
 import { diagnosticsLog } from "@/lib/diagnostics/logger";
@@ -23,17 +27,27 @@ import { useCampaignStore } from "./campaignStore";
 import {
   beginSend,
   logEdit,
+  logRead,
   logSnapshot,
   openEditLog,
   replayEdits,
   sendDone,
   shownFight,
+  snapshotNeedsRead,
   type EncounterEdit,
   type EncounterEditLog,
 } from "./encounter-edit-log";
 
 /** Long enough to gather a burst of clicks into one write, short enough to feel live. */
 const SEND_DELAY_MS = 300;
+
+/** Tries again after a failed transaction while online, before the whole-fight write. */
+const TRANSACTION_RETRIES = 4;
+/** The first wait before trying again; it doubles each time (0.5, 1, 2, 4 s). */
+const RETRY_DELAY_MS = 500;
+
+const offline = () => typeof navigator !== "undefined" && !navigator.onLine;
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
 interface EditSync {
   campaignId: string;
@@ -82,34 +96,37 @@ function schedule(s: EditSync): void {
 }
 
 /**
- * Write a batch: one transaction replayed onto the server's newest fight; with no
- * network, or when it fails, the whole fight as this device sees it (`base` with the
- * batch), queued while offline as the old autosave was. Resolves with what was written.
+ * Write a batch: one transaction replayed onto the server's newest fight, tried again
+ * while online when it fails; with no network, or when every try failed, the whole
+ * fight as this device sees it (`base` with the batch), queued while offline as the old
+ * autosave was. Resolves with what was written.
  */
 async function writeBatch(
   campaignId: string,
   base: EncounterState | null,
   batch: readonly EncounterEdit[]
 ): Promise<EncounterState | null> {
-  try {
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      throw new Error("offline");
+  let error: unknown = new Error("offline");
+  for (let attempt = 0; !offline() && attempt <= TRANSACTION_RETRIES; attempt++) {
+    if (attempt > 0) await wait(RETRY_DELAY_MS * 2 ** (attempt - 1));
+    try {
+      return await rebaseEncounterEdits(campaignId, batch);
+    } catch (failure) {
+      error = failure;
     }
-    return await rebaseEncounterEdits(campaignId, batch);
-  } catch (error) {
-    diagnosticsLog("warn", "campaign.encounter-edit-fallback", {
-      message: String(error),
-    });
-    const written = replayEdits(base, batch);
-    if (written) {
-      writeWholeEncounter(campaignId, written).catch((failure: unknown) => {
-        diagnosticsLog("error", "campaign.encounter-write-failed", {
-          message: String(failure),
-        });
-      });
-    }
-    return written;
   }
+  diagnosticsLog("warn", "campaign.encounter-edit-fallback", {
+    message: String(error),
+  });
+  const written = replayEdits(base, batch);
+  if (written) {
+    writeWholeEncounter(campaignId, written).catch((failure: unknown) => {
+      diagnosticsLog("error", "campaign.encounter-write-failed", {
+        message: String(failure),
+      });
+    });
+  }
+  return written;
 }
 
 async function send(s: EditSync): Promise<void> {
@@ -122,18 +139,23 @@ async function send(s: EditSync): Promise<void> {
   const done = sendDone(s.log, written);
   s.log = done.log;
   show(s);
-  if (done.recheck) {
-    readServerEncounter(s.campaignId)
-      .then((fight) => {
-        if (sync !== s || s.generation !== generation) return;
-        s.log = logSnapshot(s.log, fight);
-        show(s);
-      })
-      .catch(() => {
-        // The next snapshot brings the server's fight anyway.
-      });
-  }
+  if (done.recheck) readBack(s);
   if (s.log.waiting.length > 0) schedule(s);
+}
+
+/** Read the server's fight directly and take it (`logRead`): after a snapshot the log
+ *  could not trust, because it may be older than this device's last write. */
+function readBack(s: EditSync): void {
+  const { generation } = s;
+  readServerEncounter(s.campaignId)
+    .then((fight) => {
+      if (sync !== s || s.generation !== generation) return;
+      s.log = logRead(s.log, fight);
+      show(s);
+    })
+    .catch(() => {
+      // The next snapshot brings the server's fight anyway.
+    });
 }
 
 /**
@@ -189,6 +211,7 @@ export function encounterFromServer(
   fight: EncounterState | null
 ): EncounterState | null {
   if (sync?.campaignId !== campaignId) return fight;
+  if (snapshotNeedsRead(sync.log, fight)) readBack(sync);
   sync.log = logSnapshot(sync.log, fight);
   const shown = shownFight(sync.log);
   sync.shown = shown;

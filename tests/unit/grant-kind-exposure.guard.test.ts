@@ -654,6 +654,11 @@ const EXPOSURE: Record<string, Exposure> = {
     via: "effectEndsConcentration",
     consumer: "src/lib/play/concentration-ends.ts",
   },
+  // A Hit Point Die floor: the faces typed read through it (rest and spends).
+  "hit-die-floor": {
+    via: "hitDieFloor",
+    consumer: "src/features/character/RestModal.tsx",
+  },
   "auto-stabilize": {
     via: "stabilizedDeathSaves",
     consumer: "src/lib/play/damage.ts",
