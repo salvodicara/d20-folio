@@ -3063,7 +3063,11 @@
   .fui .f-sheet .f-centre > .f-pnb,
   .fui .f-sheet .f-play > :not(.f-centre) {
     --fade: 40px;
-    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade)), transparent);
+    mask-image: linear-gradient(
+      to bottom,
+      var(--shade) calc(100% - var(--fade)),
+      transparent
+    );
   }
   .fui .f-sheet .f-centre > .f-pnb {
     padding-bottom: var(--fade);
@@ -5403,7 +5407,7 @@
   /* the filter panel scrolls when its groups outgrow the screen: its foot fades,
      and the last group scrolls clear of the fade */
   .fui .f-cmp-filters {
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+    mask-image: linear-gradient(to bottom, var(--shade) calc(100% - 40px), transparent);
   }
   .fui .f-cmp-filters .f-cmp-facets {
     padding-bottom: 40px;
