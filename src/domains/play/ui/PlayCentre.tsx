@@ -5,6 +5,7 @@
  * Lancia, Usa, Reagisci) commits through the engine's one turn flow (`executeAction`);
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
+import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
   checkEntriesFor,
@@ -1026,6 +1027,19 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {/* an attack with no target is completed on the row just used (Hit · Miss ·
+          Critical, the damage), the classic sheet's chips: a line of its own under the
+          row. A Miss also closes the «Did it hit?» panel for this attack. */}
+      {!readonly && (
+        <AttackOutcomeChips
+          actionId={row.action.id}
+          onOutcome={(outcome) => {
+            const afterHit = useAfterHitStore.getState();
+            if (outcome === "miss" && afterHit.offer?.actionId === row.action.id)
+              afterHit.clear();
+          }}
+        />
       )}
       {familiar && doc && (
         <Suspense fallback={null}>

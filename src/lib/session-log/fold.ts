@@ -60,12 +60,18 @@ function isOwnAttribution(by: string, line: PlayEvent, next: PlayEvent): boolean
  * apply — a duplicate id, a correction of an unknown line, a player touching someone
  * else's line — are ignored rather than thrown, because the log is shared input.
  */
-/** The lines that give the story its shape: never hidden, never moved. */
-const MARKER_KINDS = new Set<PlayEvent["kind"]>([
+/** The lines that give the story its shape: never hidden, never moved, never shown as
+ *  a line of their own. */
+const MARKER_KINDS: ReadonlySet<PlayEvent["kind"]> = new Set<PlayEvent["kind"]>([
   "encounter-start",
   "round-start",
   "encounter-end",
+  "solo-fight",
 ]);
+
+export function isMarkerEvent(event: PlayEvent): boolean {
+  return MARKER_KINDS.has(event.kind);
+}
 
 /** A stamp is shared input: only a well-formed one may place a line. */
 function validStamp(value: unknown): value is SeenRound {
