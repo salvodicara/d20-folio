@@ -57,6 +57,18 @@ export type CombatFields = Pick<
   endedEncounter?: EncounterState | null;
 };
 
+/**
+ * A member whose character a fight takes in: its id and the party snapshot
+ * (`attachCharacter` writes both). The one rule for who may roll into a fight.
+ */
+export function isAttached(
+  member:
+    | Pick<CombatFields["memberDetails"][string], "characterId" | "character">
+    | undefined
+): boolean {
+  return Boolean(member?.characterId && member.character);
+}
+
 /** The members with an attached character: who is in a fight that starts now. */
 function attached(campaign: CombatFields): {
   seeds: Record<string, EncounterPcSeed>;
@@ -65,7 +77,7 @@ function attached(campaign: CombatFields): {
   const seeds: Record<string, EncounterPcSeed> = {};
   const uids: string[] = [];
   for (const [uid, member] of Object.entries(campaign.memberDetails)) {
-    if (member.characterId && member.character) {
+    if (isAttached(member) && member.characterId) {
       seeds[uid] = { characterId: member.characterId };
       uids.push(uid);
     }

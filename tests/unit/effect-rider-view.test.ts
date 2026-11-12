@@ -114,6 +114,22 @@ describe("an action card's rider lines", () => {
       { id: "0:forced-movement:0", text: "Spinto fino a 3 m più lontano" },
     ]);
   });
+
+  it("Thunderwave's card says the push a failed save takes", () => {
+    const doc = makeCharacterDoc({
+      classId: "wizard",
+      level: 1,
+      spells: [{ srdId: "thunderwave", prepared: true }],
+    });
+    const raw = resolveActions(doc).find((action) => action.spellId === "thunderwave");
+    if (!raw) throw new Error("no Thunderwave row");
+    expect(raw.summary.effectRiders).toEqual([
+      { kind: "forced-movement", direction: "push", feet: 10 },
+    ]);
+    expect(localizeAction(raw, "it").summary.effectRiders).toEqual([
+      { id: "0:forced-movement:0", text: "Spinto fino a 3 m più lontano" },
+    ]);
+  });
 });
 
 describe("the sheet log line", () => {

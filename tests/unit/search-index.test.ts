@@ -66,6 +66,32 @@ describe("the ⌘K search index", () => {
     expect(at("Combattimento da Proni")).toBeLessThan(firstText);
   });
 
+  // A typo keeps the word's first letter (the common rule: Lucene's fuzzy `prefix_length`,
+  // spell checkers): «palla» is not «dalla», «alla», and «arco» is not «Orco».
+  it.each(["palla", "arco", "luce", "mano"])(
+    "'%s': the names it opens or names lead, and no typo changes the first letter",
+    (query) => {
+      const hits = it_.query(query, { limit: 30 });
+      expect(["exact", "prefix"]).toContain(hits[0]?.match);
+      const opens = (hit: (typeof hits)[number]) =>
+        hit.matched
+          .toLowerCase()
+          .split(/[^\p{L}]+/u)
+          .some((word) => word.startsWith(query[0] ?? ""));
+      const offLetter = hits.filter((hit) => hit.match === "fuzzy" && !opens(hit));
+      expect(offLetter.map((hit) => hit.matched)).toEqual([]);
+    }
+  );
+
+  it("'palla': Fireball and its delayed kin first, then entries whose text says «palla»", () => {
+    const hits = it_.query("palla", { limit: 12 });
+    expect(hits.slice(0, 2).map((hit) => hit.entry.id)).toEqual([
+      expect.stringContaining("fireball"),
+      expect.stringContaining("delayed-blast-fireball"),
+    ]);
+    expect(hits.some((hit) => hit.match === "text")).toBe(true);
+  });
+
   it("never guesses on a short word: 'axe' finds axes, not 'ace'", () => {
     const hits = en.query("axe", { limit: 50 });
     expect(hits.length).toBeGreaterThan(0);

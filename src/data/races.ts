@@ -59,24 +59,27 @@ const PUBLIC_RACES: SrdRaceData[] = [
       {
         id: "fey-ancestry",
         // Permanent condition-save Advantage → `advantage-on` (rollType "save"),
-        // surfaced as a save chip near the Abilities block. Magical Sleep is a
-        // source-qualified Unconscious immunity, not blanket immunity to being
-        // knocked Unconscious by damage or another effect.
+        // surfaced as a save chip near the Abilities block.
         grants: [
           {
             type: "advantage-on",
             rollType: "save",
             vs: "charmed",
           },
+        ],
+      },
+      {
+        id: "trance",
+        // "Magic can't put you to sleep": a source-qualified Unconscious immunity, not
+        // blanket immunity to being knocked Unconscious by damage or another effect.
+        // The 4-hour Long Rest is the table's.
+        grants: [
           {
             type: "condition-immunity",
             condition: "unconscious",
             sourceId: "sleep",
           },
         ],
-      },
-      {
-        id: "trance",
       },
       {
         // M9 — Elven Lineage: SRD 5.2.1 has THREE options (Drow, High Elf,
