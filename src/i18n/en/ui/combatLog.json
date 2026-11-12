@@ -62,6 +62,16 @@
     "repeatSavePassed": "Used the action to repeat the {{ability}} save against {{condition}}: succeeded",
     "repeatSaveFailed": "Used the action to repeat the {{ability}} save against {{condition}}: failed",
     "trackerSpent_one": "Spent one use of {{name}}",
-    "trackerSpent_other": "Spent {{count}} uses of {{name}}"
+    "trackerSpent_other": "Spent {{count}} uses of {{name}}",
+    "restRecovery": {
+      "line": "{{line}}: {{details}}",
+      "hp": "+{{count}} HP",
+      "hitDiceSpent_one": "{{count}} Hit Die",
+      "hitDiceSpent_other": "{{count}} Hit Dice",
+      "hitDiceRegained_one": "{{count}} Hit Die regained",
+      "hitDiceRegained_other": "{{count}} Hit Dice regained",
+      "resource": "{{resource}} +{{count}}"
+    },
+    "levelUp": "Reaches level {{level}} ({{class}})"
   }
 }

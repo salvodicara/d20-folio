@@ -483,3 +483,81 @@ describe("a save spell's line says the targets' saves (owner, 2026-11-11)", () =
     );
   });
 });
+
+// Walkthrough 2026-11-12 (M2): a rest was one bare line and a level-up left none.
+// Coordinator's wording, in the report's voice; no empty clause.
+describe("localizePlayEvent: a rest's recovery and a level-up", () => {
+  async function translator(lng: "en" | "it") {
+    const i18n = i18next.createInstance();
+    await i18n.init({
+      lng,
+      resources: {
+        en: { translation: { ...en, ...enChronicle, ...enCombatLog } },
+        it: { translation: { ...it_, ...itChronicle, ...itCombatLog } },
+      },
+      interpolation: { escapeValue: false },
+    });
+    return (k: string, a?: Record<string, unknown>) => i18n.t(k, a);
+  }
+  const who = () => "Lyra";
+  const withBardic = {
+    ...names,
+    source: (id: string) =>
+      id === "bardic-inspiration" ? "Ispirazione Bardica" : id === "bard" ? "Bardo" : id,
+  };
+
+  it("a short rest says what it gave back", async () => {
+    const rest: PlayEvent = {
+      kind: "rest",
+      rest: "short",
+      actor: "pc-lyra",
+      hpRegained: 8,
+      hitDiceSpent: 2,
+      recovered: [{ resource: "bardic-inspiration", count: 2 }],
+    };
+    expect(localizePlayEvent(rest, await translator("it"), who, withBardic)).toBe(
+      "Lyra fa un riposo breve: +8 PF, 2 Dadi Vita, Ispirazione Bardica +2"
+    );
+    expect(localizePlayEvent(rest, await translator("en"), who, withBardic)).toBe(
+      "Lyra takes a short rest: +8 HP, 2 Hit Dice, Ispirazione Bardica +2"
+    );
+  });
+
+  it("a long rest that gave back Hit Dice says so; one die reads singular", async () => {
+    const rest: PlayEvent = {
+      kind: "rest",
+      rest: "long",
+      actor: "pc-lyra",
+      hitDiceRegained: 1,
+    };
+    expect(localizePlayEvent(rest, await translator("it"), who, names)).toBe(
+      "Lyra fa un riposo lungo: 1 Dado Vita recuperato"
+    );
+    expect(localizePlayEvent(rest, await translator("en"), who, names)).toBe(
+      "Lyra takes a long rest: 1 Hit Die regained"
+    );
+  });
+
+  it("an older rest line, with nothing recorded, stays the bare line", async () => {
+    const rest: PlayEvent = { kind: "rest", rest: "short", actor: "pc-lyra" };
+    expect(localizePlayEvent(rest, await translator("it"), who, names)).toBe(
+      "Lyra fa un riposo breve"
+    );
+  });
+
+  it("a level-up: «Lyra sale al livello 10 (Bardo)»", async () => {
+    const up: PlayEvent = {
+      kind: "level-up",
+      from: 9,
+      to: 10,
+      classId: "bard",
+      actor: "pc-lyra",
+    };
+    expect(localizePlayEvent(up, await translator("it"), who, withBardic)).toBe(
+      "Lyra sale al livello 10 (Bardo)"
+    );
+    expect(localizePlayEvent(up, await translator("en"), who, withBardic)).toBe(
+      "Lyra reaches level 10 (Bardo)"
+    );
+  });
+});
