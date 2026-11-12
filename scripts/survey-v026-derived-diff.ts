@@ -60,6 +60,10 @@ export const EXPECTED: readonly ExpectedRule[] = [
   },
   // Magical Discoveries offers the right spells (the Lore Bard's prepared list).
   { fix: "#868", path: /^spells\.bard\./ },
+  // v0.26.2: every character gains the improvised-weapon action row.
+  { fix: "#1105", path: /^actions\.improvised-weapon\./ },
+  // v0.26.2: Thunderwave's push is a rider with its distance (the second spell fold).
+  { fix: "#1129", path: /^actions\.spell-thunderwave\.effectRiders\./ },
 ];
 
 // ── The pure comparison ───────────────────────────────────────────────────────
@@ -82,8 +86,11 @@ export interface DerivedDiffSurvey {
   >;
   /** Fix → characters with at least one diff it explains. */
   byFix: Record<string, number>;
-  /** Characters with at least one unexpected CHANGED value. */
+  /** Characters with at least one unexpected diff of any kind: a moved number, or a
+   *  field only one release has. 0 means clean. */
   withUnexpected: number;
+  /** Of those, the characters with an unexpected CHANGED value (a number that moved). */
+  withUnexpectedChange: number;
   /** With `--detail` only: per `pattern [kind]`, the catalogue ids involved (a
    *  resource, an action, a class) and how many characters each. A user-made id
    *  (homebrew, an uuid) is folded to `<homebrew>`; no name, note or value. */
@@ -147,6 +154,7 @@ export function surveyDerivedDiff(
     byField: {},
     byFix: {},
     withUnexpected: 0,
+    withUnexpectedChange: 0,
     ...(options.detail ? { detail: {} } : {}),
   };
   const detailSeen = new Set<string>();
@@ -192,6 +200,7 @@ export function surveyDerivedDiff(
         fields.set(key, rule ? "expected" : "unexpected");
     }
     let unexpectedChange = false;
+    let unexpectedAny = false;
     for (const [key, tag] of fields) {
       const cut = key.lastIndexOf("|");
       const pattern = key.slice(0, cut);
@@ -201,12 +210,14 @@ export function surveyDerivedDiff(
         unexpected: 0,
       });
       row[tag] += 1;
+      if (tag === "unexpected") unexpectedAny = true;
       if (tag === "unexpected" && kind === "changed") unexpectedChange = true;
     }
     for (const fix of fixes) survey.byFix[fix] = (survey.byFix[fix] ?? 0) + 1;
-    // Only a CHANGED number is a regression to chase; a field only one release has is
-    // a model change, shown in `byField` but not counted here.
-    if (unexpectedChange) survey.withUnexpected += 1;
+    // Every unexpected diff counts, so a reader never takes 0 for clean while byField
+    // lists unexplained model changes; a moved number is also counted on its own.
+    if (unexpectedAny) survey.withUnexpected += 1;
+    if (unexpectedChange) survey.withUnexpectedChange += 1;
   });
   return survey;
 }
