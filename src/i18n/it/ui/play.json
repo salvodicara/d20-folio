@@ -110,6 +110,8 @@
       "changeOne": "Puoi cambiare 1 incantesimo.",
       "changeAny": "Puoi cambiare quelli che vuoi.",
       "keepPrepared": "Tieni così",
+      "cantripTitle": "Dopo il Riposo Lungo",
+      "cantripSwap": "{{source}}: cambia il trucchetto, se vuoi",
       "diceSpent_one": "{{count}} dado → +{{hp}} PF",
       "diceSpent_other": "{{count}} dadi → +{{hp}} PF"
     },

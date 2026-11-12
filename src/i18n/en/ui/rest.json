@@ -37,6 +37,7 @@
     "longRestExhaustionItem": "Exhaustion reduced by 1 (currently {{level}})",
     "longRestConditionsItem": "Concentration ends; persistent conditions remain",
     "longRestExpertiseItem": "{{source}}: Expertise in",
+    "longRestCantripItem": "{{source}}: the cantrip is",
     "longRestExpertiseNone": "{{source}}: no skill to choose",
     "longRestExpertiseSkip": "none",
     "unavailableWhileDown": "You must be alive and have at least 1 HP to rest.",

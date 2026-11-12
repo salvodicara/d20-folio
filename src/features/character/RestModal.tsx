@@ -40,6 +40,7 @@ import {
 import { restSummary, type RestSummary } from "@/lib/play/rest-summary";
 import { useCharacterStore } from "@/stores/characterStore";
 import { restExpertiseRows } from "@/lib/rest-expertise";
+import { applyRestCantripSwap, restCantripSwaps } from "@/lib/rest-cantrip-swap";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { Select } from "@/components/shared/Select";
 import { useUIStore } from "@/stores/uiStore";
@@ -104,6 +105,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   // A Long Rest's re-picked Expertise (Versatile Merc), by choice key; absent:
   // last time's pick, preselected.
   const [restPicks, setRestPicks] = useState<Readonly<Record<string, string | null>>>({});
+  // A lineage cantrip replaced at this Long Rest (High Elf): the new cantrip, by key.
+  const [cantripPicks, setCantripPicks] = useState<Readonly<Record<string, string>>>({});
   const inputId = useId();
 
   // Count spent spell slots
@@ -139,6 +142,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     charData.skills,
     new Set([...restAggregate.expertiseSkills].filter((id) => !restLastPicks.has(id)))
   );
+  const cantripRows = restCantripSwaps(restCharacter);
   const restPickOf = (row: (typeof expertiseRows)[number]) =>
     row.choiceKey in restPicks ? (restPicks[row.choiceKey] ?? null) : row.current;
   const restEligible = canCharacterRest(restCharacter.status, session);
@@ -228,6 +232,13 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           expertiseRows.map((row) => [row.choiceKey, restPickOf(row)])
         ),
       });
+    }
+
+    // …and a lineage cantrip replaced, when the player picked another.
+    for (const [choiceKey, spellId] of Object.entries(cantripPicks)) {
+      const store = useCharacterStore.getState();
+      const live = store.character;
+      if (live) store.setCharacter(applyRestCantripSwap(live, choiceKey, spellId));
     }
 
     const after = useCharacterStore.getState().character ?? restCharacter;
@@ -561,6 +572,36 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               <Focus className="h-4 w-4 text-accent-text" />
               {t("rest.longRestConditionsItem")}
             </li>
+            {cantripRows.map((row) => {
+              const source = grantSourceLabel(row.sourceId, locale);
+              const spellName = (id: string) => localizeSrd("spell", id, "name", locale);
+              return (
+                <li key={row.choiceKey}>
+                  <Star className="h-4 w-4 text-accent-text" />
+                  <label className="flex flex-wrap items-center gap-2">
+                    {t("rest.longRestCantripItem", { source })}
+                    <Select
+                      size="sm"
+                      value={cantripPicks[row.choiceKey] ?? row.current}
+                      onChange={(e) =>
+                        setCantripPicks((prev) => ({
+                          ...prev,
+                          [row.choiceKey]: e.target.value,
+                        }))
+                      }
+                    >
+                      {[row.current, ...row.options]
+                        .sort((a, b) => spellName(a).localeCompare(spellName(b), locale))
+                        .map((id) => (
+                          <option key={id} value={id}>
+                            {spellName(id)}
+                          </option>
+                        ))}
+                    </Select>
+                  </label>
+                </li>
+              );
+            })}
             {expertiseRows.map((row) => {
               const source = grantSourceLabel(row.sourceId, locale);
               return (

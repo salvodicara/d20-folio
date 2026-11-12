@@ -13,6 +13,7 @@ import { prepareList } from "@/domains/play/play-spells-view";
 import { restView, type RestLine } from "@/domains/play/rest-view";
 import { shortRestHeal } from "@/lib/play/short-rest-healing";
 import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
+import { restCantripSwaps } from "@/lib/rest-cantrip-swap";
 import { PlayRestSummary } from "@/domains/play/ui/PlayRestSummary";
 import { restSummary, type RestSummary } from "@/domains/play/rest-model";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -47,6 +48,8 @@ export function PlayRest({
     kind === "long" && prepareList(doc, locale).levels.length > 0
       ? longRestChange(doc)
       : null;
+  // …and a lineage cantrip may be replaced (High Elf), in the same step
+  const swaps = kind === "long" ? restCantripSwaps(doc).length > 0 : false;
   const heal = shortRestHeal(doc, count, typed);
   const pool = hitDicePool(doc.character);
   const range = hitDiceTotalRange(pool, count);
@@ -98,12 +101,20 @@ export function PlayRest({
         doc={live}
         summary={summary}
         locale={locale}
-        onDone={() => (change ? setPreparing(true) : onClose())}
+        onDone={() => (change || swaps ? setPreparing(true) : onClose())}
       />
     );
   }
-  if (preparing && change)
-    return <PlayPrepare doc={doc} locale={locale} longRest={change} onClose={onClose} />;
+  if (preparing && (change || swaps))
+    return (
+      <PlayPrepare
+        doc={doc}
+        locale={locale}
+        {...(change ? { longRest: change } : {})}
+        afterLongRest
+        onClose={onClose}
+      />
+    );
   return (
     <Dialog
       open

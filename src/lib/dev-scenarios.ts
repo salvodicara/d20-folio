@@ -644,6 +644,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "S13 effective Speed: Boots of Speed ×2 (G12) − heavy-armor Strength penalty (G11) reaches the Speed vital; unproficient-armor Disadvantage (G13) shows in the combat adv/dis list.",
   },
+  "high-elf-rest": {
+    // A High Elf fighter: after a Long Rest the lineage's Prestidigitation may become
+    // another Wizard cantrip. Visit `/characters/scn-high-elf-rest` and take a Long Rest.
+    name: "Aelar, the Restless",
+    raceId: "elf",
+    classId: "fighter",
+    level: 3,
+    background: "soldier",
+    abilityScores: { STR: 15, DEX: 14, CON: 13, INT: 12, WIS: 10, CHA: 8 },
+    grantBundleChoices: { "elf-lineage": "high-elf" },
+    exercises:
+      "High Elf: the Long Rest offers to replace the lineage cantrip (Prestidigitation) with another Wizard cantrip.",
+  },
   "xray-ring": {
     // The Ring of X-ray Vision worn and attuned: its Magic action lights 1 minute
     // of X-ray vision (30 ft) on the Senses rail. Visit `/characters/scn-xray-ring`.
