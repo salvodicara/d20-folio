@@ -17,7 +17,7 @@
  * `--detail` adds, per field pattern, the catalogue ids involved and how many
  * characters each (user-made ids folded to `<homebrew>`), to trace a pattern to a fix.
  *
- * Run with (the baseline tree: `scripts/setup-v025-baseline.sh`):
+ * Run with (the baseline tree: `scripts/setup-deployed-baseline.sh <dir> <app-sha> <pack-sha>`):
  *   node --import ./scripts/alias-loader.mjs scripts/survey-v026-derived-diff.ts \
  *     --baseline-root /absolute/path/to/v025-baseline
  */
