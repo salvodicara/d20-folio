@@ -17,7 +17,6 @@ import { useOwnReportNames, useReportNames } from "@/domains/chronicle/ui/report
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { fightControls } from "@/domains/combat/fight-controls";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
-import { ownSessionEntries } from "@/domains/play/own-session-log";
 import { playInitiativeRows } from "@/domains/play/play-initiative-view";
 import { playZonesView } from "@/domains/play/play-zones-view";
 import { PlayZoneHits } from "@/domains/play/ui/PlayZoneHits";
@@ -27,7 +26,7 @@ import { openZoneTray } from "@/features/character/center/zone-tray";
 import { foldCombatEffectOps } from "@/lib/combat-effects";
 import { activeZones } from "@/lib/zones";
 import type { Locale } from "@/lib/locale";
-import { foldSession } from "@/lib/session-log";
+import { foldSession, sheetSessionEntries } from "@/lib/session-log";
 import { sessionReportSections } from "@/lib/session-log/session-report-sections";
 import { renderSessionReport } from "@/lib/views/session-report-view";
 import { useAuthStore } from "@/stores/authStore";
@@ -324,7 +323,7 @@ function OwnReport({
   const name = useCharacterStore((s) => s.character?.character.name ?? "");
   const names = useOwnReportNames(name, locale);
   const sections = useMemo(
-    () => sessionReportSections(ownSessionEntries(log ?? [], ME)),
+    () => sessionReportSections(sheetSessionEntries(log ?? [], ME)),
     [log]
   );
   const blocks = useMemo(() => diaryBlocks(sections), [sections]);

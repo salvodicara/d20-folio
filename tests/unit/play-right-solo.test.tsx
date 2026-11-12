@@ -53,6 +53,24 @@ describe("PlayRight, no campaign", () => {
     expect(screen.getByText("Report")).toBeTruthy();
   });
 
+  it("a line from a fight of its own sits under that fight, not exploration", () => {
+    const doc = useCharacterStore.getState().character;
+    if (!doc) throw new Error("no character");
+    doc.session.logEntries = [
+      { id: "s", ts: 1_000, event: { kind: "fight-start" } },
+      {
+        id: "h",
+        ts: 2_000,
+        event: { kind: "hp-damage", amount: 4, current: 16, max: 30 },
+      },
+      { id: "e", ts: 3_000, event: { kind: "fight-end" } },
+    ];
+    useCharacterStore.setState({ character: { ...doc } });
+    mount();
+    expect(screen.getByText(/^Fight/)).toBeTruthy();
+    expect(screen.queryByText(/^Exploration/)).toBeNull();
+  });
+
   it("shows the round of a fight of its own", () => {
     useCombatStore.setState({ fightStarted: true, round: 3 });
     mount();
