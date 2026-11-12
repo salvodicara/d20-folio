@@ -93,6 +93,7 @@
     },
     "check": "{{skill}} check: {{total}}",
     "checkPassed": "succeeds on the {{skill}} check ({{total}} vs DC {{dc}})",
-    "checkFailed": "fails the {{skill}} check ({{total}} vs DC {{dc}})"
+    "checkFailed": "fails the {{skill}} check ({{total}} vs DC {{dc}})",
+    "dealt": "{{amount}} damage"
   }
 }

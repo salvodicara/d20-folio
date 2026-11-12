@@ -76,6 +76,9 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result, when the damage tray said one for every target. */
       outcome?: AttackOutcome;
+      /** The damage the player typed for an attack with no target in Folio (the tray's
+       *  "no target" state): the report says it on this line. An older reader ignores it. */
+      amount?: number;
       /** Each target's save, when the damage tray said it (Faerie Fire: Goblin saved,
        *  Orc failed). An older reader ignores it. */
       saves?: SaveResults;

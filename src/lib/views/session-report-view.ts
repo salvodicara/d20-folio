@@ -104,9 +104,11 @@ export function localizePlayEvent(
       if (saves) return `${base} — ${saves}`;
       const check = checkClause(event, t);
       if (check) return `${base} — ${check}`;
-      return event.outcome && OUTCOMES.has(event.outcome)
-        ? `${base} — ${t(`sessionReport.outcome.${event.outcome}`)}`
-        : base;
+      if (!event.outcome || !OUTCOMES.has(event.outcome)) return base;
+      const outcome = t(`sessionReport.outcome.${event.outcome}`);
+      return event.amount !== undefined && event.outcome !== "miss"
+        ? `${base} — ${outcome}, ${t("sessionReport.dealt", { amount: event.amount })}`
+        : `${base} — ${outcome}`;
     }
     case "damage":
     case "heal":

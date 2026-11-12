@@ -93,6 +93,7 @@
     },
     "check": "prova di {{skill}}: {{total}}",
     "checkPassed": "supera la prova di {{skill}} ({{total}} contro CD {{dc}})",
-    "checkFailed": "fallisce la prova di {{skill}} ({{total}} contro CD {{dc}})"
+    "checkFailed": "fallisce la prova di {{skill}} ({{total}} contro CD {{dc}})",
+    "dealt": "{{amount}} danni"
   }
 }
