@@ -55,10 +55,13 @@
   color: var(--text-secondary);
 }
 
-/* The attack's three results stay together on one line. */
+/* The attack's three results stay together on one line wherever it fits; a narrow
+   column (the new Play row on a phone, beside its button) wraps them rather than
+   letting the button cover one. */
 .attack-outcome-chips {
   display: inline-flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 8px;
 }
 

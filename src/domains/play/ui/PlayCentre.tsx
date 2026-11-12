@@ -5,6 +5,7 @@
  * Lancia, Usa, Reagisci) commits through the engine's one turn flow (`executeAction`);
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
+import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
   checkEntriesFor,
@@ -990,6 +991,9 @@ function ActionLine({
           </div>
         )}
         {reason && !cta.state.spent && <div className="f-row-s f-act-why">{reason}</div>}
+        {/* an attack with no target is completed on the row just used (Hit · Miss ·
+            Critical, the damage), the classic sheet's chips */}
+        {!readonly && <AttackOutcomeChips actionId={row.action.id} />}
       </div>
       {/* compact in the column («Sé · 4,5 m»), the catalogue's full text on hover */}
       <RangeCell range={row.range} />
