@@ -29,3 +29,33 @@ export function clearRestExpertise(
   const keys = new Set(grants.map((g) => g.choiceKey));
   return Object.fromEntries(Object.entries(choices).filter(([key]) => !keys.has(key)));
 }
+
+/** One Long Rest line: the skills it may pick (proficient, with no Expertise from
+ *  another source) and last time's pick, preselected when still eligible. */
+export interface RestExpertiseRow {
+  sourceId: string;
+  choiceKey: string;
+  options: string[];
+  current: string | null;
+}
+
+export function restExpertiseRows(
+  grants: AggregatedGrants["restExpertise"],
+  choices: Choices | undefined,
+  skills: Readonly<Record<string, string>>,
+  /** Skills with Expertise from another rule (a feature's Expertise grant). */
+  expertElsewhere: ReadonlySet<string> = new Set()
+): RestExpertiseRow[] {
+  const options = Object.keys(skills).filter(
+    (id) => skills[id] === "proficient" && !expertElsewhere.has(id)
+  );
+  return grants.map(({ sourceId, choiceKey }) => {
+    const last = choices?.[choiceKey];
+    return {
+      sourceId,
+      choiceKey,
+      options,
+      current: last && options.includes(last) ? last : null,
+    };
+  });
+}

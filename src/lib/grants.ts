@@ -3102,9 +3102,13 @@ export function evaluateGrants(
           zeroHpFloors.push({ sourceId, activeKey, hitPoints: g.hitPoints });
         }
         break;
-      case "rest-expertise":
+      case "rest-expertise": {
         restExpertise.push({ sourceId, choiceKey: g.choiceKey });
+        // The skill picked at the last Long Rest has Expertise until the next one.
+        const pick = bundleChoices.get(g.choiceKey);
+        if (pick) rules.push({ op: "flag", target: `prof:expertise:${pick}` });
         break;
+      }
       case "weapon-binding":
         // Only a lit state binds: outside a `while-active` there is no key to
         // read the chosen weapon and the cast level by.
