@@ -171,6 +171,13 @@ const NotFoundScreen = NEW_UI
     )
   : null;
 
+// A character share link (public), on the new Play sheet.
+const SharedScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/play/ui/SharedScreen").then((m) => ({ default: m.SharedScreen }))
+    )
+  : null;
+
 // The DM's read-only view of a party member, on the new Play sheet.
 const MemberSheetScreen = NEW_UI
   ? lazy(() =>
@@ -251,7 +258,9 @@ const router = createBrowserRouter(
               character id without a collection-group query, an index, and a
               broader rules grant, all of which the doc-path URL makes unnecessary
               (`docs/ARCHITECTURE.md` → "Public share links"). */}
-          <Route path="/view/:uid/:charId" element={<SharedCharacterView />} />
+          {!SharedScreen && (
+            <Route path="/view/:uid/:charId" element={<SharedCharacterView />} />
+          )}
         </Route>
       </Route>
 
@@ -266,6 +275,9 @@ const router = createBrowserRouter(
         >
           <Route errorElement={<RouteErrorBoundary variant="region" />}>
             <Route path="/legal" element={<LegalScreen />} />
+            {SharedScreen && (
+              <Route path="/view/:uid/:charId" element={<SharedScreen />} />
+            )}
           </Route>
         </Route>
       )}
