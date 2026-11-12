@@ -101,6 +101,13 @@ export interface SrdSpellRef {
    */
   freeCastSource?: { sourceId: string; rest: "short" | "long"; usesPerRest: number };
   /**
+   * The feat or feature whose spell choice added this spell (Magic Initiate's cantrips
+   * and its leveled spell), written when the player picks it. Absent on spells picked
+   * before it existed and on every other spell: readers fall back to what they did
+   * before (no migration, no backfill).
+   */
+  grantedBy?: string;
+  /**
    * Species lineage innate spell whose casting ability is the "choose INT/WIS/
    * CHA" pick made when the player selected the species (2024 Tiefling Fiendish
    * Legacy + Otherworldly Presence). Unlike `spellAbilityOverride` (which pins a

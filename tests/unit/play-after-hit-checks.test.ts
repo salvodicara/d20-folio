@@ -75,6 +75,36 @@ describe("after a hit", () => {
   });
 });
 
+describe("Cunning Strike rides Sneak Attack: a Finesse or Ranged weapon only", () => {
+  // SRD 5.2.1 Sneak Attack: «the attack must use a Finesse or a Ranged weapon»;
+  // Cunning Strike: «when you deal Sneak Attack damage».
+  const armed = rogue({});
+  const withWeapons = {
+    ...armed,
+    character: {
+      ...armed.character,
+      weapons: [
+        { srdId: "rapier", quantity: 1 },
+        { srdId: "shortbow", quantity: 1 },
+        { srdId: "club", quantity: 1 },
+      ],
+    },
+  };
+  const cunning = cunningStrikeOptionsFor(withWeapons, "en");
+  const offered = (pick: (id: string) => boolean) =>
+    afterHitOptions(actionOf(withWeapons, pick), cunning).cunningStrike.length > 0;
+
+  it.each([
+    ["a Rapier (Finesse)", (id: string) => id === "weapon-rapier", true],
+    ["a Shortbow (Ranged)", (id: string) => id === "weapon-shortbow", true],
+    ["an Unarmed Strike", (id: string) => id.startsWith("unarmed"), false],
+    ["a Club (neither)", (id: string) => id === "weapon-club", false],
+  ])("%s: %s", (_name, pick, expected) => {
+    expect(cunning.length).toBeGreaterThan(0);
+    expect(offered(pick)).toBe(expected);
+  });
+});
+
 describe("check entries", () => {
   it("Hide: DC 15 Stealth with the sheet's bonus (DEX +3, proficient or not)", () => {
     const doc = rogue();
