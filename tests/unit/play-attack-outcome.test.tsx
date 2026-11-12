@@ -1,7 +1,9 @@
 /**
  * The new Play screen completes an attack with no target on the row just used, as the
- * classic sheet does (#1060): Hit · Miss · Critical under the row's name, the damage
- * field after Hit, written on the use's own log line. The chips go at End Turn.
+ * classic sheet does (#1060): Hit · Miss · Critical, the damage field after Hit, written
+ * on the use's own log line. The chips go at End Turn. One flow with the «Did it hit?»
+ * panel (the options a hit adds): Miss closes that panel for the attack, and adding an
+ * option with no result chosen marks the attack a Hit.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
@@ -31,6 +33,26 @@ const live = () => {
   return doc;
 };
 
+function mount() {
+  render(
+    <MemoryRouter>
+      <TurnEconomyProvider renderPrompts={false}>
+        <PlayCentre doc={live()} locale="en" />
+      </TurnEconomyProvider>
+    </MemoryRouter>
+  );
+}
+
+/** Attack with the Longsword; resolves once the row's result chips are shown. */
+async function attack() {
+  fireEvent.click(screen.getByRole("button", { name: /^Attack: Longsword/ }));
+  return screen.findByRole("group", { name: "Result" });
+}
+
+const afterHitAdd = () => screen.queryByRole("button", { name: /^Add: Mastery: Sap/ });
+const useLine = () =>
+  live().session.logEntries.find((e) => e.event.kind === "action-use")?.event;
+
 beforeEach(async () => {
   await i18n.changeLanguage("en");
   useUndoStore.getState().clear(null);
@@ -56,25 +78,50 @@ beforeEach(async () => {
 
 describe("the attack's result on the new Play row", () => {
   it("Attack offers Hit · Miss · Critical on its row; Hit and the damage write the line", async () => {
-    render(
-      <MemoryRouter>
-        <TurnEconomyProvider renderPrompts={false}>
-          <PlayCentre doc={live()} locale="en" />
-        </TurnEconomyProvider>
-      </MemoryRouter>
-    );
+    mount();
     expect(screen.queryByRole("group", { name: "Result" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /^Attack: Longsword/ }));
-    const chips = await screen.findByRole("group", { name: "Result" });
+    const chips = await attack();
     fireEvent.click(within(chips).getByRole("button", { name: "Hit" }));
     const field = screen.getByRole("textbox", { name: "Damage" });
     fireEvent.change(field, { target: { value: "9" } });
     fireEvent.keyDown(field, { key: "Enter" });
-    const line = live().session.logEntries.at(-1)?.event;
-    expect(line).toMatchObject({ kind: "action-use", outcome: "hit", amount: 9 });
+    expect(useLine()).toMatchObject({ outcome: "hit", amount: 9 });
     act(() => {
       endTurn(i18n.getFixedT("en"));
     });
     expect(screen.queryByRole("group", { name: "Result" })).toBeNull();
+  });
+
+  it("Miss closes the «Did it hit?» panel for that attack; Hit leaves it", async () => {
+    mount();
+    const chips = await attack();
+    expect(afterHitAdd()).not.toBeNull();
+    fireEvent.click(within(chips).getByRole("button", { name: "Hit" }));
+    expect(afterHitAdd()).not.toBeNull();
+    fireEvent.click(within(chips).getByRole("button", { name: "Miss" }));
+    expect(afterHitAdd()).toBeNull();
+  });
+
+  it("adding a hit option with no result chosen marks the attack a Hit", async () => {
+    mount();
+    const chips = await attack();
+    const add = afterHitAdd();
+    if (!add) throw new Error("no after-hit option");
+    fireEvent.click(add);
+    expect(within(chips).getByRole("button", { name: "Hit" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    expect(useLine()).toMatchObject({ outcome: "hit" });
+  });
+
+  it("adding a hit option keeps a Critical already chosen", async () => {
+    mount();
+    const chips = await attack();
+    fireEvent.click(within(chips).getByRole("button", { name: "Critical" }));
+    const add = afterHitAdd();
+    if (!add) throw new Error("no after-hit option");
+    fireEvent.click(add);
+    expect(useLine()).toMatchObject({ outcome: "critical" });
   });
 });

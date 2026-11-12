@@ -991,9 +991,6 @@ function ActionLine({
           </div>
         )}
         {reason && !cta.state.spent && <div className="f-row-s f-act-why">{reason}</div>}
-        {/* an attack with no target is completed on the row just used (Hit · Miss ·
-            Critical, the damage), the classic sheet's chips */}
-        {!readonly && <AttackOutcomeChips actionId={row.action.id} />}
       </div>
       {/* compact in the column («Sé · 4,5 m»), the catalogue's full text on hover */}
       <RangeCell range={row.range} />
@@ -1030,6 +1027,19 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {/* an attack with no target is completed on the row just used (Hit · Miss ·
+          Critical, the damage), the classic sheet's chips: a line of its own under the
+          row. A Miss also closes the «Did it hit?» panel for this attack. */}
+      {!readonly && (
+        <AttackOutcomeChips
+          actionId={row.action.id}
+          onOutcome={(outcome) => {
+            const afterHit = useAfterHitStore.getState();
+            if (outcome === "miss" && afterHit.offer?.actionId === row.action.id)
+              afterHit.clear();
+          }}
+        />
       )}
       {familiar && doc && (
         <Suspense fallback={null}>
