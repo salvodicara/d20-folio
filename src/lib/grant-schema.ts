@@ -128,10 +128,17 @@ const CASTING_ABILITY_SCHEMA = unionSchema([
  * `onFailedSave` the conditions a failure brings, and how long they last.
  */
 const RIDER_SAVE_FIELDS = {
-  save: objectSchema({
-    ability: CASTING_ABILITY_SCHEMA,
-    dcAbilities: arraySchema(CASTING_ABILITY_SCHEMA, 1),
-  }),
+  save: objectSchema(
+    {
+      ability: CASTING_ABILITY_SCHEMA,
+      dcAbilities: arraySchema(CASTING_ABILITY_SCHEMA, 1),
+    },
+    {
+      /** «The ability increased by this feat» (Brew Poison): read when the feat's
+       *  grants resolve; unanswered, the DC keeps the best of `dcAbilities`. */
+      dcAbility: literalSchema("feat"),
+    }
+  ),
   onFailedSave: objectSchema(
     { conditions: arraySchema(CONDITION_ID_SCHEMA, 1) },
     { until: literalSchema("end-of-your-next-turn") }
