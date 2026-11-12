@@ -1,8 +1,8 @@
 /**
- * The table the owner reads: for what his groups actually play (the played-content
- * survey's catalogue ids), how far the app plays each entry, on the same rules as the
- * coverage rows (`__helpers__/rules-coverage.ts`): Auto, 1 tap, Text only (the table
- * plays it by hand), or Missing (no catalogue entry). Pure counting over public ids
+ * For what the owner's groups actually play (the played-content survey's catalogue
+ * ids), what each entry DECLARES, on the same rules as the coverage rows
+ * (`__helpers__/rules-coverage.ts`). Declared, not proven: the proven class comes from
+ * conformance cases through the functions a screen calls (the next step). Pure counting over public ids
  * here; the report run reads a real survey (see `playedCoverageMarkdown`).
  */
 import { readFileSync, writeFileSync } from "node:fs";
@@ -70,7 +70,8 @@ describe("the played-content coverage view", () => {
   it("writes a markdown table with a plain legend", () => {
     const md = playedCoverageMarkdown(survey);
     expect(md).toContain("| Entry | Id | Characters | Coverage |");
-    expect(md).toContain("Auto: the app applies it with no input.");
+    expect(md).toContain("**Declared, not proven.**");
+    expect(md).toContain("| Declared auto |");
   });
 });
 

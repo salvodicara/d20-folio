@@ -1,7 +1,10 @@
 /**
  * For what the owner's groups actually play (the played-content survey,
- * `scripts/survey-played-content.ts`), how far the app plays each catalogue entry, on
- * the coverage rules of `rules-coverage.ts`. Class features held are counted from the
+ * `scripts/survey-played-content.ts`), what each catalogue entry DECLARES, on the
+ * rules of `rules-coverage.ts`. Declared is not proven: an effect the data declares
+ * but no screen applies still reads «auto» here (coordinator, 2026-11-12). The proven
+ * class comes from a conformance case that goes through the function a screen calls;
+ * until then this column is the declaration only. Class features held are counted from the
  * survey's class levels: every character at or above a feature's level holds it (a
  * subclass's features up to the highest level any character has in that class, since
  * the survey does not pair a subclass with its level).
@@ -129,22 +132,26 @@ export function playedCoverage(survey: PlayedSurvey): PlayedSection[] {
 }
 
 const LABEL: Record<PlayedCoverage, string> = {
-  auto: "Auto",
-  tap: "1 tap",
+  auto: "Declared auto",
+  tap: "Declared 1 tap",
   reference: "Text only (by hand)",
-  missing: "Missing",
+  missing: "No catalogue entry",
 };
 
 /** The report: a legend, a summary per section, then each section's table. */
 export function playedCoverageMarkdown(survey: PlayedSurvey): string {
   const sections = playedCoverage(survey);
   const out = [
-    "# What the groups play, and how far the app plays it",
+    "# What the groups play, and what the catalogue declares for it",
     "",
-    "- Auto: the app applies it with no input.",
-    "- 1 tap: one tap or one pick applies it.",
-    "- Text only (by hand): the app shows the text; the table plays it by hand.",
-    "- Missing: no catalogue entry for this id.",
+    "**Declared, not proven.** This reads what each entry's data declares. A declared",
+    "effect that no screen applies still reads «declared auto»: check the code before",
+    "telling a player it works.",
+    "",
+    "- Declared auto: the data declares an effect the engine could apply with no input.",
+    "- Declared 1 tap: the data declares a counter, an action, a cast or a pick.",
+    "- Text only (by hand): the data declares nothing; the table plays it by hand.",
+    "- No catalogue entry: the id is not in the catalogue.",
   ];
   for (const section of sections) {
     const count = (c: PlayedCoverage) =>
@@ -153,7 +160,7 @@ export function playedCoverageMarkdown(survey: PlayedSurvey): string {
       "",
       `## ${section.title}`,
       "",
-      `${count("auto")} auto · ${count("tap")} 1 tap · ${count("reference")} text only · ${count("missing")} missing`,
+      `${count("auto")} declared auto · ${count("tap")} declared 1 tap · ${count("reference")} text only · ${count("missing")} no entry`,
       "",
       "| Entry | Id | Characters | Coverage |",
       "| --- | --- | --- | --- |",
