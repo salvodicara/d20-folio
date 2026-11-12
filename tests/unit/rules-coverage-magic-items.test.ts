@@ -11,30 +11,7 @@ import { describe, expect, it } from "vitest";
 import { MAGIC_ITEMS_PART_1 } from "@/data/magic-items/part-1";
 import { MAGIC_ITEMS_PART_2 } from "@/data/magic-items/part-2";
 import { MAGIC_ITEMS_PART_3 } from "@/data/magic-items/part-3";
-import type { SrdMagicItemData } from "@/data/types";
-
-const TAP_ONLY = new Set([
-  "while-active",
-  "always-prepared-spell",
-  "free-cast-spell",
-  "free-cast-from-list",
-  "at-will-cast-spell",
-]);
-
-function classOf(item: SrdMagicItemData): "auto" | "tap" | "reference" {
-  const grants = item.grants ?? [];
-  if (grants.some((grant) => !TAP_ONLY.has(grant.type))) return "auto";
-  if (
-    grants.length > 0 ||
-    item.resources?.length ||
-    item.potionFormula ||
-    item.summonedMonsters ||
-    item.bestiaryPick
-  ) {
-    return "tap";
-  }
-  return "reference";
-}
+import { magicItemCoverage as classOf } from "./__helpers__/rules-coverage";
 
 describe("RULES_COVERAGE magic-item row", () => {
   it("states the counted auto / 1-tap / reference split of the public catalogue", () => {
