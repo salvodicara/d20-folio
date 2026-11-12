@@ -107,3 +107,20 @@ sees):
 7. **The cast's slot level and the attack's result** on the action line.
 8. **Monster actions** as action lines from the DM's monster tray.
 9. **Saves and checks** rolled on the sheet; **money and loot** lines.
+
+## Status (2026-11-12) and what stays open
+
+Done: fights inferred from the blows and forgotten fights closed (#1056); hand spends,
+class resources, the player's initiative and an attack's damage as lines (#1058); the
+attack's result completed on the row just used (#1060); the new UI on the same builder
+(#1063); an upcast's slot on the cast line (T7); fight markers from every player's device
+(T6). Saves and checks on the sheet belong to the rules lane.
+
+Open, parked until the owner asks:
+
+- **The DM's tray names the attacker and the result.** A DM-booked hit records one
+  number; it renders as one line with its attacker («Goblin infligge 7 danni a Lyra»), but
+  no tray asks who struck or whether it hit. Adding both is a visible change to the DM's
+  dialog (direction lane). Production has no DM-booked hit yet.
+- **"Who hit you?" on a player's own damage line**, for tables whose DM runs no monsters
+  in the app.

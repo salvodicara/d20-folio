@@ -24,6 +24,7 @@
 import { turnMovementBudgetFt } from "@/lib/play/self-move";
 import { conditionFactsFor } from "@/lib/condition-sources";
 import { liveConditionEncounter } from "@/features/character/condition-encounter";
+import { logSoloFightEnd, logSoloFightStart } from "./solo-fight-log";
 import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
 import { Swords, Zap, RefreshCw, ArrowRight, Flag, Info } from "lucide-react";
@@ -238,6 +239,7 @@ export function ThisTurnTracker({
         )
         .catch((e: unknown) => console.error("Initiative roll failed", e));
     } else {
+      if (roll !== "") logSoloFightStart();
       setInitiative(roll);
     }
     if (!wasEmpty || roll === "") return;
@@ -366,6 +368,7 @@ export function ThisTurnTracker({
       tone: "warning",
     });
     if (!ok) return;
+    logSoloFightEnd();
     useCombatStore.getState().endCombat();
     // Surprise, Underwater and Mounted belong to the fight that just ended.
     useCharacterStore.getState().dispatch({ kind: "set-surprised", surprised: false });
