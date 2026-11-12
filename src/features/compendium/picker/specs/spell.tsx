@@ -75,6 +75,7 @@ export const spellSpec: CompendiumPickerSpec<SrdSpellData> = {
   }),
   data: spells,
   getId: (s) => s.id,
+  sortGroup: (s) => s.level,
   getName: (s, { locale }) => spellText(s, "name", locale),
   nameText: (s, { locale }) => nameCorpus("spell", s.id, spellText(s, "name", locale)),
   searchText: (s, ctx) => [

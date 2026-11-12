@@ -30,6 +30,7 @@ import { sortByInitiative } from "@/lib/play/encounter";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { asRaceId } from "@/data/srd-names";
+import { concentrationValue } from "@/lib/concentration";
 
 /** The id `makeDevCampaign` seeds by default (also a sample invite code). */
 export const DEV_CAMPAIGN_ID = "DEVCAMPAIGN24";
@@ -1613,6 +1614,14 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
         actor: mara,
       }),
       item(at(21, 12), { kind: "time-passes", minutes: 10, actor: bren }),
+      // A check entered with its use, and a Concentration save kept under a hit.
+      item(at(21, 20), {
+        kind: "action",
+        actor: bren,
+        source: { custom: L("Search", "Cercare") },
+        slot: "action",
+        check: { skill: "perception", total: 17, dc: 15 },
+      }),
       item(at(21, 40), {
         kind: "encounter-start",
         encounterId: fight,
@@ -1624,6 +1633,14 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
       }),
       item(at(21, 40), { kind: "round-start", round: 1 }),
       item(at(21, 41), { kind: "damage", target: mara, amount: 9 }),
+      item(at(21, 41), {
+        kind: "concentration-save",
+        actor: mara,
+        spell: concentrationValue("bless"),
+        dc: 10,
+        total: 14,
+        passed: true,
+      }),
       // A save spell everyone shrugged off, then one that half-landed (owner, 2026-11-11).
       item(at(21, 42), {
         kind: "action",

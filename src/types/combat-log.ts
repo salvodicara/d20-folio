@@ -192,6 +192,15 @@ export type CombatEvent =
   | { kind: "concentration-start"; spell: ConcentrationRef }
   /** Concentration ended — `spell` as in `concentration-start` (id / `custom:` name). */
   | { kind: "concentration-end"; spell: ConcentrationRef }
+  /** A Concentration save entered on the sheet, kept or lost: its DC and total (a lost
+   *  one is followed by the spell's `concentration-end`). */
+  | {
+      kind: "concentration-save";
+      spell: ConcentrationRef;
+      dc: number;
+      total?: number;
+      passed: boolean;
+    }
   /** A death-saving-throw mark changed. */
   | {
       kind: "death-save";

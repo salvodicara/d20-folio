@@ -49,7 +49,7 @@ recap, and the spec proposed from the reference tools. Code references are to `m
    nothing to recap.
 5. **Detail lost on casts and attacks.** The cast's slot level and the attack's result
    reach the log only when the damage tray sets them (`character-events.ts:23-31`), so
-   "Catalion cast Healing Word" never says at which level, and a miss with no damage leaves
+   "Lara cast Healing Word" never says at which level, and a miss with no damage leaves
    no result. Survey: `actionsWithoutOutcome`.
 6. **The DM's monsters do not act.** A monster's attack is recorded as the damage it dealt
    (or a condition), never as an action, so "the Goblin's Scimitar missed Lyra" is
@@ -101,7 +101,7 @@ merge on green:
 Through the coordinator and the direction lane (new line kinds or new wording the player
 sees):
 
-5. **Class-resource spends** ("Catalion used Bardic Inspiration"), a `resource-spend` line.
+5. **Class-resource spends** ("Lara used Bardic Inspiration"), a `resource-spend` line.
 6. **Fight markers without the DM's page**: the encounter's start, rounds and end derived
    from the stored encounter, so every device's lines land in their fight.
 7. **The cast's slot level and the attack's result** on the action line.
