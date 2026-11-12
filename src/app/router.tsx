@@ -171,6 +171,15 @@ const NotFoundScreen = NEW_UI
     )
   : null;
 
+// The DM's read-only view of a party member, on the new Play sheet.
+const MemberSheetScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/campaign/ui/MemberSheetScreen").then((m) => ({
+        default: m.MemberSheetScreen,
+      }))
+    )
+  : null;
+
 // The new Compendium replaces the codex in the same build (the monster catalogue
 // gates the render, as for the codex).
 const CompendiumScreen = NEW_UI
@@ -288,6 +297,12 @@ const router = createBrowserRouter(
           >
             <Route errorElement={<RouteErrorBoundary variant="region" />}>
               <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
+              {MemberSheetScreen && (
+                <Route
+                  path="/campaigns/:campaignId/sheets/:memberUid"
+                  element={<MemberSheetScreen />}
+                />
+              )}
               {PlayScreen && (
                 <Route path="/characters/:characterId" element={<PlayScreen />} />
               )}
@@ -351,10 +366,12 @@ const router = createBrowserRouter(
               <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
             )}
             {/* T4 — DM reads a party member's full sheet, read-only. */}
-            <Route
-              path="/campaigns/:campaignId/sheets/:memberUid"
-              element={<MemberSheetView />}
-            />
+            {!MemberSheetScreen && (
+              <Route
+                path="/campaigns/:campaignId/sheets/:memberUid"
+                element={<MemberSheetView />}
+              />
+            )}
             {/* Shareable invite link (#33) — auto-joins, then redirects to the hub. */}
             {!JoinScreen && <Route path="/join/:code" element={<JoinCampaignRoute />} />}
             {/* Compendium */}
