@@ -18,7 +18,7 @@ import { WizardPickList, type WizardPickOption } from "@/features/wizard/pick-li
 import { SpellLevelSeal } from "@/features/wizard/seals";
 import { PickerDetailModal } from "@/components/shared/PickerDetailModal";
 import { spellSpec } from "@/features/compendium/picker/specs/spell";
-import { spellPickVM } from "@/lib/views/spell-pick-view";
+import { byLevelThenName, spellPickVM } from "@/lib/views/spell-pick-view";
 import {
   listAvailableForSlot,
   type SpellChoicePicks,
@@ -156,8 +156,10 @@ function SpellSlotPicker({
 
   // F family (C1) + fb3 — compact fact rows (the level seal carries the level;
   // school/casting detail lives behind the picked row's open-book modal).
-  const options = available.map((sp): WizardPickOption => {
-    const vm = spellPickVM(sp, locale);
+  const sorted = available
+    .map((sp) => spellPickVM(sp, locale))
+    .sort(byLevelThenName(locale));
+  const options = sorted.map((vm): WizardPickOption => {
     return {
       id: vm.id,
       name: vm.name,
