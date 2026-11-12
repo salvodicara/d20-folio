@@ -58,7 +58,7 @@ describe("RulesTab", () => {
       <RulesTab campaign={campaign({ potions: { drink: "action" } })} onToast={vi.fn()} />
     );
     expect(
-      screen.getByText("The 2024 rules (RAW) all apply, except these.")
+      screen.getByText("The 2024 rules all apply as written, except these.")
     ).toBeTruthy();
     expect(screen.getByText("Drinking a potion")).toBeTruthy();
     expect(screen.queryByText("Flanking")).toBeNull();
@@ -68,6 +68,8 @@ describe("RulesTab", () => {
   it("a table that plays RAW says so to players", () => {
     useAuthStore.setState({ user: { uid: "player" } as never });
     render(<RulesTab campaign={campaign()} onToast={vi.fn()} />);
-    expect(screen.getByText("This table plays by the 2024 rules (RAW).")).toBeTruthy();
+    expect(
+      screen.getByText("This table plays by the 2024 rules as written.")
+    ).toBeTruthy();
   });
 });

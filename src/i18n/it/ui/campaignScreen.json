@@ -16,17 +16,17 @@
     "tableRules": {
       "title": "Regole del tavolo",
       "tab": "Regole",
-      "introDm": "Solo il Master le cambia; valgono per tutti i personaggi della campagna. Di base valgono le regole del 2024 (RAW): cambia solo quello che al tuo tavolo si gioca diversamente.",
-      "introPlayer": "Le regole del 2024 (RAW) valgono tutte, tranne queste.",
-      "allRaw": "Questo tavolo gioca con le regole del 2024 (RAW).",
-      "raw": "RAW",
+      "introDm": "Solo il Master le cambia; valgono per tutti i personaggi della campagna. Di base valgono le regole del 2024 da manuale: cambia solo quello che al tuo tavolo si gioca diversamente.",
+      "introPlayer": "Le regole del 2024 valgono tutte da manuale, tranne queste.",
+      "allRaw": "Questo tavolo gioca con le regole del 2024 da manuale.",
+      "raw": "Da manuale",
       "table": "Regola del tavolo",
       "customize": "Personalizza",
-      "reset": "Torna alle regole RAW",
+      "reset": "Torna alle regole da manuale",
       "active_one": "{{count}} regola del tavolo attiva",
       "active_other": "{{count}} regole del tavolo attive",
       "changed": "Regola del tavolo cambiata",
-      "resetDone": "Regole RAW ripristinate",
+      "resetDone": "Regole da manuale ripristinate",
       "failed": "Non è stato possibile salvare le regole del tavolo",
       "groups": {
         "rest": "Riposi e Indebolimento",
@@ -55,18 +55,18 @@
         },
         "deathSaves": {
           "title": "Tiri contro la morte",
-          "why": "Quanti successi stabilizzano e quanti fallimenti uccidono (RAW: 3 e 3)."
+          "why": "Quanti successi stabilizzano e quanti fallimenti uccidono (da manuale: 3 e 3)."
         },
         "rest": {
           "title": "Durata dei riposi",
-          "why": "RAW: riposo breve 1 ora, riposo lungo 8 ore.",
+          "why": "Da manuale: riposo breve 1 ora, riposo lungo 8 ore.",
           "fields": {
             "shortMinutes": "Riposo breve, minuti",
             "longMinutes": "Riposo lungo, minuti"
           }
         },
         "exhaustion": {
-          "why": "RAW: fino al livello 6; ogni livello toglie 2 ai tiri d20 e 1,5 m alla velocità.",
+          "why": "Da manuale: fino al livello 6; ogni livello toglie 2 ai tiri d20 e 1,5 m alla velocità.",
           "fields": {
             "maxLevel": "Livello massimo",
             "d20PerLevel": "Ai tiri d20, per livello",
@@ -88,7 +88,7 @@
           "title": "Nascondersi",
           "why": "Nel 2024 nascondersi chiede una prova contro CD 15.",
           "choices": {
-            "raw": "CD 15 fissa (RAW)",
+            "raw": "CD 15 fissa (da manuale)",
             "table": "Il Master decide (niente CD 15)"
           }
         },

@@ -76,6 +76,7 @@ import {
   applyEscapeCheck as applySheetEscapeCheck,
   applyHideCheck as applySheetHideCheck,
   skillBonusFor,
+  skillFaceFloorFor,
 } from "@/domains/play/check-entry";
 import { offListReactionAction } from "@/lib/views/off-list-reaction";
 import { useTurnState } from "@/features/character/center/turn-state";
@@ -148,7 +149,12 @@ import {
   type CombatAction,
 } from "@/lib/views/combat-action-view";
 import { repeatUseCost } from "@/lib/play/object-interaction";
-import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
+import { countedFace, TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
+import {
+  keptFace,
+  paidAdvantageFor,
+  type PaidAdvantageOffer,
+} from "@/domains/play/paid-advantage";
 import { ESCAPE_GRAPPLE_ACTION_ID, escapeGrappleSkill } from "@/lib/play/escape-grapple";
 import {
   actionHigherLevels,
@@ -473,6 +479,11 @@ export function PlayTab() {
   // (golden rule 6). Override-aware by construction (`row.bonus`).
   const skillCheckBonusFor = useMemo(
     () => (character ? skillBonusFor(character) : () => 0),
+    [character]
+  );
+  // Reliable Talent: the lowest d20 face a check with each skill counts.
+  const skillFloorFor = useMemo(
+    () => (character ? skillFaceFloorFor(character) : () => 1),
     [character]
   );
 
@@ -972,6 +983,7 @@ export function PlayTab() {
                 depletedTrackers={depletedTrackers}
                 cunningStrike={cunningStrike}
                 skillCheckBonusFor={skillCheckBonusFor}
+                skillFloorFor={skillFloorFor}
                 open={expandedId === action.id}
                 onOpenChange={(o) => setExpandedId(o ? action.id : null)}
                 onCommit={(checked) => dispatchAction(checked ?? action)}
@@ -1151,6 +1163,7 @@ export function PlayTab() {
                   depletedTrackers={depletedTrackers}
                   cunningStrike={cunningStrike}
                   skillCheckBonusFor={skillCheckBonusFor}
+                  skillFloorFor={skillFloorFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
                   onCommit={(checked) => dispatchAction(checked ?? action)}
@@ -1426,6 +1439,7 @@ function CombatActionCard({
   depletedTrackers,
   cunningStrike,
   skillCheckBonusFor,
+  skillFloorFor,
   open,
   onOpenChange,
   onCommit,
@@ -1459,6 +1473,8 @@ function CombatActionCard({
    *  Stealth), from the ONE shared skills derivation. Optional: cards rendered
    *  through groups that never carry `summary.skillCheck` omit it. */
   skillCheckBonusFor?: (skillId: string) => number;
+  /** Reliable Talent: the lowest d20 face a check with this skill counts. */
+  skillFloorFor?: (skillId: string) => number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** Commit the card; a check entry (Search, Study, Influence) hands the action as
@@ -1469,6 +1485,8 @@ function CombatActionCard({
   const { t, i18n } = useTranslation();
   const masteriesThisTurn = useCombatStore((s) => s.masteriesThisTurn);
   const { language: locale } = useLocale();
+  // The sheet, for a paid Advantage on the card's check entry (a Luck Point).
+  const characterDoc = useCharacterStore((s) => s.character);
   const kind = combatKind(action);
   // Beginner glossary: a base action's id IS its glossary term id, so its name
   // opens the plain-language line (glossary-actions.guard pins the set).
@@ -1581,7 +1599,7 @@ function CombatActionCard({
     const sc = effectiveSummary.skillCheck;
     if (!sc) return;
     applySheetHideCheck(
-      face,
+      countedFace(face, skillFloorFor?.(sc.skill) ?? 1),
       { dc: sc.dc, bonus: skillCheckBonusFor?.(sc.skill) ?? 0 },
       t
     );
@@ -1596,7 +1614,12 @@ function CombatActionCard({
       : null;
   function applyEscapeCheck(face: number, dc: number) {
     if (!escapeSkill) return;
-    applySheetEscapeCheck(face, dc, escapeSkill.bonus, t);
+    applySheetEscapeCheck(
+      countedFace(face, skillFloorFor?.(escapeSkill.skill) ?? 1),
+      dc,
+      escapeSkill.bonus,
+      t
+    );
   }
 
   return (
@@ -1759,7 +1782,29 @@ function CombatActionCard({
               skills={effectiveSummary.checkSkills}
               bonusFor={(skill) => skillCheckBonusFor?.(skill) ?? 0}
               disabled={cta.disabled}
-              onApply={(roll, dc) => onCommit(withCheckResult(action, roll, dc))}
+              onApply={(roll, dc) =>
+                onCommit(
+                  withCheckResult(
+                    action,
+                    {
+                      ...roll,
+                      face: countedFace(roll.face, skillFloorFor?.(roll.skill) ?? 1),
+                    },
+                    dc
+                  )
+                )
+              }
+              {...(characterDoc
+                ? {
+                    paidAdvantage: paidAdvantageFor(
+                      characterDoc,
+                      locale,
+                      t,
+                      "check",
+                      "play.roll.paidAdvantageCheck"
+                    ),
+                  }
+                : {})}
             />
           )}
           {escapeSkill && (
@@ -1864,16 +1909,22 @@ function ActionCheckEntry({
   bonusFor,
   disabled,
   onApply,
+  paidAdvantage,
 }: {
   skills: ReadonlyArray<string>;
   bonusFor: (skill: string) => number;
   disabled: boolean;
   onApply: (roll: { skill: string; face: number; bonus: number }, dc?: number) => void;
+  /** A paid Advantage the sheet holds (a Luck Point): chosen, the second d20 is asked
+   *  and the higher stands; it is paid on Apply. */
+  paidAdvantage?: PaidAdvantageOffer;
 }) {
   const { t } = useTranslation();
   const [skill, setSkill] = useState(skills[0] ?? "");
   const [dc, setDc] = useState<number | undefined>(undefined);
   const [face, setFace] = useState(10);
+  const [second, setSecond] = useState(10);
+  const [paid, setPaid] = useState<string | null>(null);
   const bonus = bonusFor(skill);
   return (
     <div className="heal-roll-entry">
@@ -1917,6 +1968,24 @@ function ActionCheckEntry({
           bonus: formatModifier(bonus),
         })}
       </span>
+      {paidAdvantage && (
+        <div className="fchip-group" role="group" aria-label={t("play.down.addAfter")}>
+          {paidAdvantage.options.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="fchip fchip-sm"
+              aria-pressed={paid === option.id}
+              onClick={(e) => {
+                e.stopPropagation();
+                setPaid((on) => (on === option.id ? null : option.id));
+              }}
+            >
+              {option.name}
+            </button>
+          ))}
+        </div>
+      )}
       <NumberStepper
         value={face}
         onChange={setFace}
@@ -1928,14 +1997,30 @@ function ActionCheckEntry({
         decrementLabel={t("combat.healRollDec")}
         incrementLabel={t("combat.healRollInc")}
       />
+      {paid && (
+        <NumberStepper
+          value={second}
+          onChange={setSecond}
+          min={1}
+          max={20}
+          digits={2}
+          compact
+          ariaLabel={t("combat.d20SecondAria")}
+          decrementLabel={t("combat.healRollDec")}
+          incrementLabel={t("combat.healRollInc")}
+        />
+      )}
       <Button
         variant="secondary"
         size="sm"
         disabled={disabled}
         onClick={(e) => {
           e.stopPropagation();
-          onApply({ skill, face, bonus }, dc);
+          if (paid) paidAdvantage?.onPay(paid);
+          onApply({ skill, face: keptFace(face, second, paid !== null), bonus }, dc);
           setFace(10);
+          setSecond(10);
+          setPaid(null);
         }}
       >
         {t("combat.apply")}

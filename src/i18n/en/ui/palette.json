@@ -21,7 +21,6 @@
     "actionNewCampaign": "Create a campaign",
     "actionImport": "Import a character (JSON)",
     "actionReport": "Report a bug or idea",
-    "actionSignOut": "Sign out",
     "hintGo": "Go",
     "hintNav": "Navigate"
   }

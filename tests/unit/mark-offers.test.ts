@@ -1,6 +1,7 @@
 /**
  * Hex and Hunter's Mark move on (edge-case M8): when the marked creature drops to
- * 0 HP, the caster is offered the move-the-mark Bonus Action.
+ * 0 HP, the caster is offered the move-the-mark Bonus Action. The offer carries the
+ * move's slot, so a move that takes no action (Vow of Enmity) says so.
  */
 import { describe, expect, it } from "vitest";
 import { markDropOffers } from "@/lib/play/mark-offers";
@@ -45,6 +46,7 @@ describe("move-the-mark offers", () => {
         sourceId: "hex",
         sourceKind: "spell",
         actionId: "move-mark",
+        slot: "bonus",
         targetId: "monster-1",
       },
     ]);

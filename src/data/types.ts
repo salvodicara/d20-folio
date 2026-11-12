@@ -1462,6 +1462,9 @@ export interface SrdSpellData {
    *  D20 Test: Temporary Hit Points if the new roll succeeds): the tray marks each
    *  row «Successo», and only marked rows take the amount, conditions and states. */
   appliesOnSuccess?: true;
+  /** Cast as a Reaction when you fail a D20 Test, the d20 becomes this face (a
+   *  failed roll turned into a 20): offered on the saves the app records. */
+  failedD20Becomes?: number;
   saveAbility?: AbilityCode;
   /** Attack type (if spell requires an attack roll) */
   attackType?: "melee" | "ranged";
@@ -1979,8 +1982,11 @@ export type ActionRollEffect =
       whose: "self" | "other" | "any";
       /** The new roll has Advantage (Countercharm). */
       advantage?: true;
-      /** A bonus to the new roll: a class's level (Indomitable: Fighter level). */
-      bonus?: { classLevel: ClassId };
+      /** A bonus to the new roll: a class's level (Indomitable: Fighter level), or a
+       *  value of the class's table at its level (a Rage Damage bonus). */
+      bonus?: { classLevel: ClassId } | { classTable: { classId: ClassId; key: string } };
+      /** Offered only while this state is active (once per Rage: `barbarian-rage`). */
+      whileActive?: string;
       /** Only a save against an effect applying one of these (Countercharm). */
       against?: ReadonlyArray<ConditionId>;
     }

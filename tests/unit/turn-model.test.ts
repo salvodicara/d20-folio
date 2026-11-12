@@ -29,6 +29,8 @@ import {
   turnModelView,
 } from "@/domains/play/turn-model";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { logSoloFightStart } from "@/features/character/center/solo-fight-log";
+import { sessionReportSections, sheetSessionEntries } from "@/lib/session-log";
 import { TIME_STOP_ID } from "@/lib/play/extra-turns";
 import { WISH_ID } from "@/lib/play/wish";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -175,6 +177,51 @@ describe("the turn model, solo", () => {
   });
 });
 
+describe("a solo fight's bounds in the sheet log (its own report reads them)", () => {
+  const kinds = () =>
+    (useCharacterStore.getState().character?.session.logEntries ?? [])
+      .map((line) => line.event.kind)
+      .filter(
+        (kind) => kind === "fight-start" || kind === "fight-end" || kind === "turn-end"
+      );
+
+  beforeEach(() => {
+    const doc = makeCharacterDoc();
+    doc.session.logEntries = [];
+    open(doc);
+  });
+
+  it("Start combat, End Turn and End combat each write their line", () => {
+    startCombat();
+    endTurn(t);
+    endCombat();
+    expect(kinds()).toEqual(["fight-start", "turn-end", "fight-end"]);
+  });
+
+  it("End combat with no fight on writes nothing", () => {
+    endCombat();
+    expect(kinds()).toEqual([]);
+  });
+
+  it("the first Initiative roll starts the fight; a fight already on is not started again", () => {
+    logSoloFightStart();
+    useCombatStore.getState().setInitiative("14");
+    logSoloFightStart();
+    expect(kinds()).toEqual(["fight-start"]);
+  });
+
+  it("the sheet's report reads one fight from these lines", () => {
+    startCombat();
+    endTurn(t);
+    endCombat();
+    const log = useCharacterStore.getState().character?.session.logEntries ?? [];
+    const fights = sessionReportSections(sheetSessionEntries(log, "pc-me")).filter(
+      (section) => section.kind === "encounter"
+    );
+    expect(fights).toHaveLength(1);
+  });
+});
+
 describe("the turn model, in a campaign fight", () => {
   function shared(isMyTurn: boolean) {
     const doc = makeCharacterDoc();
@@ -215,5 +262,10 @@ describe("the turn model, in a campaign fight", () => {
   it("End Combat is the DM's: the player's model ends nothing", () => {
     shared(true);
     expect(endCombat()).toBeNull();
+    expect(
+      useCharacterStore
+        .getState()
+        .character?.session.logEntries.some((line) => line.event.kind === "fight-end")
+    ).toBe(false);
   });
 });

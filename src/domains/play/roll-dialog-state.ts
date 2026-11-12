@@ -63,6 +63,12 @@ export function toggleSurprise(t: TFunction): void {
   );
 }
 
+/** A roll's mode with a paid Advantage added (a Luck Point): a plain roll gains
+ *  Advantage, a Disadvantaged one cancels to a plain roll (2024 D20 Tests). */
+export function withPaidAdvantage(mode: RollMode): RollMode {
+  return mode === "disadvantage" ? "none" : "advantage";
+}
+
 /** The death save: its mode and faces, from its own sources. */
 export function deathSaveRollModel(doc: CharacterDoc): RollModel {
   const context = deathSaveD20Context(doc);

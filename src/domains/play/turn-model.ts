@@ -28,6 +28,7 @@ import {
   endTurnWithStores,
 } from "@/features/character/center/end-turn-wiring";
 import { takeSoloExtraTurn } from "@/features/character/center/extra-turn";
+import { logSoloFightEnd } from "@/features/character/center/solo-fight-log";
 import { endSoloWorldEncounter } from "@/features/character/center/solo-world-turn";
 import {
   standUp as commitStandUp,
@@ -241,6 +242,9 @@ export function standUp(t: TFunction, locale: Locale): void {
 export function startCombat(): void {
   if (!turnModelView().canStartCombat) return;
   useCombatStore.getState().startCombat();
+  // A fresh fight by hand: its start line even when another was left open (the
+  // sheet's report closes that one here).
+  useCharacterStore.getState().logEvent({ kind: "fight-start" });
 }
 
 /**
@@ -253,6 +257,7 @@ export function endCombat(): { ammunitionRecoverable: number } | null {
   if (sharedFight()) return null;
   const store = useCharacterStore.getState();
   if (!store.character || store.readonly) return null;
+  logSoloFightEnd();
   useCombatStore.getState().endCombat();
   store.dispatch({ kind: "set-surprised", surprised: false });
   useCharacterStore.getState().dispatch({ kind: "end-fight-situations" });
