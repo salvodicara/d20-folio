@@ -104,7 +104,10 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
     <div className="f-condwrap" ref={ref}>
       <Chip kind="cond" pressed={open} onClick={() => setOpen((o) => !o)}>
         {`⚠ ${t("combat.effectReview.conditions")}`}
-        {view.count > 0 && <span className="f-chip-n">{view.count}</span>}
+        {/* burning counts as one more state on the character */}
+        {view.count + (doc.session.burning ? 1 : 0) > 0 && (
+          <span className="f-chip-n">{view.count + (doc.session.burning ? 1 : 0)}</span>
+        )}
       </Chip>
       {open && (
         <div
