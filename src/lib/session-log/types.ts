@@ -21,7 +21,7 @@ import type { RiderEffect } from "@/lib/activities/riders";
 import type { ActionType } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
 import type { ChangeableStat } from "@/types/combat-chronicle";
-import type { SaveResults } from "@/types/combat-log";
+import type { RestRecovery, SaveResults } from "@/types/combat-log";
 import type { ConcentrationRef } from "@/types/ids";
 
 /** A creature at the table: `pc-<uid>` or `monster-<n>` (the encounter's ids). */
@@ -164,7 +164,10 @@ export type PlayEvent =
       spent: boolean;
       actor?: CombatantId;
     }
-  | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }
+  /** A rest, with what it gave back (each field set only when something came back). */
+  | ({ kind: "rest"; rest: "short" | "long"; actor?: CombatantId } & RestRecovery)
+  /** A character went up a level in `classId` (the class's stable id, named at render). */
+  | { kind: "level-up"; from: number; to: number; classId: string; actor?: CombatantId }
   /** Minutes pass outside the turn order; what runs out in them ends. */
   | { kind: "time-passes"; minutes: number; actor?: CombatantId }
   | {

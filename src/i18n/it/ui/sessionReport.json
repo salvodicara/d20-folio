@@ -90,7 +90,8 @@
       "allFailed": "tutti falliscono il tiro salvezza",
       "saved": "{{name}} supera",
       "failed": "{{name}} fallisce",
-      "noEffect": "{{result}}: nessun effetto"
+      "noEffect": "{{result}}: nessun effetto",
+      "theTarget": "il bersaglio"
     },
     "check": "prova di {{skill}}: {{total}}",
     "checkPassed": "supera la prova di {{skill}} ({{total}} contro CD {{dc}})",
@@ -103,6 +104,7 @@
     },
     "dealt": "{{amount}} danni",
     "upcast": "(slot di {{level}}° livello)",
-    "upcastPact": "(slot di Magia del Patto, {{level}}° livello)"
+    "upcastPact": "(slot di Magia del Patto, {{level}}° livello)",
+    "levelUp": "{{actor}} sale al livello {{level}} ({{class}})"
   }
 }

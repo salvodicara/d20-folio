@@ -6,6 +6,7 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
+import { restRecovery } from "@/lib/play/rest-recovery";
 import { docAtClock } from "@/lib/play/campaign-clock";
 import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock";
 import type { TableRules } from "@/lib/table-rules";
@@ -3040,7 +3041,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // Events-as-data: a Long Rest is a story beat (the log survives the rest —
     // `logEntries` is untouched above). Logged AFTER the set so it lands on the
     // post-rest character, with what it faded (a penalty step, a restored maximum).
-    get().logEvent({ kind: "rest", restKind: "long" });
+    const rested = get().character;
+    get().logEvent({
+      kind: "rest",
+      restKind: "long",
+      ...(rested ? restRecovery(beforeRest.session, rested.session) : {}),
+    });
     for (const event of fades) get().logEvent(event);
     // Wholesale trio replacement (HP → full, death saves → 0): persist the whole
     // resulting combat state (offline-safe, last-write-wins).
@@ -3071,7 +3077,12 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
 
     get().dispatch({ kind: "short-rest" });
     // Events-as-data: a Short Rest is a story beat.
-    get().logEvent({ kind: "rest", restKind: "short" });
+    const rested = get().character;
+    get().logEvent({
+      kind: "rest",
+      restKind: "short",
+      ...(rested ? restRecovery(beforeRest.session, rested.session) : {}),
+    });
     persistCombat(get);
     // Undo-stack FENCE (§5.4 case 9): a rest rewrites the resource baseline (pact
     // slots + short-rest trackers + exhaustion), so a pre-rest reverse-applier would

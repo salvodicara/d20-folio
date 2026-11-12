@@ -300,7 +300,10 @@ describe("cast transaction correctness", () => {
           ?.used
       ).toBe(1)
     );
-    expect(useCombatStore.getState().selected.action).toEqual([]);
+    // In a fight the cast takes the Action like any row; undo gives it back.
+    expect(useCombatStore.getState().selected.action.map((entry) => entry.id)).toEqual([
+      "subtle-fire-bolt",
+    ]);
 
     act(() => expect(useUndoStore.getState().undo()).toBe(true));
     expect(useCombatStore.getState().selected.action).toEqual([]);

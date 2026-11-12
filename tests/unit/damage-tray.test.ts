@@ -17,6 +17,7 @@ import {
 import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import {
   damageTrayPlan,
+  saveAloneOnTheLine,
   savesOnTheLine,
   initialTrayRow,
   parseRolledTotal,
@@ -211,6 +212,18 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     const wave = plan(action("spell-thunderwave"));
     expect(wave.failNotes).toEqual(["Pushed up to 10 ft away"]);
     expect(plan(action("spell-fireball")).failNotes).toBeUndefined();
+  });
+
+  it("a save spell cast with nobody named asks its one save on the line (Vicious Mockery solo)", () => {
+    expect(saveAloneOnTheLine(action("spell-vicious-mockery"), [])).toEqual({
+      damage: true,
+    });
+    expect(saveAloneOnTheLine(action("spell-command"), [])).toEqual({ damage: false });
+    // Someone named: the tray or the per-creature line asks instead.
+    expect(saveAloneOnTheLine(action("spell-vicious-mockery"), [FOE])).toBeNull();
+    // Cast on oneself, or no save at all: nothing to ask.
+    expect(saveAloneOnTheLine(action("spell-command"), [ME])).toBeNull();
+    expect(saveAloneOnTheLine(action("spell-magic-missile"), [])).toBeNull();
   });
 
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {

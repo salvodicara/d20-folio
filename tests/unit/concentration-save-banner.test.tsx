@@ -60,6 +60,30 @@ describe("ConcentrationSaveBanner", () => {
     expect(useCharacterStore.getState().combatPendingConcentrationSaves).toHaveLength(1);
   });
 
+  it("Heroic Inspiration: a failed roll offers its reroll; the new roll stands and spends it", () => {
+    const character = makeCharacterDoc(
+      {},
+      { hp: { current: 44, temp: 0 }, concentration: conc("bless"), inspiration: true }
+    );
+    useCharacterStore.getState().setCharacter(character);
+    act(() => {
+      useCharacterStore.getState().applyDamage(10);
+    });
+    render(<ConcentrationSaveBanner />);
+    fireEvent.change(screen.getByLabelText(/concentration-save d20 result/i), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Heroic Inspiration: reroll$/ }));
+    fireEvent.change(screen.getByLabelText(/concentration-save d20 result/i), {
+      target: { value: "18" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^apply$/i }));
+    const live = useCharacterStore.getState();
+    expect(live.combatPendingConcentrationSaves).toHaveLength(0);
+    expect(live.character?.session.concentration).toBeTruthy();
+    expect(live.character?.session.inspiration).toBe(false);
+  });
+
   it("asks for two physical faces under net Advantage", () => {
     loadConcentrator({ advantage: true });
     act(() => {

@@ -196,10 +196,18 @@ describe("combat-log emission at the state-seam", () => {
     load();
     store().logEvent({ kind: "hp-damage", amount: 1, current: 29, max: 40 });
     store().longRest();
-    expect(last()).toEqual({ kind: "rest", restKind: "long" });
+    // With what it gave back (walkthrough 2026-11-12, M2): the sheet's Hit Points and
+    // Hit Dice, read before and after the rest.
+    expect(last()).toEqual({
+      kind: "rest",
+      restKind: "long",
+      hpRegained: 10,
+      hitDiceRegained: 2,
+    });
     // The pre-rest entry survives (the log is not wiped by a rest).
     expect(events().some((e) => e.kind === "hp-damage")).toBe(true);
     store().shortRest();
+    // Nothing came back on this short rest: the bare line, no empty clause.
     expect(last()).toEqual({ kind: "rest", restKind: "short" });
   });
 });

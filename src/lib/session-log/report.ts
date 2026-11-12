@@ -16,6 +16,8 @@ export type ReportSection =
       /** Names of the fight's non-PC creatures, from its start line. */
       names: Record<string, string>;
       outcome?: "victory" | "ended";
+      /** When the fight's end marker was written; absent while it runs. */
+      endedAt?: number;
       rounds: ReportRound[];
     };
 
@@ -37,12 +39,10 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
     if (event.kind === "round-start" || event.kind === "solo-fight") continue;
     const section = current();
     if (event.kind === "encounter-end") {
-      if (
-        section?.kind === "encounter" &&
-        section.encounterId === event.encounterId &&
-        event.outcome
-      )
-        section.outcome = event.outcome;
+      if (section?.kind === "encounter" && section.encounterId === event.encounterId) {
+        section.endedAt = entry.at;
+        if (event.outcome) section.outcome = event.outcome;
+      }
       continue;
     }
     if (entry.encounterId !== undefined && section?.kind === "encounter") {

@@ -85,20 +85,9 @@ describe.each(["spellbook", "play"] as const)("simple casting from %s", (surface
       );
       if (surface === "play")
         fireEvent.click(screen.getByRole("button", { name: /^all/i }));
-      act(() =>
-        useCombatStore.setState({
-          round: 3,
-          spellSlotCastsThisTurn: 1,
-          spellSlotCastTurnKey: "solo:test-char:3",
-          selected: {
-            action: [{ id: "already-used", name: "Already used", slot: "action" }],
-            bonus: [
-              { id: "already-used-bonus", name: "Already used bonus", slot: "bonus" },
-            ],
-            free: [],
-          },
-        })
-      );
+      // Out of a fight the turn's economy only logs, so the same spell repeats. In a
+      // fight a cast takes its slot like any row (action-cta-view.test.ts).
+      act(() => useCombatStore.getState().endCombat());
       const card = screen.getByText("Healing Word").closest(".uc") as HTMLElement;
       fireEvent.click(within(card).getByRole("button", { name: /^expand/i }));
       const cast = () => within(card).getByRole("button", { name: /^(cast|use)/i });

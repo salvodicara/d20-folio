@@ -3,19 +3,19 @@
  * Challenge Rating filter, each creature a row ending in «+»; what's picked counts up on
  * its row (− takes one back), and the fight's difficulty updates as you pick (the word
  * in its colour and the XP). The DM's own creatures come first. «Aggiungi» puts them
- * all in the fight, with an undo.
+ * all in the fight, with an undo; each group rolls its initiative as it enters.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
   encounterBudget,
-  homebrewMonsterInput,
   homebrewPickerMonsters,
+  pickedMonsterInputs,
 } from "@/domains/combat/monster-picker-view";
 import { MONSTERS } from "@/data/monsters";
 import { monsterPortraitUrl } from "@/data/monster-art";
-import { toMonsterInput } from "@/features/campaigns/encounter-monster-input";
+import { cryptoD20 } from "@/features/campaigns/combat-lifecycle-io";
 import type { MonsterInput } from "@/lib/play/encounter";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { localizeSrd } from "@/i18n/resolver";
@@ -105,15 +105,12 @@ export function AddMonstersDialog({
     setPicked(next);
   };
   const add = () => {
-    const inputs = chosen.flatMap((r) => {
-      const n = picked.get(r.key) ?? 0;
-      if (r.kind === "homebrew") {
-        const input = homebrewMonsterInput(library, r.id, n, null);
-        return input ? [input] : [];
-      }
-      const m = MONSTERS.find((x) => x.id === r.id);
-      return m ? [toMonsterInput(m, locale, n)] : [];
-    });
+    const inputs = pickedMonsterInputs(
+      chosen.map((r) => ({ kind: r.kind, id: r.id, count: picked.get(r.key) ?? 0 })),
+      library,
+      locale,
+      cryptoD20
+    );
     onAdd(inputs, chosen.map((r) => `${r.name} ×${picked.get(r.key)}`).join(", "));
     onClose();
   };

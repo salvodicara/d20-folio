@@ -52,6 +52,7 @@
  * boundaries and are never conflated with a rest.
  */
 
+import { restRecovery } from "@/lib/play/rest-recovery";
 import { advanceTimeOfDay, restCrossesDawn } from "@/lib/play/time";
 import { LONG_REST_MINUTES, SHORT_REST_MINUTES } from "@/lib/play/rests";
 import i18next from "i18next";
@@ -124,6 +125,9 @@ export interface RestWorldEntries {
    * the app never fabricates a die total (golden rule 21).
    */
   readonly healedHp?: number;
+  /** The Hit Dice the short rest spent on that heal. The caller spends them on the
+   *  sheet after the rest, so the rest line takes the count from here. */
+  readonly hitDiceSpent?: number;
 }
 
 /** 2024 RAW minimum rest durations, advanced on the character's timeline. */
@@ -638,7 +642,13 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
   // Events-as-data: a rest is a story beat; persist the whole resulting
   // combat state. The undo fence and the rest's own undo entry live in
   // `restThroughWorld`, around this body.
-  live.logEvent({ kind: "rest", restKind: kind });
+  const rested = live.character;
+  live.logEvent({
+    kind: "rest",
+    restKind: kind,
+    ...(rested ? restRecovery(before.session, rested.session) : {}),
+    ...(entered.hitDiceSpent ? { hitDiceSpent: entered.hitDiceSpent } : {}),
+  });
   for (const event of fades) live.logEvent(event);
   live.persistPlayState();
   return "engine";

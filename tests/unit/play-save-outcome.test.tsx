@@ -82,3 +82,41 @@ describe("the save chips on the new Play's spell row", () => {
     });
   });
 });
+
+describe("a save spell cast solo, with nobody named (the walk's M1)", () => {
+  it("Vicious Mockery's row asks its save, then the damage; the line keeps both", async () => {
+    const doc = buildScenario({
+      name: "Lyra",
+      raceId: "human",
+      classId: "bard",
+      level: 3,
+      background: "entertainer",
+      abilityScores: { STR: 8, DEX: 14, CON: 12, INT: 10, WIS: 12, CHA: 16 },
+      spells: [{ srdId: "vicious-mockery", prepared: true }],
+    });
+    doc.id = "lyra";
+    doc.session.logEntries = [];
+    useCharacterStore.setState({
+      character: doc,
+      loading: false,
+      error: null,
+      readonly: false,
+    });
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider renderPrompts={false}>
+          <PlayCentre doc={live()} locale="en" />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Cast: Vicious Mockery/ }));
+    const save = await screen.findByRole("group", { name: "Save" });
+    fireEvent.click(within(save).getByRole("button", { name: "Failed" }));
+    const field = screen.getByRole("textbox", { name: "Damage" });
+    fireEvent.change(field, { target: { value: "6" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(
+      live().session.logEntries.find((e) => e.event.kind === "action-use")?.event
+    ).toMatchObject({ saves: { target: "failed" }, amount: 6 });
+  });
+});
