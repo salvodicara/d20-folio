@@ -56,6 +56,14 @@ const SAMPLES: Record<
     started: true,
     actor: "pc-ivo",
   },
+  "concentration-save": {
+    kind: "concentration-save",
+    spell: "bless" as never,
+    dc: 10,
+    total: 14,
+    passed: true,
+    actor: "pc-ivo",
+  },
   down: { kind: "down", target: "monster-1" },
   stabilized: { kind: "stabilized", target: "pc-mara", actor: "pc-ivo" },
   "resource-grant": {

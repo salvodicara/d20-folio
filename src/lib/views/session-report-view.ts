@@ -62,6 +62,21 @@ function savesClause(
   return event.noEffect ? t("sessionReport.saves.noEffect", { result }) : result;
 }
 
+/** The check entered with a use, in the report's save voice: "succeeds on the
+ *  Perception check (17 vs DC 15)", or "Perception check: 17" without a DC. No check:
+ *  `null`. */
+function checkClause(event: ActionEvent, t: TranslateFn): string | null {
+  const check = event.check;
+  if (!check) return null;
+  const skill = t(`skills.${check.skill}`);
+  if (check.dc === undefined)
+    return t("sessionReport.check", { skill, total: check.total });
+  return t(
+    check.total >= check.dc ? "sessionReport.checkPassed" : "sessionReport.checkFailed",
+    { skill, total: check.total, dc: check.dc }
+  );
+}
+
 export function localizePlayEvent(
   event: PlayEvent,
   t: TranslateFn,
@@ -87,6 +102,8 @@ export function localizePlayEvent(
           });
       const saves = savesClause(event, t, who);
       if (saves) return `${base} — ${saves}`;
+      const check = checkClause(event, t);
+      if (check) return `${base} — ${check}`;
       return event.outcome && OUTCOMES.has(event.outcome)
         ? `${base} — ${t(`sessionReport.outcome.${event.outcome}`)}`
         : base;
@@ -139,6 +156,18 @@ export function localizePlayEvent(
           ? "sessionReport.concentrationStart"
           : "sessionReport.concentrationEnd",
         { actor: who(event.actor), spell: names.spell(event.spell) }
+      );
+    case "concentration-save":
+      return t(
+        event.passed
+          ? "sessionReport.concentrationSaved"
+          : "sessionReport.concentrationFailed",
+        {
+          actor: who(event.actor),
+          spell: names.spell(event.spell),
+          total: event.total ?? "?",
+          dc: event.dc,
+        }
       );
     case "status":
       return t(
