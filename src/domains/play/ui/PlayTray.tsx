@@ -15,6 +15,7 @@ import {
   trayRubric,
   type TrayTarget,
 } from "@/components/shared/damage-tray-target";
+import { PlayAfterHit } from "@/domains/play/ui/PlayAfterHit";
 import { applyTray } from "@/features/character/center/apply-tray";
 import {
   useDamageTrayStore,
@@ -48,6 +49,7 @@ import {
   type TrayMultiplier,
   type TrayRow,
 } from "@/lib/play/damage-tray";
+import { localizeActions } from "@/lib/views/combat-action-view";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { sheetDamageRollPenalty } from "@/lib/play/damage-roll-penalty";
@@ -125,6 +127,10 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
   };
   const rubric = trayRubric(plan, t, locale);
   const update = (row: TrayRow) => setEdited((m) => new Map(m).set(row.targetId, row));
+  const doc = useCharacterStore((st) => st.character);
+  const hitAction = doc
+    ? localizeActions(doc, locale).find((a) => a.id === offer.actionId)
+    : undefined;
   return (
     <Dialog
       open
@@ -257,6 +263,11 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
           );
         })}
       </div>
+      {/* a hit: what it can add (BG3's «Choose how to react») */}
+      {hitAction &&
+        form.rows.some((r) => r.attack === "hit" || r.attack === "critical") && (
+          <PlayAfterHit action={hitAction} locale={locale} />
+        )}
     </Dialog>
   );
 }
