@@ -371,7 +371,7 @@ function InventoryPane({
       {coins.length > 0 && (
         <p className="f-coins">
           {coins.map((c) => (
-            <span key={c} className="f-coin" data-c={c}>
+            <span key={c} className="f-coin" data-coin={c}>
               <b>{view.coins[c]}</b> {t(`equipment.currencyAbbr.${c}`)}
             </span>
           ))}
