@@ -243,7 +243,7 @@ test("an evening with no fight started: the DM's Journal tells it as one inferre
     permissions: ["clipboard-read", "clipboard-write"],
   });
 
-  await test.step("the DM's Journal: one fight (Fight, no foes) with the blows, then the rest", async () => {
+  await test.step("the DM's Journal: one fight, marked inferred, with the blows, then the rest", async () => {
     // The players' lines reach the server on their own time: read again until they do.
     await expect(async () => {
       await dm.goto(`/campaigns/${SANDBOX_CAMPAIGN}`);
@@ -252,7 +252,13 @@ test("an evening with no fight started: the DM's Journal tells it as one inferre
         timeout: 30_000,
       });
       const blocks = await journalBlocks(dm);
+      // The same marker as the classic day report and the copied text (#1155):
+      // «Fight (inferred) · 1 round · 19:04–19:15».
       expectEvening(blocks, { isFight: (heading) => /^Fight\b/.test(heading) });
+      expect(
+        blocks.find((b) => /^Fight\b/.test(b.heading))?.heading,
+        "the Journal says the app worked the fight out"
+      ).toMatch(/^Fight \(inferred\) · /);
       // The rest is its own block, its line first.
       expect(blocks.find((b) => /^Rest\b/.test(b.heading))?.lines[0]).toBe(restLine());
     }).toPass({ timeout: 120_000, intervals: [2_000, 5_000, 10_000] });
