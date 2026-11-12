@@ -877,7 +877,9 @@
   .fui dialog.f-dlg {
     width: 100vw;
     max-width: 100vw;
-    inset: auto 0 0 0;
+    /* above the on-screen keyboard (--kb, set by the Dialog from the visual viewport) */
+    inset: auto 0 var(--kb, 0px) 0;
+    max-height: calc(100dvh - var(--kb, 0px) - 16px);
     margin: 0;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     border-bottom: 0;
@@ -6313,5 +6315,43 @@
   }
   .fui .f-act-gn::before {
     content: none;
+  }
+}
+
+/* Touch targets on a phone: at least 44 px (PRODUCT.md; Apple's HIG, WCAG 2.5.5). The
+   desktop keeps its 40 px controls; a finger gets the extra 4 px. */
+@media (max-width: 640px) {
+  .fui .f-btn,
+  .fui .f-in,
+  .fui .f-srch {
+    min-height: 44px;
+  }
+  /* a chip keeps its 40 px pill; its touch area grows 2 px above and below */
+  .fui .f-chip:is(button) {
+    position: relative;
+  }
+  .fui .f-chip:is(button)::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+  .fui .f-burger,
+  .fui .f-av,
+  .fui .f-tb-back,
+  .fui .f-close,
+  .fui .f-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+/* the toast sits above a bottom bar, never over it («Sezioni», the level-up bar) */
+@media (max-width: 960px) {
+  .fui.f-app:has(.f-secbar) .f-toast {
+    bottom: 72px;
+  }
+}
+@media (max-width: 760px) {
+  .fui.f-app:has(.f-lvl-bar) .f-toast {
+    bottom: 88px;
   }
 }
