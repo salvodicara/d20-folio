@@ -207,6 +207,11 @@ function completeState(): CombatState {
           action("dash-action", "action", LOC_TEXTS.srd, {
             economyCategory: "dash",
           }),
+          // A cast is the Magic action (#1140): it must survive the round trip, or the
+          // canonical check refuses the whole document.
+          action("spell-fireball", "action", LOC_TEXTS.srd, {
+            economyCategory: "magic",
+          }),
         ],
         bonus: [
           action("disengage-action", "bonus", LOC_TEXTS.lit, {
@@ -604,7 +609,11 @@ describe("combat-state IO — full persistence contract", () => {
     expect(restored.outcomeOrdinal).toBe(5);
     expect(
       economyClaimsForTurn(restored.selected.action, restored.attacksUsed, 2)
-    ).toEqual([{ category: "attack", attackCount: 2 }, { category: "dash" }]);
+    ).toEqual([
+      { category: "attack", attackCount: 2 },
+      { category: "dash" },
+      { category: "magic" },
+    ]);
 
     useCombatStore.getState().endCombat();
     syncCombatFromSession("char-2", 8, "18", turn, `${turn.key}:next-turn`, "en");

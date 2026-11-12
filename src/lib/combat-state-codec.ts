@@ -336,7 +336,9 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
             action.economyCategory === "dash" ||
             action.economyCategory === "disengage" ||
             action.economyCategory === "hide" ||
-            action.economyCategory === "utilize"
+            action.economyCategory === "utilize" ||
+            // A cast is the Magic action (#1140).
+            action.economyCategory === "magic"
               ? action.economyCategory
               : undefined;
           const triggerEvents = Array.isArray(action.triggerEvents)
