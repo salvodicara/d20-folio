@@ -32,6 +32,31 @@ export function Dialog({
     }
     if (!open && d.open) d.close();
   }, [open]);
+  // A phone's keyboard covers the bottom of the screen; the sheet rises above it (the
+  // pattern every mobile bottom sheet follows) and the field typed in scrolls into the
+  // part still visible. Read from the visual viewport (iOS and Android alike).
+  useEffect(() => {
+    const d = ref.current;
+    const vv = typeof window === "undefined" ? undefined : window.visualViewport;
+    if (!open || !d || !vv) return;
+    const fit = () => {
+      const covered = Math.max(
+        0,
+        Math.round(window.innerHeight - vv.height - vv.offsetTop)
+      );
+      d.style.setProperty("--kb", `${String(covered)}px`);
+      const field = document.activeElement;
+      if (covered > 0 && field instanceof HTMLElement && d.contains(field))
+        field.scrollIntoView({ block: "nearest" });
+    };
+    fit();
+    vv.addEventListener("resize", fit);
+    vv.addEventListener("scroll", fit);
+    return () => {
+      vv.removeEventListener("resize", fit);
+      vv.removeEventListener("scroll", fit);
+    };
+  }, [open]);
   // The actions bar draws its rule only while the body scrolls under it: a list that
   // fits closes on the panel, with no divider under its last row.
   const bd = useRef<HTMLDivElement>(null);
