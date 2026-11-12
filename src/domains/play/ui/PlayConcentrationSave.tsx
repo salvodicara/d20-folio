@@ -17,15 +17,28 @@ import {
   resolveCharacterConcentrationSave,
 } from "@/lib/character-d20-tests";
 import { bareActionSpend } from "@/lib/play/cast-payment";
-import { failedSaveReroll, rerollOffers } from "@/lib/play/roll-reactions";
+import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableResult } from "@/stores/undoStore";
+import type { FailedSaveReroll } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
 import { Button, Chip, Dialog } from "@/ui";
 import { usePostRollEntry, type PostRollCommit } from "./PostRollEntry";
+
+/** The reroll a picked offer makes of the failed save (as the classic banner reads it). */
+function failedSaveReroll(
+  offer: RerollOffer<{ id: string }> | null
+): FailedSaveReroll | undefined {
+  if (!offer) return undefined;
+  return {
+    sourceId: offer.action.id,
+    ...(offer.reaction.bonus ? { bonus: offer.reaction.bonus } : {}),
+    ...(offer.reaction.advantage ? { advantage: true as const } : {}),
+  };
+}
 
 export function PlayConcentrationSave({ doc }: { doc: CharacterDoc }) {
   const pending = useCharacterStore((s) => s.combatPendingConcentrationSaves[0]);

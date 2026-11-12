@@ -10,10 +10,12 @@ import {
   concentrationSaveD20Context,
   enteredD20FaceCount,
   resolveCharacterConcentrationSave,
+  type FailedSaveReroll,
 } from "@/lib/character-d20-tests";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { bareActionSpend } from "@/lib/play/cast-payment";
-import { failedSaveReroll, rerollOffers } from "@/lib/play/roll-reactions";
+import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
+import type { ResolvedAction } from "@/lib/smart-tracker";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { beginWholeStateUndo } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
@@ -39,6 +41,16 @@ export function ConcentrationSaveBanner() {
 }
 
 /** The kernel's reroll for a picked offer: its source, its bonus, its Advantage. */
+function rerollOf(
+  offer: RerollOffer<ResolvedAction> | null
+): FailedSaveReroll | undefined {
+  if (!offer) return undefined;
+  return {
+    sourceId: offer.action.id,
+    ...(offer.reaction.bonus ? { bonus: offer.reaction.bonus } : {}),
+    ...(offer.reaction.advantage ? { advantage: true as const } : {}),
+  };
+}
 
 function ConcentrationSavePrompt({
   character,
@@ -64,9 +76,9 @@ function ConcentrationSavePrompt({
     [character, locale]
   );
   const [rerollWith, setRerollWith] = useState<(typeof offers)[number] | null>(null);
-  const reroll = failedSaveReroll(rerollWith);
+  const reroll = rerollOf(rerollWith);
   const context = useMemo(
-    () => concentrationSaveD20Context(character, pending, failedSaveReroll(rerollWith)),
+    () => concentrationSaveD20Context(character, pending, rerollOf(rerollWith)),
     [character, pending, rerollWith]
   );
   const faceCount = enteredD20FaceCount(context);
