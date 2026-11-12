@@ -92,8 +92,8 @@ export function ItemEffectsFields({
             <Button
               variant="ghost"
               size="sm"
-              // A finger needs 44 px on a phone.
-              className="max-sm:min-h-11 max-sm:min-w-11"
+              // A finger reaches 44 px on a touch screen (the hit-slop in folio.css).
+              className="item-effect-remove"
               aria-label={`${t("common.remove")} ${title(id)}`}
               onClick={() => remove(id)}
             >
