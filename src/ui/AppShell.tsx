@@ -54,7 +54,8 @@ export function AppShell({
   /** Open the app's search (the header field, ⌘K). */
   onSearch: (query: string) => void;
   menuLabel: string;
-  account: {
+  /** The signed-in account; absent on a public page read before sign-in (/legal). */
+  account?: {
     label: string;
     initial: string;
     name: string;
@@ -119,15 +120,17 @@ export function AppShell({
           >
             <Icon name="u-menu" />
           </button>
-          <button
-            type="button"
-            className="f-av"
-            aria-label={account.label}
-            aria-haspopup="dialog"
-            onClick={() => setOpen("account")}
-          >
-            {account.initial}
-          </button>
+          {account && (
+            <button
+              type="button"
+              className="f-av"
+              aria-label={account.label}
+              aria-haspopup="dialog"
+              onClick={() => setOpen("account")}
+            >
+              {account.initial}
+            </button>
+          )}
         </div>
       </header>
       <PageBarSlot.Provider
@@ -156,34 +159,36 @@ export function AppShell({
         </nav>
         <div className="f-menu-srch">{search}</div>
       </Menu>
-      <Menu
-        open={open === "account"}
-        onClose={close}
-        title={
-          <>
-            <b>{account.name}</b>
-            {/* an account with no name shows its email once, as the name */}
-            {account.email && account.email !== account.name && (
-              <span className="f-menu-sub">{account.email}</span>
-            )}
-          </>
-        }
-      >
-        {account.actions.map((a) => (
-          <button
-            key={a.label}
-            type="button"
-            className="f-menu-it"
-            onClick={() => {
-              close();
-              a.onSelect();
-            }}
-          >
-            <Icon name={a.icon} />
-            {a.label}
-          </button>
-        ))}
-      </Menu>
+      {account && (
+        <Menu
+          open={open === "account"}
+          onClose={close}
+          title={
+            <>
+              <b>{account.name}</b>
+              {/* an account with no name shows its email once, as the name */}
+              {account.email && account.email !== account.name && (
+                <span className="f-menu-sub">{account.email}</span>
+              )}
+            </>
+          }
+        >
+          {account.actions.map((a) => (
+            <button
+              key={a.label}
+              type="button"
+              className="f-menu-it"
+              onClick={() => {
+                close();
+                a.onSelect();
+              }}
+            >
+              <Icon name={a.icon} />
+              {a.label}
+            </button>
+          ))}
+        </Menu>
+      )}
     </div>
   );
 }

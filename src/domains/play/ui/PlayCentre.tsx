@@ -6,6 +6,7 @@
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
 import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
+import { SaveOutcomeChips } from "@/features/character/center/SaveOutcomeChips";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
   checkEntriesFor,
@@ -23,6 +24,7 @@ import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
+import { PlaySituations } from "./PlaySituations";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import {
@@ -268,6 +270,7 @@ function ActionsPane({
   return (
     <>
       <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
+      <PlaySituations />
       <Filters label={t("play.filterLabel")}>
         {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
           <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
@@ -1049,6 +1052,9 @@ function ActionLine({
           }}
         />
       )}
+      {/* A save spell with nothing to apply (Command): each creature's save, the same
+          line-completion chips. */}
+      {!readonly && <SaveOutcomeChips actionId={row.action.id} />}
       {familiar && doc && (
         <Suspense fallback={null}>
           <FamiliarPicker

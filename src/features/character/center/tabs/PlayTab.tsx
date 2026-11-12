@@ -26,6 +26,7 @@
  */
 
 import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
+import { SaveOutcomeChips } from "@/features/character/center/SaveOutcomeChips";
 import {} from "@/lib/compute";
 import { conditionFactsFor } from "@/lib/condition-sources";
 import { useConditionEncounter } from "@/features/character/condition-encounter";
@@ -180,6 +181,8 @@ import {
   combatCtaState,
   usesGloss,
 } from "./combat-card-helpers";
+import { ForetoldChips } from "@/features/character/molecules/EnteredD20Faces";
+import { useForetoldFace } from "@/features/character/molecules/use-foretold-face";
 
 type FilterType = "pinned" | "all" | "action" | "bonus" | "reaction" | "free";
 
@@ -1638,7 +1641,12 @@ function CombatActionCard({
       }
       name={action.name}
       nameTerm={nameTerm}
-      followUp={<AttackOutcomeChips actionId={action.id} />}
+      followUp={
+        <>
+          <AttackOutcomeChips actionId={action.id} />
+          <SaveOutcomeChips actionId={action.id} />
+        </>
+      }
       slot={action.type}
       spellLevel={action.source === "spell" ? (action.spellLevel ?? 0) : undefined}
       cantripSealLabel={t("spells.cantripSeal")}
@@ -1866,6 +1874,8 @@ function HideCheckEntry({
 }) {
   const { t } = useTranslation();
   const [face, setFace] = useState(10);
+  // A recorded d20 (Portent) used as the roll, spent on Apply.
+  const foretold = useForetoldFace(useCharacterStore((st) => st.character));
   return (
     <div className="heal-roll-entry">
       <span className="heal-roll-label">
@@ -1873,7 +1883,10 @@ function HideCheckEntry({
       </span>
       <NumberStepper
         value={face}
-        onChange={setFace}
+        onChange={(n) => {
+          setFace(n);
+          foretold.drop();
+        }}
         min={1}
         max={20}
         digits={2}
@@ -1882,12 +1895,14 @@ function HideCheckEntry({
         decrementLabel={t("combat.healRollDec")}
         incrementLabel={t("combat.healRollInc")}
       />
+      <ForetoldChips foretold={foretold} onFace={setFace} />
       <Button
         variant="secondary"
         size="sm"
         onClick={(e) => {
           e.stopPropagation();
           onApply(face);
+          foretold.spend();
           setFace(10);
         }}
       >
@@ -1923,6 +1938,8 @@ function ActionCheckEntry({
   const [skill, setSkill] = useState(skills[0] ?? "");
   const [dc, setDc] = useState<number | undefined>(undefined);
   const [face, setFace] = useState(10);
+  // A recorded d20 (Portent) used as the roll, spent on Apply.
+  const foretold = useForetoldFace(useCharacterStore((st) => st.character));
   const [second, setSecond] = useState(10);
   const [paid, setPaid] = useState<string | null>(null);
   const bonus = bonusFor(skill);
@@ -1988,7 +2005,10 @@ function ActionCheckEntry({
       )}
       <NumberStepper
         value={face}
-        onChange={setFace}
+        onChange={(n) => {
+          setFace(n);
+          foretold.drop();
+        }}
         min={1}
         max={20}
         digits={2}
@@ -1997,6 +2017,7 @@ function ActionCheckEntry({
         decrementLabel={t("combat.healRollDec")}
         incrementLabel={t("combat.healRollInc")}
       />
+      <ForetoldChips foretold={foretold} onFace={setFace} />
       {paid && (
         <NumberStepper
           value={second}
@@ -2018,6 +2039,7 @@ function ActionCheckEntry({
           e.stopPropagation();
           if (paid) paidAdvantage?.onPay(paid);
           onApply({ skill, face: keptFace(face, second, paid !== null), bonus }, dc);
+          foretold.spend();
           setFace(10);
           setSecond(10);
           setPaid(null);
@@ -2045,6 +2067,8 @@ function EscapeCheckEntry({
 }) {
   const { t } = useTranslation();
   const [face, setFace] = useState(10);
+  // A recorded d20 (Portent) used as the roll, spent on Apply.
+  const foretold = useForetoldFace(useCharacterStore((st) => st.character));
   const [dc, setDc] = useState(13);
   return (
     <div className="heal-roll-entry">
@@ -2053,7 +2077,10 @@ function EscapeCheckEntry({
       </span>
       <NumberStepper
         value={face}
-        onChange={setFace}
+        onChange={(n) => {
+          setFace(n);
+          foretold.drop();
+        }}
         min={1}
         max={20}
         digits={2}
@@ -2062,6 +2089,7 @@ function EscapeCheckEntry({
         decrementLabel={t("combat.healRollDec")}
         incrementLabel={t("combat.healRollInc")}
       />
+      <ForetoldChips foretold={foretold} onFace={setFace} />
       <span className="text-[0.7rem] uppercase tracking-[0.06em] text-text-muted">
         {t("combat.escapeVsDc")}
       </span>
@@ -2082,6 +2110,7 @@ function EscapeCheckEntry({
         onClick={(e) => {
           e.stopPropagation();
           onApply(face, dc);
+          foretold.spend();
           setFace(10);
         }}
       >

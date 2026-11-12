@@ -81,4 +81,34 @@ describe("standingEffectsForTargets", () => {
       phase: "turn-end",
     });
   });
+
+  it("«until the end of your next turn» on your own turn is next round's, not this one's", () => {
+    // Vicious Mockery / Guiding Bolt cast on the caster's turn (round 2): the effect
+    // must outlive the creatures acting after the caster this round, so it ends at
+    // the end of the caster's turn in round 3, never the turn under way.
+    const [effect] = standingEffectsForTargets({
+      spec: spec({ concentration: false, turnBoundary: { phase: "turn-end", turns: 1 } }),
+      caster,
+      targets: [ally],
+      position,
+      newId,
+    });
+    expect(effect?.duration).toEqual({
+      kind: "turn-boundary",
+      combatantId: "pc-me",
+      round: 3,
+      phase: "turn-end",
+    });
+  });
+
+  it("off the caster's turn (a reaction) the next turn's end is this round's", () => {
+    const [effect] = standingEffectsForTargets({
+      spec: spec({ concentration: false, turnBoundary: { phase: "turn-end", turns: 1 } }),
+      caster,
+      targets: [ally],
+      position: { ...position, currentCombatantId: "m-1" },
+      newId,
+    });
+    expect(effect?.duration).toMatchObject({ combatantId: "pc-me", round: 3 });
+  });
 });

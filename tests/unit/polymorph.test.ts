@@ -18,6 +18,7 @@ import {
   polymorphPriorSnapshot,
   revertBuildFromPrior,
   isSelfFormSpell,
+  opensSelfFormPicker,
 } from "@/lib/polymorph";
 import { CREATURE_SIZE_ORDER, type AbilityCode } from "@/data/types";
 import { DAMAGE_TYPES } from "@/types/damage";
@@ -478,5 +479,14 @@ describe("edge-case Beast shapes render safely (flat damage / zero attacks)", ()
     expect(() => resolveActions(after)).not.toThrow();
     const rows = resolveActions(after);
     expect(rows.some((r) => r.id.startsWith("beast-attack-"))).toBe(false);
+  });
+});
+
+describe("the caster's form picker opens only for a cast on the caster", () => {
+  it("Polymorph on another creature asks no form for me; on me, or unnamed, it does", () => {
+    expect(opensSelfFormPicker("polymorph", ["m-goblin"], "pc-me")).toBe(false);
+    expect(opensSelfFormPicker("polymorph", ["pc-me"], "pc-me")).toBe(true);
+    expect(opensSelfFormPicker("polymorph", [], "pc-me")).toBe(true);
+    expect(opensSelfFormPicker("fireball", [], "pc-me")).toBe(false);
   });
 });

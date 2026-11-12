@@ -127,8 +127,14 @@ import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
 import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
 import { DamageTray } from "@/features/character/center/DamageTray";
-import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
+import {
+  damageTrayPlan,
+  rollsToHit,
+  saveAloneOnTheLine,
+  savesOnTheLine,
+} from "@/lib/play/damage-tray";
 import { useAttackOutcomeStore } from "./attack-outcome-store";
+import { useSaveOutcomeStore } from "./save-outcome-store";
 import { useLocale } from "@/hooks/useLocale";
 import {
   resolveTrackers,
@@ -241,7 +247,7 @@ import {
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
-import { isSelfFormSpell } from "@/lib/polymorph";
+import { opensSelfFormPicker } from "@/lib/polymorph";
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -894,6 +900,27 @@ export function TurnEconomyProvider({
 
   /** The steps of a use on the sheet and the turn, unsealed (the caller seals them);
    *  returns the use's log line id. */
+  // What a use does ends what its acts end: an attack roll or a Verbal spell ends a
+  // Hide, Invisibility ends on an attack, damage or a spell. Each condition an act
+  // took away (a Hide's or Invisibility's Invisible) is logged. Called inside the
+  // use's or the cast's own undo, BEFORE the use lights its own state (casting
+  // Invisibility must not end itself).
+  function endStatesOnActsOf(action: ResolvedAction): void {
+    for (const act of actsOfUse(action)) {
+      const held = (): string[] => {
+        const session = useCharacterStore.getState().character?.session;
+        return session ? effectiveSessionConditions(session) : [];
+      };
+      const before = held();
+      if (!useCharacterStore.getState().performAct(act)) continue;
+      const after = new Set(held());
+      for (const conditionId of before) {
+        if (after.has(conditionId)) continue;
+        useCharacterStore.getState().logEvent({ kind: "condition-loss", conditionId });
+      }
+    }
+  }
+
   function applyUse(
     action: ResolvedAction,
     trackerAmount?: number,
@@ -968,19 +995,7 @@ export function TurnEconomyProvider({
     // ends a Hide, a potion's Invisibility ends on an attack or a spell. Inside the
     // use's own undo, so undoing the use brings them back.
     // Each condition an act took away (a Hide's or Invisibility's Invisible) is logged.
-    for (const act of actsOfUse(action)) {
-      const held = (): string[] => {
-        const session = useCharacterStore.getState().character?.session;
-        return session ? effectiveSessionConditions(session) : [];
-      };
-      const before = held();
-      if (!useCharacterStore.getState().performAct(act)) continue;
-      const after = new Set(held());
-      for (const conditionId of before) {
-        if (after.has(conditionId)) continue;
-        useCharacterStore.getState().logEvent({ kind: "condition-loss", conditionId });
-      }
-    }
+    endStatesOnActsOf(action);
     // A STRUCTURED action-use line (no localized text): effect → glyph, slot → colour.
     const loggedId = cs.logEvent({
       kind: "action-use",
@@ -994,6 +1009,7 @@ export function TurnEconomyProvider({
     // An attack with no target in Folio asks its result on its own row (no modal):
     // the newest use takes the chips, anything else retires them.
     offerAttackOutcome(action, targets, loggedId);
+    offerSaveOutcome(action, targets, loggedId);
     offerFollowUps(action, targets, loggedId, occurrenceId);
     // A use that makes a form (Wild Shape) asks which one next.
     if (action.assumesForm) setFormPickerSpellId(action.assumesForm);
@@ -1017,6 +1033,37 @@ export function TurnEconomyProvider({
           dc: check.dc,
           verdict: t(succeeded ? "combatLog.checkSuccess" : "combatLog.checkFailure"),
         });
+  }
+
+  /** A save spell with nothing to apply (Command) asks each creature's save on the
+   *  row just used; any other use takes the chips away. */
+  function offerSaveOutcome(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>,
+    loggedId: string | null
+  ): void {
+    const store = useSaveOutcomeStore.getState();
+    const asked = loggedId ? savesOnTheLine(action, targets, selfCombatantId()) : [];
+    // Cast with nobody named (solo): its one save, and the damage when it deals some.
+    const alone =
+      loggedId && asked.length === 0 ? saveAloneOnTheLine(action, targets) : null;
+    if (loggedId && alone) {
+      store.offer({ logId: loggedId, actionId: action.id, targets: [], alone });
+      return;
+    }
+    if (!loggedId || asked.length === 0) {
+      store.clear();
+      return;
+    }
+    const rows = targetRoster().rows;
+    store.offer({
+      logId: loggedId,
+      actionId: action.id,
+      targets: asked.map((id) => ({
+        id,
+        name: rows.find((row) => row.id === id)?.name ?? id,
+      })),
+    });
   }
 
   /** Open the damage tray when the use has something to apply to its targets. */
@@ -1420,7 +1467,7 @@ export function TurnEconomyProvider({
     _slot: EconomySlot,
     opt: CastCommitOption,
     metamagicIds: ReadonlyArray<string> = [],
-    _ridesPip?: boolean,
+    ridesPip?: boolean,
     execution: ActionExecution = TURN_EXECUTION
   ) {
     const characterId = character?.id;
@@ -1435,6 +1482,16 @@ export function TurnEconomyProvider({
       !!liveSession &&
       castReadiesSpell(action, useCombatStore.getState().selected.action, liveSession);
     const heldAction = readies ? { ...action, concentration: true } : action;
+    // In a fight a cast spends the slot its casting time names, like any other row: an
+    // Action spell takes the Action (Quickened: the Bonus Action). Not a readied
+    // release (Ready took the Action), a ritual, or a cast riding an attack swing.
+    const economySlot = castEconomySlot(action.type, metamagicIds);
+    const occupiesSlot =
+      inEncounter() &&
+      !readies &&
+      !execution.ritual &&
+      !ridesPip &&
+      (economySlot === "action" || economySlot === "bonus");
     if (!canCommit() || !(await confirmConcentrationBreak(heldAction)) || !canCommit())
       return;
     const itemPayment = castItemPayment(action, opt);
@@ -1488,8 +1545,17 @@ export function TurnEconomyProvider({
         const resourceCommit = resourceCycle?.apply() ?? null;
         if (resourceCycle && !resourceCommit) return null;
         const cs = useCharacterStore.getState();
+        if (
+          occupiesSlot &&
+          !appendWithinActionRules(toSelectedAction(action, economySlot, opt))
+        ) {
+          seal?.()?.();
+          return null;
+        }
         const spends = castOptionSpends(opt, metamagicIds);
         paySpends(spends);
+        // Casting is an act: it ends a Hide (Verbal) and an Invisibility held now.
+        if (!readies) endStatesOnActsOf(castAction);
         applyActionConcentration(heldAction, opt.level);
         // A self buff establishes its standing state on cast (owner 2026-10-08: states
         // activate with one tap and expire by themselves); a readied spell has no effect
@@ -1526,6 +1592,7 @@ export function TurnEconomyProvider({
         }
         const undo = seal?.() ?? null;
         if (!readies) offerAttackOutcome(action, targets, loggedId);
+        if (!readies) offerSaveOutcome(action, targets, loggedId);
         if (!readies) offerFollowUps(action, targets, loggedId);
         if (!readies) offerDispel(action.spellId, opt.level, targets);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
@@ -1536,7 +1603,7 @@ export function TurnEconomyProvider({
           !readies &&
           !execution.ritual &&
           !!action.spellId &&
-          isSelfFormSpell(action.spellId);
+          opensSelfFormPicker(action.spellId, targets, selfCombatantId());
         if (picksForm) setFormPickerSpellId(action.spellId ?? null);
         // A priced material component: "−300 mo" when consumed, else a reminder.
         const materialToastId = execution.withoutComponents
@@ -1552,7 +1619,7 @@ export function TurnEconomyProvider({
           return true;
         };
       },
-      { turnScoped: false }
+      { turnScoped: occupiesSlot }
     );
     clearPendingResolution(action);
   }
@@ -2470,6 +2537,8 @@ export function TurnEconomyProvider({
           // name behind the `custom:` marker, never a bare SRD name.
           const castLevel =
             cast?.option.level ?? action.slotLevel ?? action.spellLevel ?? undefined;
+          // Casting is an act, a reaction spell too (Shield from hiding is Verbal).
+          endStatesOnActsOf(action);
           applyActionConcentration(action, castLevel);
           // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
           // its standing state on use.

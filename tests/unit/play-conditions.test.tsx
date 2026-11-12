@@ -30,6 +30,16 @@ function open(doc: CharacterDoc) {
   fireEvent.click(screen.getByRole("button", { name: /conditions/i }));
 }
 
+describe("Play conditions chip", () => {
+  it("one condition is named on the chip, its role still says «Conditions»", () => {
+    const doc = frightened();
+    useCharacterStore.setState({ character: doc, readonly: false });
+    render(<PlayConditions doc={doc} locale="en" />);
+    const chip = screen.getByRole("button", { name: /conditions/i });
+    expect(chip.textContent).toContain("Frightened");
+  });
+});
+
 describe("Play conditions panel", () => {
   beforeEach(() => {
     vi.restoreAllMocks();

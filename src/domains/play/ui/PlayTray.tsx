@@ -222,9 +222,12 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
               {...(form.totalInvalid
                 ? { error: t("play.trayTotalHint") }
                 : {
+                    // What to roll at the table (a potion's 2d4+2), when the use says.
                     help: plan.dieFloor
                       ? `${t("play.trayTotalHint")} · ${floorRule(plan.dieFloor, t)}`
-                      : t("play.trayTotalHint"),
+                      : plan.dice
+                        ? t("combat.damageTray.totalHintDice", { dice: plan.dice })
+                        : t("play.trayTotalHint"),
                   })}
               onChange={(e) => setTotal(e.target.value)}
               onKeyDown={(e) => {
@@ -452,6 +455,11 @@ function TrayTargetRow({
       )}
       {row.attack === "critical" && plan.effect === "damage" && (
         <p className="f-help">{t("combat.damageTray.critHint")}</p>
+      )}
+      {plan.failNotes && !row.saved && (
+        <p className="f-help" data-testid="play-tray-fail-note">
+          {plan.failNotes.join(" · ")}
+        </p>
       )}
       {plan.effect === "damage" && (
         <div

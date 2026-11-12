@@ -20,3 +20,5 @@ docs/architecture/*.html
 # The approved design prototype (generated pages; their exact markup is what was reviewed).
 docs/design/prototype/
 docs/design/copy/*.json
+# Written by pnpm rules:coverage, not committed.
+docs/RULES_COVERAGE_GENERATED.md

@@ -77,12 +77,16 @@ describe("dev scenarios — the class picks the level table gives are filled", (
 
 describe("classPickPool — the options «Scelte da completare» offers", () => {
   for (const [key, spec] of Object.entries(DEV_SCENARIOS)) {
-    it(`"${key}": the pool is the banner picker's list, in its order`, () => {
+    it(`"${key}": the pool is the banner picker's list`, () => {
       const { character } = buildScenario({ ...spec, owesClassPicks: true });
       for (const row of owedClassPickRows(character, "en")) {
-        expect(classPickPool(character, row.classId, row.pick)).toEqual(
-          row.options.map((o) => o.id)
-        );
+        const pool = classPickPool(character, row.classId, row.pick);
+        const shown = row.options.map((o) => o.id);
+        // A spell picker lists by level and the reader's names (each locale its own
+        // order); the pool is the same spells. Other picks keep the pool's order.
+        if (row.pick === "cantrips" || row.pick === "spellbook")
+          expect([...pool].sort()).toEqual([...shown].sort());
+        else expect(pool).toEqual(shown);
       }
     });
   }

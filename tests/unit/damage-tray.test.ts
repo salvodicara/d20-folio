@@ -17,6 +17,8 @@ import {
 import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import {
   damageTrayPlan,
+  saveAloneOnTheLine,
+  savesOnTheLine,
   initialTrayRow,
   parseRolledTotal,
   previewHp,
@@ -192,6 +194,36 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     if (!lay) throw new Error("no Lay on Hands");
     expect(combatResolutionSpec(lay).hasHealing).toBe(true);
     expect(damageTrayPlan(lay, [], ME)).toBeNull();
+  });
+
+  it("a save with nothing else to apply asks on the cast's line, never in a tray (Command)", () => {
+    expect(damageTrayPlan(action("spell-command"), [FOE], ME)).toBeNull();
+    expect(savesOnTheLine(action("spell-command"), [FOE, ME], ME)).toEqual([FOE]);
+    // Nobody else named: nothing to ask.
+    expect(savesOnTheLine(action("spell-command"), [], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-command"), [ME], ME)).toEqual([]);
+    // A save the tray already asks (Fireball, Hold Person), or no save at all.
+    expect(savesOnTheLine(action("spell-fireball"), [FOE], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-hold-person"), [FOE], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-magic-missile"), [FOE], ME)).toEqual([]);
+  });
+
+  it("a failed save's push rides the tray (Thunderwave)", () => {
+    const wave = plan(action("spell-thunderwave"));
+    expect(wave.failNotes).toEqual(["Pushed up to 10 ft away"]);
+    expect(plan(action("spell-fireball")).failNotes).toBeUndefined();
+  });
+
+  it("a save spell cast with nobody named asks its one save on the line (Vicious Mockery solo)", () => {
+    expect(saveAloneOnTheLine(action("spell-vicious-mockery"), [])).toEqual({
+      damage: true,
+    });
+    expect(saveAloneOnTheLine(action("spell-command"), [])).toEqual({ damage: false });
+    // Someone named: the tray or the per-creature line asks instead.
+    expect(saveAloneOnTheLine(action("spell-vicious-mockery"), [FOE])).toBeNull();
+    // Cast on oneself, or no save at all: nothing to ask.
+    expect(saveAloneOnTheLine(action("spell-command"), [ME])).toBeNull();
+    expect(saveAloneOnTheLine(action("spell-magic-missile"), [])).toBeNull();
   });
 
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
@@ -446,5 +478,27 @@ describe("one total per target when each target took its own share", () => {
 
   it("an area deals one roll to everyone in it: one shared total", () => {
     for (const a of areas) expect(plan(a, FOES).perTarget, a.id).toBeUndefined();
+  });
+});
+
+describe("the tray says what to roll", () => {
+  // The Potion of Healing (on 7 live sheets): «Roll 2d4+2 at the table», so the
+  // player never forgets the +2.
+  it("a healing potion's tray carries its formula", () => {
+    const rogue = makeCharacterDoc({
+      classes: [{ classId: "rogue", level: 3 }],
+      equipment: [{ srdId: "potion-of-healing", quantity: 1 }],
+    });
+    const potion = localizeActions(rogue, "en").find(
+      (a) => a.id === "item-potion-of-healing"
+    );
+    if (!potion) throw new Error("no potion row");
+    expect(damageTrayPlan(potion, [], ME)?.dice).toBe("2d4+2");
+  });
+
+  it("a damage spell's tray carries its dice", () => {
+    expect(plan(action("spell-fireball"), FOES).dice).toBe(
+      action("spell-fireball").summary.damage
+    );
   });
 });

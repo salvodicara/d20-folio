@@ -14,9 +14,11 @@ import { useNamedConditionEncounter } from "@/features/character/condition-encou
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
+import { extinguish, setOnFire, type Extinguish } from "@/lib/play/environment";
 import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
-import type { CharacterDoc } from "@/types/character";
+import { registerUndoableResult } from "@/stores/undoStore";
+import type { CharacterDoc, SessionState } from "@/types/character";
 import { Button, Chip, Panel, Stepper } from "@/ui";
 
 export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
@@ -46,7 +48,7 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
     };
   }, [open]);
   const view = conditionsPanelView(doc, locale, encounter);
-  if (readonly && view.count === 0) return null;
+  if (readonly && view.count === 0 && !doc.session.burning) return null;
   const store = () => useCharacterStore.getState();
   // Exhaustion changed by hand writes its report line («Indebolimento 1 → 2»).
   const setExhaustion = (level: number) => {
@@ -55,6 +57,51 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
       () => store().setExhaustion(level),
       () => store().setExhaustion(was)
     );
+  };
+  // Burning (SRD 5.2.1): set by hand, put out by rolling on the ground (the Action,
+  // then Prone) or from outside; each with its undo.
+  const burning = Boolean(doc.session.burning);
+  // The whole session is replaced (a merge could not take `burning` away).
+  const replaceSession = (next: SessionState) =>
+    useCharacterStore.setState((st) =>
+      st.readonly || !st.character
+        ? st
+        : { character: { ...st.character, session: next } }
+    );
+  const withUndo = (next: SessionState, message: string) => {
+    const before = store().character?.session;
+    if (!before) return;
+    const apply = () => replaceSession(next);
+    apply();
+    registerUndoableResult(
+      { message },
+      () => {
+        replaceSession(before);
+        return true;
+      },
+      apply
+    );
+  };
+  // Holding breath and choking (SRD 5.2.1 Suffocation) are the engine's sheet events:
+  // each End Turn counts the air down (`breath-turn-end`); breathing again takes back
+  // the Exhaustion it gave.
+  const breath = doc.session.breath;
+  const breathEvent = (
+    event: { kind: "hold-breath"; choking?: boolean } | { kind: "breathe-again" },
+    label: string
+  ) => {
+    const undo = store().dispatch(event);
+    if (undo)
+      registerUndoableResult({ message: t(label) }, undo, () => store().dispatch(event));
+  };
+  const catchFire = () => {
+    const next = setOnFire(doc);
+    if (next) withUndo(next, t("play.fire.caught"));
+  };
+  const putOut = (how: Extinguish) => {
+    const out = extinguish(doc, how);
+    if (!out) return;
+    withUndo(out.session, t(how === "roll" ? "play.fire.rolled" : "play.fire.putOut"));
   };
   const add = (id: string, sourceId?: string) => {
     if (id === "exhaustion") setExhaustion(1);
@@ -65,11 +112,30 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
   const pick = (id: string) =>
     asksSource(id) && view.sources.length > 0 ? setPending(id) : add(id);
   const name = (id: string) => localizeSrd("condition", id, "name", locale);
+  const total = view.count + (doc.session.burning ? 1 : 0);
+  const single =
+    total !== 1
+      ? null
+      : doc.session.burning
+        ? t("play.fire.name")
+        : view.rows.length === 1
+          ? (view.rows[0]?.name ?? null)
+          : null;
   return (
     <div className="f-condwrap" ref={ref}>
-      <Chip kind="cond" pressed={open} onClick={() => setOpen((o) => !o)}>
-        {`⚠ ${t("combat.effectReview.conditions")}`}
-        {view.count > 0 && <span className="f-chip-n">{view.count}</span>}
+      <Chip
+        kind="cond"
+        pressed={open}
+        ariaLabel={
+          single ? `${t("combat.effectReview.conditions")}: ${single}` : undefined
+        }
+        onClick={() => setOpen((o) => !o)}
+      >
+        {/* one state is named on the chip (D&D Beyond's conditions bar): the player sees
+            «Spaventato» or «In fiamme» without opening anything; more show their count.
+            Burning counts as one more state on the character. */}
+        {`⚠ ${single ?? t("combat.effectReview.conditions")}`}
+        {!single && total > 0 && <span className="f-chip-n">{total}</span>}
       </Chip>
       {open && (
         <div
@@ -147,6 +213,78 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
                 )}
               </div>
             ))}
+            {burning && (
+              <div className="f-cond-row" data-fire="">
+                <div className="f-cond-main">
+                  <span className="f-row-t">{t("play.fire.name")}</span>
+                  <span className="f-row-s">{t("play.fire.note", { dice: "1d4" })}</span>
+                  {!readonly && (
+                    <div className="f-chips">
+                      <Chip onClick={() => putOut("roll")}>{t("play.fire.roll")}</Chip>
+                      <Chip onClick={() => putOut("doused")}>{t("play.fire.out")}</Chip>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {breath && (
+              <div className="f-cond-row">
+                <div className="f-cond-main">
+                  <span className="f-row-t">
+                    {t(breath.choking ? "play.breath.choking" : "play.breath.name")}
+                  </span>
+                  <span className="f-row-s">
+                    {breath.roundsLeft > 0
+                      ? t("play.breath.left", { count: breath.roundsLeft })
+                      : t("play.breath.out")}
+                  </span>
+                </div>
+                {!readonly && (
+                  <Button
+                    onClick={() =>
+                      breathEvent({ kind: "breathe-again" }, "play.breath.again")
+                    }
+                  >
+                    {t("play.breath.again")}
+                  </Button>
+                )}
+              </div>
+            )}
+            {!readonly && (!burning || !breath) && (
+              <div className="f-ask">
+                <span className="f-lbl">{t("play.fire.situations")}</span>
+                <div className="f-chips">
+                  {!burning && (
+                    <Chip pressed={false} onClick={catchFire}>
+                      {t("play.fire.name")}
+                    </Chip>
+                  )}
+                  {!breath && (
+                    <Chip
+                      pressed={false}
+                      onClick={() =>
+                        breathEvent({ kind: "hold-breath" }, "play.breath.name")
+                      }
+                    >
+                      {t("play.breath.name")}
+                    </Chip>
+                  )}
+                  {!breath && (
+                    <Chip
+                      pressed={false}
+                      onClick={() =>
+                        breathEvent(
+                          { kind: "hold-breath", choking: true },
+                          "play.breath.choking"
+                        )
+                      }
+                    >
+                      {t("play.breath.choking")}
+                    </Chip>
+                  )}
+                </div>
+              </div>
+            )}
             {!readonly &&
               (pending ? (
                 <div className="f-cond-add">

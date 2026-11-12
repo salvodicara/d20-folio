@@ -16,6 +16,7 @@ import { activityFromSpell } from "@/lib/activities";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
 import {
   targetStepFor,
+  withSelfRecipient,
   type TargetRoster,
 } from "@/features/character/center/target-step";
 import { makeCharacterDoc } from "./_helpers";
@@ -225,5 +226,76 @@ describe("out of a fight: the party («Il gruppo»)", () => {
 
   it("in a fight the groups stay allies and enemies", () => {
     expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
+  });
+
+  it("Calm Emotions reaches every Humanoid in its sphere, friend or foe", () => {
+    expect(combatResolutionSpec(spellAction("calm-emotions"))).toMatchObject({
+      targetAffinity: "any",
+      targetCreatureTypes: ["humanoid"],
+      targetCap: Infinity,
+    });
+  });
+
+  it("Charm Person, Hold Person and Dominate Person offer only Humanoids; an unknown type stays", () => {
+    const typed: TargetRoster = {
+      ...FIGHT,
+      rows: [
+        ...FIGHT.rows.filter((row) => row.kind === "pc"),
+        {
+          id: "m-gob1",
+          kind: "monster",
+          side: "enemy",
+          name: "Goblin",
+          creatureType: "humanoid",
+        },
+        {
+          id: "m-zomb",
+          kind: "monster",
+          side: "enemy",
+          name: "Zombie",
+          creatureType: "undead",
+        },
+        { id: "m-odd", kind: "monster", side: "enemy", name: "Shade" },
+      ],
+    };
+    for (const id of ["charm-person", "hold-person", "dominate-person"]) {
+      expect(ids(spellAction(id), typed), id).toEqual(["m-gob1", "m-odd"]);
+    }
+    // A spell with no type limit still offers the Zombie.
+    expect(ids(spellAction("command"), typed)).toContain("m-zomb");
+    // Calm Emotions: every Humanoid, friend or foe; never the Zombie.
+    const calm = ids(spellAction("calm-emotions"), typed) ?? [];
+    expect(calm).toContain("m-gob1");
+    expect(calm).toContain("pc-bren");
+    expect(calm).not.toContain("m-zomb");
+  });
+});
+
+describe("withSelfRecipient: Invisibility's state belongs to its target", () => {
+  // "The spell ends early immediately after the target makes an attack roll, deals
+  // damage, or casts a spell": cast on an ally, the caster holds no Invisibility of
+  // their own, so the caster's attack can't end it.
+  it("cast on an ally, the caster lights no state", () => {
+    const cast = withSelfRecipient(spellAction("invisibility"), ["pc-bren"], "pc-me");
+    expect(cast.activatesKey).toBeUndefined();
+  });
+
+  it("cast on myself, the state is mine", () => {
+    const cast = withSelfRecipient(spellAction("invisibility"), ["pc-me"], "pc-me");
+    expect(cast.activatesKey).toBe("spell-invisibility");
+  });
+
+  it("a state that does not end on its holder's acts stays the caster's (Bless)", () => {
+    const bless = spellAction("bless");
+    expect(withSelfRecipient(bless, ["pc-bren"], "pc-me").activatesKey).toBe(
+      bless.activatesKey
+    );
+  });
+});
+
+describe("Faerie Fire: each creature in the cube", () => {
+  it("offers enemies, allies and me", () => {
+    const offered = ids(spellAction("faerie-fire"), FIGHT) ?? [];
+    expect(offered).toEqual(expect.arrayContaining(["m-gob1", "pc-bren", "pc-me"]));
   });
 });

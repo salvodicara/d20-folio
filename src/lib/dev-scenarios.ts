@@ -546,6 +546,22 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "heal-bonus (Disciple of Life): a healing spell's verdict gains +2 + spell level. S11b: Divine Spark heal-or-damage (1d8+WIS, both chips) + Sear Undead (WIS-many d8 Radiant).",
   },
+  "command-cleric": {
+    name: "Mirovel, Command",
+    raceId: "human",
+    classId: "cleric",
+    level: 5,
+    background: "acolyte",
+    abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 10, WIS: 18, CHA: 12 },
+    spells: [
+      { srdId: "sacred-flame" },
+      { srdId: "command", prepared: true },
+      { srdId: "calm-emotions", prepared: true },
+      { srdId: "hold-person", prepared: true },
+    ],
+    exercises:
+      "A save spell with nothing to apply (Command, Calm Emotions) asks each creature's save on the row just used; Hold Person keeps its tray.",
+  },
   "material-cost": {
     name: "Ilse, Grave Tender",
     raceId: "human",
@@ -647,6 +663,50 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     activeFeatures: ["boots-of-speed"],
     exercises:
       "S13 effective Speed: Boots of Speed ×2 (G12) − heavy-armor Strength penalty (G11) reaches the Speed vital; unproficient-armor Disadvantage (G13) shows in the combat adv/dis list.",
+  },
+  "wizard-book-short": {
+    // A Wizard 5 built before the spellbook (2026-11-12): its list holds the nine
+    // spells the old level-ups asked for, five short of the book's fourteen, so
+    // «Scelte da completare» owes the gap. Visit `/characters/scn-wizard-book-short`.
+    name: "Odo, the Thin-Booked",
+    raceId: "human",
+    classId: "wizard",
+    level: 5,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
+    spells: [
+      ...["fire-bolt", "light", "mage-hand", "ray-of-frost"].map((srdId) => ({
+        srdId,
+        prepared: true,
+      })),
+      ...[
+        "magic-missile",
+        "shield",
+        "mage-armor",
+        "sleep",
+        "detect-magic",
+        "misty-step",
+        "web",
+        "fireball",
+        "counterspell",
+      ].map((srdId) => ({ srdId, prepared: true })),
+    ],
+    owesClassPicks: true,
+    exercises:
+      "The Wizard's spellbook: «Scelte da completare» owes 5 book spells (levels 1–3), landing unprepared; the level-up to 6 asks 2 for the book, not the prepared count.",
+  },
+  "high-elf-rest": {
+    // A High Elf fighter: after a Long Rest the lineage's Prestidigitation may become
+    // another Wizard cantrip. Visit `/characters/scn-high-elf-rest` and take a Long Rest.
+    name: "Aelar, the Restless",
+    raceId: "elf",
+    classId: "fighter",
+    level: 3,
+    background: "soldier",
+    abilityScores: { STR: 15, DEX: 14, CON: 13, INT: 12, WIS: 10, CHA: 8 },
+    grantBundleChoices: { "elf-lineage": "high-elf" },
+    exercises:
+      "High Elf: the Long Rest offers to replace the lineage cantrip (Prestidigitation) with another Wizard cantrip.",
   },
   "xray-ring": {
     // The Ring of X-ray Vision worn and attuned: its Magic action lights 1 minute

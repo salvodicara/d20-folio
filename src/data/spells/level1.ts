@@ -163,7 +163,12 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       on: "failed-save",
       lifetime: timedConditionLifetime(60),
     },
-    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    targeting: {
+      affinity: "enemy",
+      creatureTypes: ["humanoid"],
+      maxTargets: 1,
+      maxTargetsPerUpcast: 1,
+    },
     source: "SRD",
   },
   {
@@ -410,7 +415,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     effectTag: "advantage",
     saveAbility: "DEX",
     area: true,
-    targeting: { affinity: "enemy" },
+    // "Each creature in a 20-foot Cube": friend or foe, the caster included.
+    targeting: { affinity: "any" },
     grants: [
       {
         type: "while-active",
@@ -1140,6 +1146,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     saveAbility: "CON",
     damageOnSave: "half",
     area: true,
+    // "On a failed save, a creature ... is pushed 10 feet away from you."
+    effects: [{ kind: "forced-movement", direction: "push", feet: 10 }],
     source: "SRD",
   },
   {

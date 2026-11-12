@@ -56,7 +56,8 @@ describe("applyTurnStartOffer", () => {
 
   it("heals the open sheet by the offer, and the undo takes it back", () => {
     const [offer] = turnStartNotes(champion(40), { round: 2 });
-    if (!offer || offer.kind === "death-strike") throw new Error("no offer");
+    if (!offer || (offer.kind !== "heal" && offer.kind !== "temp-hp"))
+      throw new Error("no offer");
     expect(applyTurnStartOffer(offer, t)).toBe(true);
     expect(useCharacterStore.getState().character?.session.hp.current).toBe(47);
     useUndoStore.getState().undo();

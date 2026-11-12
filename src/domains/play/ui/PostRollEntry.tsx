@@ -20,11 +20,15 @@ import { bareActionSpend } from "@/lib/play/cast-payment";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import type { CharacterDoc } from "@/types/character";
 import { Chip, Field, Icon } from "@/ui";
+import { recordedD20Faces } from "@/lib/play/tracker-rolls";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
 
 export interface PostRollCommit {
   faces: number[];
   use: PostRollUse;
   spend?: { trackerId: string; amount: number };
+  /** A recorded d20 used as the roll (Portent): the caller spends exactly this one. */
+  foretold?: { trackerId: string; index: number };
 }
 
 const inRange = (text: string, max: number) =>
@@ -46,6 +50,12 @@ export function usePostRollEntry(
   const [dieFace, setDieFace] = useState("");
   const [withDie, setWithDie] = useState(false);
   const [advantage, setAdvantage] = useState<string | null>(null);
+  // A recorded d20 put in place of the roll (Portent: «replace that roll with one of
+  // your foretelling rolls»); typing another face drops it.
+  const [foretold, setForetold] = useState<{ trackerId: string; index: number } | null>(
+    null
+  );
+  const recorded = recordedD20Faces(doc);
   const actions = useMemo(() => localizeActions(doc, locale), [doc, locale]);
   const sources = postRollSources(doc, actions);
   const die = doc.session.bardicInspirationDie ?? "";
@@ -64,6 +74,7 @@ export function usePostRollEntry(
     setDieFace("");
     setWithDie(false);
     setAdvantage(null);
+    setForetold(null);
   };
 
   const entry = (): PostRollCommit => {
@@ -84,6 +95,7 @@ export function usePostRollEntry(
       ...(spend?.kind === "tracker"
         ? { spend: { trackerId: spend.trackerId, amount: spend.amount } }
         : {}),
+      ...(foretold && !twoFaces ? { foretold } : {}),
     };
   };
 
@@ -131,8 +143,35 @@ export function usePostRollEntry(
         className="f-in f-in-big f-in-short"
         value={first}
         {...(labels.hint && !twoFaces ? { help: labels.hint } : {})}
-        onChange={(e) => setFirst(e.target.value)}
+        onChange={(e) => {
+          setFirst(e.target.value);
+          setForetold(null);
+        }}
       />
+      {!twoFaces && recorded.length > 0 && (
+        <div className="f-ask">
+          <span className="f-lbl">{t("play.down.foretold")}</span>
+          <div className="f-chips" role="group" aria-label={t("play.down.foretold")}>
+            {recorded.map((r) => {
+              const on =
+                foretold?.trackerId === r.trackerId && foretold.index === r.index;
+              return (
+                <Chip
+                  key={`${r.trackerId}:${String(r.index)}`}
+                  pressed={on}
+                  onClick={() => {
+                    setFirst(String(r.face));
+                    setForetold(on ? null : { trackerId: r.trackerId, index: r.index });
+                  }}
+                >
+                  {on && pressedMark}
+                  {`${grantSourceLabel(r.trackerId, locale)} ${String(r.face)}`}
+                </Chip>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {twoFaces && (
         <Field
           label={t("combat.d20SecondAria")}

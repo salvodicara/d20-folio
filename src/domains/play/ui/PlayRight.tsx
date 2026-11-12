@@ -260,7 +260,9 @@ function Report({
       ),
     [campaign.memberDetails]
   );
-  if (blocks.length === 0) return null;
+  // the table has logged nothing yet: the character's own report still shows (a
+  // campaign sheet never has an empty right column)
+  if (blocks.length === 0) return <OwnReport locale={locale} onToast={onToast} />;
   const copy = () => {
     const text = renderSessionReport(sections, campaign.name, t, names, {
       notes: latest?.notes,

@@ -111,3 +111,6 @@ artifacts/visual-review/
 /.pack-out
 # The per-worktree pack worktrees bootstrap-worktree.sh creates (private content).
 /.pack-wt
+
+# Written on demand by pnpm rules:coverage; never committed (PRs would collide on its counts).
+docs/RULES_COVERAGE_GENERATED.md

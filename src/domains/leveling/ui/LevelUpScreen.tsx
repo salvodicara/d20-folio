@@ -50,6 +50,7 @@ import {
   restoreCharacterSnapshot,
   saveCharacterSnapshot,
 } from "@/lib/firestore";
+import { recordLevelUp } from "@/domains/leveling/level-up-line";
 import { commitLevelUp } from "@/lib/level-up-commit";
 import { HIT_DIE_AVG } from "@/lib/level-up-plan";
 import type { Locale } from "@/lib/locale";
@@ -151,11 +152,18 @@ export function LevelUpScreen({
         after.session,
         doc.revision
       );
+      // The level-up's line in the log, and through it the campaign's session.
+      const takeLineBack = recordLevelUp({
+        from: plan.newLevel - 1,
+        to: plan.newLevel,
+        classId,
+      });
       onClose();
       useToastStore.getState().showToast({
         message: t("levelUp.screen.done", { name: c.name, level: plan.newLevel }),
         duration: 8000,
         onUndo: () => {
+          takeLineBack();
           setCharacter(before);
           void restoreCharacterSnapshot(
             uid,
@@ -497,6 +505,7 @@ function Question({
           </span>
         )}
       </h2>
+      {row.help && <p className="f-help">{row.help}</p>}
       <PickGrid
         label={row.title}
         options={row.options}

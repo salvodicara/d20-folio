@@ -38,7 +38,7 @@
           "title": "Fiancheggiamento",
           "why": "Due alleati ai lati opposti di un nemico. Nel 2024 è una regola opzionale.",
           "choices": {
-            "off": "Spento",
+            "off": "Non si usa",
             "plus-2": "+2 al tiro"
           }
         },

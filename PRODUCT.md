@@ -30,8 +30,9 @@ it is. Decisions behind this: `docs/strategy/2026-10-16-product-brief.md`.
 needs the owner's yes): magical, premium, confident, legible. Dark stone, gold leaf, and one type
 family as Baldur's Gate 3 (owner, 2026-11-08): Alegreya for titles, names and every reading line
 (names and buttons at 500), Alegreya SC for label capitals and panel titles, never below 14px. One lit action per screen: End Turn on Play, in the turn's cyan "now" light (the colour
-of the current initiative row). One colour per action type: Action ember, Bonus teal, Reaction
-violet, Movement green. The only ornament is **Lume** (owner, 2026-11-03): one faint gold hairline,
+of the current initiative row). One colour and shape per action type, as Baldur's Gate 3 marks
+them: Action a green circle, Bonus an orange triangle, Reaction a violet diamond, Movement a
+yellow bar. The only ornament is **Lume** (owner, 2026-11-03): one faint gold hairline,
 a lit top edge that fades at both ends, a warm light from above and a soft vignette below, the same
 on the hero, every panel and every dialog; a panel's colour is its header's light, at low
 intensity; no corners, no filigree; no painting behind text; a round portrait medallion; every number opens its

@@ -260,6 +260,21 @@ afterEach(() => {
 });
 
 describe("restThroughWorld: short rest", () => {
+  // Rehearsal draft, 2026-11-12: the rest line said «+7 PF» but never the Hit Dice the
+  // player spent, because the dice are spent after the rest. They come in with the heal.
+  it("the rest line says the Hit Points healed and the Hit Dice spent", () => {
+    const doc = makeCharacterDoc(
+      { classId: "monk", level: 5, features: [{ srdId: "monk-focus" }] },
+      { hp: { current: 10, temp: 0 }, trackers: { "monk-focus": { used: 2 } } }
+    );
+    armed(doc);
+    expect(restThroughWorld("short", { healedHp: 7, hitDiceSpent: 2 })).toBe("engine");
+    const rest = liveDoc()
+      .session.logEntries.map((entry) => entry.event)
+      .find((event) => event.kind === "rest");
+    expect(rest).toMatchObject({ kind: "rest", hpRegained: 7, hitDiceSpent: 2 });
+  });
+
   it("recovers short-rest pools exactly, leaves long-rest pools and hp alone, and mirrors", () => {
     const doc = makeCharacterDoc(
       {

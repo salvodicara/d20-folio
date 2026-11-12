@@ -4,7 +4,9 @@
  * which spell and the DC, with how many more wait; «Tira il dado» asks the d20 the
  * player rolled at the table (both d20s when the sheet rolls it with Advantage or
  * Disadvantage), plus what they add after the roll (`usePostRollEntry`). Applied through
- * the sheet's one path (`commitPendingConcentrationSave`), with its undo.
+ * the sheet's one path (`commitPendingConcentrationSave`), with its undo. A failed roll
+ * offers the sheet's reroll, and, while the Reaction is free, a Reaction spell that
+ * turns the failed d20 into a 20 (`failedD20Savers`, the classic banner's offer).
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,11 +18,20 @@ import {
   enteredD20FaceCount,
   resolveCharacterConcentrationSave,
 } from "@/lib/character-d20-tests";
+import { homebrewText } from "@/lib/views/homebrew-text-view";
+import type { Locale } from "@/lib/locale";
 import { bareActionSpend } from "@/lib/play/cast-payment";
-import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
+import { failedD20Savers, type FailedD20Saver } from "@/lib/play/failed-d20";
+import {
+  HEROIC_INSPIRATION_REROLL_ID,
+  heroicInspirationReroll,
+  rerollOffers,
+  type RerollOffer,
+} from "@/lib/play/roll-reactions";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { registerUndoableResult } from "@/stores/undoStore";
 import type { FailedSaveReroll } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
@@ -38,6 +49,13 @@ function failedSaveReroll(
     ...(offer.reaction.bonus ? { bonus: offer.reaction.bonus } : {}),
     ...(offer.reaction.advantage ? { advantage: true as const } : {}),
   };
+}
+
+/** The saver spell's name: a homebrew spell's own, a catalogue spell's localized. */
+function saverName(saver: FailedD20Saver, locale: Locale): string {
+  return saver.customName
+    ? homebrewText(saver.customName, locale)
+    : concentrationLabel(saver.spellId, locale);
 }
 
 export function PlayConcentrationSave({ doc }: { doc: CharacterDoc }) {
@@ -70,7 +88,12 @@ function Prompt({
       }).filter(({ action }) => (action.summary.uses?.current ?? 1) > 0),
     [doc, locale]
   );
-  const [rerollWith, setRerollWith] = useState<(typeof offers)[number] | null>(null);
+  // Heroic Inspiration rerolls a die just rolled too: offered with the uses above.
+  const heroic = heroicInspirationReroll(doc, t("character.heroicInspiration"));
+  const choices: Array<RerollOffer<{ id: string; name: string }>> = heroic
+    ? [...offers, heroic]
+    : offers;
+  const [rerollWith, setRerollWith] = useState<(typeof choices)[number] | null>(null);
   const reroll = failedSaveReroll(rerollWith);
   const context = useMemo(
     () => concentrationSaveD20Context(doc, pending, reroll),
@@ -91,19 +114,29 @@ function Prompt({
     (faces, use) =>
       resolveCharacterConcentrationSave(doc, pending, faces, [], reroll, use)
   );
-  // Whether the roll entered now fails: then the sheet's reroll is offered.
-  const failsNow = (() => {
-    if (rerollWith || offers.length === 0 || !roll.valid) return false;
+  // The roll entered, when it fails: then the sheet's reroll is offered, and the
+  // Reaction spell that turns the d20 into a face while the Reaction is free.
+  const failed = (() => {
+    if (rerollWith || !roll.valid) return null;
     try {
       const e = roll.entry();
-      return (
-        resolveCharacterConcentrationSave(doc, pending, e.faces, [], undefined, e.use)
-          .reviewedOutcome.status === "failure"
-      );
+      return resolveCharacterConcentrationSave(
+        doc,
+        pending,
+        e.faces,
+        [],
+        undefined,
+        e.use
+      ).reviewedOutcome.status === "failure"
+        ? e
+        : null;
     } catch {
-      return false;
+      return null;
     }
   })();
+  const failsNow = failed !== null && choices.length > 0;
+  const reactionFree = useCombatStore((s) => !s.reactionUsed);
+  const saver = failed && reactionFree ? (failedD20Savers(doc)[0] ?? null) : null;
   const spell = concentrationLabel(pending.spell, locale);
   const close = () => {
     roll.reset();
@@ -125,13 +158,53 @@ function Prompt({
         entry.spend
       );
     if (!committed) return;
+    // A recorded d20 used as the roll (Portent) is spent with it, in the same undo.
+    const unspend = entry.foretold
+      ? useCharacterStore
+          .getState()
+          .spendTrackerRoll(entry.foretold.trackerId, entry.foretold.index)
+      : null;
     const message = t(
       committed.result.reviewedOutcome.status === "success"
         ? "combat.concentrationSaveSuccessToast"
         : "combat.concentrationSaveFailureToast",
       { total: committed.result.total }
     );
-    registerUndoableResult({ message }, committed.undo, () => apply(entry));
+    registerUndoableResult(
+      { message },
+      () => {
+        unspend?.();
+        return committed.undo();
+      },
+      () => apply(entry)
+    );
+  };
+  /** Cast the saver as a Reaction: its slot and the Reaction are spent, the d20 counts
+   *  as its face, and one undo takes all of it back (the classic banner). */
+  const castSaver = (as: FailedD20Saver, faces: number[]) => {
+    const store = useCharacterStore.getState();
+    const seal = beginWholeStateUndo();
+    store.dispatch({ kind: "spend-slot", level: as.slotLevel, pactMagic: false });
+    const reacted = useCombatStore.getState().useReaction(`spell-${as.spellId}`);
+    const committed = store.commitPendingConcentrationSave(
+      pending,
+      faces.map(() => as.face)
+    );
+    const restore = seal?.() ?? null;
+    const undo = () => {
+      const ok = restore ? restore() : false;
+      if (reacted) useCombatStore.getState().resetReaction();
+      return ok;
+    };
+    if (!committed) {
+      undo();
+      return;
+    }
+    const message = t("combat.failedD20UsedToast", {
+      spell: saverName(as, locale),
+      total: committed.result.total,
+    });
+    registerUndoableResult({ message }, undo, () => castSaver(as, faces));
   };
   // The reroll's use is spent with the save it decides, in one undo (the classic banner).
   const applyReroll = (
@@ -140,12 +213,14 @@ function Prompt({
     as: NonNullable<typeof reroll>
   ) => {
     const store = useCharacterStore.getState();
-    const spend = bareActionSpend(
-      store.character?.character.spellSlots ?? [],
-      offer.action
-    );
+    const used = offers.find((o) => o.action.id === offer.action.id)?.action;
+    const spend = used
+      ? bareActionSpend(store.character?.character.spellSlots ?? [], used)
+      : null;
     const seal = beginWholeStateUndo();
-    if (spend?.kind === "tracker")
+    if (offer.action.id === HEROIC_INSPIRATION_REROLL_ID)
+      store.setHeroicInspiration(false);
+    else if (spend?.kind === "tracker")
       store.dispatch({
         kind: "spend-tracker",
         trackerId: spend.trackerId,
@@ -225,9 +300,25 @@ function Prompt({
           )}
           {mode && <p className="f-quiet">{t(`combat.rollMode.${mode}`)}</p>}
           {roll.fields}
+          {saver && failed && (
+            <div className="f-acts">
+              <Button
+                kind="primary"
+                onClick={() => {
+                  castSaver(saver, failed.faces);
+                  close();
+                }}
+              >
+                {t("combat.failedD20Use", {
+                  spell: saverName(saver, locale),
+                  face: saver.face,
+                })}
+              </Button>
+            </div>
+          )}
           {failsNow && (
             <div className="f-chips" role="group" aria-label={t("combat.rerollOffers")}>
-              {offers.map((offer) => (
+              {choices.map((offer) => (
                 <Chip
                   key={offer.action.id}
                   onClick={() => {

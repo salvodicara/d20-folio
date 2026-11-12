@@ -45,6 +45,9 @@ export type TrayMultiplier = "0" | "0.25" | "0.5" | "1" | "2";
 export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.25", "0.5", "1", "2"];
 
 export interface DamageTrayPlan {
+  /** What a failed save also does, as the card says it (Thunderwave: «Pushed up to
+   *  10 ft away»): each failed row shows it; the app moves no token. */
+  failNotes?: string[];
   /** The use lands only on a target that succeeds (`appliesOnSuccess`): each row
    *  is marked «Successo» (the row's `saved`), and only marked rows take the amount,
    *  the conditions and the states. */
@@ -56,6 +59,10 @@ export interface DamageTrayPlan {
   /** A bigger die against a target missing any Hit Points (Toll the Dead): each
    *  row reads its own die from its target's Hit Points. */
   hurtDice?: { base: string; hurt: string };
+  /** What to roll at the table for the one number, when the action says it (a
+   *  potion's 2d4+2, Fireball's 8d6): the total field's hint. Absent when each row
+   *  reads its own die (`hurtDice`). */
+  dice?: string;
   /** Every damage type, when the action deals more than one (a fire + radiant smite):
    *  the tray can then take one total per type, each meeting its own defense
    *  ({@link rowAmountByType}). */
@@ -242,8 +249,15 @@ export function damageTrayPlan(
   ];
   const split =
     effect !== null && !spec.area && (s.instances ?? 1) > 1 && planTargets.length > 1;
+  const dice =
+    effect === "heal"
+      ? s.healing
+      : effect === "damage" && !s.damageIfHurt
+        ? s.damage
+        : undefined;
   return {
     effect,
+    ...(dice ? { dice } : {}),
     ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),
@@ -305,8 +319,46 @@ export function damageTrayPlan(
     ...(spec.hitPointThreshold
       ? { hitPointThreshold: { ...spec.hitPointThreshold } }
       : {}),
+    ...(hasSave && !attacks && s.effectRiders?.length
+      ? { failNotes: s.effectRiders.map((line) => line.text) }
+      : {}),
     targets: planTargets,
   };
+}
+
+/**
+ * The creatures whose save a cast asks on its own line (Command, Calm Emotions): a
+ * save spell aimed at others that leaves the app nothing to apply, so no tray opens.
+ * Empty when the tray asks it, or there is no save or nobody else to ask.
+ */
+export function savesOnTheLine(
+  action: ResolvedAction,
+  targets: ReadonlyArray<string>,
+  selfId: string
+): string[] {
+  const others = targets.filter((id) => id !== selfId);
+  if (others.length === 0) return [];
+  if (combatResolutionSpec(action).kind !== "save") return [];
+  if (!action.summary.saveAbility && action.summary.saveDC === undefined) return [];
+  return damageTrayPlan(action, targets, selfId) ? [] : others;
+}
+
+/**
+ * A save spell cast with nobody named (solo, or the target step skipped): its one save
+ * is asked on the row just used, «Save · Saved · Failed», with a damage field when the
+ * spell deals damage, as an attack with no target asks its result. `null` when a
+ * creature was named (the tray or the per-creature line asks), when the caster named
+ * only themself, or when the spell has no save.
+ */
+export function saveAloneOnTheLine(
+  action: ResolvedAction,
+  targets: ReadonlyArray<string>
+): { damage: boolean } | null {
+  if (targets.length > 0) return null;
+  const spec = combatResolutionSpec(action);
+  if (spec.kind !== "save") return null;
+  if (!action.summary.saveAbility && action.summary.saveDC === undefined) return null;
+  return { damage: spec.hasDamage };
 }
 
 /** The weapon's floor on low damage-die faces, when one applies. */
