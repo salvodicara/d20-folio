@@ -44,10 +44,19 @@ export function castFollowUps(
         : [];
   // A condition that lands by itself counts too when the target's Hit Points gate it
   // (Power Word Stun: Stunned at 150 HP or fewer): the tray's branch decides.
+  // A pure buff lands on its pick by itself (Invisibility, Greater Invisibility:
+  // "has the Invisible condition"): no attack, no save, no damage, and not aimed at
+  // an enemy. A smite's or Heat Metal's automatic rider is not one.
+  const buff =
+    spec.conditionApplication?.on === "automatic" &&
+    spec.kind === "automatic" &&
+    !spec.hasDamage &&
+    spec.targetAffinity !== "enemy";
   const application =
     spec.conditionApplication?.on === "failed-save" ||
     spec.conditionApplication?.on === "hit" ||
-    (spec.conditionApplication?.on === "automatic" && spec.hitPointThreshold)
+    (spec.conditionApplication?.on === "automatic" && spec.hitPointThreshold) ||
+    buff
       ? spec.conditionApplication
       : undefined;
 

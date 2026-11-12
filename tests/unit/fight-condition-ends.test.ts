@@ -101,3 +101,34 @@ describe("fight condition ends", () => {
     expect(sourcedFightConditions([frightened])[0]).not.toHaveProperty("saveDc");
   });
 });
+
+describe("Sleep: the Unconscious it settles into", () => {
+  // 2024 Sleep: a second failed save makes the target Unconscious for the duration;
+  // the spell still ends for it if it takes damage. The settled condition keeps the
+  // spell as its source, so it inherits the spell's ends, minus the repeat save.
+  const asleep: CombatEffectOp = {
+    id: "op-sleep",
+    kind: "apply",
+    effect: {
+      id: "sleep-1",
+      actor: { kind: "pc", combatantId: "pc-me", memberUid: "me", characterId: "c1" },
+      target: { kind: "monster", combatantId: "monster-1" },
+      source: { kind: "spell", id: "sleep", actionId: "spell-sleep" },
+      payload: { kind: "condition", conditionId: "unconscious" },
+      duration: { kind: "encounter" },
+    },
+  };
+
+  it("ends when the sleeper takes damage", () => {
+    expect(conditionEndsOf({ kind: "spell", id: "sleep" }, "unconscious")).toEqual([
+      { on: "target-damaged" },
+    ]);
+    expect(sourcedFightConditions([asleep])[0]?.ends).toEqual([{ on: "target-damaged" }]);
+  });
+
+  it("the Incapacitated before it keeps both ends", () => {
+    expect(
+      conditionEndsOf({ kind: "spell", id: "sleep" }, "incapacitated").map((e) => e.on)
+    ).toEqual(["target-damaged", "repeat-save"]);
+  });
+});

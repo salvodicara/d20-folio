@@ -1334,6 +1334,10 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       /** With `spellAbilitySource: "feat"`: what the spell reads while the feat's
        *  answer is missing (the species pick, as before the answer was stored). */
       spellAbilityFallback: literalSchema("species"),
+      /** The cantrip may be replaced after a Long Rest by another of `spellList`'s
+       *  cantrips (High Elf): the pick lives in the session's option choices under
+       *  `choiceKey`; absent, it is `spellId`. */
+      longRestSwap: objectSchema({ choiceKey: stringSchema, spellList: stringSchema }),
     }
   ),
   /**

@@ -3,7 +3,8 @@
  * owes nothing, levelled up with exactly what `levelUpPlan` asks, still owes
  * nothing — for every level of every class with a counted pick (2024 tables:
  * Warlock invocations and cantrips, Sorcerer Metamagic 2/4/6 at 2/10/17 and
- * cantrips, Wizard/Cleric/Druid/Bard cantrips, Fighter/Barbarian Weapon Mastery).
+ * cantrips, Wizard/Cleric/Druid/Bard cantrips, the Wizard's spellbook (6, then 2 a
+ * level), Fighter/Barbarian Weapon Mastery).
  */
 import { describe, expect, it } from "vitest";
 
@@ -32,12 +33,19 @@ const NO_SLOTS = {
 let serial = 0;
 
 function fresh(doc: CharacterDoc, classId: string, pick: string, n: number): string[] {
-  if (pick === "cantrips") {
+  if (pick === "cantrips" || pick === "spellbook") {
+    // Real spells: the book counts levelled Wizard spells, the cantrips cantrips.
     const known = new Set(
       doc.character.spells.flatMap((s) => ("custom" in s ? [] : [s.srdId]))
     );
+    const cantrip = pick === "cantrips";
     return spells
-      .filter((s) => s.level === 0 && s.classes.includes(classId) && !known.has(s.id))
+      .filter(
+        (s) =>
+          (cantrip ? s.level === 0 : s.level >= 1) &&
+          s.classes.includes(classId) &&
+          !known.has(s.id)
+      )
       .slice(0, n)
       .map((s) => s.id);
   }
@@ -80,7 +88,7 @@ function asked(doc: CharacterDoc, classId: string): LevelUpPicks {
     maneuvers: [],
     invocations: n(plan.needsInvocations, plan.invocationPicksNeeded, "invocations"),
     newCantrips: n(plan.cantripsKnownDiff > 0, plan.cantripsKnownDiff, "cantrips"),
-    newSpells: [],
+    newSpells: n(plan.spellbookPicks, plan.spellsKnownDiff, "spellbook"),
     choiceSlots: NO_SLOTS,
     choicePicks: EMPTY_CHOICE_PICKS,
     multiclass: null,
