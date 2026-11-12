@@ -37,11 +37,9 @@
  * mirror (`mechanics-world-store.ts`).
  */
 
-const EMPTY_KEYS: ReadonlySet<string> = new Set();
+import { isRecord } from "@/lib/is-record";
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+const EMPTY_KEYS: ReadonlySet<string> = new Set();
 
 /** The LIVE standing occurrences held on the character's own self entity. */
 function liveSelfStandings(world: unknown): Record<string, unknown>[] {
