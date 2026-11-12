@@ -123,7 +123,10 @@ export function encounterCloseDrafts(
 export function mirrorEncounter(
   encounter: EncounterState | null,
   logged: readonly SessionEntry[],
-  written: ReadonlySet<string> = new Set()
+  written: ReadonlySet<string> = new Set(),
+  /** `markersOnly`: a player's device writes the fight's start, rounds and end alone
+   *  (never the DM's beats, never a correction), under the DM mirror's own ids. */
+  options: { markersOnly?: boolean } = {}
 ): MirrorDraft[] {
   const byId = new Map(logged.map((entry) => [entry.id, entry]));
   const drafts: MirrorDraft[] = [];
@@ -168,6 +171,12 @@ export function mirrorEncounter(
     encounterId: live,
     ...(Object.keys(names).length > 0 ? { names } : {}),
   };
+  if (options.markersOnly) {
+    add(`${prefix}:start`, start);
+    for (let round = 1; round <= encounter.round; round++)
+      add(`${prefix}:round:${round}`, { kind: "round-start", round });
+    return drafts;
+  }
   upsert(`${prefix}:start`, start);
   // A line's round is the last marker before it, so every round up to a beat's own is
   // marked before the beat: a mirror that missed rounds (the DM left the page) still

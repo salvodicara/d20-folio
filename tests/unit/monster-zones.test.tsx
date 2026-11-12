@@ -65,7 +65,7 @@ const rows = [
   {
     id: "pc-mara",
     kind: "pc",
-    name: "Catalion",
+    name: "Bard",
     memberUid: "mara",
     characterId: "c1",
     maxHp: 24,
@@ -160,7 +160,7 @@ describe("monster zones", () => {
   });
 
   it("inside, on a character who saved: half lands through the sheet", async () => {
-    ask("pc-mara", "Catalion");
+    ask("pc-mara", "Bard");
     render(
       <MonsterZoneHits
         campaignId="c1"

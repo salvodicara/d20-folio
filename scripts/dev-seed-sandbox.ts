@@ -9,6 +9,7 @@
  * initial documents.
  */
 
+import { teamFixturePath } from "./team-fixture";
 import { existsSync, readFileSync } from "node:fs";
 import { env, exit } from "node:process";
 import { dirname, resolve as resolvePath } from "node:path";
@@ -52,18 +53,18 @@ interface SandboxPlayer {
 
 const PLAYER_SPECS: readonly SandboxPlayer[] = [
   {
-    uid: "dev-player-catalion",
-    email: "catalion@sandbox.dev",
-    displayName: "Catalion (Bard)",
-    characterId: "sandbox-catalion",
-    fixture: "catalion-bard.json",
+    uid: "dev-player-bard",
+    email: "bard@sandbox.dev",
+    displayName: "Bard player",
+    characterId: "sandbox-bard",
+    fixture: "bard",
   },
   {
-    uid: "dev-player-mandorlino",
-    email: "mandorlino@sandbox.dev",
-    displayName: "Mandorlino (Paladin)",
-    characterId: "sandbox-mandorlino",
-    fixture: "mandorlino-paladin.json",
+    uid: "dev-player-paladin",
+    email: "paladin@sandbox.dev",
+    displayName: "Paladin player",
+    characterId: "sandbox-paladin",
+    fixture: "paladin",
   },
 ];
 
@@ -79,8 +80,7 @@ function assertSafeSandbox(): void {
 }
 
 function loadPlayers(): Array<SandboxPlayer & { envelope: CharacterEnvelope }> {
-  const fixtureDir = resolvePath(ROOT, "content-pack", "fixtures", "team");
-  if (!existsSync(fixtureDir)) {
+  if (!existsSync(resolvePath(ROOT, "content-pack", "fixtures", "team-roles.json"))) {
     console.warn(
       "Content pack absent: the sandbox campaign is seeded with its DM only. " +
         "Create/attach an SRD character through the real UI to exercise the public build."
@@ -90,7 +90,7 @@ function loadPlayers(): Array<SandboxPlayer & { envelope: CharacterEnvelope }> {
   return PLAYER_SPECS.map((player) => ({
     ...player,
     envelope: JSON.parse(
-      readFileSync(resolvePath(fixtureDir, player.fixture), "utf8")
+      readFileSync(teamFixturePath(ROOT, player.fixture) ?? player.fixture, "utf8")
     ) as CharacterEnvelope,
   }));
 }

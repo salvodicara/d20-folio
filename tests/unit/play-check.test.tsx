@@ -15,7 +15,12 @@ vi.mock("@/lib/firebase", () => ({
   storage: {},
 }));
 
-import { checkEntriesFor, skillBonusFor } from "@/domains/play/check-entry";
+import {
+  checkEntriesFor,
+  skillBonusFor,
+  skillFaceFloorFor,
+} from "@/domains/play/check-entry";
+import { buildScenario } from "@/lib/dev-scenarios";
 import { PlayCheck } from "@/domains/play/ui/PlayCheck";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { resolveActions } from "@/lib/smart-tracker";
@@ -35,7 +40,7 @@ const doc = () => must(useCharacterStore.getState().character);
 function open(actionId: string) {
   const raw = must(resolveActions(doc()).find((a) => a.id === actionId));
   const action = localizeAction(raw, "en");
-  const entries = checkEntriesFor(action, skillBonusFor(doc()));
+  const entries = checkEntriesFor(action, skillBonusFor(doc()), skillFaceFloorFor(doc()));
   const onClose = vi.fn();
   render(
     <MemoryRouter>
@@ -107,5 +112,32 @@ describe("PlayCheck", () => {
     fireEvent.click(screen.getByRole("button", { name: "DC 20" }));
     face(10);
     expect(screen.getByRole("status").textContent).toContain(String(10 + second.bonus));
+  });
+
+  it("Reliable Talent: a level-7 rogue's 3 on Stealth counts as 10", () => {
+    const built = buildScenario({
+      name: "Pip, Thief",
+      raceId: "halfling",
+      classId: "rogue",
+      subclassId: "thief",
+      level: 7,
+      background: "criminal",
+      abilityScores: { STR: 10, DEX: 17, CON: 14, INT: 12, WIS: 12, CHA: 10 },
+    });
+    useCharacterStore.setState({
+      character: {
+        ...built,
+        character: { ...built.character, skills: { stealth: "proficient" } },
+      },
+    });
+    const { entries } = open("base-hide");
+    const hide = must(entries[0]);
+    const bonus = hide.kind === "hide" ? hide.bonus : 0;
+    expect(10 + bonus).toBeGreaterThanOrEqual(15);
+    face(3);
+    expect(screen.getByRole("status").textContent).toContain(`10 + ${String(bonus)}`);
+    expect(screen.getByText("Your 3 counts as 10.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    expect(doc().session.conditions).toContain("invisible");
   });
 });

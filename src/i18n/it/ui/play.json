@@ -375,7 +375,10 @@
       "theirs": "Round {{round}} · {{name}}"
     },
     "roll": {
-      "surprised": "Sorpreso"
+      "surprised": "Sorpreso",
+      "paidAdvantage": "{{name}} all'Iniziativa",
+      "paidAdvantageHint": "Tira due d20 per l'Iniziativa e scrivi il più alto",
+      "paidAdvantageCheck": "{{name}} sulla prova"
     },
     "defense": {
       "temporary": "temporanea",
@@ -396,7 +399,8 @@
       "hideOk": "riuscita. Sei Invisibile; chi ti cerca deve superare {{total}}.",
       "escapeOk": "ti liberi: non sei più Afferrato.",
       "hideWhat": "Prova di Destrezza (Furtività)",
-      "escapeWhat": "La migliore tra Atletica e Acrobazia"
+      "escapeWhat": "La migliore tra Atletica e Acrobazia",
+      "floored": "Il tuo {{rolled}} conta come {{face}}."
     },
     "familiar": {
       "summon": "Evoca"
@@ -405,7 +409,19 @@
       "title": "Al colpo",
       "mastery": "Padronanza",
       "askSolo": "Hai colpito con {{name}}?",
-      "askSoloAdd": "Aggiungi al colpo:"
+      "askSoloAdd": "Aggiungi al colpo:",
+      "superiorityDie": "1 Dado di Superiorità ({{left}} rimasti)",
+      "addsDamage": "+1{{die}} danni",
+      "addsAttack": "+1{{die}} al tiro per colpire"
+    },
+    "aura": {
+      "source": "Aura di {{name}}",
+      "chip": "Aura di {{name}} +{{bonus}}",
+      "group": "Aure dei paladini",
+      "onHint": "Vale sui tuoi tiri salvezza; tocca se sei fuori dall'aura di {{name}}",
+      "offHint": "Sei fuori dall'aura di {{name}}; tocca quando ci rientri",
+      "outToast": "Fuori dall'aura di {{name}}",
+      "inToast": "Di nuovo nell'aura di {{name}}"
     }
   }
 }
