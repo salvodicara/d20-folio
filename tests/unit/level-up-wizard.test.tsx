@@ -8,7 +8,7 @@
  * classes offered, illegal filtered, single-class zero-friction default).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, within, act } from "@testing-library/react";
+import { render, screen, fireEvent, within, act, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { makeCharacterDoc } from "./_helpers";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -731,6 +731,21 @@ describe("LevelUpWizard — the completion ceremony (A3 + no auto-dismiss)", () 
     // underneath must not bump it to 7.
     expect(await screen.findByText("Level 6!")).toBeInTheDocument();
     expect(screen.queryByText("Level 7!")).toBeNull();
+  });
+
+  // Walkthrough 2026-11-12 (M2): the classic wizard, the one players use today, leaves
+  // the level-up's line in the log too (forwarded to the attached campaign's session).
+  it("leaves the level-up's line in the log: from 5 to 6, in the class it advanced", async () => {
+    driveToCeremony();
+    expect(await screen.findByText("Level 6!")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(
+        useCharacterStore
+          .getState()
+          .character?.session.logEntries.map((e) => e.event)
+          .filter((e) => e.kind === "level-up")
+      ).toEqual([{ kind: "level-up", from: 5, to: 6, classId: "fighter" }])
+    );
   });
 
   it("NEVER auto-dismisses; the explicit CTA is the one way to the sheet (owner 2026-06-11)", async () => {

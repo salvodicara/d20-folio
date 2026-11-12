@@ -11,7 +11,12 @@ import {
   oldPageTitle,
   sessionNumbers,
 } from "@/domains/chronicle/diary-view";
-import { buildReport, type PlayEvent, type SessionEntry } from "@/lib/session-log";
+import {
+  buildReport,
+  inferFights,
+  type PlayEvent,
+  type SessionEntry,
+} from "@/lib/session-log";
 
 let n = 0;
 const at = (minute: number) => Date.UTC(2026, 9, 23, 19, minute);
@@ -105,6 +110,35 @@ describe("diaryBlocks", () => {
     const [, fight] = diaryBlocks(buildReport(plain));
     expect(fight).toMatchObject({ kind: "fight", endedAt: at(47) });
     expect(fight).not.toHaveProperty("outcome");
+  });
+
+  // A level-up is not exploration (coordinator, 2026-11-12): outside a fight it stands
+  // in its own «Progressi» block, between what came before and after.
+  it("a level-up outside a fight stands in its own progress block", () => {
+    const evening2 = [
+      note(5, "Orin asks for the stolen hammer."),
+      line(6, { kind: "level-up", from: 9, to: 10, classId: "bard", actor: "pc-a" }),
+      note(7, "We head for the crypt."),
+    ];
+    expect(diaryBlocks(buildReport(evening2)).map((b) => b.kind)).toEqual([
+      "explore",
+      "progress",
+      "explore",
+    ]);
+  });
+
+  // One rule on every surface (coordinator, 2026-11-12): a fight the app worked out
+  // from the blows, with nobody starting one, says so; a started fight does not.
+  it("a fight worked out from the blows is marked inferred; a started one is not", () => {
+    expect(blocks[1]).toMatchObject({ kind: "fight", inferred: false });
+    const blows = [
+      line(10, { kind: "damage", amount: 5, target: "pc-a" }),
+      // Two players' blows (a run needs two writers, infer-fights.ts).
+      { ...line(11, { kind: "damage", amount: 2, target: "pc-b" }), by: "u2" },
+      line(12, { kind: "damage", amount: 1, target: "pc-a" }),
+    ];
+    const [fight] = diaryBlocks(buildReport(inferFights(blows)));
+    expect(fight).toMatchObject({ kind: "fight", inferred: true });
   });
 
   it("keeps a note written during the fight inside the fight", () => {

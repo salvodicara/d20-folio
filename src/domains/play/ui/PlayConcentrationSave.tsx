@@ -33,6 +33,7 @@ import { concentrationLabel } from "@/lib/views/concentration-label";
 import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { registerUndoableResult } from "@/stores/undoStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { FailedSaveReroll } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
@@ -56,6 +57,14 @@ function saverName(saver: FailedD20Saver, locale: Locale): string {
   return saver.customName
     ? homebrewText(saver.customName, locale)
     : concentrationLabel(saver.spellId, locale);
+}
+
+/** The save is answered: the toast that announced it («Concentrazione su …: TS COS CD
+ *  10») has done its job and leaves, so it never sits over the result or the sheet. */
+function dismissSavePrompt() {
+  const toasts = useToastStore.getState();
+  for (const toast of toasts.toasts)
+    if (toast.intent?.kind === "concentration-save") toasts.dismissToast(toast.id);
 }
 
 export function PlayConcentrationSave({ doc }: { doc: CharacterDoc }) {
@@ -170,6 +179,7 @@ function Prompt({
         : "combat.concentrationSaveFailureToast",
       { total: committed.result.total }
     );
+    dismissSavePrompt();
     registerUndoableResult(
       { message },
       () => {
@@ -204,6 +214,7 @@ function Prompt({
       spell: saverName(as, locale),
       total: committed.result.total,
     });
+    dismissSavePrompt();
     registerUndoableResult({ message }, undo, () => castSaver(as, faces));
   };
   // The reroll's use is spent with the save it decides, in one undo (the classic banner).
@@ -245,6 +256,7 @@ function Prompt({
         : "combat.rerollFailureToast",
       { name: offer.action.name, total: committed.result.total }
     );
+    dismissSavePrompt();
     registerUndoableResult({ message }, undo, () => applyReroll(entry, offer, as));
   };
   return (
