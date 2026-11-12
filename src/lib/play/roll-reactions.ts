@@ -123,11 +123,17 @@ export interface FailedRollMoment {
 /** The rerolls the sheet can offer on a failed roll (Indomitable, Countercharm),
  *  each with its action (to spend it) and what it does. A reroll limited to some
  *  conditions needs the moment to name one of them. */
+/** One reroll the sheet can offer: the use (to spend it) and what it does. */
+export interface RerollOffer<A> {
+  action: A;
+  reaction: Extract<RollReaction, { kind: "reroll" }>;
+}
+
 export function rerollOffers<A extends { summary: { rollEffect?: ActionRollEffect } }>(
   doc: CharacterDoc,
   actions: ReadonlyArray<A>,
   moment: FailedRollMoment
-): Array<{ action: A; reaction: Extract<RollReaction, { kind: "reroll" }> }> {
+): Array<RerollOffer<A>> {
   return actions.flatMap((action) => {
     const reaction = rollReactionOf(action, doc);
     if (reaction?.kind !== "reroll") return [];

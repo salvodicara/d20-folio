@@ -420,6 +420,8 @@
 
 /* ---------- tabs and chips ---------- */
 .fui .f-tabs {
+  /* the tabs' offsets are measured from the row (scroll the selected one into view) */
+  position: relative;
   display: flex;
   gap: 4px;
   overflow-x: auto;
@@ -428,6 +430,18 @@
 }
 .fui .f-tabs[data-more="true"] {
   mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
+}
+.fui .f-tabs[data-more-start="true"] {
+  mask-image: linear-gradient(90deg, transparent, var(--shade) 56px);
+}
+.fui .f-tabs[data-more-start="true"][data-more="true"] {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--shade) 56px,
+    var(--shade) calc(100% - 56px),
+    transparent
+  );
 }
 .fui .f-tabs > button {
   flex: none;
@@ -2360,6 +2374,37 @@
   letter-spacing: 0.08em;
   color: var(--label);
 }
+/* One table, one set of columns: the header, each group and each row share the
+   table's tracks (subgrid), so a column is as wide as its widest value in the whole
+   list and every value sits under its header. On its own (outside a table) a row
+   keeps its own grid. */
+@media (min-width: 641px) {
+  .fui .f-sheet .f-act-table {
+    /* its columns fit the pane; they never widen the pane around them */
+    contain: inline-size;
+    display: grid;
+    /* fixed bounds, not content-sized: the pane's width decides, and a long value
+       wraps inside its cell («1d6‑1 / Contundente») instead of pushing the row out */
+    grid-template-columns:
+      var(--slot-size) minmax(120px, 1fr) minmax(64px, 112px) minmax(80px, 104px)
+      minmax(96px, 176px) 96px;
+    column-gap: clamp(8px, 1vw, 12px);
+  }
+  .fui .f-sheet .f-act-table > .f-act-group {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+  }
+  .fui .f-sheet .f-act-table > .f-act-group > :not(.f-act) {
+    grid-column: 1 / -1;
+  }
+  .fui .f-sheet .f-act-table .f-act {
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    /* the table's gap, not the row's own (a subgrid's own gap pads its cells) */
+    column-gap: normal;
+  }
+}
 /* the row button is a small capsule (14 px): the prototype's 92 px column, on the grid */
 @media (min-width: 641px) {
   .fui .f-sheet .f-act {
@@ -2672,8 +2717,10 @@
 }
 @media (min-width: 641px) {
   .fui .f-sheet .f-act-c {
-    display: flex;
-    align-items: center;
+    /* a grid, not flex: its narrowest width is its longest word, so a value wraps
+       («1d6‑1 / Contundente») before the table outgrows its pane */
+    display: grid;
+    align-content: center;
     justify-content: center;
     min-height: 40px;
     padding: 0 4px;
@@ -3010,6 +3057,23 @@
     scrollbar-width: thin;
     scrollbar-color: var(--frame) transparent;
     overscroll-behavior: contain;
+  }
+  /* a box that scrolls says so: its last rows fade into the panel's foot, and the
+     end of the list scrolls clear of the fade (D&D Beyond's scrolling sheet panes) */
+  .fui .f-sheet .f-centre > .f-pnb,
+  .fui .f-sheet .f-play > :not(.f-centre) {
+    --fade: 40px;
+    mask-image: linear-gradient(
+      to bottom,
+      var(--shade) calc(100% - var(--fade)),
+      transparent
+    );
+  }
+  .fui .f-sheet .f-centre > .f-pnb {
+    padding-bottom: var(--fade);
+  }
+  .fui .f-sheet .f-play > :not(.f-centre) > :last-child {
+    margin-bottom: var(--fade);
   }
   .fui .f-sheet .f-centre .f-filters {
     position: sticky;
@@ -3549,6 +3613,17 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   min-width: 16px;
+}
+/* up to six pips stay on one row (a 3/5 pool never leaves its fifth below); the
+   name gives way and wraps instead */
+.fui .f-sheet .f-res > .f-pips:not(:has(> i:nth-child(7))) {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+.fui .f-sheet .f-res:has(> .f-pips:not(:has(> i:nth-child(7)))) > .f-res-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
 }
 /* the narrowest phones: the three centre tabs at 12 px, so all three fit */
 @media (max-width: 360px) {
@@ -5326,6 +5401,9 @@
   .fui .f-cmp-grid {
     grid-template-columns: 264px minmax(0, 1fr) 440px;
   }
+  .fui .f-cmp-grid[data-nofilters] {
+    grid-template-columns: minmax(0, 1fr) 440px;
+  }
 }
 @media (max-width: 960px) {
   .fui .f-cmp-grid {
@@ -5340,6 +5418,14 @@
     top: 88px;
     max-height: calc(100vh - 112px);
     overflow-y: auto;
+  }
+  /* the filter panel scrolls when its groups outgrow the screen: its foot fades,
+     and the last group scrolls clear of the fade */
+  .fui .f-cmp-filters {
+    mask-image: linear-gradient(to bottom, var(--shade) calc(100% - 40px), transparent);
+  }
+  .fui .f-cmp-filters .f-cmp-facets {
+    padding-bottom: 40px;
   }
 }
 .fui .f-cmp-facets {
@@ -5543,6 +5629,12 @@
   .fui .f-cmp-verdict {
     display: none;
   }
+  .fui .f-cmp-verdict-m {
+    display: inline;
+  }
+}
+.fui .f-cmp-verdict-m {
+  display: none;
 }
 
 /* «Gestisci incantesimi» and the Long Rest's step: the limit beside the count, then
