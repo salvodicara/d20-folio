@@ -43,12 +43,15 @@ fi
 # checkout: a lane that switches branches there changes the pack under every other
 # lane's composed builds and tests at once. The main checkout keeps the shared link.
 # A link that already points elsewhere (a pack PR branch you chose) is left alone.
+# The pack worktrees live inside the project, in the main checkout's git-ignored
+# `.pack-wt/` (owner, 2026-11-11: nothing new under ~/Workspace/Codex). A worktree whose
+# link already points at an older location keeps it (the case below leaves it alone).
 # FOLIO_PACK_REPO / FOLIO_PACK_WORKTREES override the default locations.
 pack_repo="${FOLIO_PACK_REPO:-$HOME/Workspace/d20-folio-content}"
 app_top="$(cd "$(git rev-parse --show-toplevel)" && pwd -P)"
 app_main="$(cd "$(git rev-parse --path-format=absolute --git-common-dir)/.." && pwd -P)"
 if [ -e "$pack_repo/.git" ] && [ "$app_top" != "$app_main" ]; then
-  pack_wt="${FOLIO_PACK_WORKTREES:-$HOME/Workspace/Codex/pack-wt}/$(basename "$app_top")"
+  pack_wt="${FOLIO_PACK_WORKTREES:-$app_main/.pack-wt}/$(basename "$app_top")"
   current_link="$(readlink content-pack 2>/dev/null || true)"
   case "$current_link" in
     "" | "$pack_repo" | "$pack_repo"/*)
