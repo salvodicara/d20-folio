@@ -1,7 +1,7 @@
 /**
  * The Diario's automatic report: one played evening as the blocks a table remembers —
- * exploration, each fight (its rounds, its foes, how it ended) and each rest with what it
- * restored. Built on `buildReport`, so corrections, hidden and moved lines already apply;
+ * exploration, each fight (its rounds, its foes, how it ended), each rest with what it
+ * restored, and a character's progress (a level-up). Built on `buildReport`, so corrections, hidden and moved lines already apply;
  * notes stay where they were written. Each block carries the time of its first line.
  */
 import type { ReportSection, SessionEntry } from "@/lib/session-log";
@@ -9,6 +9,8 @@ import type { ReportSection, SessionEntry } from "@/lib/session-log";
 export type DiaryBlock =
   | { kind: "explore"; at: number; entries: SessionEntry[] }
   | { kind: "rest"; at: number; entries: SessionEntry[] }
+  /** A character's progress outside a fight: a level-up (not exploration). */
+  | { kind: "progress"; at: number; entries: SessionEntry[] }
   | {
       kind: "fight";
       encounterId: string;
@@ -61,10 +63,12 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
     for (const entry of section.entries) {
       const last = blocks[blocks.length - 1];
       const kind =
-        entry.event.kind === "rest" ||
-        (last?.kind === "rest" && RECOVERY.has(entry.event.kind))
-          ? "rest"
-          : "explore";
+        entry.event.kind === "level-up"
+          ? "progress"
+          : entry.event.kind === "rest" ||
+              (last?.kind === "rest" && RECOVERY.has(entry.event.kind))
+            ? "rest"
+            : "explore";
       if (last?.kind === kind) last.entries.push(entry);
       else blocks.push({ kind, at: entry.at, entries: [entry] });
     }

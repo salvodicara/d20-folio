@@ -107,6 +107,21 @@ describe("diaryBlocks", () => {
     expect(fight).not.toHaveProperty("outcome");
   });
 
+  // A level-up is not exploration (coordinator, 2026-11-12): outside a fight it stands
+  // in its own «Progressi» block, between what came before and after.
+  it("a level-up outside a fight stands in its own progress block", () => {
+    const evening2 = [
+      note(5, "Orin asks for the stolen hammer."),
+      line(6, { kind: "level-up", from: 9, to: 10, classId: "bard", actor: "pc-a" }),
+      note(7, "We head for the crypt."),
+    ];
+    expect(diaryBlocks(buildReport(evening2)).map((b) => b.kind)).toEqual([
+      "explore",
+      "progress",
+      "explore",
+    ]);
+  });
+
   it("keeps a note written during the fight inside the fight", () => {
     const fight = blocks[1];
     expect(fight?.entries.map((e) => e.event.kind)).toEqual(["damage", "note", "down"]);
