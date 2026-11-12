@@ -652,8 +652,9 @@ export function GlobalCombatMount(): null {
       });
     }
     // A creature your Hex or Hunter's Mark is on just dropped to 0: on a later turn,
-    // a Bonus Action moves the mark (the spell's trigger rule). A notice, not a
-    // prompt: the move row is already on the sheet while the spell lasts.
+    // a Bonus Action moves the mark (the spell's trigger rule); a Vow of Enmity moves
+    // with no action. A notice, not a prompt: the move row is already on the sheet
+    // while the mark lasts.
     const doc = useCharacterStore.getState().character;
     if (primaryIsDm || !doc || doc.id !== status?.characterId) return;
     for (const offer of markDropOffers(
@@ -664,14 +665,17 @@ export function GlobalCombatMount(): null {
       myId
     )) {
       showToast({
-        message: t("combat.markCanMove", {
-          source: localizeSrd(
-            offer.sourceKind === "spell" ? "spell" : "class-feature",
-            offer.sourceId,
-            "name",
-            locale
-          ),
-        }),
+        message: t(
+          offer.slot === "free" ? "combat.markCanMoveFree" : "combat.markCanMove",
+          {
+            source: localizeSrd(
+              offer.sourceKind === "spell" ? "spell" : "class-feature",
+              offer.sourceId,
+              "name",
+              locale
+            ),
+          }
+        ),
         duration: 8000,
       });
     }
