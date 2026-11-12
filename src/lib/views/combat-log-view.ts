@@ -213,6 +213,7 @@ export function playEventLogStyle(event: PlayEvent): LogStyle {
     case "rest":
       return resolveLogStyle("rest");
     case "round-start":
+    case "solo-fight":
       return resolveLogStyle("turn-end");
     case "encounter-start":
     case "encounter-end":

@@ -8,6 +8,7 @@ export type {
 } from "./types";
 export {
   foldSession,
+  isMarkerEvent,
   stableJson,
   type SessionAuthority,
   type SessionEntry,

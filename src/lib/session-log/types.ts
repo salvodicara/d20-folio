@@ -174,6 +174,10 @@ export type PlayEvent =
     }
   | { kind: "encounter-end"; encounterId: string; outcome?: "victory" | "ended" }
   | { kind: "round-start"; round: number }
+  /** A member started (or ended) a solo fight on their own sheet: no section of its
+   *  own in a campaign report, a strong signal for the inferred fight
+   *  (`inferFights`). Never rendered. */
+  | { kind: "solo-fight"; started: boolean; actor: CombatantId }
   | {
       /** An initiative roll: the raw d20 and its total; `rolledBy: "dm"` when the DM
        *  rolled it for a player who had not (the DM's «Tira per chi manca»). */

@@ -138,9 +138,10 @@ export function combatEventToPlayEvent(
       return { kind: "death-save", outcome: event.outcome, actor: me };
     case "fight-start":
     case "fight-end":
-      // A solo fight's bounds: the sheet's own report reads them
-      // (`sheetSessionEntries`); a campaign session has the DM's markers.
-      return null;
+      // A solo fight's bounds. In a campaign session, a signal for the inferred fight
+      // (several members' solo fights read as one); the sheet's own report reads the
+      // sheet lines themselves (`sheetSessionEntries`).
+      return { kind: "solo-fight", started: event.kind === "fight-start", actor: me };
     case "rest":
       return { kind: "rest", rest: event.restKind, actor: me };
     case "time-passes":
