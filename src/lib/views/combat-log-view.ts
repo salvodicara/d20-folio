@@ -118,6 +118,7 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
       return resolveLogStyle("condition-remove");
     case "concentration-start":
     case "concentration-end":
+    case "concentration-save":
       return resolveLogStyle("spell-cast");
     case "death-save":
       return resolveLogStyle("death-save");
@@ -197,6 +198,7 @@ export function playEventLogStyle(event: PlayEvent): LogStyle {
     case "exhaustion":
       return resolveLogStyle(event.to === 0 ? "condition-remove" : "condition-add");
     case "concentration":
+    case "concentration-save":
       return resolveLogStyle("spell-cast");
     case "status":
       return resolveLogStyle(event.started ? "spell-cast" : "effect-expired");
@@ -360,6 +362,13 @@ export function localizeCombatEvent(
       });
     case "concentration-start":
       return t("combatLog.concentrationStart", { spell: resolveSpellName(event.spell) });
+    case "concentration-save":
+      return t(
+        event.passed
+          ? "combatLog.concentrationSaveKept"
+          : "combatLog.concentrationSaveLost",
+        { spell: resolveSpellName(event.spell), total: event.total ?? "?", dc: event.dc }
+      );
     case "concentration-end":
       // Reuse the "stopped concentrating" toast key — same semantic unit (golden
       // rule 6), so the wording stays consistent between the toast and the log.

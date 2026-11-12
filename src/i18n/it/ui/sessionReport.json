@@ -35,6 +35,8 @@
     "conditionLoss": "{{target}} perde la condizione {{condition}}",
     "concentrationStart": "{{actor}} si concentra su {{spell}}",
     "concentrationEnd": "{{actor}} smette di concentrarsi su {{spell}}",
+    "concentrationSaved": "{{actor}} supera il TS di Concentrazione su {{spell}} ({{total}} contro CD {{dc}})",
+    "concentrationFailed": "{{actor}} fallisce il TS di Concentrazione su {{spell}} ({{total}} contro CD {{dc}})",
     "statusStart": "Inizia {{source}} di {{actor}}",
     "statusEnd": "Termina {{source}} di {{actor}}",
     "statusPenalty": "{{source}} di {{actor}}: −{{amount}} ai tiri d20",
@@ -88,6 +90,8 @@
       "saved": "{{name}} supera",
       "failed": "{{name}} fallisce",
       "noEffect": "{{result}}: nessun effetto"
-    }
+    },
+    "check": "{{skill}} {{total}}",
+    "checkDc": "{{skill}} {{total}} contro CD {{dc}}: {{verdict}}"
   }
 }
