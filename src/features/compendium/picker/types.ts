@@ -202,6 +202,11 @@ export interface CompendiumPickerSpec<T> {
   getId: (entry: T) => string;
   getName: (entry: T, ctx: PickerCtx) => string;
   /**
+   * The natural group a browse list keeps (a spell's level, a feature's class and
+   * level): with no query, entries sort by this, then by the reader's own name.
+   */
+  sortGroup?: (entry: T) => number;
+  /**
    * The NAME search corpus — localized name + always-resident EN name + id (+ any
    * name-adjacent candidate, e.g. a feature's subclass). This is the TIER-1 corpus
    * the picker ranks ABOVE description matches (a name hit outranks a body-text

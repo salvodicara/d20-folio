@@ -246,33 +246,35 @@ function ActionsPane({
           </Chip>
         ))}
       </Filters>
-      <TableHead />
-      {actions.groups.map(({ group, rows, note }) => {
-        const kept = rows.filter((r) => keep(group, r));
-        if (kept.length === 0) return null;
-        return (
-          <section key={group} className="f-act-group" data-group={group}>
-            <h3 className="f-act-gh">
-              {SHAPE[group] && (
-                <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
-              )}
-              {t(GROUP_KEY[group])}
-              {note && (
-                <span className="f-act-gn">
-                  {note.kind === "attacks"
-                    ? t("play.group.attacks", { count: note.count })
-                    : note.kind === "spent"
-                      ? t("play.group.spent")
-                      : t("play.group.perRound")}
-                </span>
-              )}
-            </h3>
-            {kept.map((row) => (
-              <ActionLine key={row.id} row={row} locale={locale} />
-            ))}
-          </section>
-        );
-      })}
+      <div className="f-act-table">
+        <TableHead />
+        {actions.groups.map(({ group, rows, note }) => {
+          const kept = rows.filter((r) => keep(group, r));
+          if (kept.length === 0) return null;
+          return (
+            <section key={group} className="f-act-group" data-group={group}>
+              <h3 className="f-act-gh">
+                {SHAPE[group] && (
+                  <i className="f-shape" data-kind={SHAPE[group]} aria-hidden="true" />
+                )}
+                {t(GROUP_KEY[group])}
+                {note && (
+                  <span className="f-act-gn">
+                    {note.kind === "attacks"
+                      ? t("play.group.attacks", { count: note.count })
+                      : note.kind === "spent"
+                        ? t("play.group.spent")
+                        : t("play.group.perRound")}
+                  </span>
+                )}
+              </h3>
+              {kept.map((row) => (
+                <ActionLine key={row.id} row={row} locale={locale} />
+              ))}
+            </section>
+          );
+        })}
+      </div>
       {(filter === "all" || filter === "attacks") && (
         <PlayCompanions doc={doc} locale={locale} />
       )}
@@ -562,36 +564,38 @@ function SpellsPane({
           </Chip>
         ))}
       </Filters>
-      <TableHead />
-      {view.groups.map(({ level, slots, spells }) => {
-        const kept = spells.filter((s) => keep(level, s));
-        if (kept.length === 0) return null;
-        return (
-          <section key={level} className="f-act-group" data-group="spells">
-            <h3 className="f-act-gh">
-              {level === 0 ? t("spells.cantrips") : t("spells.level", { level })}
-              {slots && (
-                <span className="f-gh-slots">
-                  <span className="f-pips" aria-hidden="true">
-                    {Array.from({ length: slots.total }, (_, i) => (
-                      <i key={i} data-on={i < slots.left || undefined} />
-                    ))}
+      <div className="f-act-table">
+        <TableHead />
+        {view.groups.map(({ level, slots, spells }) => {
+          const kept = spells.filter((s) => keep(level, s));
+          if (kept.length === 0) return null;
+          return (
+            <section key={level} className="f-act-group" data-group="spells">
+              <h3 className="f-act-gh">
+                {level === 0 ? t("spells.cantrips") : t("spells.level", { level })}
+                {slots && (
+                  <span className="f-gh-slots">
+                    <span className="f-pips" aria-hidden="true">
+                      {Array.from({ length: slots.total }, (_, i) => (
+                        <i key={i} data-on={i < slots.left || undefined} />
+                      ))}
+                    </span>
+                    {t("play.rest.slotsLeft", { left: slots.left, total: slots.total })}
                   </span>
-                  {t("play.rest.slotsLeft", { left: slots.left, total: slots.total })}
-                </span>
-              )}
-            </h3>
-            {kept.map((s) => (
-              <ActionLine
-                key={s.row.id}
-                row={s.row}
-                locale={locale}
-                spell={{ prepared: s.prepared, ritual: s.ritual }}
-              />
-            ))}
-          </section>
-        );
-      })}
+                )}
+              </h3>
+              {kept.map((s) => (
+                <ActionLine
+                  key={s.row.id}
+                  row={s.row}
+                  locale={locale}
+                  spell={{ prepared: s.prepared, ritual: s.ritual }}
+                />
+              ))}
+            </section>
+          );
+        })}
+      </div>
     </>
   );
 }
