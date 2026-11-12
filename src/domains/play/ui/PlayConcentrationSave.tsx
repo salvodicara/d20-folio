@@ -22,12 +22,18 @@ import { homebrewText } from "@/lib/views/homebrew-text-view";
 import type { Locale } from "@/lib/locale";
 import { bareActionSpend } from "@/lib/play/cast-payment";
 import { failedD20Savers, type FailedD20Saver } from "@/lib/play/failed-d20";
-import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
+import {
+  HEROIC_INSPIRATION_REROLL_ID,
+  heroicInspirationReroll,
+  rerollOffers,
+  type RerollOffer,
+} from "@/lib/play/roll-reactions";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { registerUndoableResult } from "@/stores/undoStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { FailedSaveReroll } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
@@ -51,6 +57,14 @@ function saverName(saver: FailedD20Saver, locale: Locale): string {
   return saver.customName
     ? homebrewText(saver.customName, locale)
     : concentrationLabel(saver.spellId, locale);
+}
+
+/** The save is answered: the toast that announced it («Concentrazione su …: TS COS CD
+ *  10») has done its job and leaves, so it never sits over the result or the sheet. */
+function dismissSavePrompt() {
+  const toasts = useToastStore.getState();
+  for (const toast of toasts.toasts)
+    if (toast.intent?.kind === "concentration-save") toasts.dismissToast(toast.id);
 }
 
 export function PlayConcentrationSave({ doc }: { doc: CharacterDoc }) {
@@ -83,7 +97,12 @@ function Prompt({
       }).filter(({ action }) => (action.summary.uses?.current ?? 1) > 0),
     [doc, locale]
   );
-  const [rerollWith, setRerollWith] = useState<(typeof offers)[number] | null>(null);
+  // Heroic Inspiration rerolls a die just rolled too: offered with the uses above.
+  const heroic = heroicInspirationReroll(doc, t("character.heroicInspiration"));
+  const choices: Array<RerollOffer<{ id: string; name: string }>> = heroic
+    ? [...offers, heroic]
+    : offers;
+  const [rerollWith, setRerollWith] = useState<(typeof choices)[number] | null>(null);
   const reroll = failedSaveReroll(rerollWith);
   const context = useMemo(
     () => concentrationSaveD20Context(doc, pending, reroll),
@@ -124,7 +143,7 @@ function Prompt({
       return null;
     }
   })();
-  const failsNow = failed !== null && offers.length > 0;
+  const failsNow = failed !== null && choices.length > 0;
   const reactionFree = useCombatStore((s) => !s.reactionUsed);
   const saver = failed && reactionFree ? (failedD20Savers(doc)[0] ?? null) : null;
   const spell = concentrationLabel(pending.spell, locale);
@@ -160,6 +179,7 @@ function Prompt({
         : "combat.concentrationSaveFailureToast",
       { total: committed.result.total }
     );
+    dismissSavePrompt();
     registerUndoableResult(
       { message },
       () => {
@@ -194,6 +214,7 @@ function Prompt({
       spell: saverName(as, locale),
       total: committed.result.total,
     });
+    dismissSavePrompt();
     registerUndoableResult({ message }, undo, () => castSaver(as, faces));
   };
   // The reroll's use is spent with the save it decides, in one undo (the classic banner).
@@ -203,12 +224,14 @@ function Prompt({
     as: NonNullable<typeof reroll>
   ) => {
     const store = useCharacterStore.getState();
-    const spend = bareActionSpend(
-      store.character?.character.spellSlots ?? [],
-      offer.action
-    );
+    const used = offers.find((o) => o.action.id === offer.action.id)?.action;
+    const spend = used
+      ? bareActionSpend(store.character?.character.spellSlots ?? [], used)
+      : null;
     const seal = beginWholeStateUndo();
-    if (spend?.kind === "tracker")
+    if (offer.action.id === HEROIC_INSPIRATION_REROLL_ID)
+      store.setHeroicInspiration(false);
+    else if (spend?.kind === "tracker")
       store.dispatch({
         kind: "spend-tracker",
         trackerId: spend.trackerId,
@@ -233,6 +256,7 @@ function Prompt({
         : "combat.rerollFailureToast",
       { name: offer.action.name, total: committed.result.total }
     );
+    dismissSavePrompt();
     registerUndoableResult({ message }, undo, () => applyReroll(entry, offer, as));
   };
   return (
@@ -306,7 +330,7 @@ function Prompt({
           )}
           {failsNow && (
             <div className="f-chips" role="group" aria-label={t("combat.rerollOffers")}>
-              {offers.map((offer) => (
+              {choices.map((offer) => (
                 <Chip
                   key={offer.action.id}
                   onClick={() => {

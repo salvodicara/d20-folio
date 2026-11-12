@@ -23,6 +23,7 @@ import { SOURCE_LOCALE, type Locale } from "@/lib/locale";
 import { riderEffectClause } from "@/lib/views/effect-rider-view";
 import type { PlayEvent } from "@/lib/session-log";
 import { coinsText } from "@/lib/play/purchase";
+import { withRestRecovery } from "@/lib/views/session-report-view";
 
 /**
  * The minimal `t` shape this presenter needs — the i18next translator. Kept as a
@@ -125,6 +126,8 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
     case "rest":
     case "time-passes":
       return resolveLogStyle("rest");
+    case "level-up":
+      return resolveLogStyle("generic");
     case "turn-end":
     case "fight-start":
     case "fight-end":
@@ -212,6 +215,8 @@ export function playEventLogStyle(event: PlayEvent): LogStyle {
       return resolveLogStyle("death-save");
     case "rest":
       return resolveLogStyle("rest");
+    case "level-up":
+      return resolveLogStyle("generic");
     case "round-start":
     case "solo-fight":
       return resolveLogStyle("turn-end");
@@ -389,7 +394,17 @@ export function localizeCombatEvent(
         { successes: event.successes, failures: event.failures }
       );
     case "rest":
-      return t(event.restKind === "long" ? "combatLog.longRest" : "combatLog.shortRest");
+      return withRestRecovery(
+        t(event.restKind === "long" ? "combatLog.longRest" : "combatLog.shortRest"),
+        event,
+        t,
+        resolveSourceName
+      );
+    case "level-up":
+      return t("combatLog.levelUp", {
+        level: event.to,
+        class: resolveSourceName(event.classId),
+      });
     case "time-passes":
       return t("combatLog.timePasses", { count: event.minutes });
     case "turn-end":

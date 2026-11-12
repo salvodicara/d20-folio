@@ -529,10 +529,11 @@ describe("conformance · 5. multiclass and spellcasting", () => {
         if (!action) throw new Error("missing action");
         return economyActionCategory(action);
       };
-      // A weapon swing fills an attack of the Attack action; a spell never does.
+      // A weapon swing fills an attack of the Attack action; a spell never does: it
+      // is the Magic action (which Action Surge's extra action can't be).
       expect(category((a) => a.source === "weapon")).toBe("attack");
-      expect(category((a) => a.id === "spell-fire-bolt")).toBeNull();
-      expect(category((a) => a.id === "spell-true-strike")).toBeNull();
+      expect(category((a) => a.id === "spell-fire-bolt")).toBe("magic");
+      expect(category((a) => a.id === "spell-true-strike")).toBe("magic");
     }
   );
 });

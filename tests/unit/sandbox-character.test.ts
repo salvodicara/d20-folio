@@ -83,14 +83,14 @@ describe("the campaign's copy of a sandbox hero", () => {
   it("carries the fixture's name, race and classes, at the level it was seeded", () => {
     const envelope = {
       build: {
-        name: "Bard di Sancaldo",
+        name: "Bard di Sanvaldo",
         race: "elf",
         classes: [{ classId: "bard", level: 3 }],
       },
       state: {},
     };
     expect(sandboxMemberCharacter(envelope)).toEqual({
-      name: "Bard di Sancaldo",
+      name: "Bard di Sanvaldo",
       race: "elf",
       classes: [{ classId: "bard", level: 3 }],
       portraitUrl: null,

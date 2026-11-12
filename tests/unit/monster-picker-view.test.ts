@@ -4,13 +4,14 @@
  * readout of the fight as it would be with the picked creatures, on the party the
  * campaign has attached (2024 SRD encounter-building XP budgets).
  */
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 import {
   encounterBudget,
   homebrewPickerMonsters,
-  homebrewMonsterInput,
+  pickedMonsterInputs,
 } from "@/domains/combat/monster-picker-view";
+import { ensureSrdKind } from "@/i18n";
 import type { LibraryEntry } from "@/lib/library";
 import type { CampaignDoc } from "@/types/campaign";
 
@@ -72,7 +73,13 @@ describe("the homebrew rows of the monster picker", () => {
   });
 
   it("a picked one becomes the add move's input, costed from its CR", () => {
-    expect(homebrewMonsterInput(library, "lib-1", 2, 13)).toMatchObject({
+    const [input] = pickedMonsterInputs(
+      [{ kind: "homebrew", id: "lib-1", count: 2 }],
+      library,
+      "en",
+      () => 13
+    );
+    expect(input).toMatchObject({
       name: "Bog Troll",
       ac: 15,
       maxHp: 84,
@@ -80,7 +87,14 @@ describe("the homebrew rows of the monster picker", () => {
       initiative: 13,
       xp: 1800,
     });
-    expect(homebrewMonsterInput(library, "missing", 1, null)).toBeNull();
+    expect(
+      pickedMonsterInputs(
+        [{ kind: "homebrew", id: "missing", count: 1 }],
+        library,
+        "en",
+        () => 1
+      )
+    ).toEqual([]);
   });
 });
 
@@ -117,5 +131,40 @@ describe("the budget readout", () => {
     });
     const empty = { ...campaign(), memberDetails: {} };
     expect(encounterBudget(empty, [{ cr: 1, count: 1 }]).difficulty).toBeNull();
+  });
+});
+
+// Walkthrough 2026-11-12 (M7): a creature added mid-fight sat at the bottom with no
+// initiative. D&D Beyond's Encounter Builder and Foundry roll the monsters' initiative
+// for the DM; a group of identical creatures shares one roll (SRD 5.2.1, Initiative).
+describe("the picks as the fight's creatures", () => {
+  beforeAll(() => ensureSrdKind("monster"));
+
+  it("each group rolls its initiative as it enters: d20 + the stat block's bonus", () => {
+    const rolls = [12, 5];
+    const inputs = pickedMonsterInputs(
+      [
+        { kind: "srd", id: "goblin-warrior", count: 3 },
+        { kind: "homebrew", id: "lib-1", count: 1 },
+      ],
+      library,
+      "en",
+      () => rolls.shift() ?? 0
+    );
+    // Goblin Warrior: DEX 15, Initiative +2.
+    expect(inputs.map((i) => [i.name, i.count, i.initiative])).toEqual([
+      ["Goblin Warrior", 3, 14],
+      // A homebrew creature prints no bonus: the plain d20.
+      ["Bog Troll", 1, 5],
+    ]);
+  });
+
+  it("an unknown pick adds nothing and rolls nothing", () => {
+    let rolled = 0;
+    const d20 = () => ++rolled;
+    expect(
+      pickedMonsterInputs([{ kind: "srd", id: "nope", count: 1 }], library, "en", d20)
+    ).toEqual([]);
+    expect(rolled).toBe(0);
   });
 });
