@@ -91,7 +91,8 @@
       "failed": "{{name}} fails",
       "noEffect": "{{result}}: no effect"
     },
-    "check": "{{skill}} {{total}}",
-    "checkDc": "{{skill}} {{total}} vs DC {{dc}}: {{verdict}}"
+    "check": "{{skill}} check: {{total}}",
+    "checkPassed": "succeeds on the {{skill}} check ({{total}} vs DC {{dc}})",
+    "checkFailed": "fails the {{skill}} check ({{total}} vs DC {{dc}})"
   }
 }

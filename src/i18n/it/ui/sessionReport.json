@@ -91,7 +91,8 @@
       "failed": "{{name}} fallisce",
       "noEffect": "{{result}}: nessun effetto"
     },
-    "check": "{{skill}} {{total}}",
-    "checkDc": "{{skill}} {{total}} contro CD {{dc}}: {{verdict}}"
+    "check": "prova di {{skill}}: {{total}}",
+    "checkPassed": "supera la prova di {{skill}} ({{total}} contro CD {{dc}})",
+    "checkFailed": "fallisce la prova di {{skill}} ({{total}} contro CD {{dc}})"
   }
 }

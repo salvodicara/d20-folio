@@ -62,22 +62,19 @@ function savesClause(
   return event.noEffect ? t("sessionReport.saves.noEffect", { result }) : result;
 }
 
-/** The check entered with a use, like a VTT's roll card: "Perception 17 vs DC 15:
- *  success", or "Perception 17" without a DC. No check: `null`. */
+/** The check entered with a use, in the report's save voice: "succeeds on the
+ *  Perception check (17 vs DC 15)", or "Perception check: 17" without a DC. No check:
+ *  `null`. */
 function checkClause(event: ActionEvent, t: TranslateFn): string | null {
   const check = event.check;
   if (!check) return null;
   const skill = t(`skills.${check.skill}`);
   if (check.dc === undefined)
     return t("sessionReport.check", { skill, total: check.total });
-  return t("sessionReport.checkDc", {
-    skill,
-    total: check.total,
-    dc: check.dc,
-    verdict: t(
-      check.total >= check.dc ? "combatLog.checkSuccess" : "combatLog.checkFailure"
-    ),
-  });
+  return t(
+    check.total >= check.dc ? "sessionReport.checkPassed" : "sessionReport.checkFailed",
+    { skill, total: check.total, dc: check.dc }
+  );
 }
 
 export function localizePlayEvent(

@@ -216,16 +216,16 @@ describe("the report says the roll (EN and IT)", () => {
 
   it("a check against a DC says its verdict", async () => {
     expect(await line("en", search({ skill: "perception", total: 17, dc: 15 }))).toBe(
-      "Lara uses Search — Perception 17 vs DC 15: success"
+      "Lara uses Search — succeeds on the Perception check (17 vs DC 15)"
     );
     expect(await line("it", search({ skill: "perception", total: 12, dc: 15 }))).toBe(
-      "Lara usa Cercare — Percezione 12 contro CD 15: fallimento"
+      "Lara usa Cercare — fallisce la prova di Percezione (12 contro CD 15)"
     );
   });
 
   it("a check without a DC says its total", async () => {
     expect(await line("it", search({ skill: "perception", total: 17 }))).toBe(
-      "Lara usa Cercare — Percezione 17"
+      "Lara usa Cercare — prova di Percezione: 17"
     );
   });
 });
