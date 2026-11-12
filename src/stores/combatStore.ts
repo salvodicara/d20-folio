@@ -97,9 +97,6 @@ export interface SelectedAction {
   };
 }
 
-/** The economy slots that carry a per-turn BUDGET (free is uncapped). */
-export type BudgetedSlot = "action" | "bonus";
-
 /** Extra economy slots THIS turn beyond the default 1 of each (B6). */
 export interface SlotBudget {
   /** Total ACTION slots available this turn (1 + active extra-action sources). */
