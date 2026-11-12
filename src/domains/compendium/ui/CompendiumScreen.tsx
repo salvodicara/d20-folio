@@ -72,6 +72,7 @@ export function CompendiumScreen() {
   const title = selected ? spec.getName(selected, picker.ctx) : null;
   useDocumentTitle(title ? `${title} · ${t("nav.compendium")}` : t("nav.compendium"));
   const active = countActiveFacets(spec.filters, picker.filterState);
+  const hasFilters = spec.filters.length > 0;
 
   const results = (
     <Panel
@@ -123,15 +124,20 @@ export function CompendiumScreen() {
               onChange={(e) => picker.setQuery(e.target.value)}
             />
           </label>
-          {!wide && (
+          {!wide && hasFilters && (
             <Button icon="u-filter" aria-haspopup="dialog" onClick={() => setSheet(true)}>
               {t("compendium.filters")}
               {active > 0 && <span className="f-chip-n">{active}</span>}
             </Button>
           )}
         </div>
-        <div className="f-cmp-grid" data-open={selected ? "" : undefined}>
-          {wide && (
+        <div
+          className="f-cmp-grid"
+          data-open={selected ? "" : undefined}
+          data-nofilters={hasFilters ? undefined : ""}
+        >
+          {/* a kind with nothing to filter has no filter panel */}
+          {wide && hasFilters && (
             <Panel
               color="cmp"
               title={t("compendium.filters")}
@@ -278,10 +284,21 @@ function ResultRows({
             </Slot>
             <span className="f-row-main">
               <span className="f-row-t">{row.name}</span>
-              {(cr ?? row.meta) && (
+              {(cr ?? row.meta ?? verdict) && (
                 <span className="f-row-s">
                   {cr}
-                  {cr && row.meta ? " · " : null}
+                  {/* a phone has no verdict column: the class or school joins the line */}
+                  {verdict && (
+                    <span className="f-cmp-verdict-m">
+                      {cr ? "\u00a0· " : null}
+                      {verdict.label}
+                    </span>
+                  )}
+                  {(cr || verdict) && row.meta ? (
+                    <span className={cr ? undefined : "f-cmp-verdict-m"}>
+                      {"\u00a0· "}
+                    </span>
+                  ) : null}
                   {row.meta}
                 </span>
               )}

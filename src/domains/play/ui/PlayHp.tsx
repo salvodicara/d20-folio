@@ -24,11 +24,15 @@ export function PlayHp({
   doc,
   locale,
   onClose,
+  intent = "damage",
 }: {
   doc: CharacterDoc;
   locale: Locale;
   onClose: () => void;
+  /** The button that opened it: its action leads (filled) and colours the header. */
+  intent?: "damage" | "heal";
 }) {
+  const healing = intent === "heal";
   const { t } = useTranslation();
   const hp = useHpControls();
   const [text, setText] = useState("");
@@ -70,7 +74,7 @@ export function PlayHp({
     <Dialog
       open
       onClose={onClose}
-      color="ini"
+      color={healing ? "cmp" : "ini"}
       title={t("play.hp.title")}
       closeLabel={t("common.close")}
     >
@@ -115,7 +119,7 @@ export function PlayHp({
       )}
       <div className="f-hp-acts f-ask">
         <Button
-          kind="danger"
+          kind={healing ? "ghost" : "danger"}
           wide
           disabled={!amount || hp.dead}
           onClick={() => {
@@ -129,7 +133,7 @@ export function PlayHp({
           {t("mechanics.cast.optionDamage")}
         </Button>
         <Button
-          kind="primary"
+          kind={healing ? "primary" : "ghost"}
           wide
           disabled={!amount || hp.dead}
           onClick={() => {

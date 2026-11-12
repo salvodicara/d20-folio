@@ -213,9 +213,19 @@ export function useCompendiumPicker<T>(
     // Join a spec's candidate array into ONE haystack (Array.join renders null/
     // undefined as ""; interstitial whitespace is irrelevant to the tokenizer).
     const corpus = (cands: Array<string | null | undefined>) => cands.join(" ");
+    const q = deferredQuery.trim();
+    if (!q) {
+      // Browse order: the natural group, then the name the reader sees (Italian
+      // names in Italian, not the English data order).
+      const collator = new Intl.Collator(ctx.locale, { sensitivity: "base" });
+      const group = spec.sortGroup ?? (() => 0);
+      const keyed = result.map((e) => ({ e, g: group(e), n: spec.getName(e, ctx) }));
+      keyed.sort((a, b) => a.g - b.g || collator.compare(a.n, b.n));
+      return keyed.map((k) => k.e);
+    }
     return [
       ...rankedSearch(
-        deferredQuery.trim(),
+        q,
         result,
         (e) => corpus(spec.nameText(e, ctx)),
         (e) => corpus(spec.searchText(e, ctx))
