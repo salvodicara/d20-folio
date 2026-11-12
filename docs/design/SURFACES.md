@@ -58,6 +58,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `dialog:features/character/center/CombatHeader`                    | Character  | todo   |
 | `dialog:components/shared/DamageTrayPanel`                         | Character  | todo   |
 | `dialog:features/character/center/tabs/CombatAlgorithm`            | Character  | todo   |
+| `dialog:features/character/center/RollReactionDialog`              | Character  | todo   |
 | `dialog:features/character/ChoiceRePicker`                         | Character  | todo   |
 | `dialog:features/character/companions/bestiary-summon-picker`      | Character  | todo   |
 | `dialog:features/character/companions/familiar-picker`             | Character  | todo   |

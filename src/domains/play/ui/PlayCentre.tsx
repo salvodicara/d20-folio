@@ -33,6 +33,13 @@ import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
 import { helpView, type HelpView } from "@/domains/play/help-view";
+import {
+  featureArtId,
+  rollReactionView,
+  type RollReactionView,
+} from "@/features/character/center/roll-reaction-view";
+import { RollReactionDialog } from "@/features/character/center/RollReactionDialog";
+import { rollReactionOf } from "@/lib/play/roll-reactions";
 import { spareView, type SpareView } from "@/domains/play/spare-view";
 import {
   stateWeaponPickView,
@@ -848,7 +855,7 @@ function ActionLine({
   spell?: { prepared: boolean; ritual: boolean };
 }) {
   const { t } = useTranslation();
-  const { executeAction } = useTurnEconomy();
+  const { executeAction, commitRollReaction } = useTurnEconomy();
   const fight = useSheetCombat();
   const readonly = useSheetReadonly();
   const { cta } = row;
@@ -862,8 +869,22 @@ function ActionLine({
   const [helping, setHelping] = useState<HelpView | null>(null);
   const [checking, setChecking] = useState<CheckEntry[] | null>(null);
   const [familiar, setFamiliar] = useState(false);
+  // A use on another creature's roll (Cutting Words) asks on whom and which roll.
+  const [rolling, setRolling] = useState<RollReactionView | null>(null);
   const cast = () => {
     const status = useCombatStatusStore.getState().status;
+    const reaction = rollReactionOf(row.action);
+    const rollView = reaction
+      ? rollReactionView(
+          reaction,
+          status ? { myId: status.myId, rows: status.view.rows } : null,
+          row.action.summary.uses
+        )
+      : null;
+    if (rollView) {
+      setRolling(rollView);
+      return;
+    }
     if (row.action.id === "base-help" && combatEffectsV26On()) {
       const help =
         status && doc && status.characterId === doc.id
@@ -1017,6 +1038,18 @@ function ActionLine({
           action={row.action}
           entries={checking}
           onClose={() => setChecking(null)}
+        />
+      )}
+      {rolling && (
+        <RollReactionDialog
+          name={row.name}
+          featureId={featureArtId(row.action.nameLoc)}
+          view={rolling}
+          onClose={() => setRolling(null)}
+          onUse={(rollPlan) => {
+            setRolling(null);
+            commitRollReaction(row.action, rollPlan);
+          }}
         />
       )}
       {helping && doc && (
