@@ -122,7 +122,8 @@ function conformanceCount(): { works: number; pending: number; total: number } {
   return { works, pending, total: corpusCases().length };
 }
 
-/** Source files (outside tests) that are screens: React components. */
+/** Source files (outside tests) that are screens: React components. A gap's
+ *  `waitsFor` names the function a screen calls, or the hook it mounts. */
 function screenSources(): string[] {
   const out: string[] = [];
   const walk = (dir: string) => {
