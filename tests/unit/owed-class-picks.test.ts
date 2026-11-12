@@ -88,7 +88,8 @@ describe("owedClassPicks", () => {
     const c = build([{ classId: "wizard", level: 1 }], {
       spells: cantrips("fire-bolt", "light", "mage-hand", "message", "ray-of-frost"),
     });
-    expect(owedClassPicks(c)).toEqual([]);
+    // (The Wizard's empty book is its own pick: wizard-spellbook.test.ts.)
+    expect(owedClassPicks(c).filter((o) => o.pick !== "spellbook")).toEqual([]);
     // Sorcerer 1: Metamagic opens at 2.
     const sorc = build([{ classId: "sorcerer", level: 1 }], {
       spells: cantrips("fire-bolt", "light", "mage-hand", "message"),
@@ -137,7 +138,7 @@ describe("owedClassPicks", () => {
     const c = build([{ classId: "wizard", level: 1 }], {
       spells: cantrips("fire-bolt", "light", "sacred-flame"),
     });
-    expect(owedClassPicks(c)).toEqual([]);
+    expect(owedClassPicks(c).filter((o) => o.pick !== "spellbook")).toEqual([]);
   });
 
   it("Weapon Mastery follows the column: a Fighter 4 with 3 masteries owes 1, a Paladin's 2 is flat", () => {
@@ -168,7 +169,9 @@ describe("owedClassPicks", () => {
         { srdId: "magic-missile", prepared: true },
       ],
     });
-    expect(owedClassPicks(c)).toEqual([{ classId: "wizard", pick: "cantrips", owed: 1 }]);
+    expect(owedClassPicks(c).filter((o) => o.pick !== "spellbook")).toEqual([
+      { classId: "wizard", pick: "cantrips", owed: 1 },
+    ]);
   });
 
   it("maneuvers: a Fighter 7 with maneuvers and three owes two", () => {

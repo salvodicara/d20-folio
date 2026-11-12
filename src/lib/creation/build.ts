@@ -143,7 +143,8 @@ export function buildNewCharacter(
   // spells, then the always-prepared spells of feature/feat grants.
   let spells: (SrdSpellRef | CustomSpell)[] = [
     ...draft.cantrips.map((id) => ({ srdId: id, prepared: true })),
-    ...draft.spells.map((id) => ({ srdId: id, prepared: true })),
+    // A Wizard's book holds more than it prepares: the first picks are prepared.
+    ...draft.spells.map((id, i) => ({ srdId: id, prepared: i < facts.preparedNeeded })),
   ];
   spells = injectExpandedSpells(
     spells,
@@ -217,7 +218,7 @@ export function buildNewCharacter(
       ? {
           ability: classTable.spellcasting.ability,
           preparedCaster: classTable.spellcasting.preparedCaster,
-          preparedMax: facts.spellsNeeded,
+          preparedMax: facts.preparedNeeded,
           saveDCOverride: null,
           attackBonusOverride: null,
         }

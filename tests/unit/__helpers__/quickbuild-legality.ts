@@ -32,6 +32,7 @@ import { spells as ALL_SPELLS } from "@/data/spells";
 import { ALL_ABILITY_CODES } from "@/data/types";
 import { skillNameToId } from "@/lib/compute";
 import { POINT_BUY_BUDGET, pointBuyCost } from "@/features/creation/steps/steps";
+import { wizardBookSize } from "@/lib/wizard-spellbook";
 
 /** Assert that `preset` is a legal, COMPLETE level-1 build for `classId`. */
 export function expectLegalPreset(classId: string, preset: QuickbuildPreset): void {
@@ -102,7 +103,12 @@ export function expectLegalPreset(classId: string, preset: QuickbuildPreset): vo
   const cantrips = preset.cantrips ?? [];
   const spells = preset.spells ?? [];
   expect(cantrips.length, `${classId} cantrips`).toBe(row?.cantripsKnown ?? 0);
-  expect(spells.length, `${classId} spells`).toBe(row?.spellsKnown ?? 0);
+  // A Wizard picks its book (6), of which the table's count is prepared.
+  const picks =
+    classId === "wizard" && (row?.spellsKnown ?? 0) > 0
+      ? wizardBookSize(1)
+      : (row?.spellsKnown ?? 0);
+  expect(spells.length, `${classId} spells`).toBe(picks);
   const maxLevel = (row?.spellSlots ?? []).reduce(
     (max, slots, i) => (slots > 0 ? i + 1 : max),
     0

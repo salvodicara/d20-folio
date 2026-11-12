@@ -217,11 +217,16 @@ const SRD_QUICKBUILD_PRESETS = {
     languages: ["elvish", "draconic"],
     lineage: { "elf-lineage": "high-elf" },
     cantrips: ["light", "mage-hand", "ray-of-frost"],
-    // The PHB recommends SIX spellbook spells (Detect Magic, Feather Fall, Mage
-    // Armor, Magic Missile, Sleep, Thunderwave); level 1 prepares four of them,
-    // and Detect Magic + Feather Fall come free through the Sage's Magic
-    // Initiate below.
-    spells: ["mage-armor", "magic-missile", "sleep", "thunderwave"],
+    // The book's SIX spells (the PHB's suggestion, with Shield for Detect Magic,
+    // which the Sage's Magic Initiate below gives); level 1 prepares the first four.
+    spells: [
+      "mage-armor",
+      "magic-missile",
+      "sleep",
+      "thunderwave",
+      "feather-fall",
+      "shield",
+    ],
     // Magic Initiate (Wizard), from the Sage; then Keen Senses: Perception.
     choices: {
       spell: ["minor-illusion", "prestidigitation", "detect-magic"],
