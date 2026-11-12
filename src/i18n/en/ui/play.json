@@ -263,6 +263,7 @@
       "stable": "Stable: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
       "stableFor": "Stable for {{minutes}} min: after 1d4 hours it regains 1 Hit Point (the table rolls the hours).",
       "addAfter": "After the roll",
+      "foretold": "In place of the d20",
       "addBardic": "+ Bardic Inspiration ({{die}})",
       "secondFace": "The second d20",
       "dieFace": "What did the {{die}} show?",
