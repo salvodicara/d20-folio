@@ -43,6 +43,8 @@ export type PlayEvent =
       /** One result for every target ("critical" = a critical hit). Readers ignore a
        *  value they do not know. */
       outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
+      /** The damage dealt, typed by the player for an attack with no target in Folio. */
+      amount?: number;
       /** Each target's save (an older reader shows the shared `outcome`, set when every
        *  target agrees), and whether nothing came of it. */
       saves?: SaveResults;
@@ -151,6 +153,15 @@ export type PlayEvent =
   /** Heroic Inspiration was gained or spent (given by someone else: `resource-grant`). */
   | { kind: "inspiration"; gained: boolean; target?: CombatantId; source?: LocText }
   | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
+  /** A class resource spent or regained (Bardic Inspiration, Rage, Second Wind…):
+   *  `resource` is the feature's stable id, named at render. */
+  | {
+      kind: "resource";
+      resource: string;
+      count: number;
+      spent: boolean;
+      actor?: CombatantId;
+    }
   | { kind: "rest"; rest: "short" | "long"; actor?: CombatantId }
   /** Minutes pass outside the turn order; what runs out in them ends. */
   | { kind: "time-passes"; minutes: number; actor?: CombatantId }

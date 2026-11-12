@@ -218,9 +218,20 @@ export function ThisTurnTracker({
       // that would resurrect the dual-home drift this re-architecture deleted.
       const myUid = gc.myId.startsWith("pc-") ? gc.myId.slice(3) : gc.myId;
       const campaignId = gc.campaignId;
+      const value = roll === "" ? null : Number(roll);
+      const bonus = gc.initiativeBonus;
       void import("@/features/campaigns/campaign-io")
         .then(({ setEncounterInitiative }) =>
-          setEncounterInitiative(campaignId, myUid, roll === "" ? null : Number(roll))
+          setEncounterInitiative(campaignId, myUid, value)
+        )
+        // The roll is a session-report line too ("Lyra: initiative 15").
+        .then(() =>
+          value === null
+            ? null
+            : import("@/features/campaigns/combat-lifecycle-io").then(
+                ({ recordOwnInitiative }) =>
+                  recordOwnInitiative(campaignId, myUid, value, bonus)
+              )
         )
         .catch((e: unknown) => console.error("Initiative roll failed", e));
     } else {

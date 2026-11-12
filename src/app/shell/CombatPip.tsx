@@ -168,9 +168,19 @@ export function CombatPip() {
     ) {
       applyFirstRollTopUps(t, locale);
     }
+    const { campaignId, initiativeBonus } = rollTarget.status;
     void import("@/features/campaigns/campaign-io")
       .then(({ setEncounterInitiative }) =>
-        setEncounterInitiative(rollTarget.status.campaignId, rollTarget.uid, roll)
+        setEncounterInitiative(campaignId, rollTarget.uid, roll)
+      )
+      // The roll is a session-report line too ("Lyra: initiative 15").
+      .then(() =>
+        roll === null
+          ? null
+          : import("@/features/campaigns/combat-lifecycle-io").then(
+              ({ recordOwnInitiative }) =>
+                recordOwnInitiative(campaignId, rollTarget.uid, roll, initiativeBonus)
+            )
       )
       .catch((e: unknown) => {
         console.error("Initiative roll failed", e);

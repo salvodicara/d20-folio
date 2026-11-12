@@ -94,6 +94,13 @@
     },
     "check": "{{skill}} check: {{total}}",
     "checkPassed": "succeeds on the {{skill}} check ({{total}} vs DC {{dc}})",
-    "checkFailed": "fails the {{skill}} check ({{total}} vs DC {{dc}})"
+    "checkFailed": "fails the {{skill}} check ({{total}} vs DC {{dc}})",
+    "trackerUse": {
+      "spent_one": "{{actor}} spends one use of {{resource}}",
+      "spent_other": "{{actor}} spends {{count}} uses of {{resource}}",
+      "regained_one": "{{actor}} regains one use of {{resource}}",
+      "regained_other": "{{actor}} regains {{count}} uses of {{resource}}"
+    },
+    "dealt": "{{amount}} damage"
   }
 }

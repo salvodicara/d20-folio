@@ -160,14 +160,35 @@ export function subscribeToEndedCombat(
  */
 export async function rollIntoCombat(
   campaignId: string,
-  input: { uid: string; roll: number | null; bonuses: Readonly<Record<string, number>> }
+  input: { uid: string; roll: number | null; bonuses: Readonly<Record<string, number>> },
+  /** Where the roll's report line goes (the campaign's session log in the app). */
+  recorder: Pick<SessionRecorder, "record" | "retract"> = createSessionRecorder({
+    store: sessionLogStoreFor(campaignId),
+    uid: input.uid,
+  })
 ): Promise<CombatUndo | null> {
   const done = await applyMove(campaignId, (campaign) => {
     const plan = planRoll(campaign, { ...input, now: Date.now() });
     return plan && { patch: plan.patch, result: plan };
   });
   if (!done) return null;
+  // The player's own roll is a report line too ("Lyra: initiative 15"), as the DM's
+  // roll for a missing player already is; taking a roll back writes none.
+  const line =
+    input.roll === null
+      ? null
+      : await recordOwnInitiative(
+          campaignId,
+          input.uid,
+          input.roll,
+          input.bonuses[`pc-${input.uid}`] ?? 0,
+          recorder
+        );
+  const retractLine = async () => {
+    if (line) await recorder.retract(line).catch(() => null);
+  };
   return async () => {
+    await retractLine();
     if (done.started) {
       const cancelled = await applyMove(campaignId, (campaign) => {
         const patch = planCancel(campaign, { uid: input.uid, epoch: done.epoch });
@@ -183,6 +204,27 @@ export async function rollIntoCombat(
     });
     return restored === true;
   };
+}
+
+/**
+ * A player's own initiative roll as a session-report line (`initiative`, the total
+ * with the bonus), written by that player's device; the line's id, or `null` when the
+ * write failed (the roll itself stands). The classic sheet calls it after saving the
+ * roll; `rollIntoCombat` does it itself.
+ */
+export async function recordOwnInitiative(
+  campaignId: string,
+  uid: string,
+  roll: number,
+  bonus: number,
+  recorder: Pick<SessionRecorder, "record"> = createSessionRecorder({
+    store: sessionLogStoreFor(campaignId),
+    uid,
+  })
+): Promise<string | null> {
+  return recorder
+    .record({ kind: "initiative", actor: `pc-${uid}`, roll, total: roll + bonus })
+    .catch(() => null);
 }
 
 /** Pass the turn (anyone at the table in a lifecycle fight). `expectedCurrentId` is the

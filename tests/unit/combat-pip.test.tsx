@@ -20,10 +20,12 @@ import { MemoryRouter } from "react-router";
 
 // The roll-COMMIT module is dynamically imported on commit — mock it (and firebase) so the
 // unit suite stays CI-pure (never loads the firebase/engine graph).
-const { setEncounterInitiative } = vi.hoisted(() => ({
+const { setEncounterInitiative, recordOwnInitiative } = vi.hoisted(() => ({
   setEncounterInitiative: vi.fn(),
+  recordOwnInitiative: vi.fn(),
 }));
 vi.mock("@/features/campaigns/campaign-io", () => ({ setEncounterInitiative }));
+vi.mock("@/features/campaigns/combat-lifecycle-io", () => ({ recordOwnInitiative }));
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { CombatPip } from "@/app/shell/CombatPip";
@@ -92,6 +94,7 @@ function renderPip(path = "/characters/char-x") {
 
 beforeEach(() => {
   setEncounterInitiative.mockReset();
+  recordOwnInitiative.mockReset();
   useCombatStatusStore.setState({ status: null, pip: null });
   useAuthStore.setState({ user: { uid: "u1" } as never });
 });
@@ -131,6 +134,15 @@ describe("CombatPip", () => {
     // NOTHING else to pass: no combat base, no epoch, no max HP (the deleted machinery).
     await waitFor(() =>
       expect(setEncounterInitiative).toHaveBeenCalledWith("mock-1", "u1", 15)
+    );
+    // The roll is a session-report line too, its total with the viewer's bonus.
+    await waitFor(() =>
+      expect(recordOwnInitiative).toHaveBeenCalledWith(
+        "mock-1",
+        "u1",
+        15,
+        gc().initiativeBonus
+      )
     );
   });
 

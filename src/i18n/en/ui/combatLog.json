@@ -58,6 +58,8 @@
     "inspirationGained": "Gained Heroic Inspiration",
     "inspirationSpent": "Spent Heroic Inspiration",
     "repeatSavePassed": "Used the action to repeat the {{ability}} save against {{condition}}: succeeded",
-    "repeatSaveFailed": "Used the action to repeat the {{ability}} save against {{condition}}: failed"
+    "repeatSaveFailed": "Used the action to repeat the {{ability}} save against {{condition}}: failed",
+    "trackerSpent_one": "Spent one use of {{name}}",
+    "trackerSpent_other": "Spent {{count}} uses of {{name}}"
   }
 }
