@@ -21,6 +21,7 @@
  * every derived stat here without a legacy activation row, and key-identity
  * dedupe makes double-counting unrepresentable.
  */
+import { partyAuraSource } from "@/lib/play/aura-source";
 import { resolveRiderSpeedLossSources } from "@/lib/play/rider-speed-loss";
 import type { Exhaustion } from "@/lib/compute";
 import { isMagicalCopy } from "@/lib/item-copies";
@@ -115,6 +116,7 @@ export type AggregationSession = Pick<
       | "conditions"
       | "concentrationConditions"
       | "encounterEffects"
+      | "partyAura"
       | "concentration"
       | "itemResources"
       | "world"
@@ -251,6 +253,8 @@ function aggregateWithConditions(
         ...resolvePotionStateSources(activeKeys, character.equipment),
         // A fading D20 Test penalty (Raise Dead) carries its flat penalties until it ends.
         ...resolveFadingPenaltySources(session.fadingPenalties),
+        // A party paladin's Aura of Protection reaching this sheet (+CHA to saves).
+        ...(session.partyAura ? [partyAuraSource(session.partyAura)] : []),
         ...lightSources,
       ],
       activeKeys,

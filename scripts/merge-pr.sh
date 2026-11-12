@@ -28,6 +28,7 @@ REQUIRED=(
   "rules (emulator)"
   "design rules (Linux)"
   "functions"
+  "partition guards (composed)"
 )
 
 say() { printf '%s\n' "$*" >&2; }

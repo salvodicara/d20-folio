@@ -3,6 +3,7 @@
  * The store ends Concentration first where the rest does (sleep), then applies these,
  * logs the rest, persists, and fences the undo stack.
  */
+import { OUT_OF_AURA_PREFIX } from "@/lib/play/aura-source";
 import { ageFallenSummons } from "./companions";
 import { endSummonsOn, endSummonsOutlastedBy } from "./companions";
 import { advanceTimeOfDay, restCrossesDawn } from "./time";
@@ -156,8 +157,9 @@ function longRestOwn(character: CharacterDoc): CharacterDoc {
       concentration: "",
       concentrationCastLevel: undefined,
       concentrationConditions: undefined,
+      // Standing outside a party paladin's aura lasts until the next rest.
       activeFeatures: (character.session.activeFeatures ?? []).filter(
-        (key) => !endedActiveKeys.has(key)
+        (key) => !endedActiveKeys.has(key) && !key.startsWith(OUT_OF_AURA_PREFIX)
       ),
       activeSpellCastLevels: omitStateKeys(
         character.session.activeSpellCastLevels,
@@ -260,8 +262,9 @@ function shortRestOwn(character: CharacterDoc): CharacterDoc {
       trackers: newTrackers,
       spellSlots: newSpellSlots,
       exhaustion: newExhaustion,
+      // Standing outside a party paladin's aura lasts until the next rest.
       activeFeatures: (character.session.activeFeatures ?? []).filter(
-        (key) => !endedActiveKeys.has(key)
+        (key) => !endedActiveKeys.has(key) && !key.startsWith(OUT_OF_AURA_PREFIX)
       ),
       activeSpellCastLevels: omitStateKeys(
         character.session.activeSpellCastLevels,

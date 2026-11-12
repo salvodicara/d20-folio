@@ -1,5 +1,5 @@
 /**
- * Rehearsal 5 — rests and the clock. Catalion lets an hour pass so Warding Bond, which
+ * Rehearsal 5 — rests and the clock. Bard lets an hour pass so Warding Bond, which
  * outlived the fight, ends by itself; then takes a Short Rest (spending a Hit Die). The
  * hour comes first: a Short Rest is itself an hour, and would end the bond already.
  * The Wizard takes a Long Rest and goes through its prepared-spells step.
@@ -13,9 +13,9 @@ import {
   watchErrors,
 } from "./helpers";
 
-test("Catalion: an hour passes and Warding Bond ends by itself", async ({ page }) => {
-  await signInAs(page, SANDBOX_USERS.catalion.email);
-  await page.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+test("Bard: an hour passes and Warding Bond ends by itself", async ({ page }) => {
+  await signInAs(page, SANDBOX_USERS.bard.email);
+  await page.goto(`/characters/${SANDBOX_USERS.bard.characterId}`);
   await expect(page.locator(".f-char")).toBeVisible({ timeout: 60_000 });
   await expect(page.locator(".f-char-stats")).toContainText("15"); // Warding Bond's +1 AC
   await page.getByRole("button", { name: "Let time pass" }).first().click();
@@ -29,14 +29,14 @@ test("Catalion: an hour passes and Warding Bond ends by itself", async ({ page }
     .last()
     .click();
   await expect(dialog).toHaveCount(0);
-  // Warding Bond lasts 1 hour: after it, its +1 AC is gone (Catalion's AC 15 → 14).
+  // Warding Bond lasts 1 hour: after it, its +1 AC is gone (Bard's AC 15 → 14).
   await expect(page.locator(".f-char-stats")).toContainText("14");
 });
 
-test("Catalion: a Short Rest spends a Hit Die and heals", async ({ page }) => {
+test("Bard: a Short Rest spends a Hit Die and heals", async ({ page }) => {
   const errors = watchErrors(page);
-  await signInAs(page, SANDBOX_USERS.catalion.email);
-  await page.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+  await signInAs(page, SANDBOX_USERS.bard.email);
+  await page.goto(`/characters/${SANDBOX_USERS.bard.characterId}`);
   await page.getByRole("button", { name: "Short rest" }).first().click();
   const dialog = page.locator("dialog[open]");
   await expect(dialog).toBeVisible();

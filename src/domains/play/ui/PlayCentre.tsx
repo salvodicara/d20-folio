@@ -10,6 +10,7 @@ import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
   checkEntriesFor,
   skillBonusFor,
+  skillFaceFloorFor,
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { PlayCheck } from "@/domains/play/ui/PlayCheck";
@@ -25,7 +26,10 @@ import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-
 import { PlaySituations } from "./PlaySituations";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
-import { rollInitiativeFromSheet } from "@/domains/play/sheet-initiative-roll";
+import {
+  initiativePaidAdvantage,
+  rollInitiativeFromSheet,
+} from "@/domains/play/sheet-initiative-roll";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
@@ -373,7 +377,7 @@ function InventoryPane({
       {coins.length > 0 && (
         <p className="f-coins">
           {coins.map((c) => (
-            <span key={c} className="f-coin" data-c={c}>
+            <span key={c} className="f-coin" data-coin={c}>
               <b>{view.coins[c]}</b> {t(`equipment.currencyAbbr.${c}`)}
             </span>
           ))}
@@ -738,6 +742,7 @@ function TurnStrip({
           roll={{
             ...initiativeRollModel(doc),
             onSurprise: () => toggleSurprise(t),
+            paidAdvantage: initiativePaidAdvantage(doc, locale, t),
           }}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>
@@ -916,7 +921,9 @@ function ActionLine({
       return;
     }
     // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
-    const checks = doc ? checkEntriesFor(row.action, skillBonusFor(doc)) : [];
+    const checks = doc
+      ? checkEntriesFor(row.action, skillBonusFor(doc), skillFaceFloorFor(doc))
+      : [];
     if (checks.length > 0) {
       setChecking(checks);
       return;

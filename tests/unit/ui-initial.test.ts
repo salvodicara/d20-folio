@@ -4,7 +4,7 @@ import { initialOf } from "@/ui/initial";
 
 describe("initialOf", () => {
   it("is the first letter, upper-cased, ignoring leading spaces", () => {
-    expect(initialOf("  mandorlino")).toBe("M");
+    expect(initialOf("  paladin")).toBe("P");
   });
   it("keeps a decomposed accent with its letter", () => {
     expect(initialOf("élise")).toBe("É");
