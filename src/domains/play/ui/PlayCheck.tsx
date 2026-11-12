@@ -15,7 +15,7 @@ import {
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
-import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
+import { countedFace, TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
 import type { CombatAction } from "@/lib/views/combat-action-view";
 import { Button, Chip, Dialog, Field, StatBadge } from "@/ui";
 import { useLocale } from "@/hooks/useLocale";
@@ -64,13 +64,16 @@ export function PlayCheck({
   const first = faceOf(faceText);
   const second = faceOf(secondText);
   const valid = first !== null && (paid === null || second !== null);
-  const face = first === null ? null : keptFace(first, second ?? first, paid !== null);
-  const bonus =
-    entry.kind === "check"
-      ? (entry.skills.find((s) => s.id === skill)?.bonus ?? 0)
-      : entry.bonus;
+  const picked =
+    entry.kind === "check" ? entry.skills.find((s) => s.id === skill) : entry;
+  const bonus = picked?.bonus ?? 0;
+  // The d20 kept (the higher with a paid Advantage), then Reliable Talent: a 9 or
+  // lower on a proficient skill counts as 10.
+  const rolled = first === null ? null : keptFace(first, second ?? first, paid !== null);
+  const face = valid && rolled !== null ? countedFace(rolled, picked?.floor ?? 1) : null;
+  const floored = face !== null && face !== rolled;
   const skillId = entry.kind === "check" ? (skill ?? "") : entry.skill;
-  const total = valid && face !== null ? face + bonus : null;
+  const total = face !== null ? face + bonus : null;
   const passed = total !== null && dc !== undefined ? total >= dc : undefined;
   const verdict =
     total === null || face === null
@@ -87,7 +90,7 @@ export function PlayCheck({
                   : t("play.check.ok", { dc })
         }`;
   const apply = () => {
-    if (!valid || face === null) return;
+    if (face === null) return;
     if (paid) paidAdvantage?.onPay(paid);
     if (entry.kind === "check") {
       executeAction(withCheckResult(action, { skill: skillId, face, bonus }, dc));
@@ -220,6 +223,9 @@ export function PlayCheck({
         <p className="f-note f-ask" data-c="res" role="status">
           {verdict}
         </p>
+      )}
+      {floored && (
+        <p className="f-help f-ask">{t("play.check.floored", { rolled, face })}</p>
       )}
       {entry.kind !== "check" && (
         <p className="f-help f-ask">

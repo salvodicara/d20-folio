@@ -9,6 +9,7 @@ import { RollDialog } from "@/domains/combat/ui/FightActions";
 import {
   checkEntriesFor,
   skillBonusFor,
+  skillFaceFloorFor,
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { PlayCheck } from "@/domains/play/ui/PlayCheck";
@@ -917,7 +918,9 @@ function ActionLine({
       return;
     }
     // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
-    const checks = doc ? checkEntriesFor(row.action, skillBonusFor(doc)) : [];
+    const checks = doc
+      ? checkEntriesFor(row.action, skillBonusFor(doc), skillFaceFloorFor(doc))
+      : [];
     if (checks.length > 0) {
       setChecking(checks);
       return;

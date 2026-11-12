@@ -83,10 +83,13 @@ export function PickGrid({
   );
   const byId = new Map(spellRows.map((s) => [s.id, s]));
   const [query, setQuery] = useState("");
-  const [level, setLevel] = useState<number | null>(null);
-  const [focus, setFocus] = useState<string | null>(null);
   const filtering = spellRows.length > SPELL_FILTER_FROM;
   const levels = [...new Set(spellRows.map((r) => r.level))].sort((a, b) => a - b);
+  // A long list opens on its newest level (BG3's spellbook tab), «Tutti» one tap away.
+  const [level, setLevel] = useState<number | null>(() =>
+    filtering && levels.length > 1 ? (levels.at(-1) ?? null) : null
+  );
+  const [focus, setFocus] = useState<string | null>(null);
   // A long list narrows by name and level; the picks stay on top whatever the filter.
   const shown = filtering
     ? [
@@ -142,11 +145,6 @@ export function PickGrid({
               />
             )}
           </span>
-          {spell && spell.level > 0 && (
-            <span className="f-slot-lv" aria-hidden="true">
-              {ROMAN[spell.level]}
-            </span>
-          )}
           {on && (
             <span className="f-slot-tick" aria-hidden="true">
               ✓
@@ -202,6 +200,7 @@ export function PickGrid({
         <div className="f-lvl-tools">
           <Field
             label={t("spells.pick.search")}
+            placeholder={t("spells.pick.searchHint")}
             type="search"
             autoComplete="off"
             value={query}
