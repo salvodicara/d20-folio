@@ -71,7 +71,12 @@ function Campaign({ campaignId }: { campaignId: string }) {
   return (
     <>
       <main id="main" className="f-page">
-        <Header campaign={campaign} locale={locale} onCopyInvite={copyInvite} />
+        <Header
+          campaign={campaign}
+          locale={locale}
+          onCopyInvite={copyInvite}
+          compact={tab !== "party"}
+        />
         <Tabs
           label={t("campaignScreen.tabsLabel")}
           items={[
@@ -119,10 +124,14 @@ export function Header({
   campaign,
   locale,
   onCopyInvite,
+  compact = false,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
   onCopyInvite: () => void;
+  /** A tab page past the landing one: on a phone the header shrinks to the crest and
+   *  the name, so the tab's content starts on the first screen (a working page). */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const dm = campaign.memberDetails[campaign.dmUid]?.displayName;
@@ -142,7 +151,7 @@ export function Header({
         })
       : null;
   return (
-    <section className="f-hero" data-identity>
+    <section className="f-hero" data-identity data-compact={compact || undefined}>
       <img
         className="f-crest"
         src={campaign.bannerUrl ?? "/assets/backgrounds/room-war-room.webp"}
@@ -259,7 +268,7 @@ function PartyLine({ row, href }: { row: PartyRow; href: string }) {
           hp={hp ? (share > 0.5 ? "ok" : share > 0.25 ? "low" : "bad") : undefined}
         />
         <Stat value={row.ac ?? "—"} label={t("stats.ac")} />
-        <Stat value={row.perception ?? "—"} label={t("skills.perception")} />
+        <Stat value={row.perception ?? "—"} label={t("campaignHub.passivePerception")} />
       </div>
     </Link>
   );

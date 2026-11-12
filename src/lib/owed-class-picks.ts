@@ -12,7 +12,10 @@
  *     plain ones (a feat's, a species', a subclass's fixed cantrip is always
  *     prepared and isn't one of them), each counted for a class whose list has it,
  *     the narrowest first; a cantrip on no owing list (added by hand) still fills
- *     a gap, so a player who has the count is never asked.
+ *     a gap, so a player who has the count is never asked;
+ *   - spellbook — the Wizard's book (6, then 2 per Wizard level) vs the levelled Wizard
+ *     spells on the sheet (`wizard-spellbook.ts`); the picks land in the book, not
+ *     prepared.
  *
  * The counts are the level-up's own (`invocationsKnownAt`, `metamagicKnownAt`,
  * `maneuversKnownAt`, `weaponMasteryCountForClass`, the table's `cantripsKnown`),
@@ -41,6 +44,7 @@ import {
   listMasterableWeapons,
   weaponMasteryCountForClass,
 } from "@/lib/weapon-mastery-pick";
+import { wizardBookOwed, wizardMaxSpellLevel } from "@/lib/wizard-spellbook";
 import type { CharacterData, ClassEntry } from "@/types/character";
 
 export type ClassPickKind =
@@ -49,7 +53,8 @@ export type ClassPickKind =
   | "metamagic"
   | "maneuvers"
   | "weaponMasteries"
-  | "fightingStyles";
+  | "fightingStyles"
+  | "spellbook";
 
 export interface OwedClassPick {
   classId: string;
@@ -75,6 +80,7 @@ const ORDER: readonly ClassPickKind[] = [
   "weaponMasteries",
   "fightingStyles",
   "cantrips",
+  "spellbook",
 ];
 
 function entries(build: BuildForClassPicks): ClassEntry[] {
@@ -176,6 +182,13 @@ export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
         weaponMasteryCountForClass(e.classId, level) - (e.weaponMasteries?.length ?? 0),
       cantrips: cantrips.get(e.classId) ?? 0,
       fightingStyles: 0,
+      spellbook:
+        e.classId === "wizard"
+          ? wizardBookOwed(
+              { spells: build.spells ?? [], features: build.features ?? [] },
+              level
+            )
+          : 0,
     };
     // The slots the sheet holds open (`<class>-fighting-style` placeholders).
     const styleSlots = (build.features ?? []).filter(
@@ -210,6 +223,13 @@ export function applyOwedClassPicks(
     if (!debt) continue;
     const ids = [...new Set(answer.ids)].slice(0, debt.owed);
     if (ids.length === 0) continue;
+    if (answer.pick === "spellbook") {
+      next = {
+        ...next,
+        spells: [...next.spells, ...ids.map((srdId) => ({ srdId, prepared: false }))],
+      };
+      continue;
+    }
     if (answer.pick === "fightingStyles") {
       for (const id of ids)
         next = applyClassPicks(next, answer.classId, { fightingStyle: id });
@@ -268,6 +288,21 @@ export function classPickPool(
       return ids(
         allSpells.filter(
           (s) => s.level === 0 && s.classes.includes(classId) && !known.has(s.id)
+        )
+      );
+    }
+    case "spellbook": {
+      const known = new Set(
+        (build.spells ?? []).flatMap((s) => ("custom" in s ? [] : [s.srdId]))
+      );
+      const max = wizardMaxSpellLevel(level);
+      return ids(
+        allSpells.filter(
+          (s) =>
+            s.level >= 1 &&
+            s.level <= max &&
+            s.classes.includes(classId) &&
+            !known.has(s.id)
         )
       );
     }

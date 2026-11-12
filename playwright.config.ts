@@ -20,7 +20,8 @@ const NEW_UI_PORT = E2E_PORT + 2;
 // keep the SW server. Fails TOWARD booting it — anything we can't prove is SW-free
 // still gets the server — so the SW journey is never silently starved of its origin.
 const SELECTED_PROJECTS = process.argv.flatMap((arg, i) => {
-  if (arg === "--project") return process.argv[i + 1] ? [process.argv[i + 1]] : [];
+  const next = process.argv[i + 1];
+  if (arg === "--project") return next ? [next] : [];
   const eq = arg.startsWith("--project=") ? arg.slice("--project=".length) : null;
   return eq ? [eq] : [];
 });
@@ -98,6 +99,7 @@ export default defineConfig({
         /ui-long-text\.spec\.ts/,
         /ui-pips\.spec\.ts/,
         /ui-table-columns\.spec\.ts/,
+        /ui-no-old-frame\.spec\.ts/,
         ...OFF_LANES,
       ],
     },
@@ -125,7 +127,7 @@ export default defineConfig({
       // The rebuilt screens, on the VITE_NEW_UI preview server (own port).
       name: "new-ui",
       testMatch:
-        /(?:ui-play-fidelity|ui-avatars|fight-smoke|ui-long-text|ui-pips|ui-table-columns)\.spec\.ts/,
+        /(?:ui-play-fidelity|ui-avatars|fight-smoke|ui-long-text|ui-pips|ui-table-columns|ui-no-old-frame)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${NEW_UI_PORT}` },
     },
     {
