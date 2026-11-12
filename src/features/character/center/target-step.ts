@@ -10,6 +10,7 @@
  */
 import type { ResolvedAction } from "@/lib/smart-tracker";
 import type { PortraitCrop } from "@/types/character";
+import type { CreatureType } from "@/data/types";
 import { combatResolutionSpec, shouldResolveCombatAction } from "@/lib/combat-resolution";
 
 /** One creature the sheet knows about: the encounter's visible rows. */
@@ -20,6 +21,8 @@ export interface TargetRosterRow {
   name: string;
   /** At 0 Hit Points (a monster there is dead; a PC is dying). */
   down?: boolean;
+  /** The creature's type, when the encounter knows it (a monster's stat block). */
+  creatureType?: CreatureType;
   deathSaves?: { successes: number; failures: number };
   /** The creature's portrait, for the row's round medallion. */
   portraitUrl?: string | null;
@@ -103,6 +106,14 @@ export function targetStepFor(
     if (row.id === roster.selfId) continue;
     // Only a spell that reaches the dead (Revivify) offers them.
     if (isDead(row) && !action.summary.targeting?.includesDead) continue;
+    // A spell limited to some creature types (Hold Person: a Humanoid) leaves out a
+    // creature known to be another type; an unknown type stays offered.
+    if (
+      spec.targetCreatureTypes &&
+      row.creatureType &&
+      !spec.targetCreatureTypes.includes(row.creatureType)
+    )
+      continue;
     const side = row.side ?? (row.kind === "pc" ? "ally" : "enemy");
     const candidate = {
       id: row.id,

@@ -163,7 +163,12 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
       on: "failed-save",
       lifetime: timedConditionLifetime(60),
     },
-    targeting: { affinity: "enemy", maxTargets: 1, maxTargetsPerUpcast: 1 },
+    targeting: {
+      affinity: "enemy",
+      creatureTypes: ["humanoid"],
+      maxTargets: 1,
+      maxTargetsPerUpcast: 1,
+    },
     source: "SRD",
   },
   {
