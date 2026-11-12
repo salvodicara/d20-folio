@@ -10,6 +10,9 @@
 #   3. merge with the head pinned (`sha`), so a push in the meantime is never merged
 #      unchecked. If main moved first (another merge landed), go back to 1.
 #
+# Before anything, main's newest finished Verify must have passed, or the PR must carry
+# the `verify-fix` label (scripts/lib/verify-gate.sh).
+#
 # It fails CLOSED: a read that errors or comes back empty means wait, never merge (an
 # empty read once let a red PR through, 2026-11-10).
 #
@@ -32,6 +35,9 @@ REQUIRED=(
 )
 
 say() { printf '%s\n' "$*" >&2; }
+
+# shellcheck source=lib/verify-gate.sh
+source "$(dirname "$0")/lib/verify-gate.sh"
 
 # Retry a read until it succeeds with a non-empty answer.
 read_until() {
@@ -73,6 +79,8 @@ refusal() { sed -n 's/.*"message":"\([^"]*\)".*/\1/p' <<<"$1" | head -1; }
 
 merge_one() {
   local n="$1" state head behind verdict title branch out
+  # A red main stops the line: only a verify-fix PR merges until Verify is green.
+  verify_gate "$REPO" "$n" || return 1
   for attempt in 1 2 3 4 5; do
     state="$(read_until pr_field "$n" state)"
     [ "$state" = MERGED ] && { say "#$n: already merged"; return 0; }

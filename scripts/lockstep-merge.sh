@@ -26,6 +26,11 @@ PACK_REPO="salvodicara/d20-folio-content"
 app="${1:?usage: lockstep-merge.sh <app PR number> [pack PR number]}"
 # shellcheck source=lib/lockstep-pack.sh
 source "$(dirname "$0")/lib/lockstep-pack.sh"
+# shellcheck source=lib/verify-gate.sh
+source "$(dirname "$0")/lib/verify-gate.sh"
+
+# A red main stops the line: only a verify-fix app PR merges until Verify is green.
+verify_gate "$APP_REPO" "$app" || exit 1
 
 body="$(gh pr view "$app" --repo "$APP_REPO" --json body --jq .body)"
 # Exactly one pack: a body with two `Pack:` lines (one pasted from another PR) once
