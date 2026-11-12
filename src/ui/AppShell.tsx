@@ -1,4 +1,4 @@
-import { useContext, useState, type ReactNode, type SubmitEvent } from "react";
+import { useContext, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { Link, NavLink } from "react-router";
 import { Icon } from "./Icon";
@@ -51,6 +51,7 @@ export function AppShell({
   searchLabel: string;
   /** Live status beside the search (the fight's round and whose turn). */
   status?: ReactNode;
+  /** Open the app's search (the header field, ⌘K). */
   onSearch: (query: string) => void;
   menuLabel: string;
   account: {
@@ -67,17 +68,25 @@ export function AppShell({
   const [pageBar, setPageBar] = useState<HTMLElement | null>(null);
   const [pageActions, setPageActions] = useState<PageMenuAction[]>([]);
   const close = () => setOpen(null);
-  const submit = (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const q = new FormData(e.currentTarget).get("q");
-    close();
-    onSearch(typeof q === "string" ? q.trim() : "");
-  };
+  // The header's search opens the app's search (⌘K): a field-shaped button, as the
+  // quick search of D&D Beyond, GitHub or Linear, with its shortcut beside the label.
+  const mac =
+    typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform);
   const search = (
-    <form className="f-srch" role="search" onSubmit={submit}>
+    <button
+      type="button"
+      className="f-srch f-srch-open"
+      aria-haspopup="dialog"
+      aria-keyshortcuts={mac ? "Meta+K" : "Control+K"}
+      onClick={() => {
+        close();
+        onSearch("");
+      }}
+    >
       <Icon name="u-search" />
-      <input name="q" type="search" placeholder={searchLabel} aria-label={searchLabel} />
-    </form>
+      <span className="f-srch-l">{searchLabel}</span>
+      <kbd className="f-srch-k">{mac ? "⌘K" : "Ctrl K"}</kbd>
+    </button>
   );
   const links = nav.map((l) => (
     <NavLink key={l.to} to={l.to} onClick={close}>
@@ -153,7 +162,10 @@ export function AppShell({
         title={
           <>
             <b>{account.name}</b>
-            {account.email && <span className="f-menu-sub">{account.email}</span>}
+            {/* an account with no name shows its email once, as the name */}
+            {account.email && account.email !== account.name && (
+              <span className="f-menu-sub">{account.email}</span>
+            )}
           </>
         }
       >
