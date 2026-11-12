@@ -9,36 +9,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { SRD_RACES } from "@/data/races";
-import type { SrdRaceTrait } from "@/data/types";
-import type { Grant } from "@/lib/grant-schema";
-
-const TAP_ONLY = new Set([
-  "while-active",
-  "always-prepared-spell",
-  "free-cast-spell",
-  "free-cast-from-list",
-  "at-will-cast-spell",
-  "choice-cantrip",
-  "choice-spell",
-]);
-
-const CARRIED_BY_SIBLING = new Set(["dragonborn:damage-resistance"]);
-
-function leafKinds(grants: ReadonlyArray<Grant>): string[] {
-  return grants.flatMap((grant) =>
-    grant.type === "choice-grant-bundle"
-      ? grant.options.flatMap((option) => leafKinds(option.grants))
-      : [grant.type]
-  );
-}
-
-function classOf(raceId: string, trait: SrdRaceTrait): "auto" | "tap" | "reference" {
-  if (CARRIED_BY_SIBLING.has(`${raceId}:${trait.id}`)) return "auto";
-  const kinds = leafKinds(trait.grants ?? []);
-  if (trait.mechanics?.tracker || trait.mechanics?.actions?.length) return "tap";
-  if (kinds.length === 0) return "reference";
-  return kinds.every((kind) => TAP_ONLY.has(kind)) ? "tap" : "auto";
-}
+import { speciesTraitCoverage as classOf } from "./__helpers__/rules-coverage";
 
 describe("RULES_COVERAGE species-trait row", () => {
   it("states the counted auto / 1-tap / reference split of the public species", () => {

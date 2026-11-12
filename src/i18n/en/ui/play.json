@@ -110,6 +110,8 @@
       "changeOne": "You can change 1 spell.",
       "changeAny": "You can change as many as you like.",
       "keepPrepared": "Keep them",
+      "cantripTitle": "After the Long Rest",
+      "cantripSwap": "{{source}}: change the cantrip, if you like",
       "diceSpent_one": "{{count}} die → +{{hp}} HP",
       "diceSpent_other": "{{count}} dice → +{{hp}} HP"
     },
