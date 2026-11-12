@@ -114,7 +114,8 @@ function Campaign({ campaignId }: { campaignId: string }) {
   );
 }
 
-function Header({
+/** The campaign page's identity: crest, name, characters and Master, the next session. */
+export function Header({
   campaign,
   locale,
   onCopyInvite,
@@ -128,15 +129,18 @@ function Header({
   const characters = Object.values(campaign.memberDetails).filter(
     (m) => m.character
   ).length;
-  const next = campaign.nextSessionAt
-    ? new Date(campaign.nextSessionAt).toLocaleString(intlTag(locale), {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : null;
+  // a date already past is not a next session: it reads «da decidere» until a new one
+  const [now] = useState(Date.now);
+  const next =
+    campaign.nextSessionAt && campaign.nextSessionAt > now
+      ? new Date(campaign.nextSessionAt).toLocaleString(intlTag(locale), {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
   return (
     <section className="f-hero" data-identity>
       <img
