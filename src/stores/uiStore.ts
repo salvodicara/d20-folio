@@ -54,7 +54,15 @@ interface UIState {
 function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const effectiveTheme = theme === "system" ? (systemDark ? "dark" : "light") : theme;
+  // The new UI ships dark-only for its first release (owner, 2026-11-11).
+  const effectiveTheme =
+    import.meta.env.VITE_NEW_UI === "1"
+      ? "dark"
+      : theme === "system"
+        ? systemDark
+          ? "dark"
+          : "light"
+        : theme;
 
   root.setAttribute("data-theme", effectiveTheme);
 }

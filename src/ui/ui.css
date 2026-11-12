@@ -3044,6 +3044,19 @@
     scrollbar-color: var(--frame) transparent;
     overscroll-behavior: contain;
   }
+  /* a box that scrolls says so: its last rows fade into the panel's foot, and the
+     end of the list scrolls clear of the fade (D&D Beyond's scrolling sheet panes) */
+  .fui .f-sheet .f-centre > .f-pnb,
+  .fui .f-sheet .f-play > :not(.f-centre) {
+    --fade: 40px;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - var(--fade)), transparent);
+  }
+  .fui .f-sheet .f-centre > .f-pnb {
+    padding-bottom: var(--fade);
+  }
+  .fui .f-sheet .f-play > :not(.f-centre) > :last-child {
+    margin-bottom: var(--fade);
+  }
   .fui .f-sheet .f-centre .f-filters {
     position: sticky;
     top: -16px;
@@ -3582,6 +3595,17 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   min-width: 16px;
+}
+/* up to six pips stay on one row (a 3/5 pool never leaves its fifth below); the
+   name gives way and wraps instead */
+.fui .f-sheet .f-res > .f-pips:not(:has(> i:nth-child(7))) {
+  flex-shrink: 0;
+  flex-wrap: nowrap;
+}
+.fui .f-sheet .f-res:has(> .f-pips:not(:has(> i:nth-child(7)))) > .f-res-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: none;
 }
 /* the narrowest phones: the three centre tabs at 12 px, so all three fit */
 @media (max-width: 360px) {
