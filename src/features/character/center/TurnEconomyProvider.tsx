@@ -128,6 +128,7 @@ import { useDamageTrayStore } from "@/features/character/center/damage-tray-stor
 import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
 import { DamageTray } from "@/features/character/center/DamageTray";
 import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
+import { useAttackOutcomeStore } from "./attack-outcome-store";
 import { useLocale } from "@/hooks/useLocale";
 import {
   resolveTrackers,
@@ -990,6 +991,9 @@ export function TurnEconomyProvider({
       ...(targets.length > 0 ? { targets: [...targets] } : {}),
       ...(action.checkResult ? { check: action.checkResult } : {}),
     });
+    // An attack with no target in Folio asks its result on its own row (no modal):
+    // the newest use takes the chips, anything else retires them.
+    offerAttackOutcome(action, targets, loggedId);
     offerFollowUps(action, targets, loggedId, occurrenceId);
     // A use that makes a form (Wild Shape) asks which one next.
     if (action.assumesForm) setFormPickerSpellId(action.assumesForm);
@@ -1016,6 +1020,17 @@ export function TurnEconomyProvider({
   }
 
   /** Open the damage tray when the use has something to apply to its targets. */
+  function offerAttackOutcome(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>,
+    loggedId: string | null
+  ): void {
+    const outcome = useAttackOutcomeStore.getState();
+    if (loggedId && targets.length === 0 && rollsToHit(action))
+      outcome.offer({ logId: loggedId, actionId: action.id });
+    else outcome.clear();
+  }
+
   function offerFollowUps(
     action: ResolvedAction,
     targets: ReadonlyArray<string>,
@@ -1507,6 +1522,7 @@ export function TurnEconomyProvider({
             .setReadiedSpell(readiedHold(currentRound(), loggedId || null));
         }
         const undo = seal?.() ?? null;
+        if (!readies) offerAttackOutcome(action, targets, loggedId);
         if (!readies) offerFollowUps(action, targets, loggedId);
         if (!readies) offerDispel(action.spellId, opt.level, targets);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
@@ -2644,6 +2660,7 @@ export function TurnEconomyProvider({
   // End Turn: the sequence is `runEndTurn` (lib/play/end-turn); this wires its
   // ports to the stores, the shared turn and this provider's toasts and prompt.
   function handleEndTurn() {
+    useAttackOutcomeStore.getState().clear();
     endTurnWithStores({
       setMaintenancePrompts,
       announce: (sourceIds) => {

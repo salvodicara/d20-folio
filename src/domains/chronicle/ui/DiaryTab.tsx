@@ -31,7 +31,8 @@ import {
   type SessionLog,
 } from "@/features/campaigns/useSessionReports";
 import { intlTag, type Locale } from "@/lib/locale";
-import { buildReport, foldSession } from "@/lib/session-log";
+import { foldSession } from "@/lib/session-log";
+import { sessionReportSections } from "@/lib/session-log/session-report-sections";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { renderSessionReport } from "@/lib/views/session-report-view";
 import type { CampaignDoc, SessionLogDoc } from "@/types/campaign";
@@ -217,7 +218,7 @@ function SessionPage({
     () => foldSession(log.items, { dmUid: campaign.dmUid }),
     [log.items, campaign.dmUid]
   );
-  const sections = useMemo(() => buildReport(entries), [entries]);
+  const sections = useMemo(() => sessionReportSections(entries), [entries]);
   const blocks = useMemo(() => diaryBlocks(sections), [sections]);
   // The evening's own text; an old evening falls back to its old page's, read-only.
   const [story, setStory] = useState(log.notes ?? legacy?.notes);
