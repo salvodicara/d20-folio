@@ -32,6 +32,10 @@ import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { asRaceId } from "@/data/srd-names";
 import { concentrationValue } from "@/lib/concentration";
 
+/** When the dev paladin last wrote its aura: once per page load, so the fixture is
+ *  fresh (within the 6 h window) and the same object on every read. */
+const DEV_AURA_AT = Date.now();
+
 /** The id `makeDevCampaign` seeds by default (also a sample invite code). */
 export const DEV_CAMPAIGN_ID = "DEVCAMPAIGN24";
 
@@ -554,7 +558,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
         },
         // Aura of Protection published by this member's sheet (dev: always fresh),
         // so the open hero's saves show «Aura di … +3» and its chip.
-        aura: { bonus: 3, reachFt: 10, at: Date.now() },
+        aura: { bonus: 3, reachFt: 10, at: DEV_AURA_AT },
       },
       // NON-NULLABILITY DEMO (dev-only, flag-gated): a member whose STALE snapshot
       // carries a CORRUPT (whitespace) hero name — the exact shape an old persisted

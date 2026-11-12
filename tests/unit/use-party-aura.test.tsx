@@ -15,6 +15,14 @@ import { useCharacterStore } from "@/stores/characterStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { makeCharacterDoc } from "./_helpers";
 
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  functions: {},
+  storage: {},
+}));
+
 const paladin = (hp = 40) =>
   makeCharacterDoc(
     {
