@@ -45,15 +45,22 @@ export function ItemEffectsFields({
   kind,
   value,
   onChange,
+  countsUses = false,
 }: {
   kind: HomebrewItemKind;
   value: ItemEffects;
   onChange: (next: ItemEffects) => void;
+  /** «Traccia utilizzi» is on: one way to count uses, so «Cariche» isn't offered. */
+  countsUses?: boolean;
 }) {
   const { t } = useTranslation();
   const [adding, setAdding] = useState(false);
   // A +N needs a weapon or an armour; on plain gear it is not offered.
-  const offered = ORDER.filter((id) => id !== "magicBonus" || kind !== "item");
+  const offered = ORDER.filter(
+    (id) =>
+      (id !== "magicBonus" || kind !== "item") &&
+      (id !== "charges" || !countsUses || value.charges !== undefined)
+  );
   const shown = offered.filter((id) => value[id] !== undefined);
   const missing = offered.filter((id) => value[id] === undefined);
 
@@ -85,7 +92,9 @@ export function ItemEffectsFields({
             <Button
               variant="ghost"
               size="sm"
-              aria-label={`${t("common.remove")}: ${title(id)}`}
+              // A finger needs 44 px on a phone.
+              className="max-sm:min-h-11 max-sm:min-w-11"
+              aria-label={`${t("common.remove")} ${title(id)}`}
               onClick={() => remove(id)}
             >
               <Icon as={X} size="sm" decorative />

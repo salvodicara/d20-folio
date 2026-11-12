@@ -519,7 +519,7 @@ export function CustomEquipmentForm({
 
           {isWeapon ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <FormField label={t("custom.damageDie")}>
                   <Input
                     type="text"
@@ -563,7 +563,7 @@ export function CustomEquipmentForm({
               </FormField>
             </>
           ) : isArmor ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField label={t("custom.armorCategory")}>
                 <Select
                   value={armorCategory}
@@ -591,17 +591,20 @@ export function CustomEquipmentForm({
             </div>
           ) : (
             <>
-              {/* Level 1: Track uses checkbox */}
-              <CheckboxField
-                checked={trackingMode !== "none"}
-                onCheckedChange={(c) => {
-                  setTrackingMode(c ? "tracked" : "none");
-                  if (!c) setIsPotion(false);
-                }}
-                label={t("equipment.trackUses")}
-                hint={t("equipment.trackUsesHint")}
-                className="text-[0.72rem] text-text-primary"
-              />
+              {/* Level 1: Track uses checkbox — not beside «Cariche»: one way to
+                  count uses (D&D Beyond's single «Has Charges»). */}
+              {!effects.charges && (
+                <CheckboxField
+                  checked={trackingMode !== "none"}
+                  onCheckedChange={(c) => {
+                    setTrackingMode(c ? "tracked" : "none");
+                    if (!c) setIsPotion(false);
+                  }}
+                  label={t("equipment.trackUses")}
+                  hint={t("equipment.trackUsesHint")}
+                  className="text-[0.72rem] text-text-primary"
+                />
+              )}
 
               {/* Level 2: Auto-remove sub-option — only when tracked */}
               {trackingMode !== "none" && (
@@ -642,7 +645,12 @@ export function CustomEquipmentForm({
             </>
           )}
 
-          <ItemEffectsFields kind={kind} value={effects} onChange={setEffects} />
+          <ItemEffectsFields
+            kind={kind}
+            value={effects}
+            onChange={setEffects}
+            countsUses={kind === "item" && trackingMode !== "none"}
+          />
         </div>
       </ModalScroll>
 

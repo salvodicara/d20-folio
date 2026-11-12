@@ -126,7 +126,7 @@ describe("the homebrew item form's effects", () => {
       within(screen.getByRole("group", { name: "Rarity" })).getByRole("combobox")
     ).toHaveValue("rare");
     // Removing the attunement leaves the rest, the fire resistance included.
-    fireEvent.click(screen.getByRole("button", { name: "Remove: Requires attunement" }));
+    fireEvent.click(screen.getByRole("button", { name: "Remove Requires attunement" }));
     expect((save() as CustomWeapon).mechanics).toEqual({
       rarity: "rare",
       grants: [
@@ -134,5 +134,31 @@ describe("the homebrew item form's effects", () => {
         { type: "item-bound-bonus", target: "weapon-attack-and-damage", amount: 2 },
       ],
     });
+  });
+
+  it("one way to count uses: «Track uses» and «Charges» never sit together", async () => {
+    await i18n.changeLanguage("en");
+    edit({
+      custom: true,
+      name: "Healer's Kit",
+      quantity: 1,
+      equipped: true,
+      instanceId: "item-kit",
+    });
+    const track = () => screen.queryByRole("checkbox", { name: /track uses/i });
+    // «Charges» added: the checkbox goes.
+    addEffect("Charges");
+    expect(track()).toBeNull();
+    // Removed again: it is back; ticked, «Charges» is no longer offered.
+    fireEvent.click(screen.getByRole("button", { name: "Remove Charges" }));
+    const box = track();
+    if (!box) throw new Error("no Track uses");
+    fireEvent.click(box);
+    fireEvent.click(screen.getByRole("button", { name: "Add effect" }));
+    expect(
+      within(screen.getByRole("group", { name: "Add effect" })).queryByRole("button", {
+        name: "Charges",
+      })
+    ).toBeNull();
   });
 });
