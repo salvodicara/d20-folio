@@ -175,6 +175,31 @@ jobs:
       - name: Folio Core SRD boundary (against the pack)
         run: pnpm core:build && pnpm core:boundary --require-pack
 
+  # The partition guards against the pack's own private list (owner, 2026-11-12): a
+  # live player's character name, uid or slug anywhere in the public tree turns the
+  # pull request red before the merge, not Verify after it. Same-repo PRs only, by
+  # the plain `pull_request` trigger (never `pull_request_target`): a fork has no
+  # pack token, so this job is skipped there, not failed. The guard prints file:line
+  # only, never the matched value, since this log is public.
+  partition-composed:
+    name: partition guards (composed)
+    if: github.event_name == 'merge_group' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: ./.github/actions/compose-pack
+        with:
+          token: ${{ secrets.CONTENT_PACK_TOKEN }}
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: ".tool-versions"
+          cache: "pnpm"
+      - run: pnpm install --frozen-lockfile
+      - name: Partition guards (against the pack's private list)
+        run: pnpm exec vitest run --project fast tests/unit/content-pack-partition.guard.test.ts
+
   # The design rules of the new UI (tests/e2e/ui-*.spec.ts) on every pull request,
   # on Linux: text width and wrapping depend on the OS's font rendering, so a Mac-only
   # pass must not reach main (a 320px header wrapped only here, 2026-11-02). Plus the

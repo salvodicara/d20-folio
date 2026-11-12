@@ -20,6 +20,7 @@
     "spellEndFalls": "Fine di {{spell}}: chi è ancora in aria cade, se non vola in altro modo.",
     "proneInFlight": "Prono in volo: se sei in aria, cadi.",
     "markCanMove": "{{source}}: il bersaglio è sceso a 0 PF. In un turno successivo, un'Azione Bonus lo sposta su un'altra creatura.",
+    "markCanMoveFree": "{{source}}: il bersaglio è sceso a 0 PF. Puoi spostarlo su un'altra creatura, senza usare azioni.",
     "castGainTempHp": "{{source}}: ottieni {{amount}} PF temporanei.",
     "castGainSpeed": "{{source}}: la tua Velocità aumenta di {{feet}} fino alla fine del turno.",
     "castHitPointDice": "{{source}}: puoi tirare fino a {{max}} dei tuoi Dadi Vita e recuperare il totale più il livello dello slot.",
@@ -166,6 +167,8 @@
     "hpHealToast": "+{{val}} PF ({{prev}}→{{next}})",
     "concentrationSaveToast": "Concentrazione su \"{{spell}}\": TS COS CD {{dc}} (il tuo TS {{save}})",
     "concentrationSaveAdvantageToast": "Concentrazione su \"{{spell}}\": TS COS CD {{dc}} (il tuo TS {{save}}, Vantaggio)",
+    "failedD20Use": "{{spell}}: il d20 diventa {{face}}",
+    "failedD20UsedToast": "{{spell}}: il TS riesce ({{total}})",
     "concentrationSavePrompt": "Mantieni “{{spell}}” · TS COS CD {{dc}}",
     "concentrationSaveQueue": "{{count}} TS in coda",
     "concentrationSaveRollAria": "Il risultato del tuo d20 per il TS di Concentrazione",
@@ -661,6 +664,7 @@
     "rerollActiveBonus": "Ritiro con {{name}} (+{{bonus}}): inserisci il nuovo tiro",
     "rerollSuccessToast": "{{name}}: Concentrazione mantenuta (totale {{total}})",
     "rerollFailureToast": "{{name}}: Concentrazione interrotta (totale {{total}})",
-    "attackResult": "Esito"
+    "attackResult": "Esito",
+    "rerollOffers": "Ritira il tiro salvezza fallito"
   }
 }

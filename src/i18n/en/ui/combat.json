@@ -20,6 +20,7 @@
     "spellEndFalls": "{{spell}} ended: anyone still aloft falls unless they can fly another way.",
     "proneInFlight": "Prone in flight: if you're aloft, you fall.",
     "markCanMove": "{{source}}: its target dropped to 0 HP. On a later turn, a Bonus Action moves it to a new creature.",
+    "markCanMoveFree": "{{source}}: its target dropped to 0 HP. You can move it to a new creature, with no action.",
     "castGainTempHp": "{{source}}: you gain {{amount}} Temporary Hit Points.",
     "castGainSpeed": "{{source}}: your Speed increases by {{feet}} until the end of the turn.",
     "castHitPointDice": "{{source}}: you can roll up to {{max}} of your Hit Point Dice and regain their total plus the slot's level.",
@@ -166,6 +167,8 @@
     "hpHealToast": "+{{val}} HP ({{prev}}→{{next}})",
     "concentrationSaveToast": "Concentration on \"{{spell}}\": CON save DC {{dc}} (your save {{save}})",
     "concentrationSaveAdvantageToast": "Concentration on \"{{spell}}\": CON save DC {{dc}} (your save {{save}}, Advantage)",
+    "failedD20Use": "{{spell}}: the d20 becomes {{face}}",
+    "failedD20UsedToast": "{{spell}}: the save succeeds ({{total}})",
     "concentrationSavePrompt": "Maintain “{{spell}}” · CON save DC {{dc}}",
     "concentrationSaveQueue": "{{count}} saves queued",
     "concentrationSaveRollAria": "Your Concentration-save d20 result",
@@ -661,6 +664,7 @@
     "rerollActiveBonus": "Rerolling with {{name}} (+{{bonus}}): enter the new roll",
     "rerollSuccessToast": "{{name}}: Concentration maintained (total {{total}})",
     "rerollFailureToast": "{{name}}: Concentration broken (total {{total}})",
-    "attackResult": "Result"
+    "attackResult": "Result",
+    "rerollOffers": "Reroll the failed save"
   }
 }
