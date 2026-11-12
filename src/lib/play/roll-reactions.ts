@@ -181,6 +181,26 @@ export function rerollOffers<A extends { summary: { rollEffect?: ActionRollEffec
   });
 }
 
+/** The source id of a reroll paid with Heroic Inspiration (not an action). */
+export const HEROIC_INSPIRATION_REROLL_ID = "heroic-inspiration";
+
+/**
+ * Heroic Inspiration as a reroll offer (SRD 5.2.1: "expend it to reroll any die
+ * immediately after rolling it, and you must use the new roll"): offered on a failed
+ * save while the character holds it, beside Indomitable and the like. `name` is the
+ * reader's label for it.
+ */
+export function heroicInspirationReroll(
+  doc: CharacterDoc,
+  name: string
+): RerollOffer<{ id: string; name: string }> | null {
+  if (!doc.session.inspiration) return null;
+  return {
+    action: { id: HEROIC_INSPIRATION_REROLL_ID, name },
+    reaction: { kind: "reroll", rolls: ["save"], whose: "self" },
+  };
+}
+
 /** The toast for a planned reroll, as an i18n key and its values: whose roll is
  *  taken again (`target`), and whether the new roll has Advantage (Countercharm on
  *  Bren: «Bren ritira il tiro salvezza con Vantaggio»). Null for no plan, or a die. */

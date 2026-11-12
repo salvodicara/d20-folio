@@ -17,7 +17,8 @@ export interface EconomyActionClaim {
 export interface EconomyActionRule {
   slot: ExtraActionGrant["slot"];
   count: number;
-  allowedActions?: ExtraActionGrant["allowedActions"];
+  allowedActions?: ReadonlyArray<ActionEconomyCategory>;
+  excludedActions?: ReadonlyArray<ActionEconomyCategory>;
   maxAttacks?: number;
 }
 
@@ -28,6 +29,7 @@ export interface EconomyTurnAction {
 
 interface ActionSlot {
   allowed: ReadonlySet<EconomyActionCategory> | null;
+  excluded: ReadonlySet<EconomyActionCategory> | null;
   maxAttacks: number;
 }
 
@@ -37,6 +39,8 @@ export function economyActionCategory(
 ): EconomyActionCategory | null {
   if (action.economyCategory) return action.economyCategory;
   if (action.source === "weapon") return "attack";
+  // Casting a spell is the Magic action.
+  if (action.source === "spell") return "magic";
   switch (action.id) {
     case "base-grapple":
     case "base-shove":
@@ -60,6 +64,7 @@ function actionSlots(
 ): ActionSlot[] {
   const slots: ActionSlot[] = Array.from({ length: Math.max(0, baseCount) }, () => ({
     allowed: null,
+    excluded: null,
     maxAttacks: Infinity,
   }));
   for (const rule of rules) {
@@ -67,6 +72,7 @@ function actionSlots(
     for (let index = 0; index < Math.max(0, rule.count); index += 1) {
       slots.push({
         allowed: rule.allowedActions ? new Set(rule.allowedActions) : null,
+        excluded: rule.excludedActions ? new Set(rule.excludedActions) : null,
         maxAttacks: rule.maxAttacks ?? Infinity,
       });
     }
@@ -77,6 +83,7 @@ function actionSlots(
 function slotAccepts(slot: ActionSlot, claim: EconomyActionClaim): boolean {
   if (slot.allowed && (!claim.category || !slot.allowed.has(claim.category)))
     return false;
+  if (slot.excluded && claim.category && slot.excluded.has(claim.category)) return false;
   return claim.category !== "attack" || (claim.attackCount ?? 1) <= slot.maxAttacks;
 }
 

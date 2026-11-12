@@ -239,6 +239,37 @@ describe("firestore.rules: sessionLogs/{sessionId}/items/{itemId}", () => {
     );
   });
 
+  // Walkthrough 2026-11-12 (M2): a level-up line and a rest with what it gave back are
+  // new event shapes inside an item's `event`. The rules as they are on main take them
+  // from the member who wrote them, and from nobody else.
+  it("accepts a level-up line and a rest with its recovery from its author only", async () => {
+    const levelUp = {
+      id: "l",
+      by: "ana",
+      at: 1,
+      type: "event",
+      event: { kind: "level-up", from: 9, to: 10, classId: "bard", actor: "pc-ana" },
+    } as LogItem;
+    const rest = {
+      id: "r",
+      by: "ana",
+      at: 1,
+      type: "event",
+      event: {
+        kind: "rest",
+        rest: "short",
+        actor: "pc-ana",
+        hpRegained: 8,
+        hitDiceSpent: 2,
+        recovered: [{ resource: "bardic-inspiration", count: 2 }],
+      },
+    } as LogItem;
+    await assertSucceeds(write("ana", levelUp));
+    await assertSucceeds(write("ana", rest));
+    await assertFails(write("dm", { ...levelUp, id: "l2" }));
+    await assertFails(write("dm", { ...rest, id: "r2" }));
+  });
+
   it("accepts the narrative overrides as items: hide, show, move", async () => {
     for (const item of [
       { id: "h", by: "ana", at: 1, type: "hide", target: "a" },

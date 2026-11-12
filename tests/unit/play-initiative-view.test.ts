@@ -94,7 +94,7 @@ describe("playInitiativeRows", () => {
   it("names a character by first name, a creature in full", () => {
     const named = playInitiativeRows(
       [
-        row({ ids: ["pc-c"], kind: "pc", name: "Bard di Sancaldo" }),
+        row({ ids: ["pc-c"], kind: "pc", name: "Bard di Sanvaldo" }),
         row({ ids: ["m-9"], kind: "monster", name: "Raider Chief" }),
       ],
       "pc-c"
