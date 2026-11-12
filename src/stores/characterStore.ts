@@ -583,7 +583,9 @@ interface CharacterState {
   commitDeathSave: (
     faces: ReadonlyArray<number>,
     use?: PostRollUse,
-    spend?: { trackerId: string; amount: number }
+    spend?: { trackerId: string; amount: number },
+    /** Each die's rerolls, in order (Halfling Luck on a 1: `[[15]]`). */
+    rerolled?: ReadonlyArray<ReadonlyArray<number>>
   ) => D20TestCommitResult | null;
   /** Resolve the current FIFO Concentration prompt. A stale spell, queue head,
    * damage/DC pair, or character state is rejected without mutation. */
@@ -594,7 +596,9 @@ interface CharacterState {
     reroll?: FailedSaveReroll,
     /** What the player added after the roll, and its payment (as `commitDeathSave`). */
     use?: PostRollUse,
-    spend?: { trackerId: string; amount: number }
+    spend?: { trackerId: string; amount: number },
+    /** Each die's rerolls, in order (Halfling Luck on a 1: `[[18]]`). */
+    rerolled?: ReadonlyArray<ReadonlyArray<number>>
   ) => D20TestCommitResult | null;
   /**
    * Surface the RAW damage-while-concentrating consequence for damage the
@@ -2795,7 +2799,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().dispatch({ kind: "set-exhaustion", level });
   },
 
-  commitDeathSave: (faces, use, spend) => {
+  commitDeathSave: (faces, use, spend, rerolled) => {
     if (get().readonly) return null;
     const live = get().character;
     if (
@@ -2812,7 +2816,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     try {
       // The builder reads the live aggregate here, at the mutation boundary:
       // all-save bonuses, Exhaustion, threshold, and net roll mode cannot stale.
-      result = resolveCharacterDeathSave(live, faces, [], use);
+      result = resolveCharacterDeathSave(live, faces, rerolled ?? [], use);
     } catch {
       return null;
     }
@@ -2842,7 +2846,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     };
   },
 
-  commitPendingConcentrationSave: (pending, faces, reroll, use, spend) => {
+  commitPendingConcentrationSave: (pending, faces, reroll, use, spend, rerolled) => {
     if (get().readonly) return null;
     const live = get().character;
     const head = get().combatPendingConcentrationSaves[0];
@@ -2863,7 +2867,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!before) return null;
     let result: CharacterEnteredD20Result;
     try {
-      result = resolveCharacterConcentrationSave(live, pending, faces, [], reroll, use);
+      result = resolveCharacterConcentrationSave(
+        live,
+        pending,
+        faces,
+        rerolled ?? [],
+        reroll,
+        use
+      );
     } catch {
       return null;
     }
