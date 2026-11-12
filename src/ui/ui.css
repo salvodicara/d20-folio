@@ -1162,7 +1162,7 @@
    (its aria-label keeps the name). */
 @media (max-width: 400px) {
   .fui .f-pnh .f-btn[aria-label]:has(.f-ic) {
-    min-width: 40px;
+    min-width: 44px;
     padding: 0 8px;
   }
   .fui .f-pnh .f-btn[aria-label]:has(.f-ic) .f-btn-lab {
@@ -6104,7 +6104,7 @@
     position: absolute;
     top: 16px;
     right: 16px;
-    min-width: 40px;
+    min-width: 44px;
     padding-inline: 8px;
   }
   .fui .f-sheet .f-char {
@@ -6371,6 +6371,14 @@
   .fui .f-close,
   .fui .f-btn {
     min-width: 44px;
+    min-height: 44px;
+  }
+  /* the attack row's Hit · Miss · Critical and its damage field (shared with the classic
+     sheet): the same 44 px a finger needs */
+  .fui .attack-outcome-chips .status-badge {
+    min-height: 44px;
+  }
+  .fui .attack-outcome-field input {
     min-height: 44px;
   }
   /* the creation steps («1. Classe»): text buttons, the same 44 px a finger needs */
