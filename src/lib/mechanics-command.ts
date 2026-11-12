@@ -19,6 +19,7 @@ import {
 import type { ResourceConversionEntry } from "@/lib/grants";
 import { resolveTrackers } from "@/lib/smart-tracker";
 import type { CharacterDoc, TrackerState } from "@/types/character";
+import { isRecord } from "@/lib/is-record";
 
 export type ResourceConversionSelection =
   | { kind: "create-slot"; via: "cost-table"; slotLevel: number }
@@ -134,10 +135,6 @@ function addressKey(address: ResourceOwnerAddress): string {
 
 function sameAddressValue(a: ResourceOwnerAddress, b: ResourceOwnerAddress): boolean {
   return addressKey(a) === addressKey(b);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function selectionIsValid(value: unknown): value is ResourceConversionSelection {
