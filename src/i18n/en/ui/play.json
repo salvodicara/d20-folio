@@ -320,8 +320,12 @@
         "weaponMasteries_one": "{{count}} Weapon Mastery",
         "weaponMasteries_other": "{{count}} Weapon Masteries",
         "fightingStyles_one": "{{count}} Fighting Style",
-        "fightingStyles_other": "{{count}} Fighting Styles"
-      }
+        "fightingStyles_other": "{{count}} Fighting Styles",
+        "spellbook_one": "{{count}} spellbook spell",
+        "spellbook_other": "{{count}} spellbook spells"
+      },
+      "spellbookTitle_one": "Add {{count}} spell to your spellbook: it stays unprepared",
+      "spellbookTitle_other": "Add {{count}} spells to your spellbook: they stay unprepared"
     },
     "rollReaction": {
       "toastReroll": "{{name}}: {{target}} rerolls the save",
@@ -416,10 +420,32 @@
       "source": "{{name}}'s Aura",
       "chip": "{{name}}'s Aura +{{bonus}}",
       "group": "Paladin auras",
+      "outside": "Outside the aura",
+      "backIn": "Back in the aura",
+      "saves": "+{{bonus}} to saving throws",
       "onHint": "Counts on your saves; tap if you stand outside {{name}}'s aura",
       "offHint": "You stand outside {{name}}'s aura; tap when you are back in it",
       "outToast": "Outside {{name}}'s aura",
       "inToast": "Back in {{name}}'s aura"
+    },
+    "fire": {
+      "name": "On fire",
+      "situations": "Situations",
+      "turnStart": "On fire: at the start of your turn you take {{dice}} fire damage (enter it in Damage and healing).",
+      "note": "{{dice}} fire damage at the start of each turn, until it goes out.",
+      "roll": "Roll on the ground (Action, then Prone)",
+      "out": "Put out from outside",
+      "rolled": "You roll on the ground: the fire goes out, you are Prone.",
+      "putOut": "The fire goes out.",
+      "caught": "You catch fire."
+    },
+    "breath": {
+      "name": "Hold breath",
+      "choking": "Choking",
+      "left_one": "{{count}} round of air left",
+      "left_other": "{{count}} rounds of air left",
+      "out": "Out of air: you gain 1 Exhaustion level at the end of each turn.",
+      "again": "Breathe again"
     }
   }
 }

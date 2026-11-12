@@ -86,6 +86,7 @@
     "cantripsLabel": "Cantrips (permanent)",
     "spellsKnownLabel": "Spells Known (permanent)",
     "preparedSpellsLabel": "Prepared Spells (changeable daily)",
+    "spellbookLabel": "Your spellbook: {{count}} spells. The first {{prepared}} you pick are prepared; the rest stay in the book, to prepare after a Long Rest.",
     "searchFeats": "Search feats…",
     "searchBackgrounds": "Search backgrounds…",
     "leaveTitle": "Discard this character?",

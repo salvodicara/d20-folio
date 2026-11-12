@@ -86,6 +86,7 @@
     "cantripsLabel": "Trucchetti (permanenti)",
     "spellsKnownLabel": "Incantesimi Conosciuti (permanenti)",
     "preparedSpellsLabel": "Incantesimi Preparati (modificabili ogni giorno)",
+    "spellbookLabel": "Il tuo libro degli incantesimi: {{count}} incantesimi. I primi {{prepared}} che scegli sono preparati; gli altri restano nel libro e li prepari dopo un Riposo Lungo.",
     "searchFeats": "Cerca talenti…",
     "searchBackgrounds": "Cerca background…",
     "leaveTitle": "Scartare questo personaggio?",

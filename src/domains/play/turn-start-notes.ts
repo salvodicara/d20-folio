@@ -14,6 +14,7 @@
 import type { TFunction } from "i18next";
 
 import { isCharacterAlive } from "@/lib/character-status";
+import { burningTurnStart } from "@/lib/play/environment";
 import { resolveRound1DamageDoubles, resolveStartOfTurnRegen } from "@/lib/smart-tracker";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableResult } from "@/stores/undoStore";
@@ -36,7 +37,16 @@ export interface TurnStartReminder {
   readonly saveDC: number;
 }
 
-export type TurnStartNote = TurnStartOffer | TurnStartReminder;
+/** Burning (SRD 5.2.1): its Fire damage at the start of each turn, until put out. The
+ *  app never rolls: the player enters what the dice say in «Danni e cure». */
+export interface TurnStartBurning {
+  readonly kind: "burning";
+  readonly id: string;
+  readonly sourceId: string;
+  readonly dice: string;
+}
+
+export type TurnStartNote = TurnStartOffer | TurnStartReminder | TurnStartBurning;
 
 /** The notes for the start of this character's turn in `round`. */
 export function turnStartNotes(
@@ -63,7 +73,11 @@ export function turnStartNotes(
           saveDC: r.saveDC,
         }))
       : [];
-  return [...offers, ...reminders];
+  const fire = burningTurnStart(doc);
+  const burning: TurnStartNote[] = fire
+    ? [{ kind: "burning", id: "burning", sourceId: "burning", dice: fire.dice }]
+    : [];
+  return [...burning, ...offers, ...reminders];
 }
 
 /**

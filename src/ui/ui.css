@@ -852,6 +852,10 @@
   flex: 1 1 auto;
   min-height: 0;
 }
+/* a dialog's sentence, then its field: the label never touches the text above it */
+.fui dialog.f-dlg .f-bd > p + .f-field {
+  margin-top: 16px;
+}
 .fui dialog.f-dlg:not([data-scrolls]) .f-pn-foot {
   padding-top: 0;
   border-top-color: transparent;
@@ -1961,25 +1965,66 @@
 .fui .f-ability {
   display: grid;
   justify-items: center;
+  align-content: start; /* a tile with its save line and one without keep one baseline */
   gap: 4px;
 }
-.fui .f-ability dd {
+.fui .f-ability > dd {
   margin: 0;
   display: grid;
   justify-items: center;
 }
-.fui .f-ability b {
+.fui .f-ability > dd > b {
   font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
-.fui .f-ability dd span {
+.fui .f-ability > dd > span {
   font-size: var(--fs-sm);
   color: var(--muted);
 }
-/* a proficient save: a dot before the score */
-.fui .f-ability[data-save] dd span::before {
-  content: "• ";
+/* the save under the modifier (D&D Beyond's saving-throw block): «TS +6», gold with a
+   dot when proficient, plain when only a bonus moves it; a tap shows where it comes from */
+.fui .f-ab-save > button {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 600 var(--fs-sm) var(--font-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.fui .f-ab-save > button::after {
+  content: "";
+  position: absolute;
+  inset: -12px -4px;
+}
+.fui .f-ab-save[data-prof] > button {
   color: var(--gold);
+}
+.fui .f-ab-save[data-prof] > button::before {
+  content: "• ";
+}
+.fui .f-ab-parts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  min-width: 200px;
+  list-style: none;
+}
+.fui .f-ab-parts > li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.fui .f-ab-parts b {
+  color: var(--strong);
+}
+/* on a phone the label sits under the number, the save under the label */
+@media (max-width: 800px) {
+  .fui .f-sheet .f-ab-save {
+    order: 3;
+  }
 }
 .fui .f-char-stats {
   display: flex;
@@ -2578,11 +2623,11 @@
   color: var(--text);
 }
 /* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
-.fui .f-sheet .f-ability b {
+.fui .f-sheet .f-ability > dd > b {
   font: 700 26px/1.15 var(--font-title);
   color: var(--text);
 }
-.fui .f-sheet .f-ability dd span {
+.fui .f-sheet .f-ability > dd > span {
   letter-spacing: 0.08em;
   color: var(--muted);
 }
@@ -2911,7 +2956,7 @@
   .fui .f-sheet .f-char-id h1 {
     font-size: var(--fs-title-phone);
   }
-  .fui .f-sheet .f-ability b {
+  .fui .f-sheet .f-ability > dd > b {
     font-size: var(--fs-lg);
   }
 }
@@ -2920,7 +2965,7 @@
     font-size: var(--fs-title-bar-m);
   }
   .fui .f-sheet .f-char-stats .f-lbl,
-  .fui .f-sheet .f-ability dt {
+  .fui .f-sheet .f-ability > dt {
     letter-spacing: 0.02em;
   }
 }
@@ -3145,15 +3190,15 @@
   .fui .f-sheet .f-ability {
     gap: 0;
   }
-  .fui .f-sheet .f-ability dt {
+  .fui .f-sheet .f-ability > dt {
     order: 2;
     font-weight: 700;
     color: var(--phone-label);
   }
-  .fui .f-sheet .f-ability b {
+  .fui .f-sheet .f-ability > dd > b {
     color: var(--white);
   }
-  .fui .f-sheet .f-ability dd span {
+  .fui .f-sheet .f-ability > dd > span {
     display: none;
   }
 }
@@ -4221,6 +4266,11 @@
     box-shadow:
       0 0 0 100vmax var(--scrim),
       0 -8px 32px var(--shade);
+  }
+  /* an undo toast never hides the row it is about: the sheet rises above it (the toast
+     rides 72 px up, over «Sezioni», and is about 64 px tall) */
+  .fui.f-app:has(.f-toast) .f-condpop {
+    bottom: 144px;
   }
 }
 
@@ -6081,10 +6131,10 @@
     margin-top: 4px;
   }
   /* the value sits on its score without their glyph boxes touching */
-  .fui .f-sheet .f-ability b {
+  .fui .f-sheet .f-ability > dd > b {
     line-height: 1;
   }
-  .fui .f-sheet .f-ability dd {
+  .fui .f-sheet .f-ability > dd {
     gap: 4px;
   }
   .fui .f-sheet .f-badge {
@@ -6318,7 +6368,7 @@
   .fui .f-sheet .f-char {
     padding: 20px 12px;
   }
-  .fui .f-sheet .f-ability dt,
+  .fui .f-sheet .f-ability > dt,
   .fui .f-sheet .f-char-stats .f-lbl {
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -6348,6 +6398,37 @@
   }
 }
 
+/* The table's situations: on a phone one line, the lit chips after a «Situation ▾»
+   disclosure that opens the full set (Foundry's collapsed status-effect tray); the
+   desktop has the width for every chip and shows the plain label. */
+.fui .f-sit-more {
+  display: none;
+}
+@media (max-width: 640px) {
+  .fui .f-situations > .f-chips > .f-lbl {
+    display: none;
+  }
+  .fui .f-sit-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 4px 0 0;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: 700 12px var(--font-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .fui .f-sit-more[aria-expanded="true"] .f-ic {
+    transform: rotate(180deg);
+  }
+  .fui .f-situations:not([data-open]) .f-chip[aria-pressed="false"] {
+    display: none;
+  }
+}
 /* Touch targets on a phone: at least 44 px (PRODUCT.md; Apple's HIG, WCAG 2.5.5). The
    desktop keeps its 40 px controls; a finger gets the extra 4 px. */
 @media (max-width: 640px) {
@@ -6396,4 +6477,47 @@
   .fui.f-app:has(.f-lvl-bar) .f-toast {
     bottom: 88px;
   }
+}
+
+/* a campaign card's round picture: the campaign page's crest, at the roster ring's size */
+.fui .f-crest.f-crest-sm {
+  width: 56px;
+  height: 56px;
+  box-shadow: none;
+}
+@media (max-width: 640px) {
+  .fui .f-crest.f-crest-sm {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* «Impostazioni» (D&D Beyond's account settings): short panels in a readable column;
+   the account row is the avatar, the name and email, «Esci» at the end. */
+.fui .f-settings {
+  display: grid;
+  gap: 24px;
+  max-width: 720px;
+}
+.fui .f-settings .f-pnb {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-acct {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+}
+.fui .f-acct > .f-av {
+  flex: none;
+}
+.fui .f-acct-id {
+  display: grid;
+  flex: 1 1 160px;
+  min-width: 0;
+}
+.fui .f-acct-id > span {
+  color: var(--text-3);
+  overflow-wrap: anywhere;
 }
