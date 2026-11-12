@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { notesView } from "@/domains/notes/notes-view";
+import { notePreview, notesView } from "@/domains/notes/notes-view";
 import type { SharedNote } from "@/types/campaign";
 
 const at = (day: number) => new Date(2026, 9, day, 21, 0);
@@ -88,5 +88,16 @@ describe("notesView", () => {
       notesView(notes, { filter: "all", query }, player).map((n) => n.id);
     expect(ids("MARKET")).toEqual(["brindol"]);
     expect(ids("cursèd")).toEqual(["hammer"]);
+  });
+});
+
+describe("notePreview", () => {
+  it("shows a tag once: out of the body line, kept in the meta line", () => {
+    expect(notePreview("vuole che il ferro resti nella roccia. @Morweth")).toBe(
+      "vuole che il ferro resti nella roccia."
+    );
+    expect(notePreview("Al mercato di #Valfosca , voci strane")).toBe(
+      "Al mercato di, voci strane"
+    );
   });
 });

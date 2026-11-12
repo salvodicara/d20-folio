@@ -7,7 +7,12 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { notesView, type NoteFilter, type NoteRow } from "@/domains/notes/notes-view";
+import {
+  notePreview,
+  notesView,
+  type NoteFilter,
+  type NoteRow,
+} from "@/domains/notes/notes-view";
 import { NoteDialog } from "@/domains/notes/ui/NoteDialog";
 import { removeNote, saveNote } from "@/domains/notes/ui/note-moves";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
@@ -144,7 +149,7 @@ function NoteLine({
         <span className="f-row-t">{note.title || note.content.split("\n")[0]}</span>
         {note.title && note.content && (
           <span className="f-row-s" data-user-text="">
-            {note.content.split("\n")[0]}
+            {notePreview(note.content.split("\n")[0] ?? "")}
           </span>
         )}
         <span className="f-row-s">
