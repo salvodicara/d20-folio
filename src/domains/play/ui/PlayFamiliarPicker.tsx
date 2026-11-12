@@ -48,7 +48,7 @@ export function PlayFamiliarPicker({
       id: m.id,
       hpAverage: m.hp.average,
       name: localizeSrd("monster", m.id, "name", locale),
-      en: localizeSrd("monster", m.id, "name", "en"),
+      english: localizeSrd("monster", m.id, "name", "en"),
       cr: formatCr(m.cr),
       ac: m.ac,
       hp: m.hp.average,
@@ -57,7 +57,7 @@ export function PlayFamiliarPicker({
         return typeof ft === "number" && ft > 0 ? [{ mode, ft }] : [];
       }),
     }))
-    .filter((r) => matchesSearch(query, r.name, r.en))
+    .filter((r) => matchesSearch(query, r.name, r.english))
     .sort((a, b) => a.name.localeCompare(b.name, locale));
   const form = rows.find((r) => r.id === picked) ?? null;
   return (

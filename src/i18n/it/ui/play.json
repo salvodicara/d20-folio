@@ -250,8 +250,7 @@
       "revived": "{{name}} torna in vita",
       "reviveTooLate": "Troppo tardi: la caduta risale a {{minutes}} min fa (il limite è {{limit}} min).",
       "reviveInTime": "In tempo: caduta {{minutes}} min fa, limite {{limit}} min.",
-      "reviveUnknown": "Momento della caduta sconosciuto: il limite è {{limit}} min.",
-      "form": "Forma"
+      "reviveUnknown": "Momento della caduta sconosciuto: il limite è {{limit}} min."
     },
     "down": {
       "title": "A 0 punti ferita: tiri salvezza contro la morte",
@@ -363,16 +362,8 @@
     "defense": {
       "temporary": "temporanea",
       "remove": "Togli {{name}}",
-      "add": "Aggiungi",
-      "choose": "Scegli",
       "addTitle": "Difesa temporanea",
       "addHelp": "Da una pozione o un incantesimo: finisce quando la togli, senza toccare il personaggio.",
-      "kind": {
-        "resistance": "Resistenza",
-        "immunity": "Immunità",
-        "vulnerability": "Vulnerabilità",
-        "conditionImmunity": "Condizione"
-      },
       "repick": {
         "short-or-long-rest": "{{source}}, scegli di nuovo il tipo dopo ogni Riposo Breve o Lungo.",
         "long-rest": "{{source}}, scegli di nuovo il tipo dopo ogni Riposo Lungo.",
@@ -380,7 +371,6 @@
       }
     },
     "check": {
-      "dc": "CD",
       "face": "Il d20 che hai tirato",
       "noDc": "nessuna CD: decide il DM.",
       "fail": "fallita contro CD {{dc}}.",
@@ -395,11 +385,8 @@
     },
     "hit": {
       "title": "Al colpo",
-      "add": "Aggiungi",
-      "added": "Aggiunto",
       "mastery": "Padronanza",
-      "askSolo": "Hai colpito con {{name}}? Aggiungi al colpo:",
-      "done": "Fatto"
+      "askSolo": "Hai colpito con {{name}}? Aggiungi al colpo:"
     }
   }
 }

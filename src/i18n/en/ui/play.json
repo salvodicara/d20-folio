@@ -250,8 +250,7 @@
       "revived": "{{name}} comes back to life",
       "reviveTooLate": "Too late: it fell {{minutes}} min ago (the limit is {{limit}} min).",
       "reviveInTime": "In time: it fell {{minutes}} min ago, limit {{limit}} min.",
-      "reviveUnknown": "Time of the fall unknown: the limit is {{limit}} min.",
-      "form": "Form"
+      "reviveUnknown": "Time of the fall unknown: the limit is {{limit}} min."
     },
     "down": {
       "title": "At 0 Hit Points: death saving throws",
@@ -363,16 +362,8 @@
     "defense": {
       "temporary": "temporary",
       "remove": "Remove {{name}}",
-      "add": "Add",
-      "choose": "Choose",
       "addTitle": "Temporary defense",
       "addHelp": "From a potion or a spell: it ends when you remove it, without touching the character.",
-      "kind": {
-        "resistance": "Resistance",
-        "immunity": "Immunity",
-        "vulnerability": "Vulnerability",
-        "conditionImmunity": "Condition"
-      },
       "repick": {
         "short-or-long-rest": "{{source}}, choose the type again after every Short or Long Rest.",
         "long-rest": "{{source}}, choose the type again after every Long Rest.",
@@ -380,7 +371,6 @@
       }
     },
     "check": {
-      "dc": "DC",
       "face": "The d20 you rolled",
       "noDc": "no DC: the DM decides.",
       "fail": "fails against DC {{dc}}.",
@@ -395,11 +385,8 @@
     },
     "hit": {
       "title": "On a hit",
-      "add": "Add",
-      "added": "Added",
       "mastery": "Mastery",
-      "askSolo": "Did {{name}} hit? Add to the hit:",
-      "done": "Done"
+      "askSolo": "Did {{name}} hit? Add to the hit:"
     }
   }
 }

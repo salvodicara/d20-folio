@@ -141,7 +141,7 @@ export function PlayAfterHit({
             .filter((r) => r.group === group)
             .map((row) => {
               const done = added.has(row.key);
-              const verb = done ? t("play.hit.added") : t("play.hit.add");
+              const verb = done ? t("common.added") : t("common.add");
               return (
                 <div key={row.key} className="f-act">
                   <ActionIcon icon={{ kind: "feature" }} art={row.art} />
@@ -196,7 +196,7 @@ export function AfterHitNote({ locale }: { locale: Locale }) {
       />
       <div className="f-acts">
         <Button kind="quiet" onClick={() => useAfterHitStore.getState().clear()}>
-          {t("play.hit.done")}
+          {t("common.done")}
         </Button>
       </div>
     </div>

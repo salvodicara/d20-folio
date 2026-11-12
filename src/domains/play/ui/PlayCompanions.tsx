@@ -160,9 +160,9 @@ function CompanionForms({
   const current = forms.options.find((o) => o.id === forms.selected);
   if (readonly) return current ? <Chip>{current.label}</Chip> : null;
   return (
-    <div className="f-chips" role="group" aria-label={t("play.companions.form")}>
+    <div className="f-chips" role="group" aria-label={t("features.variantLabel")}>
       <Chip pressed={open} onClick={() => setOpen(!open)}>
-        {current?.label ?? t("play.defense.choose")}
+        {current?.label ?? t("rePick.choose")}
         <Icon name="u-expand" />
       </Chip>
       {open &&

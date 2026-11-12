@@ -28,6 +28,14 @@ import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc, SessionDefenseKind } from "@/types/character";
 import { Button, Chip, Icon } from "@/ui";
 
+/** The kind chips reuse the app's one word for each defense. */
+const KIND_LABEL = {
+  resistance: "common.resistance",
+  immunity: "combat.damageMathImmune",
+  vulnerability: "combat.damageMathVulnerable",
+  conditionImmunity: "palette.kindCondition",
+} as const;
+
 const KINDS: readonly SessionDefenseKind[] = [
   "resistance",
   "immunity",
@@ -114,7 +122,7 @@ export function PlayDefenses({ doc, locale }: { doc: CharacterDoc; locale: Local
           <div className="f-chips">
             <Chip pressed={false} onClick={() => setAdding(true)}>
               <Icon name="u-add" />
-              {t("play.defense.add")}
+              {t("common.add")}
             </Chip>
           </div>
         ))}
@@ -148,7 +156,7 @@ function ChosenResistance({
   return (
     <>
       <Chip pressed={open} onClick={() => setOpen(!open)}>
-        {picked || t("play.defense.choose")}
+        {picked || t("rePick.choose")}
         <Icon name="u-expand" />
       </Chip>
       {open && (
@@ -206,7 +214,7 @@ function AddDefense({
               setId(null);
             }}
           >
-            {t(`play.defense.kind.${k}`)}
+            {t(KIND_LABEL[k])}
           </Chip>
         ))}
       </div>
@@ -236,7 +244,7 @@ function AddDefense({
             onDone();
           }}
         >
-          {t("play.defense.add")}
+          {t("common.add")}
         </Button>
       </div>
     </div>

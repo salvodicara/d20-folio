@@ -122,7 +122,7 @@ export function PlayCheck({
               </Chip>
               {TYPICAL_DCS.map((v) => (
                 <Chip key={v} pressed={dc === v} onClick={() => setDc(v)}>
-                  {`${t("play.check.dc")} ${String(v)}`}
+                  {`${t("stats.dc")} ${String(v)}`}
                 </Chip>
               ))}
             </div>
@@ -131,7 +131,7 @@ export function PlayCheck({
       ) : (
         <div className="f-ask f-ask-row">
           {dc !== undefined && (
-            <StatBadge shape="hex" value={String(dc)} label={t("play.check.dc")} />
+            <StatBadge shape="hex" value={String(dc)} label={t("stats.dc")} />
           )}
           <div>
             <div className="f-row-t">{`${t(`skills.${skillId}`)} ${signed(bonus)}`}</div>
