@@ -22,6 +22,7 @@ import {
   hitDicePool,
   hitDiceTotal,
   hitDiceTotalRange,
+  readHitDiceRoll,
 } from "@/lib/play/hit-dice";
 import { shortRestHeal as shortRestHealFor } from "@/lib/play/short-rest-healing";
 import { useState, useMemo, useId } from "react";
@@ -177,6 +178,12 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     hitDiceToSpend,
     diceTotal
   );
+  // A floor on the faces (a feature that counts a 1 or 2 as a 3) takes the faces
+  // typed one per die; the engine's heal reads them the same way.
+  const hitDieFloor = agg.hitDieFloor;
+  const read = hitDieFloor
+    ? readHitDiceRoll(diceTotal, hitDiceToSpend, hitDieFloor)
+    : null;
   const diceCountValid = hitDiceToSpend <= hitDiceAvailable;
   const hpAfterRest =
     shortRestHeal === null ? null : Math.min(hpCurrent + shortRestHeal, hpMax);
@@ -453,15 +460,19 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             {hitDiceToSpend > 0 && (
               <div>
                 <label htmlFor={inputId} className="rest-input-label">
-                  {t("rest.diceTotal")}
+                  {t(hitDieFloor ? "rest.diceFaces" : "rest.diceTotal")}
                 </label>
                 <Input
                   id={inputId}
-                  type="number"
-                  inputMode="numeric"
-                  min={rollRange.min}
-                  max={rollRange.max}
-                  step={1}
+                  {...(hitDieFloor
+                    ? { type: "text", inputMode: "text" as const }
+                    : {
+                        type: "number",
+                        inputMode: "numeric" as const,
+                        min: rollRange.min,
+                        max: rollRange.max,
+                        step: 1,
+                      })}
                   value={diceTotal}
                   onChange={(event) => setDiceTotal(event.target.value)}
                   disabled={committing}
@@ -471,13 +482,30 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   className="rest-roll-input"
                 />
                 <p id={`${inputId}-hint`} className="rest-input-hint">
-                  {t("rest.diceTotalHint", { dice: hitDiceText(hitDiceToSpend) })}
+                  {hitDieFloor
+                    ? t("rest.diceFacesHint", {
+                        dice: hitDiceText(hitDiceToSpend),
+                        count: hitDiceToSpend,
+                        below: hitDieFloor.floorBelow,
+                        to: hitDieFloor.floorTo,
+                      })
+                    : t("rest.diceTotalHint", { dice: hitDiceText(hitDiceToSpend) })}
                 </p>
                 {diceTotal !== "" && !rollValid && (
                   <p id={`${inputId}-error`} className="rest-input-hint text-error">
-                    {t("rest.diceTotalError", {
-                      min: rollRange.min,
-                      max: rollRange.max,
+                    {hitDieFloor
+                      ? t("rest.diceFacesError", { count: hitDiceToSpend })
+                      : t("rest.diceTotalError", {
+                          min: rollRange.min,
+                          max: rollRange.max,
+                        })}
+                  </p>
+                )}
+                {hitDieFloor && read?.faces && (
+                  <p className="rest-input-hint" role="status">
+                    {t("rest.diceFacesSum", {
+                      faces: read.faces.join(" + "),
+                      total: read.total,
                     })}
                   </p>
                 )}
