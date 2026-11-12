@@ -8,11 +8,14 @@ export type {
 } from "./types";
 export {
   foldSession,
+  isMarkerEvent,
   stableJson,
   type SessionAuthority,
   type SessionEntry,
 } from "./fold";
 export { buildReport, type ReportRound, type ReportSection } from "./report";
+export { sessionReportSections } from "./session-report-sections";
+export { sheetSessionEntries } from "./sheet-session";
 export {
   inferFights,
   INFERRED_FIGHT_IDLE_MS,

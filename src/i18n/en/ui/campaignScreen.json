@@ -16,17 +16,17 @@
     "tableRules": {
       "title": "Table rules",
       "tab": "Rules",
-      "introDm": "Only the DM changes them; they apply to every character in the campaign. The 2024 rules (RAW) apply by default: change only what your table plays differently.",
-      "introPlayer": "The 2024 rules (RAW) all apply, except these.",
-      "allRaw": "This table plays by the 2024 rules (RAW).",
-      "raw": "RAW",
+      "introDm": "Only the DM changes them; they apply to every character in the campaign. The 2024 rules apply as written by default: change only what your table plays differently.",
+      "introPlayer": "The 2024 rules all apply as written, except these.",
+      "allRaw": "This table plays by the 2024 rules as written.",
+      "raw": "As written",
       "table": "Table rule",
       "customize": "Customize",
-      "reset": "Back to RAW",
+      "reset": "Back to the rules as written",
       "active_one": "{{count}} table rule in effect",
       "active_other": "{{count}} table rules in effect",
       "changed": "Table rule changed",
-      "resetDone": "RAW rules restored",
+      "resetDone": "Rules as written restored",
       "failed": "Couldn't save the table rules",
       "groups": {
         "rest": "Rests and Exhaustion",
@@ -55,18 +55,18 @@
         },
         "deathSaves": {
           "title": "Death saving throws",
-          "why": "How many successes stabilize and how many failures kill (RAW: 3 and 3)."
+          "why": "How many successes stabilize and how many failures kill (as written: 3 and 3)."
         },
         "rest": {
           "title": "Rest lengths",
-          "why": "RAW: a Short Rest is 1 hour, a Long Rest 8 hours.",
+          "why": "As written: a Short Rest is 1 hour, a Long Rest 8 hours.",
           "fields": {
             "shortMinutes": "Short Rest, minutes",
             "longMinutes": "Long Rest, minutes"
           }
         },
         "exhaustion": {
-          "why": "RAW: up to level 6; each level takes 2 off D20 Tests and 5 ft off Speed.",
+          "why": "As written: up to level 6; each level takes 2 off D20 Tests and 5 ft off Speed.",
           "fields": {
             "maxLevel": "Highest level",
             "d20PerLevel": "To D20 Tests, per level",
@@ -88,7 +88,7 @@
           "title": "Hiding",
           "why": "In 2024 hiding takes a check against DC 15.",
           "choices": {
-            "raw": "Fixed DC 15 (RAW)",
+            "raw": "Fixed DC 15 (as written)",
             "table": "The DM decides (no DC 15)"
           }
         },
