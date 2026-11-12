@@ -291,7 +291,8 @@ function PlayHeader({
   // The player's own combatant: a repeat save due on it waits here.
   const fight = useCombatStatusStore((st) => st.status);
   const uid = useAuthStore((st) => st.user?.uid);
-  const [hpOpen, setHpOpen] = useState(false);
+  // «Danni e cure», and which of its actions leads (the button that opened it).
+  const [hpOpen, setHpOpen] = useState<false | "damage" | "heal">(false);
   const [moreOpen, setMoreOpen] = useState(false);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
@@ -404,7 +405,7 @@ function PlayHeader({
             className="f-char-hp-open"
             aria-haspopup="dialog"
             aria-label={`${t("play.hp.title")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
-            onClick={() => setHpOpen(true)}
+            onClick={() => setHpOpen("damage")}
           >
             <HpReadout view={view} />
           </button>
@@ -413,14 +414,14 @@ function PlayHeader({
             <Button
               icon="g-hp-damage"
               aria-haspopup="dialog"
-              onClick={() => setHpOpen(true)}
+              onClick={() => setHpOpen("damage")}
             >
               {t("mechanics.cast.optionDamage")}
             </Button>
             <Button
               icon="g-hp-heal"
               aria-haspopup="dialog"
-              onClick={() => setHpOpen(true)}
+              onClick={() => setHpOpen("heal")}
             >
               {t("combat.heal")}
             </Button>
@@ -450,7 +451,14 @@ function PlayHeader({
           </div>
         </div>
       )}
-      {hpOpen && <PlayHp doc={doc} locale={locale} onClose={() => setHpOpen(false)} />}
+      {hpOpen && (
+        <PlayHp
+          doc={doc}
+          locale={locale}
+          intent={hpOpen}
+          onClose={() => setHpOpen(false)}
+        />
+      )}
       {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
       {onLevelUp && (
         <>

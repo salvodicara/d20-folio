@@ -1,0 +1,99 @@
+/* The line-completion chips: a line completed where it is shown ("Who struck?" in the
+   fight feed, an attack's result on the sheet's row just used). Moved unchanged from
+   encounter.css so both surfaces share one look. */
+.encounter-feed-pick {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+.encounter-feed-pick-label {
+  color: var(--text-faint);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.encounter-feed-chip {
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-md);
+  background: color-mix(in oklab, var(--bg-surface-2) 70%, transparent);
+  padding: 1px 8px;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  transition:
+    border-color 120ms,
+    color 120ms;
+}
+.encounter-feed-chip:hover,
+.encounter-feed-chip:focus-visible {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+.encounter-feed-chip[data-selected] {
+  border-color: var(--accent-primary);
+  background: color-mix(in oklab, var(--accent-primary) 16%, transparent);
+  color: var(--text-primary);
+}
+.encounter-feed-pick-quiet {
+  padding: 1px 2px;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.encounter-feed-pick-quiet:hover,
+.encounter-feed-pick-quiet:focus-visible {
+  color: var(--text-primary);
+}
+
+/* The sheet's weight: the label reads at the situation chips' strength. */
+.encounter-feed-pick[data-weight="status"] {
+  gap: 6px 8px;
+}
+.encounter-feed-pick[data-weight="status"] .encounter-feed-pick-label {
+  color: var(--text-secondary);
+}
+
+/* The attack's three results stay together on one line. */
+.attack-outcome-chips {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+/* «DANNI [ 9 ]»: a label that stays, and a field sized for three digits. */
+.attack-outcome-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.attack-outcome-field {
+  display: inline-block;
+  width: 4.5rem;
+}
+
+/* A phone: «ESITO» above the chips, the damage on its own line. */
+@media (max-width: 639px) {
+  .encounter-feed-pick[data-weight="status"] > .encounter-feed-pick-label,
+  .attack-outcome-amount {
+    flex-basis: 100%;
+  }
+}
+
+/* A finger needs about 44 px: the chips keep their compact look and grow an invisible
+   hit area on touch screens. */
+@media (pointer: coarse) {
+  .encounter-feed-chip,
+  .encounter-feed-pick-quiet,
+  .line-chip-status {
+    position: relative;
+  }
+  .encounter-feed-chip::after,
+  .encounter-feed-pick-quiet::after,
+  .line-chip-status::after {
+    content: "";
+    position: absolute;
+    inset: -12px -6px;
+  }
+}

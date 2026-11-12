@@ -1,8 +1,12 @@
-import { useId, useRef } from "react";
+import { useId, useLayoutEffect, useRef } from "react";
 
-import { useScrollMore } from "./scroll-more";
+import { scrollLeftToShow, useScrollMore } from "./scroll-more";
 
-/** A row of tabs; it scrolls sideways when it does not fit. */
+/** The fade at a cut edge (ui.css `.f-tabs[data-more]`). */
+const FADE = 56;
+
+/** A row of tabs; it scrolls sideways when it does not fit, each cut edge fades, and
+ *  the selected tab is always shown whole. */
 export function Tabs<T extends string>({
   items,
   value,
@@ -17,6 +21,11 @@ export function Tabs<T extends string>({
   const id = useId();
   const ref = useRef<HTMLDivElement>(null);
   useScrollMore(ref);
+  useLayoutEffect(() => {
+    const row = ref.current;
+    const tab = row?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (row && tab) row.scrollLeft = scrollLeftToShow(row, tab, FADE);
+  }, [value]);
   return (
     <div ref={ref} className="f-tabs" role="tablist" aria-label={label}>
       {items.map((t) => (

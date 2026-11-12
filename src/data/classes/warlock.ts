@@ -389,6 +389,7 @@ export const WARLOCK_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-resistance",
         choiceKey: "warlock-fiend-patron-fiendish-resilience",
+        choiceFrequency: "short-or-long-rest",
         options: [
           "acid",
           "bludgeoning",
