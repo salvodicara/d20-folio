@@ -69,7 +69,24 @@ describe("restricted combat economy", () => {
       "attack"
     );
     expect(economyActionCategory({ id: "base-dash", source: "feature" })).toBe("dash");
-    expect(economyActionCategory({ id: "fireball", source: "spell" })).toBeNull();
+    // Casting a spell is the Magic action (Action Surge's extra action can't be it).
+    expect(economyActionCategory({ id: "fireball", source: "spell" })).toBe("magic");
+    expect(economyActionCategory({ id: "base-help", source: "feature" })).toBeNull();
+  });
+
+  it("Action Surge's extra action takes anything but the Magic action", () => {
+    const surge = [
+      { slot: "action" as const, count: 1, excludedActions: ["magic" as const] },
+    ];
+    expect(
+      canAssignActionClaims([{ category: "attack" }, { category: "magic" }], surge)
+    ).toBe(true);
+    expect(
+      canAssignActionClaims([{ category: "magic" }, { category: "magic" }], surge)
+    ).toBe(false);
+    expect(canAssignActionClaims([{ category: null }, { category: "dash" }], surge)).toBe(
+      true
+    );
   });
 
   it("reconstructs each persisted Attack group with its own swing count", () => {

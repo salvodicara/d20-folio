@@ -1455,7 +1455,7 @@ export function TurnEconomyProvider({
     _slot: EconomySlot,
     opt: CastCommitOption,
     metamagicIds: ReadonlyArray<string> = [],
-    _ridesPip?: boolean,
+    ridesPip?: boolean,
     execution: ActionExecution = TURN_EXECUTION
   ) {
     const characterId = character?.id;
@@ -1470,6 +1470,16 @@ export function TurnEconomyProvider({
       !!liveSession &&
       castReadiesSpell(action, useCombatStore.getState().selected.action, liveSession);
     const heldAction = readies ? { ...action, concentration: true } : action;
+    // In a fight a cast spends the slot its casting time names, like any other row: an
+    // Action spell takes the Action (Quickened: the Bonus Action). Not a readied
+    // release (Ready took the Action), a ritual, or a cast riding an attack swing.
+    const economySlot = castEconomySlot(action.type, metamagicIds);
+    const occupiesSlot =
+      inEncounter() &&
+      !readies &&
+      !execution.ritual &&
+      !ridesPip &&
+      (economySlot === "action" || economySlot === "bonus");
     if (!canCommit() || !(await confirmConcentrationBreak(heldAction)) || !canCommit())
       return;
     const itemPayment = castItemPayment(action, opt);
@@ -1523,6 +1533,13 @@ export function TurnEconomyProvider({
         const resourceCommit = resourceCycle?.apply() ?? null;
         if (resourceCycle && !resourceCommit) return null;
         const cs = useCharacterStore.getState();
+        if (
+          occupiesSlot &&
+          !appendWithinActionRules(toSelectedAction(action, economySlot, opt))
+        ) {
+          seal?.()?.();
+          return null;
+        }
         const spends = castOptionSpends(opt, metamagicIds);
         paySpends(spends);
         // Casting is an act: it ends a Hide (Verbal) and an Invisibility held now.
@@ -1590,7 +1607,7 @@ export function TurnEconomyProvider({
           return true;
         };
       },
-      { turnScoped: false }
+      { turnScoped: occupiesSlot }
     );
     clearPendingResolution(action);
   }

@@ -1692,7 +1692,15 @@ export interface ActionDamageReduction {
 }
 
 /** Stable semantic category used by restricted/alternate combat-economy actions. */
-export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "utilize";
+/** An action's category for restricted extra actions; "magic" is casting a spell
+ *  (the Magic action Action Surge's extra action can't be). */
+export type ActionEconomyCategory =
+  | "attack"
+  | "dash"
+  | "disengage"
+  | "hide"
+  | "utilize"
+  | "magic";
 
 export interface SrdActionDef extends EffectRiders {
   /** Optional stable suffix when one feature declares several actions of the same type. */

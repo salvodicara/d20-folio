@@ -72,4 +72,40 @@ describe("PlayConcentrationSave reroll", () => {
     expect(useCharacterStore.getState().combatPendingConcentrationSaves).toHaveLength(0);
     expect(useCharacterStore.getState().character?.session.concentration).toBeTruthy();
   });
+
+  it("Heroic Inspiration: a failed roll offers its reroll; the new roll stands and spends it", () => {
+    const doc = makeCharacterDoc(
+      { classes: [{ classId: "bard", level: 3 }] },
+      { concentration: concentrationValue("bless"), inspiration: true }
+    );
+    useCharacterStore.getState().setCharacter(doc);
+    render(<Live />);
+    fireEvent.click(screen.getByRole("button", { name: "Roll the die" }));
+    fireEvent.change(screen.getAllByRole("textbox")[0] as HTMLElement, {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Heroic Inspiration: reroll$/ }));
+    fireEvent.change(screen.getAllByRole("textbox")[0] as HTMLElement, {
+      target: { value: "18" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Confirm" }));
+    const live = useCharacterStore.getState();
+    expect(live.combatPendingConcentrationSaves).toHaveLength(0);
+    expect(live.character?.session.concentration).toBeTruthy();
+    expect(live.character?.session.inspiration).toBe(false);
+  });
+
+  it("without Heroic Inspiration nothing is offered for it", () => {
+    const doc = makeCharacterDoc(
+      { classes: [{ classId: "bard", level: 3 }] },
+      { concentration: concentrationValue("bless"), inspiration: false }
+    );
+    useCharacterStore.getState().setCharacter(doc);
+    render(<Live />);
+    fireEvent.click(screen.getByRole("button", { name: "Roll the die" }));
+    fireEvent.change(screen.getAllByRole("textbox")[0] as HTMLElement, {
+      target: { value: "2" },
+    });
+    expect(screen.queryByRole("button", { name: /Heroic Inspiration/ })).toBeNull();
+  });
 });

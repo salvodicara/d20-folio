@@ -204,7 +204,7 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
     expect(useUndoStore.getState().past).toHaveLength(1);
   });
 
-  it("keeps an item spell opener available after the action was used", async () => {
+  it("an item's spell is cast with its own casting time: a spent Action waits for the next turn", async () => {
     loadWielder(
       [
         {
@@ -227,13 +227,10 @@ describe("S9 — multi-spell item-cast (shared charge pool)", () => {
         },
       })
     );
-    const cast = await screen.findByLabelText("Cast a spell from Wand of Binding");
-    expect(cast).toBeEnabled();
-    fireEvent.click(cast);
-    fireEvent.click(within(await screen.findByRole("dialog")).getByText("Hold Person"));
-    await waitFor(() => expect(currentCharges("occupied-action-wand")).toBe(5));
-    expect(useCombatStore.getState().selected.action).toHaveLength(1);
-    expect(useCombatStore.getState().selected.action[0]?.id).toBe("dash");
+    // Hold Person takes an Action; the Dash already took it.
+    const used = await screen.findByRole("button", { name: "Used: Wand of Binding" });
+    expect(used).toBeDisabled();
+    expect(currentCharges("occupied-action-wand")).toBe(7);
   });
 
   it("Staff of Charming: a uniform-cost pick debits EXACTLY 1 charge", async () => {
