@@ -99,6 +99,7 @@
       "spent_other": "{{actor}} spende {{count}} usi di {{resource}}",
       "regained_one": "{{actor}} recupera un uso di {{resource}}",
       "regained_other": "{{actor}} recupera {{count}} usi di {{resource}}"
-    }
+    },
+    "dealt": "{{amount}} danni"
   }
 }

@@ -43,6 +43,8 @@ export type PlayEvent =
       /** One result for every target ("critical" = a critical hit). Readers ignore a
        *  value they do not know. */
       outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
+      /** The damage dealt, typed by the player for an attack with no target in Folio. */
+      amount?: number;
       /** Each target's save (an older reader shows the shared `outcome`, set when every
        *  target agrees), and whether nothing came of it. */
       saves?: SaveResults;

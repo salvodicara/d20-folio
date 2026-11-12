@@ -45,6 +45,7 @@ export function combatEventToPlayEvent(
         slot: event.slot,
         ...(event.targets?.length ? { targets: event.targets } : {}),
         ...declaredResults(event),
+        ...(event.amount !== undefined ? { amount: event.amount } : {}),
         ...(event.check ? { check: event.check } : {}),
       };
     case "reaction-use":
