@@ -67,8 +67,11 @@ checks_verdict() {
   done
 }
 
+# GitHub's own reason from a refused merge's output ("Pull Request is still a draft").
+refusal() { sed -n 's/.*"message":"\([^"]*\)".*/\1/p' <<<"$1" | head -1; }
+
 merge_one() {
-  local n="$1" state head behind verdict title branch
+  local n="$1" state head behind verdict title branch out
   for attempt in 1 2 3 4 5; do
     state="$(read_until pr_field "$n" state)"
     [ "$state" = MERGED ] && { say "#$n: already merged"; return 0; }
@@ -94,12 +97,21 @@ merge_one() {
     [ "$(read_until pr_field "$n" headRefOid)" = "$head" ] || { say "#$n moved, checking again"; continue; }
     title="$(read_until pr_field "$n" title)"
     branch="$(read_until pr_field "$n" headRefName)"
-    if gh api -X PUT "repos/$REPO/pulls/$n/merge" -f merge_method=squash -f sha="$head" \
-      -f commit_title="$title (#$n)" >/dev/null 2>&1; then
+    if out="$(gh api -X PUT "repos/$REPO/pulls/$n/merge" -f merge_method=squash -f sha="$head" \
+      -f commit_title="$title (#$n)" 2>&1)"; then
       gh api -X DELETE "repos/$REPO/git/refs/heads/$branch" >/dev/null 2>&1 || true
       say "#$n: MERGED (${head:0:9})"
       return 0
     fi
+    # Only a moved head or base is worth another try; anything else (a draft, a
+    # required review, a conflict) is said as GitHub said it, and nothing merges.
+    case "$out" in
+      *"HTTP 409"* | *"was modified"*) ;;
+      *)
+        say "✗ #$n: GitHub refused the merge: $(refusal "$out") (nothing merged)."
+        return 1
+        ;;
+    esac
     say "#$n: main moved before the merge, updating again (attempt $attempt)"
   done
   say "✗ #$n: main kept moving; try again later (nothing merged)."
