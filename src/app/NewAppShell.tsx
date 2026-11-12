@@ -68,20 +68,29 @@ export function NewAppShell() {
       status={<CombatPip />}
       onSearch={() => setSearching(true)}
       menuLabel={t("shell.menu")}
-      account={{
-        label: t("shell.account"),
-        initial: initialOf(name),
-        name,
-        email: user?.email ?? undefined,
-        actions: [
-          {
-            label: t("nav.settings"),
-            icon: "u-settings",
-            onSelect: () => void navigate("/settings"),
-          },
-          { label: t("nav.signOut"), icon: "u-sign-out", onSelect: () => void signOut() },
-        ],
-      }}
+      // a public page read before sign-in (/legal) has no account to show
+      account={
+        user
+          ? {
+              label: t("shell.account"),
+              initial: initialOf(name),
+              name,
+              email: user.email ?? undefined,
+              actions: [
+                {
+                  label: t("nav.settings"),
+                  icon: "u-settings",
+                  onSelect: () => void navigate("/settings"),
+                },
+                {
+                  label: t("nav.signOut"),
+                  icon: "u-sign-out",
+                  onSelect: () => void signOut(),
+                },
+              ],
+            }
+          : undefined
+      }
       footer={
         <>
           <span>Folio · {t("legal.terms.unofficialT")}</span>

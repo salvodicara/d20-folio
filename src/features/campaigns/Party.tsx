@@ -652,7 +652,11 @@ function CombatLayer({
     ]);
   const retract = (line: FeedLine): void => writeLog([strikeDraft(line)]);
   // The DM's one-tap monster actions strike the fight's creatures and log the results.
-  const monsterActionsContext = { rows: view.rows, log: writeLog };
+  const monsterActionsContext = {
+    rows: view.rows,
+    log: writeLog,
+    effectOps: encounter.effectOps,
+  };
   const addNote = (text: string): void => {
     const draft = noteDraft(text, viewer);
     if (draft) writeLog([draft]);

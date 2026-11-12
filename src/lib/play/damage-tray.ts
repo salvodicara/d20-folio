@@ -45,6 +45,9 @@ export type TrayMultiplier = "0" | "0.25" | "0.5" | "1" | "2";
 export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.25", "0.5", "1", "2"];
 
 export interface DamageTrayPlan {
+  /** What a failed save also does, as the card says it (Thunderwave: «Pushed up to
+   *  10 ft away»): each failed row shows it; the app moves no token. */
+  failNotes?: string[];
   /** The use lands only on a target that succeeds (`appliesOnSuccess`): each row
    *  is marked «Successo» (the row's `saved`), and only marked rows take the amount,
    *  the conditions and the states. */
@@ -315,6 +318,9 @@ export function damageTrayPlan(
     ...(spec.onZeroHp ? { onZeroHp: spec.onZeroHp } : {}),
     ...(spec.hitPointThreshold
       ? { hitPointThreshold: { ...spec.hitPointThreshold } }
+      : {}),
+    ...(hasSave && !attacks && s.effectRiders?.length
+      ? { failNotes: s.effectRiders.map((line) => line.text) }
       : {}),
     targets: planTargets,
   };

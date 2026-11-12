@@ -46,6 +46,17 @@ export function isSelfFormSpell(spellId: string): boolean {
   return getSpellById(spellId)?.formRule !== undefined;
 }
 
+/** Whether a cast opens the caster's form picker: a transforming spell cast on the
+ *  caster, or with no creature named. Cast on another creature (Polymorph on a
+ *  goblin), the form is that creature's, chosen at the table. */
+export function opensSelfFormPicker(
+  spellId: string,
+  targets: ReadonlyArray<string>,
+  selfId: string
+): boolean {
+  return isSelfFormSpell(spellId) && (targets.length === 0 || targets.includes(selfId));
+}
+
 const MIND: readonly AbilityCode[] = ["INT", "WIS", "CHA"];
 
 /** A form rule with the scores it keeps resolved: `keeps`, else the mind when

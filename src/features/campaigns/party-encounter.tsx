@@ -35,7 +35,7 @@
  * rule 7): condition ids resolve to localized chips only at the render edge.
  */
 
-import type { ActiveCombatEffect } from "@/types/combat-effect";
+import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import { effectiveDoc } from "@/lib/play/effective-doc";
 import {
   lazy,
@@ -212,6 +212,8 @@ export type ApplyFn = (fn: (e: EncounterState) => EncounterState) => void;
  *  and the session log their results go to. */
 export interface MonsterActionsContext {
   rows: ReadonlyArray<EncounterCombatantView>;
+  /** The fight's effects: the states on a monster change its attack roll (Bane). */
+  effectOps?: ReadonlyArray<CombatEffectOp>;
   log: (drafts: SessionDraft[]) => void;
 }
 
