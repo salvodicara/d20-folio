@@ -45,6 +45,8 @@ export type PlayEvent =
       outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
       /** The damage dealt, typed by the player for an attack with no target in Folio. */
       amount?: number;
+      /** The slot paid above the spell's own level (an upcast): «(slot di 4° livello)». */
+      upcast?: { level: number; pactMagic?: true };
       /** Each target's save (an older reader shows the shared `outcome`, set when every
        *  target agrees), and whether nothing came of it. */
       saves?: SaveResults;

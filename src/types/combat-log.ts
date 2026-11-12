@@ -93,6 +93,9 @@ export type CombatEvent =
       /** The spell slot the cast paid, so a Counterspell can give it back. An older
        *  reader ignores it. */
       paidSlot?: { level: number; pactMagic?: true };
+      /** The cast spell's own level, so a higher `paidSlot` reads as an upcast in the
+       *  session report. An older reader ignores it. */
+      spellLevel?: number;
       /** The Metamagic options the cast was made with (Extended Spell gives its
        *  Concentration saves Advantage). An older reader ignores it. */
       metamagic?: string[];
