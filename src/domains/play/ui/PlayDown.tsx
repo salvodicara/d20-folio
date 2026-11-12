@@ -22,6 +22,7 @@ import { grantSourceLabel } from "@/lib/views/tracker-view";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Dialog } from "@/ui";
 import { usePostRollEntry } from "./PostRollEntry";
+import { useCharacterStore } from "@/stores/characterStore";
 
 export function PlayDown({ doc }: { doc: CharacterDoc }) {
   const { t } = useTranslation();
@@ -121,6 +122,11 @@ export function PlayDown({ doc }: { doc: CharacterDoc }) {
                 onClick={() => {
                   const entry = roll.entry();
                   recordDeathSave(entry.faces, t, entry.use, entry.spend);
+                  // A recorded d20 used as the roll (Portent) is spent with it.
+                  if (entry.foretold)
+                    useCharacterStore
+                      .getState()
+                      .spendTrackerRoll(entry.foretold.trackerId, entry.foretold.index);
                   close();
                 }}
               >
