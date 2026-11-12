@@ -134,3 +134,40 @@ describe("playHeaderView — in a form", () => {
     expect(playHeaderView(selene, "en").form).toBeNull();
   });
 });
+
+describe("playHeaderView: the saving throws on the ability tiles", () => {
+  const save = (doc: Parameters<typeof playHeaderView>[0], id: string) =>
+    playHeaderView(doc, "it").abilities.find((a) => a.id === id);
+
+  it("a proficient save shows its total (WIS 17, +3 proficiency at level 5: +6)", () => {
+    expect(save(selene, "WIS")).toMatchObject({
+      save: true,
+      saveTotal: 6,
+      showSave: true,
+    });
+  });
+
+  it("a plain save (not proficient, nothing else) shows no total: it is the modifier", () => {
+    expect(save(selene, "STR")).toMatchObject({
+      save: false,
+      saveTotal: 3,
+      showSave: false,
+    });
+  });
+
+  it("a paladin's aura lifts a non-proficient save: the total shows, the aura is its own part", () => {
+    const aura = makeCharacterDoc(
+      {
+        classId: "cleric",
+        level: 5,
+        abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 17, CHA: 13 },
+        savingThrows: ["WIS", "CHA"],
+      },
+      { partyAura: { from: "pal", name: "Bren", bonus: 3 } }
+    );
+    const str = save(aura, "STR");
+    expect(str).toMatchObject({ save: false, saveTotal: 6, showSave: true });
+    expect(str?.saveParts.map((p) => p.value)).toEqual(["+3", "+3"]);
+    expect(str?.saveParts[1]).toMatchObject({ kind: "loc", label: "Aura di Bren" });
+  });
+});

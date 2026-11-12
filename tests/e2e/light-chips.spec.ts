@@ -41,7 +41,7 @@ for (const size of ["desktop", "mobile"] as const) {
   test(`light without Darkvision (it, dark, ${size})`, async ({ page }) => {
     await openSheet(page, size, "scn-weapon-cards");
     const situations = page.getByRole("group", { name: "Situazione" });
-    const dim = situations.getByRole("button", { name: "Luce Fioca" });
+    const dim = situations.getByRole("button", { name: "Luce fioca" });
     const dark = situations.getByRole("button", { name: "Oscurità" });
     await expect(dim).toHaveAttribute("aria-pressed", "false");
 

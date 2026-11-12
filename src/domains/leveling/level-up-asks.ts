@@ -130,6 +130,8 @@ export interface AskRow {
   options: ReadonlyArray<{ id: string; label: string }>;
   /** The options are spells: drawn as rows that say what each one is. */
   spell?: boolean;
+  /** One plain line under the title (a Wizard's book picks are not prepared). */
+  help?: string;
   /** Set on `slot:` rows: what `toggleAnswer` needs to write the pick. */
   slotRow?: ReturnType<typeof choiceSlotRows>[number];
 }
@@ -373,7 +375,10 @@ export function levelUpAsks(
     rows.push({
       key: "newSpells",
       spell: true,
-      title: t("levelUp.screen.chooseSpells", { count: plan.spellsKnownDiff }),
+      title: plan.spellbookPicks
+        ? t("levelUp.screen.chooseSpellbook", { count: plan.spellsKnownDiff })
+        : t("levelUp.screen.chooseSpells", { count: plan.spellsKnownDiff }),
+      ...(plan.spellbookPicks ? { help: t("levelUp.screen.spellbookHelp") } : {}),
       count: plan.spellsKnownDiff,
       picked: a.newSpells,
       options: learnableSpellVMs(

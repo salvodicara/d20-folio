@@ -95,6 +95,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `picker:components/sheet/BeastFormPicker`                          | Character  | todo   |
 | `dialog:domains/play/ui/PlayConcentration`                         | Character  | todo   |
 | `dialog:domains/play/ui/PlayConditions`                            | Character  | todo   |
+| `dialog:domains/play/ui/PlayAbilitySave`                           | Character  | todo   |
 | `dialog:domains/play/ui/PlayEffects`                               | Character  | todo   |
 | `dialog:domains/play/ui/PlayInspiration`                           | Character  | todo   |
 | `picker:domains/play/ui/PlayFamiliarPicker`                        | Character  | todo   |
@@ -178,6 +179,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `loading:app/AppShell`                                             | Shell      | todo   |
 | `loading:components/shared/AuthGuard`                              | Shell      | todo   |
 | `menu:components/shared/CardOverflowMenu`                          | Shell      | todo   |
+| `menu:domains/campaign/ui/CampaignsScreen`                         | Shell      | todo   |
 | `menu:domains/roster/ui/RosterScreen`                              | Shell      | todo   |
 | `menu:components/shared/PortraitEditMenu`                          | Shell      | todo   |
 | `notice:components/shared/SaveIndicator`                           | Shell      | todo   |

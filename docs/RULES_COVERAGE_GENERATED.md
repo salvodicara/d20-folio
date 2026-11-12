@@ -30,7 +30,7 @@ edge cases below, through the functions a screen calls.
 
 ## Rules Glossary
 
-124 rows: 107 modeled, 10 table-side, 7 gaps. Modeled = the audit found the engine applies it, and the tests named exist (they prove the engine, not yet that a screen calls it); table-side = left to the table by design; gap = a table would want the app to apply it. First pass from RULES_GLOSSARY_AUDIT.md, under review by the rules lane.
+124 rows: 109 modeled, 10 table-side, 5 gaps. Modeled = the audit found the engine applies it, and the tests named exist (they prove the engine, not yet that a screen calls it); table-side = left to the table by design; gap = a table would want the app to apply it. First pass from RULES_GLOSSARY_AUDIT.md, under review by the rules lane.
 
 | Entry | Status | Proof | Where, or why |
 | --- | --- | --- | --- |
@@ -53,7 +53,7 @@ edge cases below, through the functions a screen calls.
 | Bonus Action | modeled | `combat-economy.test.ts` | `turn-economy.ts`; `combat-economy.test.ts` |
 | Breaking Objects | gap | engine done; no screen calls `objectTarget` | #12 |
 | Bright Light, Dim Light, Darkness, Darkvision | modeled | `light-states.test.ts` | `light-states.ts`; `light-states.test.ts` |
-| Burning | gap | engine done; no screen calls `setOnFire` | #6 |
+| Burning | modeled | `play-on-fire.test.tsx` | `play/environment.ts` setOnFire / extinguish; the new Play's «In fiamme»; `play-on-fire.test.tsx` |
 | Cantrip | modeled | `utils.test.ts` | `utils.ts` scaleCantripDice; `utils.test.ts` |
 | Carrying Capacity | modeled | `carry-as-larger-size.test.ts` | `compute.ts`; `carry-as-larger-size.test.ts` |
 | Challenge Rating | modeled | `encounter-difficulty.test.ts` | `encounter-difficulty.ts`; `encounter-difficulty.test.ts` |
@@ -85,7 +85,7 @@ edge cases below, through the functions a screen calls.
 | Frightened | modeled | `conformance/09-conditions.test.ts` | `condition-effects.ts` (line of sight); `conformance/09-conditions.test.ts` |
 | Grappled | modeled | `incapacitation-sweep.test.ts` | `condition-effects.ts`, `combat-effects.ts`; `incapacitation-sweep.test.ts` |
 | Grappling | modeled | `escape-grapple.test.ts` | `compute.ts` DC, `play/escape-grapple.ts` (save: STR or DEX); `escape-grapple.test.ts` |
-| Hazard | gap | engine done; no screen calls `setOnFire`, `holdBreath`, `endDays` | Falling only reaches a screen: #6, #9, #12 |
+| Hazard | gap | engine done; no screen calls `endDays` | Falling, Burning and Suffocation reach a screen; days without food or water: #12 |
 | Healing | modeled | `combat-hp.test.ts` | `play/vitals.ts`; `combat-hp.test.ts` |
 | Heavily, Lightly Obscured | modeled | `light-states.test.ts` | `light-states.ts` (partial: fog, foliage); `light-states.test.ts` |
 | Help | modeled | `help-check.test.ts` | `play/help.ts`, `outcome-offer.ts`; `help-check.test.ts` |
@@ -133,7 +133,7 @@ edge cases below, through the functions a screen calls.
 | Spellcasting Focus | modeled | `hands.test.ts` | `play/hands.ts`; `hands.test.ts` |
 | Stable | modeled | `stable-from-state.test.ts` | `vitals.ts`; `stable-from-state.test.ts` |
 | Stunned | modeled | `conformance/09-conditions.test.ts` | `condition-effects.ts` (can move, 2024); `conformance/09-conditions.test.ts` |
-| Suffocation | gap | engine done; no screen calls `holdBreath` | #9 |
+| Suffocation | modeled | `play-hold-breath.test.tsx` | hold breath and choking on the new Play's Condizioni (`hold-breath` / `breathe-again`); `play-hold-breath.test.tsx` |
 | Surprise | modeled | `surprise-state.test.ts` | `ThisTurnTracker.tsx` chip, `surprise-state.ts`; `surprise-state.test.ts` |
 | Target | table-side | — | Choosing a target is the table's; the tray records who was hit |
 | Telepathy | table-side | — | A way of talking; shown on stat blocks |

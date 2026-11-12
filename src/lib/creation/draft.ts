@@ -81,6 +81,7 @@ import {
   toggleAbilityScoreBonus,
   type AbilityScoreBonusMode,
 } from "./ability-bonus";
+import { wizardBookSize } from "@/lib/wizard-spellbook";
 
 export { CREATION_STEPS, type CreationStep } from "./steps";
 
@@ -384,7 +385,11 @@ export interface CreationFacts {
   skillsComplete: boolean;
 
   cantripsNeeded: number;
+  /** The levelled spells the class picks: the Prepared Spells column, or a Wizard's
+   *  spellbook (6, then 2 per level), of which `preparedNeeded` are prepared. */
   spellsNeeded: number;
+  /** How many of the picks start prepared (the Prepared Spells column). */
+  preparedNeeded: number;
   maxSpellLevel: number;
   hasSpellSlots: boolean;
   isPreparedCaster: boolean;
@@ -525,7 +530,11 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
   const slotRow = levelData?.spellSlots ?? [];
   const hasSpellSlots = slotRow.some((s) => s > 0);
   const maxSpellLevel = slotRow.reduce((max, slots, i) => (slots > 0 ? i + 1 : max), 0);
-  const spellsNeeded = levelData?.spellsKnown ?? 0;
+  const preparedNeeded = levelData?.spellsKnown ?? 0;
+  const spellsNeeded =
+    draft.classId === "wizard" && preparedNeeded > 0
+      ? wizardBookSize(draft.level)
+      : preparedNeeded;
 
   const choiceSlots = creationChoiceSlots({
     classId: draft.classId,
@@ -606,6 +615,7 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
 
     cantripsNeeded,
     spellsNeeded,
+    preparedNeeded,
     maxSpellLevel,
     hasSpellSlots,
     isPreparedCaster: classTable?.spellcasting?.preparedCaster ?? false,
