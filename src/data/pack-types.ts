@@ -42,6 +42,10 @@ export type PackUiOverlay = Partial<
 /** Raw-JSON fixture loaders keyed by fixture name (the pack fixture file names). */
 export type PackFixtureLoaders = Readonly<Record<string, () => Promise<string>>>;
 
+/** A team fixture's neutral role (`bard`) → its pack fixture key. The keys are personal
+ *  data, so public code names a fixture by its role only. */
+export type PackFixtureRoles = Readonly<Record<string, string>>;
+
 /** Lazy per-locale loader for the pack's non-EN SRD catalogue shards. */
 export type PackSrdLoader = (locale: Locale) => Promise<SrdCataloguePatch>;
 

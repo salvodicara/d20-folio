@@ -5,7 +5,7 @@
  * (`sandboxCharacterDocuments`), the emulators only.
  *
  *   node --import ./scripts/alias-loader.mjs scripts/rehearsal-set-character.ts \
- *     <uid> <characterId> <fixture.json> <level> [activeKey ...] [--state=<json>]
+ *     <uid> <characterId> <role> <level> [activeKey ...] [--state=<json>]
  *
  * `--state` merges into the fixture's compact play state (spent uses:
  * `{"trackers":{"bard-bardic-inspiration":5}}`).
@@ -14,6 +14,7 @@ import { readFileSync } from "node:fs";
 import { argv, env } from "node:process";
 import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
+import { teamFixturePath } from "./team-fixture";
 import { initializeApp } from "firebase-admin/app";
 import { FieldPath, FieldValue, Timestamp, getFirestore } from "firebase-admin/firestore";
 
@@ -31,15 +32,18 @@ const [uid, characterId, fixture, levelArg, ...activeKeys] = args.filter(
   (arg) => !arg.startsWith("--")
 );
 if (!uid || !characterId || !fixture || !levelArg) {
-  throw new Error("usage: <uid> <characterId> <fixture.json> <level> [activeKey ...]");
+  throw new Error("usage: <uid> <characterId> <role> <level> [activeKey ...]");
 }
 if (!env.FIRESTORE_EMULATOR_HOST || !PROJECT_ID.startsWith("demo-")) {
   throw new Error("Refusing: the emulators and a demo- project only.");
 }
 
-const envelope = JSON.parse(
-  readFileSync(resolvePath(ROOT, "content-pack", "fixtures", "team", fixture), "utf8")
-) as { build: { classes?: Array<{ level: number }> }; state: Record<string, unknown> };
+const fixtureFile = teamFixturePath(ROOT, fixture);
+if (!fixtureFile) throw new Error(`no team fixture for the role ${fixture}`);
+const envelope = JSON.parse(readFileSync(fixtureFile, "utf8")) as {
+  build: { classes?: Array<{ level: number }> };
+  state: Record<string, unknown>;
+};
 const [first] = envelope.build.classes ?? [];
 if (!first) throw new Error(`${fixture} has no class`);
 first.level = Number(levelArg);

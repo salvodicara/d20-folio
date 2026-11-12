@@ -37,7 +37,7 @@ test("a sheet inside a campaign fight renders and settles", async ({ page }) => 
   await seedLang(page, "it");
   await seedUI(page, "dark", "play");
   await page.addInitScript(() => window.localStorage.setItem("d20-dev-encounter", "1"));
-  await page.goto("/characters/team-catalion-bard");
+  await page.goto("/characters/team-bard");
 
   // A crash replaces the page with the error screen: fail on it at once, not on a timeout.
   const crashed = page.getByText("Qualcosa è andato storto");

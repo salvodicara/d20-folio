@@ -9,7 +9,7 @@
  *   - Wizard Features, Cantrips: 3, 4 at L4, 5 at L10.
  *   - Fighter Features, Weapon Mastery column: 3, 4 at L4, 5 at L10, 6 at L16.
  *     Paladin: Weapon Mastery 2 at every level.
- *   - Battle Master (PHB 2024 Combat Superiority): 3 maneuvers at Fighter 3, +2 at
+ *   - A Fighter subclass's Combat Superiority: 3 maneuvers at Fighter 3, +2 at
  *     7, 10 and 15.
  *
  * Prepared spells are a cap the player fills from the list, not picks owed: none
@@ -171,7 +171,7 @@ describe("owedClassPicks", () => {
     expect(owedClassPicks(c)).toEqual([{ classId: "wizard", pick: "cantrips", owed: 1 }]);
   });
 
-  it("maneuvers: a Battle Master 7 with three owes two", () => {
+  it("maneuvers: a Fighter 7 with maneuvers and three owes two", () => {
     const c = build(
       [
         {

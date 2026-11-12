@@ -61,6 +61,7 @@ export const NOT_IN_RUNTIME_PACK = [
   "loadPackSrdCatalogues",
   "loadPackLazySrd",
   "packFixtures",
+  "packFixtureRoles",
   "packScenarios",
 ] as const satisfies ReadonlyArray<keyof PackExports>;
 

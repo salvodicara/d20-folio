@@ -6,6 +6,7 @@
 import { execFileSync } from "node:child_process";
 import { test as base, expect, type Page } from "@playwright/test";
 import { visibleWithin } from "../e2e/visible-within";
+import { teamFixtureName } from "../e2e/team-fixture";
 
 /**
  * The rehearsal's `test`: the browser contexts a test opens itself (a DM, a player)
@@ -29,7 +30,12 @@ export const test = base.extend<{ closeOpenedContexts: undefined }>({
 });
 
 export const SANDBOX_CAMPAIGN = "SANDBOX";
-export const PLAYER_BARD = "dev-player-catalion";
+export const PLAYER_BARD = "dev-player-bard";
+
+/** The sandbox heroes' character names, read from the pack (personal data, never
+ *  written in public code): the full name, and the first word some rows show. */
+export const BARD_NAME = teamFixtureName("bard") ?? "";
+export const BARD_FIRST = BARD_NAME.split(" ")[0] ?? "";
 
 /** The emulator project's Firestore REST root (read-only checks, never writes). */
 const FIRESTORE =
@@ -145,17 +151,17 @@ export async function levelUp(
 
 /** The sandbox players (scripts/dev-seed-sandbox.ts), each a real Auth-emulator account. */
 export const SANDBOX_USERS = {
-  catalion: {
+  bard: {
     uid: PLAYER_BARD,
-    email: "catalion@sandbox.dev",
-    characterId: "sandbox-catalion",
-    fixture: "catalion-bard.json",
+    email: "bard@sandbox.dev",
+    characterId: "sandbox-bard",
+    fixture: "bard",
   },
-  mandorlino: {
-    uid: "dev-player-mandorlino",
-    email: "mandorlino@sandbox.dev",
-    characterId: "sandbox-mandorlino",
-    fixture: "mandorlino-paladin.json",
+  paladin: {
+    uid: "dev-player-paladin",
+    email: "paladin@sandbox.dev",
+    characterId: "sandbox-paladin",
+    fixture: "paladin",
   },
 } as const;
 

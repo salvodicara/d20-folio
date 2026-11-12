@@ -2,7 +2,7 @@
  * Dev-only fixture loader — live-test the 6 real team sheets in the local
  * `DEV_BYPASS_AUTH` preview without Firebase.
  *
- * Visit `/characters/team-<kebab>` (any pack fixture name below) and the
+ * Visit `/characters/team-<role>` (`team-bard`, `team-paladin`…) and the
  * cockpit renders that imported sheet instead of the bundled MOCK. This is the
  * Phase-1 "dev affordance to load the 6 fixtures" — the canonical MOCK stays the
  * single mock (Golden Rule 13); these are test FIXTURES surfaced for verification,
@@ -15,30 +15,37 @@
  */
 import type { CharacterDoc } from "@/types/character";
 import { applyCombatToSession } from "@/lib/combat-state";
-import { packFixtures } from "@pack";
+import { packFixtureRoles, packFixtures } from "@pack";
 
-/** Route-id prefix that maps to a team fixture (`team-<fixture-name>`). */
+/** Route-id prefix that maps to a team fixture by its role (`team-bard`). */
 const DEV_FIXTURE_PREFIX = "team-";
 
 /**
- * The fixture ids (without the prefix), for menus / harnesses. The fixture
- * JSONs are personal team data, so they live in the content pack
- * (`content-pack/fixtures/team/`); without the pack there are none.
+ * The fixture roles (without the prefix), for menus / harnesses. The fixture
+ * JSONs and their keys are personal team data, so they live in the content pack
+ * (`content-pack/fixtures/team/`) and public code names each by its role only;
+ * without the pack there are none.
  */
-export const DEV_FIXTURE_NAMES: readonly string[] = Object.keys(packFixtures).sort();
+export const DEV_FIXTURE_NAMES: readonly string[] = Object.keys(packFixtureRoles).sort();
 
-function fixtureName(id: string): string {
-  return id.startsWith(DEV_FIXTURE_PREFIX) ? id.slice(DEV_FIXTURE_PREFIX.length) : id;
+/** The pack fixture key a route id names through its role, or `undefined`. */
+function fixtureName(id: string): string | undefined {
+  const role = id.startsWith(DEV_FIXTURE_PREFIX)
+    ? id.slice(DEV_FIXTURE_PREFIX.length)
+    : id;
+  return packFixtureRoles[role];
 }
 
 /** True when the route id names one of the team fixtures. */
 export function isDevFixtureId(id: string): boolean {
-  return fixtureName(id) in packFixtures;
+  const key = fixtureName(id);
+  return key !== undefined && key in packFixtures;
 }
 
 /** Import a team fixture into a renderable CharacterDoc, or null if unknown / invalid. */
 export async function loadDevFixture(id: string): Promise<CharacterDoc | null> {
-  const loader = packFixtures[fixtureName(id)];
+  const key = fixtureName(id);
+  const loader = key === undefined ? undefined : packFixtures[key];
   if (!loader) return null;
   const raw = await loader();
   const { importCharacter } = await import("@/lib/character-io");

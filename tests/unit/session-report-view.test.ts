@@ -109,14 +109,14 @@ describe("renderSessionReport", () => {
     const report = buildReport(foldSession(log, { dmUid: "dm" }));
     const t = (k: string) => (k === "sessionReport.notes" ? "Session notes" : k);
     const text = renderSessionReport(report, "S", t, names, {
-      notes: "  The party reached Phandalin.\nMara owes Ben 5 gp.  ",
+      notes: "  The party reached the river ford.\nMara owes Ben 5 gp.  ",
     });
     expect(text.split("\n").slice(0, 6)).toEqual([
       "# S",
       "",
       "## Session notes",
       "",
-      "The party reached Phandalin.",
+      "The party reached the river ford.",
       "Mara owes Ben 5 gp.",
     ]);
     // Empty notes add nothing.
