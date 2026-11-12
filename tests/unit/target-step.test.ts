@@ -250,3 +250,10 @@ describe("withSelfRecipient: Invisibility's state belongs to its target", () => 
     );
   });
 });
+
+describe("Faerie Fire: each creature in the cube", () => {
+  it("offers enemies, allies and me", () => {
+    const offered = ids(spellAction("faerie-fire"), FIGHT) ?? [];
+    expect(offered).toEqual(expect.arrayContaining(["m-gob1", "pc-bren", "pc-me"]));
+  });
+});
