@@ -1547,7 +1547,10 @@
   border-top: 1px solid var(--line-soft);
 }
 .fui .f-prose {
-  max-width: 72ch;
+  /* about 70 characters a line, the measure of the journals we model (Foundry, World
+     Anvil): \`ch\` is a digit's width, wider than this face's average letter, so 72ch ran
+     to ~90 characters; 34em reads ~70 */
+  max-width: 34em;
   color: var(--strong);
   font-size: var(--fs-prose);
   line-height: 1.75;
