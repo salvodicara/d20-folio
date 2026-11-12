@@ -285,6 +285,7 @@ const PACK_ONLY_FIELD_SAMPLES: Readonly<Record<string, unknown>> = {
   tempHpPool: 120,
   damageDieIfHurt: "d12",
   appliesOnSuccess: true,
+  failedD20Becomes: 20,
   targetStates: [
     {
       type: "while-active",
