@@ -23,6 +23,7 @@
     "saveFailed": "Non salvata: controlla la connessione e riprova.",
     "saved": "Cronaca della sessione salvata.",
     "victory": "Vittoria",
-    "progress": "Progressi"
+    "progress": "Progressi",
+    "inferredFight": "{{title}} (dedotto)"
   }
 }

@@ -4,6 +4,7 @@
  * restored, and a character's progress (a level-up). Built on `buildReport`, so corrections, hidden and moved lines already apply;
  * notes stay where they were written. Each block carries the time of its first line.
  */
+import { isInferredFight } from "@/lib/session-log/infer-fights";
 import type { ReportSection, SessionEntry } from "@/lib/session-log";
 
 export type DiaryBlock =
@@ -22,6 +23,8 @@ export type DiaryBlock =
       /** Each creature's own name, for its lines. */
       names: Record<string, string>;
       outcome?: "victory" | "ended";
+      /** Worked out from the blows (nobody started a fight): its heading says so. */
+      inferred: boolean;
       /** When it ended (its end marker); absent while it runs. */
       endedAt?: number;
     };
@@ -48,6 +51,7 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
       blocks.push({
         kind: "fight",
         encounterId: section.encounterId,
+        inferred: isInferredFight(section),
         at: first.at,
         entries,
         rounds: Math.max(0, ...section.rounds.map((r) => r.round ?? 0)),

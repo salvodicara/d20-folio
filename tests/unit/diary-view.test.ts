@@ -11,7 +11,12 @@ import {
   oldPageTitle,
   sessionNumbers,
 } from "@/domains/chronicle/diary-view";
-import { buildReport, type PlayEvent, type SessionEntry } from "@/lib/session-log";
+import {
+  buildReport,
+  inferFights,
+  type PlayEvent,
+  type SessionEntry,
+} from "@/lib/session-log";
 
 let n = 0;
 const at = (minute: number) => Date.UTC(2026, 9, 23, 19, minute);
@@ -120,6 +125,20 @@ describe("diaryBlocks", () => {
       "progress",
       "explore",
     ]);
+  });
+
+  // One rule on every surface (coordinator, 2026-11-12): a fight the app worked out
+  // from the blows, with nobody starting one, says so; a started fight does not.
+  it("a fight worked out from the blows is marked inferred; a started one is not", () => {
+    expect(blocks[1]).toMatchObject({ kind: "fight", inferred: false });
+    const blows = [
+      line(10, { kind: "damage", amount: 5, target: "pc-a" }),
+      // Two players' blows (a run needs two writers, infer-fights.ts).
+      { ...line(11, { kind: "damage", amount: 2, target: "pc-b" }), by: "u2" },
+      line(12, { kind: "damage", amount: 1, target: "pc-a" }),
+    ];
+    const [fight] = diaryBlocks(buildReport(inferFights(blows)));
+    expect(fight).toMatchObject({ kind: "fight", inferred: true });
   });
 
   it("keeps a note written during the fight inside the fight", () => {

@@ -68,9 +68,11 @@ function blockTitle(block: DiaryBlock, t: T): string {
   if (block.kind === "explore") return t("diary.explore");
   if (block.kind === "rest") return t("character.rest");
   if (block.kind === "progress") return t("diary.progress");
-  return block.foes.length
+  const title = block.foes.length
     ? t("diary.fightWith", { foes: block.foes.join(", ") })
     : t("campaignScreen.tabFight");
+  // A fight the app worked out from the blows says so, as on every report surface.
+  return block.inferred ? t("diary.inferredFight", { title }) : title;
 }
 
 function blockMeta(block: DiaryBlock, t: T): string[] {

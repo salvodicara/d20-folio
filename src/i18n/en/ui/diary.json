@@ -23,6 +23,7 @@
     "saveFailed": "Not saved: check your connection and try again.",
     "saved": "Session chronicle saved.",
     "victory": "Victory",
-    "progress": "Progress"
+    "progress": "Progress",
+    "inferredFight": "{{title}} (inferred)"
   }
 }
