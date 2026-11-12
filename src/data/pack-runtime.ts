@@ -60,7 +60,6 @@ export const loadPackLazySrd: PackLazySrdLoader = async (locale, kind) =>
 
 /** Dev-only: fixtures and scenarios stay with the local pack. */
 export const packFixtures = empty.packFixtures;
-export const packFixtureRoles = empty.packFixtureRoles;
 export const packScenarios = empty.packScenarios;
 
 /** Compile-time proof that this resolution exports what the other two do. */

@@ -33,7 +33,6 @@ import type { QuickbuildPreset } from "@/data/quickbuild";
 import type { ScenarioSpec } from "@/lib/dev-scenarios";
 import type {
   PackFixtureLoaders,
-  PackFixtureRoles,
   PackGrantExtensions,
   PackLazySrdLoader,
   PackSrdLoader,
@@ -87,9 +86,6 @@ export const uiOverlay: PackUiOverlay = {};
 
 /** Team-fixture loaders (none without the pack). */
 export const packFixtures: PackFixtureLoaders = {};
-
-/** Team-fixture roles → fixture keys (none without the pack). */
-export const packFixtureRoles: PackFixtureRoles = {};
 
 /** Dev-scenario specs exercising pack content (none without the pack). */
 export const packScenarios: Readonly<Record<string, ScenarioSpec>> = {};

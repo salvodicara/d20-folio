@@ -15,10 +15,13 @@
  */
 import type { CharacterDoc } from "@/types/character";
 import { applyCombatToSession } from "@/lib/combat-state";
-import { packFixtureRoles, packFixtures } from "@pack";
+import { packFixtures } from "@pack";
 
 /** Route-id prefix that maps to a team fixture by its role (`team-bard`). */
 const DEV_FIXTURE_PREFIX = "team-";
+
+/** The pack lists each fixture a second time under `role:<role>` (`role:bard`). */
+const ROLE_KEY = "role:";
 
 /**
  * The fixture roles (without the prefix), for menus / harnesses. The fixture
@@ -26,26 +29,27 @@ const DEV_FIXTURE_PREFIX = "team-";
  * (`content-pack/fixtures/team/`) and public code names each by its role only;
  * without the pack there are none.
  */
-export const DEV_FIXTURE_NAMES: readonly string[] = Object.keys(packFixtureRoles).sort();
+export const DEV_FIXTURE_NAMES: readonly string[] = Object.keys(packFixtures)
+  .filter((key) => key.startsWith(ROLE_KEY))
+  .map((key) => key.slice(ROLE_KEY.length))
+  .sort();
 
-/** The pack fixture key a route id names through its role, or `undefined`. */
-function fixtureName(id: string): string | undefined {
+/** The pack key a route id names through its role (`team-bard` → `role:bard`). */
+function fixtureName(id: string): string {
   const role = id.startsWith(DEV_FIXTURE_PREFIX)
     ? id.slice(DEV_FIXTURE_PREFIX.length)
     : id;
-  return packFixtureRoles[role];
+  return `${ROLE_KEY}${role}`;
 }
 
 /** True when the route id names one of the team fixtures. */
 export function isDevFixtureId(id: string): boolean {
-  const key = fixtureName(id);
-  return key !== undefined && key in packFixtures;
+  return fixtureName(id) in packFixtures;
 }
 
 /** Import a team fixture into a renderable CharacterDoc, or null if unknown / invalid. */
 export async function loadDevFixture(id: string): Promise<CharacterDoc | null> {
-  const key = fixtureName(id);
-  const loader = key === undefined ? undefined : packFixtures[key];
+  const loader = packFixtures[fixtureName(id)];
   if (!loader) return null;
   const raw = await loader();
   const { importCharacter } = await import("@/lib/character-io");
