@@ -13,6 +13,7 @@ import {
   playedCoverageMarkdown,
   type PlayedSurvey,
 } from "./__helpers__/played-coverage";
+import type { CoverageVerdict } from "./__helpers__/coverage-verdicts";
 
 const survey = {
   format: "d20-folio-played-content-survey-v1",
@@ -69,9 +70,8 @@ describe("the played-content coverage view", () => {
 
   it("writes a markdown table with a plain legend", () => {
     const md = playedCoverageMarkdown(survey);
-    expect(md).toContain("| Entry | Id | Characters | Coverage |");
-    expect(md).toContain("**Declared, not proven.**");
-    expect(md).toContain("| Declared auto |");
+    expect(md).toContain("| Entry | Id | Characters | Code-checked | Declared |");
+    expect(md).toContain("Unproven: nobody has checked it against the code yet.");
   });
 });
 
@@ -82,9 +82,18 @@ const output = process.env.PLAYED_REPORT;
 describe.runIf(Boolean(input && output))("the played-content report", () => {
   it("writes the report for a real survey", () => {
     const text = readFileSync(input ?? "", "utf8");
+    // Pack verdicts are local input too (PLAYED_VERDICTS, a JSON list).
+    const extra = process.env.PLAYED_VERDICTS
+      ? (JSON.parse(
+          readFileSync(process.env.PLAYED_VERDICTS, "utf8")
+        ) as CoverageVerdict[])
+      : [];
     writeFileSync(
       output ?? "",
-      playedCoverageMarkdown(JSON.parse(text.slice(text.indexOf("{"))) as PlayedSurvey)
+      playedCoverageMarkdown(
+        JSON.parse(text.slice(text.indexOf("{"))) as PlayedSurvey,
+        extra
+      )
     );
   });
 });

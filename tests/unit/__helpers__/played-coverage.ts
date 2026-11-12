@@ -1,10 +1,9 @@
 /**
  * For what the owner's groups actually play (the played-content survey,
- * `scripts/survey-played-content.ts`), what each catalogue entry DECLARES, on the
- * rules of `rules-coverage.ts`. Declared is not proven: an effect the data declares
- * but no screen applies still reads «auto» here (coordinator, 2026-11-12). The proven
- * class comes from a conformance case that goes through the function a screen calls;
- * until then this column is the declaration only. Class features held are counted from the
+ * `scripts/survey-played-content.ts`): what the app really does with each entry
+ * (`coverage-verdicts.ts`, checked against the code; «unproven» when nobody has), beside
+ * what the entry's data declares (`rules-coverage.ts`). Declared is not proven: an
+ * effect the data declares but no screen applies is flagged (coordinator, 2026-11-12). Class features held are counted from the
  * survey's class levels: every character at or above a feature's level holds it (a
  * subclass's features up to the highest level any character has in that class, since
  * the survey does not pair a subclass with its level).
@@ -14,6 +13,7 @@ import { getFeat } from "@/data/feats";
 import { getRace } from "@/data/races";
 import { localizeSrd } from "@/i18n/resolver";
 
+import { PUBLIC_VERDICTS, type CoverageVerdict, type Verdict } from "./coverage-verdicts";
 import {
   classFeatureCoverage,
   featCoverage,
@@ -37,7 +37,12 @@ export interface PlayedRow {
   id: string;
   name: string;
   characters: number;
+  /** What the entry's data declares. */
   coverage: PlayedCoverage;
+  /** What the code really does (`coverage-verdicts.ts`), or nobody checked it. */
+  verdict?: Verdict | "unproven";
+  note?: string;
+  until?: string;
 }
 
 export interface PlayedSection {
@@ -117,7 +122,22 @@ function speciesTraits(survey: PlayedSurvey): PlayedRow[] {
     .sort(byPlay);
 }
 
-export function playedCoverage(survey: PlayedSurvey): PlayedSection[] {
+export function playedCoverage(
+  survey: PlayedSurvey,
+  extraVerdicts: readonly CoverageVerdict[] = []
+): PlayedSection[] {
+  const verdicts = new Map(
+    [...PUBLIC_VERDICTS, ...extraVerdicts].map((v) => [v.id, v] as const)
+  );
+  const judge = (row: PlayedRow): PlayedRow => {
+    const checked = verdicts.get(row.id);
+    return {
+      ...row,
+      verdict: checked?.verdict ?? "unproven",
+      ...(checked?.note ? { note: checked.note } : {}),
+      ...(checked?.until ? { until: checked.until } : {}),
+    };
+  };
   return [
     { title: "Class features held", rows: heldClassFeatures(survey) },
     { title: "Feats and picked features", rows: pickedFeatures(survey) },
@@ -128,46 +148,70 @@ export function playedCoverage(survey: PlayedSurvey): PlayedSection[] {
         .map(([id, n]) => classFeatureRow(id, n))
         .sort(byPlay),
     },
-  ];
+  ].map((section) => ({ ...section, rows: section.rows.map(judge) }));
 }
 
-const LABEL: Record<PlayedCoverage, string> = {
+const DECLARED: Record<PlayedCoverage, string> = {
   auto: "Declared auto",
   tap: "Declared 1 tap",
-  reference: "Text only (by hand)",
+  reference: "Text only",
   missing: "No catalogue entry",
 };
 
+const CHECKED: Record<Verdict | "unproven", string> = {
+  auto: "Auto",
+  "by-hand": "By hand",
+  missing: "Missing",
+  impossible: "Impossible",
+  wrong: "Wrong",
+  unproven: "Unproven",
+};
+
+/** The declaration promises more than the code does. */
+const overclaims = (row: PlayedRow): boolean =>
+  (row.coverage === "auto" || row.coverage === "tap") &&
+  row.verdict !== undefined &&
+  row.verdict !== "auto" &&
+  row.verdict !== "unproven" &&
+  !(row.coverage === "tap" && row.verdict === "by-hand");
+
 /** The report: a legend, a summary per section, then each section's table. */
-export function playedCoverageMarkdown(survey: PlayedSurvey): string {
-  const sections = playedCoverage(survey);
+export function playedCoverageMarkdown(
+  survey: PlayedSurvey,
+  extraVerdicts: readonly CoverageVerdict[] = []
+): string {
+  const sections = playedCoverage(survey, extraVerdicts);
   const out = [
-    "# What the groups play, and what the catalogue declares for it",
+    "# What the groups play, and how far the app plays it",
     "",
-    "**Declared, not proven.** This reads what each entry's data declares. A declared",
-    "effect that no screen applies still reads «declared auto»: check the code before",
-    "telling a player it works.",
+    "**Code-checked** is what the app really does, checked against the code and its tests",
+    "(the rules lane's audits). **Declared** is what the entry's data declares; ⚠ marks a",
+    "declaration that promises more than the code does.",
     "",
-    "- Declared auto: the data declares an effect the engine could apply with no input.",
-    "- Declared 1 tap: the data declares a counter, an action, a cast or a pick.",
-    "- Text only (by hand): the data declares nothing; the table plays it by hand.",
-    "- No catalogue entry: the id is not in the catalogue.",
+    "- Auto: the app applies it, proven by tests.",
+    "- By hand: the player or the DM applies it (a tap, a note, a ruling).",
+    "- Missing: a table would want the app to apply it, and it does not.",
+    "- Impossible / Wrong: the app cannot represent it / applies something the rule does not say.",
+    "- Unproven: nobody has checked it against the code yet. Never read it as automatic.",
   ];
   for (const section of sections) {
-    const count = (c: PlayedCoverage) =>
-      section.rows.filter((row) => row.coverage === c).length;
+    const count = (v: Verdict | "unproven") =>
+      section.rows.filter((row) => row.verdict === v).length;
     out.push(
       "",
       `## ${section.title}`,
       "",
-      `${count("auto")} declared auto · ${count("tap")} declared 1 tap · ${count("reference")} text only · ${count("missing")} no entry`,
+      `${count("auto")} auto · ${count("by-hand")} by hand · ${count("missing")} missing · ${count("impossible") + count("wrong")} impossible or wrong · ${count("unproven")} unproven`,
       "",
-      "| Entry | Id | Characters | Coverage |",
-      "| --- | --- | --- | --- |",
-      ...section.rows.map(
-        (row) =>
-          `| ${row.name} | ${row.id} | ${row.characters} | ${LABEL[row.coverage]} |`
-      )
+      "| Entry | Id | Characters | Code-checked | Declared |",
+      "| --- | --- | --- | --- | --- |",
+      ...section.rows.map((row) => {
+        const checked = CHECKED[row.verdict ?? "unproven"];
+        const why = [row.note, row.until ? `until ${row.until}` : null]
+          .filter(Boolean)
+          .join("; ");
+        return `| ${row.name} | ${row.id} | ${row.characters} | ${checked}${why ? ` (${why})` : ""} | ${DECLARED[row.coverage]}${overclaims(row) ? " ⚠" : ""} |`;
+      })
     );
   }
   return `${out.join("\n")}\n`;
