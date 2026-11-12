@@ -563,6 +563,14 @@ function ruleSummary(key: string, locale: Locale): string {
 
 /** The situational attack chips in table order (`situational-states.ts`): the
  *  table's flanking variant only when its rules switch flanking on. */
+/** A chip label in sentence case: the SRD names are Title Case rule terms («Long Range»,
+ *  «Luce Fioca»), a row of chips reads as one voice («Long range», «Luce fioca»). */
+function chipLabel(name: string, locale: Locale): string {
+  return (
+    name.charAt(0).toLocaleUpperCase(locale) + name.slice(1).toLocaleLowerCase(locale)
+  );
+}
+
 export function situationChipsView(
   locale: Locale,
   flanking: "off" | "advantage" | "plus-2" = "off"
@@ -571,7 +579,7 @@ export function situationChipsView(
     id: state.id,
     activeKey: state.grant.activeKey,
     lasts: state.lasts,
-    name: localizeText(state.label, locale),
+    name: chipLabel(localizeText(state.label, locale), locale),
     summary: state.summary
       ? localizeText(state.summary, locale)
       : state.reference.map((line) => ruleSummary(line.key, locale)).join(" "),
@@ -600,7 +608,7 @@ export function lightChipsView(locale: Locale, darkvisionFt: number): LightChipV
   };
   return LIGHT_LEVELS.map((level) => ({
     level,
-    name: localizeText(lightLevelName(level), locale),
+    name: chipLabel(localizeText(lightLevelName(level), locale), locale),
     note:
       darkvisionFt <= 0
         ? { text: reference(level === "dim" ? "dim-light" : "darkness") }

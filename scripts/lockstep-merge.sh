@@ -34,6 +34,10 @@ branch="$(gh pr view "$app" --repo "$APP_REPO" --json headRefName --jq .headRefN
 packBranch="$(gh pr view "$pack" --repo "$PACK_REPO" --json headRefName --jq .headRefName)"
 echo "App #$app (branch $branch) ↔ pack #$pack (branch $packBranch)"
 
+# The pack PR must pass what the pack's pre-commit checks (a changeset, formatted
+# files), even if a commit was made without the hook.
+"$(dirname "$0")/pack-pr-check.sh" "$pack" || exit 1
+
 behindMain() { # repo, branch → commits the branch lacks from that repo's main
   local main
   main="$(gh api "repos/$1/commits/main" --jq .sha)"

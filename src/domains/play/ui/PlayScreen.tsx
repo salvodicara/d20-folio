@@ -13,6 +13,7 @@ import { Link, useMatch, useNavigate, useParams } from "react-router";
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
+import { PlayAbilitySave } from "./PlayAbilitySave";
 import { PlayInspiration } from "./PlayInspiration";
 import { PlayConcentration } from "./PlayConcentration";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
@@ -369,6 +370,7 @@ function PlayHeader({
               <b>{signed(a.mod)}</b>
               <span>{a.score}</span>
             </dd>
+            <PlayAbilitySave ability={a} />
           </div>
         ))}
       </dl>

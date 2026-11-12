@@ -320,8 +320,12 @@
         "weaponMasteries_one": "{{count}} Padronanza d'Armi",
         "weaponMasteries_other": "{{count}} Padronanze d'Armi",
         "fightingStyles_one": "{{count}} Stile di Combattimento",
-        "fightingStyles_other": "{{count}} Stili di Combattimento"
-      }
+        "fightingStyles_other": "{{count}} Stili di Combattimento",
+        "spellbook_one": "{{count}} incantesimo per il libro",
+        "spellbook_other": "{{count}} incantesimi per il libro"
+      },
+      "spellbookTitle_one": "Aggiungi {{count}} incantesimo al tuo libro: resta non preparato",
+      "spellbookTitle_other": "Aggiungi {{count}} incantesimi al tuo libro: restano non preparati"
     },
     "rollReaction": {
       "toastReroll": "{{name}}: {{target}} ripete il tiro salvezza",
@@ -423,6 +427,25 @@
       "offHint": "Sei fuori dall'aura di {{name}}; tocca quando ci rientri",
       "outToast": "Fuori dall'aura di {{name}}",
       "inToast": "Di nuovo nell'aura di {{name}}"
+    },
+    "fire": {
+      "name": "In fiamme",
+      "situations": "Situazioni",
+      "turnStart": "In fiamme: a inizio turno subisci {{dice}} danni da fuoco (inseriscili in Danni e cure).",
+      "note": "{{dice}} danni da fuoco a ogni inizio turno, finché non si spegne.",
+      "roll": "Rotola a terra (Azione, poi Prono)",
+      "out": "Spento da fuori",
+      "rolled": "Ti rotoli a terra: il fuoco si spegne, sei Prono.",
+      "putOut": "Il fuoco si spegne.",
+      "caught": "Prendi fuoco."
+    },
+    "breath": {
+      "name": "Trattieni il respiro",
+      "choking": "Soffochi",
+      "left_one": "Ancora {{count}} round d'aria",
+      "left_other": "Ancora {{count}} round d'aria",
+      "out": "Senz'aria: a ogni fine turno guadagni 1 livello di Indebolimento.",
+      "again": "Respira di nuovo"
     }
   }
 }
