@@ -14,9 +14,11 @@ import { useNamedConditionEncounter } from "@/features/character/condition-encou
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
+import { extinguish, setOnFire, type Extinguish } from "@/lib/play/environment";
 import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
-import type { CharacterDoc } from "@/types/character";
+import { registerUndoableResult } from "@/stores/undoStore";
+import type { CharacterDoc, SessionState } from "@/types/character";
 import { Button, Chip, Panel, Stepper } from "@/ui";
 
 export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
@@ -46,7 +48,7 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
     };
   }, [open]);
   const view = conditionsPanelView(doc, locale, encounter);
-  if (readonly && view.count === 0) return null;
+  if (readonly && view.count === 0 && !doc.session.burning) return null;
   const store = () => useCharacterStore.getState();
   // Exhaustion changed by hand writes its report line («Indebolimento 1 → 2»).
   const setExhaustion = (level: number) => {
@@ -55,6 +57,39 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
       () => store().setExhaustion(level),
       () => store().setExhaustion(was)
     );
+  };
+  // Burning (SRD 5.2.1): set by hand, put out by rolling on the ground (the Action,
+  // then Prone) or from outside; each with its undo.
+  const burning = Boolean(doc.session.burning);
+  // The whole session is replaced (a merge could not take `burning` away).
+  const replaceSession = (next: SessionState) =>
+    useCharacterStore.setState((st) =>
+      st.readonly || !st.character
+        ? st
+        : { character: { ...st.character, session: next } }
+    );
+  const withUndo = (next: SessionState, message: string) => {
+    const before = store().character?.session;
+    if (!before) return;
+    const apply = () => replaceSession(next);
+    apply();
+    registerUndoableResult(
+      { message },
+      () => {
+        replaceSession(before);
+        return true;
+      },
+      apply
+    );
+  };
+  const catchFire = () => {
+    const next = setOnFire(doc);
+    if (next) withUndo(next, t("play.fire.caught"));
+  };
+  const putOut = (how: Extinguish) => {
+    const out = extinguish(doc, how);
+    if (!out) return;
+    withUndo(out.session, t(how === "roll" ? "play.fire.rolled" : "play.fire.putOut"));
   };
   const add = (id: string, sourceId?: string) => {
     if (id === "exhaustion") setExhaustion(1);
@@ -147,6 +182,30 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
                 )}
               </div>
             ))}
+            {burning && (
+              <div className="f-cond-row" data-fire="">
+                <div className="f-cond-main">
+                  <span className="f-row-t">{t("play.fire.name")}</span>
+                  <span className="f-row-s">{t("play.fire.note", { dice: "1d4" })}</span>
+                  {!readonly && (
+                    <div className="f-chips">
+                      <Chip onClick={() => putOut("roll")}>{t("play.fire.roll")}</Chip>
+                      <Chip onClick={() => putOut("doused")}>{t("play.fire.out")}</Chip>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+            {!readonly && !burning && (
+              <div className="f-ask">
+                <span className="f-lbl">{t("play.fire.situations")}</span>
+                <div className="f-chips">
+                  <Chip pressed={false} onClick={catchFire}>
+                    {t("play.fire.name")}
+                  </Chip>
+                </div>
+              </div>
+            )}
             {!readonly &&
               (pending ? (
                 <div className="f-cond-add">

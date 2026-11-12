@@ -402,6 +402,17 @@
       "mastery": "Mastery",
       "askSolo": "Did {{name}} hit?",
       "askSoloAdd": "Add to the hit:"
+    },
+    "fire": {
+      "name": "On fire",
+      "situations": "Situations",
+      "turnStart": "On fire: at the start of your turn you take {{dice}} fire damage (enter it in Damage and healing).",
+      "note": "{{dice}} fire damage at the start of each turn, until it goes out.",
+      "roll": "Roll on the ground (Action, then Prone)",
+      "out": "Put out from outside",
+      "rolled": "You roll on the ground: the fire goes out, you are Prone.",
+      "putOut": "The fire goes out.",
+      "caught": "You catch fire."
     }
   }
 }
