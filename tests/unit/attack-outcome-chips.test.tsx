@@ -74,7 +74,8 @@ describe("the attack-outcome chips on the row just used", () => {
     expect(lineEvent(id)).toMatchObject({ outcome: "hit" });
     const field = screen.getByRole("textbox", { name: "Damage" });
     expect(field).toHaveAttribute("inputmode", "numeric");
-    expect(field).toHaveAttribute("placeholder", "Damage");
+    // The field keeps its label once a number is typed («DAMAGE [ 9 ]»).
+    expect(screen.getByText("Damage")).toBeTruthy();
     fireEvent.change(field, { target: { value: "9" } });
     fireEvent.keyDown(field, { key: "Enter" });
     expect(lineEvent(id)).toMatchObject({ outcome: "hit", amount: 9 });

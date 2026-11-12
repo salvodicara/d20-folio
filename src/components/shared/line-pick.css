@@ -55,10 +55,30 @@
   color: var(--text-secondary);
 }
 
-/* The damage number beside the chips: sized for three digits and its word. */
+/* The attack's three results stay together on one line. */
+.attack-outcome-chips {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+
+/* «DANNI [ 9 ]»: a label that stays, and a field sized for three digits. */
 .attack-outcome-amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.attack-outcome-field {
   display: inline-block;
-  width: 6.5rem;
+  width: 4.5rem;
+}
+
+/* A phone: «ESITO» above the chips, the damage on its own line. */
+@media (max-width: 639px) {
+  .encounter-feed-pick[data-weight="status"] > .encounter-feed-pick-label,
+  .attack-outcome-amount {
+    flex-basis: 100%;
+  }
 }
 
 /* A finger needs about 44 px: the chips keep their compact look and grow an invisible

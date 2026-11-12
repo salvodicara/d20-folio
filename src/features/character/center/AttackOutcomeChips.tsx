@@ -75,35 +75,43 @@ export function AttackOutcomeChips({ actionId }: { actionId: string }) {
 
   return (
     <LinePick label={t("combat.attackResult")} weight="status">
-      {OUTCOMES.map((value) => (
-        <LineChip
-          key={value}
-          weight="status"
-          label={t(`combat.damageTray.outcome.${value}`)}
-          selected={outcome === value}
-          onClick={() => choose(value)}
-        />
-      ))}
-      {outcome && outcome !== "miss" && (
-        <span className="attack-outcome-amount">
-          <Input
-            aria-label={t("mechanics.cast.optionDamage")}
-            placeholder={t("mechanics.cast.optionDamage")}
-            inputMode="numeric"
-            pattern="[0-9]*"
-            autoComplete="off"
-            enterKeyHint="done"
-            autoFocus
-            value={text}
-            onChange={(event) =>
-              setDraft({ logId: pending.logId, text: event.target.value })
-            }
-            onKeyDown={(event) => {
-              if (event.key === "Enter") commitAmount();
-            }}
-            onBlur={commitAmount}
+      {/* The three results stay together on one line; the damage gets its own. */}
+      <span className="attack-outcome-chips">
+        {OUTCOMES.map((value) => (
+          <LineChip
+            key={value}
+            weight="status"
+            label={t(`combat.damageTray.outcome.${value}`)}
+            selected={outcome === value}
+            onClick={() => choose(value)}
           />
-        </span>
+        ))}
+      </span>
+      {outcome && outcome !== "miss" && (
+        <label className="attack-outcome-amount">
+          {/* A label that stays once a number is typed: «DANNI [ 9 ]». */}
+          <span className="encounter-feed-pick-label">
+            {t("mechanics.cast.optionDamage")}
+          </span>
+          <span className="attack-outcome-field">
+            <Input
+              placeholder="—"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              autoComplete="off"
+              enterKeyHint="done"
+              autoFocus
+              value={text}
+              onChange={(event) =>
+                setDraft({ logId: pending.logId, text: event.target.value })
+              }
+              onKeyDown={(event) => {
+                if (event.key === "Enter") commitAmount();
+              }}
+              onBlur={commitAmount}
+            />
+          </span>
+        </label>
       )}
     </LinePick>
   );
