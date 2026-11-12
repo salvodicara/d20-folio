@@ -20,7 +20,8 @@ const NEW_UI_PORT = E2E_PORT + 2;
 // keep the SW server. Fails TOWARD booting it — anything we can't prove is SW-free
 // still gets the server — so the SW journey is never silently starved of its origin.
 const SELECTED_PROJECTS = process.argv.flatMap((arg, i) => {
-  if (arg === "--project") return process.argv[i + 1] ? [process.argv[i + 1]] : [];
+  const next = process.argv[i + 1];
+  if (arg === "--project") return next ? [next] : [];
   const eq = arg.startsWith("--project=") ? arg.slice("--project=".length) : null;
   return eq ? [eq] : [];
 });
