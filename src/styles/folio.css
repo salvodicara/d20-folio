@@ -9200,6 +9200,120 @@ button.create-need:focus-visible .create-need-chev {
   display: grid;
   place-items: center;
 }
+/* A use on another creature's roll (RollReactionDialog, Cutting Words): the
+   feature's painted icon beside the die it applies, big and in the die's gold, the
+   uses as pips; the roll as three icon tiles; the result line in the die's gold. */
+.rr-hero {
+  --rr-die: var(--gold-leaf-300);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin-bottom: var(--sp-4);
+}
+.rr-art {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in oklab, var(--rr-die) 45%, var(--border-strong));
+  background: var(--bg-surface-2);
+  color: var(--rr-die);
+  box-shadow: 0 0 18px color-mix(in oklab, var(--rr-die) 22%, transparent);
+}
+.rr-art-img,
+.rr-medallion .rr-art-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.rr-die {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--rr-die);
+  text-shadow: 0 0 14px color-mix(in oklab, var(--rr-die) 35%, transparent);
+}
+.rr-pips {
+  display: inline-flex;
+  gap: 5px;
+  margin-left: auto;
+}
+.rr-pip {
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  border: 1px solid color-mix(in oklab, var(--gold-leaf-300) 60%, transparent);
+}
+.rr-pip[data-on] {
+  background: var(--gold-leaf-300);
+  box-shadow: 0 0 6px color-mix(in oklab, var(--gold-leaf-300) 50%, transparent);
+}
+.rr-medallion {
+  color: var(--sl, var(--text-secondary));
+  background: var(--bg-surface-2);
+}
+.rr-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--sp-2);
+}
+.rr-tiles[data-n="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: var(--sp-2);
+}
+.rr-tile {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 76px;
+  padding: 10px 6px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-medium);
+  background: var(--bg-surface-1);
+  color: var(--text-secondary);
+  font-family: var(--font-numeric);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  transition:
+    border-color var(--m-fast),
+    background var(--m-fast),
+    color var(--m-fast);
+}
+.rr-tile:hover {
+  border-color: color-mix(in oklab, var(--accent-primary) 28%, var(--border-soft));
+  background: color-mix(in oklab, var(--accent-glow) 7%, var(--bg-surface-2));
+  color: var(--text-primary);
+}
+.rr-tile:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+.rr-tile.is-active {
+  border-color: var(--accent-primary);
+  background: color-mix(in oklab, var(--accent-glow) 14%, var(--bg-surface-1));
+  color: var(--accent-text);
+}
+.rr-result {
+  margin: var(--sp-4) 0 0;
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--gold-leaf-300);
+}
+
 /* Chromatic slot seal — diamond pip in the per-level --sl colour. */
 .cl-slot .cl-seal {
   display: inline-flex;

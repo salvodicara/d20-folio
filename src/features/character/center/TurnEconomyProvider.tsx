@@ -121,6 +121,7 @@ import {
   riderClaimedTurnFor,
   riderFeatureKey,
 } from "@/lib/play/once-per-turn";
+import { rollPlanCopy, type RollReactionPlan } from "@/lib/play/roll-reactions";
 import { checkSucceeded, type CheckResult } from "@/lib/play/checks";
 import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
@@ -2334,7 +2335,9 @@ export function TurnEconomyProvider({
     cast?: {
       option: CastCommitOption;
       metamagicIds: ReadonlyArray<string>;
-    }
+    },
+    /** A use on a roll already rolled (Cutting Words), as the dialog planned it. */
+    rollPlan?: RollReactionPlan
   ) {
     if (!guardActionState(action)) return;
     const expendsSpellSlot =
@@ -2384,7 +2387,16 @@ export function TurnEconomyProvider({
         : null;
     const applyResolution = pendingResolutionFor(action);
     const outcomeOccurrenceId = applyResolution?.occurrenceId;
-    const message = t("combat.reactionToast", { name: action.name });
+    // A use on a roll already rolled says the die to roll at the table.
+    const rollCopy = rollPlanCopy(rollPlan);
+    const message = rollCopy
+      ? t(rollCopy.key, {
+          ...rollCopy.values,
+          name: action.name,
+          roll: t(rollCopy.rollKey).toLowerCase(),
+        })
+      : t("combat.reactionToast", { name: action.name });
+    const rollTarget = rollPlan?.target?.id;
     // Register on the undo stack: `execute` marks the reaction used, deducts the
     // resource, applies concentration + any while-active buff, and logs the row,
     // returning the combined reverse. Redo re-runs the SAME resolved reaction.
@@ -2442,7 +2454,7 @@ export function TurnEconomyProvider({
           applyActionConcentration(action, castLevel);
           // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
           // its standing state on use.
-          const targets = applyResolution?.targets ?? [];
+          const targets = applyResolution?.targets ?? (rollTarget ? [rollTarget] : []);
           activateActionState(
             withMetamagicDuration(
               withSelfRecipient(action, targets, selfCombatantId()),
@@ -3193,6 +3205,8 @@ export function TurnEconomyProvider({
     prepareResolution,
     handleSelect,
     handleUseReaction: (action) => void handleUseReaction(action),
+    commitRollReaction: (action, plan) =>
+      void handleUseReaction(action, undefined, undefined, plan),
     spendRider,
     applyCunningStrike,
     handleEndTurn,

@@ -13,6 +13,8 @@ import { describe, expect, it } from "vitest";
 import { Timestamp } from "firebase-admin/firestore";
 
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
+import { cacheToRosterDoc } from "@/lib/character-cache";
+import { readDocMeta } from "@/lib/character-read";
 import { parseCombatState } from "@/lib/combat-state-codec";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { verifyParentCutoverCorpus } from "../../scripts/migrate-character-parents";
@@ -37,6 +39,11 @@ function check(envelope: Record<string, unknown>): void {
   expect(parent.state).toEqual({});
   expect(parent.playStateVersion).toBe(1);
   expect(parent.attachedCampaignId).toBe("SANDBOX");
+  // The roster reads only the stored `cache`: without it the seeded hero is missing
+  // from «Your characters» (perf pass 2026-11-11 found an empty sandbox roster).
+  const id = "sandbox-hero";
+  const row = cacheToRosterDoc(id, parent, readDocMeta(id, parent));
+  expect(row?.character.name).toBe((envelope.build as { name: string }).name);
   expect(parseCombatState(child).ok).toBe(true);
   // The migration's own proof that a stored family is loadable and fully cut over.
   expect(
