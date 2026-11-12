@@ -420,6 +420,8 @@
 
 /* ---------- tabs and chips ---------- */
 .fui .f-tabs {
+  /* the tabs' offsets are measured from the row (scroll the selected one into view) */
+  position: relative;
   display: flex;
   gap: 4px;
   overflow-x: auto;
@@ -428,6 +430,18 @@
 }
 .fui .f-tabs[data-more="true"] {
   mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
+}
+.fui .f-tabs[data-more-start="true"] {
+  mask-image: linear-gradient(90deg, transparent, var(--shade) 56px);
+}
+.fui .f-tabs[data-more-start="true"][data-more="true"] {
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    var(--shade) 56px,
+    var(--shade) calc(100% - 56px),
+    transparent
+  );
 }
 .fui .f-tabs > button {
   flex: none;
@@ -5585,6 +5599,12 @@
   .fui .f-cmp-verdict {
     display: none;
   }
+  .fui .f-cmp-verdict-m {
+    display: inline;
+  }
+}
+.fui .f-cmp-verdict-m {
+  display: none;
 }
 
 /* «Gestisci incantesimi» and the Long Rest's step: the limit beside the count, then

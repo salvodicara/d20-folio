@@ -278,10 +278,21 @@ function ResultRows({
             </Slot>
             <span className="f-row-main">
               <span className="f-row-t">{row.name}</span>
-              {(cr ?? row.meta) && (
+              {(cr ?? row.meta ?? verdict) && (
                 <span className="f-row-s">
                   {cr}
-                  {cr && row.meta ? " · " : null}
+                  {/* a phone has no verdict column: the class or school joins the line */}
+                  {verdict && (
+                    <span className="f-cmp-verdict-m">
+                      {cr ? "\u00a0· " : null}
+                      {verdict.label}
+                    </span>
+                  )}
+                  {(cr || verdict) && row.meta ? (
+                    <span className={cr ? undefined : "f-cmp-verdict-m"}>
+                      {"\u00a0· "}
+                    </span>
+                  ) : null}
                   {row.meta}
                 </span>
               )}

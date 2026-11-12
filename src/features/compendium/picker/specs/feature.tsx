@@ -176,9 +176,14 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
       // level + tracker mark (the source class is no longer duplicated here).
       meta: (
         <>
-          {feature.subclass ? `${localizeSubclassName(feature.subclass, locale)} · ` : ""}
-          {t("stats.lvl")} {feature.level}
-          {feature.mechanics?.tracker && ` · ${t("combat.hasTracker")}`}
+          {/* a separator stays with the word before it, never starting a line */}
+          {feature.subclass
+            ? `${localizeSubclassName(feature.subclass, locale)}\u00a0· `
+            : ""}
+          {t("stats.lvl")}
+          {"\u00a0"}
+          {feature.level}
+          {feature.mechanics?.tracker && `\u00a0· ${t("combat.hasTracker")}`}
         </>
       ),
       state: aboveLevel ? "warn" : "default",
