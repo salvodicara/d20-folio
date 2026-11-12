@@ -1141,10 +1141,6 @@ export function planPartyTurnBoundary(
   );
 }
 
-export interface PartyActionCapability {
-  readonly authority: Readonly<MechanicsProgramAuthorityReceipt>;
-}
-
 /** Active engine condition ids on one shared entity, for the legacy mirror. */
 export function engineConditionIds(
   world: Readonly<SharedMaterialState>,

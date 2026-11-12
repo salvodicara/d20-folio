@@ -20,46 +20,10 @@ import { SRD_SPELLS_LEVEL6 } from "@/data/spells/level6";
 import { SRD_SPELLS_LEVEL7 } from "@/data/spells/level7";
 import { SRD_SPELLS_LEVEL8 } from "@/data/spells/level8";
 import { SRD_SPELLS_LEVEL9 } from "@/data/spells/level9";
-import type { SrdSpellData } from "@/data/types";
-import { translateSpell } from "@/lib/activities/from-spell";
-import type { Grant } from "@/lib/grant-schema";
-
-/** Spells a dedicated engine module runs from their id (src/lib/play/wish.ts,
- *  extra-turns.ts, polymorph.ts, familiar-ids.ts). */
-const ENGINE_OWNED = new Set([
-  "wish",
-  "time-stop",
-  "shapechange",
-  "animal-shapes",
-  "find-familiar",
-]);
-
-function leafKinds(grants: ReadonlyArray<Grant>): string[] {
-  return grants.flatMap((grant) =>
-    grant.type === "while-active"
-      ? leafKinds(grant.grants)
-      : grant.type === "choice-grant-bundle"
-        ? grant.options.flatMap((option) => leafKinds(option.grants))
-        : [grant.type]
-  );
-}
-
-function classOf(spell: SrdSpellData): "auto" | "tap" | "reference" {
-  // Casting lights a state, unless its own action row enters it (Web Bolt's).
-  const lit = (spell.grants ?? []).filter(
-    (grant) => grant.type === "while-active" && !grant.activatedByAction
-  );
-  if (leafKinds(lit).some((kind) => kind !== "defense-note")) return "auto";
-  const { activity, gaps } = translateSpell(spell);
-  const structured =
-    activity.effects.length > 0 ||
-    activity.attack !== undefined ||
-    activity.save !== undefined ||
-    activity.followUp !== undefined ||
-    activity.repeats !== undefined ||
-    gaps.length > 0;
-  return structured || ENGINE_OWNED.has(spell.id) ? "tap" : "reference";
-}
+import {
+  ENGINE_OWNED_SPELLS as ENGINE_OWNED,
+  spellCoverage as classOf,
+} from "./__helpers__/rules-coverage";
 
 describe("RULES_COVERAGE spell row", () => {
   it("states the counted auto / 1-tap / reference split of the public spells", () => {

@@ -24,6 +24,7 @@ import type {
 } from "@/types/character";
 import type { StoredConcentration } from "@/types/ids";
 import { concentrationSpellData } from "@/lib/homebrew-spells";
+import { OUT_OF_AURA_PREFIX } from "@/lib/play/aura-source";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import {
   resolveGrantActiveKey,
@@ -107,7 +108,8 @@ export function deriveStatuses(character: CharacterDoc): Status[] {
   const statuses: Status[] = [];
   const seen = new Set<string>();
   for (const key of session.activeFeatures ?? []) {
-    if (seen.has(key)) continue;
+    // «outside a paladin's aura» is where the character stands, not a status on it
+    if (seen.has(key) || key.startsWith(OUT_OF_AURA_PREFIX)) continue;
     seen.add(key);
     const castLevel = castLevels[key];
     const declaration = declared.get(key);

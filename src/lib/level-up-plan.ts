@@ -44,6 +44,7 @@ import {
   type SrdFeatureRef,
   type SrdSpellRef,
 } from "@/types/character";
+import { WIZARD_BOOK_PER_LEVEL, WIZARD_BOOK_START } from "@/lib/wizard-spellbook";
 
 export const HIT_DIE_AVG: Record<number, number> = { 4: 3, 6: 4, 8: 5, 10: 6, 12: 7 };
 
@@ -193,8 +194,14 @@ export function levelUpPlan(
   // so a first level in a caster class asks for its full L1 spell loadout.
   const prevSpellsKnown = isNewClass ? 0 : prevLevelData?.spellsKnown;
   const prevCantripsKnown = isNewClass ? 0 : prevLevelData?.cantripsKnown;
-  const spellsKnownDiff =
-    levelData?.spellsKnown != null && prevSpellsKnown != null
+  // A Wizard's level-up adds to the spellbook (6 at its first Wizard level, then 2),
+  // not the Prepared Spells increase: the higher limit is filled from the book.
+  const spellbookPicks = classId === "wizard" && levelData?.spellsKnown != null;
+  const spellsKnownDiff = spellbookPicks
+    ? isNewClass
+      ? WIZARD_BOOK_START
+      : WIZARD_BOOK_PER_LEVEL
+    : levelData?.spellsKnown != null && prevSpellsKnown != null
       ? Math.max(0, levelData.spellsKnown - prevSpellsKnown)
       : 0;
   const cantripsKnownDiff =
@@ -410,6 +417,7 @@ export function levelUpPlan(
     prevSpellsKnown,
     prevCantripsKnown,
     spellsKnownDiff,
+    spellbookPicks,
     cantripsKnownDiff,
     maxSpellLevel,
     existingSpellIds,

@@ -1127,6 +1127,34 @@ describe("computeAC", () => {
     expect(computeAC(eq, scores(14), resolve)).toBe(14);
   });
 
+  it("custom armor made with the form before it wrote `ac`: «AC 14» is its base, not +14", () => {
+    // The armor form saved the number as `acBonus`; no live sheet holds one (count
+    // 2026-11-12), but such an item reads as the form meant it.
+    const medium: CustomEquipment[] = [
+      {
+        custom: true,
+        name: "Scale",
+        equipped: true,
+        armorCategory: "medium",
+        acBonus: 14,
+        instanceId: customInstanceId("Scale"),
+      },
+    ];
+    expect(computeAC(medium, scores(14), resolve)).toBe(16);
+    const shield: CustomEquipment[] = [
+      {
+        custom: true,
+        name: "Buckler",
+        equipped: true,
+        armorCategory: "shield",
+        acBonus: 2,
+        instanceId: customInstanceId("Buckler"),
+      },
+    ];
+    // 10 + DEX 2 + shield 2
+    expect(computeAC(shield, scores(14), resolve)).toBe(14);
+  });
+
   it("custom shield works (+1 shield: base 3)", () => {
     const eq: CustomEquipment[] = [
       {
