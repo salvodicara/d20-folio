@@ -413,6 +413,14 @@
       "rolled": "Ti rotoli a terra: il fuoco si spegne, sei Prono.",
       "putOut": "Il fuoco si spegne.",
       "caught": "Prendi fuoco."
+    },
+    "breath": {
+      "name": "Trattieni il respiro",
+      "choking": "Soffochi",
+      "left_one": "Ancora {{count}} round d'aria",
+      "left_other": "Ancora {{count}} round d'aria",
+      "out": "Senz'aria: a ogni fine turno guadagni 1 livello di Indebolimento.",
+      "again": "Respira di nuovo"
     }
   }
 }

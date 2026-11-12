@@ -82,6 +82,18 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
       apply
     );
   };
+  // Holding breath and choking (SRD 5.2.1 Suffocation) are the engine's sheet events:
+  // each End Turn counts the air down (`breath-turn-end`); breathing again takes back
+  // the Exhaustion it gave.
+  const breath = doc.session.breath;
+  const breathEvent = (
+    event: { kind: "hold-breath"; choking?: boolean } | { kind: "breathe-again" },
+    label: string
+  ) => {
+    const undo = store().dispatch(event);
+    if (undo)
+      registerUndoableResult({ message: t(label) }, undo, () => store().dispatch(event));
+  };
   const catchFire = () => {
     const next = setOnFire(doc);
     if (next) withUndo(next, t("play.fire.caught"));
@@ -199,13 +211,61 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
                 </div>
               </div>
             )}
-            {!readonly && !burning && (
+            {breath && (
+              <div className="f-cond-row">
+                <div className="f-cond-main">
+                  <span className="f-row-t">
+                    {t(breath.choking ? "play.breath.choking" : "play.breath.name")}
+                  </span>
+                  <span className="f-row-s">
+                    {breath.roundsLeft > 0
+                      ? t("play.breath.left", { count: breath.roundsLeft })
+                      : t("play.breath.out")}
+                  </span>
+                </div>
+                {!readonly && (
+                  <Button
+                    onClick={() =>
+                      breathEvent({ kind: "breathe-again" }, "play.breath.again")
+                    }
+                  >
+                    {t("play.breath.again")}
+                  </Button>
+                )}
+              </div>
+            )}
+            {!readonly && (!burning || !breath) && (
               <div className="f-ask">
                 <span className="f-lbl">{t("play.fire.situations")}</span>
                 <div className="f-chips">
-                  <Chip pressed={false} onClick={catchFire}>
-                    {t("play.fire.name")}
-                  </Chip>
+                  {!burning && (
+                    <Chip pressed={false} onClick={catchFire}>
+                      {t("play.fire.name")}
+                    </Chip>
+                  )}
+                  {!breath && (
+                    <Chip
+                      pressed={false}
+                      onClick={() =>
+                        breathEvent({ kind: "hold-breath" }, "play.breath.name")
+                      }
+                    >
+                      {t("play.breath.name")}
+                    </Chip>
+                  )}
+                  {!breath && (
+                    <Chip
+                      pressed={false}
+                      onClick={() =>
+                        breathEvent(
+                          { kind: "hold-breath", choking: true },
+                          "play.breath.choking"
+                        )
+                      }
+                    >
+                      {t("play.breath.choking")}
+                    </Chip>
+                  )}
                 </div>
               </div>
             )}

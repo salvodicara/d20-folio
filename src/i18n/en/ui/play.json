@@ -413,6 +413,14 @@
       "rolled": "You roll on the ground: the fire goes out, you are Prone.",
       "putOut": "The fire goes out.",
       "caught": "You catch fire."
+    },
+    "breath": {
+      "name": "Hold breath",
+      "choking": "Choking",
+      "left_one": "{{count}} round of air left",
+      "left_other": "{{count}} rounds of air left",
+      "out": "Out of air: you gain 1 Exhaustion level at the end of each turn.",
+      "again": "Breathe again"
     }
   }
 }
