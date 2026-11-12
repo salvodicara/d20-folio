@@ -104,7 +104,7 @@ export function SessionStory({
   return (
     <div className="f-stack">
       <div data-user-text="">
-        <BlockMarkdown className="f-prose" text={text} />
+        <BlockMarkdown className="f-prose" text={text} softBreaks />
       </div>
       <div>
         <Button kind="quiet" icon="u-edit" onClick={() => setDraft(text)}>

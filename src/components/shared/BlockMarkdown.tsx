@@ -13,9 +13,12 @@ import { parseInline } from "./parseInline";
 interface BlockMarkdownProps {
   text: string;
   className?: string;
+  /** A single newline is a space, as Markdown reads it (pasted prose, the Diario's
+   *  chronicle); only a blank line starts a paragraph. Off: a line stays a line. */
+  softBreaks?: boolean;
 }
 
-export function BlockMarkdown({ text, className }: BlockMarkdownProps) {
+export function BlockMarkdown({ text, className, softBreaks }: BlockMarkdownProps) {
   const blocks = parseBlocks(text);
   return (
     <div className={className}>
@@ -48,12 +51,14 @@ export function BlockMarkdown({ text, className }: BlockMarkdownProps) {
           case "p":
             return (
               <p key={i} className="bm-p">
-                {b.lines.map((line, j) => (
-                  <Fragment key={j}>
-                    {j > 0 && <br />}
-                    {parseInline(line)}
-                  </Fragment>
-                ))}
+                {softBreaks
+                  ? parseInline(b.lines.join(" "))
+                  : b.lines.map((line, j) => (
+                      <Fragment key={j}>
+                        {j > 0 && <br />}
+                        {parseInline(line)}
+                      </Fragment>
+                    ))}
               </p>
             );
         }
