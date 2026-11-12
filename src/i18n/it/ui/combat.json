@@ -46,6 +46,7 @@
     "countered": "Contrastato",
     "declareApplyFailed": "Impossibile applicare l'effetto. Il DM può correggerlo dallo scontro.",
     "resolveNextRollAdjustment": "Prossimo {{roll}} {{sign}}{{dice}}",
+    "resolveEachRollAdjustment": "Ogni {{roll}} {{sign}}{{dice}}",
     "resolveRoll_attack": "attacco",
     "resolveRoll_check": "prova",
     "resolveRoll_damage": "tiro per i danni",

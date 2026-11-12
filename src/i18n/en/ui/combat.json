@@ -46,6 +46,7 @@
     "countered": "Countered",
     "declareApplyFailed": "Couldn't apply the effect. The DM can correct it from the encounter.",
     "resolveNextRollAdjustment": "Next {{roll}} {{sign}}{{dice}}",
+    "resolveEachRollAdjustment": "Every {{roll}} {{sign}}{{dice}}",
     "resolveRoll_attack": "attack",
     "resolveRoll_check": "check",
     "resolveRoll_damage": "damage",
