@@ -30,7 +30,7 @@ edge cases below, through the functions a screen calls.
 
 ## Rules Glossary
 
-124 rows: 106 modeled, 10 table-side, 8 gaps. Modeled = the audit found the engine applies it, and the tests named exist (they prove the engine, not yet that a screen calls it); table-side = left to the table by design; gap = a table would want the app to apply it. First pass from RULES_GLOSSARY_AUDIT.md, under review by the rules lane.
+124 rows: 107 modeled, 10 table-side, 7 gaps. Modeled = the audit found the engine applies it, and the tests named exist (they prove the engine, not yet that a screen calls it); table-side = left to the table by design; gap = a table would want the app to apply it. First pass from RULES_GLOSSARY_AUDIT.md, under review by the rules lane.
 
 | Entry | Status | Proof | Where, or why |
 | --- | --- | --- | --- |
@@ -46,7 +46,7 @@ edge cases below, through the functions a screen calls.
 | Attack Roll | modeled | `compute.test.ts` | `compute.ts` weapon/spell attack bonus; `compute.test.ts` |
 | Attitude | table-side | — | An NPC's attitude is the DM's; Influence is a check against the DM's DC |
 | Attunement | modeled | `attunement-guard.test.ts` | `attunement-guard.ts`; `attunement-guard.test.ts` |
-| Aura | gap | engine done; no screen calls `usePartyAura` | #3 |
+| Aura | modeled | `aura-of-protection.test.ts`, `use-party-aura.test.tsx` | Aura of Protection reaches the allies' saves (`usePartyAura`) |
 | Blinded | modeled | `condition-effects.test.ts` | `condition-effects.ts`; `condition-effects.test.ts` |
 | Blindsight, Truesight | modeled | `can-see.test.ts` | `light-states.ts` sightUnder; `can-see.test.ts` |
 | Bloodied | modeled | `hp-band-bloodied.test.ts` | `hp-band.ts`; `hp-band-bloodied.test.ts` |

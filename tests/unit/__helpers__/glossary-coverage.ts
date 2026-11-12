@@ -96,11 +96,9 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     entry: "Aura",
-    status: "gap",
-    evidence: [],
-    note: "#3",
-    waitsFor: ["usePartyAura"],
-    gaps: [3],
+    status: "modeled",
+    evidence: ["aura-of-protection.test.ts", "use-party-aura.test.tsx"],
+    note: "Aura of Protection reaches the allies' saves (`usePartyAura`)",
   },
   {
     entry: "Blinded",

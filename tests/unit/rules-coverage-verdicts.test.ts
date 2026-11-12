@@ -1,9 +1,10 @@
 /**
  * The code-checked verdicts beside what the data declares: the played-content view
  * shows a declared effect no screen applies as what it is (missing, by hand), never
- * as automatic. Acceptance rows (coordinator, 2026-11-12): Reliable Talent is missing,
- * Aura of Protection is missing for allies, Memorize Spell is automatic; an entry
- * nobody checked reads «unproven». Public SRD ids only in the verdicts file.
+ * as automatic. Acceptance rows (coordinator, 2026-11-12; the rules lane's audit after
+ * #1097): Reliable Talent is by hand (the table's checks), Aura of Protection reaches
+ * the allies, Memorize Spell is automatic; an entry nobody checked reads «unproven».
+ * Public SRD ids only in the verdicts file.
  */
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -39,9 +40,9 @@ describe("code-checked verdicts in the played-content view", () => {
   it("the acceptance rows read the code's truth, not the declaration", () => {
     expect(of("rogue-reliable-talent")).toMatchObject({
       coverage: "auto",
-      verdict: "missing",
+      verdict: "by-hand",
     });
-    expect(of("paladin-aura-of-protection")?.verdict).toBe("missing");
+    expect(of("paladin-aura-of-protection")?.verdict).toBe("auto");
     expect(of("wizard-memorize-spell")).toMatchObject({
       coverage: "reference",
       verdict: "auto",
@@ -71,7 +72,7 @@ describe("code-checked verdicts in the played-content view", () => {
     const md = playedCoverageMarkdown(survey);
     expect(md).toContain("| Entry | Id | Characters | Code-checked | Declared |");
     expect(md).toMatch(
-      /\| rogue-reliable-talent \| 1 \| Missing \([^|]*\) \| Declared auto ⚠ \|/
+      /\| rogue-reliable-talent \| 1 \| By hand \([^|]*\) \| Declared auto ⚠ \|/
     );
   });
 });

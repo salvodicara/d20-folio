@@ -124,11 +124,14 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   },
   {
     id: "paladin-aura-of-protection",
-    verdict: "missing",
-    evidence: ["character-store-d20-lifecycle.test.ts"],
-    note: "the paladin's own saves are automatic; allies in the aura get nothing",
-    until: "#1089",
-    waitsFor: ["usePartyAura"],
+    verdict: "auto",
+    evidence: [
+      "aura-of-protection.test.ts",
+      "aura-of-protection-published.test.ts",
+      "use-party-aura.test.tsx",
+      "folio-molecules.test.tsx",
+    ],
+    note: "the ally says when they stand outside the aura (a chip); the paladin's own saves too; the published aura's access rule is checked in tests/rules/firestore-rules.test.ts",
   },
   // Rogue
   { id: "rogue-sneak-attack", verdict: "auto", evidence: ["rogue-sneak-attack.test.ts"] },
@@ -147,11 +150,9 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   { id: "rogue-evasion", verdict: "auto", evidence: ["evasion-tray.test.ts"] },
   {
     id: "rogue-reliable-talent",
-    verdict: "missing",
-    evidence: [],
-    note: "the grant is collected and shown as a note; no roll is floored to 10",
-    until: "#1093",
-    waitsFor: ["skillFaceFloorFor"],
+    verdict: "by-hand",
+    evidence: ["reliable-talent.test.ts", "play-check.test.tsx"],
+    note: "automatic on the check entries (Hide, escape, Search/Study/Influence) on both UIs; checks rolled at the table keep the rail note",
   },
   { id: "rogue-uncanny-dodge", verdict: "auto", evidence: ["damage-stages.test.ts"] },
   // Barbarian
@@ -385,6 +386,12 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     id: "elf:darkvision",
     verdict: "auto",
     evidence: ["resolve-grant-sources-race.test.ts", "species-lineage-spells.test.ts"],
+  },
+  {
+    id: "elf:keen-senses",
+    verdict: "auto",
+    evidence: ["species-choices.test.ts"],
+    note: "the Insight, Perception or Survival pick",
   },
   {
     id: "elf:elven-lineage",
