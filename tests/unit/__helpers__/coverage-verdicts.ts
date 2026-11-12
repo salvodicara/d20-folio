@@ -408,6 +408,12 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     verdict: "auto",
     evidence: ["species-condition-advantages.test.ts", "grants.test.ts"],
   },
+  {
+    id: "elf:trance",
+    verdict: "auto",
+    evidence: ["species-condition-advantages.test.ts"],
+    note: "magic can't put you to sleep (#1101)",
+  },
   { id: "orc:adrenaline-rush", verdict: "auto", evidence: ["grants-phase-c.test.ts"] },
   {
     id: "orc:darkvision",
