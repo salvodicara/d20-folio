@@ -92,7 +92,16 @@ export function PlayLeft({
                         max: r.max,
                       }),
                     },
-                    () => useCharacterStore.getState().dispatch(spend),
+                    () => {
+                      // By hand: the spend writes its report line; the undo removes it.
+                      let undo: (() => void) | null = null;
+                      return useCharacterStore.getState().changeResourceByHand(
+                        () => {
+                          undo = useCharacterStore.getState().dispatch(spend);
+                        },
+                        () => undo?.()
+                      );
+                    },
                     { turnScoped: false }
                   )
                 }

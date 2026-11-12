@@ -175,19 +175,18 @@ export type ReactionTrigger =
   // misses you.
   | "meleeAttackDamagesYou"
   | "meleeAttackMissesYou"
-  // Ranger Fey Wanderer "Beguiling Twist": you or a creature within 120 ft
-  // SUCCEEDS on a save to avoid or end the Charmed or Frightened condition.
+  // You or a creature within 120 ft SUCCEEDS on a save to avoid or end the Charmed
+  // or Frightened condition (a subclass's reaction).
   | "savedVsCharmOrFear"
   | "succeedDexSaveForHalf"
   | "targetAttacks"
   | "takeDamage"
-  // A creature you can see makes an attack roll against you (before it's resolved):
-  // the Enchanter's Instinctive Charm.
+  // A creature you can see makes an attack roll against you (before it's resolved).
   | "creatureAttacksYou"
-  // A creature you can see fails a D20 Test (Reweave Fate: it rerolls with Advantage).
+  // A creature you can see fails a D20 Test (a spell that has it reroll with Advantage).
   | "creatureFailsD20Test"
-  // You fail a saving throw (Symbiotic Being: add a Hit Point Die to it), or a
-  // Constitution one (Aberrant Fortitude).
+  // You fail a saving throw (a feature that adds a Hit Point Die to it), or a
+  // Constitution one.
   | "selfFailsSave"
   | "selfFailsConSave"
   // You succeed on a saving throw (a feat that turns a made save into a riposte).
@@ -1220,7 +1219,7 @@ export interface SrdSpellData {
    * A reaction spell with no concise structured trigger simply omits the field (its
    * card shows name + effect, exactly as the parser's `undefined` did). Omit on every
    * non-reaction spell.
-   * Several tokens: the spell answers any of them (Moment of Prescience).
+   * Several tokens: the spell answers any of them (a failed D20 Test or a hit).
    */
   reactionTrigger?: ReactionTrigger | ReadonlyArray<ReactionTrigger>;
   /** Whether this spell can be cast as a ritual */
