@@ -2857,12 +2857,23 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     } catch {
       return null;
     }
-    if (result.reviewedOutcome.status === "success") {
+    const status = result.reviewedOutcome.status;
+    if (status === "success" || status === "failure") {
+      // The save is a line whichever way it goes (the session report's Concentration).
+      get().logEvent({
+        kind: "concentration-save",
+        spell: pending.spell,
+        dc: pending.difficultyClass,
+        ...(result.total !== null ? { total: result.total } : {}),
+        passed: status === "success",
+      });
+    }
+    if (status === "success") {
       set({
         combatPendingConcentrationSaves: get().combatPendingConcentrationSaves.slice(1),
       });
       persistCombat(get);
-    } else if (result.reviewedOutcome.status === "failure") {
+    } else if (status === "failure") {
       // The authoritative teardown owns the spell, active keys, timers,
       // Polymorph body, target conditions, effects, event log, and queue clear.
       get().setConcentration("", { undoable: false });

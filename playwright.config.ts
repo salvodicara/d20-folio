@@ -96,6 +96,7 @@ export default defineConfig({
         /ui-play-fidelity\.spec\.ts/,
         /ui-avatars\.spec\.ts/,
         /ui-long-text\.spec\.ts/,
+        /ui-pips\.spec\.ts/,
         ...OFF_LANES,
       ],
     },
@@ -122,7 +123,8 @@ export default defineConfig({
     {
       // The rebuilt screens, on the VITE_NEW_UI preview server (own port).
       name: "new-ui",
-      testMatch: /(?:ui-play-fidelity|ui-avatars|fight-smoke|ui-long-text)\.spec\.ts/,
+      testMatch:
+        /(?:ui-play-fidelity|ui-avatars|fight-smoke|ui-long-text|ui-pips)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${NEW_UI_PORT}` },
     },
     {
