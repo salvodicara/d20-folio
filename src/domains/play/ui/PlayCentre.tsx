@@ -23,7 +23,10 @@ import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
-import { rollInitiativeFromSheet } from "@/domains/play/sheet-initiative-roll";
+import {
+  initiativePaidAdvantage,
+  rollInitiativeFromSheet,
+} from "@/domains/play/sheet-initiative-roll";
 import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
@@ -735,6 +738,7 @@ function TurnStrip({
           roll={{
             ...initiativeRollModel(doc),
             onSurprise: () => toggleSurprise(t),
+            paidAdvantage: initiativePaidAdvantage(doc, locale, t),
           }}
           onClose={() => setRolling(false)}
           onRoll={(d20) =>

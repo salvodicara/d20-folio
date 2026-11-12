@@ -371,7 +371,8 @@
       "theirs": "Round {{round}} · {{name}}"
     },
     "roll": {
-      "surprised": "Surprised"
+      "surprised": "Surprised",
+      "paidAdvantage": "{{name}}: Advantage on Initiative"
     },
     "defense": {
       "temporary": "temporary",
