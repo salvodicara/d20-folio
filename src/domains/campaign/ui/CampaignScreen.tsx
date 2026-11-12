@@ -265,7 +265,7 @@ function PartyLine({ row, href }: { row: PartyRow; href: string }) {
           hp={hp ? (share > 0.5 ? "ok" : share > 0.25 ? "low" : "bad") : undefined}
         />
         <Stat value={row.ac ?? "—"} label={t("stats.ac")} />
-        <Stat value={row.perception ?? "—"} label={t("skills.perception")} />
+        <Stat value={row.perception ?? "—"} label={t("campaignHub.passivePerception")} />
       </div>
     </Link>
   );

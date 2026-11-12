@@ -77,6 +77,17 @@ jobs:
         run: pnpm typecheck
       - name: Lint
         run: pnpm lint --max-warnings 0
+      # The pre-commit hook formats, but a commit made around it reached main unformatted
+      # (2026-11-12). The files a change touches are checked here, where it cannot be skipped.
+      - name: Formatting (the files this change touches)
+        if: github.event_name != 'push'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          git diff -z --name-only --diff-filter=d "$BASE_SHA" HEAD -- \
+            '*.ts' '*.tsx' '*.css' '*.json' '*.md' '*.yml' \
+            | xargs -0 -r pnpm exec prettier --check --ignore-unknown
 
   unit:
     name: unit (SRD-only, shard ${{ matrix.shard }}/2)
