@@ -1,5 +1,5 @@
 /**
- * Rehearsal 3 — «Scelte da completare» and the Paladin's level 5. Mandorlino (a real
+ * Rehearsal 3 — «Scelte da completare» and the Paladin's level 5. Paladin (a real
  * sandbox player, signed in with his own account) opens his sheet in Italian, sees the
  * banner for the choices his sheet still owes, finishes them, and the banner goes. He
  * then levels 3 → 5 and prepares Warding Bond, which the fight needs (2nd-level slots).
@@ -16,10 +16,10 @@ import {
   watchErrors,
 } from "./helpers";
 
-const { email, characterId } = SANDBOX_USERS.mandorlino;
+const { email, characterId } = SANDBOX_USERS.paladin;
 
-// Mandorlino as the seed made him (level 3, his choices still owed), every run.
-test.beforeEach(() => reseedHero(SANDBOX_USERS.mandorlino));
+// Paladin as the seed made him (level 3, his choices still owed), every run.
+test.beforeEach(() => reseedHero(SANDBOX_USERS.paladin));
 
 test("«Scelte da completare» lists the owed choices and clears once they are made", async ({
   page,
@@ -49,7 +49,7 @@ test("«Scelte da completare» lists the owed choices and clears once they are m
   expect(errors).toEqual([]);
 });
 
-test("Mandorlino levels 3 → 5 and prepares Warding Bond", async ({ page }) => {
+test("Paladin levels 3 → 5 and prepares Warding Bond", async ({ page }) => {
   const errors = watchErrors(page);
   await signInAs(page, email);
   await page.goto(`/characters/${characterId}`);

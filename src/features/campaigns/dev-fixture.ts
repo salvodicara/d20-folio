@@ -520,12 +520,12 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
               displayName: "Mara",
               // A real dev-fixture id so the DM read-only sheet view (T4) renders a
               // full character locally + in e2e (resolved via the dev fixture seam).
-              characterId: "team-catalion-bard",
+              characterId: "team-bard",
               role: "player",
               character: {
                 // The owner's REAL party hero (AC-ZERO, 2026-06-12) — long enough to
                 // exercise the CARD-NAMES wrap (it mid-truncated to "Coralino di
-                // Sanval…" before the No-Truncation fix). Matches its `team-catalion`
+                // Sanval…" before the No-Truncation fix). Matches its `team-bard`
                 // id, so the DM read-only sheet shows the same hero.
                 name: assertNonEmptyString("Coralino di Sanvaldo"),
                 race: asRaceId("human"),
@@ -540,7 +540,7 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
       ...(encounterDemo() === "table" ? devTableMembers() : {}),
       "member-bren": {
         displayName: "Bren",
-        characterId: "team-mandorlino-paladin",
+        characterId: "team-paladin",
         role: "player",
         character: {
           // A deliberately long synthetic name (AC-ZERO) — stresses the
@@ -707,7 +707,7 @@ function devPcEntry(state: PipState, round: number, actorName: string | null): P
     state,
     round,
     heroName: "Coralino di Sanvaldo",
-    characterId: "team-catalion-bard",
+    characterId: "team-bard",
     actorName,
   };
 }
@@ -757,7 +757,7 @@ export function makeDevPip(mode: DevPipMode | null): PipModel | null {
             state: "actor-turn",
             round: 7,
             heroName: "Bren Ironbeard",
-            characterId: "team-mandorlino-paladin",
+            characterId: "team-paladin",
             actorName: "Gorvek",
           },
         ],
@@ -812,7 +812,7 @@ export function makeTurnFlickerSteps(): TurnFlickerStep[] {
     epoch: 1,
     status: "active",
     combatants: [
-      { kind: "pc", id: myId, memberUid: "mock-uid", characterId: "team-catalion-bard" },
+      { kind: "pc", id: myId, memberUid: "mock-uid", characterId: "team-bard" },
       {
         kind: "monster",
         id: "monster-1",
@@ -837,7 +837,7 @@ export function makeTurnFlickerSteps(): TurnFlickerStep[] {
     encounter,
     view,
     myId,
-    characterId: "team-catalion-bard",
+    characterId: "team-bard",
     gathering: false,
     isMyTurn: true,
     initiativeBonus: 3,
@@ -889,9 +889,9 @@ const DEV_NEEDS_ROLL_BONUS = 3;
  * BACKS the loud RED needs-roll pip's inline {@link "@/features/campaigns/init-vital".InitVital}
  * roller (the ONE pip state that reads the live status — every other state navigates and needs
  * none) AND, for the turn-phase modes, drives the COCKPIT TURN BAND when the dev hero
- * (`team-catalion-bard`) is open — so the solo↔encounter band precedence (gathering / your-turn
+ * (`team-bard`) is open — so the solo↔encounter band precedence (gathering / your-turn
  * / not-your-turn) is shootable + e2e-drivable with NO live combat-state plumbing. All modes
- * name `team-catalion-bard` as the PC, so opening a DIFFERENT hero reads pure solo (the
+ * name `team-bard` as the PC, so opening a DIFFERENT hero reads pure solo (the
  * character-scoping carve-out). Non-`null` for the four turn/phase modes; `null` for the PC-less
  * `"dm"` and the `"multi"` chooser (their sheets aren't this fight's PC). Tree-shaken from
  * production. Rows carry a named monster so a not-your-turn actor cue resolves.
@@ -905,7 +905,7 @@ export function makeDevGlobalCombat(mode: DevPipMode | null): GlobalCombat | nul
   // `d20-dev-attached` puts the mock hero (`mock-1`, Lyra) in the fight, so the Play
   // screen's right column (Iniziativa) can be shot on the default dev sheet.
   const attached = window.localStorage.getItem("d20-dev-attached") === "1";
-  const characterId = attached ? "mock-1" : "team-catalion-bard";
+  const characterId = attached ? "mock-1" : "team-bard";
   const pcName = attached ? "Lyra Voss" : "Coralino di Sanvaldo";
   const currentId = gathering ? null : mode === "yourturn" ? myId : "monster-1";
   const round = gathering ? 1 : 3;
@@ -1027,7 +1027,7 @@ function pipScenarioCampaign(id: keyof typeof DEV_PIP_EPOCHS, name: string): Cam
       // untranslated Italian-locale text via `campaignHub.narratedBy`).
       "mock-uid": {
         displayName: "Rin",
-        characterId: "team-catalion-bard",
+        characterId: "team-bard",
         role: "player",
         character: {
           name: assertNonEmptyString("Coralino di Sanvaldo"),
@@ -1053,7 +1053,7 @@ function pipScenarioCampaign(id: keyof typeof DEV_PIP_EPOCHS, name: string): Cam
           kind: "pc",
           id: "pc-mock-uid",
           memberUid: "mock-uid",
-          characterId: "team-catalion-bard",
+          characterId: "team-bard",
         },
       ],
     },
@@ -1129,7 +1129,7 @@ function devTableMembers(): CampaignDoc["memberDetails"] {
   return {
     "member-ila": {
       displayName: "Ilaria",
-      characterId: "team-santaera-barbarian",
+      characterId: "team-barbarian",
       role: "player",
       character: {
         name: assertNonEmptyString("Santaera"),
@@ -1142,7 +1142,7 @@ function devTableMembers(): CampaignDoc["memberDetails"] {
     },
     "member-lu": {
       displayName: "Ludovica",
-      characterId: "team-chiaviddu-rogue",
+      characterId: "team-rogue",
       role: "player",
       character: {
         name: assertNonEmptyString("Chiaviddu"),
@@ -1193,15 +1193,15 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
     characterId,
   });
   const combatants = [
-    pc("member-ila", "team-santaera-barbarian"),
+    pc("member-ila", "team-barbarian"),
     raider(1, 10),
     raider(2, 10),
     raider(3, 4),
-    pc("member-mara", "team-catalion-bard"),
-    pc("member-lu", "team-chiaviddu-rogue"),
+    pc("member-mara", "team-bard"),
+    pc("member-lu", "team-rogue"),
     hound(1),
     hound(2),
-    pc("member-bren", "team-mandorlino-paladin"),
+    pc("member-bren", "team-paladin"),
     {
       kind: "monster" as const,
       id: "monster-6",
@@ -1268,7 +1268,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         kind: "pc",
         id: "pc-member-mara",
         memberUid: "member-mara",
-        characterId: mode === "reflexes" ? "scn-thief-reflexes" : "team-catalion-bard",
+        characterId: mode === "reflexes" ? "scn-thief-reflexes" : "team-bard",
       },
       {
         kind: "monster",
@@ -1320,7 +1320,7 @@ function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
         kind: "pc",
         id: "pc-member-bren",
         memberUid: "member-bren",
-        characterId: "team-mandorlino-paladin",
+        characterId: "team-paladin",
       },
     ],
     // The Combat-Chronicle feed (begun demo only) — a populated feed so the DM's live

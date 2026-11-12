@@ -12,6 +12,7 @@
  */
 import { expect, type Browser, type Page } from "@playwright/test";
 import {
+  BARD_FIRST,
   expectNoCrash,
   PLAYER_BARD,
   reseedHero,
@@ -30,8 +31,8 @@ const errors: string[][] = [];
  * on what the new-UI run did before it: `--project=classic` passes alone.
  */
 function reseedHeroes(): void {
-  reseedHero(SANDBOX_USERS.catalion);
-  reseedHero(SANDBOX_USERS.mandorlino);
+  reseedHero(SANDBOX_USERS.bard);
+  reseedHero(SANDBOX_USERS.paladin);
 }
 
 async function seat(browser: Browser, email?: string): Promise<Page> {
@@ -77,7 +78,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
   test.setTimeout(420_000);
   reseedHeroes();
   const dm = await seat(browser);
-  const bard = await seat(browser, SANDBOX_USERS.catalion.email);
+  const bard = await seat(browser, SANDBOX_USERS.bard.email);
 
   await test.step("the DM starts an encounter and rolls each hero", async () => {
     await openLiveTab(dm);
@@ -91,7 +92,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     await expect(dm.getByRole("button", { name: "Next turn" })).toBeVisible();
   });
 
-  await test.step("the DM deals 3 damage to Catalion from their own device", async () => {
+  await test.step("the DM deals 3 damage to Bard from their own device", async () => {
     const before = await currentHp(dm, PLAYER_BARD);
     await hpChip(dm, PLAYER_BARD).click();
     const dialog = dm.getByRole("dialog", { name: "Hit Points" });
@@ -105,10 +106,10 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
       .toBe(before - 3);
   });
 
-  await test.step("the DM knocks Catalion Prone", async () => {
+  await test.step("the DM knocks Bard Prone", async () => {
     const card = dm.locator(`li[data-combatant-id="pc-${PLAYER_BARD}"]`);
     await card
-      .getByRole("button", { name: /^Catalion/ })
+      .getByRole("button", { name: new RegExp(`^${BARD_FIRST}`) })
       .first()
       .click();
     await card.locator(".co-add").first().click();
@@ -122,8 +123,8 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
       .toBeVisible();
   });
 
-  await test.step("the turns move; Catalion ends a turn from the classic sheet", async () => {
-    await bard.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+  await test.step("the turns move; Bard ends a turn from the classic sheet", async () => {
+    await bard.goto(`/characters/${SANDBOX_USERS.bard.characterId}`);
     // Advance one turn at a time, and only once the last move has reached the player's
     // sheet: the round pip says "Your turn" on the player's own turn, so the loop reads it (never the
     // turn panel, which settles a moment after the pip) before pressing Next again.
@@ -140,7 +141,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
         .not.toBe(shown);
     }
     const endTurn = bard.getByRole("button", { name: "End Turn" });
-    await expect(endTurn, "Catalion's turn reaches the sheet").toBeEnabled({
+    await expect(endTurn, "Bard's turn reaches the sheet").toBeEnabled({
       timeout: 15_000,
     });
     await endTurn.click();
@@ -152,8 +153,8 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     await expect(dm.getByRole("button", { name: "Run encounter" })).toBeVisible();
   });
 
-  await test.step("Catalion takes a Long Rest on the classic sheet", async () => {
-    await bard.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+  await test.step("Bard takes a Long Rest on the classic sheet", async () => {
+    await bard.goto(`/characters/${SANDBOX_USERS.bard.characterId}`);
     await bard.getByRole("button", { name: "Rest", exact: true }).click();
     const dialog = bard.getByRole("dialog", { name: "Rest" });
     await dialog.getByRole("button", { name: /^Long Rest/ }).click();
@@ -162,10 +163,10 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     await expectNoCrash(bard);
   });
 
-  await test.step("Mandorlino levels up in the classic wizard", async () => {
-    const paladin = await seat(browser, SANDBOX_USERS.mandorlino.email);
+  await test.step("Paladin levels up in the classic wizard", async () => {
+    const paladin = await seat(browser, SANDBOX_USERS.paladin.email);
     await paladin.emulateMedia({ reducedMotion: "reduce" });
-    await paladin.goto(`/characters/${SANDBOX_USERS.mandorlino.characterId}`);
+    await paladin.goto(`/characters/${SANDBOX_USERS.paladin.characterId}`);
     await paladin.getByRole("button", { name: /^Level up to level/ }).click();
     await expect(paladin).toHaveURL(/\/level-up$/);
     const next = paladin.locator(".wiz-pager-btn.next");
