@@ -226,6 +226,18 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     expect(saveAloneOnTheLine(action("spell-magic-missile"), [])).toBeNull();
   });
 
+  it("a spell that doesn't resolve on its cast asks no save on its row (Detect Thoughts, Flaming Sphere)", () => {
+    // Detect Thoughts' save comes on a later «probe deeper»; Flaming Sphere's when
+    // the sphere rams or a creature ends its turn beside it.
+    const all = resolveActions(doc, "spellbook").map((row) => localizeAction(row, "en"));
+    for (const id of ["spell-detect-thoughts", "spell-flaming-sphere"]) {
+      const cast = all.find((a) => a.id === id);
+      if (!cast) throw new Error(`no ${id}`);
+      expect(savesOnTheLine(cast, [FOE], ME), id).toEqual([]);
+      expect(saveAloneOnTheLine(cast, []), id).toBeNull();
+    }
+  });
+
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
     expect(damageTrayPlan(action("spell-mage-armor"), [ME], ME)).toBeNull();
     expect(damageTrayPlan(action("spell-fireball"), [], ME)).toBeNull();

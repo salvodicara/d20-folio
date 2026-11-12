@@ -16,6 +16,7 @@ import {
   riderConditionSave,
   riderConditionSource,
   combatResolutionSpec,
+  shouldResolveCombatAction,
   type SaveDamageOutcome,
 } from "@/lib/combat-resolution";
 import type { DamageDefenses, DamageInstance } from "@/lib/damage-intake";
@@ -338,6 +339,9 @@ export function savesOnTheLine(
 ): string[] {
   const others = targets.filter((id) => id !== selfId);
   if (others.length === 0) return [];
+  // A spell that doesn't resolve on its cast (Detect Thoughts' later probe, Flaming
+  // Sphere's later ram) asks nothing on the cast's row.
+  if (!shouldResolveCombatAction(action)) return [];
   if (combatResolutionSpec(action).kind !== "save") return [];
   if (!action.summary.saveAbility && action.summary.saveDC === undefined) return [];
   return damageTrayPlan(action, targets, selfId) ? [] : others;
@@ -355,6 +359,7 @@ export function saveAloneOnTheLine(
   targets: ReadonlyArray<string>
 ): { damage: boolean } | null {
   if (targets.length > 0) return null;
+  if (!shouldResolveCombatAction(action)) return null;
   const spec = combatResolutionSpec(action);
   if (spec.kind !== "save") return null;
   if (!action.summary.saveAbility && action.summary.saveDC === undefined) return null;
