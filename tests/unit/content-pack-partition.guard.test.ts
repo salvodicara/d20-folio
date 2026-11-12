@@ -22,93 +22,13 @@
 import { describe, expect, it } from "vitest";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
+// The audited PI lexicon, shared with the PR and commit text scan.
+import { PI_TERMS } from "../../scripts/private-text";
 
 const REPO_ROOT = resolve(__dirname, "../..");
 const I18N_ROOT = join(REPO_ROOT, "src/i18n");
 const SRC_ROOT = join(REPO_ROOT, "src");
 const DATA_ROOT = join(REPO_ROOT, "src/data");
-
-/**
- * The audited PI lexicon (Phase-0 licensing audit): terms absent from SRD
- * 5.2.1 whose presence marks non-licensed content. Multi-word phrases match
- * as written; single tokens match word-bounded.
- */
-const PI_TERMS = [
-  "slaad",
-  "beholder",
-  "githyanki",
-  "githzerai",
-  "kuo-toa",
-  "mind flayer",
-  "illithid",
-  "umber hulk",
-  "displacer beast",
-  "carrion crawler",
-  "banderhobb",
-  "meazel",
-  "quickling",
-  "faerun",
-  "faerûn",
-  "waterdeep",
-  "baldur",
-  "strahd",
-  "ravenloft",
-  "barovia",
-  "greyhawk",
-  "forgotten realms",
-  "sword coast",
-  "phandelver",
-  "phandalin",
-  "sunless citadel",
-  "eberron",
-  "dragonlance",
-  "krynn",
-  "exandria",
-  "wildemount",
-  "theros",
-  "ravnica",
-  "red wizard",
-  "menzoberranzan",
-  "drizzt",
-  "mordenkainen",
-  "tasha",
-  "bigby",
-  "otiluke",
-  "leomund",
-  "melf",
-  "evard",
-  "nystul",
-  "tenser",
-  "drawmij",
-  "elminster",
-  "simbul",
-  "laeral",
-  "jallarzi",
-  "hadar",
-  "silverquill",
-  "witchlight",
-  "strixhaven",
-  "radiant citadel",
-  "netheril",
-  "halruaa",
-  "candlekeep",
-  "shadar-kai",
-  "dragonmark",
-  "siberys",
-  "aasimar",
-  "warforged",
-  "kalashtar",
-  "khoravar",
-  "zhentarim",
-  "battle master",
-  "deck of many things",
-  "monster manual",
-  "player['’]s handbook",
-  "dungeon master['’]s guide",
-  "manuale dei mostri",
-  "manuale del giocatore",
-  "guida del dungeon master",
-] as const;
 
 /** Any PI term at all: a cheap first pass before the line-by-line one. */
 const PI_ANY = new RegExp(
@@ -342,7 +262,9 @@ describe("content-pack partition — public-side licensing invariants", () => {
       if (!existsSync(dir)) continue;
       for (const file of walk(dir, CODE_EXTS)) {
         const rel = file.slice(REPO_ROOT.length + 1);
+        // The lexicon itself: this guard and its home in the PR and commit text scan.
         if (rel === "tests/unit/content-pack-partition.guard.test.ts") continue;
+        if (rel === "scripts/private-text.ts") continue;
         const text = readFileSync(file, "utf8");
         // One pass over the whole file first: only a file with a hit is read by line.
         if (!PI_ANY.test(text)) continue;
