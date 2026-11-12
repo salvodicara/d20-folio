@@ -45,6 +45,9 @@ export type LogSlot = ActionType;
  *  rolled it; the app never does). A critical hit doubles the damage dice. */
 export type AttackOutcome = "hit" | "miss" | "critical";
 
+/** Each target's save against a use, as the damage tray declared it. */
+export type SaveResults = Record<string, "saved" | "failed">;
+
 /**
  * One structured combat-log event. Each variant carries ONLY ids/tokens + numbers
  * (and the documented free-text action/spell labels) — never a pre-localized
@@ -73,6 +76,12 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result, when the damage tray said one for every target. */
       outcome?: AttackOutcome;
+      /** Each target's save, when the damage tray said it (Faerie Fire: Goblin saved,
+       *  Orc failed). An older reader ignores it. */
+      saves?: SaveResults;
+      /** Every target saved and the use left nothing on any of them (unlike a save for
+       *  half). */
+      noEffect?: true;
       /** The check entered with the use (Search, Study, Influence): the skill id, the
        *  total and the DC when one was set. An older reader ignores it. */
       check?: { skill: string; total: number; dc?: number };
@@ -103,6 +112,9 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result (see `action-use`). */
       outcome?: AttackOutcome;
+      /** The targets' saves (see `action-use`). */
+      saves?: SaveResults;
+      noEffect?: true;
       /** The Reaction released a readied spell. */
       released?: true;
     }

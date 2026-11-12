@@ -16,6 +16,8 @@
 
 import { create } from "zustand";
 import { setEncounterRoundSource } from "@/stores/characterStore";
+
+import { useCombatStatusStore } from "./combat-status-store";
 import type { EncounterView } from "@/features/campaigns/encounter-view";
 import type { ViewerEncounter } from "@/lib/play/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
@@ -207,30 +209,9 @@ export function shouldToastTurnStart(
   return next !== null && next !== prev;
 }
 
-interface CombatStatusStore {
-  status: GlobalCombat | null;
-  pip: PipModel | null;
-  /** The player's own End-Turn hand-off that is still in flight (or `null`). Set by the
-   *  sheet's End Turn; read by the producer's reconcile so a lagging listener can't
-   *  regress the optimistic advance. See {@link PendingTurn}. */
-  pendingTurn: PendingTurn | null;
-  set: (status: GlobalCombat | null, pip: PipModel | null) => void;
-  setPendingTurn: (pending: PendingTurn) => void;
-  clearPendingTurn: () => void;
-}
-
-/** The lifted combat status. The lazy {@link GlobalCombatMount} is the sole writer of
- *  `status`/`pip`; the pip + sheet region read it through {@link useGlobalCombat} /
- *  {@link usePipCombat}. `pendingTurn` is written by the sheet's End Turn and cleared by
- *  the producer once the advance lands. */
-export const useCombatStatusStore = create<CombatStatusStore>((set) => ({
-  status: null,
-  pip: null,
-  pendingTurn: null,
-  set: (status, pip) => set({ status, pip }),
-  setPendingTurn: (pending) => set({ pendingTurn: pending }),
-  clearPendingTurn: () => set({ pendingTurn: null }),
-}));
+// The store lives in its own light module, so the new UI's frame (the fight pip) reads
+// it without loading this one and, through the character store below, the engine.
+export { useCombatStatusStore } from "./combat-status-store";
 
 /**
  * The round a character's sheet is in: the encounter's round when that character is
