@@ -1325,13 +1325,13 @@
     "gist": "Velocità di Scalata pari alla tua Velocità; salti usando Destrezza invece di Forza"
   },
   "rogue-thief-supreme-sneak": {
-    "description": "Ottieni l'opzione di Colpo Astuto Attacco Furtivo (Costo: 1d6). Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te se concludi il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
+    "description": "Ottieni l'opzione di Colpo Astuto Attacco Nascosto (Costo: 1d6). Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te se concludi il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
     "name": "Furtività Suprema",
-    "gist": "Colpo Astuto Attacco Furtivo (1d6): attaccare non termina Invisibile se finisci al coperto"
+    "gist": "Attacco Nascosto (1d6): attaccare non termina Invisibile se finisci al coperto"
   },
   "rogue-thief-supreme-sneak.grants.stealth-attack": {
     "description": "Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te, a patto che tu concluda il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
-    "name": "Attacco Furtivo"
+    "name": "Attacco Nascosto"
   },
   "rogue-thief-use-magic-device": {
     "description": "Sintonia: Puoi sintonizzarti con un massimo di quattro oggetti magici contemporaneamente. Cariche: Ogni volta che usi una proprietà di un oggetto magico che consuma cariche, tira 1d6; con un 6 usi la proprietà senza consumare le cariche. Pergamene: Puoi usare qualsiasi Pergamena Magica, usando Intelligenza come caratteristica da incantatore; lanci in modo affidabile trucchetti e incantesimi di 1° livello, mentre una pergamena di livello superiore richiede una prova di Intelligenza (Arcano) (CD 10 + il livello dell'incantesimo).",

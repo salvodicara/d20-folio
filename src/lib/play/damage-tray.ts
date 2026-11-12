@@ -22,7 +22,7 @@ import type { DamageDefenses, DamageInstance } from "@/lib/damage-intake";
 import { compileCombatOutcomeReceipts } from "@/lib/combat-outcomes";
 import { castFollowUps } from "@/lib/play/cast-follow-ups";
 import type { ResolvedAction } from "@/lib/smart-tracker";
-import type { AttackOutcome } from "@/types/combat-log";
+import type { AttackOutcome, SaveResults } from "@/types/combat-log";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { DamageType } from "@/types/damage";
 import type {
@@ -821,6 +821,21 @@ export function sharedAttackOutcome(
 ): AttackOutcome | undefined {
   const first = rows[0]?.attack;
   return first && rows.every((row) => row.attack === first) ? first : undefined;
+}
+
+/** The save each target made, for the use's own log line: a use whose targets save
+ *  against it (not an attack, whose rows' «saved» is a rider's). A willing target makes
+ *  no save and is left out; none left, nothing to say. */
+export function traySaveResults(
+  plan: Pick<DamageTrayPlan, "save" | "attack">,
+  rows: ReadonlyArray<Pick<TrayRow, "targetId" | "saved" | "willing">>
+): SaveResults | undefined {
+  if (!plan.save || plan.attack) return undefined;
+  const results: SaveResults = {};
+  for (const row of rows) {
+    if (!row.willing) results[row.targetId] = row.saved ? "saved" : "failed";
+  }
+  return Object.keys(results).length > 0 ? results : undefined;
 }
 
 /** The rows' declared results as outcome receipts of this use's occurrence. */

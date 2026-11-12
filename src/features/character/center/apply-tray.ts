@@ -21,6 +21,7 @@ import { revivalHitPoints } from "@/lib/play/spell-outcomes";
 import {
   rowConditions,
   sharedAttackOutcome,
+  traySaveResults,
   trayOutcomeReceipts,
   type AttackOutcome,
   type TrayEffect,
@@ -30,7 +31,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
-import type { CombatEvent } from "@/types/combat-log";
+import type { CombatEvent, SaveResults } from "@/types/combat-log";
 import type {
   ActiveCombatEffect,
   CombatantRef,
@@ -85,9 +86,12 @@ interface AppliedRow {
   parts?: ReadonlyArray<DamageInstance>;
 }
 
-/** Write the attack's one shared result onto the use's own log line; the returned
- *  undo puts the line back as it was. */
-function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => void {
+/** Write what the tray declared (the attack's one shared result, the targets' saves)
+ *  onto the use's own log line; the returned undo puts the line back as it was. */
+function stampOutcome(
+  castLogId: string | null,
+  declared: { outcome?: AttackOutcome; saves?: SaveResults; noEffect?: true }
+): () => void {
   const store = useCharacterStore.getState();
   const entry = store.character?.session.logEntries.find((e) => e.id === castLogId);
   if (
@@ -95,7 +99,7 @@ function stampOutcome(castLogId: string | null, outcome: AttackOutcome): () => v
     (entry.event.kind !== "action-use" && entry.event.kind !== "reaction-use")
   )
     return () => {};
-  return store.amendLogEntry(entry.id, { ...entry.event, outcome }) ?? (() => {});
+  return store.amendLogEntry(entry.id, { ...entry.event, ...declared }) ?? (() => {});
 }
 
 let campaignIoModule: Promise<typeof import("@/features/campaigns/campaign-io")> | null =
@@ -291,13 +295,26 @@ export function applyTray(
   // Hit / Miss / Critical: the use's line says the shared result, and the turn keeps
   // one receipt per target (a miss applies nothing, yet it is still recorded).
   const shared = plan.attack ? sharedAttackOutcome(rows) : undefined;
+  // A save spell: the line says each target's save, even when nobody failed and the
+  // use leaves nothing (Faerie Fire, all saved: the slot is still spent).
+  const saves = traySaveResults(plan, rows);
   const receipts =
     plan.attack && offer.occurrenceId
       ? trayOutcomeReceipts(offer.occurrenceId, offer.actionId, rows)
       : [];
   // The effects each attack spends (Guiding Bolt's "next attack roll"), hit or miss.
   const consumed = consumedByAttacks(targets, rows);
-  const declares = shared !== undefined || receipts.length > 0 || consumed.length > 0;
+  const noEffect =
+    saves !== undefined &&
+    applied.length === 0 &&
+    killed.length === 0 &&
+    revived.length === 0 &&
+    Object.values(saves).every((result) => result === "saved");
+  const declares =
+    shared !== undefined ||
+    saves !== undefined ||
+    receipts.length > 0 ||
+    consumed.length > 0;
   if (applied.length === 0 && killed.length === 0 && revived.length === 0 && !declares)
     return;
 
@@ -321,7 +338,14 @@ export function applyTray(
         if (store.readonly || !store.character) return null;
         const before = logIds();
         const reversals: Array<() => void> = [];
-        if (shared) reversals.push(stampOutcome(offer.castLogId, shared));
+        if (shared || saves)
+          reversals.push(
+            stampOutcome(offer.castLogId, {
+              ...(shared ? { outcome: shared } : {}),
+              ...(saves ? { saves } : {}),
+              ...(noEffect ? { noEffect: true as const } : {}),
+            })
+          );
         const receiptIds = useCombatStore.getState().recordOutcomes(receipts);
         reversals.push(() => useCombatStore.getState().withdrawOutcomes(receiptIds));
         for (const { target, amount, conditions, outcome, knockOut } of local) {
