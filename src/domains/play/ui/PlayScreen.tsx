@@ -48,6 +48,7 @@ import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import {
   Button,
@@ -100,6 +101,9 @@ export function PlayScreen() {
   const campaign = useAttachedCampaign(characterId ?? "");
   const openMenu = useShellMenu();
   const fight = useSheetCombat();
+  // A fight, the table's or a solo one (started, or past round 1): no rest in it.
+  const soloFight = useCombatStore((s) => s.fightStarted || s.round > 1);
+  const inFight = !!fight || soloFight;
   // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
   const [section, setSection] = useState<Section>("actions");
   const [sectionsOpen, setSectionsOpen] = useState(false);
@@ -144,6 +148,8 @@ export function PlayScreen() {
       <Button
         icon="g-rest-short"
         aria-haspopup="dialog"
+        disabled={inFight}
+        title={inFight ? t("play.rest.inFight") : undefined}
         onClick={() => setResting("short")}
       >
         {t("play.rest.short")}
@@ -151,12 +157,14 @@ export function PlayScreen() {
       <Button
         icon="g-rest-long"
         aria-haspopup="dialog"
+        disabled={inFight}
+        title={inFight ? t("play.rest.inFight") : undefined}
         onClick={() => setResting("long")}
       >
         {t("play.rest.long")}
       </Button>
       {/* In a fight the rounds keep the time (prototype: exploration only). */}
-      {!fight && (
+      {!inFight && (
         <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
           {t("play.time.title")}
         </Button>

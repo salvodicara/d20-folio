@@ -112,14 +112,30 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
   const pick = (id: string) =>
     asksSource(id) && view.sources.length > 0 ? setPending(id) : add(id);
   const name = (id: string) => localizeSrd("condition", id, "name", locale);
+  const total = view.count + (doc.session.burning ? 1 : 0);
+  const single =
+    total !== 1
+      ? null
+      : doc.session.burning
+        ? t("play.fire.name")
+        : view.rows.length === 1
+          ? (view.rows[0]?.name ?? null)
+          : null;
   return (
     <div className="f-condwrap" ref={ref}>
-      <Chip kind="cond" pressed={open} onClick={() => setOpen((o) => !o)}>
-        {`⚠ ${t("combat.effectReview.conditions")}`}
-        {/* burning counts as one more state on the character */}
-        {view.count + (doc.session.burning ? 1 : 0) > 0 && (
-          <span className="f-chip-n">{view.count + (doc.session.burning ? 1 : 0)}</span>
-        )}
+      <Chip
+        kind="cond"
+        pressed={open}
+        ariaLabel={
+          single ? `${t("combat.effectReview.conditions")}: ${single}` : undefined
+        }
+        onClick={() => setOpen((o) => !o)}
+      >
+        {/* one state is named on the chip (D&D Beyond's conditions bar): the player sees
+            «Spaventato» or «In fiamme» without opening anything; more show their count.
+            Burning counts as one more state on the character. */}
+        {`⚠ ${single ?? t("combat.effectReview.conditions")}`}
+        {!single && total > 0 && <span className="f-chip-n">{total}</span>}
       </Chip>
       {open && (
         <div
