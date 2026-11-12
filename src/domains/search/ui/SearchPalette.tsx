@@ -165,6 +165,10 @@ export default function SearchPalette({
           {index && query.trim() !== "" && view.flat.length === 0 && (
             <p className="f-quiet">{t("palette.empty")}</p>
           )}
+          {/* nothing typed and nothing opened yet: say what the search finds */}
+          {query.trim() === "" && view.flat.length === 0 && (
+            <p className="f-quiet">{t("palette.description")}</p>
+          )}
           {view.groups.map((group) => (
             <div key={group.kind} role="group" aria-label={t(GROUP_KEY[group.kind])}>
               <p className="f-help f-pal-gh">{t(GROUP_KEY[group.kind])}</p>

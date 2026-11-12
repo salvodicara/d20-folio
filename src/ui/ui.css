@@ -1310,6 +1310,27 @@
   color: var(--muted);
   font: 600 var(--fs-xs) / 20px var(--font-text);
 }
+/* ⌘K holds its height while the hits change (no jumping sheet); the field stays on top
+   while the hits scroll under it; on a phone the search is a full-height sheet */
+.fui dialog.f-dlg:has(.f-pal) {
+  height: min(640px, calc(100dvh - 32px));
+}
+.fui .f-srch.f-pal-field {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
+  background: var(--sunk);
+}
+@media (max-width: 640px) {
+  .fui dialog.f-dlg:has(.f-pal) {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .fui .f-srch.f-pal-field {
+    top: -16px;
+  }
+}
 /* ⌘K: the field, then the hits under a heading per kind */
 .fui .f-pal {
   display: grid;
@@ -1341,9 +1362,13 @@
   text-align: left;
   cursor: pointer;
 }
-.fui .f-pal-row[aria-selected="true"],
 .fui .f-pal-row:hover {
   background: var(--hover);
+}
+/* the row the arrows are on: unmistakable, as a list's focused row (gold edge) */
+.fui .f-pal-row[aria-selected="true"] {
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--gold-hi);
 }
 .fui .f-pal-row[aria-selected="true"] .f-row-t {
   color: var(--white);
