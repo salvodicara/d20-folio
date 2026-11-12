@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# The content pack's pre-commit, kept in the app repo because it uses the app's
+# Prettier and config (the pack repo has no toolchain of its own). The app's
+# bootstrap points the pack repo here: git config core.hooksPath <app>/scripts/pack-hooks.
+# Same rules as the app's hook: a staged changeset, and the staged files formatted.
+# scripts/pack-pr-check.sh applies the same two rules to a whole pack PR before merge,
+# so a commit made without this hook is still caught. NEVER use --no-verify.
+set -euo pipefail
+
+app="$(cd "$(dirname "$0")/../.." && pwd -P)"
+echo "==> Pack pre-commit: changeset + format (app at $app)..."
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+if ! grep -qE '^\.changeset/[^/]+\.md$' <<<"$staged"; then
+  echo "ERROR: no changeset is staged (an empty '---\\n---' one is fine for data-only work)."
+  exit 1
+fi
+
+files=()
+while IFS= read -r f; do
+  case "$f" in *.ts | *.tsx | *.json | *.md) files+=("$f") ;; esac
+done <<<"$staged"
+if [ "${#files[@]}" -gt 0 ]; then
+  "$app/node_modules/.bin/prettier" --config "$app/.prettierrc" --check "${files[@]}"
+fi
+echo "==> Pack pre-commit OK."
