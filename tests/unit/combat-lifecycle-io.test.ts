@@ -8,10 +8,13 @@ const store = new Map<string, Record<string, unknown>>();
 const advance = vi.fn();
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
-// The session log, in memory (the lines a move records go here).
+// The session log, in memory: a test that reads lines passes its own recorder on
+// `sessionLog`; a move's default recorder writes to a separate log, so a roll made only
+// to set up a fight never lands in the session a test reads.
 const sessionLog = createMemorySessionLogStore();
+const backgroundLog = createMemorySessionLogStore();
 vi.mock("@/features/campaigns/session-log-source", () => ({
-  sessionLogStoreFor: () => sessionLog,
+  sessionLogStoreFor: () => backgroundLog,
 }));
 vi.mock("firebase/firestore", () => ({
   doc: (_db: unknown, ...path: string[]) => ({ path: path.join("/") }),
@@ -166,6 +169,40 @@ describe("a pass", () => {
     expect(
       await passCombatTurn("camp", { uid: "ben", isDm: false, expectedCurrentId: "x" })
     ).toBeNull();
+  });
+});
+
+describe("a player's own initiative roll", () => {
+  const ownLog = createMemorySessionLogStore();
+  it("writes its report line, the total with the bonus; the undo takes it back", async () => {
+    const recorder = createSessionRecorder({
+      store: ownLog,
+      uid: "ana",
+      now: () => new Date(2026, 10, 3, 21),
+    });
+    const undo = await rollIntoCombat(
+      "camp",
+      { uid: "ana", roll: 13, bonuses },
+      recorder
+    );
+    const lines = () =>
+      foldSession(ownLog.items("2026-11-03"), { dmUid: "dm" }).map((e) => e.event);
+    expect(lines()).toEqual([
+      { kind: "initiative", actor: "pc-ana", roll: 13, total: 15 },
+    ]);
+    expect(await undo?.()).toBe(true);
+    expect(lines()).toEqual([]);
+  });
+
+  it("taking a roll back writes no line", async () => {
+    const recorder = createSessionRecorder({
+      store: ownLog,
+      uid: "ben",
+      now: () => new Date(2026, 10, 4, 21),
+    });
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses });
+    await rollIntoCombat("camp", { uid: "ben", roll: null, bonuses }, recorder);
+    expect(ownLog.items("2026-11-04")).toEqual([]);
   });
 });
 

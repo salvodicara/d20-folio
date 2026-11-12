@@ -15,13 +15,15 @@ import { render, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { vi } from "vitest";
 
-const { setEncounterInitiative } = vi.hoisted(() => ({
+const { setEncounterInitiative, recordOwnInitiative } = vi.hoisted(() => ({
   setEncounterInitiative: vi.fn(() => Promise.resolve()),
+  recordOwnInitiative: vi.fn(() => Promise.resolve(null)),
 }));
 vi.mock("@/lib/firebase", () => ({}));
 // The encounter roll-commit seam (dynamically imported by the tracker) — mocked so the
 // unit stays CI-pure AND so the write target is assertable.
 vi.mock("@/features/campaigns/campaign-io", () => ({ setEncounterInitiative }));
+vi.mock("@/features/campaigns/combat-lifecycle-io", () => ({ recordOwnInitiative }));
 
 import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
@@ -118,6 +120,15 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     // The roll went to the campaign's encounterInit row (the SSOT)…
     await waitFor(() =>
       expect(setEncounterInitiative).toHaveBeenCalledWith("camp-1", "u1", 18)
+    );
+    // The roll is a session-report line too, the total with the viewer's bonus.
+    await waitFor(() =>
+      expect(recordOwnInitiative).toHaveBeenCalledWith(
+        "camp-1",
+        "u1",
+        18,
+        expect.any(Number)
+      )
     );
     // …and NOT to the solo combat store (no dual home — the stale solo roll survives
     // untouched, exactly as a separate fact should).
