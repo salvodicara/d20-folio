@@ -91,7 +91,7 @@ export function localizePlayEvent(
     case "action": {
       // A spell is cast; anything else is used.
       const verb = isCast(event) ? "cast" : "action";
-      const base = event.targets?.length
+      let base = event.targets?.length
         ? t(`sessionReport.${verb}On`, {
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
@@ -101,6 +101,13 @@ export function localizePlayEvent(
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
           });
+      if (event.upcast) {
+        const clause = t(
+          event.upcast.pactMagic ? "sessionReport.upcastPact" : "sessionReport.upcast",
+          { level: event.upcast.level }
+        );
+        base = `${base} ${clause}`;
+      }
       const saves = savesClause(event, t, who);
       if (saves) return `${base} — ${saves}`;
       const check = checkClause(event, t);
@@ -277,6 +284,7 @@ export function localizePlayEvent(
     case "encounter-start":
     case "encounter-end":
     case "round-start":
+    case "solo-fight":
       return null;
   }
   // A kind (or stat) written by a newer app version: a neutral line, never a blank row.

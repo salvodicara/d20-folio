@@ -7,6 +7,7 @@
  * the row then reads «Aggiunto». It sits in the damage tray under a hit, and in a fight
  * without a tray as a note under the turn strip.
  */
+import { hitIfUnanswered } from "@/features/character/center/attack-outcome-store";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -180,6 +181,8 @@ export function PlayAfterHit({
                       aria-label={`${verb}: ${row.group}: ${row.name}`}
                       onClick={() => {
                         row.apply();
+                        // adding to the hit says the attack hit (its row's result chips)
+                        hitIfUnanswered(action.id);
                         setAdded((st) => new Set(st).add(row.key));
                       }}
                     >

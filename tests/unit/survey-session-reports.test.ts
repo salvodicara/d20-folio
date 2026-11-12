@@ -216,6 +216,31 @@ describe("the session-report survey", () => {
     });
   });
 
+  it("counts the solo-fight state sheets already store, and members' solo-fight lines", () => {
+    const state = (id: string, data: Record<string, unknown>) => ({
+      path: `users/u1/characters/${id}/combat/state`,
+      data: { round: 1, initiativeRoll: null, ...data },
+    });
+    const survey = surveySessionReports([
+      state("c1", { soloFightStarted: true }),
+      state("c2", { round: 3 }),
+      state("c3", { initiativeRoll: 14 }),
+      state("c4", {}),
+      head([
+        event("ana", { kind: "solo-fight", started: true, actor: "pc-ana" }),
+        event("ana", { kind: "solo-fight", started: false, actor: "pc-ana" }),
+      ]),
+    ]);
+    expect(survey.soloFightState).toEqual({
+      sheets: 4,
+      fightStarted: 1,
+      roundPastOne: 1,
+      initiativeRolled: 1,
+    });
+    expect(survey.byKind["solo-fight"]).toBe(2);
+    expect(survey.sessions).toBe(1);
+  });
+
   it("counts a malformed line as unreadable", () => {
     expect(surveySessionReports([head([{ nope: true }])]).unreadable).toBe(1);
   });

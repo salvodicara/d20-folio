@@ -53,7 +53,7 @@
     "unproficientArmorHint": "Your class isn't proficient with this armor: Disadvantage on every Strength + Dexterity ability check, saving throw, and attack roll while wearing it, and you can't cast spells.",
     "attuned": "Attuned",
     "attune": "Attune",
-    "attuneHint": "Take a 1h Short Rest to attune (RAW 2024).",
+    "attuneHint": "Take a 1h Short Rest to attune (2024 rule).",
     "charges": "Charges",
     "useCharge": "Use 1 charge",
     "usedChargeToast": "Spent 1 charge of {{name}} ({{remaining}} left)",

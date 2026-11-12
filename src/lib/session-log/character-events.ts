@@ -30,6 +30,18 @@ function declaredResults(
   };
 }
 
+/** The slot a cast paid when it is above the spell's own level (an upcast). */
+function upcastOf(
+  event: Extract<CombatEvent, { kind: "action-use" }>
+): Pick<Extract<PlayEvent, { kind: "action" }>, "upcast"> {
+  const paid = event.paidSlot;
+  if (!paid || event.spellLevel === undefined || paid.level <= event.spellLevel)
+    return {};
+  return {
+    upcast: { level: paid.level, ...(paid.pactMagic ? { pactMagic: true } : {}) },
+  };
+}
+
 /** Sheet line → play event, with the character as actor (or target of what it took);
  *  `null` for what the session already knows (turn ends) or cannot express yet. */
 export function combatEventToPlayEvent(
@@ -46,6 +58,7 @@ export function combatEventToPlayEvent(
         ...(event.targets?.length ? { targets: event.targets } : {}),
         ...declaredResults(event),
         ...(event.amount !== undefined ? { amount: event.amount } : {}),
+        ...upcastOf(event),
         ...(event.check ? { check: event.check } : {}),
       };
     case "reaction-use":
@@ -136,6 +149,12 @@ export function combatEventToPlayEvent(
       };
     case "death-save":
       return { kind: "death-save", outcome: event.outcome, actor: me };
+    case "fight-start":
+    case "fight-end":
+      // A solo fight's bounds. In a campaign session, a signal for the inferred fight
+      // (several members' solo fights read as one); the sheet's own report reads the
+      // sheet lines themselves (`sheetSessionEntries`).
+      return { kind: "solo-fight", started: event.kind === "fight-start", actor: me };
     case "rest":
       return { kind: "rest", rest: event.restKind, actor: me };
     case "time-passes":

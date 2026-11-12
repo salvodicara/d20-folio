@@ -12,7 +12,7 @@ import {
 import { doc, setDoc, type Firestore } from "firebase/firestore";
 
 import { createSessionRecorder, foldSession } from "@/lib/session-log";
-import type { LogItem } from "@/lib/session-log";
+import type { LogItem, PlayEvent } from "@/lib/session-log";
 import { createFirestoreSessionLogStore } from "@/lib/session-log-io";
 
 let testEnv: RulesTestEnvironment;
@@ -34,9 +34,12 @@ beforeEach(async () => {
   await testEnv.clearFirestore();
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
-    for (const uid of ["dm", "ana"])
+    for (const uid of ["dm", "ana", "ben"])
       await setDoc(doc(db, "users", uid), { status: "active" });
-    await setDoc(doc(db, "campaigns", "camp1"), { dmUid: "dm", members: ["dm", "ana"] });
+    await setDoc(doc(db, "campaigns", "camp1"), {
+      dmUid: "dm",
+      members: ["dm", "ana", "ben"],
+    });
   });
 });
 
@@ -103,5 +106,31 @@ describe("session-log Firestore adapter", () => {
     expect(await store.latest()).toMatchObject({ id: "2026-10-09" });
     const [, yesterday] = await store.recent(2);
     expect(yesterday?.items.map((i) => i.type)).toEqual(["event", "hide"]);
+  });
+
+  it("two players' devices write the same fight markers: no write refused, one line each", async () => {
+    // T6: every player in a fight writes its markers (start, rounds), under the DM
+    // mirror's own ids. Both devices' appends are accepted, and the fold keeps one.
+    const day = "2026-11-24";
+    const marker = (by: string, id: string, event: PlayEvent): LogItem => ({
+      type: "event",
+      id,
+      by,
+      at: 1,
+      event,
+    });
+    const markers = (by: string) => [
+      marker(by, "enc:5:start", { kind: "encounter-start", encounterId: "5" }),
+      marker(by, "enc:5:round:1", { kind: "round-start", round: 1 }),
+    ];
+    for (const by of ["ana", "ben"]) {
+      const store = createFirestoreSessionLogStore(dbOf(by), "camp1");
+      for (const item of markers(by)) await store.append(day, item);
+    }
+    const [session] = await createFirestoreSessionLogStore(dbOf("dm"), "camp1").recent(1);
+    expect(foldSession(session?.items ?? [], { dmUid: "dm" }).map((e) => e.id)).toEqual([
+      "enc:5:start",
+      "enc:5:round:1",
+    ]);
   });
 });

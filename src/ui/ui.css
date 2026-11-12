@@ -8,6 +8,12 @@
 
 /* ---------- tokens ---------- */
 .fui {
+  /* the lit «now» light (End Turn, a dialog's confirm): app-wide, so every dialog has it */
+  --lit-hi: #6fd3f2;
+  --lit-mid: #4fb6dc;
+  --lit-deep: #0f3a4b;
+  --lit-glow: rgb(42 141 176 / 0.53);
+  --lit-glow-hi: #5fb3e6;
   /* One family, as Baldur's Gate 3 (owner's pick, 2026-11-08): Alegreya for titles and
      text, Alegreya SC for labels and panel titles, names and buttons at a lighter 500. */
   /* the prototype's tokens (css/tokens.css), face for face */
@@ -1283,6 +1289,113 @@
 .fui .f-srch input::placeholder {
   color: var(--muted);
 }
+/* the header's search opens ⌘K: the field's look, its shortcut on the right */
+.fui button.f-srch-open {
+  /* the label is never cut: the field grows past its 240 px for a longer one */
+  width: auto;
+  min-width: 240px;
+  cursor: pointer;
+  font: var(--fs-sm) var(--font-text);
+  text-align: left;
+}
+.fui button.f-srch-open:hover {
+  border-color: var(--gold-line);
+}
+.fui button.f-srch-open:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 1px;
+}
+.fui .f-srch-l {
+  flex: 1;
+  white-space: nowrap;
+}
+.fui .f-srch-k {
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  color: var(--muted);
+  font: 600 var(--fs-sm) / 20px var(--font-text);
+}
+/* ⌘K holds its height while the hits change (no jumping sheet); the field stays on top
+   while the hits scroll under it; on a phone the search is a full-height sheet */
+.fui dialog.f-dlg:has(.f-pal) {
+  height: min(640px, calc(100dvh - 32px));
+}
+.fui .f-srch.f-pal-field {
+  position: sticky;
+  top: -24px;
+  z-index: 1;
+  background: var(--sunk);
+}
+@media (max-width: 640px) {
+  .fui dialog.f-dlg:has(.f-pal) {
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .fui .f-srch.f-pal-field {
+    top: -16px;
+  }
+}
+/* a search field's clear «×» in the field's own colour, not the browser's blue */
+.fui input[type="search"]::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--muted);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 4l8 8M12 4l-8 8' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  cursor: pointer;
+}
+.fui input[type="search"]::-webkit-search-cancel-button:hover {
+  background: var(--gold-hi);
+}
+/* ⌘K: the field, then the hits under a heading per kind */
+.fui .f-pal {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-srch.f-pal-field {
+  width: 100%;
+  height: 48px;
+}
+.fui .f-pal-list {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-pal-gh {
+  margin: 0 0 4px;
+}
+.fui .f-pal-row {
+  display: grid;
+  grid-template-columns: var(--slot-size) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fui .f-pal-row:hover {
+  background: var(--hover);
+}
+/* the row the arrows are on: unmistakable, as a list's focused row (gold edge) */
+.fui .f-pal-row[aria-selected="true"] {
+  background: color-mix(in srgb, var(--gold) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--gold-hi);
+}
+.fui .f-pal-row[aria-selected="true"] .f-row-t {
+  color: var(--white);
+}
+.fui .f-pal-gist {
+  margin: 4px 0 8px calc(var(--slot-size) + 20px);
+}
 .fui .f-av,
 .fui .f-burger {
   width: 40px;
@@ -1547,7 +1660,10 @@
   border-top: 1px solid var(--line-soft);
 }
 .fui .f-prose {
-  max-width: 72ch;
+  /* about 70 characters a line, the measure of the journals we model (Foundry, World
+     Anvil): \`ch\` is a digit's width, wider than this face's average letter, so 72ch ran
+     to ~90 characters; 34em reads ~70 */
+  max-width: 34em;
   color: var(--strong);
   font-size: var(--fs-prose);
   line-height: 1.75;
@@ -1773,30 +1889,21 @@
 }
 
 /* ---------- notes ---------- */
-.fui .f-mark {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--r-sm);
-  background: var(--sunk);
+/* a note's kind: a small coloured word over its title */
+.fui .f-kind {
+  font: 700 var(--fs-xs) / 1.4 var(--font-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--muted);
-  font: 700 var(--fs-md) var(--font-title);
 }
-.fui .f-mark[data-kind="important"] {
+.fui .f-kind[data-kind="important"] {
   color: var(--hp-y);
 }
-.fui .f-mark[data-kind="person"] {
+.fui .f-kind[data-kind="person"] {
   color: var(--c-abi);
 }
-.fui .f-mark[data-kind="place"] {
+.fui .f-kind[data-kind="place"] {
   color: var(--c-cmp);
-}
-/* a plain note keeps the column, without an empty box */
-.fui .f-mark[data-kind="note"] {
-  background: transparent;
 }
 /* the loot window's coin boxes: one small field per coin, wrapping on phone */
 .fui .f-coin-inputs {
@@ -2244,6 +2351,11 @@
 .fui .f-act-why {
   color: var(--cond);
 }
+/* an attack's result chips (Hit · Miss · Critical, the damage): a line of their own
+   under the whole row, so the three results stay together beside no button */
+.fui .f-act > .encounter-feed-pick {
+  grid-column: 1 / -1;
+}
 .fui .f-row-main > .f-act-m {
   display: none;
 }
@@ -2294,11 +2406,6 @@
   --glow-ac: rgb(212 175 102 / 0.53);
   --glow-hp: rgb(70 240 74 / 0.53);
   --band-quiet: rgb(255 255 255 / 0.024);
-  --lit-hi: #6fd3f2;
-  --lit-mid: #4fb6dc;
-  --lit-deep: #0f3a4b;
-  --lit-glow: rgb(42 141 176 / 0.53);
-  --lit-glow-hi: #5fb3e6;
   --advice: #c9bba3;
   --rule-quiet: rgb(255 255 255 / 0.07);
   --row-rule: rgb(255 255 255 / 0.06);
@@ -2372,6 +2479,22 @@
   filter: brightness(0.82);
   box-shadow: inset 0 2px 6px var(--shade);
 }
+/* A dialog's confirm is the filled primary of its footer (BG3's lit confirm; the owner's
+   2026-11-10 choice of the blue BG3 button, as «Fine turno»): every dialog, through the
+   shared footer; its Cancel stays outlined. */
+.fui dialog.f-dlg .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
+  border: 2px solid var(--lit-hi);
+  background: radial-gradient(circle at 50% 35%, var(--lit-mid), var(--lit-deep) 78%);
+  box-shadow: 0 0 14px var(--lit-glow);
+  color: var(--white);
+}
+.fui
+  dialog.f-dlg
+  .f-pn-foot
+  .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover {
+  border-color: var(--lit-hi);
+  filter: brightness(1.2);
+}
 /* state chips: bold, tighter */
 .fui .f-sheet .f-chip {
   padding: 0 12px;
@@ -2418,6 +2541,10 @@
     grid-template-columns: subgrid;
     /* the table's gap, not the row's own (a subgrid's own gap pads its cells) */
     column-gap: normal;
+  }
+  /* on the table the result line starts under the name, after the icon's column */
+  .fui .f-sheet .f-act-table .f-act > .encounter-feed-pick {
+    grid-column: 2 / -1;
   }
 }
 /* the row button is a small capsule (14 px): the prototype's 92 px column, on the grid */
@@ -4148,6 +4275,14 @@
   gap: 8px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line-soft);
+}
+/* a table rule's current choice reads at a glance (a filled, gold-framed chip, as
+   D&D Beyond's selected option): among four quiet chips, the one in force is lit */
+.fui .f-rule .f-chip[aria-pressed="true"] {
+  border-color: var(--gold-line);
+  background: color-mix(in srgb, var(--gold) 18%, transparent);
+  color: var(--white);
+  font-weight: 700;
 }
 .fui .f-rule-head {
   display: flex;
