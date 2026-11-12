@@ -424,6 +424,25 @@
       "offHint": "You stand outside {{name}}'s aura; tap when you are back in it",
       "outToast": "Outside {{name}}'s aura",
       "inToast": "Back in {{name}}'s aura"
+    },
+    "fire": {
+      "name": "On fire",
+      "situations": "Situations",
+      "turnStart": "On fire: at the start of your turn you take {{dice}} fire damage (enter it in Damage and healing).",
+      "note": "{{dice}} fire damage at the start of each turn, until it goes out.",
+      "roll": "Roll on the ground (Action, then Prone)",
+      "out": "Put out from outside",
+      "rolled": "You roll on the ground: the fire goes out, you are Prone.",
+      "putOut": "The fire goes out.",
+      "caught": "You catch fire."
+    },
+    "breath": {
+      "name": "Hold breath",
+      "choking": "Choking",
+      "left_one": "{{count}} round of air left",
+      "left_other": "{{count}} rounds of air left",
+      "out": "Out of air: you gain 1 Exhaustion level at the end of each turn.",
+      "again": "Breathe again"
     }
   }
 }

@@ -424,6 +424,25 @@
       "offHint": "Sei fuori dall'aura di {{name}}; tocca quando ci rientri",
       "outToast": "Fuori dall'aura di {{name}}",
       "inToast": "Di nuovo nell'aura di {{name}}"
+    },
+    "fire": {
+      "name": "In fiamme",
+      "situations": "Situazioni",
+      "turnStart": "In fiamme: a inizio turno subisci {{dice}} danni da fuoco (inseriscili in Danni e cure).",
+      "note": "{{dice}} danni da fuoco a ogni inizio turno, finché non si spegne.",
+      "roll": "Rotola a terra (Azione, poi Prono)",
+      "out": "Spento da fuori",
+      "rolled": "Ti rotoli a terra: il fuoco si spegne, sei Prono.",
+      "putOut": "Il fuoco si spegne.",
+      "caught": "Prendi fuoco."
+    },
+    "breath": {
+      "name": "Trattieni il respiro",
+      "choking": "Soffochi",
+      "left_one": "Ancora {{count}} round d'aria",
+      "left_other": "Ancora {{count}} round d'aria",
+      "out": "Senz'aria: a ogni fine turno guadagni 1 livello di Indebolimento.",
+      "again": "Respira di nuovo"
     }
   }
 }
