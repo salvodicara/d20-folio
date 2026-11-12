@@ -16,6 +16,11 @@ import { rewriteSave, useSaveOutcomeStore } from "./save-outcome-store";
 
 type Use = Extract<CombatEvent, { kind: "action-use" }>;
 const RESULTS = ["saved", "failed"] as const;
+/** The tray's «Saved» and the shared «Failed» (one key per string). */
+const LABEL = {
+  saved: "combat.damageTray.saved",
+  failed: "combat.atZeroHpSaveFailed",
+} as const;
 
 export function SaveOutcomeChips({ actionId }: { actionId: string }) {
   const { t } = useTranslation();
@@ -41,7 +46,7 @@ export function SaveOutcomeChips({ actionId }: { actionId: string }) {
                 <LineChip
                   key={value}
                   weight="status"
-                  label={t(`combat.damageTray.${value}`)}
+                  label={t(LABEL[value])}
                   selected={current === value}
                   onClick={() =>
                     rewriteSave(
