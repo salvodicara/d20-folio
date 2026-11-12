@@ -1734,6 +1734,21 @@
 .fui .f-tl > span {
   min-width: 0;
 }
+.fui .f-tl > span:first-of-type {
+  flex: 1;
+}
+.fui .f-tl-amt {
+  flex: none;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fui .f-tl-amt[data-dir="in"] {
+  color: var(--heal);
+}
+.fui .f-tl-amt[data-dir="out"] {
+  color: var(--hp-r);
+}
 .fui .f-tl-by {
   color: var(--muted);
 }
@@ -3654,6 +3669,23 @@
 .fui .f-sheet .f-act.f-item {
   grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content 96px;
 }
+/* on a phone the five coins share one row, each its number over its coin (D&D Beyond's
+   phone currency row), so none is left alone on a second line */
+@media (max-width: 640px) {
+  .fui .f-sheet .f-coins {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .fui .f-sheet .f-coin {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .fui .f-sheet .f-coin > b {
+    font-size: var(--fs-md);
+  }
+}
 @media (max-width: 640px) {
   .fui .f-sheet .f-act.f-item {
     grid-template-columns: var(--slot-size) minmax(0, 1fr) 96px;
@@ -4661,8 +4693,8 @@
   background: var(--hover);
 }
 .fui .f-lvl-step[data-state="owed"] {
-  border-color: var(--danger-line);
-  background: color-mix(in srgb, var(--danger-bg) 60%, transparent);
+  /* a step still owed reads like the others; its mark and name carry the state */
+  color: var(--danger-text);
 }
 .fui .f-lvl-step small {
   display: block;
@@ -5354,11 +5386,9 @@
   font: 700 var(--fs-md) var(--font-title);
 }
 .fui .f-lvl-owed {
+  /* a status line, not a button: what is missing reads in its colour above the
+     Confirm it holds back (D&D Beyond's builder: «2 choices remaining» as text) */
   margin: 0;
-  padding: 8px;
-  border: 1px solid var(--danger-line);
-  border-radius: var(--r-pill);
-  background: var(--danger-bg);
   color: var(--danger-text);
   font: 700 var(--fs-md) var(--font-text);
   text-align: center;

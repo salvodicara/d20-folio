@@ -198,6 +198,56 @@ describe("feat grants that read the feat's answer", () => {
   });
 });
 
+describe("a rider's save DC set by the ability the feat increased", () => {
+  // Brew Poison's shape: «DC 8 + PB + the modifier of the ability increased by this
+  // feat». Unanswered, the DC keeps the better of the feat's choices, as before.
+  const DEX_OR_INT: Grant = {
+    type: "choice-ability-score",
+    abilities: ["DEX", "INT"],
+    amount: 1,
+    cap: 20,
+  };
+  const coated: Grant = {
+    type: "while-active",
+    activeKey: "coated",
+    grants: [
+      {
+        type: "damage-rider",
+        appliesTo: "weapon",
+        dice: "2d8",
+        damageType: "poison",
+        save: { ability: "CON", dcAbilities: ["DEX", "INT"], dcAbility: "feat" },
+      },
+    ],
+  };
+  const riderSave = (grants: ReadonlyArray<Grant>) => {
+    const outer = grants.find((g) => g.type === "while-active");
+    const rider =
+      outer?.type === "while-active"
+        ? outer.grants.find((g) => g.type === "damage-rider")
+        : undefined;
+    return rider?.type === "damage-rider" ? rider.save : undefined;
+  };
+
+  it("answered, the DC reads only the ability the feat raised", () => {
+    expect(riderSave(resolveFeatAbilityGrants([DEX_OR_INT, coated], "DEX"))).toEqual({
+      ability: "CON",
+      dcAbilities: ["DEX"],
+    });
+  });
+
+  it("unanswered, the DC keeps the better of the feat's choices", () => {
+    expect(riderSave(resolveFeatAbilityGrants([DEX_OR_INT, coated], null))).toEqual({
+      ability: "CON",
+      dcAbilities: ["DEX", "INT"],
+    });
+  });
+
+  it("the answer matters, so an older character is asked for it", () => {
+    expect(featAbilityMatters([DEX_OR_INT, coated])).toBe(true);
+  });
+});
+
 describe("featAbilityMatters", () => {
   it("only when the feat lets you choose AND something reads the choice", () => {
     expect(

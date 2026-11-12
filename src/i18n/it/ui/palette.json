@@ -21,7 +21,6 @@
     "actionNewCampaign": "Crea una campagna",
     "actionImport": "Importa un personaggio (JSON)",
     "actionReport": "Segnala un problema o un'idea",
-    "actionSignOut": "Esci",
     "hintGo": "Vai",
     "hintNav": "Naviga"
   }

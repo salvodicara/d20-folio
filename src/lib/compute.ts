@@ -1105,6 +1105,9 @@ export function buildSaveBreakdown(args: {
   exhaustion?: Exhaustion;
   pbOverride?: number | null;
   saveBonus?: number;
+  /** A party paladin's Aura of Protection inside `saveBonus`, shown as its own part
+   *  («Aura di Aldric +3») rather than in the features' bonus. */
+  aura?: { name: string; bonus: number };
 }): RawBreakdownPart[] {
   const parts: RawBreakdownPart[] = [
     abilityPart(args.ability, abilityModifier(args.abilityScore)),
@@ -1117,7 +1120,16 @@ export function buildSaveBreakdown(args: {
       )
     );
   }
-  if (args.saveBonus) parts.push(termPart("breakdown.featureBonus", args.saveBonus));
+  const featureBonus = (args.saveBonus ?? 0) - (args.aura?.bonus ?? 0);
+  if (featureBonus) parts.push(termPart("breakdown.featureBonus", featureBonus));
+  if (args.aura) {
+    parts.push(
+      locPart(
+        { ui: "play.aura.source", params: { name: args.aura.name } },
+        args.aura.bonus
+      )
+    );
+  }
   const exPenalty = exhaustionPenalty(args.exhaustion ?? 0);
   if (exPenalty !== 0) parts.push(termPart("character.exhaustion", exPenalty));
   return args.override != null ? withOverride(parts, args.override + exPenalty) : parts;

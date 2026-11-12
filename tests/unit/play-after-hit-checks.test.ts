@@ -118,6 +118,8 @@ describe("check entries", () => {
       dc: 15,
       skill: "stealth",
       bonus: bonusFor("stealth"),
+      // No Reliable Talent passed: the face counts as rolled.
+      floor: 1,
     });
   });
 
@@ -132,6 +134,7 @@ describe("check entries", () => {
       kind: "escape",
       skill: "acrobatics",
       bonus: bonusFor("acrobatics"),
+      floor: 1,
     });
   });
 });

@@ -434,6 +434,24 @@ describe("StatCard", () => {
     expect(rest).not.toHaveClass("on");
   });
 
+  it("a non-proficient save whose total differs from the modifier shows the total", () => {
+    // An ally inside a paladin's Aura of Protection: STR −1, its save +2.
+    const { container } = render(
+      <StatCard
+        label="STR"
+        modifier={-1}
+        score={8}
+        saveBonus={2}
+        saveProficient={false}
+        saveLabel="Save"
+      />
+    );
+    const rest = container.querySelector(".sc-save-rest");
+    expect(rest).toHaveTextContent("+2");
+    // Not gold: the dot and the plain number say "a bonus, not proficiency".
+    expect(rest).not.toHaveClass("on");
+  });
+
   it("progressive disclosure: the carved base discloses the save math on tap", () => {
     render(
       <StatCard

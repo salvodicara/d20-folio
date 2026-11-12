@@ -111,7 +111,8 @@ const ACTOR_DISADVANTAGE_CONDITIONS = [
   "restrained",
 ] as const;
 
-const INCAPACITATING_CONDITIONS = [
+/** The conditions that leave a creature Incapacitated (SRD 5.2.1 glossary). */
+export const INCAPACITATING_CONDITIONS = [
   "incapacitated",
   "paralyzed",
   "petrified",

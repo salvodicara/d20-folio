@@ -2,7 +2,7 @@
  * Every number explained (re-foundation phase 2): the save DC a class feature
  * forces (Stunning Strike, Breath Weapon, Cunning Strike, a Grapple or Shove) reads
  * "8 + Proficiency Bonus + the ability", the same lines the spell save DC uses.
- * A Battle Master's maneuver DC uses the better of Strength and Dexterity, and the
+ * A maneuver user's maneuver DC uses the better of Strength and Dexterity, and the
  * tap says so. The guard sweeps every level, score and PB override, so the lines
  * always sum to the DC the sheet shows.
  */

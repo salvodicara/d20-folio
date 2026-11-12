@@ -4,7 +4,7 @@
  * made of, from the same builders the spell and feature DC tips use. A DC pinned
  * by hand (a manual override, a casting source's printed DC) has no lines. The
  * guard sweeps every dev scenario and every resolved action, with each
- * concentration spell also held and each Battle Master knowing every maneuver,
+ * concentration spell also held and each maneuver user knowing every maneuver,
  * so the lines always sum to the DC shown.
  */
 
@@ -139,7 +139,7 @@ describe("action save DC breakdown", () => {
   });
 });
 
-/** A Battle Master scenario knowing every maneuver (each save-forcing one is a
+/** A maneuver-user scenario knowing every maneuver (each save-forcing one is a
  *  row with its own DC); `undefined` for any other character. */
 function knowingEveryManeuver(doc: CharacterDoc): CharacterDoc | undefined {
   const classes = doc.character.classes;
@@ -157,7 +157,7 @@ function knowingEveryManeuver(doc: CharacterDoc): CharacterDoc | undefined {
 }
 
 /** Every scenario, plus one variant per concentration spell held (its follow-up
- *  row carries its own DC) and one per Battle Master knowing every maneuver. */
+ *  row carries its own DC) and one per maneuver user knowing every maneuver. */
 function* sweep(): Generator<[string, CharacterDoc, RawResolvedAction]> {
   for (const id of Object.keys(DEV_SCENARIOS)) {
     const doc = buildDevScenario(id);
@@ -205,7 +205,7 @@ describe("action save DC guard", () => {
     expect(explained).toBeGreaterThan(30);
   });
 
-  it("every save-forcing maneuver a Battle Master knows reaches the sweep", () => {
+  it("every save-forcing maneuver a maneuver user knows reaches the sweep", () => {
     const forcing = SRD_MANEUVERS.filter((m) => m.save).map((m) => m.id);
     // Other granted actions force saves too (Open Hand Technique); only maneuvers count here.
     const maneuverIds = new Set(SRD_MANEUVERS.map((m) => m.id));

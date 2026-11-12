@@ -431,7 +431,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       {
         key: "act:sign-out",
         run: () => void signOut(),
-        label: t("palette.actionSignOut"),
+        label: t("nav.signOut"),
         icon: LogOut,
         terms: [
           "sign out",

@@ -378,6 +378,45 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
+  // Aura of Protection for allies (A′, coordinator 2026-11-12): the paladin's sheet
+  // publishes its aura on its OWN memberDetails entry by field path; no allow-list on
+  // an entry's keys, so the optional key needs no rules change.
+  it("a member MAY publish an aura on their OWN entry, never on another's", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, "campaigns", "camp1"), {
+        "memberDetails.member.aura": { bonus: 3, reachFt: 10, at: 1 },
+      })
+    );
+    await assertFails(
+      updateDoc(doc(db, "campaigns", "camp1"), {
+        "memberDetails.dm.aura": { bonus: 3, reachFt: 10, at: 1 },
+      })
+    );
+  });
+
+  it("an aura write and a DM encounter write at once both survive", async () => {
+    const member = testEnv.authenticatedContext("member").firestore();
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await Promise.all([
+      assertSucceeds(
+        updateDoc(doc(member, "campaigns", "camp1"), {
+          "memberDetails.member.aura": { bonus: 4, reachFt: 10, at: 2 },
+        })
+      ),
+      assertSucceeds(updateDoc(doc(dm, "campaigns", "camp1"), { "encounter.round": 2 })),
+    ]);
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const data = (await getDoc(doc(ctx.firestore(), "campaigns", "camp1"))).data() as {
+        memberDetails: Record<string, { aura?: { bonus: number }; displayName: string }>;
+        encounter?: { round?: number };
+      };
+      expect(data.memberDetails.member?.aura?.bonus).toBe(4);
+      expect(data.memberDetails.member?.displayName).toBe("member");
+      expect(data.encounter?.round).toBe(2);
+    });
+  });
+
   it("a member MAY attach/detach their OWN character (own-entry self-edit still allowed)", async () => {
     const db = testEnv.authenticatedContext("member").firestore();
     await assertSucceeds(

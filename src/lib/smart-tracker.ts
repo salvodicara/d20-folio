@@ -6525,9 +6525,21 @@ export function grantedActionRows(
   const pinned = new Set(session.pinnedActions);
   const activities = grantedActionActivities(grantedActions);
   const rows: RawResolvedAction[] = [];
+  // An action a trigger rule offers (moving Vow of Enmity) is its own row even when
+  // its source has a row of that economy: the offer names it.
+  const offered = new Set(
+    aggregateForCharacter(character).triggers.flatMap((rule) =>
+      rule.do.kind === "offer" ? [`${rule.sourceId}:${rule.do.actionId}`] : []
+    )
+  );
   grantedActions.forEach((granted, index) => {
     const activity = activities[index];
-    if (!activity || ownRowEconomies(granted.sourceId).has(granted.slot)) return;
+    if (!activity) return;
+    if (
+      ownRowEconomies(granted.sourceId).has(granted.slot) &&
+      !offered.has(`${granted.sourceId}:${granted.id ?? ""}`)
+    )
+      return;
     const maneuver = MANEUVER_BY_ID.get(granted.sourceId);
     const type = actionTypeOf(activity.cost) ?? granted.slot;
     const summary: RawActionSummary = {};
