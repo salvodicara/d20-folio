@@ -6183,3 +6183,41 @@
     content: none;
   }
 }
+
+/* Touch targets on a phone: at least 44 px (PRODUCT.md; Apple's HIG, WCAG 2.5.5). The
+   desktop keeps its 40 px controls; a finger gets the extra 4 px. */
+@media (max-width: 640px) {
+  .fui .f-btn,
+  .fui .f-in,
+  .fui .f-srch {
+    min-height: 44px;
+  }
+  /* a chip keeps its 40 px pill; its touch area grows 2 px above and below */
+  .fui .f-chip:is(button) {
+    position: relative;
+  }
+  .fui .f-chip:is(button)::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+  .fui .f-burger,
+  .fui .f-av,
+  .fui .f-tb-back,
+  .fui .f-close,
+  .fui .f-btn:has(> .f-ic:only-child) {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+/* the toast sits above a bottom bar, never over it («Sezioni», the level-up bar) */
+@media (max-width: 960px) {
+  .fui.f-app:has(.f-secbar) .f-toast {
+    bottom: 72px;
+  }
+}
+@media (max-width: 760px) {
+  .fui.f-app:has(.f-lvl-bar) .f-toast {
+    bottom: 88px;
+  }
+}
