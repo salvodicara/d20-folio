@@ -61,6 +61,10 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
       title={offer.actionName}
       plan={plan}
       targets={targets}
+      // What to roll at the table (a potion's 2d4+2), so no bonus is forgotten.
+      {...(plan.dice
+        ? { totalHint: t("combat.damageTray.totalHintDice", { dice: plan.dice }) }
+        : {})}
       onApply={(rows, totals) => {
         applyTray(
           offer,
