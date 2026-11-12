@@ -72,6 +72,9 @@ describe("monsterTurnModifiers", () => {
   it("nothing on the monster: a straight roll and its own Speed", () => {
     expect(monsterTurnModifiers([], "orc-1")).toEqual({
       attack: null,
+      attackModeSources: [],
+      attackDice: [],
+      saveDice: [],
       speedDeltaFt: 0,
       speedZero: false,
     });
