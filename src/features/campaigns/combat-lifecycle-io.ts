@@ -310,7 +310,7 @@ export async function reopenLastCombat(campaignId: string): Promise<CombatUndo |
 }
 
 /** A fair d20 from the platform's cryptographic randomness (rejection sampling). */
-function cryptoD20(): number {
+export function cryptoD20(): number {
   const limit = Math.floor(0x1_0000_0000 / 20) * 20;
   const buffer = new Uint32Array(1);
   for (;;) {
