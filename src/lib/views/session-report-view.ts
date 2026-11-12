@@ -214,6 +214,12 @@ export function localizePlayEvent(
           { actor: who(event.actor), count: event.count, level: event.level }
         )
       );
+    case "resource":
+      return t(`sessionReport.trackerUse.${event.spent ? "spent" : "regained"}`, {
+        actor: who(event.actor),
+        count: event.count,
+        resource: names.source?.(event.resource) ?? event.resource,
+      });
     case "inspiration":
       return withSource(
         t(`sessionReport.inspiration.${event.gained ? "gained" : "spent"}`, {

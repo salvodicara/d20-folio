@@ -200,9 +200,17 @@ export function combatEventToPlayEvent(
         slot: "action",
         outcome: event.passed ? "saved" : "failed",
       };
+    case "tracker-spent":
+    case "tracker-regain":
+      return {
+        kind: "resource",
+        resource: event.trackerId,
+        count: event.amount,
+        spent: event.kind === "tracker-spent",
+        actor: me,
+      };
     // A mixing roll is the sheet's own note for the DM; the session reads it there.
     case "potion-mixing":
-    case "tracker-regain":
     case "slot-regain":
     case "item-trade":
     case "legacy":

@@ -114,6 +114,11 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   "time-passes": { kind: "time-passes", minutes: 10 },
   "turn-end": { kind: "turn-end", round: 3 },
   "effect-expired": { kind: "effect-expired", sourceId: "barbarian-rage" },
+  "tracker-spent": {
+    kind: "tracker-spent",
+    trackerId: "barbarian-rage",
+    amount: 1,
+  },
   "tracker-regain": {
     kind: "tracker-regain",
     trackerId: "wizard-abjurer-arcane-ward",

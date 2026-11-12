@@ -88,6 +88,12 @@
       "saved": "{{name}} supera",
       "failed": "{{name}} fallisce",
       "noEffect": "{{result}}: nessun effetto"
+    },
+    "trackerUse": {
+      "spent_one": "{{actor}} spende un uso di {{resource}}",
+      "spent_other": "{{actor}} spende {{count}} usi di {{resource}}",
+      "regained_one": "{{actor}} recupera un uso di {{resource}}",
+      "regained_other": "{{actor}} recupera {{count}} usi di {{resource}}"
     }
   }
 }

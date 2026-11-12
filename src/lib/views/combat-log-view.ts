@@ -131,6 +131,7 @@ export function eventLogStyle(event: CombatEvent): LogStyle {
     case "effect-expired":
       return resolveLogStyle("effect-expired");
     case "tracker-regain":
+    case "tracker-spent":
       return resolveLogStyle("tracker-use");
     case "slot-regain":
     case "slot-spent":
@@ -190,6 +191,8 @@ export function playEventLogStyle(event: PlayEvent): LogStyle {
       return resolveLogStyle("heal");
     case "spell-slot":
       return resolveLogStyle(event.spent ? "spell-cast" : "heal");
+    case "resource":
+      return resolveLogStyle("tracker-use");
     case "max-hp":
       return resolveLogStyle(event.reduction > 0 ? "damage" : "heal");
     case "condition":
@@ -399,6 +402,11 @@ export function localizeCombatEvent(
         : t("combatLog.fadingPenaltyEnd", { name: resolveSpellName(event.penaltyId) });
     case "effect-expired":
       return t("combatLog.effectExpired", { name: resolveSourceName(event.sourceId) });
+    case "tracker-spent":
+      return t("combatLog.trackerSpent", {
+        name: resolveSourceName(event.trackerId),
+        count: event.amount,
+      });
     case "tracker-regain":
       return t("combatLog.trackerRegain", {
         name: resolveSourceName(event.trackerId),

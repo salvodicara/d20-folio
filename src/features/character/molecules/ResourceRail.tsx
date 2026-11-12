@@ -1887,17 +1887,21 @@ function RailTracker({ tracker }: { tracker: ResolvedTracker }) {
     const message = t("combat.trackerSpend", { name: tracker.label });
     registerUndoableToast(
       { message },
-      () => {
-        spendTracker(tracker.id, 1);
-        return () => restoreTracker(tracker.id, 1);
-      },
+      () =>
+        useCharacterStore.getState().changeResourceByHand(
+          () => spendTracker(tracker.id, 1),
+          () => restoreTracker(tracker.id, 1)
+        ),
       { turnScoped: false }
     );
   }
 
   function restore() {
     if (tracker.used <= 0) return;
-    restoreTracker(tracker.id, 1);
+    useCharacterStore.getState().changeResourceByHand(
+      () => restoreTracker(tracker.id, 1),
+      () => spendTracker(tracker.id, 1)
+    );
   }
 
   function spendRoll(index: number) {

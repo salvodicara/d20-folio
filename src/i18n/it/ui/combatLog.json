@@ -56,6 +56,8 @@
     "inspirationGained": "Ottenuta Ispirazione Eroica",
     "inspirationSpent": "Spesa Ispirazione Eroica",
     "repeatSavePassed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: riuscito",
-    "repeatSaveFailed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: fallito"
+    "repeatSaveFailed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: fallito",
+    "trackerSpent_one": "Speso un uso di {{name}}",
+    "trackerSpent_other": "Spesi {{count}} usi di {{name}}"
   }
 }

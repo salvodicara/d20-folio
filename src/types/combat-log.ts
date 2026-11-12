@@ -230,6 +230,10 @@ export type CombatEvent =
   /** Casting a spell refilled a feature's pool (Arcane Ward regains 2× the slot
    *  level); `trackerId` is the feature's stable id. */
   | { kind: "tracker-regain"; trackerId: string; amount: number }
+  /** A class resource spent by hand (Bardic Inspiration, Rage, Second Wind…);
+   *  `trackerId` is the feature's stable id. An older reader shows its "entry from a
+   *  newer version" row. */
+  | { kind: "tracker-spent"; trackerId: string; amount: number }
   /** Casting a spell gave back one expended spell slot (Expert Divination). */
   | { kind: "slot-regain"; level: number }
   /** The character bought or sold a catalogue item with their coins; `cp` is the
