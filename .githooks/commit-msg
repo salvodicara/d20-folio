@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Commit-msg hook: the message passes the private-text scan (scripts/private-text.ts)
+# before the commit exists: no licensed-setting term, and no identity value when the
+# content-pack is linked (without the pack only the public lexicon is checked).
+# A refusal names the line, never the term. NEVER use --no-verify.
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+SCAN="$ROOT/scripts/private-text.ts"
+# A branch from before the scan existed has nothing to run.
+[ -f "$SCAN" ] || exit 0
+node "$SCAN" "message=$1"
