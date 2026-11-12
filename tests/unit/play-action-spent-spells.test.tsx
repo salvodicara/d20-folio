@@ -4,8 +4,9 @@
  * and a cast takes the Action too, so the weapon does. A Bonus Action spell stays.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import { useEffect } from "react";
 
 vi.mock("@/lib/firebase", () => ({
   app: {},
@@ -18,6 +19,11 @@ vi.mock("@/lib/firebase", () => ({
 import i18n from "@/i18n";
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
+import {
+  useTurnEconomy,
+  type TurnEconomyApi,
+} from "@/features/character/center/useTurnEconomy";
+import { localizeActions } from "@/lib/views/combat-action-view";
 import { buildScenario } from "@/lib/dev-scenarios";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
@@ -94,5 +100,71 @@ describe("an Action spell after the Attack, in a fight (new Play)", () => {
       "aria-disabled",
       "true"
     );
+  });
+
+  it("the override is undo, as for a weapon: undoing the cast frees the Action", async () => {
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: /^Cast: Vicious Mockery/ }));
+    await waitFor(() =>
+      expect(useCombatStore.getState().selected.action).toHaveLength(1)
+    );
+    act(() => {
+      expect(useUndoStore.getState().undo()).toBe(true);
+    });
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+    expect(screen.getByRole("button", { name: /^Attack: Rapier/ })).not.toHaveAttribute(
+      "aria-disabled",
+      "true"
+    );
+  });
+});
+
+describe("casts that take no slot", () => {
+  it("out of a fight the economy only logs: a cast takes nothing", async () => {
+    useCharacterStore.setState({ combatSoloFightStarted: false });
+    useCombatStore.getState().endCombat();
+    mount();
+    fireEvent.click(screen.getByRole("button", { name: /^Cast: Vicious Mockery/ }));
+    await waitFor(() =>
+      expect(live().session.logEntries.some((e) => e.event.kind === "action-use")).toBe(
+        true
+      )
+    );
+    expect(useCombatStore.getState().selected.action).toEqual([]);
+  });
+
+  it("a ritual takes no slot, even in a fight", async () => {
+    const doc = live();
+    doc.character.spells.push({ srdId: "detect-magic", prepared: true });
+    useCharacterStore.setState({ character: { ...doc } });
+    let api: TurnEconomyApi | null = null;
+    function Probe() {
+      const economy = useTurnEconomy();
+      useEffect(() => {
+        api = economy;
+      }, [economy]);
+      return null;
+    }
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider>
+          <Probe />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    const detect = localizeActions(live(), "en").find(
+      (a) => a.spellId === "detect-magic"
+    );
+    if (!detect) throw new Error("no Detect Magic");
+    await act(async () => {
+      api?.executeAction(detect, { ritual: true });
+      for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0));
+    });
+    await waitFor(() =>
+      expect(live().session.logEntries.some((e) => e.event.kind === "action-use")).toBe(
+        true
+      )
+    );
+    expect(useCombatStore.getState().selected.action).toEqual([]);
   });
 });

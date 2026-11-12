@@ -156,10 +156,82 @@ describe("an Action spell once the Action is spent (one rule for every row that 
     });
   });
 
-  it("a second Action (Action Surge's budget) keeps it castable", () => {
-    const surge = { ...spentAction, budget: { action: 2, bonus: 1 } };
+  it("Action Surge: its extra action attacks but can't cast (\u00abexcept the Magic action\u00bb)", () => {
+    const surging = structuredClone(bard);
+    surging.character.features.push({ srdId: "fighter-action-surge" });
+    surging.session.activeFeatures = [
+      ...(surging.session.activeFeatures ?? []),
+      "fighter-action-surge",
+    ];
+    const its = localizeActions(surging, "en");
+    const spell = its.find((a) => a.id === actionSpell.id);
+    if (!spell) throw new Error("no spell row");
+    const budget = { action: 2, bonus: 1 };
+    // Attacked first: the surge takes the Attack, the turn's own Action still casts.
+    const attacked: ActionTurnState = {
+      ...fresh,
+      attackBudget: 1,
+      budget,
+      selected: {
+        action: [{ id: weapon.id, economyCategory: "attack" }],
+        bonus: [],
+        free: [],
+      },
+    };
     expect(
-      actionCtaView(bard, rows, surge, NO_CONDITIONS).get(actionSpell.id)
+      actionCtaView(surging, its, attacked, NO_CONDITIONS).get(spell.id)
+    ).toMatchObject({ slotFull: false });
+    // Cast first: a second spell has only the surge left, which can't cast.
+    const cast: ActionTurnState = {
+      ...attacked,
+      selected: {
+        action: [{ id: spell.id, economyCategory: "magic" }],
+        bonus: [],
+        free: [],
+      },
+    };
+    const view = actionCtaView(surging, its, cast, NO_CONDITIONS);
+    expect(view.get(spell.id)).toMatchObject({ slotFull: true });
+    expect(view.get(weapon.id)).toMatchObject({ slotFull: false });
+  });
+
+  it("Ready took the Action: the spell to ready still casts", () => {
+    const ready: ActionTurnState = {
+      ...fresh,
+      attackBudget: 1,
+      selected: { action: [{ id: "base-ready" }], bonus: [], free: [] },
+    };
+    expect(
+      actionCtaView(bard, rows, ready, NO_CONDITIONS).get(actionSpell.id)
+    ).toMatchObject({ slotFull: false });
+  });
+
+  it("War Magic: a cantrip riding an Extra Attack swing follows the swings", () => {
+    const cantrip = rows.find((a) => a.spellId === "fire-bolt");
+    if (!cantrip) throw new Error("no Fire Bolt");
+    const swinging: ActionTurnState = {
+      ...fresh,
+      attackBudget: 2,
+      attacksUsed: 1,
+      warMagicMax: 0,
+      selected: { action: [{ id: "attack-group" }], bonus: [], free: [] },
+    };
+    expect(
+      actionCtaView(bard, rows, swinging, NO_CONDITIONS).get(cantrip.id)
+    ).toMatchObject({
+      slotFull: false,
+      attacksLeft: { remaining: 1, total: 2 },
+    });
+  });
+
+  it("a Reaction spell doesn't wait on the Action", () => {
+    const shielded = structuredClone(bard);
+    shielded.character.spells.push({ srdId: "shield", prepared: true });
+    const its = localizeActions(shielded, "en");
+    const shield = its.find((a) => a.spellId === "shield");
+    if (!shield) throw new Error("no Shield");
+    expect(
+      actionCtaView(shielded, its, spentAction, NO_CONDITIONS).get(shield.id)
     ).toMatchObject({ slotFull: false });
   });
 

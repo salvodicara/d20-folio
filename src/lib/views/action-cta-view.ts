@@ -15,6 +15,7 @@ import type {
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import type { ActionEconomyCategory } from "@/data/types";
 import {
+  extraActionRulesThisTurn,
   resolveActiveStateBlocker,
   spellcastingBlocker,
   type ResolvedAction,
@@ -24,6 +25,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { isActionDepleted } from "./action-row-view";
 import { attacksRemainingInAction, isPipAttackAction } from "./combat-action-view";
+import { canAssignActionClaims, economyClaimsForTurn } from "@/lib/combat-economy";
 import { READY_ACTION_ID } from "@/lib/play/ready";
 import { resolveMetamagicForCast } from "./spell-cast-sources";
 import { conditionLabel } from "./tracker-view";
@@ -357,7 +359,23 @@ function spellSlotFull(
   const slot = slotOf(action);
   if (slot === "bonus") return turn.selected.bonus.length >= turn.budget.bonus;
   if (slot !== "action") return false;
-  if (turn.selected.action.length < turn.budget.action) return false;
+  // The commit's own assignment: a restricted extra action (Action Surge's: not the
+  // Magic action; Haste's: Attack, Dash…) can't take the cast.
+  if (
+    turn.selected.action.length < turn.budget.action &&
+    canAssignActionClaims(
+      [
+        ...economyClaimsForTurn(
+          turn.selected.action,
+          turn.attacksUsed,
+          turn.attackBudget
+        ),
+        { category: "magic" },
+      ],
+      extraActionRulesThisTurn(doc)
+    )
+  )
+    return false;
   // Ready took the Action: the spell to ready is cast with it (held, released later).
   if (
     action.castTiming === "action" &&
