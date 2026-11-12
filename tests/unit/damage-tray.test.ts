@@ -17,6 +17,7 @@ import {
 import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import {
   damageTrayPlan,
+  savesOnTheLine,
   initialTrayRow,
   parseRolledTotal,
   previewHp,
@@ -194,8 +195,16 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     expect(damageTrayPlan(lay, [], ME)).toBeNull();
   });
 
-  it("a save with nothing else to apply opens no tray: no tap added (Command)", () => {
+  it("a save with nothing else to apply asks on the cast's line, never in a tray (Command)", () => {
     expect(damageTrayPlan(action("spell-command"), [FOE], ME)).toBeNull();
+    expect(savesOnTheLine(action("spell-command"), [FOE, ME], ME)).toEqual([FOE]);
+    // Nobody else named: nothing to ask.
+    expect(savesOnTheLine(action("spell-command"), [], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-command"), [ME], ME)).toEqual([]);
+    // A save the tray already asks (Fireball, Hold Person), or no save at all.
+    expect(savesOnTheLine(action("spell-fireball"), [FOE], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-hold-person"), [FOE], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-magic-missile"), [FOE], ME)).toEqual([]);
   });
 
   it("a failed save's push rides the tray (Thunderwave)", () => {

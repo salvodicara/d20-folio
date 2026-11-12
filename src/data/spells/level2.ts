@@ -216,6 +216,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CHA",
+    // "Each Humanoid in a 20-foot-radius Sphere": friend or foe, Humanoids only.
+    targeting: { affinity: "any", creatureTypes: ["humanoid"] },
     source: "SRD",
   },
   {
