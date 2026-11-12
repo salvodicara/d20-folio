@@ -14,8 +14,6 @@ test.describe.configure({ timeout: 240_000 });
 
 /** Still in the old frame, each with the step that moves it. */
 const NOT_YET_MOVED = new Set([
-  "/legal", // next PR, with the 404
-  "*", // the 404: next PR
   "/admin", // owner-only, after the go/no-go
   "/admin/users/:uid/characters/:charId", // owner-only, after the go/no-go
   "/campaigns/:campaignId/sheets/:memberUid", // the DM's read-only member sheet
@@ -30,7 +28,7 @@ const NOT_PAGES = new Set([
   "/ui",
   "/login",
   // a redirect to the campaign it joins; its bad-invite state cannot be reached with the
-  // dev account (every code joins) and still renders the old frame: moved with /legal
+  // dev account (every code joins) and still renders the old frame: still to move
   "/join/:code",
   "/characters/:characterId/level-up/classic",
 ]);

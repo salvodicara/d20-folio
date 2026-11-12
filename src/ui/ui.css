@@ -6440,3 +6440,82 @@
   color: var(--text-3);
   overflow-wrap: anywhere;
 }
+
+/* «Note legali» (D&D Beyond's legal pages): one reading column of headed panels; the
+   two CC-BY statements set apart as quotes; each policy behind its own disclosure. */
+.fui .f-legal {
+  display: grid;
+  gap: 24px;
+  max-width: 760px;
+}
+.fui .f-legal .f-pnb {
+  display: grid;
+  gap: 12px;
+  /* the statements carry long bare URLs: they break, never run off a phone */
+  overflow-wrap: anywhere;
+}
+.fui .f-legal blockquote {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 2px solid var(--gold);
+  color: var(--strong);
+}
+.fui .f-legal dl,
+.fui .f-legal dd {
+  margin: 0;
+}
+.fui .f-legal dl {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-legal dt {
+  font-weight: 700;
+  color: var(--strong);
+}
+.fui .f-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.fui .f-legal a {
+  color: var(--gold);
+}
+.fui .f-legal-doc > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.fui .f-legal-doc > summary::-webkit-details-marker {
+  display: none;
+}
+.fui .f-legal-doc > summary > .f-legal-open,
+.fui .f-legal-doc > summary > .f-legal-close {
+  color: var(--gold);
+  font-weight: 700;
+}
+.fui .f-legal-doc[open] > summary > .f-legal-open,
+.fui .f-legal-doc:not([open]) > summary > .f-legal-close {
+  display: none;
+}
+.fui .f-legal-doc[open] > summary {
+  margin-bottom: 12px;
+}
+.fui .f-legal-doc > p {
+  margin: 0 0 12px;
+}
+/* the unknown page: one tile, centred in the page */
+.fui .f-roster-empty.f-notfound {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+.fui .f-notfound .f-tile {
+  max-width: 480px;
+}
+.fui .f-notfound h1 {
+  margin: 0;
+}
