@@ -12,6 +12,7 @@ import type { TFunction } from "i18next";
 import {
   afterHitOptions,
   cunningStrikeOptionsFor,
+  maneuverOptionsFor,
 } from "@/domains/play/after-hit-options";
 import {
   applyEscapeCheck,
@@ -20,7 +21,7 @@ import {
   skillBonusFor,
 } from "@/domains/play/check-entry";
 import { ESCAPE_GRAPPLE_ACTION_ID } from "@/lib/play/escape-grapple";
-import { localizeActions } from "@/lib/views/combat-action-view";
+import { localizeActions, type CombatAction } from "@/lib/views/combat-action-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { makeCharacterDoc } from "./_helpers";
@@ -69,6 +70,7 @@ describe("after a hit", () => {
       riders: [],
       mastery: [],
       cunningStrike: [],
+      maneuvers: [],
     });
   });
 });
@@ -133,5 +135,71 @@ describe("applying a check", () => {
     ]);
     expect(applyEscapeCheck(10, 13, 3, t)).toBe(true);
     expect(useCharacterStore.getState().character?.session.conditions).toEqual([]);
+  });
+});
+
+describe("after a hit: the on-hit maneuvers", () => {
+  // Rows as the engine builds them for a learned maneuver (`grantedActionRows`): no
+  // action of its own ("free"), a Superiority Die from a tracker, and the roll the
+  // die adds to. Synthetic ids: the maneuver catalogue is private content.
+  const row = (id: string, summary: Record<string, unknown>, type = "free") =>
+    ({ id, name: id, type, source: "feature", summary }) as unknown as CombatAction;
+  const dice = { uses: { current: 3, total: 4 }, die: "d8" };
+  const onDamage = row("m-shove", {
+    ...dice,
+    dieAddsTo: "damage",
+    saveAbility: "STR",
+    saveDC: 14,
+  });
+  const onAttackRoll = row("m-aim", { ...dice, dieAddsTo: "attack-roll" });
+  const elsewhere = row("m-check", { ...dice });
+  const asBonus = row("m-bonus", { ...dice, dieAddsTo: "damage" }, "bonus");
+
+  it("lists the free rows whose die adds to the hit's damage or attack roll", () => {
+    expect(maneuverOptionsFor([onDamage, onAttackRoll, elsewhere, asBonus])).toEqual([
+      {
+        action: onDamage,
+        id: "m-shove",
+        name: "m-shove",
+        die: "d8",
+        diceLeft: 3,
+        diceTotal: 4,
+        addsTo: "damage",
+        save: { ability: "STR", dc: 14 },
+        disabled: false,
+      },
+      {
+        action: onAttackRoll,
+        id: "m-aim",
+        name: "m-aim",
+        die: "d8",
+        diceLeft: 3,
+        diceTotal: 4,
+        addsTo: "attack-roll",
+        save: null,
+        disabled: false,
+      },
+    ]);
+  });
+
+  it("with no Superiority Dice left, each comes disabled", () => {
+    const spent = row("m-shove", {
+      uses: { current: 0, total: 4 },
+      die: "d8",
+      dieAddsTo: "damage",
+    });
+    expect(maneuverOptionsFor([spent])[0]).toMatchObject({ diceLeft: 0, disabled: true });
+  });
+
+  it("a weapon attack offers them; a non-weapon action does not", () => {
+    const doc = rogue();
+    const maneuvers = maneuverOptionsFor([onDamage]);
+    const sword = localizeActions(doc, "en").find(
+      (a) => a.weaponFacts && a.type === "action"
+    );
+    if (!sword) throw new Error("no weapon attack");
+    expect(afterHitOptions(sword, [], maneuvers).maneuvers).toEqual(maneuvers);
+    const hide = actionOf(doc, (id) => id === "base-hide");
+    expect(afterHitOptions(hide, [], maneuvers).maneuvers).toEqual([]);
   });
 });
