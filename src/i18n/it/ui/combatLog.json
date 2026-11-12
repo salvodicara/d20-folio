@@ -13,6 +13,8 @@
     "conditionGain": "Ottenuta condizione {{condition}}",
     "conditionLoss": "Persa condizione {{condition}}",
     "concentrationStart": "Iniziata concentrazione su {{spell}}",
+    "concentrationSaveKept": "TS di Concentrazione superato: {{spell}} ({{total}} contro CD {{dc}})",
+    "concentrationSaveLost": "TS di Concentrazione fallito: {{spell}} ({{total}} contro CD {{dc}})",
     "deathSaveSuccess": "Tiro salvezza contro morte riuscito ({{successes}} ✓ / {{failures}} ✗)",
     "deathSaveFailure": "Tiro salvezza contro morte fallito ({{successes}} ✓ / {{failures}} ✗)",
     "shortRest": "Fatto un Riposo Breve",
@@ -56,6 +58,8 @@
     "inspirationGained": "Ottenuta Ispirazione Eroica",
     "inspirationSpent": "Spesa Ispirazione Eroica",
     "repeatSavePassed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: riuscito",
-    "repeatSaveFailed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: fallito"
+    "repeatSaveFailed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: fallito",
+    "trackerSpent_one": "Speso un uso di {{name}}",
+    "trackerSpent_other": "Spesi {{count}} usi di {{name}}"
   }
 }

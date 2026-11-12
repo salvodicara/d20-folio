@@ -3,6 +3,7 @@
     "title": "Session {{date}}",
     "outside": "Outside combat",
     "encounter": "Encounter {{n}}",
+    "encounterInferred": "Encounter {{n}} (inferred)",
     "beforeRounds": "Before the first round",
     "somethingUsed": "something",
     "withSource": "{{line}} ({{source}})",
@@ -35,6 +36,8 @@
     "conditionLoss": "{{target}} is no longer {{condition}}",
     "concentrationStart": "{{actor}} concentrates on {{spell}}",
     "concentrationEnd": "{{actor}} stops concentrating on {{spell}}",
+    "concentrationSaved": "{{actor}} succeeds on the Concentration save for {{spell}} ({{total}} vs DC {{dc}})",
+    "concentrationFailed": "{{actor}} fails the Concentration save for {{spell}} ({{total}} vs DC {{dc}})",
     "statusStart": "{{actor}}'s {{source}} begins",
     "statusEnd": "{{actor}}'s {{source}} ends",
     "statusPenalty": "{{actor}}'s {{source}}: −{{amount}} to d20 Tests",
@@ -88,6 +91,16 @@
       "saved": "{{name}} saves",
       "failed": "{{name}} fails",
       "noEffect": "{{result}}: no effect"
-    }
+    },
+    "check": "{{skill}} check: {{total}}",
+    "checkPassed": "succeeds on the {{skill}} check ({{total}} vs DC {{dc}})",
+    "checkFailed": "fails the {{skill}} check ({{total}} vs DC {{dc}})",
+    "trackerUse": {
+      "spent_one": "{{actor}} spends one use of {{resource}}",
+      "spent_other": "{{actor}} spends {{count}} uses of {{resource}}",
+      "regained_one": "{{actor}} regains one use of {{resource}}",
+      "regained_other": "{{actor}} regains {{count}} uses of {{resource}}"
+    },
+    "dealt": "{{amount}} damage"
   }
 }

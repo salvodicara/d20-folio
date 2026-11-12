@@ -50,6 +50,7 @@ import {
   removeLogEntry as removeLogEntryById,
 } from "@/lib/play/log";
 import { takeDamage } from "@/lib/play/damage";
+import { resourceLogEvents } from "@/lib/play/resource-log";
 import type { DamageTransfer } from "@/lib/combat-transition";
 import { spendZeroHpSaver, type ZeroHpSaveResult } from "@/lib/play/zero-hp-savers";
 import {
@@ -666,6 +667,15 @@ interface CharacterState {
    * Turn, next to `recoverPerTurnTrackers`.
    */
   passBreathTurn: () => (() => void) | null;
+  /**
+   * A resource the player changes by hand (a spell-slot pip, the Exhaustion track,
+   * Heroic Inspiration): runs `change` (the existing store action, which persists as
+   * it always does), writes the play-log lines the change makes (`resourceLogEvents`),
+   * and returns an undo that removes those lines first, then runs `revert`. Only the
+   * hand taps go through here: a cast pays its slot through the store action alone, so
+   * it never writes a second line beside the cast's own.
+   */
+  changeResourceByHand: (change: () => void, revert: () => void) => () => void;
   /**
    * S9 — drinking a CONSUMED buff potion (Potion of Speed / Giant Strength / …)
    * arms its self-sustaining `potion:<itemId>` round countdown in
@@ -2857,12 +2867,23 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     } catch {
       return null;
     }
-    if (result.reviewedOutcome.status === "success") {
+    const status = result.reviewedOutcome.status;
+    if (status === "success" || status === "failure") {
+      // The save is a line whichever way it goes (the session report's Concentration).
+      get().logEvent({
+        kind: "concentration-save",
+        spell: pending.spell,
+        dc: pending.difficultyClass,
+        ...(result.total !== null ? { total: result.total } : {}),
+        passed: status === "success",
+      });
+    }
+    if (status === "success") {
       set({
         combatPendingConcentrationSaves: get().combatPendingConcentrationSaves.slice(1),
       });
       persistCombat(get);
-    } else if (result.reviewedOutcome.status === "failure") {
+    } else if (status === "failure") {
       // The authoritative teardown owns the spell, active keys, timers,
       // Polymorph body, target conditions, effects, event log, and queue clear.
       get().setConcentration("", { undoable: false });
@@ -3084,6 +3105,24 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
         undo();
         persistCombat(get);
       },
+    };
+  },
+
+  changeResourceByHand: (change, revert) => {
+    const before = get().character;
+    change();
+    const after = get().character;
+    const logged =
+      before && after && !get().readonly
+        ? resourceLogEvents(before, after).flatMap((event) => {
+            const id = get().logEvent(event);
+            return id ? [id] : [];
+          })
+        : [];
+    return () => {
+      // The lines go first, while they are still there (the passBreathTurn pattern).
+      for (const id of logged) get().removeLogEntry(id);
+      revert();
     };
   },
 

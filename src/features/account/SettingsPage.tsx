@@ -41,6 +41,8 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { signOut } from "@/lib/auth";
 
+const NEW_UI = import.meta.env.VITE_NEW_UI === "1";
+
 /**
  * One labelled setting row, on the shared `.set-row` recipe (folio.css): an
  * engraved icon badge + name + italic help on the left, the control on the right.
@@ -103,23 +105,26 @@ export function SettingsPage() {
               appearance rows read as a composed tile instead of floating bare on the
               page (the two .set-rows divide inside the one card). */}
           <InfoCard>
-            <SettingRow
-              icon={Palette}
-              name={t("settings.theme")}
-              help={t("settings.themeHelp")}
-              control={
-                <Segmented<"dark" | "light" | "system">
-                  aria-label={t("settings.theme")}
-                  value={theme}
-                  onChange={setTheme}
-                  options={[
-                    { value: "dark", label: t("settings.darkMode") },
-                    { value: "light", label: t("settings.lightMode") },
-                    { value: "system", label: t("settings.systemMode") },
-                  ]}
-                />
-              }
-            />
+            {/* the new UI ships dark-only for its first release: no theme to pick */}
+            {!NEW_UI && (
+              <SettingRow
+                icon={Palette}
+                name={t("settings.theme")}
+                help={t("settings.themeHelp")}
+                control={
+                  <Segmented<"dark" | "light" | "system">
+                    aria-label={t("settings.theme")}
+                    value={theme}
+                    onChange={setTheme}
+                    options={[
+                      { value: "dark", label: t("settings.darkMode") },
+                      { value: "light", label: t("settings.lightMode") },
+                      { value: "system", label: t("settings.systemMode") },
+                    ]}
+                  />
+                }
+              />
+            )}
             <SettingRow
               icon={Languages}
               name={t("settings.language")}

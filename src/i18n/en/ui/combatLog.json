@@ -13,6 +13,8 @@
     "conditionGain": "Gained {{condition}}",
     "conditionLoss": "Lost {{condition}}",
     "concentrationStart": "Started concentrating on {{spell}}",
+    "concentrationSaveKept": "Concentration save passed: {{spell}} ({{total}} vs DC {{dc}})",
+    "concentrationSaveLost": "Concentration save failed: {{spell}} ({{total}} vs DC {{dc}})",
     "deathSaveSuccess": "Death save succeeded ({{successes}} ✓ / {{failures}} ✗)",
     "deathSaveFailure": "Death save failed ({{successes}} ✓ / {{failures}} ✗)",
     "shortRest": "Took a Short Rest",
@@ -56,6 +58,8 @@
     "inspirationGained": "Gained Heroic Inspiration",
     "inspirationSpent": "Spent Heroic Inspiration",
     "repeatSavePassed": "Used the action to repeat the {{ability}} save against {{condition}}: succeeded",
-    "repeatSaveFailed": "Used the action to repeat the {{ability}} save against {{condition}}: failed"
+    "repeatSaveFailed": "Used the action to repeat the {{ability}} save against {{condition}}: failed",
+    "trackerSpent_one": "Spent one use of {{name}}",
+    "trackerSpent_other": "Spent {{count}} uses of {{name}}"
   }
 }

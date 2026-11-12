@@ -45,6 +45,8 @@ export function combatEventToPlayEvent(
         slot: event.slot,
         ...(event.targets?.length ? { targets: event.targets } : {}),
         ...declaredResults(event),
+        ...(event.amount !== undefined ? { amount: event.amount } : {}),
+        ...(event.check ? { check: event.check } : {}),
       };
     case "reaction-use":
       return {
@@ -115,6 +117,15 @@ export function combatEventToPlayEvent(
               ? { outcome: event.outcome }
               : {}),
           };
+    case "concentration-save":
+      return {
+        kind: "concentration-save",
+        actor: me,
+        spell: event.spell,
+        dc: event.dc,
+        ...(event.total !== undefined ? { total: event.total } : {}),
+        passed: event.passed,
+      };
     case "concentration-start":
     case "concentration-end":
       return {
@@ -200,9 +211,17 @@ export function combatEventToPlayEvent(
         slot: "action",
         outcome: event.passed ? "saved" : "failed",
       };
+    case "tracker-spent":
+    case "tracker-regain":
+      return {
+        kind: "resource",
+        resource: event.trackerId,
+        count: event.amount,
+        spent: event.kind === "tracker-spent",
+        actor: me,
+      };
     // A mixing roll is the sheet's own note for the DM; the session reads it there.
     case "potion-mixing":
-    case "tracker-regain":
     case "slot-regain":
     case "item-trade":
     case "legacy":

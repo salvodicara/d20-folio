@@ -76,6 +76,9 @@ export type CombatEvent =
       targets?: string[];
       /** The attack's declared result, when the damage tray said one for every target. */
       outcome?: AttackOutcome;
+      /** The damage the player typed for an attack with no target in Folio (the tray's
+       *  "no target" state): the report says it on this line. An older reader ignores it. */
+      amount?: number;
       /** Each target's save, when the damage tray said it (Faerie Fire: Goblin saved,
        *  Orc failed). An older reader ignores it. */
       saves?: SaveResults;
@@ -192,6 +195,15 @@ export type CombatEvent =
   | { kind: "concentration-start"; spell: ConcentrationRef }
   /** Concentration ended — `spell` as in `concentration-start` (id / `custom:` name). */
   | { kind: "concentration-end"; spell: ConcentrationRef }
+  /** A Concentration save entered on the sheet, kept or lost: its DC and total (a lost
+   *  one is followed by the spell's `concentration-end`). */
+  | {
+      kind: "concentration-save";
+      spell: ConcentrationRef;
+      dc: number;
+      total?: number;
+      passed: boolean;
+    }
   /** A death-saving-throw mark changed. */
   | {
       kind: "death-save";
@@ -230,6 +242,10 @@ export type CombatEvent =
   /** Casting a spell refilled a feature's pool (Arcane Ward regains 2× the slot
    *  level); `trackerId` is the feature's stable id. */
   | { kind: "tracker-regain"; trackerId: string; amount: number }
+  /** A class resource spent by hand (Bardic Inspiration, Rage, Second Wind…);
+   *  `trackerId` is the feature's stable id. An older reader shows its "entry from a
+   *  newer version" row. */
+  | { kind: "tracker-spent"; trackerId: string; amount: number }
   /** Casting a spell gave back one expended spell slot (Expert Divination). */
   | { kind: "slot-regain"; level: number }
   /** The character bought or sold a catalogue item with their coins; `cp` is the

@@ -104,6 +104,13 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   "condition-loss": { kind: "condition-loss", conditionId: "prone" },
   "concentration-start": { kind: "concentration-start", spell: conc("bless") },
   "concentration-end": { kind: "concentration-end", spell: conc("bless") },
+  "concentration-save": {
+    kind: "concentration-save",
+    spell: conc("bless"),
+    dc: 10,
+    total: 14,
+    passed: true,
+  },
   "death-save": {
     kind: "death-save",
     outcome: "failure",
@@ -114,6 +121,11 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   "time-passes": { kind: "time-passes", minutes: 10 },
   "turn-end": { kind: "turn-end", round: 3 },
   "effect-expired": { kind: "effect-expired", sourceId: "barbarian-rage" },
+  "tracker-spent": {
+    kind: "tracker-spent",
+    trackerId: "barbarian-rage",
+    amount: 1,
+  },
   "tracker-regain": {
     kind: "tracker-regain",
     trackerId: "wizard-abjurer-arcane-ward",

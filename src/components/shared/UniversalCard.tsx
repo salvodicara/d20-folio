@@ -201,6 +201,9 @@ export interface UniversalCardProps {
   quantity?: number;
   /** Inline accordion body (facts / description / higher-levels / foot). */
   children?: ReactNode;
+  /** A follow-up shown under the head whether the card is open or not (an attack's
+   *  result chips on the row just used). Omitted when absent. */
+  followUp?: ReactNode;
 
   /** Card mode. Default "library". */
   mode?: "library" | "with-prep" | "combat-CTA";
@@ -336,6 +339,7 @@ export function UniversalCard({
   onCommit,
   ctaDisabled,
   ctaReason,
+  followUp,
   ctaDimmed,
   ctaEmphasis,
   ctaTitle,
@@ -583,6 +587,8 @@ export function UniversalCard({
           <span className="uc-chevron" aria-hidden />
         )}
       </div>
+
+      {followUp ? <div className="uc-followup">{followUp}</div> : null}
 
       {/* Inline accordion detail — grid-rows 0fr→1fr animation via CSS.
           Named region so screen readers can announce/skip the disclosed facts;

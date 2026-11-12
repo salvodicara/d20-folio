@@ -656,6 +656,11 @@
     "useHitPointDice": "{{source}}: puoi spendere fino a {{max}} dei tuoi Dadi Vita.",
     "rerollOffer": "{{name}}: ritira",
     "rerollOfferBonus": "{{name}}: ritira +{{bonus}}",
-    "oncePerTurnTaken": "{{name}}: già usato in questo turno"
+    "oncePerTurnTaken": "{{name}}: già usato in questo turno",
+    "rerollActive": "Ritiro con {{name}}: inserisci il nuovo tiro",
+    "rerollActiveBonus": "Ritiro con {{name}} (+{{bonus}}): inserisci il nuovo tiro",
+    "rerollSuccessToast": "{{name}}: Concentrazione mantenuta (totale {{total}})",
+    "rerollFailureToast": "{{name}}: Concentrazione interrotta (totale {{total}})",
+    "attackResult": "Esito"
   }
 }

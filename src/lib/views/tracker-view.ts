@@ -72,6 +72,8 @@ import { impliedConditionSources } from "@/lib/condition";
 import { combatHigherLevels } from "@/lib/views/combat-action-view";
 import { statusRoundsLeft, type Status } from "@/lib/status";
 import type { Locale } from "@/lib/locale";
+import { classFeatures } from "@/data/classes";
+import { srdKey } from "@/i18n/srd-key";
 export {
   conversionOptionVMs,
   type ConversionCtx,
@@ -507,7 +509,28 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
       return localizeSrd(kind, sourceId, "name", locale);
     }
   }
+  // A feature's extra tracker (a second resource beside its primary one) is named
+  // under its feature, the key the tracker row itself is labelled with.
+  const owner = extraTrackerOwner(sourceId);
+  if (owner) {
+    const key = srdKey(owner, "mechanics", "extraTrackers", sourceId);
+    if (hasSrd("class-feature", key, "name", locale))
+      return localizeSrd("class-feature", key, "name", locale);
+  }
   return sourceId;
+}
+
+let extraTrackerOwners: Map<string, string> | null = null;
+/** The class feature that declares an extra tracker id, if any. */
+function extraTrackerOwner(trackerId: string): string | undefined {
+  extraTrackerOwners ??= new Map(
+    classFeatures.flatMap((feature) =>
+      (feature.mechanics?.extraTrackers ?? []).map(
+        (extra) => [extra.id, feature.id] as const
+      )
+    )
+  );
+  return extraTrackerOwners.get(trackerId);
 }
 
 /** A cover level's localized name and one-line summary (the cover table's row). */

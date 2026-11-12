@@ -9,6 +9,7 @@ import type { LocText } from "@/lib/loc-text";
 import type { Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { riderEffectClause } from "@/lib/views/effect-rider-view";
+import { isInferredFight } from "@/lib/session-log/infer-fights";
 import type { PlayEvent, ReportSection, SessionEntry } from "@/lib/session-log";
 import type { ConcentrationRef } from "@/types/ids";
 
@@ -62,6 +63,21 @@ function savesClause(
   return event.noEffect ? t("sessionReport.saves.noEffect", { result }) : result;
 }
 
+/** The check entered with a use, in the report's save voice: "succeeds on the
+ *  Perception check (17 vs DC 15)", or "Perception check: 17" without a DC. No check:
+ *  `null`. */
+function checkClause(event: ActionEvent, t: TranslateFn): string | null {
+  const check = event.check;
+  if (!check) return null;
+  const skill = t(`skills.${check.skill}`);
+  if (check.dc === undefined)
+    return t("sessionReport.check", { skill, total: check.total });
+  return t(
+    check.total >= check.dc ? "sessionReport.checkPassed" : "sessionReport.checkFailed",
+    { skill, total: check.total, dc: check.dc }
+  );
+}
+
 export function localizePlayEvent(
   event: PlayEvent,
   t: TranslateFn,
@@ -87,9 +103,13 @@ export function localizePlayEvent(
           });
       const saves = savesClause(event, t, who);
       if (saves) return `${base} — ${saves}`;
-      return event.outcome && OUTCOMES.has(event.outcome)
-        ? `${base} — ${t(`sessionReport.outcome.${event.outcome}`)}`
-        : base;
+      const check = checkClause(event, t);
+      if (check) return `${base} — ${check}`;
+      if (!event.outcome || !OUTCOMES.has(event.outcome)) return base;
+      const outcome = t(`sessionReport.outcome.${event.outcome}`);
+      return event.amount !== undefined && event.outcome !== "miss"
+        ? `${base} — ${outcome}, ${t("sessionReport.dealt", { amount: event.amount })}`
+        : `${base} — ${outcome}`;
     }
     case "damage":
     case "heal":
@@ -139,6 +159,18 @@ export function localizePlayEvent(
           ? "sessionReport.concentrationStart"
           : "sessionReport.concentrationEnd",
         { actor: who(event.actor), spell: names.spell(event.spell) }
+      );
+    case "concentration-save":
+      return t(
+        event.passed
+          ? "sessionReport.concentrationSaved"
+          : "sessionReport.concentrationFailed",
+        {
+          actor: who(event.actor),
+          spell: names.spell(event.spell),
+          total: event.total ?? "?",
+          dc: event.dc,
+        }
       );
     case "status":
       return t(
@@ -214,6 +246,12 @@ export function localizePlayEvent(
           { actor: who(event.actor), count: event.count, level: event.level }
         )
       );
+    case "resource":
+      return t(`sessionReport.trackerUse.${event.spent ? "spent" : "regained"}`, {
+        actor: who(event.actor),
+        count: event.count,
+        resource: names.source?.(event.resource) ?? event.resource,
+      });
     case "inspiration":
       return withSource(
         t(`sessionReport.inspiration.${event.gained ? "gained" : "spent"}`, {
@@ -277,20 +315,29 @@ export function renderSessionReport(
       continue;
     }
     encounters += 1;
-    const heading = t("sessionReport.encounter", { n: encounters });
+    const heading = t(
+      isInferredFight(section)
+        ? "sessionReport.encounterInferred"
+        : "sessionReport.encounter",
+      { n: encounters }
+    );
     const outcome = section.outcome
       ? ` — ${t(`sessionReport.result.${section.outcome}`)}`
       : "";
     out.push("", `## ${heading}${outcome}`);
+    // Rounds only once the fight reached a second one: a table that never advanced the
+    // turn order (or a fight worked out from the log) has no rounds to tell apart.
+    const advanced = section.rounds.some((round) => (round.round ?? 0) > 1);
     for (const round of section.rounds) {
-      out.push(
-        "",
-        `### ${
-          round.round === null
-            ? t("sessionReport.beforeRounds")
-            : t("combatChronicle.round", { n: round.round })
-        }`
-      );
+      if (advanced)
+        out.push(
+          "",
+          `### ${
+            round.round === null
+              ? t("sessionReport.beforeRounds")
+              : t("combatChronicle.round", { n: round.round })
+          }`
+        );
       lines(round.entries, section.names);
     }
   }

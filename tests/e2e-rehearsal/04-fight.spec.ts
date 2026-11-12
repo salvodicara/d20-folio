@@ -239,8 +239,19 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
       Number((await uses.getAttribute("aria-label"))?.match(/(\d+) of/)?.[1]);
     const before = await left();
     await actionRow(bard, "Cutting Words").getByRole("button", { name: "React" }).click();
-    const dialog = bard.locator("dialog[open]");
-    if (await dialog.isVisible()) await dialog.getByRole("button").last().click();
+    // Cutting Words asks on whom and which roll (#852): an enemy, the attack roll, then
+    // the Reaction. Without a fight to target it spends straight away.
+    const dialog = bard.getByRole("dialog", { name: "Cutting Words" });
+    const asks = await dialog
+      .waitFor({ timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (asks) {
+      const enemy = dialog.locator('.cl-target[data-side="enemy"]').first();
+      if (await enemy.isVisible()) await enemy.click();
+      await dialog.getByRole("button", { name: "Attack roll" }).click();
+      await dialog.getByRole("button", { name: "Use Reaction" }).click();
+    }
     await settles(left, before - 1, "Cutting Words spends one Bardic Inspiration die");
   });
 
