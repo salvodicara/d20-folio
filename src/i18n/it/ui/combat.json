@@ -1,5 +1,6 @@
 {
   "combat": {
+    "improvisedWeapon": "Arma improvvisata",
     "grantBundlePickedToast": "{{name}}: ora {{option}}",
     "effectRider": {
       "push": "Spinto fino a {{distance}} più lontano",

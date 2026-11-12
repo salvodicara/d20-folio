@@ -69,6 +69,8 @@ import {
   type RuleFact,
 } from "@/lib/rules";
 import { buildWeaponRange, type WeaponRangeSpec } from "@/lib/weapon-range";
+import { improvisedWeaponAttack } from "@/lib/play/improvised-weapon";
+import { asProficiencyToken } from "@/lib/proficiency-tokens";
 
 export { buildWeaponRange, type WeaponRangeSpec };
 import type {
@@ -8574,6 +8576,43 @@ function resolveWeaponActions(
       costsSlot: false,
       pinned: !unpinnedSet.has(id),
       defaultPinned: true,
+    });
+  }
+
+  // 4d. Universal improvised weapon (SRD 5.2.1 Improvised Weapons): a table leg, a
+  //     bottle. 1d4 of a type the DM picks, Strength, thrown 20/60 ft, the
+  //     Proficiency Bonus only with proficiency in improvised weapons. An object that
+  //     resembles a weapon is that weapon's own card (the DM's call).
+  {
+    const id = "improvised-weapon";
+    const attack = improvisedWeaponAttack({
+      str: ctx.abilityScores.STR,
+      level: ctx.level,
+      proficient: classWeaponProfs.includes(asProficiencyToken("improvised-weapons")),
+      pbOverride: charData.proficiencyBonusOverride,
+    });
+    actions.push({
+      id,
+      name: uiText("combat.improvisedWeapon"),
+      type: "action",
+      source: "weapon",
+      spellLevel: null,
+      concentration: false,
+      summary: {
+        attackBonus: attack.attackBonus + ctx.exPenalty,
+        damage: withFlatDamage(attack.damageDice, attack.damageBonus),
+        damageType: "bludgeoning",
+        damageTypes: ["bludgeoning", "piercing", "slashing"],
+        multiDamageTypeFlavor: "choice",
+        weaponRange: {
+          kind: "melee",
+          reachFt: 5,
+          thrown: { nearFt: attack.thrownFt.normal, farFt: attack.thrownFt.long },
+        },
+      },
+      costsSlot: false,
+      pinned: ctx.pinnedSet.has(id),
+      defaultPinned: false,
     });
   }
 
