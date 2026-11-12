@@ -118,6 +118,7 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
     failures: 2,
   },
   rest: { kind: "rest", restKind: "long" },
+  "level-up": { kind: "level-up", from: 4, to: 5, classId: "bard" },
   "time-passes": { kind: "time-passes", minutes: 10 },
   "turn-end": { kind: "turn-end", round: 3 },
   "fight-start": { kind: "fight-start" },

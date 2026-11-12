@@ -87,6 +87,26 @@ describe("diaryBlocks", () => {
     });
   });
 
+  // Walkthrough 2026-11-12 (M2): «Fine scontro» left no trace in the diary. The end is
+  // a marker, not a line: the fight's block carries when it ended, for its heading.
+  it("a fight carries when it ended; a fight still running has no end", () => {
+    expect(blocks[1]).toMatchObject({ kind: "fight", endedAt: at(47) });
+    const running = diaryBlocks(buildReport(evening.slice(0, 8)));
+    expect(running[1]).toMatchObject({ kind: "fight" });
+    expect(running[1]).not.toHaveProperty("endedAt");
+  });
+
+  it("an end with no outcome (a plain «Fine scontro») still ends the fight", () => {
+    const plain = evening.map((entry) =>
+      entry.event.kind === "encounter-end"
+        ? { ...entry, event: { kind: "encounter-end" as const, encounterId: "f1" } }
+        : entry
+    );
+    const [, fight] = diaryBlocks(buildReport(plain));
+    expect(fight).toMatchObject({ kind: "fight", endedAt: at(47) });
+    expect(fight).not.toHaveProperty("outcome");
+  });
+
   it("keeps a note written during the fight inside the fight", () => {
     const fight = blocks[1];
     expect(fight?.entries.map((e) => e.event.kind)).toEqual(["damage", "note", "down"]);

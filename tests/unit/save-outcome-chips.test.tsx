@@ -110,3 +110,57 @@ describe("the save chips on the row just used", () => {
     expect(lineEvent(first)).toMatchObject({ saves: { "m-gob": "failed" } });
   });
 });
+
+describe("a save spell cast with nobody named (solo)", () => {
+  const offerAlone = (logId: string, damage: boolean) =>
+    act(() =>
+      useSaveOutcomeStore.getState().offer({
+        logId,
+        actionId: "spell-vicious-mockery",
+        targets: [],
+        alone: { damage },
+      })
+    );
+  const soloLine = () => {
+    const id = store().logEvent({
+      kind: "action-use",
+      action: { custom: "Vicious Mockery" },
+      effect: "spell-cast",
+      slot: "action",
+    });
+    if (!id) throw new Error("no log line");
+    return id;
+  };
+
+  it("one «Save» line; Failed shows the damage field, and Enter writes it", () => {
+    const id = soloLine();
+    offerAlone(id, true);
+    render(<SaveOutcomeChips actionId="spell-vicious-mockery" />);
+    const save = within(screen.getByRole("group", { name: "Save" }));
+    expect(screen.queryByRole("textbox")).toBeNull();
+    fireEvent.click(save.getByRole("button", { name: "Failed" }));
+    expect(lineEvent(id)).toMatchObject({ saves: { target: "failed" } });
+    const field = screen.getByRole("textbox", { name: "Damage" });
+    expect(field).toHaveAttribute("inputmode", "numeric");
+    fireEvent.change(field, { target: { value: "6" } });
+    fireEvent.keyDown(field, { key: "Enter" });
+    expect(lineEvent(id)).toMatchObject({ saves: { target: "failed" }, amount: 6 });
+    // The selected chip again clears the result and its damage.
+    fireEvent.click(save.getByRole("button", { name: "Failed" }));
+    expect(lineEvent(id)).not.toHaveProperty("saves");
+    expect(lineEvent(id)).not.toHaveProperty("amount");
+  });
+
+  it("a spell with no damage asks only the save", () => {
+    const id = soloLine();
+    offerAlone(id, false);
+    render(<SaveOutcomeChips actionId="spell-vicious-mockery" />);
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Save" })).getByRole("button", {
+        name: "Saved",
+      })
+    );
+    expect(lineEvent(id)).toMatchObject({ saves: { target: "saved" } });
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+});

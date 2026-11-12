@@ -504,6 +504,8 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
     "invocation",
     "magic-item",
     "spell",
+    // A class (a level-up line names the class it advanced).
+    "class",
   ] as const) {
     if (hasSrd(kind, sourceId, "name", locale)) {
       return localizeSrd(kind, sourceId, "name", locale);
