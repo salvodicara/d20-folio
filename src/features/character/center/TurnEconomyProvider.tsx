@@ -1486,11 +1486,17 @@ export function TurnEconomyProvider({
     // Action spell takes the Action (Quickened: the Bonus Action). Not a readied
     // release (Ready took the Action), a ritual, or a cast riding an attack swing.
     const economySlot = castEconomySlot(action.type, metamagicIds);
+    // A cantrip that replaces one attack of an Attack action already open (War
+    // Magic) rides that action: it takes no Action of its own.
+    const combat = useCombatStore.getState();
+    const ridesOpenAttack =
+      isPipAttack(action) && combat.attacksUsed % combat.attackBudget !== 0;
     const occupiesSlot =
       inEncounter() &&
       !readies &&
       !execution.ritual &&
       !ridesPip &&
+      !ridesOpenAttack &&
       (economySlot === "action" || economySlot === "bonus");
     if (!canCommit() || !(await confirmConcentrationBreak(heldAction)) || !canCommit())
       return;
