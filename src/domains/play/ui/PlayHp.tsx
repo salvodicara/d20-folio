@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { hpEntryNote } from "@/domains/play/hp-entry-view";
+import { PlayDefenses } from "@/domains/play/ui/PlayDefenses";
 import { useHpControls } from "@/features/character/molecules/use-hp-controls";
 import type { Locale } from "@/lib/locale";
 import { concentrationLabel } from "@/lib/views/concentration-label";
@@ -174,6 +175,7 @@ export function PlayHp({
           </Button>
         </div>
       </div>
+      <PlayDefenses doc={doc} locale={locale} />
     </Dialog>
   );
 }

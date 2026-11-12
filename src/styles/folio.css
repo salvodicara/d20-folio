@@ -12219,6 +12219,15 @@ button.uc-chevron::before {
 }
 /* accordion detail — ease-standard (no overshoot) on layout height; brass
    spring stays on transforms (chevron rotate) only. */
+/* A follow-up under the head, open or closed (an attack's result chips on the row just
+   used): aligned with the name column (the 34px seal plus the head's gaps). */
+.uc-followup {
+  padding: 0 var(--sp-3) var(--sp-2) calc(var(--sp-3) * 2 + 34px);
+}
+.uc-followup:empty {
+  display: none;
+}
+
 .uc-detail-wrap {
   display: grid;
   grid-template-rows: 0fr;

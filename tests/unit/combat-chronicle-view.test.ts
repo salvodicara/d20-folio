@@ -44,6 +44,13 @@ const SAMPLES: Record<
   exhaustion: { kind: "exhaustion", from: 1, to: 2, target: "pc-mara" },
   "spell-slot": { kind: "spell-slot", level: 3, count: 1, spent: true, actor: "pc-mara" },
   inspiration: { kind: "inspiration", gained: true, target: "pc-mara" },
+  resource: {
+    kind: "resource",
+    resource: "bard-bardic-inspiration",
+    count: 1,
+    spent: true,
+    actor: "pc-mara",
+  },
   rider: {
     kind: "rider",
     rider: { kind: "speed-reduction", feet: 10 },

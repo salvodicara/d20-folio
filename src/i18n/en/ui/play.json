@@ -372,6 +372,36 @@
     },
     "roll": {
       "surprised": "Surprised"
+    },
+    "defense": {
+      "temporary": "temporary",
+      "remove": "Remove {{name}}",
+      "addTitle": "Temporary defense",
+      "addHelp": "From a potion or a spell: it ends when you remove it, without touching the character.",
+      "repick": {
+        "short-or-long-rest": "{{source}}, choose the type again after every Short or Long Rest.",
+        "long-rest": "{{source}}, choose the type again after every Long Rest.",
+        "cast": "{{source}}, choose the type each time you cast the spell."
+      }
+    },
+    "check": {
+      "face": "The d20 you rolled",
+      "noDc": "no DC: the DM decides.",
+      "fail": "fails against DC {{dc}}.",
+      "ok": "succeeds against DC {{dc}}.",
+      "hideOk": "success. You are Invisible; whoever searches for you must beat {{total}}.",
+      "escapeOk": "you break free: no longer Grappled.",
+      "hideWhat": "Dexterity (Stealth) check",
+      "escapeWhat": "The better of Athletics and Acrobatics"
+    },
+    "familiar": {
+      "summon": "Summon"
+    },
+    "hit": {
+      "title": "On a hit",
+      "mastery": "Mastery",
+      "askSolo": "Did {{name}} hit?",
+      "askSoloAdd": "Add to the hit:"
     }
   }
 }
