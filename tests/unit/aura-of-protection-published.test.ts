@@ -87,6 +87,18 @@ describe("an ally's sheet with a received aura", () => {
         value: 3,
       })
     );
+    // A save the fighter is not proficient in moves too, and lists the aura: its
+    // total is no longer the bare modifier, so the tile shows the number.
+    const dex = withAura.find((row) => row.id === "DEX");
+    const plainDex = plain.find((row) => row.id === "DEX");
+    expect(dex?.proficient).toBe(false);
+    expect(dex?.bonus).toBe((plainDex?.bonus ?? 0) + 3);
+    expect(dex?.breakdownParts).toContainEqual(
+      expect.objectContaining({
+        label: { loc: { ui: "play.aura.source", params: { name: "Aldric" } } },
+        value: 3,
+      })
+    );
   });
 });
 
@@ -130,5 +142,25 @@ describe("standing outside an aura lasts until the next rest", () => {
     );
     expect(shortRestCharacter(doc).session.activeFeatures).toEqual(["keep-me"]);
     expect(longRestCharacter(doc).session.activeFeatures).toEqual(["keep-me"]);
+  });
+});
+
+describe("the Concentration save under a received aura", () => {
+  it("counts the aura in the CON save the banner judges", async () => {
+    const { concentrationSaveD20Context } = await import("@/lib/character-d20-tests");
+    const ally = makeCharacterDoc({ classes: [{ classId: "wizard", level: 5 }] });
+    const pending = { id: "p", difficultyClass: 10 } as Parameters<
+      typeof concentrationSaveD20Context
+    >[1];
+    const total = (doc: typeof ally) =>
+      concentrationSaveD20Context(doc, pending).modifierTerms.reduce(
+        (sum, term) => sum + term.value,
+        0
+      );
+    const inAura = {
+      ...ally,
+      session: { ...ally.session, partyAura: { from: "pal", name: "Aldric", bonus: 3 } },
+    };
+    expect(total(inAura)).toBe(total(ally) + 3);
   });
 });
