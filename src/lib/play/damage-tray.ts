@@ -250,11 +250,15 @@ export function damageTrayPlan(
   ];
   const split =
     effect !== null && !spec.area && (s.instances ?? 1) > 1 && planTargets.length > 1;
+  // Several instances on one creature (Magic Missile's darts): roll them all.
+  const instances = s.instances ?? 1;
+  const damageDice =
+    s.damage && instances > 1 && !split ? `${instances} × (${s.damage})` : s.damage;
   const dice =
     effect === "heal"
       ? s.healing
       : effect === "damage" && !s.damageIfHurt
-        ? s.damage
+        ? damageDice
         : undefined;
   return {
     effect,

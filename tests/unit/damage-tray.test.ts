@@ -238,6 +238,12 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     }
   });
 
+  it("every dart on one target: the tray says to roll them all (Magic Missile)", () => {
+    expect(plan(action("spell-magic-missile")).dice).toBe("3 × (1d4+1)");
+    // Split over two creatures, each row asks its own darts.
+    expect(plan(action("spell-magic-missile"), [FOE, "monster-2"]).perTarget).toBe(true);
+  });
+
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
     expect(damageTrayPlan(action("spell-mage-armor"), [ME], ME)).toBeNull();
     expect(damageTrayPlan(action("spell-fireball"), [], ME)).toBeNull();
