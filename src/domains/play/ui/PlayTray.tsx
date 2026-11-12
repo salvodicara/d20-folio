@@ -456,6 +456,11 @@ function TrayTargetRow({
       {row.attack === "critical" && plan.effect === "damage" && (
         <p className="f-help">{t("combat.damageTray.critHint")}</p>
       )}
+      {plan.failNotes && !row.saved && (
+        <p className="f-help" data-testid="play-tray-fail-note">
+          {plan.failNotes.join(" · ")}
+        </p>
+      )}
       {plan.effect === "damage" && (
         <div
           className="f-chips"
