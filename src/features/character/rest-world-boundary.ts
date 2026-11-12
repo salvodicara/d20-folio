@@ -125,6 +125,9 @@ export interface RestWorldEntries {
    * the app never fabricates a die total (golden rule 21).
    */
   readonly healedHp?: number;
+  /** The Hit Dice the short rest spent on that heal. The caller spends them on the
+   *  sheet after the rest, so the rest line takes the count from here. */
+  readonly hitDiceSpent?: number;
 }
 
 /** 2024 RAW minimum rest durations, advanced on the character's timeline. */
@@ -644,6 +647,7 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
     kind: "rest",
     restKind: kind,
     ...(rested ? restRecovery(before.session, rested.session) : {}),
+    ...(entered.hitDiceSpent ? { hitDiceSpent: entered.hitDiceSpent } : {}),
   });
   for (const event of fades) live.logEvent(event);
   live.persistPlayState();

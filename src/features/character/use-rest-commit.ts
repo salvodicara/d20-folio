@@ -106,7 +106,7 @@ export function useRestCommit() {
       session.hp.current + healedHp,
       effectiveMaxHp(reviewed.character, session)
     );
-    restThroughWorld("short", { healedHp });
+    restThroughWorld("short", { healedHp, hitDiceSpent: hitDice });
     fireClock(reviewed, SHORT_REST_MINUTES);
     stepCampaign(reviewed, SHORT_REST_MINUTES);
     if (healedHp > 0) setHP(newHp);
