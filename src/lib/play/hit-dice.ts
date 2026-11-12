@@ -115,7 +115,7 @@ export function hitDiceHealing(input: {
 
 /**
  * The Hit Point Dice roll as typed. Plain: the total of the dice. With a floor on the
- * faces (Powerful Recovery: a 1 or 2 counts as a 3) the faces are typed one per die
+ * faces (a feature that counts a 1 or 2 as a 3) the faces are typed one per die
  * ("1+5+2") and each low one counts as the floor; the total is their sum. Null when
  * the text doesn't read, or the faces don't match the dice spent.
  */

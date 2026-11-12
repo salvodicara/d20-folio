@@ -1,5 +1,5 @@
 /**
- * A floor on Hit Point Die faces (Powerful Recovery: a 1 or 2 counts as a 3): the faces
+ * A floor on Hit Point Die faces (a feature that counts a 1 or 2 as a 3): the faces
  * are typed one per die and each low one counts as the floor; without a floor the
  * total is typed as before. The `hit-die-floor` grant sets it.
  */
@@ -34,7 +34,7 @@ describe("the hit-die-floor grant", () => {
   it("sets the character's floor", () => {
     const recovery: CustomFeature = {
       custom: true,
-      title: "Powerful Recovery",
+      title: "Hearty Recovery",
       emoji: "*",
       source: "Homebrew",
       tags: [],
@@ -58,7 +58,7 @@ describe("the Play screen's Short Rest reads the floor too (shortRestHeal)", () 
     const { shortRestHeal } = await import("@/lib/play/short-rest-healing");
     const recovery: CustomFeature = {
       custom: true,
-      title: "Powerful Recovery",
+      title: "Hearty Recovery",
       emoji: "*",
       source: "Homebrew",
       tags: [],

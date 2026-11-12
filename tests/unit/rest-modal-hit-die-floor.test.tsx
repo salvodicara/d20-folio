@@ -1,5 +1,5 @@
 /**
- * A floor on Hit Point Die faces in the Short Rest (Powerful Recovery: a 1 or 2 counts
+ * A floor on Hit Point Die faces in the Short Rest (a feature that counts a 1 or 2
  * as a 3): the rest asks the faces, one per die, and heals by the floored faces plus
  * CON per die.
  */
@@ -14,7 +14,7 @@ import { customInstanceId } from "./__helpers__/custom-items";
 
 const recovery: CustomFeature = {
   custom: true,
-  title: "Powerful Recovery",
+  title: "Hearty Recovery",
   emoji: "*",
   source: "Homebrew",
   tags: [],

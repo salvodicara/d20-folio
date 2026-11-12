@@ -675,7 +675,7 @@ function HitDiceStep({
   const [typed, setTyped] = useState("");
   const skip = useOnce(prompt.onCancel);
   const range = prompt.range(count);
-  // A floor on the faces (Powerful Recovery) takes them one per die, floored.
+  // A floor on the faces (a feature that counts a low face higher) takes them one per die, floored.
   const { floor } = prompt;
   const read = floor ? readHitDiceRoll(typed, count, floor) : null;
   const rolled = floor

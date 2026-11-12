@@ -40,7 +40,7 @@ export function shortRestHealing(
 
 /** A Short Rest's heal for `count` dice and the roll the player typed, or null while
  *  the roll is not one those dice can make. No dice heal nothing and need no roll. A
- *  floor on the faces (Powerful Recovery: a 1 or 2 counts as a 3) takes the faces one
+ *  floor on the faces (a feature that counts a 1 or 2 as a 3) takes the faces one
  *  per die ("1+5"), each low face counted as the floor, and returns them. */
 export function shortRestHeal(
   doc: CharacterDoc,

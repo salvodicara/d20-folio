@@ -178,7 +178,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     hitDiceToSpend,
     diceTotal
   );
-  // A floor on the faces (Powerful Recovery: a 1 or 2 counts as a 3) takes the faces
+  // A floor on the faces (a feature that counts a 1 or 2 as a 3) takes the faces
   // typed one per die; the engine's heal reads them the same way.
   const hitDieFloor = agg.hitDieFloor;
   const read = hitDieFloor

@@ -408,7 +408,7 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
    * still ends it.
    */
   /** A Hit Point Die rolled at `floorBelow` or lower counts as `floorTo` (a feat's
-   *  Powerful Recovery: a 1 or 2 counts as a 3), wherever the dice are spent. */
+   *  a feature that counts a 1 or 2 as a 3), wherever the dice are spent. */
   "hit-die-floor": objectSchema({
     type: literalSchema("hit-die-floor"),
     floorBelow: numberSchema,

@@ -2131,7 +2131,7 @@ export interface AggregatedGrants {
   d20Rerolls: ReadonlyArray<D20RerollClause>;
   /** Held spells whose Concentration taking damage can't break (Relentless Hunter). */
   concentrationDamageProof: ReadonlyArray<ConcentrationDamageProofClause>;
-  /** The floor on a Hit Point Die's face, the most generous one (Powerful Recovery). */
+  /** The floor on a Hit Point Die's face, the most generous one (a feature that counts a low face higher). */
   hitDieFloor?: { floorBelow: number; floorTo: number };
   /** Physical add/subtract dice attached to a roll (Mind Sliver: next save −1d4). */
   rollDieAdjustments: ReadonlyArray<RollDieAdjustmentClause>;
