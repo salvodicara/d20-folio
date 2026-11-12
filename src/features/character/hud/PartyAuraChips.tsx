@@ -27,9 +27,12 @@ export function PartyAuraChips() {
       { turnScoped: false }
     );
   };
+  // The chip names the paladin by first name; the full name is in its tooltip and in
+  // the save breakdown, so the chip never outgrows its panel.
+  const short = (name: string) => name.split(" ")[0] ?? name;
   return (
     <div
-      className="flex flex-wrap gap-1 pt-1"
+      className="flex min-w-0 max-w-full flex-wrap gap-1 pt-1"
       role="group"
       aria-label={t("play.aura.group")}
     >
@@ -37,17 +40,21 @@ export function PartyAuraChips() {
         <button
           key={offer.characterId}
           type="button"
-          className="status-badge sb-toggle"
+          className="status-badge sb-toggle min-w-0 max-w-full"
           data-kind={offer.on ? "active" : undefined}
           aria-pressed={offer.on}
-          disabled={readonly}
+          aria-disabled={readonly || undefined}
           title={t(offer.on ? "play.aura.onHint" : "play.aura.offHint", {
             name: offer.name,
           })}
-          onClick={() => toggle(offer.characterId, offer.name, offer.on)}
+          onClick={() => {
+            if (!readonly) toggle(offer.characterId, short(offer.name), offer.on);
+          }}
         >
-          <span className="sb-label">
-            {t("play.aura.chip", { name: offer.name, bonus: offer.bonus })}
+          <span className="sb-label block truncate">
+            {offer.on
+              ? t("play.aura.chip", { name: short(offer.name), bonus: offer.bonus })
+              : t("play.aura.outToast", { name: short(offer.name) })}
           </span>
         </button>
       ))}
