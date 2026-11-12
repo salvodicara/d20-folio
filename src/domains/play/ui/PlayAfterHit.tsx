@@ -132,7 +132,7 @@ export function PlayAfterHit({
   if (rows.length === 0) return null;
   const groups = [...new Set(rows.map((r) => r.group))];
   return (
-    <div className="f-ask" role="group" aria-label={t("play.hit.title")}>
+    <div className="f-ask f-after-hit-list" role="group" aria-label={t("play.hit.title")}>
       {titled && <span className="f-lbl">{t("play.hit.title")}</span>}
       {groups.map((group) => (
         <div key={group} className="f-ask">
@@ -186,8 +186,11 @@ export function AfterHitNote({ locale }: { locale: Locale }) {
   const action = localizeActions(doc, locale).find((a) => a.id === offer.actionId);
   if (!action || !hasAfterHitOptions(doc, action, locale)) return null;
   return (
-    <div className="f-note f-save-due" data-c="act" role="group">
-      <p>{t("play.hit.askSolo", { name: action.name })}</p>
+    <div className="f-note f-save-due f-after-hit" data-c="act" role="group">
+      {/* the question in bold, then what to do (the approved mock) */}
+      <p>
+        <b>{t("play.hit.askSolo", { name: action.name })}</b> {t("play.hit.askSoloAdd")}
+      </p>
       <PlayAfterHit
         titled={false}
         key={`${offer.actionId}-${String(offer.round)}`}

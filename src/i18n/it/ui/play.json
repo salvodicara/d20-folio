@@ -400,7 +400,8 @@
     "hit": {
       "title": "Al colpo",
       "mastery": "Padronanza",
-      "askSolo": "Hai colpito con {{name}}? Aggiungi al colpo:"
+      "askSolo": "Hai colpito con {{name}}?",
+      "askSoloAdd": "Aggiungi al colpo:"
     }
   }
 }

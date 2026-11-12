@@ -103,7 +103,9 @@ describe("PlayAfterHit", () => {
         </TurnEconomyProvider>
       </MemoryRouter>
     );
-    expect(screen.getByText(`Did ${dagger.name} hit? Add to the hit:`)).toBeTruthy();
+    // the question in bold, then what to do
+    expect(screen.getByText(`Did ${dagger.name} hit?`).tagName).toBe("B");
+    expect(screen.getByText(/Add to the hit:/)).toBeTruthy();
     act(() => useCombatStore.getState().setRound(round + 1));
     expect(screen.queryByRole("group", { name: "On a hit" })).toBeNull();
     act(() => {

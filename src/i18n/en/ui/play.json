@@ -400,7 +400,8 @@
     "hit": {
       "title": "On a hit",
       "mastery": "Mastery",
-      "askSolo": "Did {{name}} hit? Add to the hit:"
+      "askSolo": "Did {{name}} hit?",
+      "askSoloAdd": "Add to the hit:"
     }
   }
 }
