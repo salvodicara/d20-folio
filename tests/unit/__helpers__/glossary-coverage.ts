@@ -99,7 +99,7 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     status: "gap",
     evidence: [],
     note: "#3",
-    waitsFor: ["auraOffers"],
+    waitsFor: ["usePartyAura"],
     gaps: [3],
   },
   {

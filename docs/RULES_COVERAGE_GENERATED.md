@@ -46,7 +46,7 @@ edge cases below, through the functions a screen calls.
 | Attack Roll | modeled | `compute.test.ts` | `compute.ts` weapon/spell attack bonus; `compute.test.ts` |
 | Attitude | table-side | — | An NPC's attitude is the DM's; Influence is a check against the DM's DC |
 | Attunement | modeled | `attunement-guard.test.ts` | `attunement-guard.ts`; `attunement-guard.test.ts` |
-| Aura | gap | engine done; no screen calls `auraOffers` | #3 |
+| Aura | gap | engine done; no screen calls `usePartyAura` | #3 |
 | Blinded | modeled | `condition-effects.test.ts` | `condition-effects.ts`; `condition-effects.test.ts` |
 | Blindsight, Truesight | modeled | `can-see.test.ts` | `light-states.ts` sightUnder; `can-see.test.ts` |
 | Bloodied | modeled | `hp-band-bloodied.test.ts` | `hp-band.ts`; `hp-band-bloodied.test.ts` |
