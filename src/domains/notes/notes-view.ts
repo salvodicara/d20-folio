@@ -1,7 +1,7 @@
 /**
  * The campaign's Note tab: the table's shared notes, important ones first then the
- * freshest. Each is marked by what it is about: «!» important (pinned), else «@» a
- * person or «#» a place from the first tag it carries. Filters: important, people,
+ * freshest. Each is marked by what it is about: important (pinned), else a person
+ * (`@`) or a place (`#`) from the first tag it carries. Filters: important, people,
  * places, only mine; the search covers title and text, ignoring case and accents. A
  * player never sees a note the DM keeps hidden (the server already withholds it; this
  * is the second guard).
@@ -19,6 +19,16 @@ export interface NoteRow extends SharedNote {
 
 const TAG = /[@#][\p{L}\p{N}][\p{L}\p{N}_-]*/gu;
 const fold = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase();
+
+/** A note's first line as its row shows it: the tags come out (the row lists them once,
+ *  in its meta line), and the spaces they leave close up. */
+export function notePreview(line: string): string {
+  return line
+    .replace(TAG, "")
+    .replace(/\s+([.,;:!?])/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}
 
 export function notesView(
   notes: readonly SharedNote[],
