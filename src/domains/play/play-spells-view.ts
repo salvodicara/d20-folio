@@ -110,6 +110,7 @@ export function prepareList(doc: CharacterDoc, locale: Locale): PrepareList {
   const model = buildSpellsViewModel(doc, primaryClassId(doc.character), locale, false);
   const cs = model.castSummary;
   const casters = casterClassAbilities(doc.character);
+  const collator = new Intl.Collator(locale, { sensitivity: "base" });
   return {
     count: cs?.preparedCount ?? 0,
     max: cs?.preparedMax ?? 0,
@@ -118,18 +119,21 @@ export function prepareList(doc: CharacterDoc, locale: Locale): PrepareList {
       .filter((g) => g.level > 0)
       .map((g) => ({
         level: g.level,
-        spells: g.spells.map((card) => {
-          const via = viaChoice(doc, card.idx, casters, locale);
-          return {
-            idx: card.idx,
-            name: card.name,
-            spellId: card.data?.id ?? null,
-            school: card.data?.school ?? null,
-            prepared: card.isPrepared || card.isAlwaysPrepared,
-            always: card.isAlwaysPrepared,
-            ...(via ? { via } : {}),
-          };
-        }),
+        spells: g.spells
+          .map((card) => {
+            const via = viaChoice(doc, card.idx, casters, locale);
+            return {
+              idx: card.idx,
+              name: card.name,
+              spellId: card.data?.id ?? null,
+              school: card.data?.school ?? null,
+              prepared: card.isPrepared || card.isAlwaysPrepared,
+              always: card.isAlwaysPrepared,
+              ...(via ? { via } : {}),
+            };
+          })
+          // By the name the reader sees, with the locale's collator.
+          .sort((x, y) => collator.compare(x.name, y.name)),
       }))
       .filter((g) => g.spells.length > 0),
   };
