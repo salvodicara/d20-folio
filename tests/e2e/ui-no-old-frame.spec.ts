@@ -27,9 +27,6 @@ const NOT_PAGES = new Set([
   "/_specimens",
   "/ui",
   "/login",
-  // a redirect to the campaign it joins; its bad-invite state cannot be reached with the
-  // dev account (every code joins) and still renders the old frame: still to move
-  "/join/:code",
   "/characters/:characterId/level-up/classic",
 ]);
 
