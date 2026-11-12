@@ -17,7 +17,7 @@ git config core.hooksPath .githooks   # or `just setup`
 
 `scripts/program-supervisor/bootstrap-worktree.sh` does the same three installs after checking
 the exact Node and pnpm pins; use it in a fresh checkout or worktree. In a worktree it also gives
-`content-pack` its own pack worktree (`~/Workspace/Codex/pack-wt/<name>`, from the pack's
+`content-pack` its own pack worktree (`.pack-wt/<name>` in the main checkout, git-ignored, from the pack's
 `origin/main`), so a lane switching branches never changes the pack under another lane's tests;
 the shared pack checkout stays on `main`, and pack PR branches live in their own pack worktrees.
 

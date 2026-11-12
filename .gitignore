@@ -109,3 +109,5 @@ artifacts/visual-review/
 
 # The runtime pack emitted by deploy.yml / emit-pack.ts (private content).
 /.pack-out
+# The per-worktree pack worktrees bootstrap-worktree.sh creates (private content).
+/.pack-wt

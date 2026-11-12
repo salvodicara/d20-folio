@@ -57,6 +57,7 @@ const COMPONENTS: Record<string, Answer> = {
     model: "src/domains/play/reactions-resistance-view.ts",
     pending: "direction: the control on screen",
   },
+  RollReactionDialog: { covered: "src/domains/play/ui/PlayCentre.tsx" },
   SpeciesChoicesBanner: { covered: "src/domains/play/ui/PlaySpeciesChoices.tsx" },
   SummaryRow: { covered: "src/domains/play/ui/PlayRest.tsx" },
   TransformFormPicker: { covered: "src/domains/play/ui/PlayFormPicker.tsx" },
