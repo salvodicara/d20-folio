@@ -90,7 +90,8 @@
       "allFailed": "all targets fail",
       "saved": "{{name}} saves",
       "failed": "{{name}} fails",
-      "noEffect": "{{result}}: no effect"
+      "noEffect": "{{result}}: no effect",
+      "theTarget": "the target"
     },
     "check": "{{skill}} check: {{total}}",
     "checkPassed": "succeeds on the {{skill}} check ({{total}} vs DC {{dc}})",

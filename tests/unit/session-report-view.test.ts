@@ -470,6 +470,19 @@ describe("a save spell's line says the targets' saves (owner, 2026-11-11)", () =
     );
   });
 
+  it("cast with nobody named: «the target» saves or fails, and the damage it took", async () => {
+    const solo = cast({ target: "failed" }, { targets: [], amount: 6 });
+    expect(await line("en", solo)).toBe(
+      "Lara casts Faerie Fire — the target fails, 6 damage"
+    );
+    expect(await line("it", solo)).toBe(
+      "Lara lancia Faerie Fire — il bersaglio fallisce, 6 danni"
+    );
+    expect(await line("en", cast({ target: "saved" }, { targets: [] }))).toBe(
+      "Lara casts Faerie Fire — the target saves"
+    );
+  });
+
   it("nobody marked anything: the line stays as it was, but a spell is cast", async () => {
     const event: PlayEvent = {
       kind: "action",

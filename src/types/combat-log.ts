@@ -48,6 +48,10 @@ export type AttackOutcome = "hit" | "miss" | "critical";
 /** Each target's save against a use, as the damage tray declared it. */
 export type SaveResults = Record<string, "saved" | "failed">;
 
+/** The key a save cast with nobody named is written under in `saves` (a Firestore
+ *  map key must not be empty). */
+export const ALONE_SAVE_ID = "target";
+
 /**
  * One structured combat-log event. Each variant carries ONLY ids/tokens + numbers
  * (and the documented free-text action/spell labels) — never a pre-localized

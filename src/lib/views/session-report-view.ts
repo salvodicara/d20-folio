@@ -12,6 +12,7 @@ import { riderEffectClause } from "@/lib/views/effect-rider-view";
 import { isInferredFight } from "@/lib/session-log/infer-fights";
 import type { PlayEvent, ReportSection, SessionEntry } from "@/lib/session-log";
 import type { ConcentrationRef } from "@/types/ids";
+import { ALONE_SAVE_ID } from "@/types/combat-log";
 
 export type TranslateFn = (key: string, args?: Record<string, string | number>) => string;
 
@@ -58,7 +59,12 @@ function savesClause(
     all && entries.length > 1
       ? t(`sessionReport.saves.${first === "saved" ? "allSaved" : "allFailed"}`)
       : entries
-          .map(([id, r]) => t(`sessionReport.saves.${r}`, { name: who(id) }))
+          .map(([id, r]) =>
+            t(`sessionReport.saves.${r}`, {
+              // A cast with nobody named writes its one save under ALONE_SAVE_ID.
+              name: id === ALONE_SAVE_ID ? t("sessionReport.saves.theTarget") : who(id),
+            })
+          )
           .join(", ");
   return event.noEffect ? t("sessionReport.saves.noEffect", { result }) : result;
 }
@@ -109,7 +115,11 @@ export function localizePlayEvent(
         base = `${base} ${clause}`;
       }
       const saves = savesClause(event, t, who);
-      if (saves) return `${base} — ${saves}`;
+      // A cast with nobody named carries its damage on the line too («6 damage»).
+      if (saves)
+        return event.amount !== undefined
+          ? `${base} — ${saves}, ${t("sessionReport.dealt", { amount: event.amount })}`
+          : `${base} — ${saves}`;
       const check = checkClause(event, t);
       if (check) return `${base} — ${check}`;
       if (!event.outcome || !OUTCOMES.has(event.outcome)) return base;

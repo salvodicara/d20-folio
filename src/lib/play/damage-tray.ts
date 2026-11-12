@@ -343,6 +343,24 @@ export function savesOnTheLine(
   return damageTrayPlan(action, targets, selfId) ? [] : others;
 }
 
+/**
+ * A save spell cast with nobody named (solo, or the target step skipped): its one save
+ * is asked on the row just used, «Save · Saved · Failed», with a damage field when the
+ * spell deals damage, as an attack with no target asks its result. `null` when a
+ * creature was named (the tray or the per-creature line asks), when the caster named
+ * only themself, or when the spell has no save.
+ */
+export function saveAloneOnTheLine(
+  action: ResolvedAction,
+  targets: ReadonlyArray<string>
+): { damage: boolean } | null {
+  if (targets.length > 0) return null;
+  const spec = combatResolutionSpec(action);
+  if (spec.kind !== "save") return null;
+  if (!action.summary.saveAbility && action.summary.saveDC === undefined) return null;
+  return { damage: spec.hasDamage };
+}
+
 /** The weapon's floor on low damage-die faces, when one applies. */
 function dieFloorOf(action: ResolvedAction): Pick<DamageTrayPlan, "dieFloor"> {
   const floor = action.summary.dieModifiers?.find((m) => m.mode === "floor");
