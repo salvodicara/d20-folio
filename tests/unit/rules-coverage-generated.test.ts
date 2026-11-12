@@ -1,10 +1,11 @@
 /**
- * The generated rules coverage page cannot go stale: it is rewritten from the code
- * and the tests (`pnpm rules:coverage`), and this test fails when the committed page
- * differs, when a glossary entry claims «modeled» without a test, or when a screen now
- * calls what a gap waits for (the gap may be closed: review it).
+ * The generated rules coverage page is written on demand from the code and the tests
+ * (`pnpm rules:coverage`) and is not committed: a count lives in one place, and two PRs
+ * that change a verdict never collide on it. This test fails when a glossary entry
+ * claims «modeled» without a test, or when a screen now calls what a gap waits for
+ * (the gap may be closed: review it).
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -15,10 +16,10 @@ import {
 import { GLOSSARY } from "./__helpers__/glossary-coverage";
 
 describe("the generated rules coverage page", () => {
-  it("is current (run `pnpm rules:coverage` after a change it reflects)", () => {
+  it("renders (`pnpm rules:coverage` writes it to disk)", () => {
     const page = renderCoverageDoc();
     if (process.env.WRITE_COVERAGE) writeFileSync(GENERATED_DOC, page);
-    expect(readFileSync(GENERATED_DOC, "utf8")).toBe(page);
+    expect(page).toContain("## Rules Glossary");
   });
 
   it("every modeled glossary entry names a test, and every test it names exists", () => {

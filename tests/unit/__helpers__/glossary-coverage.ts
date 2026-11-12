@@ -396,11 +396,9 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     entry: "Improvised Weapons",
-    status: "gap",
-    evidence: [],
-    note: "#11",
-    waitsFor: ["improvisedWeaponAttack"],
-    gaps: [11],
+    status: "modeled",
+    evidence: ["improvised-weapon-row.test.ts"],
+    note: "a row beside the Unarmed Strike on both sheets (`improvisedWeaponAttack`)",
   },
   {
     entry: "Incapacitated",

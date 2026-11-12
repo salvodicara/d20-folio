@@ -253,7 +253,7 @@ runs it for a pair; run it by hand before merging a pack PR on its own.
    data, the product brief (`docs/strategy/2026-10-16-product-brief.md`)/Design for UI, or the
    relevant operations runbook. Verify claims against code, config, git, and runtime evidence
    before acting.
-3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage (its counts are test-pinned).
+3. **`docs/RULES_COVERAGE.md`** for rules and catalogue automation coverage; `pnpm rules:coverage` writes the counted page (never committed).
 
 ## Common recipes
 
@@ -321,8 +321,9 @@ runs it for a pair; run it by hand before merging a pack PR on its own.
 8. `pnpm changeset`. Commit; open a pull request.
 ```
 
-> **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`, checked by the
-> `rules-coverage-*` tests; a new feature lands with its row.
+> **Rules coverage.** Every rule's state lives in `docs/RULES_COVERAGE.md`; a new feature lands
+> with its row. Catalogue counts are not typed there: `pnpm rules:coverage` writes them, from the
+> same rules the `rules-coverage-*` tests check, to a page that is never committed.
 
 ### I'm fixing a bug
 
