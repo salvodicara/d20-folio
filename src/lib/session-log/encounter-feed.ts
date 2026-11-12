@@ -15,7 +15,7 @@
  * result: "Goblin: Scimitar → Lyra: hit, 7".
  */
 
-import type { SessionEntry } from "./fold";
+import { isMarkerEvent, type SessionEntry } from "./fold";
 import type { CombatantId, PlayEvent } from "./types";
 
 export interface FeedLine {
@@ -39,11 +39,6 @@ export interface FeedViewer {
   isDm: boolean;
 }
 
-const MARKERS = new Set<PlayEvent["kind"]>([
-  "encounter-start",
-  "round-start",
-  "encounter-end",
-]);
 const LANDED = new Set(["hit", "critical", "failed", "saved"]);
 /** The results a damage line itself can say ("Goblin → Lyra: hit, 7"). */
 const ATTACK_RESULTS = new Set(["hit", "miss", "critical"]);
@@ -88,7 +83,7 @@ export function encounterFeed(
   encounterId: string
 ): FeedLine[] {
   const scoped = entries.filter(
-    (entry) => entry.encounterId === encounterId && !MARKERS.has(entry.event.kind)
+    (entry) => entry.encounterId === encounterId && !isMarkerEvent(entry.event)
   );
 
   const key = (target: string, round: number | undefined) => `${target}::${round ?? 0}`;
