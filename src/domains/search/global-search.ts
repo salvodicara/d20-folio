@@ -43,6 +43,9 @@ export interface SearchEntry {
   action: SearchAction;
   /** Every name the entry answers to: the label first, then the other language's. */
   names: ReadonlyArray<string>;
+  /** Other words it answers to (an abbreviation, a common nickname). Only the ⌘K index
+   *  (`search-index.ts`) reads them; the classic ranker matches `names` alone. */
+  aliases?: ReadonlyArray<string>;
   /** The entry's text, matched as a capped hint band (whole words only). */
   text?: ReadonlyArray<string | null | undefined>;
 }

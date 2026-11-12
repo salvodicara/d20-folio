@@ -43,6 +43,11 @@ beforeEach(async () => {
 const dbOf = (uid: string): Firestore =>
   testEnv.authenticatedContext(uid).firestore() as unknown as Firestore;
 
+/** Close a test client's connections. `rules-unit-testing` hands back the compat
+ *  client (cast to `Firestore` here), so it is closed through its own `terminate()`. */
+const closeClient = (db: Firestore): Promise<void> =>
+  (db as unknown as { terminate: () => Promise<void> }).terminate();
+
 describe("session-log Firestore adapter", () => {
   it("two devices share one ordered session and the fold applies the DM's correction", async () => {
     const now = () => new Date(2026, 9, 8, 20, 0);
@@ -61,7 +66,8 @@ describe("session-log Firestore adapter", () => {
     await dm.record({ kind: "round-start", round: 1 });
     await dm.correct(hit, { kind: "damage", amount: 12 });
 
-    const store = createFirestoreSessionLogStore(dbOf("ana"), "camp1");
+    const listener = dbOf("ana");
+    const store = createFirestoreSessionLogStore(listener, "camp1");
     expect(await store.latest()).toMatchObject({ id: "2026-10-08" });
     const items = await new Promise<LogItem[]>((done) => {
       const stop = store.subscribe("2026-10-08", (log) => {
@@ -71,6 +77,9 @@ describe("session-log Firestore adapter", () => {
         }
       });
     });
+    // Close the listener's connection before the next test clears the emulator: a
+    // stream still shutting down makes that clear fail with CANCELLED.
+    await closeClient(listener);
     expect(items.map((i) => [i.type, i.by])).toEqual([
       ["event", "ana"],
       ["event", "dm"],
