@@ -174,7 +174,8 @@ export function PlayScreen() {
   const sections: Section[] = [
     "actions",
     "resources",
-    ...(fight || campaign ? (["fight"] as const) : []),
+    // the fight and the session report: always there (a solo hero's report, too)
+    "fight",
   ];
   return (
     <main id="main" className="f-page f-sheet">
