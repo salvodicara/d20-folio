@@ -175,8 +175,9 @@ describe("a stored wizard short of the book", () => {
     expect(rows[0]?.title).toBe(
       "Aggiungi 5 incantesimi al tuo libro: restano non preparati"
     );
-    expect(rows[0]?.options.map((o) => o.id)).toEqual(
-      classPickPool(short, "wizard", "spellbook")
+    // The same spells as the pool (the picker sorts them by the reader's names).
+    expect(new Set(rows[0]?.options.map((o) => o.id))).toEqual(
+      new Set(classPickPool(short, "wizard", "spellbook"))
     );
   });
 });
