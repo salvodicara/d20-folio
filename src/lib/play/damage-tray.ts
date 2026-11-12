@@ -167,11 +167,22 @@ export function damageTrayPlan(
   // Only for another creature: the caster's own state lights on its sheet (a
   // willing self-target of Enlarge/Reduce makes no save).
   const otherTargets = targets.filter((id) => id !== selfId);
-  const standsOnSave =
-    spec.standingEffect !== undefined && spec.kind === "save" && otherTargets.length > 0;
+  const savesAtOthers =
+    spec.kind === "save" &&
+    Boolean(action.summary.saveAbility || action.summary.saveDC) &&
+    otherTargets.length > 0;
+  const standsOnSave = spec.standingEffect !== undefined && savesAtOthers;
+  // A save with nothing else to apply still asks who saved (Command: a failed save
+  // obeys), so the log says it.
+  const savesOnly = savesAtOthers && items.length === 0 && !standsOnSave;
   // An attack at a picked target always has its result to say, even with nothing
   // else to apply (Ray of Enfeeblement).
-  if (items.length === 0 && !(attacks && targets.length > 0) && !standsOnSave)
+  if (
+    items.length === 0 &&
+    !(attacks && targets.length > 0) &&
+    !standsOnSave &&
+    !savesOnly
+  )
     return null;
   // A pool spend (Lay on Hands) already chose its amount in its own picker: there is
   // no roll to type, so the tray would only ask the same number twice.
@@ -237,7 +248,7 @@ export function damageTrayPlan(
   const planTargets = [
     ...new Set([
       ...items.map((item) => item.targetId),
-      ...(attacks ? targets : standsOnSave ? otherTargets : []),
+      ...(attacks ? targets : standsOnSave || savesOnly ? otherTargets : []),
     ]),
   ];
   const split =
@@ -254,7 +265,7 @@ export function damageTrayPlan(
     ...(s.ignoresResistance?.length
       ? { ignoresResistance: [...s.ignoresResistance] }
       : {}),
-    ...(hasSave && (saveGovernsDamage || condition || standsOnSave)
+    ...(hasSave && (saveGovernsDamage || condition || standsOnSave || savesOnly)
       ? {
           save: {
             ...(s.saveAbility ? { ability: s.saveAbility } : {}),
@@ -289,7 +300,7 @@ export function damageTrayPlan(
           },
         }
       : {}),
-    ...(standsOnSave
+    ...(standsOnSave || savesOnly
       ? { leavesState: { on: "failed-save" as const, name: action.name } }
       : attacks && spec.standingEffect !== undefined
         ? { leavesState: { on: "hit" as const, name: action.name } }

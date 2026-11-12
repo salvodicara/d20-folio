@@ -23,6 +23,7 @@ import {
   rowAmount,
   rowConditions,
   rowNeedsTotal,
+  rowTakesState,
   setAttackOutcome,
   setMultiplier,
   sharedAttackOutcome,
@@ -192,6 +193,20 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     if (!lay) throw new Error("no Lay on Hands");
     expect(combatResolutionSpec(lay).hasHealing).toBe(true);
     expect(damageTrayPlan(lay, [], ME)).toBeNull();
+  });
+
+  it("a save with nothing else to apply still asks who saved (Command)", () => {
+    const command = plan(action("spell-command"));
+    expect(command).toMatchObject({
+      effect: null,
+      targets: [FOE],
+      save: { ability: "WIS", onSave: "none", bySpell: true },
+      leavesState: { on: "failed-save", name: "Command" },
+    });
+    // A failed save reads «Under Command»; a success, «No effect».
+    expect(rowTakesState(command, initialTrayRow(command, FOE))).toBe(true);
+    // Cast with no creature named, there is nobody to ask.
+    expect(damageTrayPlan(action("spell-command"), [], ME)).toBeNull();
   });
 
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
