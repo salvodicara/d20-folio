@@ -3,8 +3,8 @@
  * the catalogue rows counted by the coverage rules (public SRD data only, so the page
  * reads the same with or without the content pack), the conformance count read from
  * the cases' statuses (CI proves each: `works` passes, the rest must fail), and the
- * Rules Glossary entry by entry with its proof. `pnpm rules:coverage` rewrites it;
- * `rules-coverage-generated.test.ts` fails when the committed page differs.
+ * Rules Glossary entry by entry with its proof. `pnpm rules:coverage` writes it on
+ * demand; it is not committed (gitignored), so PRs never collide on its counts.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -171,8 +171,7 @@ export function renderCoverageDoc(): string {
   return [
     "# Rules coverage (generated)",
     "",
-    "<!-- Written by `pnpm rules:coverage` from the code and the tests; do not edit by hand.",
-    "     tests/unit/rules-coverage-generated.test.ts fails when this page is out of date. -->",
+    "<!-- Written by `pnpm rules:coverage` from the code and the tests; not committed. -->",
     "",
     "Side by side with the hand-written [RULES_COVERAGE.md](RULES_COVERAGE.md) and",
     "[RULES_GLOSSARY_AUDIT.md](RULES_GLOSSARY_AUDIT.md) until the coordinator has compared",

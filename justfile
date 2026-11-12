@@ -83,6 +83,18 @@ e2e-rehearsal *args:
 merge-pr +prs:
     bash scripts/merge-pr.sh {{prs}}
 
+# Open or edit a PR through the private-text scan (no licensed-setting term, no identity
+# value in the title or body; GitHub keeps every revision). Needs the linked pack.
+#   just pr-create --title "…" --body-file body.md [--base main --head branch …]
+#   just pr-edit 1234 --title "…" --body-file body.md
+[positional-arguments]
+pr-create *args:
+    bash scripts/pr-text.sh create "$@"
+
+[positional-arguments]
+pr-edit pr *args:
+    bash scripts/pr-text.sh edit "$@"
+
 # ─── Build ────────────────────────────────────────────────
 
 # Production build

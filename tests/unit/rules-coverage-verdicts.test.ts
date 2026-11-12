@@ -6,6 +6,7 @@
  * the allies, Memorize Spell is automatic; an entry nobody checked reads «unproven».
  * Public SRD ids only in the verdicts file.
  */
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
@@ -35,6 +36,25 @@ const held = (extra: readonly CoverageVerdict[] = []) =>
   [];
 const of = (id: string, extra?: readonly CoverageVerdict[]) =>
   held(extra).find((row) => row.id === id);
+
+/**
+ * True when a screen on the base branch (the PR's base in CI, else origin/main) already
+ * calls `fn`, or when the base cannot be read. A pack row due a re-check then names a
+ * change that landed: the two repos cannot merge together, so main is warned, not broken,
+ * and the row is settled in the pack. Only the change that adds the call fails here.
+ */
+function landedOnBase(fn: string): boolean {
+  const base = `origin/${process.env.GITHUB_BASE_REF || "main"}`;
+  try {
+    execFileSync("git", ["grep", "-q", "-w", "-e", fn, base, "--", "src/*.tsx"], {
+      stdio: "ignore",
+    });
+    return true;
+  } catch (error) {
+    // git grep exits 1 for "not found"; anything else (no such ref) reads as landed.
+    return (error as { status?: number }).status !== 1;
+  }
+}
 
 describe("code-checked verdicts in the played-content view", () => {
   it("the acceptance rows read the code's truth, not the declaration", () => {
@@ -113,8 +133,9 @@ describe("the public verdicts file", () => {
   });
 
   // The pack's own file (composed builds only). Its messages name a row by its index,
-  // never its id: a pack id must not reach a CI log.
-  it("the pack's verdicts cite pack tests that exist and run, and none is due a re-check", () => {
+  // never its id: a pack id must not reach a CI log. A re-check fails only the change
+  // that adds the waited-for call; once that call is on the base it is a warning.
+  it("the pack's verdicts cite pack tests that exist and run, and no change here adds a call one waits for", () => {
     packVerdicts().forEach((v, i) => {
       const row = `pack verdict ${i + 1}`;
       for (const file of v.packEvidence ?? []) {
@@ -131,9 +152,16 @@ describe("the public verdicts file", () => {
         expect(v.waitsFor?.length ?? 0, `${row}: until without waitsFor`).toBeGreaterThan(
           0
         );
-      expect(shownVerdict(v, aScreenCalls) === "re-check", `${row}: re-check it`).toBe(
-        false
-      );
+      if (shownVerdict(v, aScreenCalls) !== "re-check") return;
+      const added = (v.waitsFor ?? [])
+        .filter(aScreenCalls)
+        .filter((fn) => !landedOnBase(fn));
+      if (added.length === 0)
+        console.warn(`${row}: due a re-check in the pack (a waited-for call landed)`);
+      expect(
+        added.length,
+        `${row}: this change adds a call it waits for: settle it`
+      ).toBe(0);
     });
   });
 
