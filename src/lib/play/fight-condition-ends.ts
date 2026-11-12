@@ -30,7 +30,15 @@ export function conditionEndsOf(
     options?.includes(conditionId) ?? false;
   if (source.kind === "spell") {
     const application = getSpellById(source.id)?.conditionApplication;
-    return application && applies(application.options) ? (application.ends ?? []) : [];
+    if (!application) return [];
+    const ends = application.ends ?? [];
+    if (applies(application.options)) return ends;
+    // The condition a repeat-save track settles into (Sleep's Unconscious) keeps the
+    // spell's other ends: the sleeper still wakes when it takes damage.
+    const settled = ends.some(
+      (end) => end.on === "repeat-save" && end.track?.settlesInto === conditionId
+    );
+    return settled ? ends.filter((end) => end.on !== "repeat-save") : [];
   }
   const action = classFeatureIndex
     .get(source.id)
