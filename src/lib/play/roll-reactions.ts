@@ -6,6 +6,7 @@
  * Reaction and says it at the table. Pure.
  */
 import type { ActionRollEffect, ConditionId, ReactableRoll } from "@/data/types";
+import { getClassTable } from "@/data/classes";
 import type { CharacterDoc } from "@/types/character";
 
 /** What the use does, with its die resolved (the Bardic Inspiration die by level). */
@@ -26,11 +27,35 @@ export type RollReaction =
       /** The bonus to the new roll, resolved (Indomitable: the Fighter level). */
       bonus?: number;
       against?: ReadonlyArray<ConditionId>;
+      /** Offered only while this state is active (`barbarian-rage`). */
+      whileActive?: string;
     };
 
 /** A class's level on the sheet (0 without it). */
 function classLevel(doc: CharacterDoc | undefined, classId: string): number {
   return doc?.character.classes.find((c) => c.classId === classId)?.level ?? 0;
+}
+
+/** A number from a class's table at the sheet's level in it (0 without it). */
+function classTableValue(
+  doc: CharacterDoc | undefined,
+  classId: string,
+  key: string
+): number {
+  const level = classLevel(doc, classId);
+  const row = getClassTable(classId)?.levels[level - 1];
+  const value = (row?.classSpecific as Record<string, unknown> | undefined)?.[key];
+  return typeof value === "number" ? value : 0;
+}
+
+/** The resolved bonus of a reroll: a class's level, or a value of its table. */
+function rerollBonus(
+  doc: CharacterDoc | undefined,
+  bonus: Extract<ActionRollEffect, { kind: "reroll" }>["bonus"]
+): number {
+  if (!bonus) return 0;
+  if ("classLevel" in bonus) return classLevel(doc, bonus.classLevel);
+  return classTableValue(doc, bonus.classTable.classId, bonus.classTable.key);
 }
 
 /** "d8" → "1d8"; a count already given stays. */
@@ -50,7 +75,7 @@ export function rollReactionOf(
   // post-roll seam reads it (`postRollSources`).
   if (!effect || effect.kind === "advantage") return null;
   if (effect.kind === "reroll") {
-    const bonus = effect.bonus ? classLevel(doc, effect.bonus.classLevel) : 0;
+    const bonus = rerollBonus(doc, effect.bonus);
     return {
       kind: "reroll",
       rolls: effect.rolls,
@@ -58,6 +83,7 @@ export function rollReactionOf(
       ...(effect.advantage ? { advantage: true as const } : {}),
       ...(bonus > 0 ? { bonus } : {}),
       ...(effect.against ? { against: effect.against } : {}),
+      ...(effect.whileActive ? { whileActive: effect.whileActive } : {}),
     };
   }
   const die = "tracker" in effect.die ? action.summary.die : effect.die.dice;
@@ -139,6 +165,12 @@ export function rerollOffers<A extends { summary: { rollEffect?: ActionRollEffec
     if (reaction?.kind !== "reroll") return [];
     if (!reaction.rolls.includes(moment.roll)) return [];
     if (reaction.whose !== "any" && reaction.whose !== moment.whose) return [];
+    if (
+      reaction.whileActive &&
+      !(doc.session.activeFeatures ?? []).includes(reaction.whileActive)
+    ) {
+      return [];
+    }
     if (
       reaction.against &&
       (!moment.against || !reaction.against.includes(moment.against))
