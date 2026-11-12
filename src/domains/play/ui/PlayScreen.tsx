@@ -220,10 +220,14 @@ export function PlaySheet({
         </button>
       </PhoneBar>
       {back.crumb && (
-        <Link className="f-crumb" to={back.to}>
-          <Icon name="u-back" size={16} />
-          {back.label}
-        </Link>
+        <div className="f-crumbs">
+          <Link className="f-crumb" to={back.to}>
+            <Icon name="u-back" size={16} />
+            {back.label}
+          </Link>
+          {/* someone else's sheet: every control is read-only, and it says so */}
+          {readonly && <Chip>{t("dmView.readonly")}</Chip>}
+        </div>
       )}
       <PlayHeader
         doc={doc}
