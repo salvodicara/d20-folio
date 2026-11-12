@@ -13,11 +13,19 @@
  * it (the heal between two blows belongs to the fight). A real fight's markers always
  * win: its lines are never re-placed and never join a run.
  *
+ * A member's solo fight (their «Start combat», a `solo-fight` line) is a strong signal:
+ * it opens a run with no blow or writer threshold, the other members' starts, ends and
+ * blows extend it, and it ends at the last solo end once every member who started has
+ * ended (else when the blows stop). So several players starting the same fight on their
+ * own sheets read as one fight, from the earliest start to the latest end. A run a real
+ * fight's start cuts keeps no section of its own unless it met the usual threshold:
+ * the real fight wins.
+ *
  * The model is BG3's (combat starts with the first blow and ends when the blows stop);
  * the report marks the fight as inferred ({@link isInferredFight}).
  */
 
-import type { SessionEntry } from "./fold";
+import { isMarkerEvent, type SessionEntry } from "./fold";
 import type { ReportSection } from "./report";
 import type { LocText } from "@/lib/loc-text";
 
@@ -74,31 +82,62 @@ export function inferFights(
   options: InferFightsOptions = {}
 ): SessionEntry[] {
   // Runs of combat lines outside real fights, as index spans into `entries`.
-  const runs: { from: number; to: number; writers: Set<string>; blows: number }[] = [];
-  let run: (typeof runs)[number] | null = null;
+  interface Run {
+    from: number;
+    to: number;
+    writers: Set<string>;
+    blows: number;
+    /** Members whose solo fight is open in this run; `null`: no solo start seen. */
+    solo: Set<string> | null;
+  }
+  const runs: Run[] = [];
+  let run: Run | null = null;
   let lastAt = 0;
-  const close = () => {
-    if (run && run.blows >= INFERRED_FIGHT_MIN_BLOWS && run.writers.size >= 2)
-      runs.push(run);
+  const close = (cutByRealFight = false) => {
+    const met = run && run.blows >= INFERRED_FIGHT_MIN_BLOWS && run.writers.size >= 2;
+    const signalled =
+      run?.solo != null &&
+      !cutByRealFight &&
+      entries.slice(run.from, run.to + 1).some((entry) => !isMarkerEvent(entry.event));
+    if (run && (met || signalled)) runs.push(run);
     run = null;
+  };
+  const extend = (index: number, at: number): Run => {
+    if (run && at - lastAt > INFERRED_FIGHT_IDLE_MS) close();
+    run ??= { from: index, to: index, writers: new Set(), blows: 0, solo: null };
+    run.to = index;
+    lastAt = at;
+    return run;
   };
   entries.forEach((entry, index) => {
     const { event } = entry;
     if (entry.encounterId !== undefined || event.kind === "encounter-start") {
-      close();
+      close(true);
       return;
     }
     if (event.kind === "rest") {
       close();
       return;
     }
+    if (event.kind === "solo-fight") {
+      if (event.started) {
+        const span = extend(index, entry.at);
+        span.solo ??= new Set();
+        span.solo.add(event.actor);
+      } else if (
+        run?.solo?.has(event.actor) &&
+        entry.at - lastAt <= INFERRED_FIGHT_IDLE_MS
+      ) {
+        const span = extend(index, entry.at);
+        span.solo?.delete(event.actor);
+        if (span.solo?.size === 0) close();
+      }
+      return;
+    }
     if (!isCombatLine(event, options)) return;
-    if (run && entry.at - lastAt > INFERRED_FIGHT_IDLE_MS) close();
-    run ??= { from: index, to: index, writers: new Set(), blows: 0 };
-    run.to = index;
-    run.writers.add(entry.by);
-    run.blows += 1;
-    lastAt = entry.at;
+    const span = extend(index, entry.at);
+    span.writers.add(entry.by);
+    span.blows += 1;
   });
   close();
   if (runs.length === 0) return [...entries];

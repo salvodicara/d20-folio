@@ -8,7 +8,7 @@
  * the player's sheet folds that spend, and the hit must still be on the server after
  * the fold; the next hit is not halved.
  *
- * Runs after the classic journey: it rewrites Catalion's sheet as a Rogue 5.
+ * Runs after the classic journey: it rewrites Bard's sheet as a Rogue 5.
  */
 import { expect, type Page } from "@playwright/test";
 import {
@@ -24,7 +24,7 @@ import {
 } from "./helpers";
 
 const DODGE = "rogue-uncanny-dodge";
-const CHARACTER = `http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents/users/${PLAYER_BARD}/characters/${SANDBOX_USERS.catalion.characterId}`;
+const CHARACTER = `http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents/users/${PLAYER_BARD}/characters/${SANDBOX_USERS.bard.characterId}`;
 const OWNER = { headers: { Authorization: "Bearer owner" } };
 
 /** The spends ledger as raw REST JSON (empty when the document does not exist). */
@@ -33,7 +33,7 @@ async function ledger(): Promise<string> {
   return response.ok ? await response.text() : "";
 }
 
-/** The Hit Points the server holds for Catalion (combat/state). */
+/** The Hit Points the server holds for Bard (combat/state). */
 async function serverHp(): Promise<number> {
   const body = (await (await fetch(`${CHARACTER}/combat/state`, OWNER)).json()) as {
     fields?: {
@@ -67,8 +67,8 @@ test("classic UI: the DM's hit spends a claimed Uncanny Dodge, and the player's 
   browser,
 }) => {
   test.setTimeout(300_000);
-  reseedHero(SANDBOX_USERS.catalion, {
-    fixture: "chiaviddu-rogue.json",
+  reseedHero(SANDBOX_USERS.bard, {
+    fixture: "rogue",
     level: 5,
     active: [DODGE],
   });
@@ -77,9 +77,9 @@ test("classic UI: the DM's hit spends a claimed Uncanny Dodge, and the player's 
   const owner = await (await browser.newContext()).newPage();
   errors.push(...watchErrors(owner));
 
-  await test.step("Catalion's player has their sheet open", async () => {
-    await signInAs(owner, SANDBOX_USERS.catalion.email);
-    await owner.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+  await test.step("Bard's player has their sheet open", async () => {
+    await signInAs(owner, SANDBOX_USERS.bard.email);
+    await owner.goto(`/characters/${SANDBOX_USERS.bard.characterId}`);
     await expect(owner.getByRole("button", { name: "Rest", exact: true })).toBeVisible({
       timeout: 60_000,
     });

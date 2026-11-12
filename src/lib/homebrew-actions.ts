@@ -326,7 +326,16 @@ export const HOMEBREW_ACTION_FIELD_SCHEMAS: {
       },
       {
         advantage: TRUE,
-        bonus: objectSchema({ classLevel: literals(ALL_CLASS_IDS) }),
+        bonus: unionSchema([
+          objectSchema({ classLevel: literals(ALL_CLASS_IDS) }),
+          objectSchema({
+            classTable: objectSchema({
+              classId: literals(ALL_CLASS_IDS),
+              key: stringSchema,
+            }),
+          }),
+        ]),
+        whileActive: stringSchema,
         against: arraySchema(CONDITION_ID_SCHEMA),
       }
     ),

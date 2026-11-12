@@ -141,6 +141,18 @@ peer-damage.ts`; plus the `combat/spends` append when the ledger flag is on), so
   device must be online; the target need not be.
 - In a campaign fight a PC's initiative lives in `campaigns/{id}.encounterInit[uid]`, and the
   round on the shared `encounter`; solo, both live in `combat/state`.
+- The DM's fight edits (`encounter-edit-log.ts`, `encounter-edit-sync.ts`) are pure reducers
+  kept in a log, shown at once and sent in batches: each batch is a transaction replayed onto
+  the server's newest fight, tried again while online when it fails, so another device's write
+  is kept. After a send, a snapshot that differs from the write is checked by a read, never
+  taken as is (it may be older, delivered late). Pinned by `encounter-edit-races.test.ts` and
+  the seeded `encounter-edit-fuzz.test.ts`. **Known, bounded:** three paths still write the
+  fight whole, last writer wins, so another device's change made meanwhile can be
+  overwritten (never the DM's own edit): offline (queued, written on reconnect), closing or
+  hiding the campaign page (the waiting edits are written at once so they survive the
+  unload), and every transaction try failing while online (after about 7.5 s). Closing them
+  needs a write that replays the edits on the server: a Cloud Function or a rules-validated
+  edit queue the server applies, instead of the client's whole write.
 - Offline: Firestore's persistent cache plus a Workbox service worker (`vite-plugin-pwa`,
   `vite.config.ts`) that precaches the app shell and catalogue chunks. Proven by
   `tests/e2e-offline/offline-it.spec.ts`.

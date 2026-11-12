@@ -30,6 +30,12 @@ export function actionCheckSkills(actionId: string): string[] | undefined {
   return skills ? [...skills] : undefined;
 }
 
+/** The d20 face a check counts: the face entered, raised to the skill's floor
+ *  (Reliable Talent treats a 9 or lower as 10). */
+export function countedFace(face: number, floor: number): number {
+  return Math.max(face, floor);
+}
+
 /** The SRD "Typical Difficulty Classes", offered as one-tap DC picks. */
 export const TYPICAL_DCS = [5, 10, 15, 20, 25, 30] as const;
 

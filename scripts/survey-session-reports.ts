@@ -17,6 +17,9 @@
  *     how many lines carry their own fight stamp, and the time gaps between combat
  *     lines (bucketed): enough to tell a fight nobody started from one whose markers
  *     the DM's closed page never wrote.
+ *   - (v4) the solo-fight state each sheet stores (`combat/state`): a solo fight
+ *     started, a round past 1, a solo Initiative roll. `solo-fight` lines (a member's
+ *     «Start combat» / «End combat» in a campaign session) count under `byKind`.
  * It never writes.
  *
  * Output: counts only. Never a name, an id, a path or any text: sessions are listed
@@ -40,6 +43,7 @@ import {
 
 const HEAD = /^campaigns\/([^/]+)\/sessionLogs\/([^/]+)$/;
 const ITEM = /^campaigns\/([^/]+)\/sessionLogs\/([^/]+)\/items\/([^/]+)$/;
+const COMBAT_STATE = /^users\/[^/]+\/characters\/[^/]+\/combat\/state$/;
 
 export interface SessionReportRow {
   lines: number;
@@ -100,7 +104,7 @@ const emptyGaps = (): Record<GapBucket, number> =>
   Object.fromEntries(GAP_BUCKETS.map((b) => [b, 0])) as Record<GapBucket, number>;
 
 export interface SessionReportsSurvey {
-  format: "d20-folio-session-reports-survey-v3";
+  format: "d20-folio-session-reports-survey-v4";
   sessions: number;
   lines: number;
   byKind: Record<string, number>;
@@ -124,6 +128,13 @@ export interface SessionReportsSurvey {
   linesInsideInferredFights: number;
   linesStillOutside: number;
   unreadable: number;
+  /** (v4) Sheets' stored solo-fight state, counted per sheet. */
+  soloFightState: {
+    sheets: number;
+    fightStarted: number;
+    roundPastOne: number;
+    initiativeRolled: number;
+  };
   perSession: SessionReportRow[];
 }
 
@@ -299,7 +310,7 @@ export function surveySessionReports(
   engine?: ReportEngine
 ): SessionReportsSurvey {
   const survey: SessionReportsSurvey = {
-    format: "d20-folio-session-reports-survey-v3",
+    format: "d20-folio-session-reports-survey-v4",
     sessions: 0,
     lines: 0,
     byKind: {},
@@ -321,6 +332,7 @@ export function surveySessionReports(
     linesInsideInferredFights: 0,
     linesStillOutside: 0,
     unreadable: 0,
+    soloFightState: { sheets: 0, fightStarted: 0, roundPastOne: 0, initiativeRolled: 0 },
     perSession: [],
   };
   const sessions = new Map<
@@ -328,6 +340,15 @@ export function surveySessionReports(
     { head: unknown[]; items: { at: number; line: unknown }[] }
   >();
   for (const doc of documents) {
+    if (COMBAT_STATE.test(doc.path)) {
+      const solo = survey.soloFightState;
+      solo.sheets += 1;
+      if (doc.data.soloFightStarted === true) solo.fightStarted += 1;
+      if (typeof doc.data.round === "number" && doc.data.round > 1)
+        solo.roundPastOne += 1;
+      if (typeof doc.data.initiativeRoll === "number") solo.initiativeRolled += 1;
+      continue;
+    }
     const head = HEAD.exec(doc.path);
     const item = ITEM.exec(doc.path);
     const key = head ? `${head[1]}/${head[2]}` : item ? `${item[1]}/${item[2]}` : null;
@@ -396,6 +417,7 @@ export function surveySessionReports(
 export const DISCOVERY = [
   { collectionGroup: "sessionLogs", pattern: HEAD },
   { collectionGroup: "items", pattern: ITEM },
+  { collectionGroup: "combat", pattern: COMBAT_STATE },
 ];
 
 async function engineExport(file: string, name: string): Promise<unknown> {

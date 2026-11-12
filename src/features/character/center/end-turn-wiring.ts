@@ -5,6 +5,7 @@
  * turn the same way. The caller supplies only what it shows: the maintained-state
  * prompt, the ended-effect notices, the lost readied spell and the undo entry.
  */
+import { useAttackOutcomeStore } from "./attack-outcome-store";
 import {
   advanceGlobalCombat,
   syncPipToStatus,
@@ -153,6 +154,8 @@ export function storeEndTurnPorts(ui: EndTurnUi): EndTurnPorts {
 
 /** End the open character's turn through the shared wiring. */
 export function endTurnWithStores(ui: EndTurnUi): void {
+  // The attack-result chips belong to the turn's last use: they go with the turn.
+  useAttackOutcomeStore.getState().clear();
   runEndTurn(storeEndTurnPorts(ui));
 }
 

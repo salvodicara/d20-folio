@@ -15,9 +15,12 @@ import {
   type CheckEntry,
 } from "@/domains/play/check-entry";
 import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
-import { TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
+import { countedFace, TYPICAL_DCS, withCheckResult } from "@/lib/play/checks";
 import type { CombatAction } from "@/lib/views/combat-action-view";
 import { Button, Chip, Dialog, Field, StatBadge } from "@/ui";
+import { useLocale } from "@/hooks/useLocale";
+import { keptFace, paidAdvantageFor } from "@/domains/play/paid-advantage";
+import { useCharacterStore } from "@/stores/characterStore";
 
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 /** «14 + 5 = 19», with a true minus for a penalty. */
@@ -45,18 +48,35 @@ export function PlayCheck({
     entry?.kind === "hide" ? entry.dc : entry?.kind === "escape" ? ESCAPE_DC : undefined
   );
   const [dcText, setDcText] = useState(String(ESCAPE_DC));
+  const [secondText, setSecondText] = useState("");
+  const [paid, setPaid] = useState<string | null>(null);
+  const { language: locale } = useLocale();
+  const doc = useCharacterStore((st) => st.character);
   if (!entry) return null;
-  const face = /^\d{1,2}$/.test(faceText.trim()) ? Number(faceText.trim()) : null;
-  const valid = face !== null && face >= 1 && face <= 20;
-  const bonus =
-    entry.kind === "check"
-      ? (entry.skills.find((s) => s.id === skill)?.bonus ?? 0)
-      : entry.bonus;
+  // A paid Advantage the sheet holds (a Luck Point), as the save entries offer it.
+  const paidAdvantage = doc
+    ? paidAdvantageFor(doc, locale, t, "check", "play.roll.paidAdvantageCheck")
+    : undefined;
+  const faceOf = (text: string) =>
+    /^\d{1,2}$/.test(text.trim()) && Number(text) >= 1 && Number(text) <= 20
+      ? Number(text.trim())
+      : null;
+  const first = faceOf(faceText);
+  const second = faceOf(secondText);
+  const valid = first !== null && (paid === null || second !== null);
+  const picked =
+    entry.kind === "check" ? entry.skills.find((s) => s.id === skill) : entry;
+  const bonus = picked?.bonus ?? 0;
+  // The d20 kept (the higher with a paid Advantage), then Reliable Talent: a 9 or
+  // lower on a proficient skill counts as 10.
+  const rolled = first === null ? null : keptFace(first, second ?? first, paid !== null);
+  const face = valid && rolled !== null ? countedFace(rolled, picked?.floor ?? 1) : null;
+  const floored = face !== null && face !== rolled;
   const skillId = entry.kind === "check" ? (skill ?? "") : entry.skill;
-  const total = valid ? face + bonus : null;
+  const total = face !== null ? face + bonus : null;
   const passed = total !== null && dc !== undefined ? total >= dc : undefined;
   const verdict =
-    total === null || !valid
+    total === null || face === null
       ? null
       : `${sum(face, bonus)}: ${
           passed === undefined
@@ -70,7 +90,8 @@ export function PlayCheck({
                   : t("play.check.ok", { dc })
         }`;
   const apply = () => {
-    if (!valid) return;
+    if (face === null) return;
+    if (paid) paidAdvantage?.onPay(paid);
     if (entry.kind === "check") {
       executeAction(withCheckResult(action, { skill: skillId, face, bonus }, dc));
     } else {
@@ -172,11 +193,39 @@ export function PlayCheck({
             if (e.key === "Enter") apply();
           }}
         />
+        {paid && (
+          <Field
+            label={t("combat.d20SecondAria")}
+            inputMode="numeric"
+            autoComplete="off"
+            className="f-in f-in-big f-in-short"
+            value={secondText}
+            onChange={(e) => setSecondText(e.target.value)}
+          />
+        )}
       </div>
+      {paidAdvantage && (
+        <div className="f-ask">
+          <div className="f-chips" role="group" aria-label={t("play.down.addAfter")}>
+            {paidAdvantage.options.map((option) => (
+              <Chip
+                key={option.id}
+                pressed={paid === option.id}
+                onClick={() => setPaid((on) => (on === option.id ? null : option.id))}
+              >
+                {option.name}
+              </Chip>
+            ))}
+          </div>
+        </div>
+      )}
       {verdict && (
         <p className="f-note f-ask" data-c="res" role="status">
           {verdict}
         </p>
+      )}
+      {floored && (
+        <p className="f-help f-ask">{t("play.check.floored", { rolled, face })}</p>
       )}
       {entry.kind !== "check" && (
         <p className="f-help f-ask">

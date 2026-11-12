@@ -101,6 +101,8 @@
       "regained_one": "{{actor}} regains one use of {{resource}}",
       "regained_other": "{{actor}} regains {{count}} uses of {{resource}}"
     },
-    "dealt": "{{amount}} damage"
+    "dealt": "{{amount}} damage",
+    "upcast": "(level {{level}} slot)",
+    "upcastPact": "(Pact Magic slot, level {{level}})"
   }
 }

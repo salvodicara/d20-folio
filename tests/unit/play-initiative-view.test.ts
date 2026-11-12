@@ -94,12 +94,12 @@ describe("playInitiativeRows", () => {
   it("names a character by first name, a creature in full", () => {
     const named = playInitiativeRows(
       [
-        row({ ids: ["pc-c"], kind: "pc", name: "Catalion di Sancaldo" }),
+        row({ ids: ["pc-c"], kind: "pc", name: "Bard di Sancaldo" }),
         row({ ids: ["m-9"], kind: "monster", name: "Raider Chief" }),
       ],
       "pc-c"
     );
-    expect(named.map((r) => r.name)).toEqual(["Catalion", "Raider Chief"]);
+    expect(named.map((r) => r.name)).toEqual(["Bard", "Raider Chief"]);
   });
 
   it("the next turn wraps to the top of the order", () => {

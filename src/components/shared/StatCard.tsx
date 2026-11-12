@@ -167,8 +167,13 @@ export function StatCard({
             data-state={saveProficient ? "prof" : "none"}
             aria-hidden
           />
+          {/* Proficient: the total, gold. Not proficient but something else moves
+              the save (an ally's Aura of Protection, a Cloak of Protection): the
+              total, plain, so the player never rolls with the bare modifier. */}
           {saveProficient ? (
             <span className="sc-save-rest on">{formatModifier(saveBonus)}</span>
+          ) : saveBonus !== modifier ? (
+            <span className="sc-save-rest">{formatModifier(saveBonus)}</span>
           ) : (
             <span className="sc-save-rest">{saveLabel}</span>
           )}

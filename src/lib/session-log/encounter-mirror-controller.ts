@@ -16,6 +16,9 @@ export function createEncounterMirror(deps: {
   dmUid: string;
   now?: () => Date;
   onError?: (error: unknown) => void;
+  /** A player's device: the fight's markers only (start, rounds, end), each sent after
+   *  the one before has landed, so a device joining mid-fight writes them in order. */
+  markersOnly?: boolean;
 }): { update(encounter: EncounterState | null): void; stop(): void } {
   const now = deps.now ?? (() => new Date());
   let encounter: EncounterState | null = null;
@@ -26,10 +29,32 @@ export function createEncounterMirror(deps: {
   let stopped = false;
   const inFlight = new Set<string>();
 
+  let chain: Promise<void> = Promise.resolve();
   const flush = (): void => {
     if (stopped || entries === null || sessionId === null) return;
     const target = sessionId;
-    for (const draft of mirrorEncounter(encounter, entries, written)) {
+    const drafts = mirrorEncounter(encounter, entries, written, {
+      markersOnly: deps.markersOnly === true,
+    });
+    if (deps.markersOnly) {
+      // One after the other: the start lands before its rounds, each round before the next.
+      for (const draft of drafts) {
+        if (inFlight.has(draft.id)) continue;
+        inFlight.add(draft.id);
+        chain = chain.then(() =>
+          stopped
+            ? undefined
+            : deps.store
+                .append(target, { ...draft, by: deps.uid, at: now().getTime() })
+                .catch((error: unknown) => {
+                  inFlight.delete(draft.id);
+                  deps.onError?.(error);
+                })
+        );
+      }
+      return;
+    }
+    for (const draft of drafts) {
       if (inFlight.has(draft.id)) continue;
       inFlight.add(draft.id);
       deps.store
