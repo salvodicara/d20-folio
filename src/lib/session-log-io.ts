@@ -18,7 +18,6 @@ import {
   onSnapshot,
   orderBy,
   query,
-  serverTimestamp,
   setDoc,
   Timestamp,
   updateDoc,
@@ -47,11 +46,6 @@ export function isLogItem(value: unknown): value is LogItem {
     (item.type === "retract" || item.type === "hide" || item.type === "show") &&
     typeof item.target === "string"
   );
-}
-
-/** The document a per-event item is stored as: the item, stamped with the server's time. */
-export function perEventItemDoc(item: LogItem): Record<string, unknown> {
-  return { ...item, serverAt: serverTimestamp() };
 }
 
 /** The head's array items, in their order. */

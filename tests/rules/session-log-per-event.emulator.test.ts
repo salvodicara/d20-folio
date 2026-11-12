@@ -27,7 +27,14 @@ import {
 } from "firebase/firestore";
 
 import type { LogItem } from "@/lib/session-log";
-import { createFirestoreSessionLogStore, perEventItemDoc } from "@/lib/session-log-io";
+import { createFirestoreSessionLogStore } from "@/lib/session-log-io";
+
+/** The document a per-event item is stored as (step 3's writer will own it): the item,
+ *  stamped with the server's time. */
+const perEventItemDoc = (item: LogItem): Record<string, unknown> => ({
+  ...item,
+  serverAt: serverTimestamp(),
+});
 
 let testEnv: RulesTestEnvironment;
 
@@ -60,6 +67,11 @@ beforeEach(async () => {
 
 const dbOf = (uid: string): Firestore =>
   testEnv.authenticatedContext(uid).firestore() as unknown as Firestore;
+
+/** Close a test client's connections. `rules-unit-testing` hands back the compat
+ *  client (cast to `Firestore` here), so it is closed through its own `terminate()`. */
+const closeClient = (db: Firestore): Promise<void> =>
+  (db as unknown as { terminate: () => Promise<void> }).terminate();
 
 const SESSION = "2026-10-16";
 const itemPath = (id: string) =>
@@ -121,7 +133,8 @@ describe("session-log readers accept one document per item", () => {
 
   it("subscribe joins both shapes and follows a new item", async () => {
     await seed([event("x", "ana", 1)], []);
-    const store = createFirestoreSessionLogStore(dbOf("ana"), "camp1");
+    const listener = dbOf("ana");
+    const store = createFirestoreSessionLogStore(listener, "camp1");
     const seen: string[][] = [];
     const done = new Promise<void>((resolveDone) => {
       const stop = store.subscribe(SESSION, (items) => {
@@ -137,6 +150,9 @@ describe("session-log readers accept one document per item", () => {
       perEventItemDoc(event("a", "ana", 3))
     );
     await done;
+    // Close the listener's connection before the next test clears the emulator: a
+    // stream still shutting down makes that clear fail with CANCELLED.
+    await closeClient(listener);
     expect(seen.at(-1)).toEqual(["x", "a"]);
   });
 });
