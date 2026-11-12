@@ -24,13 +24,6 @@ export const HIT_DIE_ROLL = 5;
 /** Bard's Constitution 14: the die heals its roll + 2 (below the 9 taken, no cap). */
 export const HIT_DIE_HEAL = HIT_DIE_ROLL + 2;
 
-/**
- * DEPENDS ON PR #1142 (open on 2026-11-12, «what a rest gave back, in the report»),
- * which adds the recovery to the rest line («: +7 HP, 1 Hit Die»). Without it on main
- * the line is the bare one: run with `REHEARSAL_BARE_REST_LINE=1` until it lands.
- */
-export const REST_RECOVERY_IN_REPORT = process.env.REHEARSAL_BARE_REST_LINE !== "1";
-
 /** The inferred fight's lines, in the order they were played. */
 export function fightLines(): string[] {
   return [
@@ -43,12 +36,9 @@ export function fightLines(): string[] {
   ];
 }
 
-/** The rest, after the fight and outside it. */
+/** The rest, after the fight and outside it, with what it gave back (#1142). */
 export function restLine(): string {
-  const bare = `${BARD_NAME} takes a short rest`;
-  return REST_RECOVERY_IN_REPORT
-    ? `${bare}: +${String(HIT_DIE_HEAL)} HP, 1 Hit Die`
-    : bare;
+  return `${BARD_NAME} takes a short rest: +${String(HIT_DIE_HEAL)} HP, 1 Hit Die`;
 }
 
 /** The copied (and classic) report's heading for the one fight nobody started. */
