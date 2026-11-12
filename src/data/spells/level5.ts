@@ -214,6 +214,7 @@ export const SRD_SPELLS_LEVEL5: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
+    targeting: { affinity: "enemy", creatureTypes: ["humanoid"], maxTargets: 1 },
     conditionApplication: {
       ends: [{ on: "repeat-save", ability: "WIS", at: "target-damaged" }],
       options: ["charmed"],

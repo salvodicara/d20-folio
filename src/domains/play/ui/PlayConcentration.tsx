@@ -49,7 +49,8 @@ export function PlayConcentration({
   return (
     <div className="f-condwrap" ref={ref}>
       <Chip kind="conc" pressed={open} onClick={() => setOpen((o) => !o)}>
-        {`◉ ${model.spell.name}`}
+        {/* it says what it is: a beginner reads «Trama Ipnotica» alone as an effect */}
+        {`◉ ${t("combat.concentration")} · ${model.spell.name}`}
       </Chip>
       {open && (
         <div className="f-condpop" role="dialog" aria-label={model.spell.name}>
