@@ -11,6 +11,7 @@ import { canFlipInStep, type LongRestChange } from "@/domains/play/long-rest-cha
 
 import { prepareList } from "@/domains/play/play-spells-view";
 import { ActionGlyph } from "@/domains/play/ui/ActionIcon";
+import { PlayCantripSwap } from "@/domains/play/ui/PlayCantripSwap";
 import { spellPickRows } from "@/domains/spells/spell-pick-rows";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import type { Locale } from "@/lib/locale";
@@ -24,12 +25,15 @@ export function PlayPrepare({
   locale,
   onClose,
   longRest,
+  afterLongRest,
 }: {
   doc: CharacterDoc;
   locale: Locale;
   onClose: () => void;
   /** After a Long Rest: «Cambia incantesimi preparati», within the class's limit. */
   longRest?: LongRestChange;
+  /** The step after a Long Rest: also a cantrip the lineage lets you replace. */
+  afterLongRest?: boolean;
 }) {
   const { t } = useTranslation();
   const list = prepareList(doc, locale);
@@ -78,7 +82,13 @@ export function PlayPrepare({
       open
       onClose={onClose}
       color="res"
-      title={t(longRest ? "create.screen.preparedSpells" : "play.spells.manage")}
+      title={t(
+        longRest
+          ? "create.screen.preparedSpells"
+          : afterLongRest
+            ? "play.rest.cantripTitle"
+            : "play.spells.manage"
+      )}
       closeLabel={t("common.close")}
       actions={
         <>
@@ -93,22 +103,25 @@ export function PlayPrepare({
         </>
       }
     >
+      {afterLongRest && <PlayCantripSwap doc={doc} locale={locale} />}
       {/* the limit, then the count against the most (the level-up's «1/1») */}
-      <div className="f-pick-title f-prep-head" role="status">
-        <span className="f-help">
-          {longRest
-            ? t(longRest === "one" ? "play.rest.changeOne" : "play.rest.changeAny")
-            : t("create.screen.preparedSpells")}
-          {list.overLimit ? ` ${t("play.spells.overLimit")}` : ""}
-        </span>
-        <span
-          className="f-lvl-count"
-          data-state={list.overLimit ? undefined : "done"}
-          aria-label={t("play.spells.prepared", { count: list.count, max: list.max })}
-        >
-          {`${String(list.count)}/${String(list.max)}`}
-        </span>
-      </div>
+      {list.levels.length > 0 && (
+        <div className="f-pick-title f-prep-head" role="status">
+          <span className="f-help">
+            {longRest
+              ? t(longRest === "one" ? "play.rest.changeOne" : "play.rest.changeAny")
+              : t("create.screen.preparedSpells")}
+            {list.overLimit ? ` ${t("play.spells.overLimit")}` : ""}
+          </span>
+          <span
+            className="f-lvl-count"
+            data-state={list.overLimit ? undefined : "done"}
+            aria-label={t("play.spells.prepared", { count: list.count, max: list.max })}
+          >
+            {`${String(list.count)}/${String(list.max)}`}
+          </span>
+        </div>
+      )}
       {list.levels.map(({ level, spells }) => (
         <div key={level} className="f-ask">
           <span className="f-lbl">{t("spells.level", { level })}</span>

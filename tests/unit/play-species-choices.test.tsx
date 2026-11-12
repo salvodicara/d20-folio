@@ -57,6 +57,22 @@ beforeEach(() => {
 });
 afterEach(() => useCharacterStore.getState().setCharacter(null));
 
+/** Twelve Wizard spells of levels 1–2: the book a Wizard 4 holds. */
+const BOOK = [
+  "burning-hands",
+  "charm-person",
+  "detect-magic",
+  "feather-fall",
+  "mage-armor",
+  "magic-missile",
+  "shield",
+  "sleep",
+  "thunderwave",
+  "misty-step",
+  "web",
+  "invisibility",
+].map((srdId) => ({ srdId }));
+
 describe("PlaySpeciesChoices", () => {
   it("names an Elf's owed choices and completes them on Save", () => {
     load("elf");
@@ -121,7 +137,8 @@ describe("PlaySpeciesChoices", () => {
     const base = makeCharacterDoc({
       race: asRaceId("dwarf"),
       classes: [{ classId: "wizard", level: 4 }],
-      spells: [{ srdId: "fire-bolt" }, { srdId: "light" }],
+      // A full book (12 at Wizard 4), so only the cantrips are owed.
+      spells: [{ srdId: "fire-bolt" }, { srdId: "light" }, ...BOOK],
     });
     useCharacterStore.getState().setCharacter(base);
     render(<Banner />);
@@ -135,10 +152,9 @@ describe("PlaySpeciesChoices", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mage Hand" }));
     fireEvent.click(screen.getByRole("button", { name: "Ray of Frost" }));
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
-    expect(useCharacterStore.getState().character?.character.spells.slice(2)).toEqual([
-      { srdId: "mage-hand" },
-      { srdId: "ray-of-frost" },
-    ]);
+    expect(
+      useCharacterStore.getState().character?.character.spells.slice(2 + BOOK.length)
+    ).toEqual([{ srdId: "mage-hand" }, { srdId: "ray-of-frost" }]);
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   });
 });

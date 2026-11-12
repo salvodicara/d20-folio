@@ -655,9 +655,16 @@ export function CreationWizard() {
         id: "spells",
         label: t("create.stepSpells"),
         amount: spellsNeeded,
-        rubric: isPreparedCaster
-          ? t("create.preparedSpellsLabel")
-          : t("create.spellsKnownLabel"),
+        // A Wizard picks the book, and prepares only some of it: say so plainly.
+        rubric:
+          selectedClass === "wizard" && spellsNeeded > facts.preparedNeeded
+            ? t("create.spellbookLabel", {
+                count: spellsNeeded,
+                prepared: facts.preparedNeeded,
+              })
+            : isPreparedCaster
+              ? t("create.preparedSpellsLabel")
+              : t("create.spellsKnownLabel"),
         pool: learnableSpellVMs(
           {
             classId: selectedClass,

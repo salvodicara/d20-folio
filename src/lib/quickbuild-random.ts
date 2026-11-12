@@ -34,6 +34,7 @@ import { backgroundSkillIds, classSkillPool } from "@/lib/quickbuild";
 import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
 import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import { ALL_SKILLS } from "@/lib/skills";
+import { wizardBookSize } from "@/lib/wizard-spellbook";
 import { SRD_TOOLS_2024 } from "@/lib/tools";
 
 /** A source of `0 ≤ x < 1`. Injected so a roll is reproducible under test. */
@@ -142,10 +143,16 @@ export function rollQuickbuildFlavor(
     onList((l) => l === 0),
     row?.cantripsKnown ?? 0
   );
+  // A Wizard draws its whole book (six at level 1), as the preset does; the table's
+  // count of them is prepared.
+  const spellPicks =
+    classId === "wizard" && (row?.spellsKnown ?? 0) > 0
+      ? wizardBookSize(1)
+      : (row?.spellsKnown ?? 0);
   const spells = sample(
     rng,
     onList((l) => l > 0 && l <= maxSpellLevel),
-    row?.spellsKnown ?? 0
+    spellPicks
   );
 
   // ── Origin languages ───────────────────────────────────────────────────────

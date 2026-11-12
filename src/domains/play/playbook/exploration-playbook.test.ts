@@ -11,6 +11,7 @@ import { concentrationValue } from "@/lib/concentration";
 import type { CharacterDoc } from "@/types/character";
 import { buildCombatPlaybook } from "./build-combat-playbook";
 import type { Playbook, PlaybookStep } from "./types";
+import { getSpellById } from "@/data/spells";
 
 type Extra = Partial<
   Pick<
@@ -164,11 +165,16 @@ describe("Wizard ritual caster", () => {
       buildCombatPlaybook(wizard(), EXPLORING),
       "anytime:ritual-no-slot"
     );
-    expect(optionIds(rituals)).toEqual([
+    // The scenario fills the rest of the Wizard 5's book (14 spells) with legal picks,
+    // so other rituals may join these three; every option is a ritual in the book.
+    expect(optionIds(rituals).slice(0, 3)).toEqual([
       "spell-detect-magic",
       "spell-identify",
       "spell-find-familiar",
     ]);
+    for (const id of optionIds(rituals)) {
+      expect(getSpellById(id.replace(/^spell-/, ""))?.ritual, id).toBe(true);
+    }
     for (const o of rituals.options) {
       expect(o.spend, o.actionId).toBeUndefined();
       expect(o.limits ?? [], o.actionId).not.toContain("one-slot-spell");
