@@ -9,6 +9,10 @@
 import { Sparkles } from "lucide-react";
 import { FolioScrollIcon } from "@/components/shared/folio-icons";
 import { classFeatures } from "@/data/classes";
+
+const CLASS_ORDER = new Map(
+  [...new Set(classFeatures.map((f) => f.class))].map((c, i) => [c, i * 100])
+);
 import { primaryClassId, totalLevel } from "@/lib/classes";
 import { useCharacterStore } from "@/stores/characterStore";
 import { Icon } from "@/components/ui/icon";
@@ -59,6 +63,8 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
   }),
   data: classFeatures,
   getId: (f) => f.id,
+  // By class (in the data's class order), then level.
+  sortGroup: (f) => (CLASS_ORDER.get(f.class) ?? 0) + f.level,
   getName: (f, { locale }) => featureText(f, "name", locale),
   // Bilingual feature-name search via the ACTIVE locale + EN (both always loaded:
   // EN is the static facts seed, the active locale is loaded by the i18n bootstrap).
@@ -170,9 +176,14 @@ export const featureSpec: CompendiumPickerSpec<SrdClassFeatureData> = {
       // level + tracker mark (the source class is no longer duplicated here).
       meta: (
         <>
-          {feature.subclass ? `${localizeSubclassName(feature.subclass, locale)} · ` : ""}
-          {t("stats.lvl")} {feature.level}
-          {feature.mechanics?.tracker && ` · ${t("combat.hasTracker")}`}
+          {/* a separator stays with the word before it, never starting a line */}
+          {feature.subclass
+            ? `${localizeSubclassName(feature.subclass, locale)}\u00a0· `
+            : ""}
+          {t("stats.lvl")}
+          {"\u00a0"}
+          {feature.level}
+          {feature.mechanics?.tracker && `\u00a0· ${t("combat.hasTracker")}`}
         </>
       ),
       state: aboveLevel ? "warn" : "default",
