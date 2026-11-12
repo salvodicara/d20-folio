@@ -53,7 +53,7 @@
     "unproficientArmorHint": "La tua classe non è competente con questa armatura: Svantaggio a ogni prova di caratteristica, tiro salvezza e tiro per colpire basati su Forza o Destrezza mentre la indossi, e non puoi lanciare incantesimi.",
     "attuned": "Sintonizzato",
     "attune": "Sintonizza",
-    "attuneHint": "Effettua un Riposo Breve di 1h per sintonizzarti (RAW 2024).",
+    "attuneHint": "Effettua un Riposo Breve di 1h per sintonizzarti (regola 2024).",
     "charges": "Cariche",
     "useCharge": "Usa 1 carica",
     "usedChargeToast": "Spesa 1 carica di {{name}} ({{remaining}} rimaste)",

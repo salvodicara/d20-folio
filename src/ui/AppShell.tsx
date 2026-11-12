@@ -153,7 +153,10 @@ export function AppShell({
         title={
           <>
             <b>{account.name}</b>
-            {account.email && <span className="f-menu-sub">{account.email}</span>}
+            {/* an account with no name shows its email once, as the name */}
+            {account.email && account.email !== account.name && (
+              <span className="f-menu-sub">{account.email}</span>
+            )}
           </>
         }
       >
