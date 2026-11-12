@@ -546,6 +546,22 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "heal-bonus (Disciple of Life): a healing spell's verdict gains +2 + spell level. S11b: Divine Spark heal-or-damage (1d8+WIS, both chips) + Sear Undead (WIS-many d8 Radiant).",
   },
+  "command-cleric": {
+    name: "Mirovel, Command",
+    raceId: "human",
+    classId: "cleric",
+    level: 5,
+    background: "acolyte",
+    abilityScores: { STR: 12, DEX: 10, CON: 14, INT: 10, WIS: 18, CHA: 12 },
+    spells: [
+      { srdId: "sacred-flame" },
+      { srdId: "command", prepared: true },
+      { srdId: "calm-emotions", prepared: true },
+      { srdId: "hold-person", prepared: true },
+    ],
+    exercises:
+      "A save spell with nothing to apply (Command, Calm Emotions) asks each creature's save on the row just used; Hold Person keeps its tray.",
+  },
   "material-cost": {
     name: "Ilse, Grave Tender",
     raceId: "human",
