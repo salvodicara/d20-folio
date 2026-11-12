@@ -48,8 +48,16 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
   const view = conditionsPanelView(doc, locale, encounter);
   if (readonly && view.count === 0) return null;
   const store = () => useCharacterStore.getState();
+  // Exhaustion changed by hand writes its report line («Indebolimento 1 → 2»).
+  const setExhaustion = (level: number) => {
+    const was = store().character?.session.exhaustion ?? 0;
+    store().changeResourceByHand(
+      () => store().setExhaustion(level),
+      () => store().setExhaustion(was)
+    );
+  };
   const add = (id: string, sourceId?: string) => {
-    if (id === "exhaustion") store().setExhaustion(1);
+    if (id === "exhaustion") setExhaustion(1);
     else store().addCondition(id, sourceId ? { sourceId } : undefined);
     setPending(null);
     setAdding(false);
@@ -94,14 +102,12 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
                       label={`${name("exhaustion")} · ${t("common.level")}`}
                       less={t("common.decrease")}
                       more={t("common.increase")}
-                      onChange={(level) => store().setExhaustion(level)}
+                      onChange={(level) => setExhaustion(level)}
                     />
                   )}
                 </div>
                 {!readonly && (
-                  <Button onClick={() => store().setExhaustion(0)}>
-                    {t("common.remove")}
-                  </Button>
+                  <Button onClick={() => setExhaustion(0)}>{t("common.remove")}</Button>
                 )}
               </div>
             )}
