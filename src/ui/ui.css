@@ -6373,6 +6373,19 @@
   }
 }
 
+/* a campaign card's round picture: the campaign page's crest, at the roster ring's size */
+.fui .f-crest.f-crest-sm {
+  width: 56px;
+  height: 56px;
+  box-shadow: none;
+}
+@media (max-width: 640px) {
+  .fui .f-crest.f-crest-sm {
+    width: 48px;
+    height: 48px;
+  }
+}
+
 /* «Impostazioni» (D&D Beyond's account settings): short panels in a readable column;
    the account row is the avatar, the name and email, «Esci» at the end. */
 .fui .f-settings {

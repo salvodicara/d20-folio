@@ -58,6 +58,19 @@ describe("campaignCards", () => {
     expect(card?.active).toBeTruthy();
   });
 
+  it("the campaign's own picture for its thumbnail; none when it has no banner", () => {
+    const [plain] = campaignCards([campaign()], "p1", false, "it", NOW);
+    expect(plain?.picture).toBeNull();
+    const [own] = campaignCards(
+      [campaign({ bannerUrl: "https://x/banner.jpeg" })],
+      "p1",
+      false,
+      "it",
+      NOW
+    );
+    expect(own?.picture).toBe("https://x/banner.jpeg");
+  });
+
   it("never lists the personal campaign", () => {
     const cards = campaignCards(
       [campaign(), campaign({ id: PERSONAL_CAMPAIGN_ID })],

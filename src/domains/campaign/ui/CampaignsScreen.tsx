@@ -89,7 +89,7 @@ export function CampaignsScreen() {
   };
   return (
     <>
-      <Room room="war-room" />
+      <Room room="war-room" band />
       <main id="main" className="f-page f-roster f-camps">
         <header className="f-ph">
           <div>
@@ -216,42 +216,40 @@ function CampaignCardView({
     <article className="f-pn f-ccard">
       <Link className="f-ccard-link" to={`/campaigns/${card.id}`}>
         <span className="f-ccard-who">
+          {/* the campaign's round picture, as on its own page: one identity */}
+          <img
+            className="f-crest f-crest-sm"
+            src={card.picture ?? "/assets/backgrounds/room-war-room.webp"}
+            alt=""
+          />
           <span className="f-ccard-id">
             <span className="f-ccard-name">{card.name}</span>
             <span className="f-ccard-class">
               {card.dm
                 ? t("campaigns.cardDm", { name: card.dm })
                 : t("campaigns.cardNoDm")}
+              {card.started && ` · ${t("campaigns.cardStarted", { date: card.started })}`}
             </span>
-            {card.started && (
-              <span className="f-ccard-sub">
-                {t("campaigns.cardStarted", { date: card.started })}
-              </span>
-            )}
+            <span className="f-ccard-sub">
+              {[
+                `${t("campaigns.cardParty")} ${String(card.party)}`,
+                card.levels && `${t("campaigns.cardLevels")} ${card.levels}`,
+                card.potGp > 0 &&
+                  `${t("campaigns.cardPot")} ${String(card.potGp)} ${t("equipment.currencyAbbr.gp")}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
           </span>
         </span>
-        <span className="f-ccard-stats">
-          <span>
-            <b>{card.party}</b>
-            <span className="f-lbl">{t("campaigns.cardParty")}</span>
-          </span>
-          <span>
-            <b>{card.levels ?? "—"}</b>
-            <span className="f-lbl">{t("campaigns.cardLevels")}</span>
-          </span>
-          <span>
-            <b>{`${String(card.potGp)} ${t("equipment.currencyAbbr.gp")}`}</b>
-            <span className="f-lbl">{t("campaigns.cardPot")}</span>
-          </span>
-        </span>
-        <span className="f-ccard-foot">
-          <span />
-          {card.active && (
+        {card.active && (
+          <span className="f-ccard-foot">
+            <span />
             <span className="f-ccard-when">
               {t("campaigns.cardActive", { date: card.active })}
             </span>
-          )}
-        </span>
+          </span>
+        )}
       </Link>
       <div className="f-ccard-menu" ref={menuRef}>
         <button

@@ -13,7 +13,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { signOut } from "@/lib/auth";
 import { LOCALES } from "@/lib/locale";
 import { useAuthStore } from "@/stores/authStore";
-import { Button, Chip, Panel, Room } from "@/ui";
+import { Button, Chip, Panel } from "@/ui";
 import { initialOf } from "@/ui/initial";
 
 export function SettingsScreen() {
@@ -26,9 +26,9 @@ export function SettingsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const name = profile?.displayName || user?.email || t("settings.noIdentity");
   const email = profile?.displayName ? user?.email : null;
+  // a working page: no room band above it, the panels come first
   return (
     <>
-      <Room room="study" />
       <main id="main" className="f-page f-settings">
         <header className="f-ph">
           <h1>{t("nav.settings")}</h1>

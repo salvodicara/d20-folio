@@ -24,6 +24,9 @@ export interface CampaignCard {
   active: string | null;
   canDelete: boolean;
   inviteCode: string;
+  /** The campaign's own picture (its banner), shown round as on its page; null: the
+   *  default art. */
+  picture: string | null;
 }
 
 const valid = (d: unknown): d is Date => d instanceof Date && !Number.isNaN(d.getTime());
@@ -64,5 +67,6 @@ export function campaignCards(
       active: valid(c.updatedAt) ? formatRelativeTime(c.updatedAt, locale, now) : null,
       canDelete: isAdmin || (uid !== undefined && c.dmUid === uid),
       inviteCode: c.inviteCode,
+      picture: c.bannerUrl ?? null,
     }));
 }
