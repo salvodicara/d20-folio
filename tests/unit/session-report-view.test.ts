@@ -7,7 +7,7 @@ import itCombatLog from "@/i18n/it/ui/combatLog.json";
 import en from "@/i18n/en/ui/sessionReport.json";
 import itChronicle from "@/i18n/it/ui/combatChronicle.json";
 import it_ from "@/i18n/it/ui/sessionReport.json";
-import { buildReport, foldSession } from "@/lib/session-log";
+import { buildReport, foldSession, inferFights } from "@/lib/session-log";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 import {
   localizePlayEvent,
@@ -82,6 +82,51 @@ async function render(lng: "en" | "it"): Promise<string> {
 }
 
 describe("renderSessionReport", () => {
+  it("a fight worked out from the log says so, with no round headings", () => {
+    const blows: LogItem[] = [
+      {
+        type: "event",
+        id: "x1",
+        by: "ana",
+        at: 0,
+        event: { kind: "damage", amount: 5, target: "pc-ana" },
+      },
+      {
+        type: "event",
+        id: "x2",
+        by: "ben",
+        at: 60_000,
+        event: { kind: "damage", amount: 2, target: "pc-ben" },
+      },
+    ];
+    const report = buildReport(inferFights(foldSession(blows, { dmUid: "dm" })));
+    const t = (k: string, a?: Record<string, unknown>) =>
+      `${k}${typeof a?.n === "number" ? a.n : ""}`;
+    const text = renderSessionReport(report, "S", t, names);
+    expect(text).toContain("## sessionReport.encounterInferred1");
+    expect(text).not.toContain("###");
+  });
+
+  it("round headings appear only once the fight reached a second round", () => {
+    const fight: LogItem[] = [
+      ev("dm", { kind: "encounter-start", encounterId: "9" }),
+      ev("dm", { kind: "round-start", round: 1 }),
+      ev("ana", { kind: "damage", amount: 1, target: "pc-ana" }),
+      ev("dm", { kind: "round-start", round: 2 }),
+      ev("ana", { kind: "damage", amount: 2, target: "pc-ana" }),
+    ];
+    const t = (k: string, a?: Record<string, unknown>) =>
+      `${k}${typeof a?.n === "number" ? a.n : ""}`;
+    const text = renderSessionReport(
+      buildReport(foldSession(fight, { dmUid: "dm" })),
+      "S",
+      t,
+      names
+    );
+    expect(text).toContain("### combatChronicle.round1");
+    expect(text).toContain("### combatChronicle.round2");
+  });
+
   it("renders the session as a round-by-round markdown chronicle", async () => {
     expect(await render("en")).toBe(
       [
@@ -91,8 +136,6 @@ describe("renderSessionReport", () => {
         "- Ana takes 3 damage",
         "",
         "## Encounter 1 — victory",
-        "",
-        "### Round 1",
         "- Ana uses Longsword on Goblin — hit",
         "- Ana deals 9 damage to Goblin",
         "- Goblin drops to 0 HP",

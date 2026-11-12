@@ -13,6 +13,7 @@ export {
   type SessionEntry,
 } from "./fold";
 export { buildReport, type ReportRound, type ReportSection } from "./report";
+export { inferFights, INFERRED_FIGHT_IDLE_MS, isInferredFight } from "./infer-fights";
 export {
   SESSION_GAP_MS,
   createMemorySessionLogStore,
