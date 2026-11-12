@@ -52,6 +52,7 @@
  * boundaries and are never conflated with a rest.
  */
 
+import { restRecovery } from "@/lib/play/rest-recovery";
 import { advanceTimeOfDay, restCrossesDawn } from "@/lib/play/time";
 import { LONG_REST_MINUTES, SHORT_REST_MINUTES } from "@/lib/play/rests";
 import i18next from "i18next";
@@ -638,7 +639,12 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
   // Events-as-data: a rest is a story beat; persist the whole resulting
   // combat state. The undo fence and the rest's own undo entry live in
   // `restThroughWorld`, around this body.
-  live.logEvent({ kind: "rest", restKind: kind });
+  const rested = live.character;
+  live.logEvent({
+    kind: "rest",
+    restKind: kind,
+    ...(rested ? restRecovery(before.session, rested.session) : {}),
+  });
   for (const event of fades) live.logEvent(event);
   live.persistPlayState();
   return "engine";
