@@ -406,6 +406,15 @@
       "mastery": "Padronanza",
       "askSolo": "Hai colpito con {{name}}?",
       "askSoloAdd": "Aggiungi al colpo:"
+    },
+    "aura": {
+      "source": "Aura di {{name}}",
+      "chip": "Aura di {{name}} +{{bonus}}",
+      "group": "Aure dei paladini",
+      "onHint": "Vale sui tuoi tiri salvezza; tocca se sei fuori dall'aura di {{name}}",
+      "offHint": "Sei fuori dall'aura di {{name}}; tocca quando ci rientri",
+      "outToast": "Fuori dall'aura di {{name}}",
+      "inToast": "Di nuovo nell'aura di {{name}}"
     }
   }
 }

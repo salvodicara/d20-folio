@@ -552,6 +552,9 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
           ac: 18,
           hpMax: 60,
         },
+        // Aura of Protection published by this member's sheet (dev: always fresh),
+        // so the open hero's saves show «Aura di … +3» and its chip.
+        aura: { bonus: 3, reachFt: 10, at: Date.now() },
       },
       // NON-NULLABILITY DEMO (dev-only, flag-gated): a member whose STALE snapshot
       // carries a CORRUPT (whitespace) hero name — the exact shape an old persisted
