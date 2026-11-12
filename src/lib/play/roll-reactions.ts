@@ -6,6 +6,7 @@
  * Reaction and says it at the table. Pure.
  */
 import type { ActionRollEffect, ConditionId, ReactableRoll } from "@/data/types";
+import type { FailedSaveReroll } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
 
 /** What the use does, with its die resolved (the Bardic Inspiration die by level). */
@@ -127,6 +128,19 @@ export interface FailedRollMoment {
 export interface RerollOffer<A> {
   action: A;
   reaction: Extract<RollReaction, { kind: "reroll" }>;
+}
+
+/** The reroll a picked offer makes of a failed save (Indomitable: its bonus; a use with
+ *  Advantage), as the save's resolver reads it; none when no offer is picked. */
+export function failedSaveReroll(
+  offer: RerollOffer<{ id: string }> | null
+): FailedSaveReroll | undefined {
+  if (!offer) return undefined;
+  return {
+    sourceId: offer.action.id,
+    ...(offer.reaction.bonus ? { bonus: offer.reaction.bonus } : {}),
+    ...(offer.reaction.advantage ? { advantage: true as const } : {}),
+  };
 }
 
 export function rerollOffers<A extends { summary: { rollEffect?: ActionRollEffect } }>(
