@@ -4539,8 +4539,8 @@
   background: var(--hover);
 }
 .fui .f-lvl-step[data-state="owed"] {
-  border-color: var(--danger-line);
-  background: color-mix(in srgb, var(--danger-bg) 60%, transparent);
+  /* a step still owed reads like the others; its mark and name carry the state */
+  color: var(--danger-text);
 }
 .fui .f-lvl-step small {
   display: block;
@@ -5232,11 +5232,9 @@
   font: 700 var(--fs-md) var(--font-title);
 }
 .fui .f-lvl-owed {
+  /* a status line, not a button: what is missing reads in its colour above the
+     Confirm it holds back (D&D Beyond's builder: «2 choices remaining» as text) */
   margin: 0;
-  padding: 8px;
-  border: 1px solid var(--danger-line);
-  border-radius: var(--r-pill);
-  background: var(--danger-bg);
   color: var(--danger-text);
   font: 700 var(--fs-md) var(--font-text);
   text-align: center;
