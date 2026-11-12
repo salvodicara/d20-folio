@@ -61,7 +61,7 @@ describe("the sandbox seed's character documents", () => {
     );
   });
 
-  for (const fixture of ["catalion-bard.json", "mandorlino-paladin.json"]) {
+  for (const fixture of ["bard.json", "paladin.json"]) {
     it.skipIf(!existsSync(resolve(TEAM, fixture)))(
       `store the team fixture ${fixture} in the live ADR-0009 shape`,
       () => {
@@ -79,18 +79,18 @@ describe("the sandbox seed's character documents", () => {
 describe("the campaign's copy of a sandbox hero", () => {
   // A spec that reseeds a hero (another fixture, another name) must leave the campaign
   // showing the hero it seeded: the DM's party card reads this copy (rehearsal
-  // 2026-11-11: the journey after the peer-spend spec found «Chiaviddu» on Catalion's card).
+  // 2026-11-11: the journey after the peer-spend spec found «Chiaviddu» on Bard's card).
   it("carries the fixture's name, race and classes, at the level it was seeded", () => {
     const envelope = {
       build: {
-        name: "Catalion di Sancaldo",
+        name: "Bard di Sancaldo",
         race: "elf",
         classes: [{ classId: "bard", level: 3 }],
       },
       state: {},
     };
     expect(sandboxMemberCharacter(envelope)).toEqual({
-      name: "Catalion di Sancaldo",
+      name: "Bard di Sancaldo",
       race: "elf",
       classes: [{ classId: "bard", level: 3 }],
       portraitUrl: null,

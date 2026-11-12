@@ -155,11 +155,20 @@ export function TreasuryTab({
         {lines.map((line, i) => (
           <p key={`${line.at}-${i}`} className="f-tl">
             <span>
-              {[day(line.at), describe(line)].join(" · ")}
+              {[day(line.at), line.kind === "coins" ? who(line) : describe(line)].join(
+                " · "
+              )}
               {line.kind === "coins" && line.entry.note && (
                 <span className="f-tl-by">{": " + line.entry.note}</span>
               )}
             </span>
+            {/* a ledger's amount on the right, signed and coloured (a bank statement,
+                D&D Beyond's currency log): what came in reads green, what left red */}
+            {line.kind === "coins" && (
+              <b className="f-tl-amt" data-dir={line.direction}>
+                {`${line.direction === "in" ? "+" : "\u2212"}${String(line.entry.amount)}\u00a0${t(`equipment.currencyAbbr.${line.entry.currency}`)}`}
+              </b>
+            )}
           </p>
         ))}
       </Panel>
@@ -206,6 +215,15 @@ export function TreasuryTab({
       )}
     </div>
   );
+
+  /** A coin line's words; its amount shows apart, on the right, signed. */
+  function who(line: Extract<HistoryLine, { kind: "coins" }>): string {
+    return line.who
+      ? t(line.direction === "in" ? "treasury.putInBy" : "treasury.tookOutBy", {
+          who: line.who,
+        })
+      : t(line.direction === "in" ? "treasury.cameInPlain" : "treasury.wentOutPlain");
+  }
 
   function describe(line: HistoryLine): string {
     const who = line.who;

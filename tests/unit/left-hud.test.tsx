@@ -10,13 +10,21 @@
  * (`resource-rail.test`); HP/exhaustion in their own panels.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent, within } from "@testing-library/react";
 import { LeftHud } from "@/features/character/hud/LeftHud";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
+
+vi.mock("@/lib/firebase", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  functions: {},
+  storage: {},
+}));
 
 function load(doc: CharacterDoc = structuredClone(MOCK_CHARACTER)): void {
   useCharacterStore.setState({ character: doc, loading: false, error: null });

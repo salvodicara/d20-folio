@@ -1307,32 +1307,6 @@ export function pcEncounterCampaignId(
 }
 
 /**
- * Like {@link pcEncounterCampaignId}, but keyed on the VIEWER'S `uid` rather than an
- * OPEN character id: the id of the campaign whose active encounter includes a PC
- * combatant OWNED BY `uid` (`kind === "pc" && memberUid === uid`), or `null`.
- *
- * This is what the shell-level combat pip ({@link "@/features/campaigns/global-combat"})
- * resolves from, so it lights wherever the user is — the campaign hub, the compendium,
- * anywhere — with NO character sheet open (the open-sheet store is empty off the
- * cockpit). A DM read-only viewing a teammate's sheet still resolves to THEIR OWN
- * encounter. Same pure-total contract as {@link pcEncounterCampaignId}; first match wins
- * (one-character-per-campaign membership invariant); `id` + `encounter` are the only
- * fields read.
- */
-export function uidEncounterCampaignId(
-  campaigns: ReadonlyArray<Pick<CampaignDoc, "id" | "encounter">>,
-  uid: string
-): string | null {
-  for (const campaign of campaigns) {
-    const inEncounter = campaign.encounter?.combatants.some(
-      (c) => c.kind === "pc" && c.memberUid === uid
-    );
-    if (inEncounter) return campaign.id;
-  }
-  return null;
-}
-
-/**
  * One ACTIVE encounter the viewer takes part in — the doc-derived facts the topbar
  * combat pip ({@link "@/app/shell/CombatPip"}) needs, ALL from the cheap
  * shared-campaigns query alone: the campaign doc now carries the `encounterInit` roll

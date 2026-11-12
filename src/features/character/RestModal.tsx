@@ -22,6 +22,7 @@ import {
   hitDicePool,
   hitDiceTotal,
   hitDiceTotalRange,
+  readHitDiceRoll,
 } from "@/lib/play/hit-dice";
 import { shortRestHeal as shortRestHealFor } from "@/lib/play/short-rest-healing";
 import { useState, useMemo, useId } from "react";
@@ -40,6 +41,7 @@ import {
 import { restSummary, type RestSummary } from "@/lib/play/rest-summary";
 import { useCharacterStore } from "@/stores/characterStore";
 import { restExpertiseRows } from "@/lib/rest-expertise";
+import { applyRestCantripSwap, restCantripSwaps } from "@/lib/rest-cantrip-swap";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { Select } from "@/components/shared/Select";
 import { useUIStore } from "@/stores/uiStore";
@@ -104,6 +106,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
   // A Long Rest's re-picked Expertise (Versatile Merc), by choice key; absent:
   // last time's pick, preselected.
   const [restPicks, setRestPicks] = useState<Readonly<Record<string, string | null>>>({});
+  // A lineage cantrip replaced at this Long Rest (High Elf): the new cantrip, by key.
+  const [cantripPicks, setCantripPicks] = useState<Readonly<Record<string, string>>>({});
   const inputId = useId();
 
   // Count spent spell slots
@@ -139,6 +143,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     charData.skills,
     new Set([...restAggregate.expertiseSkills].filter((id) => !restLastPicks.has(id)))
   );
+  const cantripRows = restCantripSwaps(restCharacter);
   const restPickOf = (row: (typeof expertiseRows)[number]) =>
     row.choiceKey in restPicks ? (restPicks[row.choiceKey] ?? null) : row.current;
   const restEligible = canCharacterRest(restCharacter.status, session);
@@ -177,6 +182,12 @@ function RestFlow({ onClose }: { onClose: () => void }) {
     hitDiceToSpend,
     diceTotal
   );
+  // A floor on the faces (a feature that counts a 1 or 2 as a 3) takes the faces
+  // typed one per die; the engine's heal reads them the same way.
+  const hitDieFloor = agg.hitDieFloor;
+  const read = hitDieFloor
+    ? readHitDiceRoll(diceTotal, hitDiceToSpend, hitDieFloor)
+    : null;
   const diceCountValid = hitDiceToSpend <= hitDiceAvailable;
   const hpAfterRest =
     shortRestHeal === null ? null : Math.min(hpCurrent + shortRestHeal, hpMax);
@@ -228,6 +239,13 @@ function RestFlow({ onClose }: { onClose: () => void }) {
           expertiseRows.map((row) => [row.choiceKey, restPickOf(row)])
         ),
       });
+    }
+
+    // …and a lineage cantrip replaced, when the player picked another.
+    for (const [choiceKey, spellId] of Object.entries(cantripPicks)) {
+      const store = useCharacterStore.getState();
+      const live = store.character;
+      if (live) store.setCharacter(applyRestCantripSwap(live, choiceKey, spellId));
     }
 
     const after = useCharacterStore.getState().character ?? restCharacter;
@@ -453,15 +471,19 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             {hitDiceToSpend > 0 && (
               <div>
                 <label htmlFor={inputId} className="rest-input-label">
-                  {t("rest.diceTotal")}
+                  {t(hitDieFloor ? "rest.diceFaces" : "rest.diceTotal")}
                 </label>
                 <Input
                   id={inputId}
-                  type="number"
-                  inputMode="numeric"
-                  min={rollRange.min}
-                  max={rollRange.max}
-                  step={1}
+                  {...(hitDieFloor
+                    ? { type: "text", inputMode: "text" as const }
+                    : {
+                        type: "number",
+                        inputMode: "numeric" as const,
+                        min: rollRange.min,
+                        max: rollRange.max,
+                        step: 1,
+                      })}
                   value={diceTotal}
                   onChange={(event) => setDiceTotal(event.target.value)}
                   disabled={committing}
@@ -471,13 +493,30 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   className="rest-roll-input"
                 />
                 <p id={`${inputId}-hint`} className="rest-input-hint">
-                  {t("rest.diceTotalHint", { dice: hitDiceText(hitDiceToSpend) })}
+                  {hitDieFloor
+                    ? t("rest.diceFacesHint", {
+                        dice: hitDiceText(hitDiceToSpend),
+                        count: hitDiceToSpend,
+                        below: hitDieFloor.floorBelow,
+                        to: hitDieFloor.floorTo,
+                      })
+                    : t("rest.diceTotalHint", { dice: hitDiceText(hitDiceToSpend) })}
                 </p>
                 {diceTotal !== "" && !rollValid && (
                   <p id={`${inputId}-error`} className="rest-input-hint text-error">
-                    {t("rest.diceTotalError", {
-                      min: rollRange.min,
-                      max: rollRange.max,
+                    {hitDieFloor
+                      ? t("rest.diceFacesError", { count: hitDiceToSpend })
+                      : t("rest.diceTotalError", {
+                          min: rollRange.min,
+                          max: rollRange.max,
+                        })}
+                  </p>
+                )}
+                {hitDieFloor && read?.faces && (
+                  <p className="rest-input-hint" role="status">
+                    {t("rest.diceFacesSum", {
+                      faces: read.faces.join(" + "),
+                      total: read.total,
                     })}
                   </p>
                 )}
@@ -561,6 +600,36 @@ function RestFlow({ onClose }: { onClose: () => void }) {
               <Focus className="h-4 w-4 text-accent-text" />
               {t("rest.longRestConditionsItem")}
             </li>
+            {cantripRows.map((row) => {
+              const source = grantSourceLabel(row.sourceId, locale);
+              const spellName = (id: string) => localizeSrd("spell", id, "name", locale);
+              return (
+                <li key={row.choiceKey}>
+                  <Star className="h-4 w-4 text-accent-text" />
+                  <label className="flex flex-wrap items-center gap-2">
+                    {t("rest.longRestCantripItem", { source })}
+                    <Select
+                      size="sm"
+                      value={cantripPicks[row.choiceKey] ?? row.current}
+                      onChange={(e) =>
+                        setCantripPicks((prev) => ({
+                          ...prev,
+                          [row.choiceKey]: e.target.value,
+                        }))
+                      }
+                    >
+                      {[row.current, ...row.options]
+                        .sort((a, b) => spellName(a).localeCompare(spellName(b), locale))
+                        .map((id) => (
+                          <option key={id} value={id}>
+                            {spellName(id)}
+                          </option>
+                        ))}
+                    </Select>
+                  </label>
+                </li>
+              );
+            })}
             {expertiseRows.map((row) => {
               const source = grantSourceLabel(row.sourceId, locale);
               return (

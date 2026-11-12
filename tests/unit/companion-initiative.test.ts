@@ -1,7 +1,7 @@
 /**
  * Where a companion acts (edge-case M19), from its source's SRD 5.2.1 text: the
  * familiar "rolls its own Initiative and acts on its own turn" (Find Familiar); Find
- * Steed's steed acts right after you; Bigby's Hand has no turn of its own (you move it
+ * Steed's steed acts right after you; a summoned hand has no turn of its own (you move it
  * on yours); a summon whose text says nothing rolls its own.
  */
 import { describe, expect, it } from "vitest";

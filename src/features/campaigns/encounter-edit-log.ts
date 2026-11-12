@@ -11,6 +11,10 @@
  *   turn, another device's move) is kept rather than overwritten.
  * - While a batch is out, snapshots wait: the server's echo of the write must not be
  *   shown with the batch replayed over it a second time.
+ * - After a send, until its echo is seen, a different snapshot may be OLDER than the
+ *   write (the listener delivers it late): it is not taken, the server is read instead
+ *   (`logRead`). Taking it would put the DM's confirmed edit back in the past, and a
+ *   whole-fight fallback written from there would erase it.
  */
 import { canonicalJsonEquals } from "@/lib/character-snapshot-reconciler";
 import type { EncounterState } from "@/types/campaign";
@@ -30,6 +34,8 @@ export interface EncounterEditLog {
   sending: readonly EncounterEdit[] | null;
   /** The newest snapshot that landed while the batch was out. */
   arrived?: { fight: EncounterState | null };
+  /** The last batch as written, until a snapshot or a read confirms it. */
+  unconfirmed?: { fight: EncounterState | null };
 }
 
 export function openEditLog(server: EncounterState | null): EncounterEditLog {
@@ -57,13 +63,38 @@ export function logEdit(log: EncounterEditLog, edit: EncounterEdit): EncounterEd
   return { ...log, waiting: [...log.waiting, edit] };
 }
 
-/** A server snapshot of the fight. During a send it waits for the send to end. */
+/** A snapshot the log will not take: after a send, one that differs from the write
+ *  may be older than it. The caller reads the server instead (`logRead`). */
+export function snapshotNeedsRead(
+  log: EncounterEditLog,
+  fight: EncounterState | null
+): boolean {
+  return (
+    !log.sending &&
+    log.unconfirmed !== undefined &&
+    !canonicalJsonEquals(log.unconfirmed.fight, fight)
+  );
+}
+
+/** A server snapshot of the fight. During a send it waits for the send to end; after a
+ *  send, one that differs from the write is left to a read (`snapshotNeedsRead`). */
 export function logSnapshot(
   log: EncounterEditLog,
   fight: EncounterState | null
 ): EncounterEditLog {
   if (log.sending) return { ...log, arrived: { fight } };
-  return { ...log, server: fight };
+  if (snapshotNeedsRead(log, fight)) return log;
+  return { server: fight, waiting: log.waiting, sending: null };
+}
+
+/** The server's fight read directly: newer than any snapshot already delivered, so it
+ *  is taken (during a send it waits like a snapshot). */
+export function logRead(
+  log: EncounterEditLog,
+  fight: EncounterState | null
+): EncounterEditLog {
+  if (log.sending) return { ...log, arrived: { fight } };
+  return { server: fight, waiting: log.waiting, sending: null };
 }
 
 /** Take every waiting edit as one batch; `null` when nothing waits or a send is out. */
@@ -87,7 +118,12 @@ export function sendDone(
   const arrived = log.arrived;
   const echo = arrived !== undefined && canonicalJsonEquals(arrived.fight, written);
   return {
-    log: { server: written, waiting: log.waiting, sending: null },
+    log: {
+      server: written,
+      waiting: log.waiting,
+      sending: null,
+      ...(echo ? {} : { unconfirmed: { fight: written } }),
+    },
     recheck: arrived !== undefined && !echo,
   };
 }
