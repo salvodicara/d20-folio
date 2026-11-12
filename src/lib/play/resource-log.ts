@@ -1,5 +1,6 @@
 /**
- * The log lines a change to Exhaustion, spell-slot pips or Heroic Inspiration writes,
+ * The log lines a change to Exhaustion, spell-slot pips, class resources or Heroic
+ * Inspiration writes,
  * read from the character before and after it. The store writes them in one place,
  * after the sheet event that made the change ({@link sheetEventLogEvents}); an undo
  * removes the lines first, then undoes the event (the `passBreathTurn` pattern).
@@ -57,6 +58,14 @@ export function resourceLogEvents(
       ...(slot.pactMagic ? { pactMagic: true as const } : {}),
       ...source,
     });
+  }
+  for (const id of new Set([
+    ...Object.keys(was.trackers),
+    ...Object.keys(now.trackers),
+  ])) {
+    const delta = (now.trackers[id]?.used ?? 0) - (was.trackers[id]?.used ?? 0);
+    if (delta > 0) events.push({ kind: "tracker-spent", trackerId: id, amount: delta });
+    if (delta < 0) events.push({ kind: "tracker-regain", trackerId: id, amount: -delta });
   }
   if (was.inspiration !== now.inspiration) {
     events.push({ kind: "inspiration-change", gained: now.inspiration, ...source });
