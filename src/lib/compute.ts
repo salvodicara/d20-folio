@@ -368,10 +368,25 @@ export function computeACDetailed(
     };
 
     if ("custom" in item) {
+      // The armor form once saved its «AC» as `acBonus` with no `ac`: that number is
+      // the armor's own AC (or the shield's), never a bonus on top of it.
+      const formAc =
+        item.armorCategory && !item.ac && item.acBonus !== undefined
+          ? item.acBonus
+          : undefined;
+      const ownAc =
+        item.ac ??
+        (formAc !== undefined && item.armorCategory && item.armorCategory !== "shield"
+          ? {
+              base: formAc,
+              dexBonus: item.armorCategory !== "heavy",
+              ...(item.armorCategory === "medium" ? { maxDex: 2 } : {}),
+            }
+          : undefined);
       if (item.armorCategory === "shield") {
-        shieldBonus = Math.max(shieldBonus, item.ac?.base ?? 2);
-      } else if (item.ac && item.armorCategory) {
-        const c = armorComposition(item.ac.base, item.armorCategory, item.ac);
+        shieldBonus = Math.max(shieldBonus, item.ac?.base ?? formAc ?? 2);
+      } else if (ownAc && item.armorCategory) {
+        const c = armorComposition(ownAc.base, item.armorCategory, ownAc);
         if (c.effective > bestArmorAC) {
           bestArmorAC = c.effective;
           baseValue = c.base;
@@ -383,7 +398,7 @@ export function computeACDetailed(
         }
         armorEquipped = true;
       }
-      if (item.acBonus && !requiresAttunementButNotAttuned) {
+      if (item.acBonus && formAc === undefined && !requiresAttunementButNotAttuned) {
         itemBonuses += item.acBonus;
       }
     } else if ("srdId" in item) {

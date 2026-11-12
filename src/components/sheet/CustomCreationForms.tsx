@@ -327,8 +327,14 @@ export function CustomEquipmentForm({
   const [armorCategory, setArmorCategory] = useState<
     "light" | "medium" | "heavy" | "shield"
   >(seedGear?.armorCategory ?? "light");
+  // The armour's own AC (`ac.base`); an item saved before the form wrote `ac` kept
+  // it as `acBonus`.
   const [acBonus, setAcBonus] = useState(
-    seedGear?.acBonus != null ? String(seedGear.acBonus) : ""
+    seedGear?.ac?.base != null
+      ? String(seedGear.ac.base)
+      : seedGear?.acBonus != null
+        ? String(seedGear.acBonus)
+        : ""
   );
 
   function handleCreate() {
@@ -371,7 +377,16 @@ export function CustomEquipmentForm({
         equipped: true,
         quantity,
         armorCategory,
-        acBonus: Number.isNaN(parsedAc) ? undefined : parsedAc,
+        // The number is the armour's AC (a shield's: what it adds), with the
+        // category's Dexterity rule; never a bonus on top of 10 + DEX.
+        ac: Number.isNaN(parsedAc)
+          ? undefined
+          : {
+              base: parsedAc,
+              dexBonus: armorCategory === "light" || armorCategory === "medium",
+              ...(armorCategory === "medium" ? { maxDex: 2 } : {}),
+            },
+        acBonus: undefined,
         instanceId: seedGear?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {

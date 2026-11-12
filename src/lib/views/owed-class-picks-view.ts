@@ -23,6 +23,7 @@ import {
   type LevelUpOptionVM,
 } from "@/lib/views/level-up-view";
 import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
+import { wizardMaxSpellLevel } from "@/lib/wizard-spellbook";
 
 /** One option, shaped for the level-up pick list. */
 export interface OwedPickOptionVM {
@@ -145,6 +146,30 @@ export function owedClassPickRows(build: Build, locale: Locale): OwedClassPickRo
     const known = new Set(
       (build.spells ?? []).flatMap((s) => ("custom" in s ? [] : [s.srdId]))
     );
+    const spellOption = (vm: ReturnType<typeof learnableSpellVMs>[number]) => ({
+      id: vm.id,
+      name: vm.name,
+      description: vm.description,
+      searchText: vm.searchText,
+      searchDesc: vm.searchDesc,
+    });
+    if (pick === "spellbook") {
+      // The Wizard's book: spells of a level the Wizard has slots for, landing unprepared.
+      return {
+        ...base,
+        title: t("play.speciesChoices.spellbookTitle", { count: owed }),
+        searchPlaceholder: t("levelUp.spells.searchSpells"),
+        options: learnableSpellVMs(
+          {
+            classId,
+            cantripsOnly: false,
+            maxLevel: wizardMaxSpellLevel(level),
+            exclude: known,
+          },
+          locale
+        ).map(spellOption),
+      };
+    }
     return {
       ...base,
       title: t("featChoices.pickClassCantrips", {
@@ -155,13 +180,7 @@ export function owedClassPickRows(build: Build, locale: Locale): OwedClassPickRo
       options: learnableSpellVMs(
         { classId, cantripsOnly: true, maxLevel: 0, exclude: known },
         locale
-      ).map((vm) => ({
-        id: vm.id,
-        name: vm.name,
-        description: vm.description,
-        searchText: vm.searchText,
-        searchDesc: vm.searchDesc,
-      })),
+      ).map(spellOption),
     };
   });
 }

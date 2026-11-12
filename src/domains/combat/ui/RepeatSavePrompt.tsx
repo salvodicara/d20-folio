@@ -47,12 +47,27 @@ function restoreEnded(save: PendingRepeatSave): void {
   const store = useRepeatSaveStore.getState();
   if (combatEffectsV26On()) {
     void reinstatePersistentCombatEffect(save.campaignId, save.id).catch(() => undefined);
+    for (const sibling of save.siblings ?? [])
+      void reinstatePersistentCombatEffect(save.campaignId, sibling.id).catch(
+        () => undefined
+      );
     store.add(save);
     return;
   }
+  const siblings = (save.siblings ?? []).map((sibling) => ({
+    ...sibling,
+    id: `${sibling.id}~${String(Date.now())}`,
+  }));
+  for (const copy of siblings)
+    void appendPersistentCombatEffect(save.campaignId, copy).catch(() => undefined);
   const effect = { ...save.effect, id: `${save.effect.id}~${String(Date.now())}` };
   void appendPersistentCombatEffect(save.campaignId, effect).catch(() => undefined);
-  store.add({ ...save, id: effect.id, effect });
+  store.add({
+    ...save,
+    id: effect.id,
+    effect,
+    ...(siblings.length > 0 ? { siblings } : {}),
+  });
 }
 
 /** The saves waiting for these combatants. */
@@ -236,6 +251,11 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
     if (counted(true)) return;
     store().remove(save.id);
     void revokePersistentCombatEffect(save.campaignId, save.id).catch(() => undefined);
+    // The same cast's other conditions on the target end with it (Hideous Laughter).
+    for (const sibling of save.siblings ?? [])
+      void revokePersistentCombatEffect(save.campaignId, sibling.id).catch(
+        () => undefined
+      );
     useToastStore.getState().showToast({
       message: t("combat.repeatSaveEnded", { condition, target: save.targetName }),
       duration: 6000,
