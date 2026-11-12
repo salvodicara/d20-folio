@@ -305,6 +305,7 @@ export function applySpellChoicePicks(
   const abilityBySlot = new Map<string, AbilityCode | undefined>();
   const freeCastBySlot = new Map<string, SpellChoiceSlot["freeCastSource"]>();
   const freeCastMultiBySlot = new Map<string, boolean | undefined>();
+  const sourceBySlot = new Map<string, string | undefined>();
   const toSpellbookBySlot = new Map<string, boolean | undefined>();
   for (const slot of slots ?? []) {
     // Fixed `spellAbility` wins; otherwise a `spellAbilityChoice` set is
@@ -318,6 +319,7 @@ export function applySpellChoicePicks(
     );
     freeCastBySlot.set(slot.slotId, slot.freeCastSource);
     freeCastMultiBySlot.set(slot.slotId, slot.freeCastMulti);
+    sourceBySlot.set(slot.slotId, slot.sourceId);
     toSpellbookBySlot.set(slot.slotId, slot.toSpellbook);
   }
   for (const [slotId, ids] of Object.entries(picks)) {
@@ -362,6 +364,10 @@ export function applySpellChoicePicks(
         }
       }
       if (existingIndex === undefined) {
+        // A new pick names the source that granted it; a spell already on the
+        // sheet keeps its own provenance.
+        const grantedBy = sourceBySlot.get(slotId);
+        if (grantedBy) ref.grantedBy = grantedBy;
         indexById.set(id, result.length);
         result.push(ref);
       } else {

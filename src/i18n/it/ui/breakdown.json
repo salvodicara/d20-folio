@@ -3,6 +3,7 @@
     "rubric": "Scomposizione",
     "base": "Base",
     "featureBonus": "Bonus da privilegi",
+    "untilLongRest": "fino al prossimo Riposo Lungo",
     "override": "Correzione manuale",
     "hpMaxReduction": "Riduzione dei PF massimi",
     "ac": {

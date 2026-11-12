@@ -67,7 +67,10 @@ import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
-import { cunningStrikeOptionsFor } from "@/domains/play/after-hit-options";
+import {
+  carriesSneakAttack,
+  cunningStrikeOptionsFor,
+} from "@/domains/play/after-hit-options";
 import {
   applyEscapeCheck as applySheetEscapeCheck,
   applyHideCheck as applySheetHideCheck,
@@ -1655,14 +1658,17 @@ function CombatActionCard({
             <WieldStance twoHanded={twoHanded} onChange={setTwoHanded} />
           )}
           {/* S6 — the Rogue Cunning Strike picker rides a weapon ATTACK (the
-              effect is added to a Sneak Attack hit), reusing the shared
+              effect is added to a Sneak Attack hit, so only on an attack that
+              carries Sneak Attack), reusing the shared
               `.rider-strip` register beside the on-hit riders. */}
-          {action.type === "action" && cunningStrike.options.length > 0 && (
-            <CunningStrikeOptions
-              options={cunningStrike.options}
-              onApply={(option) => cunningStrike.onApply(action, option)}
-            />
-          )}
+          {action.type === "action" &&
+            carriesSneakAttack(action) &&
+            cunningStrike.options.length > 0 && (
+              <CunningStrikeOptions
+                options={cunningStrike.options}
+                onApply={(option) => cunningStrike.onApply(action, option)}
+              />
+            )}
           {/* The weapon's Weapon-Mastery effects (Graze, Topple, Vex, …) as
               one-tap rows in the same rider register: a tap logs it and, for
               Vex, lights the next-attack Advantage. */}
