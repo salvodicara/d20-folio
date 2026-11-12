@@ -124,9 +124,12 @@ export function DiaryTab({
         >
           <span className="f-row-main">
             <span className="f-row-t">{t("diary.allChronicle")}</span>
-            <span className="f-row-s">
-              {t("diary.sessionCount", { count: evenings.length })}
-            </span>
+            {/* a chronicle kept only on the old pages has no evening to count */}
+            {evenings.length > 0 && (
+              <span className="f-row-s">
+                {t("diary.sessionCount", { count: evenings.length })}
+              </span>
+            )}
           </span>
         </Link>
         {evenings.map((e) => (
@@ -180,7 +183,7 @@ export function DiaryTab({
         >
           {chronicle.trim() ? (
             <div data-user-text="">
-              <BlockMarkdown className="f-prose" text={chronicle} />
+              <BlockMarkdown className="f-prose" text={chronicle} softBreaks />
             </div>
           ) : (
             <p className="f-quiet">
