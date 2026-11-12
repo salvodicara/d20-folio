@@ -20,6 +20,8 @@
  */
 import { HIT_DIE_AVG, levelUpPlan } from "@/lib/level-up-plan";
 import { commitLevelUp } from "@/lib/level-up-commit";
+import { recordLevelUp } from "@/domains/leveling/level-up-line";
+import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
@@ -183,6 +185,8 @@ interface DoneInfo {
 export function LevelUpWizard() {
   const { characterId } = useParams<{ characterId: string }>();
   useCharacterSubscription(characterId);
+  // The level-up's line reaches the attached campaign's session from here too.
+  useSessionLogPlayerRecorder(characterId);
   const { t } = useTranslation();
   useDocumentTitle(t("levelUp.title"));
   const { language } = useLocale();
@@ -719,6 +723,8 @@ export function LevelUpWizard() {
         // Compare-and-set base: the generation the wizard opened on.
         character.revision
       );
+      // The level-up's line in the log, and through it the campaign's session.
+      recordLevelUp({ from: newLevel - 1, to: newLevel, classId });
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("common.unknownError");
       console.error("Level-up save failed", e);

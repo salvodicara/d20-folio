@@ -67,6 +67,7 @@ type T = ReturnType<typeof useTranslation>["t"];
 function blockTitle(block: DiaryBlock, t: T): string {
   if (block.kind === "explore") return t("diary.explore");
   if (block.kind === "rest") return t("character.rest");
+  if (block.kind === "progress") return t("diary.progress");
   return block.foes.length
     ? t("diary.fightWith", { foes: block.foes.join(", ") })
     : t("campaignScreen.tabFight");

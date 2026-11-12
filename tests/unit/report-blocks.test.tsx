@@ -45,3 +45,11 @@ describe("a fight's heading", () => {
     expect(heading(fight({}))).toMatch(/3 rounds · 07:41.PM$/i);
   });
 });
+
+describe("a progress block's heading", () => {
+  it("reads «Progress», not exploration", () => {
+    expect(heading({ kind: "progress", at: at(41), entries: [] })).toMatch(
+      /^Progress · 07:41.PM$/i
+    );
+  });
+});
