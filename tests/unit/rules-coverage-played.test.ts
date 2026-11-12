@@ -71,7 +71,9 @@ describe("the played-content coverage view", () => {
   it("writes a markdown table with a plain legend", () => {
     const md = playedCoverageMarkdown(survey);
     expect(md).toContain("| Entry | Id | Characters | Code-checked | Declared |");
-    expect(md).toContain("Unproven: nobody has checked it against the code yet.");
+    expect(md).toContain(
+      "Unproven: nobody has checked it against the code with a test to cite."
+    );
   });
 });
 

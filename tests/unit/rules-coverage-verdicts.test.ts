@@ -5,13 +5,18 @@
  * Aura of Protection is missing for allies, Memorize Spell is automatic; an entry
  * nobody checked reads «unproven». Public SRD ids only in the verdicts file.
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { classFeatureIndex } from "@/data/classes";
 import { getFeat } from "@/data/feats";
 
-import { PUBLIC_VERDICTS, type CoverageVerdict } from "./__helpers__/coverage-verdicts";
+import { aScreenCalls } from "./__helpers__/coverage-report";
+import {
+  PUBLIC_VERDICTS,
+  shownVerdict,
+  type CoverageVerdict,
+} from "./__helpers__/coverage-verdicts";
 import { playedCoverage, playedCoverageMarkdown } from "./__helpers__/played-coverage";
 
 const survey = {
@@ -46,7 +51,14 @@ describe("code-checked verdicts in the played-content view", () => {
   });
 
   it("verdicts given at run time (the pack's) join the public ones", () => {
-    const extra = [{ id: "wizard-scholar", verdict: "by-hand" as const, evidence: [] }];
+    const extra = [
+      {
+        id: "wizard-scholar",
+        verdict: "by-hand" as const,
+        evidence: [],
+        packEvidence: ["p.test.ts"],
+      },
+    ];
     expect(of("wizard-scholar", extra)?.verdict).toBe("by-hand");
   });
 
@@ -67,12 +79,37 @@ describe("the public verdicts file", () => {
     }
   });
 
-  it("an automatic verdict names a test, and every test it names exists", () => {
+  it("an auto or by-hand verdict names a test; every test it names exists and runs", () => {
     for (const v of PUBLIC_VERDICTS) {
-      if (v.verdict === "auto" && !v.provenInPack)
+      if (v.verdict === "auto" || v.verdict === "by-hand")
         expect(v.evidence.length, v.id).toBeGreaterThan(0);
-      for (const file of v.evidence)
-        expect(existsSync(`tests/unit/${file}`), `${v.id}: ${file}`).toBe(true);
+      for (const file of v.evidence) {
+        const where = `tests/unit/${file}`;
+        expect(existsSync(where), `${v.id}: ${file}`).toBe(true);
+        // Skipped, left to do, or expected to fail: it proves nothing.
+        const idle = /\.(skip|todo)\(|\bit\.fails\(/.test(readFileSync(where, "utf8"));
+        expect(idle, `${v.id}: ${file} skips or expects a failure`).toBe(false);
+      }
     }
+  });
+
+  it("a verdict waiting on a change names what a screen will call; none is due a re-check", () => {
+    for (const v of PUBLIC_VERDICTS) {
+      if (v.until) expect(v.waitsFor?.length, v.id).toBeGreaterThan(0);
+      expect(shownVerdict(v, aScreenCalls), `${v.id}: re-check it`).not.toBe("re-check");
+    }
+  });
+
+  it("a verdict with no test reads unproven; a landed change reads re-check", () => {
+    const auto = { id: "x", verdict: "auto" as const, evidence: [] };
+    expect(shownVerdict(auto, () => false)).toBe("unproven");
+    expect(shownVerdict({ ...auto, evidence: ["a.test.ts"] }, () => false)).toBe("auto");
+    expect(shownVerdict({ ...auto, packEvidence: ["p.test.ts"] }, () => false)).toBe(
+      "auto"
+    );
+    const none = { id: "y", verdict: "missing" as const, evidence: [] };
+    expect(shownVerdict(none, () => false)).toBe("missing");
+    const waiting = { ...none, waitsFor: ["useZ"] };
+    expect(shownVerdict(waiting, (fn) => fn === "useZ")).toBe("re-check");
   });
 });

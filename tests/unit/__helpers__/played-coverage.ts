@@ -13,7 +13,13 @@ import { getFeat } from "@/data/feats";
 import { getRace } from "@/data/races";
 import { localizeSrd } from "@/i18n/resolver";
 
-import { PUBLIC_VERDICTS, type CoverageVerdict, type Verdict } from "./coverage-verdicts";
+import { aScreenCalls } from "./coverage-report";
+import {
+  PUBLIC_VERDICTS,
+  shownVerdict,
+  type CoverageVerdict,
+  type ShownVerdict,
+} from "./coverage-verdicts";
 import {
   classFeatureCoverage,
   featCoverage,
@@ -40,7 +46,7 @@ export interface PlayedRow {
   /** What the entry's data declares. */
   coverage: PlayedCoverage;
   /** What the code really does (`coverage-verdicts.ts`), or nobody checked it. */
-  verdict?: Verdict | "unproven";
+  verdict?: ShownVerdict;
   note?: string;
   until?: string;
 }
@@ -133,7 +139,7 @@ export function playedCoverage(
     const checked = verdicts.get(row.id);
     return {
       ...row,
-      verdict: checked?.verdict ?? "unproven",
+      verdict: checked ? shownVerdict(checked, aScreenCalls) : "unproven",
       ...(checked?.note ? { note: checked.note } : {}),
       ...(checked?.until ? { until: checked.until } : {}),
     };
@@ -158,7 +164,8 @@ const DECLARED: Record<PlayedCoverage, string> = {
   missing: "No catalogue entry",
 };
 
-const CHECKED: Record<Verdict | "unproven", string> = {
+const CHECKED: Record<ShownVerdict, string> = {
+  "re-check": "Re-check (its change reached a screen)",
   auto: "Auto",
   "by-hand": "By hand",
   missing: "Missing",
@@ -173,6 +180,7 @@ const overclaims = (row: PlayedRow): boolean =>
   row.verdict !== undefined &&
   row.verdict !== "auto" &&
   row.verdict !== "unproven" &&
+  row.verdict !== "re-check" &&
   !(row.coverage === "tap" && row.verdict === "by-hand");
 
 /** The report: a legend, a summary per section, then each section's table. */
@@ -192,16 +200,17 @@ export function playedCoverageMarkdown(
     "- By hand: the player or the DM applies it (a tap, a note, a ruling).",
     "- Missing: a table would want the app to apply it, and it does not.",
     "- Impossible / Wrong: the app cannot represent it / applies something the rule does not say.",
-    "- Unproven: nobody has checked it against the code yet. Never read it as automatic.",
+    "- Unproven: nobody has checked it against the code with a test to cite. Never read it as automatic.",
+    "- Re-check: the change its verdict waited for now reaches a screen; check it again.",
   ];
   for (const section of sections) {
-    const count = (v: Verdict | "unproven") =>
+    const count = (v: ShownVerdict) =>
       section.rows.filter((row) => row.verdict === v).length;
     out.push(
       "",
       `## ${section.title}`,
       "",
-      `${count("auto")} auto · ${count("by-hand")} by hand · ${count("missing")} missing · ${count("impossible") + count("wrong")} impossible or wrong · ${count("unproven")} unproven`,
+      `${count("auto")} auto · ${count("by-hand")} by hand · ${count("missing")} missing · ${count("impossible") + count("wrong")} impossible or wrong · ${count("unproven")} unproven · ${count("re-check")} to re-check`,
       "",
       "| Entry | Id | Characters | Code-checked | Declared |",
       "| --- | --- | --- | --- | --- |",

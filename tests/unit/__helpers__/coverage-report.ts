@@ -137,13 +137,18 @@ function screenSources(): string[] {
   return out;
 }
 
+let screens: string[] | null = null;
+
+/** True when a screen (a React component) calls `fn` or mounts the hook `fn`. */
+export function aScreenCalls(fn: string): boolean {
+  screens ??= screenSources();
+  return screens.some((text) => new RegExp(`\\b${fn}\\b`).test(text));
+}
+
 /** The functions a gap waits for that a screen now calls (the gap may be closed). */
 export function gapsAScreenNowCalls(): Array<{ entry: string; fn: string }> {
-  const screens = screenSources();
   return GLOSSARY.flatMap((entry) =>
-    (entry.waitsFor ?? [])
-      .filter((fn) => screens.some((text) => new RegExp(`\\b${fn}\\b`).test(text)))
-      .map((fn) => ({ entry: entry.entry, fn }))
+    (entry.waitsFor ?? []).filter(aScreenCalls).map((fn) => ({ entry: entry.entry, fn }))
   );
 }
 

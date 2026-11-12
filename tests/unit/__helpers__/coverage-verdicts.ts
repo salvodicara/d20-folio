@@ -12,9 +12,18 @@
  *  - wrong: the app applies something the rule does not say.
  *
  * A mixed entry takes its weakest part's verdict and says the rest in `note`.
+ *
+ * A verdict is only as good as its tests (coordinator, 2026-11-12): an «auto» or
+ * «by-hand» verdict with no test it can cite reads «unproven»; a verdict waiting on an
+ * open change names what a screen will call (`waitsFor`), and turns into «re-check»
+ * once a screen calls it. Entries proven only by a pack test live in the pack's own
+ * verdicts file (read at run time), never here.
  */
 
 export type Verdict = "auto" | "by-hand" | "missing" | "impossible" | "wrong";
+
+/** What the report shows: the verdict, or why it cannot be trusted yet. */
+export type ShownVerdict = Verdict | "unproven" | "re-check";
 
 export interface CoverageVerdict {
   id: string;
@@ -24,8 +33,22 @@ export interface CoverageVerdict {
   note?: string;
   /** The open PR that changes the verdict when it lands. */
   until?: string;
-  /** Proven only by a content-pack test (named there, not here). */
-  provenInPack?: true;
+  /** With `until`: the function or hook a screen calls once that change lands. */
+  waitsFor?: readonly string[];
+  /** In the pack's verdicts file only: its tests under content-pack/tests/unit. */
+  packEvidence?: readonly string[];
+}
+
+/** The verdict to show, given which functions screens call today. */
+export function shownVerdict(
+  verdict: CoverageVerdict,
+  screenCalls: (fn: string) => boolean
+): ShownVerdict {
+  if (verdict.waitsFor?.some(screenCalls)) return "re-check";
+  const proven = verdict.evidence.length + (verdict.packEvidence?.length ?? 0) > 0;
+  if ((verdict.verdict === "auto" || verdict.verdict === "by-hand") && !proven)
+    return "unproven";
+  return verdict.verdict;
 }
 
 export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
@@ -88,13 +111,13 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     verdict: "auto",
     evidence: ["divine-sense.test.ts", "raw-2024-tracker-corrections.test.ts"],
   },
-  { id: "paladin-faithful-steed", verdict: "auto", evidence: [], provenInPack: true },
   {
     id: "paladin-aura-of-protection",
     verdict: "missing",
     evidence: ["character-store-d20-lifecycle.test.ts"],
     note: "the paladin's own saves are automatic; allies in the aura get nothing",
     until: "#1089",
+    waitsFor: ["usePartyAura"],
   },
   // Rogue
   { id: "rogue-sneak-attack", verdict: "auto", evidence: ["rogue-sneak-attack.test.ts"] },
@@ -130,7 +153,6 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     evidence: ["attack-scope-clauses.test.tsx", "advantage-rail.test.ts"],
   },
   { id: "barbarian-primal-knowledge", verdict: "auto", evidence: ["grants.test.ts"] },
-  { id: "barbarian-feral-instinct", verdict: "auto", evidence: [], provenInPack: true },
   {
     id: "barbarian-instinctive-pounce",
     verdict: "by-hand",
