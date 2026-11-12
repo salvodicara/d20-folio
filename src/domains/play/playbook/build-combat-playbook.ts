@@ -368,7 +368,10 @@ function defaultAttack(
       a.type === "action" &&
       (a.source === "weapon" || (a.spellLevel === 0 && a.summary.damage !== undefined))
   );
-  const real = candidates.filter((a) => a.id !== "unarmed-strike");
+  // The attacks every creature has (fists, a bottle) are the fallback, never the pick.
+  const real = candidates.filter(
+    (a) => a.id !== "unarmed-strike" && a.id !== "improvised-weapon"
+  );
   const pool = real.length > 0 ? real : candidates;
   const value = (a: RawResolvedAction): number =>
     averageDamage(a.summary.damage) *

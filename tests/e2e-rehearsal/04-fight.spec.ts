@@ -1,12 +1,14 @@
 /**
  * Rehearsal 4 — a campaign fight with the DM. Three people, each in their own browser
- * with their own account: the DM on the campaign page, Catalion (Lore Bard) and
- * Mandorlino (Paladin 5) on their sheets. Initiative, Bless on an ally, Warding Bond,
+ * with their own account: the DM on the campaign page, Bard (Lore Bard) and
+ * Paladin (Paladin 5) on their sheets. Initiative, Bless on an ally, Warding Bond,
  * a hit the DM calls landing through the bond, Cutting Words as a reaction, the end
  * of the fight; Warding Bond (1 hour, no Concentration) outlives it.
  */
 import { expect, type Browser, type Page } from "@playwright/test";
 import {
+  BARD_NAME,
+  BARD_FIRST,
   actionRow,
   expectNoCrash,
   openFightTab,
@@ -121,11 +123,11 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   browser,
 }) => {
   test.setTimeout(600_000);
-  // Catalion as the seed made him; Mandorlino comes from 03 (level 5, Warding Bond).
-  reseedHero(SANDBOX_USERS.catalion);
+  // Bard as the seed made him; Paladin comes from 03 (level 5, Warding Bond).
+  reseedHero(SANDBOX_USERS.bard);
   const dm = await seat(browser);
-  const bard = await seat(browser, SANDBOX_USERS.catalion.email);
-  const paladin = await seat(browser, SANDBOX_USERS.mandorlino.email);
+  const bard = await seat(browser, SANDBOX_USERS.bard.email);
+  const paladin = await seat(browser, SANDBOX_USERS.paladin.email);
 
   await test.step("the DM can start the fight (Roll for the missing)", async () => {
     await openFightTab(dm);
@@ -139,7 +141,7 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   await test.step("a player rolls initiative (and starts the fight if the DM could not)", async () => {
     await openFightTab(bard);
     const roll = bard.getByRole("button", { name: "Roll initiative" });
-    // The DM's «Roll for the missing» may roll for Catalion first: the button then
+    // The DM's «Roll for the missing» may roll for Bard first: the button then
     // goes away between the look and the click, and there is nothing left to roll.
     const opened =
       (await roll.isVisible()) &&
@@ -162,8 +164,8 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
 
   await test.step("each player's sheet shows the fight's order", async () => {
     for (const [page, id] of [
-      [bard, SANDBOX_USERS.catalion.characterId],
-      [paladin, SANDBOX_USERS.mandorlino.characterId],
+      [bard, SANDBOX_USERS.bard.characterId],
+      [paladin, SANDBOX_USERS.paladin.characterId],
     ] as const) {
       await page.goto(`/characters/${id}`);
       await expect
@@ -172,20 +174,15 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
     }
   });
 
-  await test.step("Mandorlino casts Bless on Catalion; Catalion's sheet shows it", async () => {
-    await cast(paladin, "Bless", ["Catalion di Sancaldo"]);
-    expect
-      .soft(await showsEffect(bard, "Bless"), "Catalion's sheet lists Bless")
-      .toBe(true);
+  await test.step("Paladin casts Bless on Bard; Bard's sheet shows it", async () => {
+    await cast(paladin, "Bless", [BARD_NAME]);
+    expect.soft(await showsEffect(bard, "Bless"), "Bard's sheet lists Bless").toBe(true);
   });
 
-  await test.step("Mandorlino casts Warding Bond on Catalion", async () => {
-    await cast(paladin, "Warding Bond", ["Catalion di Sancaldo"]);
+  await test.step("Paladin casts Warding Bond on Bard", async () => {
+    await cast(paladin, "Warding Bond", [BARD_NAME]);
     expect
-      .soft(
-        await showsEffect(bard, "Warding Bond"),
-        "Catalion's sheet lists Warding Bond"
-      )
+      .soft(await showsEffect(bard, "Warding Bond"), "Bard's sheet lists Warding Bond")
       .toBe(true);
   });
 
@@ -204,13 +201,15 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
       .toBeVisible({ timeout: 5_000 });
     await expect
       .soft(
-        dm.getByRole("button", { name: /^Damage and healing: Catalion/ }).first(),
+        dm
+          .getByRole("button", { name: new RegExp(`^Damage and healing: ${BARD_FIRST}`) })
+          .first(),
         "the DM can damage a PC from the fight"
       )
       .toBeVisible({ timeout: 5_000 });
   });
 
-  await test.step("a 10-damage hit the DM calls on Catalion lands through the bond", async () => {
+  await test.step("a 10-damage hit the DM calls on Bard lands through the bond", async () => {
     const bardBefore = await currentHp(bard);
     const paladinBefore = await currentHp(paladin);
     await bard.getByRole("button", { name: "Damage", exact: true }).click();
@@ -221,19 +220,15 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
       .first()
       .click();
     // Warding Bond: Resistance to all damage halves the 10; the caster takes the same 5.
-    await settles(
-      () => currentHp(bard),
-      bardBefore - 5,
-      "Catalion takes half (Resistance)"
-    );
+    await settles(() => currentHp(bard), bardBefore - 5, "Bard takes half (Resistance)");
     await settles(
       () => currentHp(paladin),
       paladinBefore - 5,
-      "Mandorlino takes the same 5"
+      "Paladin takes the same 5"
     );
   });
 
-  await test.step("Catalion answers an attack with Cutting Words (a Bardic Inspiration die)", async () => {
+  await test.step("Bard answers an attack with Cutting Words (a Bardic Inspiration die)", async () => {
     const uses = bard.getByRole("button", { name: /Bardic Inspiration: \d+ of \d+/ });
     const left = async () =>
       Number((await uses.getAttribute("aria-label"))?.match(/(\d+) of/)?.[1]);

@@ -4,7 +4,7 @@
  * also runs (combat status, homebrew library, scroll restore). Old screens keep the old
  * shell until each is rebuilt.
  */
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link, Outlet, useMatch, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/ui/AppShell";
@@ -21,6 +21,8 @@ const GlobalCombatMount = lazy(() =>
     default: m.GlobalCombatMount,
   }))
 );
+// ⌘K reads the roster and the compendium: it loads on first open, never at first paint.
+const SearchPalette = lazy(() => import("@/domains/search/ui/SearchPalette"));
 const LibraryMount = lazy(() =>
   import("@/features/account/library-mount").then((m) => ({ default: m.LibraryMount }))
 );
@@ -39,6 +41,18 @@ export function NewAppShell() {
   const background = onSheet || afterLoad;
   // A Google account always has a name; the email stands in when it doesn't.
   const name = user?.displayName || user?.email || "";
+  // ⌘K / Ctrl+K anywhere, or the header's search, opens the app's search.
+  const [searching, setSearching] = useState(false);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearching(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   return (
     <AppShell
       skipLabel={t("common.skipToMain")}
@@ -50,11 +64,9 @@ export function NewAppShell() {
         { to: "/compendium", label: t("nav.compendium") },
       ]}
       navLabel={t("nav.primary")}
-      searchLabel={t("shell.search")}
+      searchLabel={t("palette.title")}
       status={<CombatPip />}
-      onSearch={(q) =>
-        void navigate(q ? `/compendium?q=${encodeURIComponent(q)}` : "/compendium")
-      }
+      onSearch={() => setSearching(true)}
       menuLabel={t("shell.menu")}
       account={{
         label: t("shell.account"),
@@ -91,6 +103,11 @@ export function NewAppShell() {
         <Outlet />
       </Suspense>
       <NewToasts />
+      {searching && (
+        <Suspense fallback={null}>
+          <SearchPalette open onClose={() => setSearching(false)} />
+        </Suspense>
+      )}
     </AppShell>
   );
 }

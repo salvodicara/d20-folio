@@ -21,6 +21,8 @@
     "longRest": "Took a Long Rest",
     "timePasses_one": "{{count}} minute passes",
     "timePasses_other": "{{count}} minutes pass",
+    "fightStart": "Combat started",
+    "fightEnd": "Combat ended",
     "riderUse": "Spent {{rider}} on {{name}}",
     "masteryUse": "{{rider}} ({{name}})",
     "effectExpired": "{{name}} ended (duration elapsed)",

@@ -18,7 +18,7 @@
  * after the interaction the URL is UNCHANGED — still the sheet, never the roster.
  *
  * Auth is bypassed by the webServer's `VITE_DEV_BYPASS_AUTH`; the Zealot barbarian
- * fixture (`team-santaera-barbarian`, has Warrior of the Gods) and the mock Lyra
+ * fixture (`team-barbarian`, has Warrior of the Gods) and the mock Lyra
  * Voss cockpit (`mock-1`) load with no sign-in. Desktop width — live play is
  * desktop-first (the action board / header controls are always visible there).
  */
@@ -40,7 +40,7 @@ test.describe("a dialog interaction never bounces off the sheet", () => {
   test("A: the Warrior of the Gods pool-spend modal — Cancel AND Spend stay put", async ({
     page,
   }) => {
-    await page.goto("/characters/team-santaera-barbarian");
+    await page.goto("/characters/team-barbarian");
     await page.getByRole("main").waitFor();
     const url = page.url();
 

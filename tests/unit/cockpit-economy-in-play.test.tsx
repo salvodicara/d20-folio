@@ -558,7 +558,7 @@ describe("economy in the Play tab", () => {
 
     // Put combat mid-fight so the baseline reset is observable. The mock already
     // carries conditions + Action Log entries, so we can prove End Combat leaves them
-    // untouched (it never reaches into the character store).
+    // as they were, adding only the fight's end line.
     act(() => {
       useCombatStore.getState().setRound(4);
       useCombatStore.getState().selectAction({ id: "x", name: "X", slot: "action" });
@@ -596,12 +596,15 @@ describe("economy in the Play tab", () => {
     });
     expect(useCombatStore.getState().round).toBe(1);
     expect(useCombatStore.getState().selected.action).toEqual([]);
-    // …and the Action Log + conditions are UNTOUCHED — End Combat never reaches into
-    // the character store.
+    // …the conditions are untouched, and the Action Log gains only the fight's end
+    // («Combat ended»), so the sheet's own report closes the solo fight there.
     const after = useCharacterStore.getState().character;
     if (!after) throw new Error("character not loaded");
     expect(after.session.conditions).toEqual(conditionsBefore);
-    expect(after.session.logEntries).toEqual(logBefore);
+    expect(after.session.logEntries.slice(0, logBefore.length)).toEqual(logBefore);
+    expect(after.session.logEntries.slice(logBefore.length).map((e) => e.event)).toEqual([
+      { kind: "fight-end" },
+    ]);
   });
 
   // ── RA-12 — the Hide card's roll-entry (SRD "Hide [Action]": DC 15 Dexterity

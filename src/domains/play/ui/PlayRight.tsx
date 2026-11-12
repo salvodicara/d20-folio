@@ -1,8 +1,11 @@
 /**
  * The Play screen's right column (approved prototype x-play): «Iniziativa» while the
- * character's campaign fights (the same list as the campaign's Scontro), and «Resoconto»,
- * the campaign's latest evening as the Diario tells it (blocks, times, signed notes),
- * with «Copia il resoconto». A character attached to no campaign shows neither.
+ * character fights (the campaign's list, as the campaign's Scontro shows it; or, in a
+ * fight of its own, the round and its turn), and «Resoconto»: the campaign's latest
+ * evening as the Diario tells it, or, for a character in no campaign, its own sheet log,
+ * through the same report builder, with «Copia il resoconto». The column is always
+ * there, as D&D Beyond's sheet and BG3's HUD never drop a column by state (coordinator,
+ * 2026-11-12); with no fight and nothing logged yet it stays empty, as in a campaign.
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,7 +13,7 @@ import { useTranslation } from "react-i18next";
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { diaryBlocks } from "@/domains/chronicle/diary-view";
 import { ReportBlocks } from "@/domains/chronicle/ui/ReportBlocks";
-import { useReportNames } from "@/domains/chronicle/ui/report-names";
+import { useOwnReportNames, useReportNames } from "@/domains/chronicle/ui/report-names";
 import { fightRows } from "@/domains/combat/fight-rows-view";
 import { fightControls } from "@/domains/combat/fight-controls";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
@@ -23,14 +26,19 @@ import { openZoneTray } from "@/features/character/center/zone-tray";
 import { foldCombatEffectOps } from "@/lib/combat-effects";
 import { activeZones } from "@/lib/zones";
 import type { Locale } from "@/lib/locale";
-import { foldSession } from "@/lib/session-log";
+import { foldSession, sheetSessionEntries } from "@/lib/session-log";
 import { sessionReportSections } from "@/lib/session-log/session-report-sections";
 import { renderSessionReport } from "@/lib/views/session-report-view";
 import { useAuthStore } from "@/stores/authStore";
+import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { Button, Chip, Icon, initialOf, Panel } from "@/ui";
 import type { HpBandValue } from "@/lib/hp-band";
+
+/** The character itself, in its own report (no campaign, no party). */
+const ME = "pc-me";
 
 export function PlayRight({
   campaign,
@@ -44,7 +52,11 @@ export function PlayRight({
   return (
     <div className="f-stack f-right">
       <Initiative campaign={campaign} locale={locale} />
-      {campaign && <Report campaign={campaign} locale={locale} onToast={onToast} />}
+      {campaign ? (
+        <Report campaign={campaign} locale={locale} onToast={onToast} />
+      ) : (
+        <OwnReport locale={locale} onToast={onToast} />
+      )}
     </div>
   );
 }
@@ -66,7 +78,7 @@ function Initiative({
       .getState()
       .showToast({ message, duration: 5000, ...(undo ? { onUndo: undo } : {}) })
   );
-  if (!fight) return null;
+  if (!fight) return <SoloInitiative />;
   const isDm = campaign?.dmUid === uid;
   // The combat lifecycle (owner, #505): anyone at the table steps a turn back and
   // ends the fight, each with its undo; the same rule as the campaign's Scontro.
@@ -268,6 +280,71 @@ function Report({
       }
     >
       <ReportBlocks blocks={blocks} names={names} players={players} locale={locale} />
+    </Panel>
+  );
+}
+
+/** A fight of the character's own (no campaign): the round, and its turn. */
+function SoloInitiative() {
+  const { t } = useTranslation();
+  const started = useCombatStore((s) => s.fightStarted);
+  const round = useCombatStore((s) => s.round);
+  const name = useCharacterStore((s) => s.character?.character.name ?? "");
+  if (!started) return null;
+  return (
+    <Panel color="ini" title={t("fight.listTitle", { round })}>
+      <div className="f-ir" data-current="">
+        <span className="f-ir-i" />
+        <span className="f-ir-tok" aria-hidden="true">
+          {initialOf(name)}
+        </span>
+        <span className="f-ir-n">
+          <span className="f-ir-name">
+            {name}
+            {`\u00a0${t("play.initiativeYou")}`}
+          </span>
+          <span className="f-ir-now">{t("fight.now")}</span>
+        </span>
+      </div>
+    </Panel>
+  );
+}
+
+/** A character in no campaign: «Resoconto» from its own sheet log. */
+function OwnReport({
+  locale,
+  onToast,
+}: {
+  locale: Locale;
+  onToast: (message: string) => void;
+}) {
+  const { t } = useTranslation();
+  const log = useCharacterStore((s) => s.character?.session.logEntries);
+  const name = useCharacterStore((s) => s.character?.character.name ?? "");
+  const names = useOwnReportNames(name, locale);
+  const sections = useMemo(
+    () => sessionReportSections(sheetSessionEntries(log ?? [], ME)),
+    [log]
+  );
+  const blocks = useMemo(() => diaryBlocks(sections), [sections]);
+  if (blocks.length === 0) return null;
+  const copy = () => {
+    const text = renderSessionReport(sections, name, t, names, {});
+    void navigator.clipboard
+      .writeText(text)
+      .then(() => onToast(t("sessionReport.copied")));
+  };
+  return (
+    <Panel
+      color="log"
+      title={t("play.report")}
+      foot={
+        <Button kind="quiet" icon="u-copy" onClick={copy}>
+          {t("diary.copyReport")}
+        </Button>
+      }
+    >
+      <ReportBlocks blocks={blocks} names={names} players={{}} locale={locale} />
     </Panel>
   );
 }

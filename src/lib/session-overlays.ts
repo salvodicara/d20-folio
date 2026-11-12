@@ -12,6 +12,7 @@ export const RUNTIME_SESSION_OVERLAYS = [
   "encounterEffects",
   "tableRules",
   "campaignClock",
+  "partyAura",
 ] as const satisfies ReadonlyArray<keyof SessionState>;
 
 const OVERLAYS: ReadonlySet<string> = new Set(RUNTIME_SESSION_OVERLAYS);
