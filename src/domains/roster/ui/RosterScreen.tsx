@@ -14,7 +14,6 @@ import { deleteCharacterAndDetach } from "@/features/roster/delete-character";
 import { ImportCharacterHost } from "@/features/roster/ImportCharacterHost";
 import { triggerCharacterImport } from "@/features/roster/import-trigger";
 import { useRosterActions } from "@/features/roster/use-roster-actions";
-import { listSharedCampaigns } from "@/features/campaigns/campaign-io";
 import { useCharacters } from "@/hooks/useCharacters";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
@@ -34,7 +33,10 @@ export function RosterScreen() {
   useEffect(() => {
     if (!uid) return;
     let live = true;
-    listSharedCampaigns(uid)
+    // On demand: the campaign reads bring the campaign engine, which the list itself
+    // never needs; the campaign label arrives a moment after the cards paint.
+    import("@/features/campaigns/campaign-io")
+      .then(({ listSharedCampaigns }) => listSharedCampaigns(uid))
       .then((all) => {
         if (!live) return;
         const map: Record<string, string> = {};

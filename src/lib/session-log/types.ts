@@ -21,6 +21,7 @@ import type { RiderEffect } from "@/lib/activities/riders";
 import type { ActionType } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
 import type { ChangeableStat } from "@/types/combat-chronicle";
+import type { SaveResults } from "@/types/combat-log";
 import type { ConcentrationRef } from "@/types/ids";
 
 /** A creature at the table: `pc-<uid>` or `monster-<n>` (the encounter's ids). */
@@ -42,6 +43,10 @@ export type PlayEvent =
       /** One result for every target ("critical" = a critical hit). Readers ignore a
        *  value they do not know. */
       outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
+      /** Each target's save (an older reader shows the shared `outcome`, set when every
+       *  target agrees), and whether nothing came of it. */
+      saves?: SaveResults;
+      noEffect?: true;
     }
   | {
       kind: "damage" | "heal" | "temp-hp";

@@ -67,7 +67,10 @@ import { SituationalRules } from "./SituationalRules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore, type EconomySlot } from "@/stores/combatStore";
 import { READIED_SPELL_REACTION_ID } from "@/lib/play/ready";
-import { cunningStrikeOptionsFor } from "@/domains/play/after-hit-options";
+import {
+  carriesSneakAttack,
+  cunningStrikeOptionsFor,
+} from "@/domains/play/after-hit-options";
 import {
   applyEscapeCheck as applySheetEscapeCheck,
   applyHideCheck as applySheetHideCheck,
@@ -154,6 +157,14 @@ import {
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { useTurnEconomy } from "../useTurnEconomy";
+import { RollReactionDialog } from "../RollReactionDialog";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import {
+  featureArtId,
+  rollReactionView,
+  type RollReactionView,
+} from "../roll-reaction-view";
+import { rollReactionOf } from "@/lib/play/roll-reactions";
 // The verdict composers live in the sibling helpers module (the same pattern as
 // spell-card-helpers) so the chip-budget guard walks the REAL composer.
 import {
@@ -358,6 +369,7 @@ export function PlayTab() {
   // undo refs), used by BOTH these cards and the center ThisTurnTracker.
   const {
     executeAction: commitAction,
+    commitRollReaction,
     spendRider,
     applyCunningStrike,
     releaseReadiedSpell,
@@ -464,6 +476,22 @@ export function PlayTab() {
   );
 
   const dispatchAction = commitAction;
+  // A reaction on another creature's roll (Cutting Words): its «Su chi? / Su quale
+  // tiro?» dialog, with the fight's roster when this sheet is in one.
+  const [rolling, setRolling] = useState<{
+    action: ResolvedAction;
+    view: RollReactionView;
+  } | null>(null);
+  const rollViewFor = (action: ResolvedAction): RollReactionView | null => {
+    const reaction = rollReactionOf(action);
+    if (!reaction) return null;
+    const status = useCombatStatusStore.getState().status;
+    return rollReactionView(
+      reaction,
+      status ? { myId: status.myId, rows: status.view.rows } : null,
+      action.summary.uses
+    );
+  };
 
   // Inline-modifier state — the engine-derived advantage / disadvantage on the
   // character's ATTACK rolls right now, netted (RAW): grant clauses
@@ -1061,9 +1089,27 @@ export function PlayTab() {
                   higherLevelsFor={higherLevelsFor}
                   open={expandedId === action.id}
                   onOpenChange={(o) => setExpandedId(o ? action.id : null)}
-                  onUse={() => dispatchAction(action)}
+                  onUse={() => {
+                    // A use on another creature's roll (Cutting Words) asks on
+                    // whom and which roll first.
+                    const view = rollViewFor(action);
+                    if (view) setRolling({ action, view });
+                    else dispatchAction(action);
+                  }}
                 />
               ))}
+              {rolling && (
+                <RollReactionDialog
+                  name={rolling.action.name}
+                  featureId={featureArtId(rolling.action.nameLoc)}
+                  view={rolling.view}
+                  onClose={() => setRolling(null)}
+                  onUse={(plan) => {
+                    setRolling(null);
+                    commitRollReaction(rolling.action, plan);
+                  }}
+                />
+              )}
               {/* Off-list reaction bookkeeping — ONE clear "Mark used" row for a
                 reaction resolved verbally at the table (an opportunity attack,
                 a readied action). Commits through the SAME handleUseReaction
@@ -1655,14 +1701,17 @@ function CombatActionCard({
             <WieldStance twoHanded={twoHanded} onChange={setTwoHanded} />
           )}
           {/* S6 — the Rogue Cunning Strike picker rides a weapon ATTACK (the
-              effect is added to a Sneak Attack hit), reusing the shared
+              effect is added to a Sneak Attack hit, so only on an attack that
+              carries Sneak Attack), reusing the shared
               `.rider-strip` register beside the on-hit riders. */}
-          {action.type === "action" && cunningStrike.options.length > 0 && (
-            <CunningStrikeOptions
-              options={cunningStrike.options}
-              onApply={(option) => cunningStrike.onApply(action, option)}
-            />
-          )}
+          {action.type === "action" &&
+            carriesSneakAttack(action) &&
+            cunningStrike.options.length > 0 && (
+              <CunningStrikeOptions
+                options={cunningStrike.options}
+                onApply={(option) => cunningStrike.onApply(action, option)}
+              />
+            )}
           {/* The weapon's Weapon-Mastery effects (Graze, Topple, Vex, …) as
               one-tap rows in the same rider register: a tap logs it and, for
               Vex, lights the next-attack Advantage. */}

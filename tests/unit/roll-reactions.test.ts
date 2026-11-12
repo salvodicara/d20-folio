@@ -9,7 +9,11 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { rollReactionOf, rollReactionPlan } from "@/lib/play/roll-reactions";
+import {
+  rollPlanCopy,
+  rollReactionOf,
+  rollReactionPlan,
+} from "@/lib/play/roll-reactions";
 import { resolveActions } from "@/lib/smart-tracker";
 
 import { makeCharacterDoc } from "./_helpers";
@@ -75,5 +79,29 @@ describe("Cutting Words", () => {
   it("an action without a roll effect has none", () => {
     const dodge = resolveActions(lore(3), "combat").find((a) => a.id === "base-dodge");
     expect(dodge && rollReactionOf(dodge)).toBeNull();
+  });
+});
+
+describe("the toast for a planned use", () => {
+  it("names the die, what it does, the roll and the target", () => {
+    expect(
+      rollPlanCopy({
+        die: "1d8",
+        operation: "subtract",
+        roll: "attack",
+        target: { id: "m-ogre", name: "Ogre" },
+      })
+    ).toEqual({
+      key: "play.rollReaction.toastSubtract",
+      rollKey: "play.rollReaction.roll_attack",
+      values: { die: "1d8", target: "Ogre" },
+    });
+  });
+
+  it("without a target, and with nothing planned", () => {
+    expect(rollPlanCopy({ die: "2d4", operation: "add", roll: "check" })?.key).toBe(
+      "play.rollReaction.toastAddNoTarget"
+    );
+    expect(rollPlanCopy(undefined)).toBeNull();
   });
 });
