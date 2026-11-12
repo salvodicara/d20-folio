@@ -6373,6 +6373,10 @@
     min-width: 44px;
     min-height: 44px;
   }
+  /* the creation steps («1. Classe»): text buttons, the same 44 px a finger needs */
+  .fui .f-steps button {
+    min-height: 44px;
+  }
 }
 /* the toast sits above a bottom bar, never over it («Sezioni», the level-up bar) */
 @media (max-width: 960px) {
