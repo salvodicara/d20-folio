@@ -65,6 +65,11 @@ export interface SessionReportRow {
   /** Declared hits (hit, critical, failed, saved) naming a monster: what could claim
    *  a nameless damage line on that monster. */
   landedOnMonsters: number;
+  /** (v3) With the report's own fight inference: fights it works out, the lines it
+   *  places in them, and the event lines still outside every fight. */
+  inferredFights: number;
+  linesInsideInferredFights: number;
+  linesStillOutside: number;
   /** Gaps between consecutive combat lines (action, damage, heal, condition,
    *  concentration, death save), by the recording device's clock. */
   combatGaps: Record<GapBucket, number>;
@@ -95,7 +100,7 @@ const emptyGaps = (): Record<GapBucket, number> =>
   Object.fromEntries(GAP_BUCKETS.map((b) => [b, 0])) as Record<GapBucket, number>;
 
 export interface SessionReportsSurvey {
-  format: "d20-folio-session-reports-survey-v2";
+  format: "d20-folio-session-reports-survey-v3";
   sessions: number;
   lines: number;
   byKind: Record<string, number>;
@@ -115,6 +120,9 @@ export interface SessionReportsSurvey {
   damageRecordedByTheHurt: number;
   landedOnMonsters: number;
   combatGaps: Record<string, number>;
+  inferredFights: number;
+  linesInsideInferredFights: number;
+  linesStillOutside: number;
   unreadable: number;
   perSession: SessionReportRow[];
 }
@@ -170,6 +178,9 @@ function surveySession(lines: Line[], byKind: Record<string, number>): SessionRe
     damageRecordedByTheHurt: 0,
     landedOnMonsters: 0,
     combatGaps: emptyGaps(),
+    inferredFights: 0,
+    linesInsideInferredFights: 0,
+    linesStillOutside: 0,
   };
   const stamped = new Set<string>();
   let lastCombatAt: number | null = null;
@@ -248,11 +259,47 @@ function surveySession(lines: Line[], byKind: Record<string, number>): SessionRe
   return row;
 }
 
+/** The report's own fold and fight inference, passed in (structural, so the scripts
+ *  project never type-imports the app): the survey counts what the report would show. */
+export interface ReportEngine {
+  foldSession: (items: unknown[], authority: Record<string, never>) => unknown[];
+  inferFights: (entries: unknown[], options: { isAttack: unknown }) => unknown[];
+  isAttackSource: unknown;
+}
+
+const MARKER_KINDS = new Set(["encounter-start", "encounter-end", "round-start"]);
+
+/** Fights the report infers in one session, and where its event lines land. */
+function inferred(
+  raw: unknown[],
+  engine: ReportEngine
+): { fights: number; inside: number; outside: number } {
+  const entries = engine.inferFights(engine.foldSession(raw, {}), {
+    isAttack: engine.isAttackSource,
+  });
+  const fights = new Set<string>();
+  let inside = 0;
+  let outside = 0;
+  for (const entry of entries) {
+    if (!isRecord(entry) || !isRecord(entry.event)) continue;
+    const kind = entry.event.kind;
+    if (typeof kind !== "string" || MARKER_KINDS.has(kind)) continue;
+    const fight = typeof entry.encounterId === "string" ? entry.encounterId : null;
+    if (fight === null) outside += 1;
+    else if (fight.startsWith("inferred-")) {
+      inside += 1;
+      fights.add(fight);
+    }
+  }
+  return { fights: fights.size, inside, outside };
+}
+
 export function surveySessionReports(
-  documents: readonly MigrationSourceDocument[]
+  documents: readonly MigrationSourceDocument[],
+  engine?: ReportEngine
 ): SessionReportsSurvey {
   const survey: SessionReportsSurvey = {
-    format: "d20-folio-session-reports-survey-v2",
+    format: "d20-folio-session-reports-survey-v3",
     sessions: 0,
     lines: 0,
     byKind: {},
@@ -270,6 +317,9 @@ export function surveySessionReports(
     damageRecordedByTheHurt: 0,
     landedOnMonsters: 0,
     combatGaps: emptyGaps(),
+    inferredFights: 0,
+    linesInsideInferredFights: 0,
+    linesStillOutside: 0,
     unreadable: 0,
     perSession: [],
   };
@@ -306,6 +356,15 @@ export function surveySessionReports(
       else survey.unreadable += 1;
     }
     const row = surveySession(lines, survey.byKind);
+    if (engine) {
+      const found = inferred(raw, engine);
+      row.inferredFights = found.fights;
+      row.linesInsideInferredFights = found.inside;
+      row.linesStillOutside = found.outside;
+      survey.inferredFights += found.fights;
+      survey.linesInsideInferredFights += found.inside;
+      survey.linesStillOutside += found.outside;
+    }
     survey.sessions += 1;
     survey.lines += row.lines;
     survey.fights += row.fights;
@@ -339,6 +398,29 @@ export const DISCOVERY = [
   { collectionGroup: "items", pattern: ITEM },
 ];
 
+async function engineExport(file: string, name: string): Promise<unknown> {
+  const module: unknown = await import(
+    new URL(`../src/lib/${file}`, import.meta.url).href
+  );
+  if (!isRecord(module) || typeof module[name] !== "function")
+    throw new TypeError(`${file} does not export ${name}`);
+  return module[name];
+}
+
+async function loadReportEngine(): Promise<ReportEngine> {
+  return {
+    foldSession: (await engineExport(
+      "session-log/fold.ts",
+      "foldSession"
+    )) as ReportEngine["foldSession"],
+    inferFights: (await engineExport(
+      "session-log/infer-fights.ts",
+      "inferFights"
+    )) as ReportEngine["inferFights"],
+    isAttackSource: await engineExport("session-log/attack-source.ts", "isAttackSource"),
+  };
+}
+
 async function run(): Promise<void> {
   const target = await readTargetConfiguration();
   const [{ initializeApp, applicationDefault, deleteApp }, { getFirestore }] =
@@ -353,7 +435,14 @@ async function run(): Promise<void> {
   try {
     const found = await discoverDocuments(getFirestore(app), DISCOVERY);
     console.log(
-      JSON.stringify(surveySessionReports(found.map((d) => d.source)), null, 2)
+      JSON.stringify(
+        surveySessionReports(
+          found.map((d) => d.source),
+          await loadReportEngine()
+        ),
+        null,
+        2
+      )
     );
   } finally {
     await deleteApp(app);

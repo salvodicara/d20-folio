@@ -9,6 +9,7 @@ import type { LocText } from "@/lib/loc-text";
 import type { Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { riderEffectClause } from "@/lib/views/effect-rider-view";
+import { isInferredFight } from "@/lib/session-log/infer-fights";
 import type { PlayEvent, ReportSection, SessionEntry } from "@/lib/session-log";
 import type { ConcentrationRef } from "@/types/ids";
 
@@ -306,20 +307,29 @@ export function renderSessionReport(
       continue;
     }
     encounters += 1;
-    const heading = t("sessionReport.encounter", { n: encounters });
+    const heading = t(
+      isInferredFight(section)
+        ? "sessionReport.encounterInferred"
+        : "sessionReport.encounter",
+      { n: encounters }
+    );
     const outcome = section.outcome
       ? ` — ${t(`sessionReport.result.${section.outcome}`)}`
       : "";
     out.push("", `## ${heading}${outcome}`);
+    // Rounds only once the fight reached a second one: a table that never advanced the
+    // turn order (or a fight worked out from the log) has no rounds to tell apart.
+    const advanced = section.rounds.some((round) => (round.round ?? 0) > 1);
     for (const round of section.rounds) {
-      out.push(
-        "",
-        `### ${
-          round.round === null
-            ? t("sessionReport.beforeRounds")
-            : t("combatChronicle.round", { n: round.round })
-        }`
-      );
+      if (advanced)
+        out.push(
+          "",
+          `### ${
+            round.round === null
+              ? t("sessionReport.beforeRounds")
+              : t("combatChronicle.round", { n: round.round })
+          }`
+        );
       lines(round.entries, section.names);
     }
   }

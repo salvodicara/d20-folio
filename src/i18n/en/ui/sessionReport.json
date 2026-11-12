@@ -3,6 +3,7 @@
     "title": "Session {{date}}",
     "outside": "Outside combat",
     "encounter": "Encounter {{n}}",
+    "encounterInferred": "Encounter {{n}} (inferred)",
     "beforeRounds": "Before the first round",
     "somethingUsed": "something",
     "withSource": "{{line}} ({{source}})",
