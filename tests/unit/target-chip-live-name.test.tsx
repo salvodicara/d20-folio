@@ -16,7 +16,7 @@ const fight = (allyName: string) =>
     myId: "pc-me",
     view: {
       rows: [
-        { id: "pc-me", kind: "pc", side: "ally", name: "Mandorlino" },
+        { id: "pc-me", kind: "pc", side: "ally", name: "Paladin" },
         { id: "pc-ally", kind: "pc", side: "ally", name: allyName },
       ],
     },
@@ -43,7 +43,7 @@ describe("the cast dialog's ally chip", () => {
             step: {
               max: 2,
               candidates: [
-                { id: "pc-me", name: "Mandorlino", side: "ally", self: true },
+                { id: "pc-me", name: "Paladin", side: "ally", self: true },
                 { id: "pc-ally", name: "", side: "ally", self: false },
               ],
             },
@@ -54,7 +54,7 @@ describe("the cast dialog's ally chip", () => {
       },
     } as never);
     render(<PlayPrompts locale="en" />);
-    act(() => useCombatStatusStore.setState({ status: fight("Catalion") }));
-    expect(screen.getByRole("button", { name: "Catalion" })).toBeTruthy();
+    act(() => useCombatStatusStore.setState({ status: fight("Bard") }));
+    expect(screen.getByRole("button", { name: "Bard" })).toBeTruthy();
   });
 });

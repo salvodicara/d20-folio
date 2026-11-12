@@ -63,6 +63,7 @@ export interface SavesChecksSession {
   conditions?: string[];
   concentrationConditions?: SessionState["concentrationConditions"];
   encounterEffects?: SessionState["encounterEffects"];
+  partyAura?: SessionState["partyAura"];
   concentration?: SessionState["concentration"];
   grantBundleChoices?: Record<string, string>;
   itemResources?: SessionState["itemResources"];
@@ -302,6 +303,9 @@ export function deriveSavesAndChecks(
         exhaustion,
         pbOverride,
         saveBonus: saveBonusFor(code),
+        ...(session.partyAura
+          ? { aura: { name: session.partyAura.name, bonus: session.partyAura.bonus } }
+          : {}),
       }),
       ...(cause ? { autoFailCause: cause } : {}),
       dieAdjustments: saveDice,

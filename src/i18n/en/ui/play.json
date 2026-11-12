@@ -371,7 +371,10 @@
       "theirs": "Round {{round}} · {{name}}"
     },
     "roll": {
-      "surprised": "Surprised"
+      "surprised": "Surprised",
+      "paidAdvantage": "{{name}} on Initiative",
+      "paidAdvantageHint": "Roll two d20s for Initiative and enter the higher",
+      "paidAdvantageCheck": "{{name}} on the check"
     },
     "defense": {
       "temporary": "temporary",
@@ -392,7 +395,8 @@
       "hideOk": "success. You are Invisible; whoever searches for you must beat {{total}}.",
       "escapeOk": "you break free: no longer Grappled.",
       "hideWhat": "Dexterity (Stealth) check",
-      "escapeWhat": "The better of Athletics and Acrobatics"
+      "escapeWhat": "The better of Athletics and Acrobatics",
+      "floored": "Your {{rolled}} counts as {{face}}."
     },
     "familiar": {
       "summon": "Summon"
@@ -405,6 +409,15 @@
       "superiorityDie": "1 Superiority Die ({{left}} left)",
       "addsDamage": "+1{{die}} damage",
       "addsAttack": "+1{{die}} to the attack roll"
+    },
+    "aura": {
+      "source": "{{name}}'s Aura",
+      "chip": "{{name}}'s Aura +{{bonus}}",
+      "group": "Paladin auras",
+      "onHint": "Counts on your saves; tap if you stand outside {{name}}'s aura",
+      "offHint": "You stand outside {{name}}'s aura; tap when you are back in it",
+      "outToast": "Outside {{name}}'s aura",
+      "inToast": "Back in {{name}}'s aura"
     }
   }
 }

@@ -37,7 +37,7 @@ function withEffects(effects: ActiveCombatEffect[]): CharacterDoc {
   return doc;
 }
 
-const names: Record<string, string> = { "pc-ally": "Mandorlino", "pc-me": "Catalion" };
+const names: Record<string, string> = { "pc-ally": "Paladin", "pc-me": "Bard" };
 
 describe("playEffectsView", () => {
   it("lists what an ally put on the character, with who cast it", () => {
@@ -51,8 +51,8 @@ describe("playEffectsView", () => {
     ]);
     const view = playEffectsView(doc, "it", (id) => names[id] ?? "");
     expect(view.rows.map((r) => [r.name, r.from])).toEqual([
-      ["Benedizione", "Mandorlino"],
-      ["Vincolo di Interdizione", "Mandorlino"],
+      ["Benedizione", "Paladin"],
+      ["Vincolo di Interdizione", "Paladin"],
     ]);
     expect(view.rows[0]?.concentration).toBe(true);
     expect(view.rows[0]?.spell).toEqual({ id: "bless", school: "enchantment" });

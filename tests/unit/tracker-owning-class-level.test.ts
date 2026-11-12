@@ -209,7 +209,7 @@ describe("B2 — a SINGLE-class character is unchanged (owning-class level == to
  *   ranger-fey-wanderer-misty-wanderer   Misty Step        "WIS"    "Wisdom modifier" / LR
  *   artificer-cartographer-mapping-magic Faerie Fire       "INT"    "Intelligence modifier" / LR
  *   warlock-archfey-steps-of-the-fey     Misty Step        "CHA"    "Charisma modifier" / LR
- *   shadar-kai lineage (L5 capacity step) Misty Step        "PB"     "Proficiency Bonus" / LR
+ *   a lineage trait (L5 capacity step) Misty Step        "PB"     "Proficiency Bonus" / LR
  *
  * This guard PINS that set + asserts EXHAUSTIVELY that NO shipped `chargesFormula`
  * references a `"level"` token (i.e. a class-specific or even character level). So
