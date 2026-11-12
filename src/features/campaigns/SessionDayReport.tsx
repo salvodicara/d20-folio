@@ -12,7 +12,7 @@ import { CopyButton } from "@/components/shared/CopyButton";
 import { Icon } from "@/components/ui/icon";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { SessionLog } from "@/features/campaigns/useSessionReports";
-import { foldSession } from "@/lib/session-log";
+import { foldSession, isMarkerEvent } from "@/lib/session-log";
 import { sessionReportSections } from "@/lib/session-log/session-report-sections";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
@@ -23,8 +23,6 @@ import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
-
-const MARKERS = new Set(["encounter-start", "encounter-end", "round-start"]);
 
 /** The automatic report of one logged sitting, behind a quiet disclosure. */
 export function SessionDayReport({
@@ -66,7 +64,7 @@ export function SessionDayReport({
     () => foldSession(log.items, { dmUid: campaign?.dmUid }),
     [log.items, campaign?.dmUid]
   );
-  const lines = entries.filter((e) => !MARKERS.has(e.event.kind)).length;
+  const lines = entries.filter((e) => !isMarkerEvent(e.event)).length;
   const title = t("sessionReport.title", {
     date: date.toLocaleDateString(i18n.language),
   });

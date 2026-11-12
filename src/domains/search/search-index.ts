@@ -10,6 +10,8 @@
  *   4. suffix  a word ends with it      ("axe"         → Handaxe)
  *   5. fuzzy   a typo away              ("fierball"    → Fireball)
  *   6. text    the entry's text, whole words, at most {@link TEXT_HIT_CAP} results
+ *   7. fuzzy   a typo of a word's opening only ("prono" ~ «proto» in Protoplasma): a
+ *              half-typed word may still find it, after every whole word found
  * and `infix` (inside a word: "cover" in Recovery) only when nothing better matched.
  * Within a band the user's own things lead (characters, campaigns), then screens,
  * rules and the compendium; then the fewer typos, the shorter name, the label.
@@ -63,8 +65,10 @@ const BAND: Record<Exclude<SearchMatch, "recent">, number> = {
   suffix: 3,
   fuzzy: 4,
   text: 5,
-  infix: 6,
+  infix: 7,
 };
+/** A typo of a word's opening only, after the text hits (read as `fuzzy`). */
+const PARTIAL_FUZZY_BAND = 6;
 
 const KIND_ORDER: Record<SearchKind, number> = {
   character: 0,
@@ -126,30 +130,36 @@ function editDistance(a: string, b: string, cap: number): number {
 
 /**
  * Typos between the query and a name: every query word must sit within its allowance
- * of some word of the name, whole or as its opening (so "fireba" still finds Fireball
- * while it is being typed). `Infinity` when a word does not.
+ * of some word of the name, whole or as its opening (so "fierba" still finds Fireball
+ * while it is being typed). `distance` is `Infinity` when a word does not; `partial`
+ * when a word only matched an opening with a typo, a weaker guess than a whole word.
  */
-function fuzzyDistance(tokens: ReadonlyArray<string>, name: IndexedName): number {
+function fuzzyDistance(
+  tokens: ReadonlyArray<string>,
+  name: IndexedName
+): { distance: number; partial: boolean } {
   let total = 0;
+  let partial = false;
   for (const token of tokens) {
     const cap = allowedTypos(token.length);
     if (cap === 0) {
-      if (!name.words.some((word) => word.startsWith(token))) return Infinity;
+      if (!name.words.some((word) => word.startsWith(token)))
+        return { distance: Infinity, partial };
       continue;
     }
-    let best = cap + 1;
+    let whole = cap + 1;
+    let opening = cap + 1;
     for (const word of name.words) {
-      best = Math.min(
-        best,
-        editDistance(token, word, cap),
-        editDistance(token, word.slice(0, token.length), cap)
-      );
-      if (best === 0) break;
+      whole = Math.min(whole, editDistance(token, word, cap));
+      opening = Math.min(opening, editDistance(token, word.slice(0, token.length), cap));
+      if (whole === 0) break;
     }
-    if (best > cap) return Infinity;
+    const best = Math.min(whole, opening);
+    if (best > cap) return { distance: Infinity, partial };
+    if (whole > best && best > 0) partial = true;
     total += best;
   }
-  return total;
+  return { distance: total, partial };
 }
 
 const QUALITY_BAND: Partial<Record<MatchQuality, number>> = {
@@ -176,9 +186,14 @@ function score(
       candidates.push({ item, band, distance: 0, matched: name.raw });
       continue;
     }
-    const distance = fuzzyDistance(tokens, name);
+    const { distance, partial } = fuzzyDistance(tokens, name);
     if (distance > 0 && distance !== Infinity)
-      candidates.push({ item, band: BAND.fuzzy, distance, matched: name.raw });
+      candidates.push({
+        item,
+        band: partial ? PARTIAL_FUZZY_BAND : BAND.fuzzy,
+        distance,
+        matched: name.raw,
+      });
     else if (band === BAND.infix)
       candidates.push({ item, band: BAND.infix, distance: 0, matched: name.raw });
   }
@@ -203,9 +218,10 @@ function compare(a: Scored, b: Scored): number {
   );
 }
 
-const MATCH_OF_BAND = Object.fromEntries(
-  Object.entries(BAND).map(([match, band]) => [band, match])
-) as Record<number, Exclude<SearchMatch, "recent">>;
+const MATCH_OF_BAND = Object.fromEntries([
+  ...Object.entries(BAND).map(([match, band]) => [band, match]),
+  [PARTIAL_FUZZY_BAND, "fuzzy"],
+]) as Record<number, Exclude<SearchMatch, "recent">>;
 
 export function createSearchIndex(entries: ReadonlyArray<SearchEntry>): SearchIndex {
   const indexed: Indexed[] = entries.map((entry, order) => ({

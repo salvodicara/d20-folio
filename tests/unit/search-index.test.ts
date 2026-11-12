@@ -54,6 +54,18 @@ describe("the ⌘K search index", () => {
     });
   });
 
+  it("a whole word found ranks above a typo of a word's opening ('prono' is not 'Protoplasma')", () => {
+    const hits = it_.query("prono", { limit: 30 });
+    expect(hits[0]).toMatchObject({ match: "exact", entry: { label: "Prono" } });
+    const at = (label: string) => hits.findIndex((hit) => hit.entry.label === label);
+    const firstText = hits.findIndex((hit) => hit.match === "text");
+    expect(firstText).toBeGreaterThan(0);
+    // «Protoplasma nero» only shares a typo'd opening with «prono» («proto»).
+    expect(at("Protoplasma nero")).toBeGreaterThan(firstText);
+    // A typo of a whole word (the plural «Proni») still leads the texts.
+    expect(at("Combattimento da Proni")).toBeLessThan(firstText);
+  });
+
   it("never guesses on a short word: 'axe' finds axes, not 'ace'", () => {
     const hits = en.query("axe", { limit: 50 });
     expect(hits.length).toBeGreaterThan(0);
