@@ -34,4 +34,19 @@ describe("PlaySituations", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mounted" }));
     expect(active().some((k) => k.includes("mounted"))).toBe(false);
   });
+
+  it("labels every chip in sentence case («Long range», «Dim light»)", () => {
+    render(<PlaySituations />);
+    expect(screen.getByRole("button", { name: "Long range" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Dim light" })).toBeTruthy();
+  });
+
+  it("a phone opens the full set from the «Situation» disclosure", () => {
+    const { container } = render(<PlaySituations />);
+    const toggle = screen.getByRole("button", { name: "Situation" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(container.querySelector(".f-situations[data-open]")).toBeTruthy();
+  });
 });

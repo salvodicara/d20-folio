@@ -6315,3 +6315,35 @@
     content: none;
   }
 }
+
+/* The table's situations: on a phone one line, the lit chips after a «Situation ▾»
+   disclosure that opens the full set (Foundry's collapsed status-effect tray); the
+   desktop has the width for every chip and shows the plain label. */
+.fui .f-sit-more {
+  display: none;
+}
+@media (max-width: 640px) {
+  .fui .f-situations > .f-chips > .f-lbl {
+    display: none;
+  }
+  .fui .f-sit-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 4px 0 0;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: 700 12px var(--font-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .fui .f-sit-more[aria-expanded="true"] .f-ic {
+    transform: rotate(180deg);
+  }
+  .fui .f-situations:not([data-open]) .f-chip[aria-pressed="false"] {
+    display: none;
+  }
+}

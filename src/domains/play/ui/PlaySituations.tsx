@@ -5,8 +5,12 @@
  * light) and the attack rows net it into their Advantage / Disadvantage. An attack
  * fact ends with the turn; Underwater and Mounted when the fight ends; a second tap
  * clears it. A lit one says the rule line the sheet cannot apply for you.
+ *
+ * On a phone the row is one line: only the lit chips, after a «Situation ▾» disclosure
+ * that opens the full set (Foundry's collapsed status-effect tray); the desktop has the
+ * width for all of them and shows the label alone.
  */
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -21,7 +25,7 @@ import { localeDistance } from "@/lib/utils";
 import { lightChipsView, situationChipsView } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
-import { Chip } from "@/ui";
+import { Chip, Icon } from "@/ui";
 
 export function PlaySituations() {
   const { t } = useTranslation();
@@ -31,6 +35,7 @@ export function PlaySituations() {
   const activeFeatures = doc?.session.activeFeatures;
   const flanking = doc?.session.tableRules?.flanking;
   const darkvisionFt = useMemo(() => (doc ? sheetDarkvisionFt(doc) : 0), [doc]);
+  const [open, setOpen] = useState(false);
   if (!doc) return null;
   const chips = situationChipsView(locale, flanking).map((chip) => ({
     ...chip,
@@ -50,9 +55,18 @@ export function PlaySituations() {
       ),
   ];
   return (
-    <div className="f-ask f-situations">
+    <div className="f-ask f-situations" data-open={open || undefined}>
       <div className="f-chips" role="group" aria-label={t("combat.situations")}>
         <span className="f-lbl">{t("combat.situations")}</span>
+        <button
+          type="button"
+          className="f-sit-more"
+          aria-expanded={open}
+          onClick={() => setOpen((o) => !o)}
+        >
+          {t("combat.situations")}
+          <Icon name="u-expand" />
+        </button>
         {chips.map((chip) => (
           <Chip
             key={chip.id}
