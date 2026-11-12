@@ -414,13 +414,13 @@
       "source": "{{name}}'s Aura",
       "chip": "{{name}}'s Aura +{{bonus}}",
       "group": "Paladin auras",
+      "outside": "Outside the aura",
+      "backIn": "Back in the aura",
+      "saves": "+{{bonus}} to saving throws",
       "onHint": "Counts on your saves; tap if you stand outside {{name}}'s aura",
       "offHint": "You stand outside {{name}}'s aura; tap when you are back in it",
       "outToast": "Outside {{name}}'s aura",
-      "inToast": "Back in {{name}}'s aura",
-      "outside": "Outside the aura",
-      "backIn": "Back in the aura",
-      "saves": "+{{bonus}} to saving throws"
+      "inToast": "Back in {{name}}'s aura"
     }
   }
 }

@@ -414,13 +414,13 @@
       "source": "Aura di {{name}}",
       "chip": "Aura di {{name}} +{{bonus}}",
       "group": "Aure dei paladini",
+      "outside": "Fuori dall'aura",
+      "backIn": "Di nuovo nell'aura",
+      "saves": "+{{bonus}} ai tiri salvezza",
       "onHint": "Vale sui tuoi tiri salvezza; tocca se sei fuori dall'aura di {{name}}",
       "offHint": "Sei fuori dall'aura di {{name}}; tocca quando ci rientri",
       "outToast": "Fuori dall'aura di {{name}}",
-      "inToast": "Di nuovo nell'aura di {{name}}",
-      "outside": "Fuori dall'aura",
-      "backIn": "Di nuovo nell'aura",
-      "saves": "+{{bonus}} ai tiri salvezza"
+      "inToast": "Di nuovo nell'aura di {{name}}"
     }
   }
 }
