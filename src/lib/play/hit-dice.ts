@@ -112,3 +112,27 @@ export function hitDiceHealing(input: {
   const restored = Math.max(count, rolled + count * conMod);
   return ruleFlag(aggregate.values, "hit-dice:double") ? restored * 2 : restored;
 }
+
+/**
+ * The Hit Point Dice roll as typed. Plain: the total of the dice. With a floor on the
+ * faces (a feature that counts a 1 or 2 as a 3) the faces are typed one per die
+ * ("1+5+2") and each low one counts as the floor; the total is their sum. Null when
+ * the text doesn't read, or the faces don't match the dice spent.
+ */
+export function readHitDiceRoll(
+  text: string,
+  count: number,
+  floor?: { floorBelow: number; floorTo: number }
+): { total: number; faces?: number[] } | null {
+  const trimmed = text.trim();
+  if (trimmed === "" || count <= 0) return null;
+  if (!floor) {
+    const total = Number(trimmed);
+    return Number.isInteger(total) && total >= 0 ? { total } : null;
+  }
+  if (!/^\d+(\s*\+\s*\d+)*$/.test(trimmed)) return null;
+  const faces = trimmed.split("+").map((part) => Number(part.trim()));
+  if (faces.length !== count || faces.some((face) => face < 1)) return null;
+  const counted = faces.map((face) => (face <= floor.floorBelow ? floor.floorTo : face));
+  return { total: counted.reduce((sum, face) => sum + face, 0), faces: counted };
+}

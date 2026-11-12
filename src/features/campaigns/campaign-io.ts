@@ -360,6 +360,22 @@ export async function setMemberCharacter(
   });
 }
 
+/**
+ * Publish (or clear, with null) the open paladin's Aura of Protection on the member's
+ * OWN entry, by field path: nothing else in the campaign doc is rewritten, so it never
+ * races the DM's encounter writes (the rules allow a member only their own entry).
+ */
+export async function setMemberAura(
+  campaignId: string,
+  uid: string,
+  aura: { bonus: number; reachFt: number; at: number } | null
+): Promise<void> {
+  if (import.meta.env.DEV && DEV_BYPASS) return;
+  await updateDoc(campaignDoc(campaignId), {
+    [`memberDetails.${uid}.aura`]: aura ?? deleteField(),
+  });
+}
+
 /** The result of an atomic attach: the claim succeeded, or the character was already
  *  claimed by a DIFFERENT campaign (D9 — the caller reverts + tells the player). */
 export type AttachOutcome = "attached" | "conflict";

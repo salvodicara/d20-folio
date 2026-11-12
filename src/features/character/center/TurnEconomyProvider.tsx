@@ -2663,7 +2663,6 @@ export function TurnEconomyProvider({
   // End Turn: the sequence is `runEndTurn` (lib/play/end-turn); this wires its
   // ports to the stores, the shared turn and this provider's toasts and prompt.
   function handleEndTurn() {
-    useAttackOutcomeStore.getState().clear();
     endTurnWithStores({
       setMaintenancePrompts,
       announce: (sourceIds) => {
@@ -3413,6 +3412,9 @@ export function TurnEconomyProvider({
       ...hitDiceOffer,
       sizes: hitDiceLabel(pool).sizes,
       range: (count) => hitDiceTotalRange(pool, count),
+      ...((floor) => (floor ? { floor } : {}))(
+        aggregateCharacterGrants(character.character, character.session).hitDieFloor
+      ),
       onCancel: next,
       onConfirm: (count, rolled) => {
         next();

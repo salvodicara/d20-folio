@@ -15,28 +15,23 @@ import { Input } from "@/components/ui";
 import type { AttackOutcome, CombatEvent } from "@/types/combat-log";
 import { useCharacterStore } from "@/stores/characterStore";
 
-import { useAttackOutcomeStore } from "./attack-outcome-store";
+import {
+  rewriteAttackLine as rewrite,
+  useAttackOutcomeStore,
+} from "./attack-outcome-store";
 
 const OUTCOMES: AttackOutcome[] = ["hit", "miss", "critical"];
 
 type Use = Extract<CombatEvent, { kind: "action-use" }>;
 
-/** Rewrite the use's own log line with this result and damage (absent = cleared). */
-function rewrite(logId: string, outcome?: AttackOutcome, amount?: number): void {
-  const store = useCharacterStore.getState();
-  const entry = store.character?.session.logEntries.find((e) => e.id === logId);
-  if (entry?.event.kind !== "action-use") return;
-  const { outcome: _outcome, amount: _amount, ...rest } = entry.event;
-  void _outcome;
-  void _amount;
-  store.amendLogEntry(entry.id, {
-    ...rest,
-    ...(outcome ? { outcome } : {}),
-    ...(outcome && outcome !== "miss" && amount !== undefined ? { amount } : {}),
-  });
-}
-
-export function AttackOutcomeChips({ actionId }: { actionId: string }) {
+export function AttackOutcomeChips({
+  actionId,
+  onOutcome,
+}: {
+  actionId: string;
+  /** The result just chosen (undefined: cleared), for a screen that couples a flow. */
+  onOutcome?: (outcome: AttackOutcome | undefined) => void;
+}) {
   const { t } = useTranslation();
   const pending = useAttackOutcomeStore((s) =>
     s.pending?.actionId === actionId ? s.pending : null
@@ -62,6 +57,7 @@ export function AttackOutcomeChips({ actionId }: { actionId: string }) {
     setDraft(null);
     if (next === outcome) rewrite(pending.logId);
     else rewrite(pending.logId, next, next === "miss" ? undefined : line.amount);
+    onOutcome?.(next === outcome ? undefined : next);
   };
   const commitAmount = () => {
     if (!outcome || outcome === "miss") return;

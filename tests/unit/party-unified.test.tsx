@@ -456,7 +456,7 @@ describe("Party dashboard — player (live cards, no DM action)", () => {
     listSharedCampaignsMock.mockResolvedValue([]);
     rosterRef.value = [
       {
-        id: "team-catalion-bard",
+        id: "team-bard",
         portraitUrl: null,
         portraitCrop: null,
         character: {
@@ -496,7 +496,7 @@ describe("Party dashboard — player (live cards, no DM action)", () => {
     // The disclosure body carries the attach picker, seeded with the current hero,
     // with the blank option reading as an explicit DETACH.
     const select = scope.getByLabelText(/attach your character/i);
-    expect((select as HTMLSelectElement).value).toBe("team-catalion-bard");
+    expect((select as HTMLSelectElement).value).toBe("team-bard");
     expect(scope.getByRole("option", { name: /detach character/i })).toBeInTheDocument();
 
     // SWAP — pick the other hero; the one atomic attach seam CLAIMS the new hero (and
@@ -506,7 +506,7 @@ describe("Party dashboard — player (live cards, no DM action)", () => {
       expect(attachMemberCharacterMock).toHaveBeenCalledWith(
         "c1",
         "member-mara",
-        "team-catalion-bard",
+        "team-bard",
         "hero2",
         expect.objectContaining({ name: "Second Hero" })
       )
@@ -1138,7 +1138,7 @@ describe("PC combat editor — the multi-writer edit gate", () => {
     if (!call) throw new Error("no combat-effect write recorded");
     const [uid, charId, , , mutation] = call;
     expect(uid).toBe("member-mara");
-    expect(charId).toBe("team-catalion-bard");
+    expect(charId).toBe("team-bard");
     expect(mutation).toEqual({ kind: "hp", operation: { kind: "damage", amount: 6 } });
   });
 
