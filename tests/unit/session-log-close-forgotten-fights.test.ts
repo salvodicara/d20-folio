@@ -7,7 +7,12 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { buildReport, foldSession } from "@/lib/session-log";
+import {
+  buildReport,
+  foldSession,
+  inferFights,
+  isInferredFight,
+} from "@/lib/session-log";
 import { closeForgottenFights } from "@/lib/session-log/close-forgotten-fights";
 import type { LogItem, PlayEvent } from "@/lib/session-log";
 
@@ -62,5 +67,22 @@ describe("a fight nobody ended", () => {
         line("r", "ana", 40, { kind: "rest", rest: "short", actor: "pc-ana" }),
       ])
     ).toEqual(["fight:a,b", "outside:r"]);
+  });
+
+  it("the lines it frees can still form a fight of their own, found by the blows", () => {
+    const items = [
+      line("s", DM, 0, { kind: "encounter-start", encounterId: "7" }),
+      line("a", "ana", 1, hit),
+      line("r", "ana", 20, { kind: "rest", rest: "long", actor: "pc-ana" }),
+      line("x", "ana", 200, hit),
+      line("y", "ben", 201, { kind: "damage", amount: 2, target: "pc-ben" }),
+      line("z", "ana", 202, hit),
+    ];
+    const report = buildReport(
+      inferFights(closeForgottenFights(foldSession(items, { dmUid: DM })))
+    );
+    expect(
+      report.map((s) => (s.kind === "encounter" ? isInferredFight(s) : "outside"))
+    ).toEqual([false, "outside", true]);
   });
 });
