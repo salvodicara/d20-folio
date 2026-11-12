@@ -664,6 +664,7 @@
     "rerollActiveBonus": "Rerolling with {{name}} (+{{bonus}}): enter the new roll",
     "rerollSuccessToast": "{{name}}: Concentration maintained (total {{total}})",
     "rerollFailureToast": "{{name}}: Concentration broken (total {{total}})",
-    "attackResult": "Result"
+    "attackResult": "Result",
+    "rerollOffers": "Reroll the failed save"
   }
 }

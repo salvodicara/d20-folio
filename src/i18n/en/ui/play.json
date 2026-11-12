@@ -405,7 +405,10 @@
       "title": "On a hit",
       "mastery": "Mastery",
       "askSolo": "Did {{name}} hit?",
-      "askSoloAdd": "Add to the hit:"
+      "askSoloAdd": "Add to the hit:",
+      "superiorityDie": "1 Superiority Die ({{left}} left)",
+      "addsDamage": "+1{{die}} damage",
+      "addsAttack": "+1{{die}} to the attack roll"
     },
     "aura": {
       "source": "{{name}}'s Aura",

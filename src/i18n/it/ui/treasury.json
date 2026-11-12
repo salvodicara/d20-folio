@@ -55,6 +55,10 @@
     "shareMine": "La tua parte: arriva sulla tua scheda.",
     "shareWaiting": "In attesa sulla sua scheda.",
     "moved": "La cassa è già cambiata: guarda di nuovo e riprova.",
-    "tooLate": "Troppo tardi per annullare: è già sulla scheda."
+    "tooLate": "Troppo tardi per annullare: è già sulla scheda.",
+    "putInBy": "{{who}} mette nella cassa",
+    "tookOutBy": "{{who}} prende dalla cassa",
+    "cameInPlain": "Entrano nella cassa",
+    "wentOutPlain": "Escono dalla cassa"
   }
 }
