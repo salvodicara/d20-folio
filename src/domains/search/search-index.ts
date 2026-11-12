@@ -8,7 +8,9 @@
  *   2. prefix  the name opens with it   ("fire"        → Fire Bolt)
  *   3. word    a word of the name       ("bolt"        → Fire Bolt)
  *   4. suffix  a word ends with it      ("axe"         → Handaxe)
- *   5. fuzzy   a typo away              ("fierball"    → Fireball)
+ *   5. fuzzy   a typo away              ("fierball"    → Fireball), the first letter
+ *              kept: «palla» is not «dalla» or «alla», «arco» not «Orco» (Lucene's
+ *              fuzzy `prefix_length`; a first letter is rarely the typo)
  *   6. text    the entry's text, whole words, at most {@link TEXT_HIT_CAP} results
  *   7. fuzzy   a typo of a word's opening only ("prono" ~ «proto» in Protoplasma): a
  *              half-typed word may still find it, after every whole word found
@@ -130,8 +132,8 @@ function editDistance(a: string, b: string, cap: number): number {
 
 /**
  * Typos between the query and a name: every query word must sit within its allowance
- * of some word of the name, whole or as its opening (so "fierba" still finds Fireball
- * while it is being typed). `distance` is `Infinity` when a word does not; `partial`
+ * of some word of the name that starts with the same letter, whole or as its opening
+ * (so "fierba" still finds Fireball while it is being typed). `distance` is `Infinity` when a word does not; `partial`
  * when a word only matched an opening with a typo, a weaker guess than a whole word.
  */
 function fuzzyDistance(
@@ -150,6 +152,7 @@ function fuzzyDistance(
     let whole = cap + 1;
     let opening = cap + 1;
     for (const word of name.words) {
+      if (word[0] !== token[0]) continue;
       whole = Math.min(whole, editDistance(token, word, cap));
       opening = Math.min(opening, editDistance(token, word.slice(0, token.length), cap));
       if (whole === 0) break;
