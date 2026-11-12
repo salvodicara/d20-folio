@@ -419,7 +419,8 @@
       "outToast": "Fuori dall'aura di {{name}}",
       "inToast": "Di nuovo nell'aura di {{name}}",
       "outside": "Fuori dall'aura",
-      "backIn": "Di nuovo nell'aura"
+      "backIn": "Di nuovo nell'aura",
+      "saves": "+{{bonus}} ai tiri salvezza"
     }
   }
 }

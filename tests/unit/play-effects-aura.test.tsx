@@ -37,10 +37,11 @@ describe("PlayEffects: the party aura", () => {
     });
   });
 
-  it("an aura alone opens «Effects» and names the paladin and the bonus", () => {
+  it("an aura alone opens «Effects» and names the paladin and what it does", () => {
     render(<Live />);
     fireEvent.click(screen.getByRole("button", { name: /Effects/ }));
-    expect(screen.getByText("Bren's Aura +3")).toBeTruthy();
+    expect(screen.getByText("Bren's Aura")).toBeTruthy();
+    expect(screen.getByText("+3 to saving throws")).toBeTruthy();
   });
 
   it("«Outside the aura» marks this character outside; undo puts it back", () => {

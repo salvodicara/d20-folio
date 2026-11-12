@@ -4222,6 +4222,11 @@
       0 0 0 100vmax var(--scrim),
       0 -8px 32px var(--shade);
   }
+  /* an undo toast never hides the row it is about: the sheet rises above it (the toast
+     rides 72 px up, over «Sezioni», and is about 64 px tall) */
+  .fui.f-app:has(.f-toast) .f-condpop {
+    bottom: 144px;
+  }
 }
 
 /* A fallen companion's «Rianima»: the hint, then a chip per slot that can pay. */

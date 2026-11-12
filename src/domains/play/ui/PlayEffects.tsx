@@ -122,11 +122,14 @@ export function PlayEffects({ doc, locale }: { doc: CharacterDoc; locale: Locale
                 </span>
                 <div className="f-cond-main">
                   <span className="f-row-t">
-                    {aura.on
-                      ? t("play.aura.chip", { name: short(aura.name), bonus: aura.bonus })
-                      : t("play.aura.outToast", { name: short(aura.name) })}
+                    {t(aura.on ? "play.aura.source" : "play.aura.outToast", {
+                      name: short(aura.name),
+                    })}
                   </span>
-                  <span className="f-row-s">{t("play.aura.group")}</span>
+                  {/* what it does; the source is the title */}
+                  <span className="f-row-s">
+                    {t("play.aura.saves", { bonus: aura.bonus })}
+                  </span>
                 </div>
                 {!readonly && (
                   <Button
