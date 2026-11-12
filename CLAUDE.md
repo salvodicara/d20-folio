@@ -26,6 +26,9 @@ one at a time onto `main`, never a base to resume. Its docs describe that branch
 - Small Conventional Commits, the owner as sole author. The pre-commit hook requires a staged
   `.changeset/*.md` (an empty `---\n---` one is fine for docs-only work) and formats with Prettier.
   CI and Verify are authoritative; local hooks only format and check the changeset.
+- Open and edit PRs with `just pr-create` / `just pr-edit <N>`, never bare `gh pr create` / `gh pr edit`:
+  the title and body pass the private-text scan first, because GitHub keeps every revision of a PR's
+  text. Describe private-pack content generically in public text (code, comments, changesets, PRs).
 - Behaviour changes are test-first (`tdd`); bugs go through `diagnosing-bugs`. A test takes its
   cases from the thing it checks and is proven by breaking the code on purpose.
 - UI is verified in a real browser (`playwright-cli`), with before/after screenshots shown in chat.

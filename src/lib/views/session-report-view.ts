@@ -11,6 +11,7 @@ import { localeDistance } from "@/lib/utils";
 import { riderEffectClause } from "@/lib/views/effect-rider-view";
 import { isInferredFight } from "@/lib/session-log/infer-fights";
 import type { PlayEvent, ReportSection, SessionEntry } from "@/lib/session-log";
+import type { RestRecovery } from "@/types/combat-log";
 import type { ConcentrationRef } from "@/types/ids";
 import { ALONE_SAVE_ID } from "@/types/combat-log";
 
@@ -26,6 +27,36 @@ export interface SessionReportNames {
   source?(sourceId: string): string;
   /** The report's language: a speed stored in feet reads in its unit (IT: metres). */
   locale: Locale;
+}
+
+/**
+ * A rest line with what it gave back: «Lyra fa un riposo breve: +8 PF, 2 Dadi Vita,
+ * Ispirazione Bardica +2». Only what came back is said; an older line, with nothing
+ * recorded, stays the bare line. Shared by the session report and the sheet's log.
+ */
+export function withRestRecovery(
+  line: string,
+  recovery: RestRecovery,
+  t: TranslateFn,
+  resourceName: (id: string) => string
+): string {
+  const details = [
+    ...(recovery.hpRegained
+      ? [t("combatLog.restRecovery.hp", { count: recovery.hpRegained })]
+      : []),
+    ...(recovery.hitDiceSpent
+      ? [t("combatLog.restRecovery.hitDiceSpent", { count: recovery.hitDiceSpent })]
+      : []),
+    ...(recovery.hitDiceRegained
+      ? [t("combatLog.restRecovery.hitDiceRegained", { count: recovery.hitDiceRegained })]
+      : []),
+    ...(recovery.recovered ?? []).map(({ resource, count }) =>
+      t("combatLog.restRecovery.resource", { resource: resourceName(resource), count })
+    ),
+  ];
+  return details.length > 0
+    ? t("combatLog.restRecovery.line", { line, details: details.join(", ") })
+    : line;
 }
 
 /** The results the report can say; another stored value is left out of the line. */
@@ -278,7 +309,18 @@ export function localizePlayEvent(
     case "death-save":
       return t(`sessionReport.deathSave.${event.outcome}`, { actor: who(event.actor) });
     case "rest":
-      return t(`sessionReport.rest.${event.rest}`, { actor: who(event.actor) });
+      return withRestRecovery(
+        t(`sessionReport.rest.${event.rest}`, { actor: who(event.actor) }),
+        event,
+        t,
+        (id) => names.source?.(id) ?? id
+      );
+    case "level-up":
+      return t("sessionReport.levelUp", {
+        actor: who(event.actor),
+        level: event.to,
+        class: names.source?.(event.classId) ?? event.classId,
+      });
     case "time-passes":
       // The same unit as the sheet's log line (golden rule 6).
       return t("combatLog.timePasses", { count: event.minutes });

@@ -494,14 +494,25 @@ export function makeDevCampaign(id: string = DEV_CAMPAIGN_ID): CampaignDoc {
       // untranslated Italian-locale text via `campaignHub.narratedBy`).
       // The `d20-dev-attached` flag attaches the mock hero (`mock-1`), so the sheet
       // can be checked as a campaign member's (its log panel reads the session).
+      // Attached means the id AND the party snapshot (`isAttached`), as
+      // `attachCharacter` writes them: with the id alone, a roll into the fight is refused.
       "mock-uid": {
         displayName: "Ottavio",
-        characterId:
-          typeof window !== "undefined" &&
-          window.localStorage.getItem("d20-dev-attached") === "1"
-            ? "mock-1"
-            : null,
         role: "dm",
+        ...(typeof window !== "undefined" &&
+        window.localStorage.getItem("d20-dev-attached") === "1"
+          ? {
+              characterId: "mock-1",
+              character: {
+                name: assertNonEmptyString("Lyra Voss"),
+                race: asRaceId("elf"),
+                class: "Bard",
+                level: 9,
+                ac: 17,
+                hpMax: 62,
+              },
+            }
+          : { characterId: null }),
       },
       // D29 — Mara attached a character snapshot (the party card shows her hero);
       // Bren attached a character; the DM has none — every state is visible.

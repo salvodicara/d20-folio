@@ -22,7 +22,7 @@ const EXEMPT: Record<string, string> = {
   "features/campaigns/useMemberCharacterSubscription.ts":
     "loads a teammate's sheet read-only; MemberSheetView projects it",
   // A public share is outside any campaign: no one left effects on it there.
-  "features/character/SharedCharacterView.tsx": "public share, outside a campaign",
+  "features/character/shared-character.ts": "public share, outside a campaign",
   // Reads only the PC's own Concentration (its own sheet's field).
   "domains/combat/ui/FightTab.tsx": "reads only the PC's own Concentration",
 };

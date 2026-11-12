@@ -34,6 +34,17 @@ import type { ConcentrationRef } from "@/types/ids";
 import type { LocText } from "@/lib/loc-text";
 import type { AbilityCode } from "@/types/ability";
 
+/** What a rest gave back: Hit Points, Hit Dice spent (a short rest's healing) or
+ *  regained (a long rest), and each class resource's uses (a tracker id, named at
+ *  render). Every field is optional and set only when something came back. */
+// A type, not an interface: an older reader's index-signature event accepts it.
+export type RestRecovery = {
+  hpRegained?: number;
+  hitDiceSpent?: number;
+  hitDiceRegained?: number;
+  recovered?: ReadonlyArray<{ resource: string; count: number }>;
+};
+
 /**
  * The economy slot a committed action consumed — drives the log row's COLOUR
  * (`action`=green, `bonus`=blue, `reaction`=red, `free`=grey), the same family the
@@ -218,8 +229,12 @@ export type CombatEvent =
       successes: number;
       failures: number;
     }
-  /** A rest was taken. */
-  | { kind: "rest"; restKind: "short" | "long" }
+  /** A rest was taken, with what it gave back when anything came back (each field is
+   *  absent when nothing did; an older line carries none of them). */
+  | ({ kind: "rest"; restKind: "short" | "long" } & RestRecovery)
+  /** The character went up a level in `classId`. An older reader shows its "entry from
+   *  a newer version" row. */
+  | { kind: "level-up"; from: number; to: number; classId: string }
   /** A solo fight began («Start combat», or the first Initiative roll) or ended («End
    *  combat»). Each End Turn between them logs its round (`turn-end`). An older reader
    *  shows its "entry from a newer version" row. */
