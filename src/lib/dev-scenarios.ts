@@ -644,6 +644,37 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "S13 effective Speed: Boots of Speed ×2 (G12) − heavy-armor Strength penalty (G11) reaches the Speed vital; unproficient-armor Disadvantage (G13) shows in the combat adv/dis list.",
   },
+  "wizard-book-short": {
+    // A Wizard 5 built before the spellbook (2026-11-12): its list holds the nine
+    // spells the old level-ups asked for, five short of the book's fourteen, so
+    // «Scelte da completare» owes the gap. Visit `/characters/scn-wizard-book-short`.
+    name: "Odo, the Thin-Booked",
+    raceId: "human",
+    classId: "wizard",
+    level: 5,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
+    spells: [
+      ...["fire-bolt", "light", "mage-hand", "ray-of-frost"].map((srdId) => ({
+        srdId,
+        prepared: true,
+      })),
+      ...[
+        "magic-missile",
+        "shield",
+        "mage-armor",
+        "sleep",
+        "detect-magic",
+        "misty-step",
+        "web",
+        "fireball",
+        "counterspell",
+      ].map((srdId) => ({ srdId, prepared: true })),
+    ],
+    owesClassPicks: true,
+    exercises:
+      "The Wizard's spellbook: «Scelte da completare» owes 5 book spells (levels 1–3), landing unprepared; the level-up to 6 asks 2 for the book, not the prepared count.",
+  },
   "xray-ring": {
     // The Ring of X-ray Vision worn and attuned: its Magic action lights 1 minute
     // of X-ray vision (30 ft) on the Senses rail. Visit `/characters/scn-xray-ring`.
