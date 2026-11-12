@@ -111,7 +111,7 @@ export function PlayAfterHit({
       disabled: !o.legal,
       apply: () => applyCunningStrike(action, o),
     })),
-    // Battle Master: each learned maneuver that rides a hit, its die and save
+    // each learned maneuver that rides a hit, its die and save
     ...options.maneuvers.map((m) => ({
       key: `mv:${m.id}`,
       group: t("maneuvers.section"),
