@@ -256,4 +256,193 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     evidence: ["rider-view.test.ts"],
     note: "no once-per-turn tracking",
   },
+  // Code-checked by the rules lane (2026-11-12), the played rows that were unproven.
+  {
+    id: "bard-lore-bonus-proficiencies",
+    verdict: "auto",
+    evidence: ["feature-choices.test.ts"],
+    note: "3 skills of any kind at level 3",
+  },
+  {
+    id: "bard-spellcasting",
+    verdict: "auto",
+    evidence: [
+      "multiclass-slots.test.ts",
+      "prepared-caster-classification.test.ts",
+      "compute.test.ts",
+    ],
+    note: "from the class table",
+  },
+  {
+    id: "bard-asi",
+    verdict: "auto",
+    evidence: ["level-up.test.ts", "level-up-plan.test.ts"],
+    note: "class-table `asi` flag (tests use a Fighter; same flag)",
+  },
+  {
+    id: "barbarian-danger-sense",
+    verdict: "auto",
+    evidence: ["advantage-rail.test.ts"],
+    note: "off while Incapacitated",
+  },
+  { id: "barbarian-unarmored-defense", verdict: "auto", evidence: ["compute.test.ts"] },
+  {
+    id: "barbarian-weapon-mastery",
+    verdict: "auto",
+    evidence: [
+      "weapon-mastery-pick.test.ts",
+      "features-weapon-mastery-repick.test.tsx",
+      "mastery-riders.test.ts",
+      "mastery-hit-effects.test.ts",
+    ],
+  },
+  {
+    id: "wizard-asi",
+    verdict: "auto",
+    evidence: ["level-up.test.ts", "level-up-plan.test.ts"],
+    note: "same `asi` flag",
+  },
+  {
+    id: "monk-extra-attack",
+    verdict: "auto",
+    evidence: ["compute.test.ts"],
+    note: "same `extra-attack` grant",
+  },
+  {
+    id: "paladin-extra-attack",
+    verdict: "auto",
+    evidence: ["compute.test.ts"],
+    note: "same grant",
+  },
+  {
+    id: "paladin-faithful-steed",
+    verdict: "auto",
+    evidence: ["species-lineage-spells.test.ts"],
+  },
+  {
+    id: "paladin-fighting-style",
+    verdict: "auto",
+    evidence: ["owed-fighting-style.test.ts", "paladin-combat-contract.test.ts"],
+  },
+  {
+    id: "paladin-fighting-style-defense",
+    verdict: "auto",
+    evidence: ["flat-feature-ac-bonus.test.ts"],
+  },
+  { id: "wizard-scholar", verdict: "auto", evidence: ["scholar-expertise-pool.test.ts"] },
+  {
+    id: "paladin-spellcasting",
+    verdict: "auto",
+    evidence: [
+      "multiclass-slots.test.ts",
+      "slot-gated-prepared.test.ts",
+      "prepared-caster-classification.test.ts",
+    ],
+  },
+  {
+    id: "wizard-spellcasting",
+    verdict: "missing",
+    evidence: ["multiclass-slots.test.ts", "slot-gated-prepared.test.ts"],
+    note: "spellbook not modelled: level 1 gets 4 (prepared count) not 6; level-up gives no 2 free spellbook spells",
+  },
+  {
+    id: "rogue-thieves-cant",
+    verdict: "auto",
+    evidence: ["feat-language-choices.test.ts", "grants.test.ts"],
+  },
+  { id: "monk-unarmored-defense", verdict: "auto", evidence: ["compute.test.ts"] },
+  {
+    id: "monk-unarmored-movement",
+    verdict: "auto",
+    evidence: ["unarmored-movement-speed.test.ts"],
+  },
+  {
+    id: "rogue-weapon-mastery",
+    verdict: "auto",
+    evidence: ["weapon-mastery-pick.test.ts", "mastery-hit-effects.test.ts"],
+  },
+  {
+    id: "paladin-weapon-mastery",
+    verdict: "auto",
+    evidence: ["weapon-mastery-pick.test.ts", "mastery-hit-effects.test.ts"],
+  },
+  {
+    id: "human:resourceful",
+    verdict: "auto",
+    evidence: ["heroic-inspiration-on-rest.test.ts"],
+  },
+  {
+    id: "human:skillful",
+    verdict: "auto",
+    evidence: ["unresolved-build-choices.test.ts"],
+  },
+  {
+    id: "human:versatile",
+    verdict: "auto",
+    evidence: ["unresolved-build-choices.test.ts", "sync-origin-feats.test.ts"],
+  },
+  {
+    id: "elf:darkvision",
+    verdict: "auto",
+    evidence: ["resolve-grant-sources-race.test.ts", "species-lineage-spells.test.ts"],
+  },
+  {
+    id: "elf:elven-lineage",
+    verdict: "by-hand",
+    evidence: ["species-lineage-spells.test.ts"],
+    note: "High Elf cantrip swap after a Long Rest not offered",
+  },
+  {
+    id: "elf:fey-ancestry",
+    verdict: "auto",
+    evidence: ["species-condition-advantages.test.ts", "grants.test.ts"],
+    note: "carries Trance's sleep immunity (label only)",
+  },
+  { id: "orc:adrenaline-rush", verdict: "auto", evidence: ["grants-phase-c.test.ts"] },
+  {
+    id: "orc:darkvision",
+    verdict: "auto",
+    evidence: ["resolve-grant-sources-race.test.ts"],
+  },
+  {
+    id: "orc:relentless-endurance",
+    verdict: "auto",
+    evidence: ["zero-hp-consequence.test.ts", "character-store-rest.test.ts"],
+  },
+  {
+    id: "gnome:darkvision",
+    verdict: "auto",
+    evidence: ["resolve-grant-sources-race.test.ts"],
+  },
+  {
+    id: "gnome:gnome-cunning",
+    verdict: "auto",
+    evidence: ["species-condition-advantages.test.ts"],
+  },
+  {
+    id: "gnome:gnomish-lineage",
+    verdict: "by-hand",
+    evidence: ["species-lineage-spells.test.ts"],
+    note: "clockwork device text only",
+  },
+  {
+    id: "tiefling:darkvision",
+    verdict: "auto",
+    evidence: ["resolve-grant-sources-race.test.ts"],
+  },
+  {
+    id: "tiefling:fiendish-legacy",
+    verdict: "auto",
+    evidence: ["species-lineage-spells.test.ts"],
+  },
+  {
+    id: "tiefling:otherworldly-presence",
+    verdict: "auto",
+    evidence: ["species-lineage-spells.test.ts"],
+  },
+  {
+    id: "barbarian-feral-instinct",
+    verdict: "auto",
+    evidence: ["surprise-state.test.ts"],
+  },
 ];

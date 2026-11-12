@@ -10,6 +10,7 @@ import { describe, expect, it } from "vitest";
 
 import { classFeatureIndex } from "@/data/classes";
 import { getFeat } from "@/data/feats";
+import { getRace } from "@/data/races";
 
 import { aScreenCalls } from "./__helpers__/coverage-report";
 import {
@@ -48,7 +49,10 @@ describe("code-checked verdicts in the played-content view", () => {
   });
 
   it("an entry nobody checked is unproven, never automatic", () => {
-    expect(of("wizard-scholar")?.verdict).toBe("unproven");
+    const checked = new Set(PUBLIC_VERDICTS.map((v) => v.id));
+    const unchecked = held().find((row) => !checked.has(row.id));
+    expect(unchecked, "an unchecked held feature").toBeDefined();
+    expect(unchecked?.verdict).toBe("unproven");
   });
 
   it("verdicts given at run time (the pack's) join the public ones", () => {
@@ -75,7 +79,13 @@ describe("code-checked verdicts in the played-content view", () => {
 describe("the public verdicts file", () => {
   it("names public SRD entries only", () => {
     for (const { id } of PUBLIC_VERDICTS) {
-      const source = classFeatureIndex.get(id)?.source ?? getFeat(id)?.source;
+      // A species trait is `<species>:<trait>`: the species is public, the trait its own.
+      const [raceId = "", traitId] = id.split(":");
+      const source = traitId
+        ? getRace(raceId)?.traits.some((t) => t.id === traitId)
+          ? getRace(raceId)?.source
+          : undefined
+        : (classFeatureIndex.get(id)?.source ?? getFeat(id)?.source);
       expect(source, id).toBe("SRD");
     }
   });
