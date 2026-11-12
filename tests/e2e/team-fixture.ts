@@ -29,17 +29,24 @@ export function teamFixtureFile(role: string): string | null {
   return key ? resolve(TEAM_DIR, `${key}.json`) : null;
 }
 
-/** The name the role's sheet SHOWS in dev (the made-up DEV_HERO_NAMES, never the
- *  player's real character name), or null when the pack is absent. */
+/** The role's stored character name, or null when the pack is absent. The rehearsal
+ *  (real emulators, `reseedHero`) shows this stored name. */
 export function teamFixtureName(role: string): string | null {
   const file = teamFixtureFile(role);
   if (!file || !existsSync(file)) return null;
-  const shown = DEV_HERO_NAMES[role];
-  if (shown) return shown;
   const parsed = JSON.parse(readFileSync(file, "utf8")) as {
     build?: { name?: string };
   };
   return parsed.build?.name ?? null;
+}
+
+/** The name the role's sheet SHOWS under the dev bypass (#1144's made-up
+ *  DEV_HERO_NAMES, never a player's real character name), or null when the pack is
+ *  absent. For the dev-bypass specs; the rehearsal keeps `teamFixtureName`. */
+export function devHeroName(role: string): string | null {
+  const file = teamFixtureFile(role);
+  if (!file || !existsSync(file)) return null;
+  return DEV_HERO_NAMES[role] ?? teamFixtureName(role);
 }
 
 /** The name's first word (the short-form locator several specs anchor on). */
