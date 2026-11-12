@@ -12,6 +12,7 @@ import { initialOf } from "@/ui/initial";
 import { NewToasts } from "./NewToasts";
 import { CombatPip } from "@/domains/combat/ui/CombatPip";
 import { ScrollRestorer } from "./ScrollRestorer";
+import { useAfterLoad } from "./use-after-load";
 import { useAuthStore } from "@/stores/authStore";
 import { signOut } from "@/lib/auth";
 
@@ -28,6 +29,9 @@ export function NewAppShell() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
+  // The fight producer brings the rules engine: it starts once the page has loaded,
+  // so the screen's own code and data come first on a slow phone.
+  const background = useAfterLoad();
   // A Google account always has a name; the email stands in when it doesn't.
   const name = user?.displayName || user?.email || "";
   return (
@@ -75,7 +79,7 @@ export function NewAppShell() {
     >
       <ScrollRestorer />
       <Suspense fallback={null}>
-        <GlobalCombatMount />
+        {background && <GlobalCombatMount />}
         <LibraryMount />
       </Suspense>
       <Suspense fallback={null}>
