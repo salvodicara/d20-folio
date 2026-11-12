@@ -117,3 +117,69 @@ describe("actionCtaView", () => {
     });
   });
 });
+
+describe("an Action spell once the Action is spent (one rule for every row that costs it)", () => {
+  const bard = buildDevScenario("evoker-wizard");
+  if (!bard) throw new Error("dev scenario evoker-wizard is missing");
+  const rows = localizeActions(bard, "en");
+  const actionSpell = rows.find((a) => a.spellId && a.type === "action");
+  const weapon = rows.find((a) => a.source === "weapon" && a.type === "action");
+  if (!actionSpell || !weapon) throw new Error("no action spell or weapon");
+  const spentAction: ActionTurnState = {
+    ...fresh,
+    attackBudget: 1,
+    selected: { action: [{ id: weapon.id }], bonus: [], free: [] },
+  };
+
+  it("an attack spends the Action: the Action spell reads «Used»", () => {
+    const view = actionCtaView(bard, rows, spentAction, NO_CONDITIONS);
+    expect(view.get(actionSpell.id)).toMatchObject({
+      slotFull: true,
+      state: { spent: true, disabled: true },
+    });
+    // Before the attack it is free.
+    expect(
+      actionCtaView(bard, rows, { ...fresh, attackBudget: 1 }, NO_CONDITIONS).get(
+        actionSpell.id
+      )
+    ).toMatchObject({ slotFull: false });
+  });
+
+  it("a cast spends the Action too: the weapon reads «Used»", () => {
+    const cast: ActionTurnState = {
+      ...fresh,
+      attackBudget: 1,
+      selected: { action: [{ id: actionSpell.id }], bonus: [], free: [] },
+    };
+    expect(actionCtaView(bard, rows, cast, NO_CONDITIONS).get(weapon.id)).toMatchObject({
+      slotFull: true,
+    });
+  });
+
+  it("a second Action (Action Surge's budget) keeps it castable", () => {
+    const surge = { ...spentAction, budget: { action: 2, bonus: 1 } };
+    expect(
+      actionCtaView(bard, rows, surge, NO_CONDITIONS).get(actionSpell.id)
+    ).toMatchObject({ slotFull: false });
+  });
+
+  it("Quickened Spell with the points and the Bonus Action free keeps it castable", () => {
+    const sorcerer = buildDevScenario("font-sorcerer");
+    if (!sorcerer) throw new Error("dev scenario font-sorcerer is missing");
+    const its = localizeActions(sorcerer, "en");
+    const fireBolt = its.find((a) => a.spellId === "fire-bolt");
+    const turn: ActionTurnState = {
+      ...fresh,
+      attackBudget: 1,
+      selected: { action: [{ id: "spent-elsewhere" }], bonus: [], free: [] },
+    };
+    expect(
+      actionCtaView(sorcerer, its, turn, NO_CONDITIONS).get(fireBolt?.id ?? "")
+    ).toMatchObject({ slotFull: false });
+    // The Bonus Action spent too: nowhere left to cast it.
+    const both = { ...turn, selected: { ...turn.selected, bonus: [{ id: "x" }] } };
+    expect(
+      actionCtaView(sorcerer, its, both, NO_CONDITIONS).get(fireBolt?.id ?? "")
+    ).toMatchObject({ slotFull: true });
+  });
+});

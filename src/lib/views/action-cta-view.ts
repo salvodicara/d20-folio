@@ -24,6 +24,8 @@ import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { isActionDepleted } from "./action-row-view";
 import { attacksRemainingInAction, isPipAttackAction } from "./combat-action-view";
+import { READY_ACTION_ID } from "@/lib/play/ready";
+import { resolveMetamagicForCast } from "./spell-cast-sources";
 import { conditionLabel } from "./tracker-view";
 
 /** The button's verb, as a stable id; each screen renders the label. */
@@ -300,8 +302,12 @@ export function actionCtaView(
     const spell = castsSpell(action);
     const slot = slotOf(action);
     const committed = !spell && turn.selected[slot].some((s) => s.id === action.id);
+    const live =
+      turn.attackBudget > 1 &&
+      isPipAttackAction(action, turn.warMagicMax) &&
+      attacksLeft != null;
     const slotFull = spell
-      ? false
+      ? spellSlotFull(doc, action, turn, live)
       : action.offhand && offHand != null && offHand !== action.id
         ? true
         : slot === "action"
@@ -309,10 +315,6 @@ export function actionCtaView(
           : slot === "bonus"
             ? turn.selected.bonus.length >= turn.budget.bonus
             : false;
-    const live =
-      turn.attackBudget > 1 &&
-      isPipAttackAction(action, turn.warMagicMax) &&
-      attacksLeft != null;
     const reason = actionBlockReason(doc, action, turn, conditions, depleted);
     out.set(action.id, {
       hidden:
@@ -337,6 +339,40 @@ export function actionCtaView(
     });
   }
   return out;
+}
+
+/**
+ * A spell costs the slot its casting time names, like any other row: an Action spell
+ * once the turn's Actions are spent (an attack, another cast) reads «Used». A cast
+ * riding an Extra Attack swing (War Magic) follows the swings; Quickened Spell can
+ * still move it to a free Bonus Action when the points are there.
+ */
+function spellSlotFull(
+  doc: CharacterDoc,
+  action: ResolvedAction,
+  turn: ActionTurnState,
+  ridesSwing: boolean
+): boolean {
+  if (ridesSwing) return false;
+  const slot = slotOf(action);
+  if (slot === "bonus") return turn.selected.bonus.length >= turn.budget.bonus;
+  if (slot !== "action") return false;
+  if (turn.selected.action.length < turn.budget.action) return false;
+  // Ready took the Action: the spell to ready is cast with it (held, released later).
+  if (
+    action.castTiming === "action" &&
+    doc.session.readiedSpell === undefined &&
+    turn.selected.action.some((selected) => selected.id === READY_ACTION_ID)
+  )
+    return false;
+  const bonusFree = turn.selected.bonus.length < turn.budget.bonus;
+  const quickened =
+    bonusFree &&
+    action.spellId !== undefined &&
+    resolveMetamagicForCast(doc, action.spellId).some(
+      (m) => m.id === "quickened-spell" && m.appliesToSpell && m.affordable
+    );
+  return !quickened;
 }
 
 type Translate = (key: string, opts?: Record<string, unknown>) => string;
