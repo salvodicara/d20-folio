@@ -13,6 +13,7 @@ import type { RawMap } from "../../scripts/lib/migration-kit";
 import { surveyPlayedContent } from "../../scripts/survey-played-content";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import { makeCharacterDoc } from "./_helpers";
+import { customInstanceId } from "./__helpers__/custom-items";
 
 function parent(doc: CharacterDoc, path: string) {
   const envelope = serializeCharacterEnvelope(doc);
@@ -40,6 +41,36 @@ const wizard = makeCharacterDoc({
   name: assertNonEmptyString("Another Name"),
   race: asRaceId("elf"),
   classes: [{ classId: "wizard", level: 1 }],
+  spells: [
+    { srdId: "fire-bolt", prepared: true },
+    { srdId: "magic-missile", prepared: true },
+    { srdId: "shield", prepared: false },
+    {
+      custom: true,
+      name: "My secret spell",
+      level: 1,
+      school: "evocation",
+      castingTime: "action",
+      range: "Self",
+      components: { v: true, s: false, m: false },
+      duration: "Instantaneous",
+      concentration: false,
+      description: "",
+      prepared: true,
+      instanceId: customInstanceId("My secret spell"),
+    } as never,
+  ],
+  weapons: [{ srdId: "dagger", quantity: 2 }],
+  equipment: [
+    { srdId: "potion-of-healing", quantity: 1 },
+    { srdId: "leather-armor", quantity: 1, equipped: true },
+    {
+      custom: true,
+      name: "Granny's locket",
+      quantity: 1,
+      instanceId: customInstanceId("Granny's locket"),
+    } as never,
+  ],
 });
 
 describe("surveyPlayedContent", () => {
@@ -55,6 +86,20 @@ describe("surveyPlayedContent", () => {
     expect(survey.species).toEqual({ dwarf: 1, elf: 1 });
     expect(survey.features.alert).toBe(1);
     expect(survey.customFeatures).toBe(1);
+  });
+
+  it("counts the spells on the sheets: characters, and how many prepare each", () => {
+    expect(survey.spells["magic-missile"]).toEqual({ characters: 1, prepared: 1 });
+    expect(survey.spells.shield).toEqual({ characters: 1, prepared: 0 });
+    expect(survey.spells["fire-bolt"]).toEqual({ characters: 1, prepared: 1 });
+    expect(survey.customSpells).toBe(1);
+  });
+
+  it("counts the catalogue items they carry, by kind", () => {
+    expect(survey.items.dagger).toEqual({ characters: 1, kind: "weapon" });
+    expect(survey.items["leather-armor"]).toEqual({ characters: 1, kind: "armor" });
+    expect(survey.items["potion-of-healing"]?.characters).toBe(1);
+    expect(survey.customItems).toBe(1);
   });
 
   it("names the class features each character gains in its next two levels", () => {
@@ -76,6 +121,8 @@ describe("surveyPlayedContent", () => {
       "private player note",
       "My homebrew thing",
       "inst-1",
+      "My secret spell",
+      "Granny's locket",
     ]) {
       expect(out).not.toContain(leak);
     }
