@@ -33,6 +33,24 @@ describe("pending repeat saves", () => {
     expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["e1"]);
   });
 
+  it("one spell's two conditions on one target ask one save (Hideous Laughter)", () => {
+    // Prone and Incapacitated from the same cast: one WIS save ends the spell.
+    const of = (id: string, conditionId: string): PendingRepeatSave => ({
+      ...save(id, "m1"),
+      conditionId,
+      effect: {
+        id,
+        source: { kind: "spell", id: "tashas-hideous-laughter", actionId: "cast-1" },
+      } as PendingRepeatSave["effect"],
+    });
+    const { add } = useRepeatSaveStore.getState();
+    add(of("e-prone", "prone"));
+    add(of("e-incap", "incapacitated"));
+    const saves = useRepeatSaveStore.getState().saves;
+    expect(saves.map((s) => s.id)).toEqual(["e-prone"]);
+    expect(saves[0]?.siblings?.map((e) => e.id)).toEqual(["e-incap"]);
+  });
+
   it("keeps a save while its effect lasts and its target's next turn hasn't come", () => {
     const saves = [save("e1", "m1"), save("e2", "m2")];
     expect(

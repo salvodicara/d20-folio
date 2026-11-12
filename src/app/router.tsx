@@ -136,6 +136,22 @@ const CreationScreen = NEW_UI
     )
   : null;
 
+// The new campaign list and settings replace the old pages in the same build.
+const CampaignsScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/campaign/ui/CampaignsScreen").then((m) => ({
+        default: m.CampaignsScreen,
+      }))
+    )
+  : null;
+const SettingsScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/account/ui/SettingsScreen").then((m) => ({
+        default: m.SettingsScreen,
+      }))
+    )
+  : null;
+
 // The new Compendium replaces the codex in the same build (the monster catalogue
 // gates the render, as for the codex).
 const CompendiumScreen = NEW_UI
@@ -255,6 +271,10 @@ const router = createBrowserRouter(
               {CompendiumScreen && (
                 <Route path="/compendium" element={<CompendiumScreen />} />
               )}
+              {CampaignsScreen && (
+                <Route path="/campaigns" element={<CampaignsScreen />} />
+              )}
+              {SettingsScreen && <Route path="/settings" element={<SettingsScreen />} />}
             </Route>
           </Route>
         )}
@@ -288,7 +308,9 @@ const router = createBrowserRouter(
               />
             )}
             {/* Campaigns */}
-            <Route path="/campaigns" element={<CampaignsListPage />} />
+            {!CampaignsScreen && (
+              <Route path="/campaigns" element={<CampaignsListPage />} />
+            )}
             {!CampaignScreen && (
               <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
             )}
@@ -304,7 +326,7 @@ const router = createBrowserRouter(
               <Route path="/compendium" element={<CompendiumPage />} />
             )}
             {/* Settings */}
-            <Route path="/settings" element={<SettingsPage />} />
+            {!SettingsScreen && <Route path="/settings" element={<SettingsPage />} />}
             {/* Admin — role-gated console, lazy + admin-only. */}
             <Route path="/admin" element={<AdminPage />} />
             {/* Admin reads ANY user's character, read-only (admin override grant). */}

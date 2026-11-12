@@ -132,6 +132,23 @@ describe("RepeatSavePrompts", () => {
     expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual([effect.id]);
   });
 
+  it("a success ends every condition of the same cast on the target", async () => {
+    useRepeatSaveStore.setState({
+      saves: [
+        {
+          ...save,
+          siblings: [{ id: "e2" } as PendingRepeatSave["effect"]],
+        },
+      ],
+    });
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
+    await waitFor(() =>
+      expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "e2")
+    );
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "e1");
+  });
+
   it("a failure keeps the condition and closes the prompt", () => {
     render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
     fireEvent.click(screen.getByRole("button", { name: "Failed: it stays" }));

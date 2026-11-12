@@ -28,14 +28,19 @@ export function standingEffectsForTargets(input: {
 }): ActiveCombatEffect[] {
   const { spec, caster, position } = input;
   const casterId = caster.combatantId;
-  const boundary = spec.lifetime.turnBoundary
-    ? turnBoundaryAfter(
-        casterId,
-        spec.lifetime.turnBoundary.turns,
-        spec.lifetime.turnBoundary.phase,
-        position
-      )
+  const edge = spec.lifetime.turnBoundary;
+  const after = edge
+    ? turnBoundaryAfter(casterId, edge.turns, edge.phase, position)
     : null;
+  // "Your next turn" is never the one under way: cast on the caster's own turn, the
+  // end of the next turn is the following round's (Vicious Mockery, Guiding Bolt; the
+  // same rule as a condition's turn-edge lifetime in the tray).
+  const underWay =
+    after !== null &&
+    edge?.phase === "turn-end" &&
+    position.currentCombatantId === casterId &&
+    after.round === position.round;
+  const boundary = after && underWay ? { ...after, round: after.round + 1 } : after;
   const duration: ActiveCombatEffect["duration"] = spec.lifetime.concentration
     ? { kind: "concentration", actorId: casterId, sourceId: spec.source.id }
     : (boundary ??
