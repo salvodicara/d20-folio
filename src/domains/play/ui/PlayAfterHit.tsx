@@ -14,7 +14,9 @@ import { riderName, riderToken } from "@/components/shared/rider-label";
 import {
   afterHitOptions,
   cunningStrikeOptionsFor,
+  maneuverOptionsFor,
 } from "@/domains/play/after-hit-options";
+import { maneuverDetail } from "@/domains/play/maneuver-row";
 import { useAfterHitStore } from "@/domains/play/after-hit-store";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { useCombatStore } from "@/stores/combatStore";
@@ -46,9 +48,14 @@ function hasAfterHitOptions(
   action: CombatAction,
   locale: Locale
 ): boolean {
-  const o = afterHitOptions(action, cunningStrikeOptionsFor(doc, locale));
+  const o = afterHitOptions(
+    action,
+    cunningStrikeOptionsFor(doc, locale),
+    maneuverOptionsFor(localizeActions(doc, locale))
+  );
   return (
     o.cunningStrike.length > 0 ||
+    o.maneuvers.length > 0 ||
     o.mastery.length > 0 ||
     o.riders.some((r) => r.spend !== null)
   );
@@ -74,10 +81,14 @@ export function PlayAfterHit({
   const { t } = useTranslation();
   const doc = useCharacterStore((s) => s.character);
   const readonly = useSheetReadonly();
-  const { applyCunningStrike, spendRider } = useTurnEconomy();
+  const { applyCunningStrike, spendRider, executeAction } = useTurnEconomy();
   const [added, setAdded] = useState<ReadonlySet<string>>(() => new Set());
   if (!doc) return null;
-  const options = afterHitOptions(action, cunningStrikeOptionsFor(doc, locale));
+  const options = afterHitOptions(
+    action,
+    cunningStrikeOptionsFor(doc, locale),
+    maneuverOptionsFor(localizeActions(doc, locale))
+  );
   const weaponArt = (fallback: ReactNode) =>
     action.weaponId ? (
       <Art kind="equipment" id={action.weaponId} fallback={fallback} />
@@ -98,6 +109,16 @@ export function PlayAfterHit({
       art: <Art kind="feature" id={o.sourceId} fallback={featureGlyph} />,
       disabled: !o.legal,
       apply: () => applyCunningStrike(action, o),
+    })),
+    // Battle Master: each learned maneuver that rides a hit, its die and save
+    ...options.maneuvers.map((m) => ({
+      key: `mv:${m.id}`,
+      group: t("maneuvers.section"),
+      name: m.name,
+      detail: maneuverDetail(m, t),
+      art: <Art kind="feature" id={m.id} fallback={featureGlyph} />,
+      disabled: m.disabled,
+      apply: () => executeAction(m.action),
     })),
     ...options.mastery.map((m) => ({
       key: `m:${m.id}`,
