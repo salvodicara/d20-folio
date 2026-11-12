@@ -22,6 +22,7 @@
  * catalogue. IDs + numbers are the only stored facts.
  */
 
+import { LineChip, LinePick, LineQuiet } from "@/components/shared/LinePick";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollText, ChevronDown, Trash2, HelpCircle, Undo2, X } from "lucide-react";
@@ -105,29 +106,6 @@ function useFeedNames(
       locale: language,
     }),
     [name, language]
-  );
-}
-
-// ─── A combatant chip (attribution pick) ─────────────────────────────────────
-
-function CombatantChip({
-  label,
-  selected,
-  onClick,
-}: {
-  label: string;
-  selected?: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-selected={selected ? "" : undefined}
-      className="encounter-feed-chip"
-    >
-      {label}
-    </button>
   );
 }
 
@@ -354,16 +332,9 @@ function FeedRow({
         )}
       </span>
       {showPicker && (
-        <div
-          className="encounter-feed-pick"
-          role="group"
-          aria-label={t("combatChronicle.attributeLabel")}
-        >
-          <span className="encounter-feed-pick-label">
-            {t("combatChronicle.attributeLabel")}
-          </span>
+        <LinePick label={t("combatChronicle.attributeLabel")}>
           {candidates.map((c) => (
-            <CombatantChip
+            <LineChip
               key={c.id}
               label={names.name(c.id)}
               selected={c.id === preselect}
@@ -371,22 +342,16 @@ function FeedRow({
             />
           ))}
           {more.length > 0 && !showMore && (
-            <button
-              type="button"
-              className="encounter-feed-pick-quiet"
+            <LineQuiet
+              label={t("combatChronicle.attributeMore", { count: more.length })}
               onClick={() => setShowMore(true)}
-            >
-              {t("combatChronicle.attributeMore", { count: more.length })}
-            </button>
+            />
           )}
-          <button
-            type="button"
-            className="encounter-feed-pick-quiet"
+          <LineQuiet
+            label={t("combatChronicle.attributeSkip")}
             onClick={() => onAttribute(line, null)}
-          >
-            {t("combatChronicle.attributeSkip")}
-          </button>
-        </div>
+          />
+        </LinePick>
       )}
     </div>
   );
