@@ -152,6 +152,20 @@ const SettingsScreen = NEW_UI
     )
   : null;
 
+// The new legal page and the unknown page, in the same build.
+const LegalScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/legal/ui/LegalScreen").then((m) => ({ default: m.LegalScreen }))
+    )
+  : null;
+const NotFoundScreen = NEW_UI
+  ? lazy(() =>
+      import("@/domains/legal/ui/NotFoundScreen").then((m) => ({
+        default: m.NotFoundScreen,
+      }))
+    )
+  : null;
+
 // The new Compendium replaces the codex in the same build (the monster catalogue
 // gates the render, as for the codex).
 const CompendiumScreen = NEW_UI
@@ -212,7 +226,7 @@ const router = createBrowserRouter(
           so a render fault shows the recoverable region panel with the nav intact. */}
       <Route element={<AppShell />}>
         <Route errorElement={<RouteErrorBoundary variant="region" />}>
-          <Route path="/legal" element={<LegalPage />} />
+          {!LegalScreen && <Route path="/legal" element={<LegalPage />} />}
           {/* A character share link. PUBLIC by design — the viewer has no account
               (that is the feature), and the server-side grant is the character
               doc's own `shared` flag, so this route enforces nothing: a link to an
@@ -226,6 +240,21 @@ const router = createBrowserRouter(
           <Route path="/view/:uid/:charId" element={<SharedCharacterView />} />
         </Route>
       </Route>
+
+      {/* VITE_NEW_UI: the legal page in the new frame, still public (no account shown). */}
+      {NewAppShell && LegalScreen && (
+        <Route
+          element={
+            <Suspense fallback={null}>
+              <NewAppShell />
+            </Suspense>
+          }
+        >
+          <Route errorElement={<RouteErrorBoundary variant="region" />}>
+            <Route path="/legal" element={<LegalScreen />} />
+          </Route>
+        </Route>
+      )}
 
       {/* DEV-ONLY crash probe (fullscreen): throws directly under the ROOT error
           net, so the fullscreen fallback (+ its crash-report entry) is a drivable,
@@ -275,6 +304,7 @@ const router = createBrowserRouter(
                 <Route path="/campaigns" element={<CampaignsScreen />} />
               )}
               {SettingsScreen && <Route path="/settings" element={<SettingsScreen />} />}
+              {NotFoundScreen && <Route path="*" element={<NotFoundScreen />} />}
             </Route>
           </Route>
         )}
@@ -339,7 +369,7 @@ const router = createBrowserRouter(
                 drivable, a11y/visual-covered surface. Stripped from prod. */}
             {import.meta.env.DEV && <Route path="/_crash" element={<CrashProbe />} />}
             {/* Catch-all — recoverable 404 inside the shell. */}
-            <Route path="*" element={<NotFoundPage />} />
+            {!NotFoundScreen && <Route path="*" element={<NotFoundPage />} />}
           </Route>
         </Route>
       </Route>
