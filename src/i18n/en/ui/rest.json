@@ -10,7 +10,7 @@
     "slotsRestored": "Spell Slots Restored",
     "slotsRestoredValue_one": "{{count}} slot",
     "slotsRestoredValue_other": "{{count}} slots",
-    "trackersReset": "Trackers Reset",
+    "trackersReset": "Features recharged",
     "trackersRestoredValue_one": "{{count}} use",
     "trackersRestoredValue_other": "{{count}} uses",
     "itemResourcesRecovered": "Magic-item resources restored",
