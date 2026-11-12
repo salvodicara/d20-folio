@@ -241,7 +241,7 @@ import {
 import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
-import { isSelfFormSpell } from "@/lib/polymorph";
+import { opensSelfFormPicker } from "@/lib/polymorph";
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -1547,7 +1547,7 @@ export function TurnEconomyProvider({
           !readies &&
           !execution.ritual &&
           !!action.spellId &&
-          isSelfFormSpell(action.spellId);
+          opensSelfFormPicker(action.spellId, targets, selfCombatantId());
         if (picksForm) setFormPickerSpellId(action.spellId ?? null);
         // A priced material component: "−300 mo" when consumed, else a reminder.
         const materialToastId = execution.withoutComponents

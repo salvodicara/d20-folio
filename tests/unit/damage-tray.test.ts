@@ -194,6 +194,16 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     expect(damageTrayPlan(lay, [], ME)).toBeNull();
   });
 
+  it("a save with nothing else to apply opens no tray: no tap added (Command)", () => {
+    expect(damageTrayPlan(action("spell-command"), [FOE], ME)).toBeNull();
+  });
+
+  it("a failed save's push rides the tray (Thunderwave)", () => {
+    const wave = plan(action("spell-thunderwave"));
+    expect(wave.failNotes).toEqual(["Pushed up to 10 ft away"]);
+    expect(plan(action("spell-fireball")).failNotes).toBeUndefined();
+  });
+
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
     expect(damageTrayPlan(action("spell-mage-armor"), [ME], ME)).toBeNull();
     expect(damageTrayPlan(action("spell-fireball"), [], ME)).toBeNull();
