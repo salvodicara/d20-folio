@@ -17,7 +17,6 @@ import type { CampaignDoc, SharedNote } from "@/types/campaign";
 import { Button, Chip, Field, Panel } from "@/ui";
 
 const FILTERS: NoteFilter[] = ["all", "important", "people", "places", "mine"];
-const MARK = { important: "!", person: "@", place: "#", note: "" } as const;
 
 export function NotesTab({
   campaign,
@@ -132,19 +131,16 @@ function NoteLine({
   onOpen: () => void;
 }) {
   const { t } = useTranslation();
-  const mark = MARK[note.kind];
   return (
     <div className="f-row f-note-row">
-      <span
-        className="f-mark"
-        data-kind={note.kind}
-        aria-label={
-          note.kind === "note" ? undefined : t(`campaignNotes.kind.${note.kind}`)
-        }
-      >
-        {mark}
-      </span>
       <span className="f-row-main">
+        {/* the kind as a coloured word (Kanka's and World Anvil's type label), never a
+            punctuation mark standing in for an icon */}
+        {note.kind !== "note" && (
+          <span className="f-kind" data-kind={note.kind}>
+            {t(`campaignNotes.kind.${note.kind}`)}
+          </span>
+        )}
         <span className="f-row-t">{note.title || note.content.split("\n")[0]}</span>
         {note.title && note.content && (
           <span className="f-row-s" data-user-text="">
