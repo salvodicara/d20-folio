@@ -668,6 +668,10 @@ const EXPOSURE: Record<string, Exposure> = {
   "permanent-ability-increase": {
     open: "core seam studyItemAbilityScores (2026-10-24); no Study action wired yet",
   },
+  // Expertise re-picked at each Long Rest (a pack feat's Versatile Merc).
+  "rest-expertise": {
+    open: "headless model restExpertiseSkills / clearRestExpertise (2026-11-11); the Long Rest pick and the skill row are the next step",
+  },
   // Magic Weapon / Shillelagh: the lit binding changes its chosen weapon's row.
   "weapon-binding": {
     via: "resolveWeaponBindings",

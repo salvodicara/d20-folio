@@ -116,6 +116,8 @@
       "saveBonusAria": "Bonus al tiro salvezza di {{ability}}",
       "cycleSkillProf": "Scorri la competenza in {{skill}} (nessuna / competente / esperto)",
       "skillBonusAria": "Bonus a {{skill}}",
+      "expertiseUntilLongRest": "Maestria fino al prossimo Riposo Lungo",
+      "untilLongRestShort": "fino al Riposo Lungo",
       "auras": "Aure",
       "activePotions": "Pozioni attive",
       "companions": "Compagni"

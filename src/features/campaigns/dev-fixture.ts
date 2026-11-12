@@ -1615,10 +1615,27 @@ export function makeDevEvening(): { day: string; items: LogItem[] } | null {
       }),
       item(at(21, 40), { kind: "round-start", round: 1 }),
       item(at(21, 41), { kind: "damage", target: mara, amount: 9 }),
+      // A save spell everyone shrugged off, then one that half-landed (owner, 2026-11-11).
+      item(at(21, 42), {
+        kind: "action",
+        actor: mara,
+        source: { srd: { kind: "spell", key: "faerie-fire", field: "name" } },
+        targets: ["m-1", "m-2"],
+        outcome: "saved",
+        saves: { "m-1": "saved", "m-2": "saved" },
+        noEffect: true,
+      }),
       item(at(21, 43), { kind: "round-start", round: 2 }),
       item(at(21, 44), { kind: "damage", actor: bren, target: "m-1", amount: 11 }),
       item(at(21, 44), { kind: "down", target: "m-1" }),
       item(at(21, 47), { kind: "round-start", round: 3 }),
+      item(at(21, 47), {
+        kind: "action",
+        actor: mara,
+        source: { srd: { kind: "spell", key: "faerie-fire", field: "name" } },
+        targets: ["m-2", "m-3"],
+        saves: { "m-2": "failed", "m-3": "saved" },
+      }),
       item(at(21, 48), {
         kind: "note",
         text: L(

@@ -875,6 +875,27 @@ describe("a spell prepared through one class", () => {
   });
 });
 
+describe("a spell granted by a feat", () => {
+  it("keeps the source that granted it across a save and a load; absent stays absent", () => {
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      character: {
+        ...MOCK_CHARACTER.character,
+        spells: [
+          { srdId: "guidance", prepared: true, grantedBy: "magic-initiate-cleric" },
+          { srdId: "bless", prepared: true },
+        ],
+      },
+    };
+    const res = parseCharacter(serializeCharacter(doc));
+    if (!res.success) throw new Error(res.error);
+    expect(res.doc.character.spells).toEqual([
+      { srdId: "guidance", prepared: true, grantedBy: "magic-initiate-cleric" },
+      { srdId: "bless", prepared: true },
+    ]);
+  });
+});
+
 describe("the ability a feat increased", () => {
   const withFeat = (feature: Record<string, unknown>, spell?: Record<string, unknown>) =>
     ({

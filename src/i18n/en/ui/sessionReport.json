@@ -8,6 +8,8 @@
     "withSource": "{{line}} ({{source}})",
     "action": "{{actor}} uses {{source}}",
     "actionOn": "{{actor}} uses {{source}} on {{targets}}",
+    "cast": "{{actor}} casts {{source}}",
+    "castOn": "{{actor}} casts {{source}} on {{targets}}",
     "outcome": {
       "hit": "hit",
       "miss": "miss",
@@ -79,6 +81,13 @@
       "spent": "{{target}} spends Heroic Inspiration"
     },
     "initiativeByDm": "Initiative for {{actor}}, rolled by the DM: {{total}}",
-    "initiative": "{{actor}} rolls initiative: {{total}}"
+    "initiative": "{{actor}} rolls initiative: {{total}}",
+    "saves": {
+      "allSaved": "all targets save",
+      "allFailed": "all targets fail",
+      "saved": "{{name}} saves",
+      "failed": "{{name}} fails",
+      "noEffect": "{{result}}: no effect"
+    }
   }
 }

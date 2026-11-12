@@ -45,6 +45,7 @@ Since 0.24.1, also the pure core the new app is built on:
   notes (`privateNoteDraft`, `authorDiarioNotes`).
 
 The whole public surface is listed in [`api.txt`](api.txt): import only from
-`@d20-folio/core`, never a deeper path. A change to that list is a change to the API.
+`@d20-folio/core`, never a deeper path. A change to that list is a change to the API,
+released as a semver step in [`CHANGELOG.md`](CHANGELOG.md).
 
 Build: `pnpm core:build` (from the repository root). Not published yet.
