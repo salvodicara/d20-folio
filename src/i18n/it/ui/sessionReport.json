@@ -3,6 +3,7 @@
     "title": "Sessione {{date}}",
     "outside": "Fuori dal combattimento",
     "encounter": "Scontro {{n}}",
+    "encounterInferred": "Scontro {{n}} (dedotto)",
     "beforeRounds": "Prima del primo round",
     "somethingUsed": "qualcosa",
     "withSource": "{{line}} ({{source}})",
