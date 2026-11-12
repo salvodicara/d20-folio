@@ -12,7 +12,9 @@ import { CopyButton } from "@/components/shared/CopyButton";
 import { Icon } from "@/components/ui/icon";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import type { SessionLog } from "@/features/campaigns/useSessionReports";
-import { buildReport, foldSession } from "@/lib/session-log";
+import { buildReport, foldSession, inferFights } from "@/lib/session-log";
+import { isAttackSource } from "@/lib/session-log/attack-source";
+import { closeForgottenFights } from "@/lib/session-log/close-forgotten-fights";
 import { localizeText } from "@/lib/views/srd-i18n";
 import {
   renderSessionReport,
@@ -69,11 +71,18 @@ export function SessionDayReport({
   const title = t("sessionReport.title", {
     date: date.toLocaleDateString(i18n.language),
   });
-  const markdown = open ? renderSessionReport(buildReport(entries), title, t, names) : "";
+  // Read time only: a fight nobody ended closes after a rest or an idle hour, then a
+  // fight nobody started is worked out from the blows.
+  const sections = useMemo(
+    () =>
+      buildReport(
+        inferFights(closeForgottenFights(entries), { isAttack: isAttackSource })
+      ),
+    [entries]
+  );
+  const markdown = open ? renderSessionReport(sections, title, t, names) : "";
   // The copy carries the page's notes too: one paste gives an AI the whole evening.
-  const copied = open
-    ? renderSessionReport(buildReport(entries), title, t, names, { notes })
-    : "";
+  const copied = open ? renderSessionReport(sections, title, t, names, { notes }) : "";
 
   return (
     <div className="sess-report-block" data-open={open || undefined}>

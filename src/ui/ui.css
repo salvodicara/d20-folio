@@ -4100,6 +4100,21 @@
   margin: 0;
 }
 
+/* «Hai colpito con …?» (board 2b, D5a): an accent bar on its left, as the mock; its
+   rows keep «Aggiungi» near the name on a wide centre (never ~700 px away). */
+.fui .f-after-hit {
+  border-left: 3px solid var(--nc);
+}
+.fui .f-after-hit-list {
+  max-width: 720px;
+}
+/* a toast never hides the end of the page: on a phone the page leaves room for it */
+@media (max-width: 640px) {
+  .fui.f-app:has(.f-toast) .f-page {
+    padding-bottom: 104px;
+  }
+}
+
 /* «Entra nella zona»: who walked in, as chips under the zone. */
 .fui .f-zone-enter {
   display: grid;

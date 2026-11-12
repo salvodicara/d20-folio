@@ -6,6 +6,19 @@
  * its state is the shared `actionCtaView` for this turn, so it reads as the old sheet's.
  */
 import { RollDialog } from "@/domains/combat/ui/FightActions";
+import {
+  checkEntriesFor,
+  skillBonusFor,
+  type CheckEntry,
+} from "@/domains/play/check-entry";
+import { PlayCheck } from "@/domains/play/ui/PlayCheck";
+import { AfterHitNote } from "@/domains/play/ui/PlayAfterHit";
+import { useAfterHitStore } from "@/domains/play/after-hit-store";
+import { ensureSrdKind } from "@/i18n";
+import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
+
+import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlayTurnStart } from "./PlayTurnStart";
@@ -15,7 +28,7 @@ import { playRollOffer } from "@/domains/play/play-roll-offer";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc } from "@/types/campaign";
 import { turnMovementBudgetFt } from "@/lib/play/self-move";
-import { useMemo, useState } from "react";
+import { Suspense, lazy, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { playActionsView, type PlayActionRow } from "@/domains/play/play-actions-view";
@@ -86,6 +99,13 @@ import { PlayScrollPick } from "./PlayScrollPick";
 import { saveAbilityShort } from "@/lib/views/save-ability-short";
 import { PlaySpare } from "./PlaySpare";
 import { PlayWeaponPick } from "./PlayWeaponPick";
+
+// The familiar's forms read the monster corpus: a lazy leaf, like the classic picker.
+const FamiliarPicker = lazy(() =>
+  Promise.all([import("./PlayFamiliarPicker"), ensureSrdKind("monster")]).then(([m]) => ({
+    default: m.PlayFamiliarPicker,
+  }))
+);
 
 type Filter = "all" | "attacks" | "actions" | "bonus" | "reactions" | "other" | "limited";
 const FILTERS: Filter[] = [
@@ -278,6 +298,7 @@ function ActionsPane({
               {kept.map((row) => (
                 <ActionLine key={row.id} row={row} locale={locale} />
               ))}
+              {group === "reactions" && <OtherReactionRow />}
             </section>
           );
         })}
@@ -733,6 +754,8 @@ function TurnStrip({
         <PlayTurnStart doc={doc} round={fight ? round : solo.round} locale={locale} />
       )}
       {!fight && !campaign && solo.notes}
+      <ReadiedNote locale={locale} />
+      {!fight && <AfterHitNote locale={locale} />}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}
       {counterable.map((cast) => {
         const name = localizeText(cast.action, locale);
@@ -837,6 +860,7 @@ function ActionLine({
 }) {
   const { t } = useTranslation();
   const { executeAction, commitRollReaction } = useTurnEconomy();
+  const fight = useSheetCombat();
   const readonly = useSheetReadonly();
   const { cta } = row;
   const reason = cta.reason ? blockReasonLine(cta.reason, t, locale) : null;
@@ -847,6 +871,8 @@ function ActionLine({
   const [sparing, setSparing] = useState<SpareView | null>(null);
   // Help in a fight asks «Su chi?» then «Per chi?» (the effect needs the v0.26 rules).
   const [helping, setHelping] = useState<HelpView | null>(null);
+  const [checking, setChecking] = useState<CheckEntry[] | null>(null);
+  const [familiar, setFamiliar] = useState(false);
   // A use on another creature's roll (Cutting Words) asks on whom and which roll.
   const [rolling, setRolling] = useState<RollReactionView | null>(null);
   const cast = () => {
@@ -881,6 +907,17 @@ function ActionLine({
       setSparing(spare);
       return;
     }
+    // Find Familiar asks the form (and its creature type), then casts.
+    if (row.spellId === FIND_FAMILIAR_SPELL_ID && doc) {
+      setFamiliar(true);
+      return;
+    }
+    // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
+    const checks = doc ? checkEntriesFor(row.action, skillBonusFor(doc)) : [];
+    if (checks.length > 0) {
+      setChecking(checks);
+      return;
+    }
     const choices = !doc
       ? []
       : row.spellId
@@ -889,7 +926,16 @@ function ActionLine({
           ? stateWeaponPickView(doc, row.action.activatesKey, locale)
           : [];
     if (choices.length > 0) setPicking(choices);
-    else executeAction(row.action);
+    else {
+      executeAction(row.action);
+      // Outside a shared fight no tray asks what the hit adds: the strip's note does.
+      if (row.action.weaponFacts && !fight && doc)
+        useAfterHitStore.getState().offerFor({
+          characterId: doc.id,
+          actionId: row.action.id,
+          round: useCombatStore.getState().round,
+        });
+    }
   };
   const sub = [
     // On the Spells tab the level is the group's header: not said again per row.
@@ -980,6 +1026,23 @@ function ActionLine({
             {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
           </Button>
         )
+      )}
+      {familiar && doc && (
+        <Suspense fallback={null}>
+          <FamiliarPicker
+            formIds={aggregateCharacterGrants(doc.character, doc.session).familiarFormIds}
+            locale={locale}
+            onClose={() => setFamiliar(false)}
+            onSummoned={() => executeAction(row.action)}
+          />
+        </Suspense>
+      )}
+      {checking && (
+        <PlayCheck
+          action={row.action}
+          entries={checking}
+          onClose={() => setChecking(null)}
+        />
       )}
       {rolling && (
         <RollReactionDialog
