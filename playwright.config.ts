@@ -97,6 +97,7 @@ export default defineConfig({
         /ui-avatars\.spec\.ts/,
         /ui-long-text\.spec\.ts/,
         /ui-pips\.spec\.ts/,
+        /ui-table-columns\.spec\.ts/,
         ...OFF_LANES,
       ],
     },
@@ -124,7 +125,7 @@ export default defineConfig({
       // The rebuilt screens, on the VITE_NEW_UI preview server (own port).
       name: "new-ui",
       testMatch:
-        /(?:ui-play-fidelity|ui-avatars|fight-smoke|ui-long-text|ui-pips)\.spec\.ts/,
+        /(?:ui-play-fidelity|ui-avatars|fight-smoke|ui-long-text|ui-pips|ui-table-columns)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${NEW_UI_PORT}` },
     },
     {

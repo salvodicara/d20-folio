@@ -957,7 +957,8 @@ function ActionLine({
       ? signed(row.attackBonus)
       : row.saveDc !== undefined
         ? [
-            t("play.dc", { dc: row.saveDc }),
+            // «CD 14» stays together; only the ability may go to the next line
+            t("play.dc", { dc: row.saveDc }).replace(/ /g, "\u00a0"),
             row.saveAbility
               ? saveAbilityShort(row.saveAbility, row.saveAbilities, t)
               : null,
