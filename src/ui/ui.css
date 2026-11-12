@@ -877,7 +877,9 @@
   .fui dialog.f-dlg {
     width: 100vw;
     max-width: 100vw;
-    inset: auto 0 0 0;
+    /* above the on-screen keyboard (--kb, set by the Dialog from the visual viewport) */
+    inset: auto 0 var(--kb, 0px) 0;
+    max-height: calc(100dvh - var(--kb, 0px) - 16px);
     margin: 0;
     border-radius: var(--r-lg) var(--r-lg) 0 0;
     border-bottom: 0;
@@ -1731,6 +1733,21 @@
 }
 .fui .f-tl > span {
   min-width: 0;
+}
+.fui .f-tl > span:first-of-type {
+  flex: 1;
+}
+.fui .f-tl-amt {
+  flex: none;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fui .f-tl-amt[data-dir="in"] {
+  color: var(--heal);
+}
+.fui .f-tl-amt[data-dir="out"] {
+  color: var(--hp-r);
 }
 .fui .f-tl-by {
   color: var(--muted);
@@ -3652,6 +3669,23 @@
 .fui .f-sheet .f-act.f-item {
   grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content 96px;
 }
+/* on a phone the five coins share one row, each its number over its coin (D&D Beyond's
+   phone currency row), so none is left alone on a second line */
+@media (max-width: 640px) {
+  .fui .f-sheet .f-coins {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .fui .f-sheet .f-coin {
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .fui .f-sheet .f-coin > b {
+    font-size: var(--fs-md);
+  }
+}
 @media (max-width: 640px) {
   .fui .f-sheet .f-act.f-item {
     grid-template-columns: var(--slot-size) minmax(0, 1fr) 96px;
@@ -4659,8 +4693,8 @@
   background: var(--hover);
 }
 .fui .f-lvl-step[data-state="owed"] {
-  border-color: var(--danger-line);
-  background: color-mix(in srgb, var(--danger-bg) 60%, transparent);
+  /* a step still owed reads like the others; its mark and name carry the state */
+  color: var(--danger-text);
 }
 .fui .f-lvl-step small {
   display: block;
@@ -5352,11 +5386,9 @@
   font: 700 var(--fs-md) var(--font-title);
 }
 .fui .f-lvl-owed {
+  /* a status line, not a button: what is missing reads in its colour above the
+     Confirm it holds back (D&D Beyond's builder: «2 choices remaining» as text) */
   margin: 0;
-  padding: 8px;
-  border: 1px solid var(--danger-line);
-  border-radius: var(--r-pill);
-  background: var(--danger-bg);
   color: var(--danger-text);
   font: 700 var(--fs-md) var(--font-text);
   text-align: center;
@@ -6345,5 +6377,42 @@
   }
   .fui .f-situations:not([data-open]) .f-chip[aria-pressed="false"] {
     display: none;
+  }
+}
+/* Touch targets on a phone: at least 44 px (PRODUCT.md; Apple's HIG, WCAG 2.5.5). The
+   desktop keeps its 40 px controls; a finger gets the extra 4 px. */
+@media (max-width: 640px) {
+  .fui .f-btn,
+  .fui .f-in,
+  .fui .f-srch {
+    min-height: 44px;
+  }
+  /* a chip keeps its 40 px pill; its touch area grows 2 px above and below */
+  .fui .f-chip:is(button) {
+    position: relative;
+  }
+  .fui .f-chip:is(button)::after {
+    content: "";
+    position: absolute;
+    inset: -2px 0;
+  }
+  .fui .f-burger,
+  .fui .f-av,
+  .fui .f-tb-back,
+  .fui .f-close,
+  .fui .f-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+/* the toast sits above a bottom bar, never over it («Sezioni», the level-up bar) */
+@media (max-width: 960px) {
+  .fui.f-app:has(.f-secbar) .f-toast {
+    bottom: 72px;
+  }
+}
+@media (max-width: 760px) {
+  .fui.f-app:has(.f-lvl-bar) .f-toast {
+    bottom: 88px;
   }
 }

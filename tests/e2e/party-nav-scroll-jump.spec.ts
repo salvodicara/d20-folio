@@ -17,7 +17,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { firstWord, teamFixtureName } from "./team-fixture";
 
 // Derived from the pack fixture at runtime — no name literal ships publicly.
-const HERO_NAME = teamFixtureName("catalion-bard");
+const HERO_NAME = teamFixtureName("bard");
 const HERO_FIRST = firstWord(HERO_NAME);
 import { seedUI, seedLang } from "./surfaces";
 
@@ -78,7 +78,7 @@ test.describe("combat-pip sheet↔party navigation — plain landing (no auto-sc
     // ── (a) HERO FLIP — a bare /characters/<id> PUSH → tops out. ──
     await resetTopResets(page);
     await page.locator(".combat-pip-split .cp-dest-chip").click();
-    await page.waitForURL("**/characters/team-catalion-bard", { timeout: 20_000 });
+    await page.waitForURL("**/characters/team-bard", { timeout: 20_000 });
     await page.getByText(HERO_FIRST).first().waitFor({ timeout: 20_000 });
     await expect
       .poll(() => page.evaluate(() => window.scrollY), { timeout: 10_000 })

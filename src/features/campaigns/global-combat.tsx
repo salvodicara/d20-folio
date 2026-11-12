@@ -25,6 +25,7 @@
  * primary live-encounter listeners; a user NOT in combat pays just the shared query.
  */
 
+import { usePartyAura } from "@/features/campaigns/use-party-aura";
 import { useFightMarkers } from "./use-fight-markers";
 import { effectsOnTarget } from "@/lib/play/effective-doc";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -341,6 +342,9 @@ export function GlobalCombatMount(): null {
       ? campaigns.find((c) => c.memberDetails[uid]?.characterId === openCharacterId)
       : undefined;
   useCampaignClockProjection(openCharacterId ?? undefined, clockCampaign);
+  // Aura of Protection across the party: published from a paladin's own sheet, read
+  // onto every ally's saves, both through the campaign doc this sheet already reads.
+  usePartyAura(clockCampaign, uid, openCharacterId);
   const catchUpTo = useCharacterStore(clockCatchUpTarget);
   useEffect(() => {
     if (catchUpTo !== null) catchUpCampaignClock();
@@ -655,8 +659,9 @@ export function GlobalCombatMount(): null {
       });
     }
     // A creature your Hex or Hunter's Mark is on just dropped to 0: on a later turn,
-    // a Bonus Action moves the mark (the spell's trigger rule). A notice, not a
-    // prompt: the move row is already on the sheet while the spell lasts.
+    // a Bonus Action moves the mark (the spell's trigger rule); a Vow of Enmity moves
+    // with no action. A notice, not a prompt: the move row is already on the sheet
+    // while the mark lasts.
     const doc = useCharacterStore.getState().character;
     if (primaryIsDm || !doc || doc.id !== status?.characterId) return;
     for (const offer of markDropOffers(
@@ -667,14 +672,17 @@ export function GlobalCombatMount(): null {
       myId
     )) {
       showToast({
-        message: t("combat.markCanMove", {
-          source: localizeSrd(
-            offer.sourceKind === "spell" ? "spell" : "class-feature",
-            offer.sourceId,
-            "name",
-            locale
-          ),
-        }),
+        message: t(
+          offer.slot === "free" ? "combat.markCanMoveFree" : "combat.markCanMove",
+          {
+            source: localizeSrd(
+              offer.sourceKind === "spell" ? "spell" : "class-feature",
+              offer.sourceId,
+              "name",
+              locale
+            ),
+          }
+        ),
         duration: 8000,
       });
     }
