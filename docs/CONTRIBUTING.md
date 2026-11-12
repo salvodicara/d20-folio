@@ -20,6 +20,9 @@ the exact Node and pnpm pins; use it in a fresh checkout or worktree. In a workt
 `content-pack` its own pack worktree (`.pack-wt/<name>` in the main checkout, git-ignored, from the pack's
 `origin/main`), so a lane switching branches never changes the pack under another lane's tests;
 the shared pack checkout stays on `main`, and pack PR branches live in their own pack worktrees.
+It also installs the pack's pre-commit: the pack repo has no toolchain, so its hook lives here
+(`scripts/pack-hooks/pre-commit`: a staged changeset, the staged files formatted with the app's
+Prettier) and the pack repo's `core.hooksPath` points at the main checkout's copy.
 
 The toolchain is pinned via **asdf** (`.tool-versions`): **Node 24.16.0** (matches the Cloud
 Functions runtime) and **Temurin 25** (the JDK the Firestore emulator needs — no Homebrew JDK
@@ -236,6 +239,11 @@ waits for the app's checks, runs Verify on the app branch composing the pack PR'
 commit (`verify.yml` input `pack_sha`), and only when that is green and nothing moved
 meanwhile merges the pack and then the app, seconds apart. Merging either one first and
 verifying after leaves main composing a pack and an app that don't match.
+
+**Any pack PR, before it merges:** `scripts/pack-pr-check.sh <pack PR>` refuses it when what
+lands (the pack squash-merges: the PR's whole diff) adds no changeset or changes a file Prettier
+would reformat, so a commit made without the hook is caught before merge. The lockstep script
+runs it for a pair; run it by hand before merging a pack PR on its own.
 
 ## Reading order (especially for AI agents)
 
