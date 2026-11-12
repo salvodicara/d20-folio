@@ -23,11 +23,13 @@ import { useCampaignStore } from "./campaignStore";
 import {
   beginSend,
   logEdit,
+  logRead,
   logSnapshot,
   openEditLog,
   replayEdits,
   sendDone,
   shownFight,
+  snapshotNeedsRead,
   type EncounterEdit,
   type EncounterEditLog,
 } from "./encounter-edit-log";
@@ -122,18 +124,23 @@ async function send(s: EditSync): Promise<void> {
   const done = sendDone(s.log, written);
   s.log = done.log;
   show(s);
-  if (done.recheck) {
-    readServerEncounter(s.campaignId)
-      .then((fight) => {
-        if (sync !== s || s.generation !== generation) return;
-        s.log = logSnapshot(s.log, fight);
-        show(s);
-      })
-      .catch(() => {
-        // The next snapshot brings the server's fight anyway.
-      });
-  }
+  if (done.recheck) readBack(s);
   if (s.log.waiting.length > 0) schedule(s);
+}
+
+/** Read the server's fight directly and take it (`logRead`): after a snapshot the log
+ *  could not trust, because it may be older than this device's last write. */
+function readBack(s: EditSync): void {
+  const { generation } = s;
+  readServerEncounter(s.campaignId)
+    .then((fight) => {
+      if (sync !== s || s.generation !== generation) return;
+      s.log = logRead(s.log, fight);
+      show(s);
+    })
+    .catch(() => {
+      // The next snapshot brings the server's fight anyway.
+    });
 }
 
 /**
@@ -189,6 +196,7 @@ export function encounterFromServer(
   fight: EncounterState | null
 ): EncounterState | null {
   if (sync?.campaignId !== campaignId) return fight;
+  if (snapshotNeedsRead(sync.log, fight)) readBack(sync);
   sync.log = logSnapshot(sync.log, fight);
   const shown = shownFight(sync.log);
   sync.shown = shown;
