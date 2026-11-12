@@ -6603,3 +6603,20 @@
 .fui .f-notfound h1 {
   margin: 0;
 }
+
+/* «Torna alla campagna» above a party member's sheet (the DM's view; D&D Beyond's
+   back-to-campaign link). The phone has it in its own top bar. */
+.fui .f-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-bottom: 8px;
+  color: var(--gold);
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .fui .f-crumb {
+    display: none;
+  }
+}
