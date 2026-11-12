@@ -25,6 +25,7 @@
  * primary live-encounter listeners; a user NOT in combat pays just the shared query.
  */
 
+import { useFightMarkers } from "./use-fight-markers";
 import { effectsOnTarget } from "@/lib/play/effective-doc";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -142,6 +143,8 @@ export function GlobalCombatMount(): null {
   // The party-world lease reconcile waits for it: an unsettled empty list must
   // never read as "every fight ended" and release a live lease.
   const [campaignsSettled, setCampaignsSettled] = useState(false);
+  // This player's fight markers in the session log, with the DM's page closed too.
+  useFightMarkers(campaigns, uid);
   const deliveringEffects = useRef<string | null>(null);
   const observedConcentration = useRef<{
     scope: string;
