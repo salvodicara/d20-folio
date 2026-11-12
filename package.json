@@ -21,6 +21,7 @@
     "i18n:check": "node scripts/i18n/check-i18n.ts",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\" \"content-pack/**/*.{ts,tsx,json}\"",
     "test": "vitest run --project fast --project slow",
+    "rules:coverage": "WRITE_COVERAGE=1 vitest run --project fast tests/unit/rules-coverage-generated.test.ts",
     "rules:played": "vitest run --project fast tests/unit/rules-coverage-played.test.ts",
     "test:budget": "vitest run --project budget",
     "test:fast": "vitest run --project fast",
