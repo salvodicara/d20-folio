@@ -52,6 +52,8 @@ export interface ChoiceResistanceSlot {
   amount: number;
   options: ReadonlyArray<DamageType>;
   picked: ReadonlyArray<DamageType>;
+  /** When the pick may change (the feature's rule); absent when not recorded. */
+  choiceFrequency?: "short-or-long-rest" | "long-rest" | "cast";
 }
 
 export function choiceResistanceView(doc: CharacterDoc): ChoiceResistanceSlot[] {
@@ -63,6 +65,7 @@ export function choiceResistanceView(doc: CharacterDoc): ChoiceResistanceSlot[] 
       amount: slot.amount,
       options: slot.options,
       picked: slot.selected,
+      ...(slot.choiceFrequency ? { choiceFrequency: slot.choiceFrequency } : {}),
     })
   );
 }
