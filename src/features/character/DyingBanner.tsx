@@ -56,6 +56,7 @@ import { EnteredD20Faces } from "./molecules/EnteredD20Faces";
 import { Icon } from "@/components/ui/icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useForetoldFace } from "./molecules/use-foretold-face";
 
 export function DyingBanner() {
   const { t } = useTranslation();
@@ -75,6 +76,8 @@ export function DyingBanner() {
   // The entered d20 face for the death-save roll entry (clamped 1–20; golden
   // rule 21 — rolled in real life, interpreted here).
   const [firstFace, setFirstFace] = useState(10);
+  // A recorded d20 (Portent) used as the roll, spent with the save.
+  const foretold = useForetoldFace(character);
   const [secondFace, setSecondFace] = useState(10);
   const deathSaveContext = useMemo(
     () => (character ? deathSaveD20Context(character) : null),
@@ -189,6 +192,7 @@ export function DyingBanner() {
             onFirstChange={setFirstFace}
             onSecondChange={setSecondFace}
             singleAriaLabel={t("combat.deathSaveRollAria")}
+            foretold={foretold}
             firstAriaLabel={t("combat.d20FirstAria")}
             secondAriaLabel={t("combat.d20SecondAria")}
             decrementLabel={t("combat.healRollDec")}
@@ -199,6 +203,8 @@ export function DyingBanner() {
             size="sm"
             onClick={() => {
               applyDeathSave(faceCount === 2 ? [firstFace, secondFace] : [firstFace]);
+              if (faceCount === 1) foretold.spend();
+              else foretold.drop();
               setFirstFace(10);
               setSecondFace(10);
             }}

@@ -140,11 +140,9 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     entry: "Burning",
-    status: "gap",
-    evidence: [],
-    note: "#6",
-    waitsFor: ["setOnFire"],
-    gaps: [6],
+    status: "modeled",
+    evidence: ["play-on-fire.test.tsx"],
+    note: "`play/environment.ts` setOnFire / extinguish; the new Play's «In fiamme»; `play-on-fire.test.tsx`",
   },
   {
     entry: "Cantrip",
@@ -338,9 +336,9 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
     entry: "Hazard",
     status: "gap",
     evidence: [],
-    note: "Falling only reaches a screen: #6, #9, #12",
-    waitsFor: ["setOnFire", "holdBreath", "endDays"],
-    gaps: [6, 9, 12],
+    note: "Falling, Burning and Suffocation reach a screen; days without food or water: #12",
+    waitsFor: ["endDays"],
+    gaps: [12],
   },
   {
     entry: "Healing",
@@ -398,11 +396,9 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     entry: "Improvised Weapons",
-    status: "gap",
-    evidence: [],
-    note: "#11",
-    waitsFor: ["improvisedWeaponAttack"],
-    gaps: [11],
+    status: "modeled",
+    evidence: ["improvised-weapon-row.test.ts"],
+    note: "a row beside the Unarmed Strike on both sheets (`improvisedWeaponAttack`)",
   },
   {
     entry: "Incapacitated",
@@ -628,11 +624,9 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   },
   {
     entry: "Suffocation",
-    status: "gap",
-    evidence: [],
-    note: "#9",
-    waitsFor: ["holdBreath"],
-    gaps: [9],
+    status: "modeled",
+    evidence: ["play-hold-breath.test.tsx"],
+    note: "hold breath and choking on the new Play's Condizioni (`hold-breath` / `breathe-again`); `play-hold-breath.test.tsx`",
   },
   {
     entry: "Surprise",

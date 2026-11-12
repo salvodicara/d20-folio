@@ -1036,6 +1036,25 @@
   .fui .f-hero h1 {
     font-size: var(--fs-xl);
   }
+  /* a campaign tab page: one line, the crest and the name; the full header is the
+     landing tab's (the owner's rule: working pages put their content first) */
+  .fui .f-hero[data-compact] {
+    flex-wrap: nowrap;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .fui .f-hero[data-compact] .f-crest {
+    width: 40px;
+    height: 40px;
+  }
+  .fui .f-hero[data-compact] h1 {
+    font-size: var(--fs-lg);
+  }
+  .fui .f-hero[data-compact] .f-hero-sub,
+  .fui .f-hero[data-compact] .f-kv,
+  .fui .f-hero[data-compact] .f-hero-acts {
+    display: none;
+  }
 }
 
 /* ---------- two columns: content and a side column ---------- */
@@ -1965,25 +1984,66 @@
 .fui .f-ability {
   display: grid;
   justify-items: center;
+  align-content: start; /* a tile with its save line and one without keep one baseline */
   gap: 4px;
 }
-.fui .f-ability dd {
+.fui .f-ability > dd {
   margin: 0;
   display: grid;
   justify-items: center;
 }
-.fui .f-ability b {
+.fui .f-ability > dd > b {
   font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
-.fui .f-ability dd span {
+.fui .f-ability > dd > span {
   font-size: var(--fs-sm);
   color: var(--muted);
 }
-/* a proficient save: a dot before the score */
-.fui .f-ability[data-save] dd span::before {
-  content: "• ";
+/* the save under the modifier (D&D Beyond's saving-throw block): «TS +6», gold with a
+   dot when proficient, plain when only a bonus moves it; a tap shows where it comes from */
+.fui .f-ab-save > button {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: 600 var(--fs-sm) var(--font-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.fui .f-ab-save > button::after {
+  content: "";
+  position: absolute;
+  inset: -12px -4px;
+}
+.fui .f-ab-save[data-prof] > button {
   color: var(--gold);
+}
+.fui .f-ab-save[data-prof] > button::before {
+  content: "• ";
+}
+.fui .f-ab-parts {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  min-width: 200px;
+  list-style: none;
+}
+.fui .f-ab-parts > li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.fui .f-ab-parts b {
+  color: var(--strong);
+}
+/* on a phone the label sits under the number, the save under the label */
+@media (max-width: 800px) {
+  .fui .f-sheet .f-ab-save {
+    order: 3;
+  }
 }
 .fui .f-char-stats {
   display: flex;
@@ -2530,8 +2590,10 @@
     /* fixed bounds, not content-sized: the pane's width decides, and a long value
        wraps inside its cell («1d6‑1 / Contundente») instead of pushing the row out */
     grid-template-columns:
-      var(--slot-size) minmax(120px, 1fr) minmax(64px, 112px) minmax(80px, 104px)
-      minmax(96px, 176px) 96px;
+      /* the name column is never narrower than its longest word: «Arma improvvisata»
+         wraps between words, never inside one */
+      var(--slot-size) minmax(min-content, 1fr) minmax(64px, 112px)
+      minmax(80px, 104px) minmax(96px, 176px) 96px;
     column-gap: clamp(8px, 1vw, 12px);
   }
   .fui .f-sheet .f-act-table > .f-act-group {
@@ -2582,11 +2644,11 @@
   color: var(--text);
 }
 /* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
-.fui .f-sheet .f-ability b {
+.fui .f-sheet .f-ability > dd > b {
   font: 700 26px/1.15 var(--font-title);
   color: var(--text);
 }
-.fui .f-sheet .f-ability dd span {
+.fui .f-sheet .f-ability > dd > span {
   letter-spacing: 0.08em;
   color: var(--muted);
 }
@@ -2915,7 +2977,7 @@
   .fui .f-sheet .f-char-id h1 {
     font-size: var(--fs-title-phone);
   }
-  .fui .f-sheet .f-ability b {
+  .fui .f-sheet .f-ability > dd > b {
     font-size: var(--fs-lg);
   }
 }
@@ -2924,7 +2986,7 @@
     font-size: var(--fs-title-bar-m);
   }
   .fui .f-sheet .f-char-stats .f-lbl,
-  .fui .f-sheet .f-ability dt {
+  .fui .f-sheet .f-ability > dt {
     letter-spacing: 0.02em;
   }
 }
@@ -3149,15 +3211,15 @@
   .fui .f-sheet .f-ability {
     gap: 0;
   }
-  .fui .f-sheet .f-ability dt {
+  .fui .f-sheet .f-ability > dt {
     order: 2;
     font-weight: 700;
     color: var(--phone-label);
   }
-  .fui .f-sheet .f-ability b {
+  .fui .f-sheet .f-ability > dd > b {
     color: var(--white);
   }
-  .fui .f-sheet .f-ability dd span {
+  .fui .f-sheet .f-ability > dd > span {
     display: none;
   }
 }
@@ -4226,6 +4288,11 @@
       0 0 0 100vmax var(--scrim),
       0 -8px 32px var(--shade);
   }
+  /* an undo toast never hides the row it is about: the sheet rises above it (the toast
+     rides 72 px up, over «Sezioni», and is about 64 px tall) */
+  .fui.f-app:has(.f-toast) .f-condpop {
+    bottom: 144px;
+  }
 }
 
 /* A fallen companion's «Rianima»: the hint, then a chip per slot that can pay. */
@@ -4844,12 +4911,13 @@
   font: 700 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
 }
+/* a spell slot: the same violet diamond the resources panel draws */
 .fui .f-lvl-pip {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--temp);
-  box-shadow: 0 0 10px var(--temp);
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  background: var(--c-res);
+  box-shadow: 0 0 10px var(--c-res);
 }
 .fui .f-lvl-gain-v {
   display: flex;
@@ -6114,10 +6182,10 @@
     margin-top: 4px;
   }
   /* the value sits on its score without their glyph boxes touching */
-  .fui .f-sheet .f-ability b {
+  .fui .f-sheet .f-ability > dd > b {
     line-height: 1;
   }
-  .fui .f-sheet .f-ability dd {
+  .fui .f-sheet .f-ability > dd {
     gap: 4px;
   }
   .fui .f-sheet .f-badge {
@@ -6351,7 +6419,7 @@
   .fui .f-sheet .f-char {
     padding: 20px 12px;
   }
-  .fui .f-sheet .f-ability dt,
+  .fui .f-sheet .f-ability > dt,
   .fui .f-sheet .f-char-stats .f-lbl {
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -6381,6 +6449,37 @@
   }
 }
 
+/* The table's situations: on a phone one line, the lit chips after a «Situation ▾»
+   disclosure that opens the full set (Foundry's collapsed status-effect tray); the
+   desktop has the width for every chip and shows the plain label. */
+.fui .f-sit-more {
+  display: none;
+}
+@media (max-width: 640px) {
+  .fui .f-situations > .f-chips > .f-lbl {
+    display: none;
+  }
+  .fui .f-sit-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 4px 0 0;
+    background: none;
+    border: 0;
+    color: var(--muted);
+    font: 700 12px var(--font-label);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .fui .f-sit-more[aria-expanded="true"] .f-ic {
+    transform: rotate(180deg);
+  }
+  .fui .f-situations:not([data-open]) .f-chip[aria-pressed="false"] {
+    display: none;
+  }
+}
 /* Touch targets on a phone: at least 44 px (PRODUCT.md; Apple's HIG, WCAG 2.5.5). The
    desktop keeps its 40 px controls; a finger gets the extra 4 px. */
 @media (max-width: 640px) {
@@ -6412,6 +6511,10 @@
     min-height: 44px;
   }
   .fui .attack-outcome-field input {
+    min-height: 44px;
+  }
+  /* the creation steps («1. Classe»): text buttons, the same 44 px a finger needs */
+  .fui .f-steps button {
     min-height: 44px;
   }
 }
@@ -6468,4 +6571,83 @@
 .fui .f-acct-id > span {
   color: var(--text-3);
   overflow-wrap: anywhere;
+}
+
+/* «Note legali» (D&D Beyond's legal pages): one reading column of headed panels; the
+   two CC-BY statements set apart as quotes; each policy behind its own disclosure. */
+.fui .f-legal {
+  display: grid;
+  gap: 24px;
+  max-width: 760px;
+}
+.fui .f-legal .f-pnb {
+  display: grid;
+  gap: 12px;
+  /* the statements carry long bare URLs: they break, never run off a phone */
+  overflow-wrap: anywhere;
+}
+.fui .f-legal blockquote {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 2px solid var(--gold);
+  color: var(--strong);
+}
+.fui .f-legal dl,
+.fui .f-legal dd {
+  margin: 0;
+}
+.fui .f-legal dl {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-legal dt {
+  font-weight: 700;
+  color: var(--strong);
+}
+.fui .f-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.fui .f-legal a {
+  color: var(--gold);
+}
+.fui .f-legal-doc > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.fui .f-legal-doc > summary::-webkit-details-marker {
+  display: none;
+}
+.fui .f-legal-doc > summary > .f-legal-open,
+.fui .f-legal-doc > summary > .f-legal-close {
+  color: var(--gold);
+  font-weight: 700;
+}
+.fui .f-legal-doc[open] > summary > .f-legal-open,
+.fui .f-legal-doc:not([open]) > summary > .f-legal-close {
+  display: none;
+}
+.fui .f-legal-doc[open] > summary {
+  margin-bottom: 12px;
+}
+.fui .f-legal-doc > p {
+  margin: 0 0 12px;
+}
+/* the unknown page: one tile, centred in the page */
+.fui .f-roster-empty.f-notfound {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+.fui .f-notfound .f-tile {
+  max-width: 480px;
+}
+.fui .f-notfound h1 {
+  margin: 0;
 }

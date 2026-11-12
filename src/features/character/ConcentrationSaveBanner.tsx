@@ -26,6 +26,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
 import { Button } from "@/components/ui/button";
 import { EnteredD20Faces } from "./molecules/EnteredD20Faces";
+import { useForetoldFace } from "./molecules/use-foretold-face";
 
 export function ConcentrationSaveBanner() {
   const character = useCharacterStore((state) => state.character);
@@ -68,6 +69,8 @@ function ConcentrationSavePrompt({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const [firstFace, setFirstFace] = useState(10);
+  // A recorded d20 (Portent) used as the roll, spent with the save.
+  const foretold = useForetoldFace(character);
   const [secondFace, setSecondFace] = useState(10);
   // A failed save taken again (Indomitable, Disciplined Survivor): the use picked,
   // spent only when the new roll is applied, in the same undo.
@@ -196,6 +199,7 @@ function ConcentrationSavePrompt({
       .getState()
       .commitPendingConcentrationSave(pending, faces);
     if (!committed) return;
+    const unspend = faceCount === 1 ? foretold.spend() : null;
     const success = committed.result.reviewedOutcome.status === "success";
     const message = t(
       success
@@ -203,7 +207,14 @@ function ConcentrationSavePrompt({
         : "combat.concentrationSaveFailureToast",
       { total: committed.result.total }
     );
-    registerUndoableResult({ message }, committed.undo, commit);
+    registerUndoableResult(
+      { message },
+      () => {
+        unspend?.();
+        return committed.undo();
+      },
+      commit
+    );
   }
 
   return (
@@ -233,6 +244,7 @@ function ConcentrationSavePrompt({
           onFirstChange={setFirstFace}
           onSecondChange={setSecondFace}
           singleAriaLabel={t("combat.concentrationSaveRollAria")}
+          foretold={foretold}
           firstAriaLabel={t("combat.d20FirstAria")}
           secondAriaLabel={t("combat.d20SecondAria")}
           decrementLabel={t("combat.healRollDec")}
