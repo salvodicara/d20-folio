@@ -5,7 +5,7 @@
  * shell until each is rebuilt.
  */
 import { lazy, Suspense } from "react";
-import { Link, Outlet, useNavigate } from "react-router";
+import { Link, Outlet, useMatch, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { AppShell } from "@/ui/AppShell";
 import { initialOf } from "@/ui/initial";
@@ -29,9 +29,14 @@ export function NewAppShell() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
-  // The fight producer brings the rules engine: it starts once the page has loaded,
-  // so the screen's own code and data come first on a slow phone.
-  const background = useAfterLoad();
+  // The fight producer brings the rules engine. On a character sheet it starts at once:
+  // Play reads the live fight and the session log stamps each line with its round (the
+  // sheet loads the engine anyway). Elsewhere it starts once the page has loaded, so the
+  // screen's own code and data come first on a slow phone; it reads the stored fight
+  // when it starts, so nothing that began meanwhile is missed.
+  const onSheet = useMatch("/characters/:characterId/*") !== null;
+  const afterLoad = useAfterLoad();
+  const background = onSheet || afterLoad;
   // A Google account always has a name; the email stands in when it doesn't.
   const name = user?.displayName || user?.email || "";
   return (
