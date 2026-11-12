@@ -71,7 +71,12 @@ function Campaign({ campaignId }: { campaignId: string }) {
   return (
     <>
       <main id="main" className="f-page">
-        <Header campaign={campaign} locale={locale} onCopyInvite={copyInvite} />
+        <Header
+          campaign={campaign}
+          locale={locale}
+          onCopyInvite={copyInvite}
+          compact={tab !== "party"}
+        />
         <Tabs
           label={t("campaignScreen.tabsLabel")}
           items={[
@@ -114,31 +119,39 @@ function Campaign({ campaignId }: { campaignId: string }) {
   );
 }
 
-function Header({
+/** The campaign page's identity: crest, name, characters and Master, the next session. */
+export function Header({
   campaign,
   locale,
   onCopyInvite,
+  compact = false,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
   onCopyInvite: () => void;
+  /** A tab page past the landing one: on a phone the header shrinks to the crest and
+   *  the name, so the tab's content starts on the first screen (a working page). */
+  compact?: boolean;
 }) {
   const { t } = useTranslation();
   const dm = campaign.memberDetails[campaign.dmUid]?.displayName;
   const characters = Object.values(campaign.memberDetails).filter(
     (m) => m.character
   ).length;
-  const next = campaign.nextSessionAt
-    ? new Date(campaign.nextSessionAt).toLocaleString(intlTag(locale), {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : null;
+  // a date already past is not a next session: it reads «da decidere» until a new one
+  const [now] = useState(Date.now);
+  const next =
+    campaign.nextSessionAt && campaign.nextSessionAt > now
+      ? new Date(campaign.nextSessionAt).toLocaleString(intlTag(locale), {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null;
   return (
-    <section className="f-hero" data-identity>
+    <section className="f-hero" data-identity data-compact={compact || undefined}>
       <img
         className="f-crest"
         src={campaign.bannerUrl ?? "/assets/backgrounds/room-war-room.webp"}
