@@ -2,7 +2,7 @@
  * Dev-only fixture loader — live-test the 6 real team sheets in the local
  * `DEV_BYPASS_AUTH` preview without Firebase.
  *
- * Visit `/characters/team-<kebab>` (any pack fixture name below) and the
+ * Visit `/characters/team-<role>` (`team-bard`, `team-paladin`…) and the
  * cockpit renders that imported sheet instead of the bundled MOCK. This is the
  * Phase-1 "dev affordance to load the 6 fixtures" — the canonical MOCK stays the
  * single mock (Golden Rule 13); these are test FIXTURES surfaced for verification,
@@ -17,18 +17,29 @@ import type { CharacterDoc } from "@/types/character";
 import { applyCombatToSession } from "@/lib/combat-state";
 import { packFixtures } from "@pack";
 
-/** Route-id prefix that maps to a team fixture (`team-<fixture-name>`). */
+/** Route-id prefix that maps to a team fixture by its role (`team-bard`). */
 const DEV_FIXTURE_PREFIX = "team-";
 
-/**
- * The fixture ids (without the prefix), for menus / harnesses. The fixture
- * JSONs are personal team data, so they live in the content pack
- * (`content-pack/fixtures/team/`); without the pack there are none.
- */
-export const DEV_FIXTURE_NAMES: readonly string[] = Object.keys(packFixtures).sort();
+/** The pack lists each fixture a second time under `role:<role>` (`role:bard`). */
+const ROLE_KEY = "role:";
 
+/**
+ * The fixture roles (without the prefix), for menus / harnesses. The fixture
+ * JSONs and their keys are personal team data, so they live in the content pack
+ * (`content-pack/fixtures/team/`) and public code names each by its role only;
+ * without the pack there are none.
+ */
+export const DEV_FIXTURE_NAMES: readonly string[] = Object.keys(packFixtures)
+  .filter((key) => key.startsWith(ROLE_KEY))
+  .map((key) => key.slice(ROLE_KEY.length))
+  .sort();
+
+/** The pack key a route id names through its role (`team-bard` → `role:bard`). */
 function fixtureName(id: string): string {
-  return id.startsWith(DEV_FIXTURE_PREFIX) ? id.slice(DEV_FIXTURE_PREFIX.length) : id;
+  const role = id.startsWith(DEV_FIXTURE_PREFIX)
+    ? id.slice(DEV_FIXTURE_PREFIX.length)
+    : id;
+  return `${ROLE_KEY}${role}`;
 }
 
 /** True when the route id names one of the team fixtures. */

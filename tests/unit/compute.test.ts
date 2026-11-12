@@ -1449,7 +1449,7 @@ describe("computeAC", () => {
 
     it("medium armor at EXACTLY the cap carries no why either (DEX 14 → +2 == cap 2)", () => {
       // The boundary: `dexMod > cap` is strict, so a modifier that equals the
-      // ceiling was never clipped. (This is the live santaera-barbarian case.)
+      // ceiling was never clipped. (This is the live barbarian case.)
       const eq: SrdEquipmentRef[] = [{ srdId: "half-plate-armor", equipped: true }];
       const { ac, parts } = computeACDetailed(eq, scores(14), resolve);
       expect(ac).toBe(17);

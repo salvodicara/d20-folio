@@ -61,7 +61,12 @@ function scanFeatAbility(node: unknown): boolean {
   if (Array.isArray(node)) return node.some(scanFeatAbility);
   if (node && typeof node === "object") {
     const record = node as Record<string, unknown>;
-    if (record.spellAbilitySource === "feat" || record.ability === "feat") return true;
+    if (
+      record.spellAbilitySource === "feat" ||
+      record.ability === "feat" ||
+      record.dcAbility === "feat"
+    )
+      return true;
     if (typeof record.formula === "string" && record.formula.includes(FEAT_ABILITY_TOKEN))
       return true;
     return Object.values(record).some(scanFeatAbility);
@@ -95,8 +100,21 @@ export function resolveFeatAbilityGrants(
   const fallback =
     choices.length > 1 ? `max(${choices[0]},${choices[1]})` : (choices[0] ?? "0");
   let changed = false;
+  // A rider's save DC «with the ability increased by this feat» (Brew Poison), at any
+  // depth: answered, only that ability; unanswered, the best of `dcAbilities`.
+  const resolveRiderDc = (g: Grant): Grant => {
+    if (g.type === "while-active") {
+      const inner = g.grants.map(resolveRiderDc);
+      return inner.some((x, i) => x !== g.grants[i]) ? { ...g, grants: inner } : g;
+    }
+    if (g.type !== "damage-rider" || g.save?.dcAbility !== "feat") return g;
+    const save = { ability: g.save.ability, dcAbilities: g.save.dcAbilities };
+    return { ...g, save: ability ? { ...save, dcAbilities: [ability] } : save };
+  };
   const out: Grant[] = [];
-  for (const g of grants) {
+  for (const raw of grants) {
+    const g = resolveRiderDc(raw);
+    if (g !== raw) changed = true;
     if (g.type === "concentration-save-bonus" && g.ability === "feat") {
       changed = true;
       if (ability) out.push({ ...g, ability });

@@ -17,9 +17,9 @@ import {
   watchErrors,
 } from "./helpers";
 
-const STATE = `http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents/users/${PLAYER_BARD}/characters/${SANDBOX_USERS.catalion.characterId}/combat/state`;
+const STATE = `http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents/users/${PLAYER_BARD}/characters/${SANDBOX_USERS.bard.characterId}/combat/state`;
 const TRACKER = "bard-bardic-inspiration";
-/** Catalion's Charisma 17 gives 3 uses. */
+/** Bard's Charisma 17 gives 3 uses. */
 const USES = 3;
 
 type Fields = Record<string, Record<string, unknown>>;
@@ -51,7 +51,7 @@ test("the Bard's first roll from the new sheet regains Bardic Inspiration", asyn
   });
 
   await test.step("the Bard is level 18 with every use spent", async () => {
-    reseedHero(SANDBOX_USERS.catalion, {
+    reseedHero(SANDBOX_USERS.bard, {
       level: 18,
       state: { trackers: { [TRACKER]: USES } },
     });
@@ -59,8 +59,8 @@ test("the Bard's first roll from the new sheet regains Bardic Inspiration", asyn
   });
 
   await test.step("the Bard rolls initiative from its own sheet", async () => {
-    await signInAs(bard, SANDBOX_USERS.catalion.email);
-    await bard.goto(`/characters/${SANDBOX_USERS.catalion.characterId}`);
+    await signInAs(bard, SANDBOX_USERS.bard.email);
+    await bard.goto(`/characters/${SANDBOX_USERS.bard.characterId}`);
     await expect(bard.locator(".f-char")).toBeVisible({ timeout: 60_000 });
     await bard.getByRole("button", { name: "Roll initiative" }).first().click();
     const dialog = bard.locator("dialog[open]");

@@ -18,6 +18,7 @@
  * proficiency / defense / language overrides are a later types decision.
  */
 
+import { PartyAuraChips } from "./PartyAuraChips";
 import { useMemo } from "react";
 import { totalLevel } from "@/lib/classes";
 import { useTranslation } from "react-i18next";
@@ -95,6 +96,8 @@ export function LeftHud() {
   );
   const itemResources = characterDoc?.session.itemResources;
   const fadingPenalties = characterDoc?.session.fadingPenalties;
+  // A party paladin's Aura of Protection on this sheet's saves (a runtime overlay).
+  const partyAura = useCharacterStore((s) => s.character?.session.partyAura);
   // An assumed form changes the scores and saves the rail derives (M2).
   const activeForm = characterDoc?.session.activeForm;
 
@@ -112,6 +115,7 @@ export function LeftHud() {
             itemResources,
             fadingPenalties,
             activeForm,
+            ...(partyAura ? { partyAura } : {}),
           })
         : null,
     [
@@ -121,6 +125,7 @@ export function LeftHud() {
       itemResources,
       fadingPenalties,
       activeForm,
+      partyAura,
     ]
   );
   const savesChecks = useMemo(
@@ -134,6 +139,7 @@ export function LeftHud() {
             itemResources,
             fadingPenalties,
             activeForm,
+            ...(partyAura ? { partyAura } : {}),
           })
         : null,
     [
@@ -145,6 +151,7 @@ export function LeftHud() {
       itemResources,
       fadingPenalties,
       activeForm,
+      partyAura,
     ]
   );
 
@@ -355,6 +362,7 @@ export function LeftHud() {
             );
           })}
         </div>
+        {!isEdit && <PartyAuraChips />}
       </RailSection>
 
       {/* Ability-score editing — edit-mode only (#68). The medallions show the

@@ -3,7 +3,7 @@
  * (owner-ratified 2026-07-03) in REAL Chromium, where jsdom can't reach: the per-phase DIM +
  * the not-your-turn REACTION carve-out are computed-style facts (`opacity`), unreadable in a
  * unit render. It drives the dev-bypass status seed (`d20-dev-pip`, which publishes a
- * {@link makeDevGlobalCombat} status for the dev hero `team-catalion-bard`) and opens that
+ * {@link makeDevGlobalCombat} status for the dev hero `team-bard`) and opens that
  * hero's Play tab, so the band reads the real phase.
  *
  * The matrix pinned here:
@@ -57,7 +57,7 @@ const opacityOf = (page: Page, kind: string) =>
 
 test.describe("cockpit turn band — solo↔encounter precedence", () => {
   test("SOLO: no phase, End Turn live, End Combat present", async ({ page }) => {
-    await bootBand(page, null, "team-catalion-bard");
+    await bootBand(page, null, "team-bard");
     await expect(band(page)).not.toHaveAttribute("data-phase", /.+/);
     await expect(endTurn(page)).toBeEnabled();
     await expect(endCombat(page)).toBeVisible();
@@ -68,7 +68,7 @@ test.describe("cockpit turn band — solo↔encounter precedence", () => {
   test("GATHERING: phase `gathering`, End Turn inert, End Combat absent", async ({
     page,
   }) => {
-    await bootBand(page, "gathering", "team-catalion-bard");
+    await bootBand(page, "gathering", "team-bard");
     await expect(band(page)).toHaveAttribute("data-phase", "gathering");
     await expect(endTurn(page)).toBeDisabled();
     await expect(endCombat(page)).toHaveCount(0);
@@ -79,7 +79,7 @@ test.describe("cockpit turn band — solo↔encounter precedence", () => {
   test("NOT-MY-TURN: phase `waiting`, action dims but the reaction coin stays LIVE", async ({
     page,
   }) => {
-    await bootBand(page, "actorturn", "team-catalion-bard");
+    await bootBand(page, "actorturn", "team-bard");
     await expect(band(page)).toHaveAttribute("data-phase", "waiting");
     await expect(endTurn(page)).toBeDisabled();
     await expect(endCombat(page)).toHaveCount(0);
@@ -96,7 +96,7 @@ test.describe("cockpit turn band — solo↔encounter precedence", () => {
   test("CHARACTER SCOPING: a different hero of the same user reads pure solo", async ({
     page,
   }) => {
-    // The seed fight names `team-catalion-bard`; opening mock-1 (a DIFFERENT hero) must NOT
+    // The seed fight names `team-bard`; opening mock-1 (a DIFFERENT hero) must NOT
     // inherit its combat chrome — the band is solo, End Combat is back.
     await bootBand(page, "actorturn", "mock-1");
     await expect(band(page)).not.toHaveAttribute("data-phase", /.+/);

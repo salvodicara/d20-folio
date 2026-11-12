@@ -10,9 +10,10 @@ import { useTranslation } from "react-i18next";
 
 import { longRestChange } from "@/domains/play/long-rest-change";
 import { prepareList } from "@/domains/play/play-spells-view";
-import { restView, type RestLine } from "@/domains/play/rest-view";
+import { hitDieFloorOf, restView, type RestLine } from "@/domains/play/rest-view";
 import { shortRestHeal } from "@/lib/play/short-rest-healing";
 import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
+import { restCantripSwaps } from "@/lib/rest-cantrip-swap";
 import { PlayRestSummary } from "@/domains/play/ui/PlayRestSummary";
 import { restSummary, type RestSummary } from "@/domains/play/rest-model";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -47,7 +48,10 @@ export function PlayRest({
     kind === "long" && prepareList(doc, locale).levels.length > 0
       ? longRestChange(doc)
       : null;
+  // …and a lineage cantrip may be replaced (High Elf), in the same step
+  const swaps = kind === "long" ? restCantripSwaps(doc).length > 0 : false;
   const heal = shortRestHeal(doc, count, typed);
+  const floor = hitDieFloorOf(doc);
   const pool = hitDicePool(doc.character);
   const range = hitDiceTotalRange(pool, count);
   const dice = hitDiceLabel(pool, count).dice ?? hitDiceLabel(pool).sizes;
@@ -98,12 +102,20 @@ export function PlayRest({
         doc={live}
         summary={summary}
         locale={locale}
-        onDone={() => (change ? setPreparing(true) : onClose())}
+        onDone={() => (change || swaps ? setPreparing(true) : onClose())}
       />
     );
   }
-  if (preparing && change)
-    return <PlayPrepare doc={doc} locale={locale} longRest={change} onClose={onClose} />;
+  if (preparing && (change || swaps))
+    return (
+      <PlayPrepare
+        doc={doc}
+        locale={locale}
+        {...(change ? { longRest: change } : {})}
+        afterLongRest
+        onClose={onClose}
+      />
+    );
   return (
     <Dialog
       open
@@ -156,19 +168,38 @@ export function PlayRest({
           </div>
           {count > 0 && (
             <Field
-              label={t("rest.diceTotal")}
-              inputMode="numeric"
+              label={t(floor ? "rest.diceFaces" : "rest.diceTotal")}
+              inputMode={floor ? "text" : "numeric"}
               autoComplete="off"
               className="f-in f-in-big f-in-short"
               value={typed}
-              help={t("rest.diceTotalHint", { dice })}
+              help={
+                floor
+                  ? t("rest.diceFacesHint", {
+                      dice,
+                      count,
+                      below: floor.floorBelow,
+                      to: floor.floorTo,
+                    })
+                  : t("rest.diceTotalHint", { dice })
+              }
               error={
                 typed.trim() !== "" && !heal.valid
-                  ? t("rest.diceTotalError", { min: range.min, max: range.max })
+                  ? floor
+                    ? t("rest.diceFacesError", { count })
+                    : t("rest.diceTotalError", { min: range.min, max: range.max })
                   : undefined
               }
               onChange={(e) => setTyped(e.target.value)}
             />
+          )}
+          {heal.faces && (
+            <p className="f-help" role="status">
+              {t("rest.diceFacesSum", {
+                faces: heal.faces.join(" + "),
+                total: heal.faces.reduce((sum, face) => sum + face, 0),
+              })}
+            </p>
           )}
           {heal.heal !== null && heal.heal > 0 && (
             <p className="f-note" data-c="res" role="status">

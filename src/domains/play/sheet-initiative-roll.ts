@@ -8,6 +8,8 @@
 import type { TFunction } from "i18next";
 import { applyFirstRollTopUps } from "@/features/character/center/initiative-top-up";
 import type { Locale } from "@/lib/locale";
+import { paidAdvantageFor } from "./paid-advantage";
+import type { CharacterDoc } from "@/types/character";
 
 export function rollInitiativeFromSheet(args: {
   /** Sends the roll to the fight (the campaign move, with its own undo). */
@@ -17,4 +19,9 @@ export function rollInitiativeFromSheet(args: {
 }): void {
   args.send();
   applyFirstRollTopUps(args.t, args.locale);
+}
+
+/** The paid Advantage the sheet holds for its initiative roll (a Luck Point). */
+export function initiativePaidAdvantage(doc: CharacterDoc, locale: Locale, t: TFunction) {
+  return paidAdvantageFor(doc, locale, t, "initiative", "play.roll.paidAdvantage");
 }
