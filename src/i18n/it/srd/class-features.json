@@ -1327,7 +1327,7 @@
   "rogue-thief-supreme-sneak": {
     "description": "Ottieni l'opzione di Colpo Astuto Attacco Nascosto (Costo: 1d6). Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te se concludi il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
     "name": "Furtività Suprema",
-    "gist": "Colpo Astuto Attacco Nascosto (1d6): attaccare non termina Invisibile se finisci al coperto"
+    "gist": "Attacco Nascosto (1d6): attaccare non termina Invisibile se finisci al coperto"
   },
   "rogue-thief-supreme-sneak.grants.stealth-attack": {
     "description": "Se hai la condizione Invisibile dell'azione Nascondersi, questo attacco non termina quella condizione su di te, a patto che tu concluda il turno dietro a Tre Quarti di Copertura o a una Copertura Totale.",
