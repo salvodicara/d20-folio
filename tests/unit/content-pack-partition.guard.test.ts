@@ -110,6 +110,12 @@ const PI_TERMS = [
   "guida del dungeon master",
 ] as const;
 
+/** Any PI term at all: a cheap first pass before the line-by-line one. */
+const PI_ANY = new RegExp(
+  PI_TERMS.map((t) => `\\b${t.replace(/ /g, "\\s")}\\b`).join("|"),
+  "i"
+);
+
 const PI_RES = PI_TERMS.map(
   (t) => [t, new RegExp(`\\b${t.replace(/ /g, "\\s")}\\b`, "i")] as const
 );
@@ -298,12 +304,13 @@ describe("content-pack partition — public-side licensing invariants", () => {
     for (const file of treeFiles()) {
       const rel = file.slice(REPO_ROOT.length + 1);
       if (SANCTIONED.has(rel)) continue;
-      readFileSync(file, "utf8")
-        .split("\n")
-        .forEach((line, i) => {
-          // The location only: a public CI log must never carry the value.
-          if (TREE_RES.some((re) => re.test(line))) offenders.push(`${rel}:${i + 1}`);
-        });
+      const text = readFileSync(file, "utf8");
+      // One pass over the whole file first: only a file with a hit is read by line.
+      if (!TREE_RES.some((re) => re.test(text))) continue;
+      text.split("\n").forEach((line, i) => {
+        // The location only: a public CI log must never carry the value.
+        if (TREE_RES.some((re) => re.test(line))) offenders.push(`${rel}:${i + 1}`);
+      });
     }
     expect(offenders).toEqual([]);
   });
@@ -336,14 +343,15 @@ describe("content-pack partition — public-side licensing invariants", () => {
       for (const file of walk(dir, CODE_EXTS)) {
         const rel = file.slice(REPO_ROOT.length + 1);
         if (rel === "tests/unit/content-pack-partition.guard.test.ts") continue;
-        readFileSync(file, "utf8")
-          .split("\n")
-          .forEach((line, i) => {
-            if (isAllowlistedDocLine(line)) return;
-            if (PI_SANCTIONED.some(([f, re]) => f === rel && re.test(line))) return;
-            for (const term of piHits(line))
-              offenders.push(`${rel}:${i + 1}: PI "${term}"`);
-          });
+        const text = readFileSync(file, "utf8");
+        // One pass over the whole file first: only a file with a hit is read by line.
+        if (!PI_ANY.test(text)) continue;
+        text.split("\n").forEach((line, i) => {
+          if (isAllowlistedDocLine(line)) return;
+          if (PI_SANCTIONED.some(([f, re]) => f === rel && re.test(line))) return;
+          for (const term of piHits(line))
+            offenders.push(`${rel}:${i + 1}: PI "${term}"`);
+        });
       }
     }
     expect(offenders).toEqual([]);
