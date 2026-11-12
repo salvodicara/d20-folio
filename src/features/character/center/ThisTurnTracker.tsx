@@ -35,6 +35,7 @@ import { offerAmmunitionRecovery } from "@/features/character/ammo-recovery-offe
 import { useCombatStore } from "@/stores/combatStore";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { useLocale } from "@/hooks/useLocale";
+import { initiativePaidAdvantage } from "@/domains/play/sheet-initiative-roll";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
   aggregateCharacterGrants,
@@ -129,6 +130,8 @@ export function ThisTurnTracker({
   } = useTurnEconomy();
 
   const character = useCharacterStore((s) => s.character);
+  // A Luck Point paid for the initiative roll still to come: the tap hides its badge.
+  const [paidForRoll, setPaidForRoll] = useState(false);
   // The ONE turn seam: in an active campaign encounter `round` is the SHARED encounter
   // round (resolved from the shell global-combat status) and `phase` distinguishes
   // gathering / my-turn / waiting; solo it is the local `combatStore.round` with
@@ -449,6 +452,12 @@ export function ThisTurnTracker({
   const surprised = isSurprised({ activeFeatures });
   const showSurprise =
     !readonly && (surprised || (!initLocked && initShownRoll === null));
+  // A paid Advantage on the roll still to come (a Luck Point), beside Surprise: one tap
+  // spends it with its undo, and the player rolls two d20s and types the higher.
+  const paidAdvantage =
+    !readonly && !initLocked && initShownRoll === null && !paidForRoll
+      ? initiativePaidAdvantage(character, locale, t)
+      : undefined;
   function toggleSurprise(): void {
     const next = !surprised;
     registerUndoableToast(
@@ -752,6 +761,20 @@ export function ThisTurnTracker({
               </GlossaryTip>
             </span>
           )}
+          {paidAdvantage?.options.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="status-badge sb-toggle"
+              onClick={() => {
+                paidAdvantage.onPay(option.id);
+                setPaidForRoll(true);
+              }}
+              title={t("play.roll.paidAdvantageHint")}
+            >
+              <span className="sb-label">{option.name}</span>
+            </button>
+          ))}
         </div>
 
         <div className="econ" role="group" aria-label={t("combat.economy")}>
