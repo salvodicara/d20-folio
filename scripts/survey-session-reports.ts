@@ -11,7 +11,12 @@
  *     waiting for "Who struck?"), an action on targets with no outcome;
  *   - who wrote: the number of distinct writers and the fewest and most lines one of
  *     them wrote (a player whose device recorded nothing shows as a low count);
- *   - corrections, retractions, hides and moves.
+ *   - corrections, retractions, hides and moves;
+ *   - (v2) whom the damage lines hit (a character, a monster) and whether the hurt
+ *     player recorded it, how many declared hits on monsters could claim a damage line,
+ *     how many lines carry their own fight stamp, and the time gaps between combat
+ *     lines (bucketed): enough to tell a fight nobody started from one whose markers
+ *     the DM's closed page never wrote.
  * It never writes.
  *
  * Output: counts only. Never a name, an id, a path or any text: sessions are listed
@@ -49,10 +54,48 @@ export interface SessionReportRow {
   writers: number;
   fewestLinesByAWriter: number;
   mostLinesByAWriter: number;
+  /** Lines stamped with the fight their device saw, and how many distinct fights. */
+  stampedLines: number;
+  stampedFights: number;
+  damageToCharacter: number;
+  damageToMonster: number;
+  damageWithoutTarget: number;
+  /** Damage to a character recorded by that character's own player. */
+  damageRecordedByTheHurt: number;
+  /** Declared hits (hit, critical, failed, saved) naming a monster: what could claim
+   *  a nameless damage line on that monster. */
+  landedOnMonsters: number;
+  /** Gaps between consecutive combat lines (action, damage, heal, condition,
+   *  concentration, death save), by the recording device's clock. */
+  combatGaps: Record<GapBucket, number>;
 }
 
+type GapBucket = "<1m" | "1-5m" | "5-15m" | "15-60m" | ">60m";
+const GAP_BUCKETS: GapBucket[] = ["<1m", "1-5m", "5-15m", "15-60m", ">60m"];
+const COMBAT_KINDS = new Set([
+  "action",
+  "damage",
+  "heal",
+  "condition",
+  "concentration",
+  "death-save",
+]);
+const LANDED = new Set(["hit", "critical", "failed", "saved"]);
+
+function gapBucket(ms: number): GapBucket {
+  const minutes = ms / 60_000;
+  if (minutes < 1) return "<1m";
+  if (minutes < 5) return "1-5m";
+  if (minutes < 15) return "5-15m";
+  if (minutes < 60) return "15-60m";
+  return ">60m";
+}
+
+const emptyGaps = (): Record<GapBucket, number> =>
+  Object.fromEntries(GAP_BUCKETS.map((b) => [b, 0])) as Record<GapBucket, number>;
+
 export interface SessionReportsSurvey {
-  format: "d20-folio-session-reports-survey-v1";
+  format: "d20-folio-session-reports-survey-v2";
   sessions: number;
   lines: number;
   byKind: Record<string, number>;
@@ -62,6 +105,16 @@ export interface SessionReportsSurvey {
   damageWithoutAttacker: number;
   actionsWithoutOutcome: number;
   sessionsWithoutMarkers: number;
+  /** Sessions with no marker whose lines still carry a fight stamp: a fight was
+   *  running, but no device wrote its markers. */
+  unmarkedSessionsWithStamps: number;
+  stampedLines: number;
+  damageToCharacter: number;
+  damageToMonster: number;
+  damageWithoutTarget: number;
+  damageRecordedByTheHurt: number;
+  landedOnMonsters: number;
+  combatGaps: Record<string, number>;
   unreadable: number;
   perSession: SessionReportRow[];
 }
@@ -71,8 +124,9 @@ const MARKERS = new Set(["encounter-start", "encounter-end", "round-start"]);
 interface Line {
   type: string;
   by: string;
+  at: number | null;
   event: Record<string, unknown> | null;
-  seenFight: boolean;
+  seenFight: string | null;
 }
 
 function readLine(value: unknown): Line | null {
@@ -83,8 +137,9 @@ function readLine(value: unknown): Line | null {
   return {
     type: value.type,
     by: value.by,
+    at: typeof value.at === "number" ? value.at : null,
     event,
-    seenFight: typeof seen?.encounterId === "string",
+    seenFight: typeof seen?.encounterId === "string" ? seen.encounterId : null,
   };
 }
 
@@ -107,7 +162,17 @@ function surveySession(lines: Line[], byKind: Record<string, number>): SessionRe
     writers: 0,
     fewestLinesByAWriter: 0,
     mostLinesByAWriter: 0,
+    stampedLines: 0,
+    stampedFights: 0,
+    damageToCharacter: 0,
+    damageToMonster: 0,
+    damageWithoutTarget: 0,
+    damageRecordedByTheHurt: 0,
+    landedOnMonsters: 0,
+    combatGaps: emptyGaps(),
   };
+  const stamped = new Set<string>();
+  let lastCombatAt: number | null = null;
   const perWriter = new Map<string, number>();
   let inFight = false;
   for (const line of lines) {
@@ -137,11 +202,36 @@ function surveySession(lines: Line[], byKind: Record<string, number>): SessionRe
     }
     if (MARKERS.has(kind)) continue;
     row.events += 1;
-    if (inFight || line.seenFight) row.eventsInFight += 1;
+    if (line.seenFight !== null) {
+      row.stampedLines += 1;
+      stamped.add(line.seenFight);
+    }
+    if (COMBAT_KINDS.has(kind) && line.at !== null) {
+      if (lastCombatAt !== null)
+        row.combatGaps[gapBucket(Math.abs(line.at - lastCombatAt))] += 1;
+      lastCombatAt = line.at;
+    }
+    if (inFight || line.seenFight !== null) row.eventsInFight += 1;
     else row.eventsOutsideFight += 1;
     const e = line.event;
     if (kind === "damage" && e.actor === undefined && e.unattributed !== true)
       row.damageWithoutAttacker += 1;
+    if (kind === "damage") {
+      const target = typeof e.target === "string" ? e.target : null;
+      if (target === null) row.damageWithoutTarget += 1;
+      else if (target.startsWith("pc-")) {
+        row.damageToCharacter += 1;
+        if (target === `pc-${line.by}`) row.damageRecordedByTheHurt += 1;
+      } else row.damageToMonster += 1;
+    }
+    if (
+      kind === "action" &&
+      typeof e.outcome === "string" &&
+      LANDED.has(e.outcome) &&
+      Array.isArray(e.targets) &&
+      e.targets.some((t) => typeof t === "string" && !t.startsWith("pc-"))
+    )
+      row.landedOnMonsters += 1;
     if (
       kind === "action" &&
       Array.isArray(e.targets) &&
@@ -150,6 +240,7 @@ function surveySession(lines: Line[], byKind: Record<string, number>): SessionRe
     )
       row.actionsWithoutOutcome += 1;
   }
+  row.stampedFights = stamped.size;
   const counts = [...perWriter.values()];
   row.writers = counts.length;
   row.fewestLinesByAWriter = counts.length ? Math.min(...counts) : 0;
@@ -161,7 +252,7 @@ export function surveySessionReports(
   documents: readonly MigrationSourceDocument[]
 ): SessionReportsSurvey {
   const survey: SessionReportsSurvey = {
-    format: "d20-folio-session-reports-survey-v1",
+    format: "d20-folio-session-reports-survey-v2",
     sessions: 0,
     lines: 0,
     byKind: {},
@@ -171,6 +262,14 @@ export function surveySessionReports(
     damageWithoutAttacker: 0,
     actionsWithoutOutcome: 0,
     sessionsWithoutMarkers: 0,
+    unmarkedSessionsWithStamps: 0,
+    stampedLines: 0,
+    damageToCharacter: 0,
+    damageToMonster: 0,
+    damageWithoutTarget: 0,
+    damageRecordedByTheHurt: 0,
+    landedOnMonsters: 0,
+    combatGaps: emptyGaps(),
     unreadable: 0,
     perSession: [],
   };
@@ -214,7 +313,19 @@ export function surveySessionReports(
     survey.eventsOutsideFight += row.eventsOutsideFight;
     survey.damageWithoutAttacker += row.damageWithoutAttacker;
     survey.actionsWithoutOutcome += row.actionsWithoutOutcome;
-    if (row.fights === 0) survey.sessionsWithoutMarkers += 1;
+    if (row.fights === 0) {
+      survey.sessionsWithoutMarkers += 1;
+      if (row.stampedLines > 0) survey.unmarkedSessionsWithStamps += 1;
+    }
+    survey.stampedLines += row.stampedLines;
+    survey.damageToCharacter += row.damageToCharacter;
+    survey.damageToMonster += row.damageToMonster;
+    survey.damageWithoutTarget += row.damageWithoutTarget;
+    survey.damageRecordedByTheHurt += row.damageRecordedByTheHurt;
+    survey.landedOnMonsters += row.landedOnMonsters;
+    for (const bucket of GAP_BUCKETS)
+      survey.combatGaps[bucket] =
+        (survey.combatGaps[bucket] ?? 0) + row.combatGaps[bucket];
     survey.perSession.push(row);
   }
   survey.perSession.sort(

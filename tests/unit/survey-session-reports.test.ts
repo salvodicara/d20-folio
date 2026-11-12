@@ -116,6 +116,72 @@ describe("the session-report survey", () => {
     expect(JSON.stringify(survey)).not.toMatch(/secret/);
   });
 
+  it("tells whom damage hit, who recorded it, and which hits could claim it", () => {
+    const survey = surveySessionReports([
+      head([
+        event("ana", { kind: "damage", amount: 5, target: "pc-ana" }),
+        event("dm", { kind: "damage", amount: 4, target: "pc-ana" }),
+        event("dm", { kind: "damage", amount: 3, target: "monster-1" }),
+        event("ana", { kind: "damage", amount: 1 }),
+        event("ana", {
+          kind: "action",
+          actor: "pc-ana",
+          targets: ["monster-1"],
+          outcome: "hit",
+        }),
+        event("ana", {
+          kind: "action",
+          actor: "pc-ana",
+          targets: ["monster-1"],
+          outcome: "miss",
+        }),
+      ]),
+    ]);
+    expect(survey).toMatchObject({
+      damageToCharacter: 2,
+      damageRecordedByTheHurt: 1,
+      damageToMonster: 1,
+      damageWithoutTarget: 1,
+      landedOnMonsters: 1,
+    });
+  });
+
+  it("finds a running fight with no markers through its lines' own stamps", () => {
+    const seen = { seen: { encounterId: "3", round: 1 } };
+    const survey = surveySessionReports([
+      head([
+        event("ana", { kind: "damage", amount: 2 }, seen),
+        event("bo", { kind: "heal", amount: 2 }, seen),
+      ]),
+      head([event("ana", { kind: "heal", amount: 1 })], "camp2/sessionLogs/s2"),
+    ]);
+    expect(survey).toMatchObject({
+      sessionsWithoutMarkers: 2,
+      unmarkedSessionsWithStamps: 1,
+      stampedLines: 2,
+    });
+  });
+
+  it("buckets the time between combat lines", () => {
+    const at = (min: number) => ({ at: min * 60_000 });
+    const survey = surveySessionReports([
+      head([
+        event("ana", { kind: "action", actor: "pc-ana" }, at(0)),
+        event("ana", { kind: "damage", amount: 1 }, { at: 30_000 }),
+        event("bo", { kind: "rest", type: "short" }, at(2)),
+        event("bo", { kind: "heal", amount: 1 }, at(3)),
+        event("bo", { kind: "condition", id: "prone" }, at(90)),
+      ]),
+    ]);
+    expect(survey.combatGaps).toEqual({
+      "<1m": 1,
+      "1-5m": 1,
+      "5-15m": 0,
+      "15-60m": 0,
+      ">60m": 1,
+    });
+  });
+
   it("counts a malformed line as unreadable", () => {
     expect(surveySessionReports([head([{ nope: true }])]).unreadable).toBe(1);
   });
