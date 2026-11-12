@@ -1616,6 +1616,21 @@
 .fui .f-tl > span {
   min-width: 0;
 }
+.fui .f-tl > span:first-of-type {
+  flex: 1;
+}
+.fui .f-tl-amt {
+  flex: none;
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fui .f-tl-amt[data-dir="in"] {
+  color: var(--heal);
+}
+.fui .f-tl-amt[data-dir="out"] {
+  color: var(--hp-r);
+}
 .fui .f-tl-by {
   color: var(--muted);
 }
