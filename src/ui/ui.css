@@ -1036,6 +1036,25 @@
   .fui .f-hero h1 {
     font-size: var(--fs-xl);
   }
+  /* a campaign tab page: one line, the crest and the name; the full header is the
+     landing tab's (the owner's rule: working pages put their content first) */
+  .fui .f-hero[data-compact] {
+    flex-wrap: nowrap;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .fui .f-hero[data-compact] .f-crest {
+    width: 40px;
+    height: 40px;
+  }
+  .fui .f-hero[data-compact] h1 {
+    font-size: var(--fs-lg);
+  }
+  .fui .f-hero[data-compact] .f-hero-sub,
+  .fui .f-hero[data-compact] .f-kv,
+  .fui .f-hero[data-compact] .f-hero-acts {
+    display: none;
+  }
 }
 
 /* ---------- two columns: content and a side column ---------- */
