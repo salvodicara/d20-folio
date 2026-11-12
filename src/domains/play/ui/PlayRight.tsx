@@ -23,7 +23,8 @@ import { openZoneTray } from "@/features/character/center/zone-tray";
 import { foldCombatEffectOps } from "@/lib/combat-effects";
 import { activeZones } from "@/lib/zones";
 import type { Locale } from "@/lib/locale";
-import { buildReport, foldSession } from "@/lib/session-log";
+import { foldSession } from "@/lib/session-log";
+import { sessionReportSections } from "@/lib/session-log/session-report-sections";
 import { renderSessionReport } from "@/lib/views/session-report-view";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -234,7 +235,9 @@ function Report({
   const latest = reports.logs[0];
   const sections = useMemo(
     () =>
-      latest ? buildReport(foldSession(latest.items, { dmUid: campaign.dmUid })) : [],
+      latest
+        ? sessionReportSections(foldSession(latest.items, { dmUid: campaign.dmUid }))
+        : [],
     [latest, campaign.dmUid]
   );
   const blocks = useMemo(() => diaryBlocks(sections), [sections]);

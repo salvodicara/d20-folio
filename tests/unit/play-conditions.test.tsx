@@ -84,6 +84,20 @@ describe("Play conditions panel", () => {
     expect(setExhaustion).toHaveBeenLastCalledWith(0);
   });
 
+  it("Exhaustion changed by hand writes its session-report line", () => {
+    // The real store (earlier tests stub its actions).
+    useCharacterStore.setState(useCharacterStore.getInitialState(), true);
+    const doc = {
+      ...frightened(),
+      session: { ...frightened().session, exhaustion: 2, logEntries: [] },
+    };
+    open(doc);
+    fireEvent.click(screen.getByRole("button", { name: "Increase" }));
+    expect(
+      useCharacterStore.getState().character?.session.logEntries.at(-1)?.event
+    ).toMatchObject({ kind: "exhaustion-change", from: 2, to: 3 });
+  });
+
   it("adds Exhaustion at level 1", () => {
     const setExhaustion = vi.fn();
     useCharacterStore.setState({ setExhaustion });
