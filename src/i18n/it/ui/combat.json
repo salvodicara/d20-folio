@@ -661,6 +661,7 @@
     "rerollActiveBonus": "Ritiro con {{name}} (+{{bonus}}): inserisci il nuovo tiro",
     "rerollSuccessToast": "{{name}}: Concentrazione mantenuta (totale {{total}})",
     "rerollFailureToast": "{{name}}: Concentrazione interrotta (totale {{total}})",
-    "attackResult": "Esito"
+    "attackResult": "Esito",
+    "rerollOffers": "Ritira il tiro salvezza fallito"
   }
 }

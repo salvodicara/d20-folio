@@ -34,7 +34,7 @@ export function buildReport(entries: readonly SessionEntry[]): ReportSection[] {
       });
       continue;
     }
-    if (event.kind === "round-start") continue;
+    if (event.kind === "round-start" || event.kind === "solo-fight") continue;
     const section = current();
     if (event.kind === "encounter-end") {
       if (

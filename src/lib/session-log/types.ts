@@ -45,6 +45,8 @@ export type PlayEvent =
       outcome?: "hit" | "miss" | "critical" | "saved" | "failed";
       /** The damage dealt, typed by the player for an attack with no target in Folio. */
       amount?: number;
+      /** The slot paid above the spell's own level (an upcast): «(slot di 4° livello)». */
+      upcast?: { level: number; pactMagic?: true };
       /** Each target's save (an older reader shows the shared `outcome`, set when every
        *  target agrees), and whether nothing came of it. */
       saves?: SaveResults;
@@ -174,6 +176,10 @@ export type PlayEvent =
     }
   | { kind: "encounter-end"; encounterId: string; outcome?: "victory" | "ended" }
   | { kind: "round-start"; round: number }
+  /** A member started (or ended) a solo fight on their own sheet: no section of its
+   *  own in a campaign report, a strong signal for the inferred fight
+   *  (`inferFights`). Never rendered. */
+  | { kind: "solo-fight"; started: boolean; actor: CombatantId }
   | {
       /** An initiative roll: the raw d20 and its total; `rolledBy: "dm"` when the DM
        *  rolled it for a player who had not (the DM's «Tira per chi manca»). */
