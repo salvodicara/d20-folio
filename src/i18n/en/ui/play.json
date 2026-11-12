@@ -318,8 +318,12 @@
         "weaponMasteries_one": "{{count}} Weapon Mastery",
         "weaponMasteries_other": "{{count}} Weapon Masteries",
         "fightingStyles_one": "{{count}} Fighting Style",
-        "fightingStyles_other": "{{count}} Fighting Styles"
-      }
+        "fightingStyles_other": "{{count}} Fighting Styles",
+        "spellbook_one": "{{count}} spellbook spell",
+        "spellbook_other": "{{count}} spellbook spells"
+      },
+      "spellbookTitle_one": "Add {{count}} spell to your spellbook: it stays unprepared",
+      "spellbookTitle_other": "Add {{count}} spells to your spellbook: they stay unprepared"
     },
     "rollReaction": {
       "toastReroll": "{{name}}: {{target}} rerolls the save",

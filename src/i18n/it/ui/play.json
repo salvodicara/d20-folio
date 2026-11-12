@@ -318,8 +318,12 @@
         "weaponMasteries_one": "{{count}} Padronanza d'Armi",
         "weaponMasteries_other": "{{count}} Padronanze d'Armi",
         "fightingStyles_one": "{{count}} Stile di Combattimento",
-        "fightingStyles_other": "{{count}} Stili di Combattimento"
-      }
+        "fightingStyles_other": "{{count}} Stili di Combattimento",
+        "spellbook_one": "{{count}} incantesimo per il libro",
+        "spellbook_other": "{{count}} incantesimi per il libro"
+      },
+      "spellbookTitle_one": "Aggiungi {{count}} incantesimo al tuo libro: resta non preparato",
+      "spellbookTitle_other": "Aggiungi {{count}} incantesimi al tuo libro: restano non preparati"
     },
     "rollReaction": {
       "toastReroll": "{{name}}: {{target}} ripete il tiro salvezza",

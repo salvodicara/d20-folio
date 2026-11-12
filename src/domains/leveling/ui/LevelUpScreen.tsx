@@ -497,6 +497,7 @@ function Question({
           </span>
         )}
       </h2>
+      {row.help && <p className="f-help">{row.help}</p>}
       <PickGrid
         label={row.title}
         options={row.options}
