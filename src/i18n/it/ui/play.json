@@ -371,7 +371,10 @@
       "theirs": "Round {{round}} · {{name}}"
     },
     "roll": {
-      "surprised": "Sorpreso"
+      "surprised": "Sorpreso",
+      "paidAdvantage": "{{name}} all'Iniziativa",
+      "paidAdvantageHint": "Tira due d20 per l'Iniziativa e scrivi il più alto",
+      "paidAdvantageCheck": "{{name}} sulla prova"
     },
     "defense": {
       "temporary": "temporanea",
