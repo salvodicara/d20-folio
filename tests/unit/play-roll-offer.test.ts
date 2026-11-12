@@ -12,7 +12,11 @@ const campaign = (patch: Partial<CampaignDoc> = {}) =>
   ({
     id: "c1",
     dmUid: "dm",
-    memberDetails: { me: { characterId: "lyra" }, ally: { characterId: "cat" } },
+    // Attached as `attachCharacter` writes it: the id and the party snapshot.
+    memberDetails: {
+      me: { characterId: "lyra", character: { name: "Lyra" } },
+      ally: { characterId: "cat", character: { name: "Cat" } },
+    },
     encounter: null,
     encounterInit: {},
     ...patch,

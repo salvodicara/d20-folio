@@ -100,7 +100,9 @@
   --school-illusion: #a884e0;
   --school-necromancy: #7fb069;
   --school-transmutation: #c07f52;
+  --coin-pp: #bcd8ec; /* platinum: white with a blue cast, never silver's grey */
   --coin-gp: #e9c55a;
+  --coin-ep: #c8d48a; /* electrum: gold-silver with a green cast, never gold */
   --coin-sp: #c9ccd2;
   --coin-cp: #c47a45;
   --toast-bg: rgb(26 22 17 / 0.95);
@@ -1036,6 +1038,25 @@
   .fui .f-hero h1 {
     font-size: var(--fs-xl);
   }
+  /* a campaign tab page: one line, the crest and the name; the full header is the
+     landing tab's (the owner's rule: working pages put their content first) */
+  .fui .f-hero[data-compact] {
+    flex-wrap: nowrap;
+    padding: 12px 16px;
+    gap: 12px;
+  }
+  .fui .f-hero[data-compact] .f-crest {
+    width: 40px;
+    height: 40px;
+  }
+  .fui .f-hero[data-compact] h1 {
+    font-size: var(--fs-lg);
+  }
+  .fui .f-hero[data-compact] .f-hero-sub,
+  .fui .f-hero[data-compact] .f-kv,
+  .fui .f-hero[data-compact] .f-hero-acts {
+    display: none;
+  }
 }
 
 /* ---------- two columns: content and a side column ---------- */
@@ -1150,9 +1171,14 @@
     color-mix(in srgb, var(--coin, var(--coin-gp)) 50%, var(--shade))
   );
 }
-.fui .f-coin[data-coin="sp"],
-.fui .f-coin[data-coin="pp"] {
+.fui .f-coin[data-coin="sp"] {
   --coin: var(--coin-sp);
+}
+.fui .f-coin[data-coin="pp"] {
+  --coin: var(--coin-pp);
+}
+.fui .f-coin[data-coin="ep"] {
+  --coin: var(--coin-ep);
 }
 .fui .f-coin[data-coin="cp"] {
   --coin: var(--coin-cp);
@@ -2571,8 +2597,10 @@
     /* fixed bounds, not content-sized: the pane's width decides, and a long value
        wraps inside its cell («1d6‑1 / Contundente») instead of pushing the row out */
     grid-template-columns:
-      var(--slot-size) minmax(120px, 1fr) minmax(64px, 112px) minmax(80px, 104px)
-      minmax(96px, 176px) 96px;
+      /* the name column is never narrower than its longest word: «Arma improvvisata»
+         wraps between words, never inside one */
+      var(--slot-size) minmax(min-content, 1fr) minmax(64px, 112px)
+      minmax(80px, 104px) minmax(96px, 176px) 96px;
     column-gap: clamp(8px, 1vw, 12px);
   }
   .fui .f-sheet .f-act-table > .f-act-group {
@@ -4605,6 +4633,35 @@
   font-size: var(--fs-sm);
   color: var(--muted);
 }
+/* The step's Back and Next stay on screen while its list scrolls (a wizard's sticky
+   footer, D&D Beyond's builder): a choice and the button that confirms it, together. */
+.fui .f-create-step > .f-pn-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--panel-top);
+  box-shadow: 0 -8px 24px var(--shade);
+}
+/* On phone the classes are compact rows, two columns: the crest beside the name, so the
+   whole list and Next fit far closer to one screen */
+@media (max-width: 640px) {
+  .fui .f-class-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .fui .f-class-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 8px;
+    text-align: start;
+  }
+  .fui .f-class-card .f-crest-art[data-size] {
+    --sz: 40px;
+  }
+}
 /* On phone the step's hint takes its own line above Back and Next. */
 @media (max-width: 640px) {
   .fui .f-create-step .f-pn-foot > .f-help {
@@ -4861,12 +4918,13 @@
   font: 700 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
 }
+/* a spell slot: the same violet diamond the resources panel draws */
 .fui .f-lvl-pip {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--temp);
-  box-shadow: 0 0 10px var(--temp);
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  background: var(--c-res);
+  box-shadow: 0 0 10px var(--c-res);
 }
 .fui .f-lvl-gain-v {
   display: flex;
@@ -6520,4 +6578,106 @@
 .fui .f-acct-id > span {
   color: var(--text-3);
   overflow-wrap: anywhere;
+}
+
+/* «Note legali» (D&D Beyond's legal pages): one reading column of headed panels; the
+   two CC-BY statements set apart as quotes; each policy behind its own disclosure. */
+.fui .f-legal {
+  display: grid;
+  gap: 24px;
+  max-width: 760px;
+}
+.fui .f-legal .f-pnb {
+  display: grid;
+  gap: 12px;
+  /* the statements carry long bare URLs: they break, never run off a phone */
+  overflow-wrap: anywhere;
+}
+.fui .f-legal blockquote {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 2px solid var(--gold);
+  color: var(--strong);
+}
+.fui .f-legal dl,
+.fui .f-legal dd {
+  margin: 0;
+}
+.fui .f-legal dl {
+  display: grid;
+  gap: 12px;
+}
+.fui .f-legal dt {
+  font-weight: 700;
+  color: var(--strong);
+}
+.fui .f-legal-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.fui .f-legal a {
+  color: var(--gold);
+}
+.fui .f-legal-doc > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  min-height: 44px;
+  cursor: pointer;
+  list-style: none;
+}
+.fui .f-legal-doc > summary::-webkit-details-marker {
+  display: none;
+}
+.fui .f-legal-doc > summary > .f-legal-open,
+.fui .f-legal-doc > summary > .f-legal-close {
+  color: var(--gold);
+  font-weight: 700;
+}
+.fui .f-legal-doc[open] > summary > .f-legal-open,
+.fui .f-legal-doc:not([open]) > summary > .f-legal-close {
+  display: none;
+}
+.fui .f-legal-doc[open] > summary {
+  margin-bottom: 12px;
+}
+.fui .f-legal-doc > p {
+  margin: 0 0 12px;
+}
+/* the unknown page: one tile, centred in the page */
+.fui .f-roster-empty.f-notfound {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+}
+.fui .f-notfound .f-tile {
+  max-width: 480px;
+}
+.fui .f-notfound h1 {
+  margin: 0;
+}
+
+/* «Torna alla campagna» above a party member's sheet (the DM's view; D&D Beyond's
+   back-to-campaign link). The phone has it in its own top bar. */
+.fui .f-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+.fui .f-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--gold);
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .fui .f-crumb {
+    display: none;
+  }
 }

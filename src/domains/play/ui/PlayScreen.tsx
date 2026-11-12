@@ -48,6 +48,7 @@ import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import {
   Button,
@@ -89,17 +90,46 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 export function PlayScreen() {
   const { characterId } = useParams<{ characterId: string }>();
   const { t } = useTranslation();
-  const locale = asLocale(useLocale().language);
   useCharacterSubscription(characterId);
   useSessionLogPlayerRecorder(characterId);
   useCollectPickups(characterId);
+  const campaign = useAttachedCampaign(characterId ?? "");
+  return (
+    <PlaySheet
+      characterId={characterId}
+      campaign={campaign}
+      back={{ to: "/characters", label: t("nav.characters") }}
+    />
+  );
+}
+
+/**
+ * The Play sheet itself, for whoever loaded the character into the store: the owner's
+ * route above, or the DM's read-only view of a party member (`MemberSheetScreen`),
+ * which brings its own campaign and its way back.
+ */
+export function PlaySheet({
+  characterId,
+  campaign,
+  back,
+}: {
+  characterId: string | undefined;
+  campaign: CampaignDoc | null;
+  /** The way back; `crumb` also draws it above the sheet on a laptop (the DM's view of
+   *  a member, D&D Beyond's «back to campaign»), where the owner has the app's nav. */
+  back: { to: string; label: string; crumb?: boolean };
+}) {
+  const { t } = useTranslation();
+  const locale = asLocale(useLocale().language);
   const doc = useCharacterStore((s) => s.character);
   const [toast, setToast] = useState<string | null>(null);
   const error = useCharacterStore((s) => s.error);
   useDocumentTitle(doc?.character.name);
-  const campaign = useAttachedCampaign(characterId ?? "");
   const openMenu = useShellMenu();
   const fight = useSheetCombat();
+  // A fight, the table's or a solo one (started, or past round 1): no rest in it.
+  const soloFight = useCombatStore((s) => s.fightStarted || s.round > 1);
+  const inFight = !!fight || soloFight;
   // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
   const [section, setSection] = useState<Section>("actions");
   const [sectionsOpen, setSectionsOpen] = useState(false);
@@ -144,6 +174,8 @@ export function PlayScreen() {
       <Button
         icon="g-rest-short"
         aria-haspopup="dialog"
+        disabled={inFight}
+        title={inFight ? t("play.rest.inFight") : undefined}
         onClick={() => setResting("short")}
       >
         {t("play.rest.short")}
@@ -151,12 +183,14 @@ export function PlayScreen() {
       <Button
         icon="g-rest-long"
         aria-haspopup="dialog"
+        disabled={inFight}
+        title={inFight ? t("play.rest.inFight") : undefined}
         onClick={() => setResting("long")}
       >
         {t("play.rest.long")}
       </Button>
       {/* In a fight the rounds keep the time (prototype: exploration only). */}
-      {!fight && (
+      {!inFight && (
         <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
           {t("play.time.title")}
         </Button>
@@ -171,7 +205,7 @@ export function PlayScreen() {
   return (
     <main id="main" className="f-page f-sheet">
       <PhoneBar>
-        <Link className="f-tb-back" to="/characters" aria-label={t("nav.characters")}>
+        <Link className="f-tb-back" to={back.to} aria-label={back.label}>
           <Icon name="u-back" size={20} />
         </Link>
         <span className="f-tb-gap" />
@@ -185,6 +219,16 @@ export function PlayScreen() {
           <Icon name="u-more" size={20} />
         </button>
       </PhoneBar>
+      {back.crumb && (
+        <div className="f-crumbs">
+          <Link className="f-crumb" to={back.to}>
+            <Icon name="u-back" size={16} />
+            {back.label}
+          </Link>
+          {/* someone else's sheet: every control is read-only, and it says so */}
+          {readonly && <Chip>{t("dmView.readonly")}</Chip>}
+        </div>
+      )}
       <PlayHeader
         doc={doc}
         view={view}

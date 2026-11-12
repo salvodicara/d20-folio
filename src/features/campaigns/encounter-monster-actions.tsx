@@ -22,7 +22,12 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DamageTrayPanel } from "@/components/shared/DamageTrayPanel";
-import { trayRubric, trayTargetFromRow } from "@/components/shared/damage-tray-target";
+import {
+  monsterAttackNotes,
+  trayRubric,
+  trayTargetFromRow,
+} from "@/components/shared/damage-tray-target";
+import { monsterTurnModifiers } from "@/lib/play/monster-turn-modifiers";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { getMonster } from "@/data/monsters";
@@ -209,6 +214,20 @@ function MonsterActionTray({
   );
   const targets = chosen.map((row) => trayTargetFromRow(row, true));
   const dice = monsterActionDice(action, monster.hp).join(" + ");
+  // The states on the monster that change its attack roll (Bane's −1d4, Vicious
+  // Mockery's Disadvantage), read against the one creature it strikes.
+  const attackNotes =
+    action.toHit !== undefined
+      ? monsterAttackNotes(
+          monsterTurnModifiers(
+            context.effectOps,
+            monster.id,
+            chosen.length === 1 ? chosen[0]?.id : undefined
+          ),
+          t,
+          locale
+        )
+      : [];
   const toggle = (id: string) =>
     setPicked((current) => {
       const next = new Set(current);
@@ -228,6 +247,7 @@ function MonsterActionTray({
               bonus: `${action.toHit >= 0 ? "+" : ""}${action.toHit}`,
             })
           : null,
+        ...attackNotes,
         trayRubric(plan, t, locale),
       ]
         .filter(Boolean)

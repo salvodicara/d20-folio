@@ -26,7 +26,7 @@ import { SRD_TOOLS_2024 } from "@/lib/tools";
 import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
 import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import type { ChoicePicks, FeatureChoiceSlots } from "@/lib/feature-choices";
-import { spellPickVM } from "@/lib/views/spell-pick-view";
+import { byLevelThenName, spellPickVM } from "@/lib/views/spell-pick-view";
 import {
   equipmentName,
   featName,
@@ -327,10 +327,10 @@ export function choiceSlotRows(
       title: t(key, { count: slot.count, className }).replace(/<\/?c>/g, ""),
       amount: slot.count,
       picked,
-      options: listAvailableForSlot(slot, excluded).map((sp) => {
-        const vm = spellPickVM(sp, locale);
-        return { id: vm.id, label: vm.name };
-      }),
+      options: listAvailableForSlot(slot, excluded)
+        .map((sp) => spellPickVM(sp, locale))
+        .sort(byLevelThenName(locale))
+        .map((vm) => ({ id: vm.id, label: vm.name })),
     });
   }
   return rows;

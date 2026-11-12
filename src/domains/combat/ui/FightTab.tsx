@@ -34,7 +34,7 @@ import {
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
-import { missingRollers } from "@/features/campaigns/combat-lifecycle";
+import { isAttached, missingRollers } from "@/features/campaigns/combat-lifecycle";
 import { encounterRollFor } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
@@ -91,7 +91,7 @@ export function FightTab({
     {
       uid,
       isDm,
-      hasCharacter: Boolean(campaign.memberDetails[uid]?.characterId),
+      hasCharacter: isAttached(campaign.memberDetails[uid]),
       rolled: campaign.encounterInit?.[uid] != null,
       missing: missingRollers({ ...campaign, encounter }).length,
     },

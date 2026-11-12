@@ -778,8 +778,11 @@ describe("spell-data integrity", () => {
       const explicitCount = /up to (one|two|three|four|five|six) creatures?/i.exec(
         description
       )?.[1];
+      // "One Humanoid you can see", "Choose a Humanoid": only Humanoids are legal.
+      const humanoidOnly = /\b(?:[Oo]ne|[Aa]) Humanoid\b/.test(description);
       expect(spell.targeting, spell.id).toEqual({
         affinity: spell.saveAbility ? "enemy" : "ally",
+        ...(humanoidOnly ? { creatureTypes: ["humanoid"] } : {}),
         maxTargets: explicitCount ? NUMBER_WORDS[explicitCount.toLowerCase()] : 1,
         maxTargetsPerUpcast: 1,
       });

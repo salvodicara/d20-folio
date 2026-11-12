@@ -5,9 +5,11 @@
  * takes it away again, and the offer ends with the turn.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 vi.mock("@/lib/firebase", () => ({}));
+import { PlayTab } from "@/features/character/center/tabs/PlayTab";
+import { makeCharacterDoc } from "./_helpers";
 import { ThisTurnTracker } from "@/features/character/center/ThisTurnTracker";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -48,6 +50,35 @@ describe("which casts can be marked countered", () => {
         }),
       ])
     ).toEqual([]);
+  });
+});
+
+describe("a Counterspell that is itself countered", () => {
+  // Counterspell is a Reaction: when a foe counters it, its slot comes back too.
+  it("the Reaction cast can be marked countered, in a fight", async () => {
+    useCombatStatusStore.getState().set(null, null);
+    useCombatStore.getState().endCombat();
+    const doc = makeCharacterDoc({ classId: "wizard", level: 5 });
+    doc.character.spells = [{ srdId: "counterspell", prepared: true }];
+    doc.character.spellSlots = [{ level: 3, total: 2 }];
+    doc.session.spellSlots = {};
+    doc.session.logEntries = [];
+    useCharacterStore.setState({ character: doc, loading: false, error: null });
+    useCombatStore.setState({ fightStarted: true });
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider>
+          <PlayTab />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^all/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^React: Counterspell/ }));
+    const log = () => useCharacterStore.getState().character?.session.logEntries ?? [];
+    await waitFor(() => expect(log()).toHaveLength(1));
+    expect(counterableCasts(log())).toMatchObject([
+      { entryId: log()[0]?.id, level: 3, pactMagic: false },
+    ]);
   });
 });
 

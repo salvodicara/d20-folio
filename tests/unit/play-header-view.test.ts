@@ -140,11 +140,19 @@ describe("playHeaderView: the saving throws on the ability tiles", () => {
     playHeaderView(doc, "it").abilities.find((a) => a.id === id);
 
   it("a proficient save shows its total (WIS 17, +3 proficiency at level 5: +6)", () => {
-    expect(save(selene, "WIS")).toMatchObject({ save: true, saveTotal: 6, showSave: true });
+    expect(save(selene, "WIS")).toMatchObject({
+      save: true,
+      saveTotal: 6,
+      showSave: true,
+    });
   });
 
   it("a plain save (not proficient, nothing else) shows no total: it is the modifier", () => {
-    expect(save(selene, "STR")).toMatchObject({ save: false, saveTotal: 3, showSave: false });
+    expect(save(selene, "STR")).toMatchObject({
+      save: false,
+      saveTotal: 3,
+      showSave: false,
+    });
   });
 
   it("a paladin's aura lifts a non-proficient save: the total shows, the aura is its own part", () => {

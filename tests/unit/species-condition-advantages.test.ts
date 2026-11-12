@@ -45,6 +45,22 @@ function advantagesFor(id: string) {
   return evaluateGrants([srcFor(id)]).advantages;
 }
 
+describe("Elf — Trance: magic can't put you to sleep (not Fey Ancestry)", () => {
+  // SRD 5.2.1 Trance: "You don't need to sleep, and magic can't put you to sleep."
+  const sleepImmunity = (id: string) =>
+    traitGrants(id).filter(
+      (g) => g.type === "condition-immunity" && g.condition === "unconscious"
+    );
+  it("Trance carries the magical-sleep immunity", () => {
+    expect(sleepImmunity("elf-trance")).toEqual([
+      { type: "condition-immunity", condition: "unconscious", sourceId: "sleep" },
+    ]);
+  });
+  it("Fey Ancestry carries only its Charmed Advantage", () => {
+    expect(sleepImmunity("elf-fey-ancestry")).toEqual([]);
+  });
+});
+
 describe("Elf — Fey Ancestry → Advantage on saves vs Charmed", () => {
   it("carries one advantage-on (save, Charmed) grant", () => {
     const adv = traitGrants("elf-fey-ancestry").filter(
