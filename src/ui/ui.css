@@ -1304,11 +1304,11 @@
   text-overflow: ellipsis;
 }
 .fui .f-srch-k {
-  padding: 0 6px;
+  padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   color: var(--muted);
-  font: 600 var(--fs-xs) / 20px var(--font-text);
+  font: 600 var(--fs-sm) / 20px var(--font-text);
 }
 /* ⌘K holds its height while the hits change (no jumping sheet); the field stays on top
    while the hits scroll under it; on a phone the search is a full-height sheet */
