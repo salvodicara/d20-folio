@@ -68,3 +68,12 @@ fi
 pnpm install --silent
 "$node_bin" "$npm_cli" --prefix functions ci --prefer-offline --no-audit
 git config core.hooksPath .githooks
+
+# The pack repo has no toolchain of its own: its pre-commit lives here and uses the
+# main checkout's Prettier (scripts/pack-hooks/pre-commit). The setting is the pack
+# repo's, shared by every pack worktree, so it points at the main checkout, which
+# outlives any one app worktree. Never set core.hooksPath to /dev/null.
+if [ -e "$pack_repo/.git" ]; then
+  git -C "$pack_repo" config core.hooksPath "$app_main/scripts/pack-hooks"
+  echo "pack hooks -> $app_main/scripts/pack-hooks"
+fi

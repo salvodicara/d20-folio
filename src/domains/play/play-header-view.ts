@@ -14,6 +14,9 @@ import type { Locale } from "@/lib/locale";
 import { currentForm, formNameKind, formSourceKind } from "@/lib/polymorph";
 import { playEffectsView } from "@/domains/play/play-effects-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
+import { localizeBreakdown } from "@/lib/views/combat-action-view";
+import type { BreakdownLine } from "@/lib/value-breakdown";
+import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import {
   localizeBackgroundName,
   localizeClassName,
@@ -30,7 +33,21 @@ export interface PlayHeaderView {
   identity: string[];
   /** The phone's line (prototype x-play-m): each class with its level, then the species. */
   identityShort: string[];
-  abilities: { id: AbilityCode; mod: number; score: number; save: boolean }[];
+  abilities: {
+    id: AbilityCode;
+    mod: number;
+    score: number;
+    /** Proficient in this save. */
+    save: boolean;
+    /** The save as the sheet rolls it (override, Exhaustion and every bonus in). */
+    saveTotal: number;
+    /** The tile shows the total: always when proficient, and whenever something
+     *  moves it off the modifier (an ally's aura, a cloak), as the classic tile does. */
+    showSave: boolean;
+    /** Where the total comes from, a line each (modifier, proficiency, «Aura di Bren
+     *  +3»); empty under a hand-set override. */
+    saveParts: BreakdownLine[];
+  }[];
   numbers: { ac: number; initiative: number; speedFt: number; proficiency: number };
   hp: { current: number; max: number; temp: number };
   concentration: string | null;
@@ -43,7 +60,9 @@ export interface PlayHeaderView {
 export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderView {
   const c = doc.character;
   const n = sheetNumbers(doc);
-  const saves = new Set(c.savingThrows);
+  const saveRows = new Map(
+    deriveSavesAndChecks(c, doc.session).saves.map((row) => [row.id, row])
+  );
   const concentration = doc.session.concentration;
   return {
     name: c.name,
@@ -64,7 +83,21 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
     ],
     abilities: ABILITY_CODES.map((id) => {
       const score = n.abilities[id].total;
-      return { id, mod: abilityModifier(score), score, save: saves.has(id) };
+      const mod = abilityModifier(score);
+      const row = saveRows.get(id);
+      const save = row?.proficient ?? false;
+      const saveTotal = row?.bonus ?? mod;
+      return {
+        id,
+        mod,
+        score,
+        save,
+        saveTotal,
+        showSave: save || saveTotal !== mod,
+        saveParts: row?.breakdownParts
+          ? localizeBreakdown(row.breakdownParts, locale)
+          : [],
+      };
     }),
     numbers: {
       ac: n.ac.total,

@@ -60,6 +60,7 @@ import { applySpellSwap, type SpellSwapChoice } from "@/lib/spell-swap";
 import { applyFeatSpellChange } from "@/lib/feat-spell-change";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
+import { preparedLevelledCount } from "@/lib/wizard-spellbook";
 
 /** What the level asks, as the player answered it (empty / null when not asked). */
 export interface LevelUpPicks {
@@ -348,9 +349,15 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
 
   if (newSpells.length > 0) {
     handledChecklistKeys.push("levelUp.checklistLearnSpells");
-    const spellRefs: SrdSpellRef[] = newSpells.map((id) => ({
+    // A Wizard's picks go into the book: they fill the new prepared limit first, the
+    // rest stay unprepared. Any other class prepares what it picks.
+    const room =
+      classId === "wizard"
+        ? Math.max(0, (levelData?.spellsKnown ?? 0) - preparedLevelledCount(updated))
+        : newSpells.length;
+    const spellRefs: SrdSpellRef[] = newSpells.map((id, i) => ({
       srdId: id,
-      prepared: true,
+      prepared: i < room,
     }));
     updated = { ...updated, spells: [...updated.spells, ...spellRefs] };
   }

@@ -319,6 +319,31 @@ describe("a cast today: it changes the sheet and the turn, one undo restores, on
   });
 });
 
+describe("casting is an act: it ends what ends when you cast", () => {
+  it("a Verbal cantrip cast from hiding ends the Hide's Invisible; undo brings it back", async () => {
+    mountWizard(0);
+    const doc = useCharacterStore.getState().character;
+    if (!doc) throw new Error("no sheet");
+    useCharacterStore.setState({
+      character: {
+        ...doc,
+        session: { ...doc.session, conditions: ["invisible"], hiddenDc: 16 },
+      },
+    });
+    const before = state();
+    // Fire Bolt has a Verbal component.
+    await settle(() =>
+      api?.executeAction({ ...spell("spark", "action", 0), spellId: "fire-bolt" })
+    );
+    const cast = useCharacterStore.getState().character?.session;
+    expect(cast?.conditions).not.toContain("invisible");
+    expect(cast?.hiddenDc).toBeUndefined();
+
+    await settle(() => void useUndoStore.getState().undo());
+    expect(state()).toEqual(before);
+  });
+});
+
 describe("a Concentration swap and its undo (Main Verify regression, combat.spec.ts:223)", () => {
   it("casting a second Concentration spell, then undo, gives the first one back", async () => {
     mountWizard(1);

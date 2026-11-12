@@ -23,6 +23,7 @@ import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
+import { PlaySituations } from "./PlaySituations";
 import { PlayTurnStart } from "./PlayTurnStart";
 import { moves, useFightMove } from "@/domains/combat/ui/fight-moves";
 import {
@@ -268,6 +269,7 @@ function ActionsPane({
   return (
     <>
       <Playbook doc={doc} locale={locale} onShortRest={onShortRest} />
+      <PlaySituations />
       <Filters label={t("play.filterLabel")}>
         {FILTERS.filter((f) => actions.counts[f] > 0).map((f) => (
           <Chip key={f} pressed={filter === f} onClick={() => setFilter(f)}>
@@ -375,7 +377,7 @@ function InventoryPane({
       {coins.length > 0 && (
         <p className="f-coins">
           {coins.map((c) => (
-            <span key={c} className="f-coin" data-c={c}>
+            <span key={c} className="f-coin" data-coin={c}>
               <b>{view.coins[c]}</b> {t(`equipment.currencyAbbr.${c}`)}
             </span>
           ))}
