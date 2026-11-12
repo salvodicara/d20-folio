@@ -577,6 +577,7 @@
       "rowTotal": "Rolled total for {{name}}",
       "saved": "Saved",
       "savedAria": "{{name}} saved",
+      "failed": "Failed",
       "succeeded": "Succeeded",
       "succeededAria": "{{name}} succeeded",
       "conditionSave": "{{condition}} · {{ability}} save DC {{dc}}",
