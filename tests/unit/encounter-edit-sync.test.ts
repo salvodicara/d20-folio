@@ -135,10 +135,20 @@ describe("the DM's fight edits, kept and sent", () => {
     expect(hiddenOn(shown(), "pc-a")).toBe(true);
   });
 
-  it("a failed transaction falls back to the old write, and the edit stays on screen", async () => {
+  it("a transaction that fails once is tried again, never written whole", async () => {
     rebaseMock.mockImplementationOnce(() => Promise.reject(new Error("unavailable")));
     editEncounter("c1", hide("pc-a"));
     await vi.runAllTimersAsync();
+    expect(rebaseMock).toHaveBeenCalledTimes(2);
+    expect(wholeMock).not.toHaveBeenCalled();
+    expect(hiddenOn(server, "pc-a")).toBe(true);
+  });
+
+  it("when every try fails, the old write takes over, and the edit stays on screen", async () => {
+    rebaseMock.mockImplementation(() => Promise.reject(new Error("unavailable")));
+    editEncounter("c1", hide("pc-a"));
+    await vi.runAllTimersAsync();
+    expect(rebaseMock).toHaveBeenCalledTimes(5);
     expect(wholeMock).toHaveBeenCalledTimes(1);
     expect(hiddenOn(shown(), "pc-a")).toBe(true);
   });
