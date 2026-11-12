@@ -4626,6 +4626,35 @@
   font-size: var(--fs-sm);
   color: var(--muted);
 }
+/* The step's Back and Next stay on screen while its list scrolls (a wizard's sticky
+   footer, D&D Beyond's builder): a choice and the button that confirms it, together. */
+.fui .f-create-step > .f-pn-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  background: var(--panel-top);
+  box-shadow: 0 -8px 24px var(--shade);
+}
+/* On phone the classes are compact rows, two columns: the crest beside the name, so the
+   whole list and Next fit far closer to one screen */
+@media (max-width: 640px) {
+  .fui .f-class-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .fui .f-class-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 8px;
+    text-align: start;
+  }
+  .fui .f-class-card .f-crest-art[data-size] {
+    --sz: 40px;
+  }
+}
 /* On phone the step's hint takes its own line above Back and Next. */
 @media (max-width: 640px) {
   .fui .f-create-step .f-pn-foot > .f-help {
