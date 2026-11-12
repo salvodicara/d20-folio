@@ -127,7 +127,12 @@ import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
 import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
 import { DamageTray } from "@/features/character/center/DamageTray";
-import { damageTrayPlan, rollsToHit, savesOnTheLine } from "@/lib/play/damage-tray";
+import {
+  damageTrayPlan,
+  rollsToHit,
+  saveAloneOnTheLine,
+  savesOnTheLine,
+} from "@/lib/play/damage-tray";
 import { useAttackOutcomeStore } from "./attack-outcome-store";
 import { useSaveOutcomeStore } from "./save-outcome-store";
 import { useLocale } from "@/hooks/useLocale";
@@ -1039,6 +1044,13 @@ export function TurnEconomyProvider({
   ): void {
     const store = useSaveOutcomeStore.getState();
     const asked = loggedId ? savesOnTheLine(action, targets, selfCombatantId()) : [];
+    // Cast with nobody named (solo): its one save, and the damage when it deals some.
+    const alone =
+      loggedId && asked.length === 0 ? saveAloneOnTheLine(action, targets) : null;
+    if (loggedId && alone) {
+      store.offer({ logId: loggedId, actionId: action.id, targets: [], alone });
+      return;
+    }
     if (!loggedId || asked.length === 0) {
       store.clear();
       return;
