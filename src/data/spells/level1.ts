@@ -1140,6 +1140,8 @@ export const SRD_SPELLS_LEVEL1: SrdSpellData[] = [
     saveAbility: "CON",
     damageOnSave: "half",
     area: true,
+    // "On a failed save, a creature ... is pushed 10 feet away from you."
+    effects: [{ kind: "forced-movement", direction: "push", feet: 10 }],
     source: "SRD",
   },
   {

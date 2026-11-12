@@ -365,6 +365,12 @@ function TrayTargetRow({
         </div>
       )}
 
+      {plan.failNotes && !row.saved && (
+        <p className="text-xs text-text-muted" data-testid="damage-tray-fail-note">
+          {plan.failNotes.join(" · ")}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-2">
         {plan.effect === "damage" && (
           <Segmented
