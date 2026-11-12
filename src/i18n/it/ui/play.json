@@ -110,6 +110,8 @@
       "changeOne": "Puoi cambiare 1 incantesimo.",
       "changeAny": "Puoi cambiare quelli che vuoi.",
       "keepPrepared": "Tieni così",
+      "cantripTitle": "Dopo il Riposo Lungo",
+      "cantripSwap": "{{source}}: cambia il trucchetto, se vuoi",
       "diceSpent_one": "{{count}} dado → +{{hp}} PF",
       "diceSpent_other": "{{count}} dadi → +{{hp}} PF"
     },
@@ -261,6 +263,7 @@
       "stable": "Stabile: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
       "stableFor": "Stabile da {{minutes}} min: dopo 1d4 ore torna a 1 punto ferita (le ore le tira il tavolo).",
       "addAfter": "Dopo il tiro",
+      "foretold": "Al posto del d20",
       "addBardic": "+ Ispirazione Bardica ({{die}})",
       "secondFace": "Il secondo d20",
       "dieFace": "Quanto hai fatto col {{die}}?",
@@ -318,8 +321,12 @@
         "weaponMasteries_one": "{{count}} Padronanza d'Armi",
         "weaponMasteries_other": "{{count}} Padronanze d'Armi",
         "fightingStyles_one": "{{count}} Stile di Combattimento",
-        "fightingStyles_other": "{{count}} Stili di Combattimento"
-      }
+        "fightingStyles_other": "{{count}} Stili di Combattimento",
+        "spellbook_one": "{{count}} incantesimo per il libro",
+        "spellbook_other": "{{count}} incantesimi per il libro"
+      },
+      "spellbookTitle_one": "Aggiungi {{count}} incantesimo al tuo libro: resta non preparato",
+      "spellbookTitle_other": "Aggiungi {{count}} incantesimi al tuo libro: restano non preparati"
     },
     "rollReaction": {
       "toastReroll": "{{name}}: {{target}} ripete il tiro salvezza",
@@ -414,10 +421,32 @@
       "source": "Aura di {{name}}",
       "chip": "Aura di {{name}} +{{bonus}}",
       "group": "Aure dei paladini",
+      "outside": "Fuori dall'aura",
+      "backIn": "Di nuovo nell'aura",
+      "saves": "+{{bonus}} ai tiri salvezza",
       "onHint": "Vale sui tuoi tiri salvezza; tocca se sei fuori dall'aura di {{name}}",
       "offHint": "Sei fuori dall'aura di {{name}}; tocca quando ci rientri",
       "outToast": "Fuori dall'aura di {{name}}",
       "inToast": "Di nuovo nell'aura di {{name}}"
+    },
+    "fire": {
+      "name": "In fiamme",
+      "situations": "Situazioni",
+      "turnStart": "In fiamme: a inizio turno subisci {{dice}} danni da fuoco (inseriscili in Danni e cure).",
+      "note": "{{dice}} danni da fuoco a ogni inizio turno, finché non si spegne.",
+      "roll": "Rotola a terra (Azione, poi Prono)",
+      "out": "Spento da fuori",
+      "rolled": "Ti rotoli a terra: il fuoco si spegne, sei Prono.",
+      "putOut": "Il fuoco si spegne.",
+      "caught": "Prendi fuoco."
+    },
+    "breath": {
+      "name": "Trattieni il respiro",
+      "choking": "Soffochi",
+      "left_one": "Ancora {{count}} round d'aria",
+      "left_other": "Ancora {{count}} round d'aria",
+      "out": "Senz'aria: a ogni fine turno guadagni 1 livello di Indebolimento.",
+      "again": "Respira di nuovo"
     }
   }
 }

@@ -56,6 +56,10 @@ export interface DamageTrayPlan {
   /** A bigger die against a target missing any Hit Points (Toll the Dead): each
    *  row reads its own die from its target's Hit Points. */
   hurtDice?: { base: string; hurt: string };
+  /** What to roll at the table for the one number, when the action says it (a
+   *  potion's 2d4+2, Fireball's 8d6): the total field's hint. Absent when each row
+   *  reads its own die (`hurtDice`). */
+  dice?: string;
   /** Every damage type, when the action deals more than one (a fire + radiant smite):
    *  the tray can then take one total per type, each meeting its own defense
    *  ({@link rowAmountByType}). */
@@ -242,8 +246,15 @@ export function damageTrayPlan(
   ];
   const split =
     effect !== null && !spec.area && (s.instances ?? 1) > 1 && planTargets.length > 1;
+  const dice =
+    effect === "heal"
+      ? s.healing
+      : effect === "damage" && !s.damageIfHurt
+        ? s.damage
+        : undefined;
   return {
     effect,
+    ...(dice ? { dice } : {}),
     ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),

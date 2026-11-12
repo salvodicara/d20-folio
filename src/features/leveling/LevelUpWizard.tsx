@@ -352,6 +352,7 @@ export function LevelUpWizard() {
     maneuversNeeded,
     canSwapSpell,
     spellsKnownDiff,
+    spellbookPicks,
     cantripsKnownDiff,
     maxSpellLevel,
     existingSpellIds,
@@ -568,7 +569,10 @@ export function LevelUpWizard() {
         id: "spells",
         label: t("levelUp.stepSpells"),
         amount: spellsKnownDiff,
-        rubric: t("levelUp.spells.selectCount_other", { count: spellsKnownDiff }),
+        // A Wizard's picks fill the book, not the prepared spells: say so plainly.
+        rubric: spellbookPicks
+          ? `${t("levelUp.screen.chooseSpellbook", { count: spellsKnownDiff })}. ${t("levelUp.screen.spellbookHelp")}`
+          : t("levelUp.spells.selectCount_other", { count: spellsKnownDiff }),
         pool: learnableSpellVMs(
           {
             classId,
