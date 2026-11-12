@@ -8,7 +8,8 @@
  * combat lines (an attack or a damaging spell, even with no target, damage, a creature
  * down, a death save),
  * each within {@link INFERRED_FIGHT_IDLE_MS} of the one before and with no rest between,
- * recorded by two players or more, is one fight. Every line inside the run's span joins
+ * at least {@link INFERRED_FIGHT_MIN_BLOWS} of them, recorded by two players or more, is
+ * one fight. Every line inside the run's span joins
  * it (the heal between two blows belongs to the fight). A real fight's markers always
  * win: its lines are never re-placed and never join a run.
  *
@@ -33,6 +34,11 @@ export interface InferFightsOptions {
  *  production survey (2026-11-12, 92 gaps between combat lines): 79% under 5 minutes,
  *  14% 5–15 (a slow round at a full table), 7% beyond 15 (a scene change). */
 export const INFERRED_FIGHT_IDLE_MS = 15 * 60 * 1000;
+
+/** The fewest blows a fight has. Two players each striking once, minutes apart, may be
+ *  two scenes (a trap, a barrel smashed); a real fight, however short, gives at least
+ *  one blow per player plus the damage someone takes. */
+export const INFERRED_FIGHT_MIN_BLOWS = 3;
 
 const PREFIX = "inferred-";
 
@@ -72,7 +78,8 @@ export function inferFights(
   let run: (typeof runs)[number] | null = null;
   let lastAt = 0;
   const close = () => {
-    if (run && run.blows >= 2 && run.writers.size >= 2) runs.push(run);
+    if (run && run.blows >= INFERRED_FIGHT_MIN_BLOWS && run.writers.size >= 2)
+      runs.push(run);
     run = null;
   };
   entries.forEach((entry, index) => {

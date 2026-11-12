@@ -85,13 +85,22 @@ describe("inferring a fight nobody started", () => {
       fights([
         line("a1", "ana", 0, hit("pc-ana")),
         line("b1", "ben", 1, hit("pc-ben")),
-        line("a2", "ana", 2 + idle, hit("pc-ana")),
-        line("b2", "ben", 3 + idle, hit("pc-ben")),
-        line("r", "ana", 4 + idle, { kind: "rest", rest: "short", actor: "pc-ana" }),
-        line("a3", "ana", 5 + idle, hit("pc-ana")),
-        line("b3", "ben", 6 + idle, hit("pc-ben")),
+        line("c1", "ana", 2, hit("pc-ana")),
+        line("a2", "ana", 3 + idle, hit("pc-ana")),
+        line("b2", "ben", 4 + idle, hit("pc-ben")),
+        line("c2", "ben", 5 + idle, hit("pc-ben")),
+        line("r", "ana", 6 + idle, { kind: "rest", rest: "short", actor: "pc-ana" }),
+        line("a3", "ana", 7 + idle, hit("pc-ana")),
+        line("b3", "ben", 8 + idle, hit("pc-ben")),
+        line("c3", "ana", 9 + idle, hit("pc-ana")),
       ])
-    ).toEqual(["fight:a1,b1", "fight:a2,b2", "outside:r", "fight:a3,b3"]);
+    ).toEqual(["fight:a1,b1,c1", "fight:a2,b2,c2", "outside:r", "fight:a3,b3,c3"]);
+  });
+
+  it("two blows alone are not a fight: two players' single attacks may be two scenes", () => {
+    expect(
+      fights([line("a1", "ana", 0, hit("pc-ana")), line("b1", "ben", 10, hit("pc-ben"))])
+    ).toEqual(["outside:a1,b1"]);
   });
 
   it("one player alone, or a single blow, is not a fight", () => {
@@ -130,6 +139,7 @@ describe("inferring a fight nobody started", () => {
               actor: "pc-ben",
               outcome: "failure",
             }),
+            line("a1b", "ana", 1, hit("pc-ana")),
             line("s", DM, 2, { kind: "encounter-start", encounterId: "goblins" }),
             line("a2", "ana", 3, hit("pc-ana")),
           ],

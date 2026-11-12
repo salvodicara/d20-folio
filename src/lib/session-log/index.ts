@@ -16,6 +16,7 @@ export { buildReport, type ReportRound, type ReportSection } from "./report";
 export {
   inferFights,
   INFERRED_FIGHT_IDLE_MS,
+  INFERRED_FIGHT_MIN_BLOWS,
   isInferredFight,
   type InferFightsOptions,
 } from "./infer-fights";

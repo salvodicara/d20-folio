@@ -98,6 +98,13 @@ describe("renderSessionReport", () => {
         at: 60_000,
         event: { kind: "damage", amount: 2, target: "pc-ben" },
       },
+      {
+        type: "event",
+        id: "x3",
+        by: "ana",
+        at: 120_000,
+        event: { kind: "damage", amount: 1, target: "pc-ana" },
+      },
     ];
     const report = buildReport(inferFights(foldSession(blows, { dmUid: "dm" })));
     const t = (k: string, a?: Record<string, unknown>) =>
