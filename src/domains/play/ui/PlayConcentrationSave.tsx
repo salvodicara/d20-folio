@@ -22,7 +22,12 @@ import { homebrewText } from "@/lib/views/homebrew-text-view";
 import type { Locale } from "@/lib/locale";
 import { bareActionSpend } from "@/lib/play/cast-payment";
 import { failedD20Savers, type FailedD20Saver } from "@/lib/play/failed-d20";
-import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
+import {
+  HEROIC_INSPIRATION_REROLL_ID,
+  heroicInspirationReroll,
+  rerollOffers,
+  type RerollOffer,
+} from "@/lib/play/roll-reactions";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { beginWholeStateUndo, useCharacterStore } from "@/stores/characterStore";
@@ -92,7 +97,12 @@ function Prompt({
       }).filter(({ action }) => (action.summary.uses?.current ?? 1) > 0),
     [doc, locale]
   );
-  const [rerollWith, setRerollWith] = useState<(typeof offers)[number] | null>(null);
+  // Heroic Inspiration rerolls a die just rolled too: offered with the uses above.
+  const heroic = heroicInspirationReroll(doc, t("character.heroicInspiration"));
+  const choices: Array<RerollOffer<{ id: string; name: string }>> = heroic
+    ? [...offers, heroic]
+    : offers;
+  const [rerollWith, setRerollWith] = useState<(typeof choices)[number] | null>(null);
   const reroll = failedSaveReroll(rerollWith);
   const context = useMemo(
     () => concentrationSaveD20Context(doc, pending, reroll),
@@ -133,7 +143,7 @@ function Prompt({
       return null;
     }
   })();
-  const failsNow = failed !== null && offers.length > 0;
+  const failsNow = failed !== null && choices.length > 0;
   const reactionFree = useCombatStore((s) => !s.reactionUsed);
   const saver = failed && reactionFree ? (failedD20Savers(doc)[0] ?? null) : null;
   const spell = concentrationLabel(pending.spell, locale);
@@ -214,12 +224,14 @@ function Prompt({
     as: NonNullable<typeof reroll>
   ) => {
     const store = useCharacterStore.getState();
-    const spend = bareActionSpend(
-      store.character?.character.spellSlots ?? [],
-      offer.action
-    );
+    const used = offers.find((o) => o.action.id === offer.action.id)?.action;
+    const spend = used
+      ? bareActionSpend(store.character?.character.spellSlots ?? [], used)
+      : null;
     const seal = beginWholeStateUndo();
-    if (spend?.kind === "tracker")
+    if (offer.action.id === HEROIC_INSPIRATION_REROLL_ID)
+      store.setHeroicInspiration(false);
+    else if (spend?.kind === "tracker")
       store.dispatch({
         kind: "spend-tracker",
         trackerId: spend.trackerId,
@@ -318,7 +330,7 @@ function Prompt({
           )}
           {failsNow && (
             <div className="f-chips" role="group" aria-label={t("combat.rerollOffers")}>
-              {offers.map((offer) => (
+              {choices.map((offer) => (
                 <Chip
                   key={offer.action.id}
                   onClick={() => {

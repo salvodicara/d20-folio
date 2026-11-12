@@ -20,6 +20,8 @@ export type DiaryBlock =
       /** Each creature's own name, for its lines. */
       names: Record<string, string>;
       outcome?: "victory" | "ended";
+      /** When it ended (its end marker); absent while it runs. */
+      endedAt?: number;
     };
 
 /** What a rest gives back: these lines right after a rest belong to it. */
@@ -52,6 +54,7 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
           ...new Set(Object.values(section.names).map((n) => n.replace(/\s+\d+$/, ""))),
         ],
         ...(section.outcome ? { outcome: section.outcome } : {}),
+        ...(section.endedAt !== undefined ? { endedAt: section.endedAt } : {}),
       });
       continue;
     }

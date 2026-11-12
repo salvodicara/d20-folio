@@ -10,7 +10,7 @@
     "slotsRestored": "Slot Incantesimo Ripristinati",
     "slotsRestoredValue_one": "{{count}} slot",
     "slotsRestoredValue_other": "{{count}} slot",
-    "trackersReset": "Tracciatori Reimpostati",
+    "trackersReset": "Capacità ricaricate",
     "trackersRestoredValue_one": "{{count}} uso",
     "trackersRestoredValue_other": "{{count}} usi",
     "itemResourcesRecovered": "Risorse degli oggetti magici recuperate",

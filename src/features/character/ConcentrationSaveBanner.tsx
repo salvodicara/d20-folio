@@ -14,8 +14,12 @@ import {
 } from "@/lib/character-d20-tests";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { bareActionSpend } from "@/lib/play/cast-payment";
-import { rerollOffers, type RerollOffer } from "@/lib/play/roll-reactions";
-import type { ResolvedAction } from "@/lib/smart-tracker";
+import {
+  HEROIC_INSPIRATION_REROLL_ID,
+  heroicInspirationReroll,
+  rerollOffers,
+  type RerollOffer,
+} from "@/lib/play/roll-reactions";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { failedD20Savers, type FailedD20Saver } from "@/lib/play/failed-d20";
 import type { Locale } from "@/lib/locale";
@@ -47,7 +51,7 @@ export function ConcentrationSaveBanner() {
 
 /** The kernel's reroll for a picked offer: its source, its bonus, its Advantage. */
 function rerollOf(
-  offer: RerollOffer<ResolvedAction> | null
+  offer: RerollOffer<{ id: string }> | null
 ): FailedSaveReroll | undefined {
   if (!offer) return undefined;
   return {
@@ -82,7 +86,12 @@ function ConcentrationSavePrompt({
       }).filter(({ action }) => (action.summary.uses?.current ?? 1) > 0),
     [character, locale]
   );
-  const [rerollWith, setRerollWith] = useState<(typeof offers)[number] | null>(null);
+  // Heroic Inspiration rerolls a die just rolled too: offered with the uses above.
+  const heroic = heroicInspirationReroll(character, t("character.heroicInspiration"));
+  const choices: Array<RerollOffer<{ id: string; name: string }>> = heroic
+    ? [...offers, heroic]
+    : offers;
+  const [rerollWith, setRerollWith] = useState<(typeof choices)[number] | null>(null);
   const reroll = rerollOf(rerollWith);
   const context = useMemo(
     () => concentrationSaveD20Context(character, pending, rerollOf(rerollWith)),
@@ -146,7 +155,7 @@ function ConcentrationSavePrompt({
 
   // Whether the roll entered now fails: then a reroll the sheet has is offered.
   const failsNow = (() => {
-    if (rerollWith || offers.length === 0) return false;
+    if (rerollWith || choices.length === 0) return false;
     try {
       return (
         resolveCharacterConcentrationSave(character, pending, faces).reviewedOutcome
@@ -160,12 +169,14 @@ function ConcentrationSavePrompt({
   function commitReroll(): void {
     if (!rerollWith || !reroll) return;
     const store = useCharacterStore.getState();
-    const spend = bareActionSpend(
-      store.character?.character.spellSlots ?? [],
-      rerollWith.action
-    );
+    const used = offers.find((o) => o.action.id === rerollWith.action.id)?.action;
+    const spend = used
+      ? bareActionSpend(store.character?.character.spellSlots ?? [], used)
+      : null;
     const seal = beginWholeStateUndo();
-    if (spend?.kind === "tracker") {
+    if (rerollWith.action.id === HEROIC_INSPIRATION_REROLL_ID)
+      store.setHeroicInspiration(false);
+    else if (spend?.kind === "tracker") {
       store.dispatch({
         kind: "spend-tracker",
         trackerId: spend.trackerId,
@@ -264,7 +275,7 @@ function ConcentrationSavePrompt({
       </div>
       {failsNow && (
         <div className="conc-reroll-offers flex flex-wrap items-center gap-2">
-          {offers.map((offer) => (
+          {choices.map((offer) => (
             <Button
               key={offer.action.id}
               variant="primary"

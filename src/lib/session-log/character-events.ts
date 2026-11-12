@@ -156,7 +156,23 @@ export function combatEventToPlayEvent(
       // sheet lines themselves (`sheetSessionEntries`).
       return { kind: "solo-fight", started: event.kind === "fight-start", actor: me };
     case "rest":
-      return { kind: "rest", rest: event.restKind, actor: me };
+      return {
+        kind: "rest",
+        rest: event.restKind,
+        ...(event.hpRegained ? { hpRegained: event.hpRegained } : {}),
+        ...(event.hitDiceSpent ? { hitDiceSpent: event.hitDiceSpent } : {}),
+        ...(event.hitDiceRegained ? { hitDiceRegained: event.hitDiceRegained } : {}),
+        ...(event.recovered?.length ? { recovered: event.recovered } : {}),
+        actor: me,
+      };
+    case "level-up":
+      return {
+        kind: "level-up",
+        from: event.from,
+        to: event.to,
+        classId: event.classId,
+        actor: me,
+      };
     case "time-passes":
       return { kind: "time-passes", minutes: event.minutes, actor: me };
     case "fading-penalty":
