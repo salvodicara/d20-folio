@@ -13,6 +13,8 @@ export {
   type SessionEntry,
 } from "./fold";
 export { buildReport, type ReportRound, type ReportSection } from "./report";
+export { sessionReportSections } from "./session-report-sections";
+export { sheetSessionEntries } from "./sheet-session";
 export {
   inferFights,
   INFERRED_FIGHT_IDLE_MS,

@@ -136,6 +136,11 @@ export function combatEventToPlayEvent(
       };
     case "death-save":
       return { kind: "death-save", outcome: event.outcome, actor: me };
+    case "fight-start":
+    case "fight-end":
+      // A solo fight's bounds: the sheet's own report reads them
+      // (`sheetSessionEntries`); a campaign session has the DM's markers.
+      return null;
     case "rest":
       return { kind: "rest", rest: event.restKind, actor: me };
     case "time-passes":

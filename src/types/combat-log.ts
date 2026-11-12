@@ -213,6 +213,11 @@ export type CombatEvent =
     }
   /** A rest was taken. */
   | { kind: "rest"; restKind: "short" | "long" }
+  /** A solo fight began («Start combat», or the first Initiative roll) or ended («End
+   *  combat»). Each End Turn between them logs its round (`turn-end`). An older reader
+   *  shows its "entry from a newer version" row. */
+  | { kind: "fight-start" }
+  | { kind: "fight-end" }
   /** Minutes passed outside the turn order ("10 minutes pass"). */
   | { kind: "time-passes"; minutes: number }
   /** Mixing potions (the DM's optional d100 table): the roll entered, the potions it
