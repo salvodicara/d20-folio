@@ -31,6 +31,37 @@ const OUTCOMES = new Set(["hit", "miss", "critical", "saved", "failed"]);
 /** The stats this version can name; a newer app's stat reads as an unknown line. */
 const KNOWN_STATS: ReadonlySet<string> = new Set(["ac", "speed"]);
 
+type ActionEvent = Extract<PlayEvent, { kind: "action" }>;
+
+/** A spell is cast; anything else is used. */
+function isCast(event: ActionEvent): boolean {
+  return (
+    event.source !== undefined &&
+    "srd" in event.source &&
+    event.source.srd.kind === "spell"
+  );
+}
+
+/** The targets' saves as one short suffix, like a VTT's chat card: "all targets save:
+ *  no effect", "Goblin fails, Orc saves". No results: `null` (the line stays as is). */
+function savesClause(
+  event: ActionEvent,
+  t: TranslateFn,
+  who: (id: string | undefined) => string
+): string | null {
+  const entries = Object.entries(event.saves ?? {});
+  if (entries.length === 0) return null;
+  const first = entries[0]?.[1];
+  const all = entries.every(([, result]) => result === first);
+  const result =
+    all && entries.length > 1
+      ? t(`sessionReport.saves.${first === "saved" ? "allSaved" : "allFailed"}`)
+      : entries
+          .map(([id, r]) => t(`sessionReport.saves.${r}`, { name: who(id) }))
+          .join(", ");
+  return event.noEffect ? t("sessionReport.saves.noEffect", { result }) : result;
+}
+
 export function localizePlayEvent(
   event: PlayEvent,
   t: TranslateFn,
@@ -42,16 +73,20 @@ export function localizePlayEvent(
     source ? t("sessionReport.withSource", { line, source }) : line;
   switch (event.kind) {
     case "action": {
+      // A spell is cast; anything else is used.
+      const verb = isCast(event) ? "cast" : "action";
       const base = event.targets?.length
-        ? t("sessionReport.actionOn", {
+        ? t(`sessionReport.${verb}On`, {
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
             targets: event.targets.map(who).join(", "),
           })
-        : t("sessionReport.action", {
+        : t(`sessionReport.${verb}`, {
             actor: who(event.actor),
             source: source ?? t("sessionReport.somethingUsed"),
           });
+      const saves = savesClause(event, t, who);
+      if (saves) return `${base} — ${saves}`;
       return event.outcome && OUTCOMES.has(event.outcome)
         ? `${base} — ${t(`sessionReport.outcome.${event.outcome}`)}`
         : base;

@@ -8,6 +8,8 @@
     "withSource": "{{line}} ({{source}})",
     "action": "{{actor}} usa {{source}}",
     "actionOn": "{{actor}} usa {{source}} su {{targets}}",
+    "cast": "{{actor}} lancia {{source}}",
+    "castOn": "{{actor}} lancia {{source}} su {{targets}}",
     "outcome": {
       "hit": "colpito",
       "miss": "mancato",
@@ -79,6 +81,13 @@
       "spent": "{{target}} spende Ispirazione Eroica"
     },
     "initiativeByDm": "Il Master tira per {{actor}}: {{total}}",
-    "initiative": "{{actor}} tira l'iniziativa: {{total}}"
+    "initiative": "{{actor}} tira l'iniziativa: {{total}}",
+    "saves": {
+      "allSaved": "tutti superano il tiro salvezza",
+      "allFailed": "tutti falliscono il tiro salvezza",
+      "saved": "{{name}} supera",
+      "failed": "{{name}} fallisce",
+      "noEffect": "{{result}}: nessun effetto"
+    }
   }
 }
