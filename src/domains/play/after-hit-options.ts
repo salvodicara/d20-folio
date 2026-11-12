@@ -90,6 +90,14 @@ export function maneuverOptionsFor(
   });
 }
 
+/** The attack carries the Sneak Attack rider (the engine decides which attacks do). */
+export function carriesSneakAttack(action: CombatAction): boolean {
+  return (action.weaponFacts?.riders ?? action.riders ?? []).some(
+    (rider) =>
+      rider.spend?.kind === "tracker" && rider.spend.trackerId === SNEAK_ATTACK_ID
+  );
+}
+
 export interface AfterHitOptions {
   riders: ReadonlyArray<RiderVM>;
   mastery: MasteryRiderVM[];
@@ -98,7 +106,7 @@ export interface AfterHitOptions {
 }
 
 /** The options one action offers after a hit. Mastery, Cunning Strike and the
- *  maneuvers ride a weapon; Cunning Strike only its Attack action. */
+ *  maneuvers ride a weapon; Cunning Strike only an Attack action that deals Sneak Attack. */
 export function afterHitOptions(
   action: CombatAction,
   cunningStrike: CunningStrikeVM[],
@@ -108,7 +116,13 @@ export function afterHitOptions(
   return {
     riders: action.weaponFacts?.riders ?? action.riders ?? [],
     mastery: weapon ? (action.masteryRiders ?? []) : [],
-    cunningStrike: weapon && action.type === "action" ? cunningStrike : [],
+    // Cunning Strike rides Sneak Attack (SRD 5.2.1), so only an attack that carries
+    // the Sneak Attack rider offers it: a Finesse or Ranged weapon, or whatever a
+    // feature lets Sneak Attack ride. Never a plain Club or an Unarmed Strike.
+    cunningStrike:
+      weapon && action.type === "action" && carriesSneakAttack(action)
+        ? cunningStrike
+        : [],
     maneuvers: weapon ? maneuvers : [],
   };
 }
