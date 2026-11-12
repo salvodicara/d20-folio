@@ -100,7 +100,9 @@
   --school-illusion: #a884e0;
   --school-necromancy: #7fb069;
   --school-transmutation: #c07f52;
+  --coin-pp: #bcd8ec; /* platinum: white with a blue cast, never silver's grey */
   --coin-gp: #e9c55a;
+  --coin-ep: #c8d48a; /* electrum: gold-silver with a green cast, never gold */
   --coin-sp: #c9ccd2;
   --coin-cp: #c47a45;
   --toast-bg: rgb(26 22 17 / 0.95);
@@ -1169,9 +1171,14 @@
     color-mix(in srgb, var(--coin, var(--coin-gp)) 50%, var(--shade))
   );
 }
-.fui .f-coin[data-coin="sp"],
-.fui .f-coin[data-coin="pp"] {
+.fui .f-coin[data-coin="sp"] {
   --coin: var(--coin-sp);
+}
+.fui .f-coin[data-coin="pp"] {
+  --coin: var(--coin-pp);
+}
+.fui .f-coin[data-coin="ep"] {
+  --coin: var(--coin-ep);
 }
 .fui .f-coin[data-coin="cp"] {
   --coin: var(--coin-cp);
