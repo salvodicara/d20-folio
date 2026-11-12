@@ -120,6 +120,8 @@ const SAMPLES: Record<CombatEventKind, CombatEvent> = {
   rest: { kind: "rest", restKind: "long" },
   "time-passes": { kind: "time-passes", minutes: 10 },
   "turn-end": { kind: "turn-end", round: 3 },
+  "fight-start": { kind: "fight-start" },
+  "fight-end": { kind: "fight-end" },
   "effect-expired": { kind: "effect-expired", sourceId: "barbarian-rage" },
   "tracker-spent": {
     kind: "tracker-spent",
@@ -315,6 +317,8 @@ describe("localizeCombatEvent — every kind routes to a non-empty template", ()
     expect(localize(SAMPLES.rest)).toBe("combatLog.longRest");
     expect(localize({ kind: "rest", restKind: "short" })).toBe("combatLog.shortRest");
     expect(localize(SAMPLES["turn-end"])).toBe('combat.endTurnToast {"round":3}');
+    expect(localize(SAMPLES["fight-start"])).toBe("combatLog.fightStart");
+    expect(localize(SAMPLES["fight-end"])).toBe("combatLog.fightEnd");
   });
 
   it("renders a legacy event's frozen text verbatim", () => {

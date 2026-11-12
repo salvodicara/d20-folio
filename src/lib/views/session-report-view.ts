@@ -284,6 +284,7 @@ export function localizePlayEvent(
     case "encounter-start":
     case "encounter-end":
     case "round-start":
+    case "solo-fight":
       return null;
   }
   // A kind (or stat) written by a newer app version: a neutral line, never a blank row.
