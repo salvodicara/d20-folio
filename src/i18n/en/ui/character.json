@@ -116,6 +116,8 @@
       "saveBonusAria": "{{ability}} saving throw bonus",
       "cycleSkillProf": "Cycle {{skill}} proficiency (none / proficient / expertise)",
       "skillBonusAria": "{{skill}} bonus",
+      "expertiseUntilLongRest": "Expertise until the next Long Rest",
+      "untilLongRestShort": "until Long Rest",
       "auras": "Auras",
       "activePotions": "Active Potions",
       "companions": "Companions"
