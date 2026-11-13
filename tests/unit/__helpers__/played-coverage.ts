@@ -152,7 +152,7 @@ export function playedCoverage(
     { title: "Feats and picked features", rows: pickedFeatures(survey) },
     { title: "Species traits", rows: speciesTraits(survey) },
     {
-      title: "Next two levels",
+      title: "Next four levels",
       rows: Object.entries(survey.upcoming)
         .map(([id, n]) => classFeatureRow(id, n))
         .sort(byPlay),

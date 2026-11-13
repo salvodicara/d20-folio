@@ -1,7 +1,7 @@
 /**
  * The read-only "what do the groups play" survey: counts of classes at their levels,
  * subclasses, species, the catalogue features on the sheets, and the class features
- * each character gains in its next two levels. Catalogue ids and counts only: never a
+ * each character gains in its next four levels. Catalogue ids and counts only: never a
  * user, a character, a name or any free text.
  */
 import { describe, expect, it } from "vitest";
@@ -102,10 +102,12 @@ describe("surveyPlayedContent", () => {
     expect(survey.customItems).toBe(1);
   });
 
-  it("names the class features each character gains in its next two levels", () => {
+  it("names the class features each character gains in its next four levels", () => {
     // Barbarian 8 brings no new feature id of its own; Barbarian 9 brings Brutal
-    // Strike. A Wizard gains its level-2 subclass at 3, so it is not listed by id.
+    // Strike, Barbarian 11 Relentless Rage (four levels ahead: the group levels every
+    // few sessions). A Wizard gains its level-2 subclass at 3, so it is not listed by id.
     expect(survey.upcoming["barbarian-brutal-strike"]).toBe(1);
+    expect(survey.upcoming["barbarian-relentless-rage"]).toBe(1);
     expect(Object.keys(survey.upcoming).every((id) => !id.includes(" "))).toBe(true);
   });
 
