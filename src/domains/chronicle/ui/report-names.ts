@@ -25,9 +25,14 @@ function namesWith(
   };
 }
 
-/** A character's own report (no campaign): every `pc-…` is the character itself. */
+/** A character's own report (no campaign): every `pc-…` is the character itself; any
+ *  other creature is not, so a cast on a monster never reads as cast on the caster. */
 export function useOwnReportNames(name: string, locale: Locale): SessionReportNames {
-  return useMemo(() => namesWith(() => name || undefined, locale), [name, locale]);
+  return useMemo(
+    () =>
+      namesWith((id) => (id.startsWith("pc-") ? name || undefined : undefined), locale),
+    [name, locale]
+  );
 }
 
 /** How the report names people, conditions, spells and sources, in the reader's language. */
