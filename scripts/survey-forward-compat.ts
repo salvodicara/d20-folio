@@ -19,7 +19,9 @@
  * counts; dev characters by count, never by id.
  *
  *   node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts \
- *     --baseline-root /absolute/path/to/the/deployed/release/app
+ *     --baseline-root /absolute/path/to/the/deployed/release/app \
+ *     [--release v0.26.1 --write-fixture tests/unit/__fixtures__/forward-compat-v0.26.1.json]
+ * The fixture freezes the release's accepted shape; the gate test reads it in CI.
  */
 /// <reference types="node" />
 /// <reference types="vite/client" />
@@ -58,7 +60,7 @@ type TriggerEvent = NonNullable<Selected["triggerEvents"]>[number];
 
 /** Every economy category this tree can store on a turn's Action. A `Record` over the
  *  union: a category added to the type and not here fails the type check. */
-const ECONOMY_CATEGORIES: Record<ActionEconomyCategory, true> = {
+export const ECONOMY_CATEGORIES: Record<ActionEconomyCategory, true> = {
   attack: true,
   dash: true,
   disengage: true,
@@ -66,7 +68,10 @@ const ECONOMY_CATEGORIES: Record<ActionEconomyCategory, true> = {
   utilize: true,
   magic: true,
 };
-const TRIGGER_EVENTS: Record<TriggerEvent, true> = { attack: true, "bonus-extend": true };
+export const TRIGGER_EVENTS: Record<TriggerEvent, true> = {
+  attack: true,
+  "bonus-extend": true,
+};
 
 /** A combat/state document as this tree's writer stores it (combat-state-io's
  *  `combatStateWriteData`, without the server timestamp). */
@@ -218,6 +223,42 @@ export function summarize(
   return { closedLists, characters, playStateLists, problems };
 }
 
+/**
+ * The live client's accepted shape, frozen as a fixture so CI can gate on it without the
+ * release checkout: per closed list, the values (of the ones this tree can write) that
+ * the release reads. `tests/unit/forward-compat-gate.test.ts` then requires every value
+ * this tree's writers store to be among them.
+ */
+export interface AcceptedShape {
+  release: string;
+  /** How it was made: the command, so the next release regenerates it the same way. */
+  generatedBy: string;
+  lists: Record<string, string[]>;
+}
+
+export function acceptedShape(
+  release: string,
+  input: CompatInput,
+  live: CompatOutput
+): AcceptedShape {
+  const lists: Record<string, string[]> = {};
+  for (const row of live.cases) {
+    if (row.list === "character" || row.result !== "accepted") continue;
+    (lists[row.list] ??= []).push(row.value);
+  }
+  for (const row of live.lists) {
+    const offered = input.lists.find((l) => l.list === row.list)?.values ?? [];
+    lists[row.list] =
+      "absent" in row ? [] : offered.filter((v) => !row.missing.includes(v));
+  }
+  return {
+    release,
+    generatedBy:
+      "node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts --baseline-root <release app> --release <name> --write-fixture <this file>",
+    lists,
+  };
+}
+
 const run$ = promisify(execFile);
 
 async function run(): Promise<void> {
@@ -248,6 +289,16 @@ async function run(): Promise<void> {
     const live = JSON.parse(await readFile(outFile, "utf8")) as CompatOutput;
     const current = readCases(parseCombatState, input.cases);
     console.log(JSON.stringify(summarize(input, live, current), null, 2));
+    const fixtureIndex = processArgv.indexOf("--write-fixture");
+    const fixture = fixtureIndex > 0 ? processArgv[fixtureIndex + 1] : undefined;
+    const release = processArgv[processArgv.indexOf("--release") + 1];
+    if (fixture && release) {
+      await writeFile(
+        fixture,
+        `${JSON.stringify(acceptedShape(release, input, live), null, 2)}\n`
+      );
+      console.log(`fixture written: ${fixture}`);
+    }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
