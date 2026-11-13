@@ -13,9 +13,8 @@
  * starts a new sitting (`startNewSitting`), so the report holds only this spec's lines.
  *
  * Both players roll their own initiative on their sheets (the turn band's roll), which
- * writes the report's initiative line. The DM's typed roll on the hub card writes none
- * (finding, 2026-11-12): the forgotten encounter's Paladin roll is typed by the DM and
- * has no line.
+ * writes the report's initiative line. The DM's typed roll on the hub card writes one too
+ * (#1162): the forgotten encounter's Paladin roll is typed by the DM, «rolled by the DM».
  */
 import { expect, type Browser, type Page } from "@playwright/test";
 import {
@@ -30,6 +29,7 @@ import {
   startNewSitting,
   test,
   watchErrors,
+  endEncounterOnServer,
 } from "./helpers";
 import {
   BARD_D20,
@@ -44,6 +44,7 @@ import {
   levelUpLine,
   markMiss,
   markSave,
+  dmInitiative,
   ownInitiative,
   PALADIN_D20,
   PALADIN_WEAPON,
@@ -82,14 +83,8 @@ async function openLiveTab(dm: Page): Promise<void> {
 
 /** End a running encounter without a Chronicle entry; then none runs. */
 async function endEncounter(dm: Page): Promise<void> {
-  const end = dm.getByRole("button", { name: "End encounter" });
-  const run = dm.getByRole("button", { name: "Run encounter" });
-  await expect(end.or(run).first()).toBeVisible({ timeout: 60_000 });
-  if (await end.isVisible()) {
-    await end.click();
-    await dm.getByRole("dialog").getByRole("button", { name: "Skip" }).click();
-  }
-  await expect(run).toBeVisible();
+  // Read from the server, not the page (see `endEncounterOnServer`).
+  await endEncounterOnServer(dm);
 }
 
 /** The optional «On whom?» step: no one. */
@@ -147,15 +142,7 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
   const dm = await seat(browser);
 
   await test.step("no encounter is running; the evening starts a new sitting", async () => {
-    await openLiveTab(dm);
     await endEncounter(dm);
-    await dm.reload();
-    await expect(
-      dm.getByRole("button", { name: "Run encounter" }),
-      "the end is on the server"
-    ).toBeVisible({
-      timeout: 30_000,
-    });
     await startNewSitting();
   });
 
@@ -313,10 +300,15 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
         },
         // The solo start makes one blow a fight.
         { heading: "Encounter 2 (inferred)", lines: soloLines() },
-        // Never ended; the DM's typed roll for Paladin writes no line.
+        // Never ended. The DM's typed roll for Paladin is a line too (#1162); the d20 is
+        // the hub's, so only its shape is known. Written at once: in either order.
         {
           heading: "Encounter 3",
-          lines: [ownInitiative(BARD_NAME, forgottenInitiative)],
+          lines: [
+            ownInitiative(BARD_NAME, forgottenInitiative),
+            dmInitiative(PALADIN_NAME),
+          ],
+          unordered: true,
         },
         // The rest leaves the forgotten encounter: after it, outside it.
         { heading: "Outside combat", lines: [`${BARD_NAME} takes a long rest`] },

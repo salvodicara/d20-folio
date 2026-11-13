@@ -17,6 +17,8 @@ import {
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
   signInAs,
+  encounterRunning,
+  endEncounterOnServer,
   startNewSitting,
   test,
   watchErrors,
@@ -110,18 +112,8 @@ test("classic UI: an evening with no fight started reads as one inferred fight a
   await test.step("no encounter is running; the evening starts a new sitting", async () => {
     // An encounter an earlier rehearsal left open would take every line into it.
     const dm = await seat(browser);
-    await dm.goto(`/campaigns/${SANDBOX_CAMPAIGN}`);
-    await dm.getByRole("tab", { name: "Live" }).click();
-    const end = dm.getByRole("button", { name: "End encounter" });
-    const run = dm.getByRole("button", { name: "Run encounter" });
-    await expect(end.or(run).first()).toBeVisible({ timeout: 60_000 });
-    if (await end.isVisible()) {
-      await end.click();
-      await dm.getByRole("dialog").getByRole("button", { name: "Skip" }).click();
-    }
-    await expect(run).toBeVisible();
-    await dm.reload();
-    await expect(run, "the end is on the server").toBeVisible({ timeout: 30_000 });
+    await endEncounterOnServer(dm);
+    expect(await encounterRunning(), "no fight on the server").toBe(false);
     await dm.context().close();
     await startNewSitting();
   });

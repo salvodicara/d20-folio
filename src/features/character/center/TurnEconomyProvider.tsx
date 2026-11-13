@@ -109,6 +109,7 @@ import {
   registerUndoableResult,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { fightKnown, fightKnownSoon } from "@/features/campaigns/context-settled";
 import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
@@ -3141,13 +3142,37 @@ export function TurnEconomyProvider({
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
+    const doc = useCharacterStore.getState().character;
+    // Every turn action enters here. When the campaigns are read and one lists this
+    // character's fight (the pip says «Your turn») but the fight's live status has not
+    // reached the sheet, an action would count on the no-fight turn, and the fight's
+    // arrival would then reset the turn: the Action comes back (classic rehearsal,
+    // 2026-11-13). So it waits, its row busy; still unknown after the wait, nothing is
+    // spent and a toast says why. Before the campaigns are read nothing waits yet: that
+    // window belongs to the settled-context work.
+    if (doc && partyKnown(doc.id) && !fightKnown(doc.id)) {
+      usePartyRosterStore.setState({ castWaiting: action.id });
+      void fightKnownSoon(doc.id).then((known) => {
+        usePartyRosterStore.setState({ castWaiting: null });
+        if (!known) {
+          showToast({ message: t("campaignContext.unread"), duration: 6000 });
+          return;
+        }
+        executeSettled(action, intent);
+      });
+      return;
+    }
+    executeSettled(action, intent);
+  }
+
+  function executeSettled(action: ResolvedAction, intent?: ExecuteActionIntent): void {
+    const doc = useCharacterStore.getState().character;
     // The classic sheet asks which weapon a binding names (a screen that draws its
     // own prompts asks before calling, and passes the weapon).
-    const doc = useCharacterStore.getState().character;
     if (renderPrompts && !intent?.weapon && doc) {
       const step = weaponPickStep(doc, action, locale);
       if (step.kind === "bind") {
-        executeAction(action, { ...intent, weapon: step.weapon });
+        executeSettled(action, { ...intent, weapon: step.weapon });
         return;
       }
       if (step.kind === "ask") {

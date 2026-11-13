@@ -65,6 +65,9 @@ import { concentrationRoundsLeft, deriveStatuses } from "@/lib/status";
 import { useTurnEconomy } from "./useTurnEconomy";
 import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
+import { rollTargetOf, type RollTarget } from "@/features/campaigns/context-settled";
+import { partyKnownSoon } from "@/features/campaigns/party-roster";
+import { useAuthStore } from "@/stores/authStore";
 import { MovementSlider } from "./MovementSlider";
 import {
   DIFFICULT_TERRAIN_COST_PER_FOOT,
@@ -373,20 +376,58 @@ export function ThisTurnTracker({
   // ROLL — the SAME value the campaign encounter + the `combat/state.initiativeRoll`
   // subdoc store. The total (roll + bonus) is DERIVED for display, never stored. The input
   // below edits that raw d20 roll directly; `rollInitiative` receives the raw roll string.
-  function rollInitiative(roll: string) {
-    // "First roll of THIS fight" gates the S4 top-ups: in an encounter that is an empty
-    // `encounterInit` row (`gc.initiativeRoll === null` — a stale SOLO roll lingering in
-    // `combatStore.initiative` is irrelevant, its home is separate now); solo it is the
-    // blank combat-store string.
-    const wasEmpty = gc ? gc.initiativeRoll === null : initiative === "";
+  function rollInitiative(roll: string): Promise<string | null> | undefined {
+    // Encounter or solo. With the fight's status here, the roll goes to it. Before the
+    // shell has read this character's campaigns no fight is visible yet even when the DM
+    // runs one: the roll waits for that read (a few seconds at most; the roller shows it
+    // works) instead of starting a solo fight the DM never sees, then goes to the fight
+    // its campaign lists (`rollTargetOf`: the pip knows the fight before its live status
+    // arrives) or solo (rehearsal on CI, 2026-11-13). Still unread after the wait:
+    // nothing is written and the roller says why, keeping the typed roll (a wrong solo
+    // write is the defect; no write is the safe failure).
+    const characterId = character?.id;
+    const uid = useAuthStore.getState().user?.uid;
     if (gc) {
+      const myUid = gc.myId.startsWith("pc-") ? gc.myId.slice(3) : gc.myId;
+      commitInitiative(roll, {
+        kind: "fight",
+        campaignId: gc.campaignId,
+        uid: myUid,
+        firstRoll: gc.initiativeRoll === null,
+      });
+      return undefined;
+    }
+    const target =
+      roll === "" || !characterId
+        ? ({ kind: "solo" } as const)
+        : uid
+          ? rollTargetOf(characterId, uid)
+          : null;
+    if (target) {
+      commitInitiative(roll, target);
+      return undefined;
+    }
+    return partyKnownSoon(characterId ?? "").then(() => {
+      const known = characterId && uid ? rollTargetOf(characterId, uid) : null;
+      if (!known) return t("character.initiativeFightUnread");
+      commitInitiative(roll, known);
+      return null;
+    });
+  }
+
+  function commitInitiative(roll: string, target: RollTarget) {
+    // "First roll of THIS fight" gates the S4 top-ups: in an encounter that is an empty
+    // `encounterInit` row (a stale SOLO roll lingering in `combatStore.initiative` is
+    // irrelevant, its home is separate now); solo it is the blank combat-store string.
+    const wasEmpty = target.kind === "fight" ? target.firstRoll : initiative === "";
+    if (target.kind === "fight") {
       // ENCOUNTER — the roll's ONE home is the campaign doc's `encounterInit` table
       // (the member's own-row grant / the DM's unconstrained branch both authorize it).
       // Dynamic import so this module's static graph stays Firebase-free (the same
       // discipline as `advanceSharedTurn`). NEVER written to the combat store/subdoc —
       // that would resurrect the dual-home drift this re-architecture deleted.
-      const myUid = gc.myId.startsWith("pc-") ? gc.myId.slice(3) : gc.myId;
-      const campaignId = gc.campaignId;
+      const myUid = target.uid;
+      const campaignId = target.campaignId;
       const value = roll === "" ? null : Number(roll);
       // The sheet's own bonus, the one its chip shows: the fight's row has it only once
       // the party's sheets are read (0 before), and the stored roll is the raw d20.

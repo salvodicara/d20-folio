@@ -37,8 +37,11 @@ export function InitVital({
   bonus: number;
   canEdit: boolean;
   name: string;
-  /** Yields the raw d20 ROLL (`null` clears) — never the total. */
-  onCommit: (roll: number | null) => void;
+  /** Yields the raw d20 ROLL (`null` clears) — never the total. A commit that must wait
+   *  (the sheet's roll before its campaigns are read) returns a promise: the roller shows
+   *  it is working, then closes, or stays open with the typed roll and the message the
+   *  promise resolves with. */
+  onCommit: (roll: number | null) => unknown;
   /** Set ONLY when this tile lives inside a popover the CALLER owns (the {@link CombatPip}
    *  loud-tier roller, mounted `autoEdit`). A dismissal (Enter / Escape) CLOSES the caller's
    *  popover via this callback. In that mode the CALLER is the SOLE committer: it reads the
@@ -67,6 +70,9 @@ export function InitVital({
   // never a destructive reset). `value` IS the raw d20 roll, never the total; "" stays blank.
   const seed = value === null ? "" : String(value);
   const [editing, setEditing] = useState(autoEdit);
+  // A commit in flight (the roller is busy) and what it said when it could not commit.
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
   const [draft, setDraft] = useState(seed); // autoEdit (pip popover) mounts pre-filled too
   const inputRef = useRef<HTMLInputElement>(null);
   // The LIVE draft mirror the close-time commit reads — kept current SYNCHRONOUSLY in the
@@ -103,8 +109,26 @@ export function InitVital({
   // The TOTAL shown when not editing = the stored raw roll + the engine bonus.
   const total = value === null ? null : value + bonus;
 
+  /** Commit the typed roll, then `done` (close). A commit that waits keeps the roller open
+   *  and busy; one that resolves with a message keeps it open with the roll and the note. */
+  function commit(done: () => void): void {
+    const result = onCommit(parseRoll(draftRef.current));
+    if (!(result instanceof Promise)) {
+      done();
+      return;
+    }
+    setBusy(true);
+    setNote(null);
+    void (result as Promise<string | null>).then((message) => {
+      setBusy(false);
+      if (message) setNote(message);
+      else done();
+    });
+  }
+
   function start(): void {
     cancelRef.current = false;
+    setNote(null);
     setDraftLive(seed); // re-open pre-fills the committed roll (selected on focus → overtype)
     setEditing(true);
   }
@@ -115,8 +139,9 @@ export function InitVital({
   // Escape-cancel behaviours all hold. (The autoEdit / pip path never reaches here — its caller
   // owns the popover AND the commit.)
   function close(): void {
-    if (!cancelRef.current) onCommit(parseRoll(draftRef.current));
-    setEditing(false);
+    if (busy) return; // the roll in flight decides whether the roller closes
+    if (cancelRef.current) setEditing(false);
+    else commit(() => setEditing(false));
   }
 
   // Escape CANCELS — mark it at the CAPTURE phase, BEFORE Radix's Escape handler fires
@@ -144,7 +169,11 @@ export function InitVital({
   // card the popover this tile OWNS (below), and for the CombatPip loud-tier roller
   // (`autoEdit`) the caller-owned popover. NEVER placed in the card's flow (the reflow bug).
   const editBox = (
-    <span className="vital vital-init vital-init-edit" data-density="chip">
+    <span
+      className="vital vital-init vital-init-edit"
+      data-density="chip"
+      aria-busy={busy || undefined}
+    >
       <span className="vi-edit-row">
         <span className="vi-input">
           <input
@@ -152,6 +181,7 @@ export function InitVital({
             type="text"
             inputMode="numeric"
             value={draft}
+            readOnly={busy}
             onChange={(e) => setDraftLive(e.target.value.replace(/[^\d]/g, ""))}
             onFocus={(e) => e.target.select()}
             onKeyDown={(e) => {
@@ -162,9 +192,13 @@ export function InitVital({
               // `cancelRef`, so neither this nor the caller's close-commit fires).
               if (e.key === "Enter") {
                 e.preventDefault();
-                if (!cancelRef.current) onCommit(parseRoll(draftRef.current));
-                if (onDismiss) onDismiss();
-                else setEditing(false);
+                if (busy) return;
+                const dismiss = () => {
+                  if (onDismiss) onDismiss();
+                  else setEditing(false);
+                };
+                if (cancelRef.current) dismiss();
+                else commit(dismiss);
               } else if (e.key === "Escape") {
                 cancelRef.current = true;
                 if (onDismiss) onDismiss();
@@ -182,6 +216,11 @@ export function InitVital({
         >{`${bonusLabel} = ${liveTotal ?? "—"}`}</span>
       </span>
       <StatLabel icon={Dices} acronym={acr} />
+      {note && (
+        <span className="vi-note" role="alert">
+          {note}
+        </span>
+      )}
     </span>
   );
 

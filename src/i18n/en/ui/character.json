@@ -209,6 +209,7 @@
     "flatDamageReduction": "{{types}} −{{amount}}",
     "flatDamageReductionInHeavyArmor": "in heavy armor",
     "deadLabel": "Dead",
-    "stableLabel": "0 HP · Stable"
+    "stableLabel": "0 HP · Stable",
+    "initiativeFightUnread": "Can't read the campaign's fight yet. Try again in a moment."
   }
 }
