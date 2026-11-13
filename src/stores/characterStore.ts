@@ -3489,7 +3489,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const features = character.character.features;
-    const index = features.findIndex((f) => !("custom" in f) && f.srdId === featId);
+    // A feat taken twice: answer the copy still unanswered, the one the banner lists.
+    const copies = features.flatMap((f, i) =>
+      !("custom" in f) && f.srdId === featId ? [i] : []
+    );
+    const index =
+      copies.find((i) => {
+        const f = features[i];
+        return f !== undefined && !("custom" in f) && !f.featAbility;
+      }) ??
+      copies[0] ??
+      -1;
     const feat = features[index];
     if (!feat || "custom" in feat || feat.featAbility === ability) return;
     const next = [...features];
