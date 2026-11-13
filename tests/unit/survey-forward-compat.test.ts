@@ -17,9 +17,13 @@ describe("the forward-compat check", () => {
   it("writes one document per value of each closed list, and every dev character", () => {
     const byList = (list: string) =>
       input.cases.filter((c) => c.list === list).map((c) => c.value);
+    // Built through the real turn writer (snapshotTurnEconomy): «magic» is never stored
+    // (#1168), so it is no case (coordinator, 2026-11-13: the survey reported it refused).
     expect(byList("turnEconomy.action.economyCategory")).toEqual(
-      expect.arrayContaining(["attack", "magic"])
+      expect.arrayContaining(["attack", "dash", "disengage", "hide", "utilize"])
     );
+    expect(byList("turnEconomy.action.economyCategory")).not.toContain("magic");
+    expect(input.notStored["turnEconomy.action.economyCategory"]).toEqual(["magic"]);
     expect(byList("turnEconomy.action.triggerEvents")).toEqual([
       "attack",
       "bonus-extend",
@@ -31,7 +35,7 @@ describe("the forward-compat check", () => {
     const live = {
       cases: readCases(
         (doc) =>
-          JSON.stringify(doc).includes('"magic"')
+          JSON.stringify(doc).includes('"hide"')
             ? {
                 ok: false,
                 reason: "invalid-combat-state",
@@ -51,10 +55,21 @@ describe("the forward-compat check", () => {
       readCases(() => ({ ok: true }), input.cases)
     );
     expect(survey.closedLists["turnEconomy.action.economyCategory"]?.refused).toEqual({
-      magic: "canonical:turnEconomy",
+      hide: "canonical:turnEconomy",
     });
     expect(survey.playStateLists.conditions).toEqual(["dazed"]);
     expect(survey.problems).toBe(2);
+  });
+
+  it("a value the writer never stores is information, never a problem", () => {
+    const allRead = readCases(() => ({ ok: true }), input.cases);
+    const survey = summarize(
+      input,
+      { cases: allRead, lists: [{ list: "damage types", missing: [] }] },
+      allRead
+    );
+    expect(survey.notStored["turnEconomy.action.economyCategory"]).toEqual(["magic"]);
+    expect(survey.problems).toBe(0);
   });
 
   it("this tree's own reader reads its dev characters", () => {
