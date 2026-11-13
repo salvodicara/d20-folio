@@ -13356,6 +13356,11 @@ textarea.input.sess-notes-edit {
   opacity: 0.4;
   cursor: not-allowed;
 }
+/* Busy is "working", not "not allowed": full colour, the progress cursor. */
+.cc-btn[aria-busy="true"]:disabled {
+  opacity: 1;
+  cursor: progress;
+}
 /* B2 — a condition-blocked CTA DIMS but stays tappable (the post-tap toast is the
    backstop, override-first), so it can't use `:disabled`. The dimmed state reads
    as "not right now" without locking the player out of their own adjudication. */
