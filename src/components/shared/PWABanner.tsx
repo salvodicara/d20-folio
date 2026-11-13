@@ -3,7 +3,8 @@
  *
  * Shows contextual banners for PWA state:
  * 1. Offline indicator (when browser goes offline)
- * 2. Install prompt (when PWA can be installed and user hasn't dismissed)
+ * 2. A new version is ready (the service worker updated under this page): Reload
+ * 3. Install prompt (when PWA can be installed and user hasn't dismissed)
  *
  * ANCHORED to the viewport bottom on EVERY viewport via the `.pwa-dock` folio
  * recipe (it is mounted after the router in `App.tsx`, so in static flow it
@@ -19,9 +20,10 @@
  * realm switcher stays tappable while offline.
  */
 
-import { useEffect, useRef } from "react";
-import { WifiOff, Download, X } from "lucide-react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+import { WifiOff, Download, RefreshCw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { appUpdate } from "@/app/app-update";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useSaveStore } from "@/stores/saveStore";
 import { Button } from "@/components/ui/button";
@@ -35,8 +37,10 @@ export function PWABanner() {
   // `useState` reset on every reload.
   const { canInstall, install, dismissInstall } = usePWAInstall();
 
-  const showInstall = canInstall;
-  const visible = showInstall || !online;
+  const updateReady = useSyncExternalStore(appUpdate.subscribe, appUpdate.ready);
+  // One gilt prompt at a time: a waiting update outranks the install offer.
+  const showInstall = canInstall && !updateReady;
+  const visible = updateReady || showInstall || !online;
   const dockRef = useRef<HTMLDivElement>(null);
 
   // Publish the dock's measured height as `--pwa-banner-h` so the AppShell can
@@ -79,6 +83,31 @@ export function PWABanner() {
           <span className="text-[length:var(--text-micro)] opacity-80">
             · {t("common.offlineSync")}
           </span>
+        </div>
+      )}
+
+      {/* A new version is ready — the install prompt's own carved-gilt strip (the
+          pattern of Gmail's «a new version is available» bar and vite-plugin-pwa's
+          ReloadPrompt): one action, Reload, and a close. Announced politely. */}
+      {updateReady && (
+        <div
+          role="status"
+          className="accent-alert pointer-events-auto justify-between md:mx-auto md:mb-3 md:w-full md:max-w-2xl"
+        >
+          <div className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 text-accent-text" aria-hidden="true" />
+            <span className="text-xs font-medium text-text-primary">
+              {t("pwa.updateReady")}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => window.location.reload()}>
+              {t("pwa.reload")}
+            </Button>
+            <IconButton onClick={appUpdate.dismiss} aria-label={t("common.close")}>
+              <X className="h-3.5 w-3.5" />
+            </IconButton>
+          </div>
         </div>
       )}
 
