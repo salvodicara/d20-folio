@@ -252,8 +252,9 @@ jobs:
   # The e2e smoke on every pull request (2026-11-13): main's Verify was red for hours
   # because PR CI ran no e2e, and a cast that broke the sheet merged unseen. Three paths
   # players use every session, desktop Chromium only, in a few minutes: the classic cast
-  # → tray → undo, a save spell on three targets with one saved, and the DM's monster
-  # tray in a campaign fight. Verify still runs the whole matrix after the merge.
+  # → tray → undo, a save spell on three targets with one saved, and a condition spell on
+  # a goblin in the fight. PR CI has no content pack, so no spec here may need its team
+  # sheets (monster-actions does). Verify still runs the whole matrix after the merge.
   e2e-smoke:
     name: e2e smoke
     runs-on: ubuntu-24.04
@@ -281,9 +282,9 @@ jobs:
       - name: E2E smoke
         run: >-
           pnpm exec playwright test tests/e2e/simple-casting.spec.ts
-          tests/e2e/damage-tray.spec.ts tests/e2e/monster-actions.spec.ts
+          tests/e2e/damage-tray.spec.ts
           --project=chromium
-          --grep "simple cast persists and undoes: en dark desktop|\(b\) Palla di Fuoco on three, one saved \(it, dark, desktop\)|monster actions \(desktop\)"
+          --grep "simple cast persists and undoes: en dark desktop|\((b|c)\) [^(]+\(it, dark, desktop\)"
 
   # firestore.rules and storage.rules against the real emulators (`pnpm test:rules`,
   # vitest.rules.config.ts): the access matrix, the migration kit's apply path and the
