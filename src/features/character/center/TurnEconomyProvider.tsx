@@ -249,6 +249,7 @@ import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
 import { opensSelfFormPicker } from "@/lib/polymorph";
+import { useActionRequestStore } from "./action-request-store";
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -616,6 +617,25 @@ export function TurnEconomyProvider({
     targets?: ReadonlyArray<string>;
   };
   const pendingResolutionRef = useRef<PendingResolution | null>(null);
+  // An action asked for by an offer outside the sheet (Uncanny Metabolism at the first
+  // initiative roll) runs as a tap on its row would.
+  const handleSelectRef = useRef<(action: ResolvedAction) => void>(() => undefined);
+  useEffect(() => {
+    handleSelectRef.current = (action) => handleSelect(action);
+  });
+  useEffect(
+    () =>
+      useActionRequestStore.subscribe((state, prev) => {
+        if (!state.request || state.request === prev.request) return;
+        const doc = useCharacterStore.getState().character;
+        const action = doc
+          ? localizeActions(doc, locale).find((a) => a.id === state.request?.actionId)
+          : undefined;
+        if (action) handleSelectRef.current(action);
+      }),
+    [locale]
+  );
+
   const pendingResolutionFor = (action: ResolvedAction): PendingResolution | null => {
     const pending = pendingResolutionRef.current;
     return pending?.actionId === action.id ? pending : null;
