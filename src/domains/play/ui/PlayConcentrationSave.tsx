@@ -330,7 +330,11 @@ function Prompt({
             </div>
           )}
           {failsNow && (
-            <div className="f-acts" role="group" aria-label={t("combat.rerollOffers")}>
+            <div
+              className="f-acts f-reroll"
+              role="group"
+              aria-label={t("combat.rerollOffers")}
+            >
               {choices.map((offer) => (
                 <Button
                   key={offer.action.id}
