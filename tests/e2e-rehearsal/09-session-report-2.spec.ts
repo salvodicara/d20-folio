@@ -3,8 +3,9 @@
  * request, 2026-11-12): the report features rehearsal 8 does not play. Two players, each
  * signed in on their own browser, and the DM on the campaign page play the five scenes
  * of `session-report-2.ts` in one evening: saves marked on the row, a level-up, a
- * campaign fight started by initiative and ended in round 2, a solo fight with a single
- * blow, and a campaign fight left open. Then the DM reads the Journal and copies the
+ * campaign fight started by initiative and ended in round 2, and a campaign fight left
+ * open. The solo-fight scene runs on the classic UI only: on the new UI a sheet attached
+ * to a campaign offers «Roll initiative» (the campaign's fight), never «Start combat». Then the DM reads the Journal and copies the
  * report: every block, its heading and its lines, nothing dangling. The same evening on
  * the classic UI is `classic-session-report-2.spec.ts`.
  *
@@ -61,8 +62,6 @@ import {
   SAVE_SPELL_SLOT,
   SAVED_DAMAGE,
   savesLines,
-  SOLO_HIT,
-  soloLines,
   spendLine,
   type ExpectedSection,
 } from "./session-report-2";
@@ -155,7 +154,7 @@ async function endFight(dm: Page): Promise<void> {
   await expect(idle).toBeVisible();
 }
 
-test("a second evening: saves, a level-up, a started fight, a solo fight and a forgotten one, read back from the Journal", async ({
+test("a second evening: saves, a level-up, a started fight and a forgotten one, read back from the Journal", async ({
   browser,
 }) => {
   test.setTimeout(900_000);
@@ -205,17 +204,28 @@ test("a second evening: saves, a level-up, a started fight, a solo fight and a f
       .or(dialog.getByRole("textbox"))
       .first()
       .fill(String(BARD_D20));
-    await dialog.getByRole("button", { name: "Confirm" }).click();
-    // The roll's toast says the total: the d20 plus the sheet's bonus.
-    const toast = bard
-      .locator("[role=status]")
-      .filter({ hasText: /Initiative \d+: you're in the fight/ })
-      .first();
-    await expect(toast).toBeVisible();
-    bardInitiative = Number((await toast.innerText()).match(/Initiative (\d+):/)?.[1]);
+    // «With your bonus (+3): 15.» On the Fight tab the party's bonuses arrive a moment
+    // after the dialog opens (it shows +0 first): wait for the line to settle, then read
+    // the total the roll is recorded with.
+    const totalLine = dialog.getByText(/With your bonus/);
+    let seen = "";
+    await expect
+      .poll(
+        async () => {
+          const now = await totalLine.innerText();
+          const settled = now === seen;
+          seen = now;
+          return settled;
+        },
+        { intervals: [1_000], timeout: 15_000, message: "the bonus settles" }
+      )
+      .toBe(true);
+    bardInitiative = Number(seen.match(/:\s*(\d+)/)?.[1]);
     expect(bardInitiative, "the total is the d20 and a bonus").toBeGreaterThanOrEqual(
       BARD_D20 - 5
     );
+    await dialog.getByRole("button", { name: "Confirm" }).click();
+    await expect(dialog).toHaveCount(0);
     // The DM sees the fight Bard's roll started, with Paladin still to roll.
     await expect(roundTitle(dm, 1)).toBeVisible({ timeout: 30_000 });
     await dm.getByRole("button", { name: "Roll for the missing" }).click();
@@ -256,21 +266,6 @@ test("a second evening: saves, a level-up, a started fight, a solo fight and a f
     await expect(dm.getByText(/No fight running/i)).toBeVisible();
   });
 
-  await test.step(`a solo fight: Paladin starts it, Bard hits once (${String(SOLO_HIT)}), Paladin ends it`, async () => {
-    await openSheet(paladin, SANDBOX_USERS.paladin.characterId);
-    await paladin.getByRole("button", { name: "Start combat" }).click();
-    await expect(paladin.getByRole("button", { name: "End fight" })).toBeVisible();
-    await openSheet(bard, SANDBOX_USERS.bard.characterId);
-    await attack(bard, BARD_WEAPON);
-    await markHit(bard, SOLO_HIT);
-    await paladin.getByRole("button", { name: "End fight" }).click();
-    await paladin
-      .locator("dialog[open]")
-      .getByRole("button", { name: "End fight" })
-      .click();
-    await expect(paladin.getByRole("button", { name: "Start combat" })).toBeVisible();
-  });
-
   await test.step("a forgotten fight: the DM rolls for everyone and nobody ends it", async () => {
     await openFightTab(dm);
     await dm.getByRole("button", { name: "Roll for the missing" }).click();
@@ -302,8 +297,6 @@ test("a second evening: saves, a level-up, a started fight, a solo fight and a f
         ...fightBlows(),
       ],
     },
-    // #1155: the solo fight, worked out from one blow, says so.
-    { heading: blockHeading("Fight (inferred)", true), lines: soloLines() },
     {
       // Never ended: its start time alone.
       heading: blockHeading("Fight · 1 round", false),
@@ -325,7 +318,7 @@ test("a second evening: saves, a level-up, a started fight, a solo fight and a f
     expectNothingDangling(await journalBlocks(dm));
   });
 
-  await test.step("the copied report: three encounters, only the solo one inferred", async () => {
+  await test.step("the copied report: two encounters, neither inferred", async () => {
     await dm.getByRole("button", { name: "Copy", exact: true }).first().click();
     let markdown = "";
     await expect
@@ -349,9 +342,8 @@ test("a second evening: saves, a level-up, a started fight, a solo fight and a f
         ],
         rounds: ["Round 1", "Round 2"],
       },
-      { heading: "Encounter 2 (inferred)", lines: soloLines() },
       {
-        heading: "Encounter 3",
+        heading: "Encounter 2",
         lines: [dmInitiative(BARD_NAME), dmInitiative(PALADIN_NAME)],
         unordered: true,
       },

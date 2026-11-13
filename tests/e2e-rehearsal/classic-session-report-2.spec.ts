@@ -39,6 +39,7 @@ import {
   FAILED_DAMAGE,
   FIGHT_HIT,
   fightBlows,
+  lastEvening,
   LEVEL_TO,
   levelUpLine,
   markMiss,
@@ -298,7 +299,7 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
 
   await test.step("the DM's Journal: three encounters, only the solo one inferred, the rest after the open one", async () => {
     await expect(async () => {
-      expectReport(await classicJournalReport(dm, SANDBOX_CAMPAIGN), [
+      expectReport(lastEvening(await classicJournalReport(dm, SANDBOX_CAMPAIGN), 5), [
         { heading: "Outside combat", lines: [...savesLines(), levelUpLine()] },
         {
           // Started, so never «(inferred)».
@@ -321,7 +322,9 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
         { heading: "Outside combat", lines: [`${BARD_NAME} takes a long rest`] },
       ]);
     }).toPass({ timeout: 120_000, intervals: [2_000, 5_000, 10_000] });
-    expectNothingDangling(await classicJournalReport(dm, SANDBOX_CAMPAIGN));
+    expectNothingDangling(
+      lastEvening(await classicJournalReport(dm, SANDBOX_CAMPAIGN), 5)
+    );
   });
 
   await test.step("the table tidies up: the DM ends the forgotten encounter", async () => {

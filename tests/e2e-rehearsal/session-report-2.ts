@@ -131,7 +131,13 @@ export function expectReport(
           `${what} holds ${String(line)}`
         ).toBe(true);
     } else expectLines(got.lines, want.lines, what);
-    if (want.rounds) expect(got.rounds ?? [], `${what}: its rounds`).toEqual(want.rounds);
+    // A roll recorded before the DM's page wrote the round-1 marker heads its own
+    // «Before the first round»: which comes first is a race the report shows truly.
+    if (want.rounds)
+      expect(
+        (got.rounds ?? []).filter((r) => r !== "Before the first round"),
+        `${what}: its rounds`
+      ).toEqual(want.rounds);
   });
 }
 
@@ -191,6 +197,27 @@ export async function classicJournalReport(
     heading: plain(s.heading),
     lines: s.lines.map(plain),
     ...(s.rounds.length > 0 ? { rounds: s.rounds.map(plain) } : {}),
+  }));
+}
+
+/**
+ * The classic hub's report is one per DAY, every sitting of it together (the new UI's
+ * Journal splits sittings). A rehearsal run that plays more than one evening the same
+ * day reads only its own: the last `count` sections, their encounters numbered from 1
+ * again («Encounter 4 (inferred)» → «Encounter 2 (inferred)»).
+ */
+export function lastEvening(sections: ReportSection[], count: number): ReportSection[] {
+  const tail = sections.slice(-count);
+  const first = tail
+    .map((s) => Number(s.heading.match(/^Encounter (\d+)/)?.[1] ?? Number.NaN))
+    .find((n) => !Number.isNaN(n));
+  if (first === undefined) return tail;
+  return tail.map((s) => ({
+    ...s,
+    heading: s.heading.replace(
+      /^Encounter (\d+)/,
+      (_, n: string) => `Encounter ${String(Number(n) - first + 1)}`
+    ),
   }));
 }
 
