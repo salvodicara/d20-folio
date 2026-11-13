@@ -41,6 +41,29 @@ function Probe() {
   return null;
 }
 
+/** «Campaigns read, fight pending» (the engine lane's contract): the party is resolved and
+ *  the campaigns snapshot's pip lists this character's fight; its live status is not here. */
+function campaignsRead(characterId: string): void {
+  usePartyRosterStore.getState().setParty(null, characterId);
+  useCombatStatusStore.setState({
+    pip: {
+      primaryId: "camp-1",
+      entries: [
+        {
+          campaignId: "camp-1",
+          campaignName: "Campaign",
+          role: "pc",
+          state: "your-turn",
+          round: 1,
+          heroName: "Brakka",
+          characterId,
+          actorName: null,
+        },
+      ],
+    },
+  });
+}
+
 function fightArrives(characterId: string): void {
   const rows = [
     { id: ME, kind: "pc", side: "ally", name: "Brakka" },
@@ -81,11 +104,11 @@ beforeEach(() => {
   select = null;
   useUIStore.setState({ sheetMode: "play" });
   useToastStore.setState({ toasts: [], timers: {} });
-  useCombatStatusStore.setState({ status: null });
+  useCombatStatusStore.setState({ status: null, pip: null });
   usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
   useCombatStore.getState().endCombat();
 });
-afterEach(() => useCombatStatusStore.setState({ status: null }));
+afterEach(() => useCombatStatusStore.setState({ status: null, pip: null }));
 
 describe("a turn action before the fight is read (settled-context gap)", () => {
   it("a Dash taken before the fight arrives spends that turn's Action", async () => {
@@ -113,7 +136,10 @@ describe("a turn action before the fight is read (settled-context gap)", () => {
     });
     // The shell answers a moment later: the campaigns, then this character's fight.
     act(() => {
-      usePartyRosterStore.getState().setParty(null, character.id);
+      campaignsRead(character.id);
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
       fightArrives(character.id);
     });
     await vi.waitFor(
@@ -148,7 +174,10 @@ describe("a turn action before the fight is read (settled-context gap)", () => {
       await Promise.resolve();
     });
     act(() => {
-      usePartyRosterStore.getState().setParty(null, character.id);
+      campaignsRead(character.id);
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
       fightArrives(character.id);
     });
     expect(useCombatStore.getState().round).toBe(roundBefore);

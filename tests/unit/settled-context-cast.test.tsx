@@ -40,6 +40,7 @@ vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
 import {
   useCombatStatusStore,
   type GlobalCombat,
+  type PipModel,
 } from "@/features/campaigns/global-combat-context";
 import { type PartyRoster, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
@@ -58,7 +59,7 @@ afterEach(() => {
   usePlayPromptStore.setState({ open: {} });
   vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
-  useCombatStatusStore.setState({ status: null });
+  useCombatStatusStore.setState({ status: null, pip: null });
   usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
   useToastStore.setState({ toasts: [] });
   useUndoStore.getState().clear(null);
@@ -96,6 +97,24 @@ function fight(characterId: string): GlobalCombat {
   } as unknown as GlobalCombat;
 }
 
+function fightPip(characterId: string): PipModel {
+  return {
+    primaryId: "camp-1",
+    entries: [
+      {
+        campaignId: "camp-1",
+        campaignName: "Campaign",
+        role: "pc",
+        state: "needs-roll",
+        round: 1,
+        heroName: "Hero",
+        characterId,
+        actorName: null,
+      },
+    ],
+  };
+}
+
 async function castWardingBondInTheGap(campaignsRead: boolean): Promise<string[]> {
   const doc = makeCharacterDoc({
     classId: "cleric",
@@ -122,8 +141,15 @@ async function castWardingBondInTheGap(campaignsRead: boolean): Promise<string[]
       },
     ],
   };
-  useCombatStatusStore.setState({ status: null });
-  if (campaignsRead) usePartyRosterStore.getState().setParty(party, doc.id);
+  // «Campaigns read, fight pending» (the engine lane's contract): the party is resolved and
+  // the campaigns snapshot's pip already lists this character's fight, but the fight's live
+  // status has not answered yet.
+  const pip = fightPip(doc.id);
+  useCombatStatusStore.setState({ status: null, pip: null });
+  if (campaignsRead) {
+    usePartyRosterStore.getState().setParty(party, doc.id);
+    useCombatStatusStore.setState({ pip });
+  }
   let api: ReturnType<typeof useTurnEconomy> | null = null;
   function Probe() {
     api = useTurnEconomy();
@@ -145,7 +171,7 @@ async function castWardingBondInTheGap(campaignsRead: boolean): Promise<string[]
   // The shell answers a moment later: this character's fight (and, in 2b, the campaigns).
   act(() => {
     if (!campaignsRead) usePartyRosterStore.getState().setParty(party, doc.id);
-    useCombatStatusStore.setState({ status: fight(doc.id) });
+    useCombatStatusStore.setState({ status: fight(doc.id), pip });
   });
   await waitFor(() => expect(usePlayPromptStore.getState().open.target).toBeDefined(), {
     timeout: 3000,
