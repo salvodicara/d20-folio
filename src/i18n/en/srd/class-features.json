@@ -794,12 +794,12 @@
     "summary": "Full Focus + Martial Arts die + Monk level HP"
   },
   "paladin-abjure-foes": {
-    "description": "As a Magic action, you can expend one use of Channel Divinity to present your holy symbol. Each enemy within 60 feet must make a Wisdom save or be Frightened for 1 minute (save ends).",
+    "description": "As a Magic action, you can expend one use of Channel Divinity and present your holy symbol or weapon. Target a number of creatures equal to your Charisma modifier (minimum one) that you can see within 60 feet. Each target makes a Wisdom saving throw against your spell save DC or is Frightened for 1 minute or until it takes any damage. While Frightened this way, on its turns it can do only one of these: move, take an action, or take a Bonus Action.",
     "name": "Abjure Foes"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
-    "description": "Channel Divinity: enemies within 60 ft make a WIS save or are Frightened.",
-    "summary": "Enemies within 60 ft: WIS save or Frightened"
+    "description": "Channel Divinity: up to your CHA modifier in creatures (min. 1) within 60 ft make a WIS save or are Frightened for 1 minute, ending if they take damage.",
+    "summary": "CHA mod creatures within 60 ft: WIS save or Frightened"
   },
   "paladin-aura-expansion": {
     "description": "Your Aura of Protection and Aura of Courage now extend to 30 feet.",

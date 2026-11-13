@@ -342,7 +342,7 @@
     "gist": "On Initiative, regain all Focus Points and heal Martial Arts die + Monk level; 1/Long Rest"
   },
   "paladin-abjure-foes": {
-    "gist": "Magic action, 1 Channel Divinity: enemies within 60 ft save (Wis) or are Frightened 1 min"
+    "gist": "Magic action, 1 Channel Divinity: CHA-mod creatures within 60 ft save (Wis) or are Frightened 1 min, until damaged"
   },
   "paladin-aura-expansion": {
     "gist": "Aura of Protection and Aura of Courage now reach 30 ft"
