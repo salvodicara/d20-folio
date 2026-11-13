@@ -137,7 +137,8 @@ for (const leg of [
       await tray(page).getByRole("textbox", { name: "Totale tirato" }).fill("59");
       await tray(page)
         .getByRole("button", {
-          name: new RegExp(`${PALADIN} ha superato il TS`),
+          // the tray names the hero in full («Bren Ironbeard … ha superato il TS»)
+          name: new RegExp(`${PALADIN}.* ha superato il TS`),
         })
         .click(); // tap 3
       await expect(
