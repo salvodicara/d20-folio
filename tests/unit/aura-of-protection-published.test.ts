@@ -164,3 +164,38 @@ describe("the Concentration save under a received aura", () => {
     expect(total(inAura)).toBe(total(ally) + 3);
   });
 });
+
+describe("a paladin standing in another paladin's aura", () => {
+  // SRD 5.2.1, Combining Game Effects: the same feature doesn't stack. A paladin's own
+  // Aura of Protection and another paladin's are one effect: only the best counts.
+  const now = 1_000_000_000;
+  const other = (bonus: number): PartyAura => ({
+    characterId: "pal-2",
+    name: "Bren",
+    aura: { bonus, reachFt: 10, at: now },
+  });
+
+  it("adds its own aura or the received one, the best, never both", async () => {
+    const { deriveSavesAndChecks } = await import("@/lib/views/saves-checks-view");
+    const own = makeCharacterDoc({
+      classes: [{ classId: "paladin", level: 6 }],
+      features: [{ srdId: "paladin-aura-of-protection" }],
+      abilityScores: { STR: 14, DEX: 10, CON: 12, INT: 10, WIS: 10, CHA: 16 },
+    });
+    const ownBonus = publishedAura(own)?.bonus ?? null;
+    expect(ownBonus).toBe(3);
+    const savesWith = (received: ReturnType<typeof allyAura>) =>
+      deriveSavesAndChecks(own.character, {
+        ...own.session,
+        ...(received ? { partyAura: received } : {}),
+      }).saves;
+    const alone = savesWith(null);
+    // its own +3 beats the received +2: nothing is received
+    expect(allyAura([other(2)], "me", now, [], ownBonus)).toBeNull();
+    // the received +5 replaces its own +3: two more, not five
+    const stronger = savesWith(allyAura([other(5)], "me", now, [], ownBonus));
+    for (const [i, row] of stronger.entries()) {
+      expect(row.bonus, row.id).toBe((alone[i]?.bonus ?? 0) + 2);
+    }
+  });
+});
