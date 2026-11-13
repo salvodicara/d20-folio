@@ -51,9 +51,7 @@ async function castOn(page: Page, spell: string, targets: string[]) {
   await expect(picker).toBeHidden();
 }
 
-test("Command, then Calm Emotions: the saves on the row, no tray (it, dark, phone)", async ({
-  page,
-}) => {
+test("Command: the saves on the row, no tray (it, dark, phone)", async ({ page }) => {
   await open(page);
 
   await castOn(page, "Comando", ["Goblin"]);
@@ -73,7 +71,12 @@ test("Command, then Calm Emotions: the saves on the row, no tray (it, dark, phon
   await expect(
     page.getByRole("button", { name: /^Usata: Calmare Emozioni/ }).first()
   ).toBeDisabled();
-  await page.getByRole("button", { name: /^Fine Turno/i }).click();
+});
+
+test("Calm Emotions: the saves on the row, no tray (it, dark, phone)", async ({
+  page,
+}) => {
+  await open(page);
   await castOn(page, "Calmare Emozioni", ["Goblin Chief"]);
   await expect(page.getByTestId("damage-tray")).toHaveCount(0);
   await expect(page.getByRole("group", { name: "Goblin Chief" })).toBeVisible();
