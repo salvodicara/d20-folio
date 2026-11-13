@@ -18,6 +18,7 @@ import {
   signInAs,
   spaced,
   test,
+  turnWriteSent,
   watchErrors,
 } from "./helpers";
 
@@ -176,6 +177,7 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   });
 
   await test.step("Paladin casts Bless on Bard; Bard's sheet shows it", async () => {
+    const written = turnWriteSent(paladin, "spell-bless");
     await cast(paladin, "Bless", [BARD_NAME]);
     expect.soft(await showsEffect(bard, "Bless"), "Bard's sheet lists Bless").toBe(true);
     // Bless took the turn's Action: a second Action spell waits for the next turn.
@@ -184,6 +186,21 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
         name: /^Used: Warding\sBond/,
       })
     ).toBeVisible();
+    // The cast's turn is saved before the next step reloads (#1178 is a sub-second loss).
+    await written;
+  });
+
+  await test.step("Paladin reloads mid-fight: the sheet is there and the Action stays spent", async () => {
+    // A cast in a fight once saved a turn the reader refused, and the sheet showed its
+    // error page on reload (#1158). Bless took the turn's Action: after the reload,
+    // Warding Bond (an Action spell, a slot still free) still reads «Used».
+    await paladin.reload();
+    await expect(paladin.locator(".f-char")).toBeVisible({ timeout: 60_000 });
+    await expect(
+      actionRow(paladin, "Warding Bond").getByRole("button", {
+        name: /^Used: Warding\sBond/,
+      })
+    ).toBeVisible({ timeout: 15_000 });
   });
 
   await test.step("the turns move on to Paladin's next turn", async () => {

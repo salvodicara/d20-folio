@@ -1183,11 +1183,17 @@ export function ResourceRail() {
               <DefenseRow
                 key={`${adjustment.sourceId}-roll-adjustment-${index}`}
                 label={t(`combat.resolveRoll_${adjustment.rollType}`)}
-                value={t("combat.resolveNextRollAdjustment", {
-                  roll: t(`combat.resolveRoll_${adjustment.rollType}`),
-                  sign: adjustment.operation === "add" ? "+" : "−",
-                  dice: adjustment.dice,
-                })}
+                // Bless adds to EVERY attack and save; Guidance to the next check.
+                value={t(
+                  adjustment.consume === "each"
+                    ? "combat.resolveEachRollAdjustment"
+                    : "combat.resolveNextRollAdjustment",
+                  {
+                    roll: t(`combat.resolveRoll_${adjustment.rollType}`),
+                    sign: adjustment.operation === "add" ? "+" : "−",
+                    dice: adjustment.dice,
+                  }
+                )}
               />
             ))}
             {/* SELF-side combat downsides (Reckless Attack): framed as a Disadv.

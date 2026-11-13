@@ -144,6 +144,32 @@ export function foldSession(
     moved.add(target);
   }
 
+  // A line stamped with a fight whose start marker comes later in the log joins that
+  // fight, right after its start: the roll that starts a fight is written before any page
+  // that sees the fight writes the start marker. A line the DM moved stays where it is.
+  const startOf = (id: string): string | undefined => {
+    const event = lines.get(id)?.event;
+    return event?.kind === "encounter-start" ? event.encounterId : undefined;
+  };
+  const ahead = new Set(order.map(startOf).filter((e): e is string => e !== undefined));
+  const waiting = new Map<string, string[]>();
+  const placedOrder: string[] = [];
+  for (const id of order) {
+    const started = startOf(id);
+    if (started !== undefined) {
+      placedOrder.push(id, ...(waiting.get(started) ?? []));
+      waiting.delete(started);
+      ahead.delete(started);
+      continue;
+    }
+    const fight = moved.has(id) ? undefined : stamps.get(id)?.encounterId;
+    if (fight !== undefined && ahead.has(fight)) {
+      waiting.set(fight, [...(waiting.get(fight) ?? []), id]);
+      continue;
+    }
+    placedOrder.push(id);
+  }
+
   const placed = (
     id: string,
     encounterId: string | undefined,
@@ -157,7 +183,7 @@ export function foldSession(
   let encounterId: string | undefined;
   let round: number | undefined;
   const entries: SessionEntry[] = [];
-  for (const id of order) {
+  for (const id of placedOrder) {
     const line = lines.get(id);
     if (line === undefined) continue;
     const { event } = line;
