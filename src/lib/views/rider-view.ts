@@ -93,11 +93,14 @@ export interface RiderVM {
   vsMarkedTarget?: MarkedTargetScope;
   /**
    * `true` when the rider rides a `while-active` toggle that is currently up
-   * (Rage's Brutal Strike, Divine Favor). The chip appends a "· active" suffix
+   * (Divine Favor). The chip appends a "· active" suffix
    * (`combat.whileActiveNote`) so it reads as conditional on the toggle —
    * mirrors the weapon-damage breakdown note. Absent → an unconditional rider.
    */
   whileActive?: boolean;
+  /** The toggle the rider needs and that is off («Attacco Irruento»): the chip says
+   *  «needs …», and the hit never offers the die. */
+  needsActive?: string;
   /**
    * The rider's plain-language explanation — one sentence COMPOSED by the engine
    * from the grant's own fields (dice, damage type, once-per-turn limiter, spent
@@ -148,6 +151,9 @@ export function buildRiders(summary: RawActionSummary, locale: Locale): RiderVM[
       ...(r.scope ? { scope: r.scope } : {}),
       ...(r.vsMarkedTarget ? { vsMarkedTarget: r.vsMarkedTarget } : {}),
       ...(r.whileActive ? { whileActive: true } : {}),
+      ...(r.needsActiveName
+        ? { needsActive: localizeText(r.needsActiveName, locale) }
+        : {}),
       ...(r.why ? { why: resolveWhy(r.why, locale) } : {}),
     });
   }

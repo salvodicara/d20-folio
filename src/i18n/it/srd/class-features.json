@@ -33,7 +33,7 @@
     "description": "Effettua un attacco in mischia contro una creatura che ti ha danneggiato entro 1,5 metri."
   },
   "barbarian-brutal-strike": {
-    "description": "Se usi Attacco Irruento, puoi rinunciare al Vantaggio su un tiro per colpire basato sulla Forza nel tuo turno. Se l'attacco scelto colpisce, il bersaglio subisce 1d10 danni extra e puoi causare un effetto: Colpo Possente (spingi di 4,5 m, poi muoviti fino a metà velocità verso il bersaglio) o Colpo al Tendine (riduci la velocità di 4,5 m fino all'inizio del tuo turno successivo).",
+    "description": "Se usi Attacco Irruento, puoi rinunciare a ogni Vantaggio su un tiro per colpire basato sulla Forza a tua scelta nel tuo turno; quel tiro non deve avere Svantaggio. Se l'attacco scelto colpisce, il bersaglio subisce 1d10 danni extra del tipo dell'arma o del Colpo Senz'Armi e puoi causare un effetto: Colpo Possente (lo spingi di 4,5 m in linea retta, poi puoi muoverti fino a metà della tua Velocità verso di lui senza provocare Attacchi di Opportunità) o Colpo al Tendine (la sua Velocità cala di 4,5 m fino all'inizio del tuo turno successivo; una creatura subisce un solo Colpo al Tendine alla volta, il più recente).",
     "name": "Colpo Brutale",
     "gist": "Rinunci al Vantaggio di Attacco Irruento: +1d10 danni e un effetto (spinta o rallento)"
   },
@@ -74,7 +74,7 @@
     "gist": "Colpo Brutale infligge 2d10 e applica due effetti diversi"
   },
   "barbarian-improved-brutal-strike": {
-    "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5).",
+    "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (prima dell'inizio del tuo turno successivo, il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5; una volta per turno).",
     "name": "Colpo Brutale Migliorato",
     "gist": "Nuove opzioni di Colpo Brutale: Svantaggio al prossimo TS, o +5 al prossimo attacco altrui"
   },
