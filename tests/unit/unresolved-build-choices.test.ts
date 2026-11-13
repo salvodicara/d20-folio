@@ -45,6 +45,38 @@ describe("unresolvedBuildChoices", () => {
     ).toEqual([{ kind: "skill", traitId: "skillful", verifiable: false }]);
   });
 
+  // Skillful («one skill of your choice») leaves no trace of its own. A Human is asked
+  // only when the stored skills fall short of the least the build gives: background (2)
+  // + the starting class's skill choices + Skillful (1). A wrong prompt is worse than
+  // none, so at or above that count the pick is trusted.
+  it("a Human whose skills fall short is asked for Skillful, with the count", () => {
+    const four = {
+      athletics: "proficient",
+      intimidation: "proficient",
+      perception: "proficient",
+      survival: "proficient",
+    };
+    const fighter = (skills: object) =>
+      build("human", {
+        humanOriginFeat: "alert",
+        classes: [{ classId: "fighter", level: 3 }],
+        skills,
+      });
+    const skill = (skills: object) =>
+      unresolvedBuildChoices(fighter(skills), {}).filter((c) => c.kind === "skill");
+    expect(skill(four)).toEqual([
+      {
+        kind: "skill",
+        traitId: "skillful",
+        verifiable: true,
+        short: { have: 4, need: 5 },
+      },
+    ]);
+    expect(skill({ ...four, insight: "proficient" })).toEqual([
+      { kind: "skill", traitId: "skillful", verifiable: false },
+    ]);
+  });
+
   it("a Tiefling owes its legacy and its spellcasting ability", () => {
     expect(unresolvedBuildChoices(build("tiefling"), {})).toEqual([
       { kind: "bundle", traitId: "fiendish-legacy", bundleKey: "tiefling-legacy" },

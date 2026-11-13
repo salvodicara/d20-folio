@@ -21,7 +21,15 @@ const as = (race: string, extra: Partial<CharacterData> = {}): CharacterData => 
   ...MOCK_CHARACTER.character,
   race: race as CharacterData["race"],
   speciesSpellAbility: undefined,
-  skills: {},
+  // A realistic count (background 2 + a Monk's 2 + Skillful 1), none of them a Keen
+  // Senses option, so an any-skill pick isn't owed for being short.
+  skills: {
+    athletics: "proficient",
+    acrobatics: "proficient",
+    history: "proficient",
+    religion: "proficient",
+    stealth: "proficient",
+  },
   spells: [],
   // A class whose table gives no picks, so only the species' choices are owed.
   classes: [{ classId: "monk", level: 9 }],

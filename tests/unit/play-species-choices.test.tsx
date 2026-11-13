@@ -116,7 +116,19 @@ describe("PlaySpeciesChoices", () => {
         ...base.character,
         race: asRaceId("human"),
         humanOriginFeat: "",
-        skills: {},
+        // a full skill count, so only the Versatile feat is owed
+        skills: Object.fromEntries(
+          [
+            "athletics",
+            "acrobatics",
+            "history",
+            "religion",
+            "stealth",
+            "arcana",
+            "nature",
+            "medicine",
+          ].map((id) => [id, "proficient" as const])
+        ),
         spells: [],
       },
     });

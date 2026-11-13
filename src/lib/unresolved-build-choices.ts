@@ -20,6 +20,7 @@
  */
 import { FEATS_BY_ID } from "@/data/feats";
 import { getRace } from "@/data/races";
+import { getClassTable } from "@/data/classes";
 import { featsOwingAbility } from "@/lib/feat-ability";
 import { owedClassPicks, type ClassPickKind } from "@/lib/owed-class-picks";
 import type { CharacterData, SessionState } from "@/types/character";
@@ -31,8 +32,15 @@ export type UnresolvedBuildChoice =
   | { kind: "species-spell-ability" }
   /** An origin feat the species grants, never chosen. */
   | { kind: "feat"; traitId: string }
-  /** A skill pick; `verifiable: false` when the sheet can't tell it was made. */
-  | { kind: "skill"; traitId: string; verifiable: boolean }
+  /** A skill pick; `verifiable: false` when the sheet can't tell it was made. An
+   *  any-skill pick (Skillful) is asked only when the stored skills fall short of the
+   *  least the build gives (`short`: how many it has, how many it needs at least). */
+  | {
+      kind: "skill";
+      traitId: string;
+      verifiable: boolean;
+      short?: { have: number; need: number };
+    }
   /** Which ability a feat's increase raised, when something reads it. */
   | { kind: "feat-ability"; featId: string }
   /** `owed` more picks of a kind the class's level table gives. */
@@ -60,6 +68,24 @@ export function unresolvedBuildChoices(
   return out;
 }
 
+/**
+ * The stored skills against the least a build gives (background 2 + the starting
+ * class's skill choices + the species' one any-skill pick): `{ have, need }` when
+ * short, null when not or when the class is unknown. A lower bound: other sources
+ * (a feat, a subclass) only raise the real count, so a character at the bound is
+ * trusted, never asked by mistake.
+ */
+function skillsShort(character: BuildForChoices): { have: number; need: number } | null {
+  const first = character.classes?.[0];
+  const table = first ? getClassTable(first.classId) : undefined;
+  if (!table) return null;
+  const need = 2 + table.skillChoices.count + 1;
+  const have = Object.values(character.skills).filter(
+    (tier) => tier === "proficient" || tier === "expertise"
+  ).length;
+  return have < need ? { have, need } : null;
+}
+
 function speciesChoicesOwed(
   character: BuildForChoices,
   session: Pick<SessionState, "grantBundleChoices">
@@ -81,7 +107,12 @@ function speciesChoicesOwed(
       } else if (grant.type === "choice-skill-proficiency") {
         const options = grant.options;
         if (options.length === 0) {
-          out.push({ kind: "skill", traitId: trait.id, verifiable: false });
+          const short = skillsShort(character);
+          out.push(
+            short
+              ? { kind: "skill", traitId: trait.id, verifiable: true, short }
+              : { kind: "skill", traitId: trait.id, verifiable: false }
+          );
         } else if (!options.some((skill) => character.skills[skill])) {
           out.push({ kind: "skill", traitId: trait.id, verifiable: true });
         }
