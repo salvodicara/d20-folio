@@ -164,6 +164,15 @@ import type { SessionDraft } from "@/features/campaigns/useSessionLog";
 import { defendedDamageTypes, type DamageInstance } from "@/lib/damage-intake";
 import type { BudgetVerdict } from "@/lib/encounter-difficulty";
 import { useToastStore } from "@/stores/toastStore";
+import { useAuthStore } from "@/stores/authStore";
+import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import {
+  createDmInitiativeLines,
+  type DmTypedRoll,
+} from "@/features/campaigns/dm-initiative-line";
+import { sessionLogStoreFor } from "@/features/campaigns/session-log-source";
+import { createSessionRecorder } from "@/lib/session-log";
+import { diagnosticsLog } from "@/lib/diagnostics";
 import type { CharacterDoc } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
 import type {
@@ -763,6 +772,7 @@ function PcReadyCard({
   // The ONE combat-write failure surface (an honest toast, never a silent swallow)
   // shared by the HP tile, the INIT chip, and the conditions / death-save block.
   const write = useCombatWrite();
+  const encounterEpoch = useCampaignStore((st) => st.campaign?.encounter?.epoch);
 
   // `PcCombatantCard` admits this branch only after the combat subdoc has been
   // resolved and the parent ownership marker has hydrated successfully.
@@ -800,7 +810,17 @@ function PcReadyCard({
       // No nudge once the order is frozen (the roll can no longer change).
       urgent={canEditInit && initRoll === null}
       onCommit={(roll) =>
-        write(() => setEncounterInitiative(campaignId, memberUid, roll))
+        write(async () => {
+          await setEncounterInitiative(campaignId, memberUid, roll);
+          // The DM typing a hero's roll: the report's «rolled by the DM» line.
+          if (!isMe && encounterEpoch !== undefined)
+            recordDmTypedInitiative(campaignId, {
+              epoch: encounterEpoch,
+              memberUid,
+              roll,
+              bonus: stats.initiativeBonus,
+            });
+        })
       }
     />
   ) : null;
@@ -980,6 +1000,27 @@ function PcReadyCard({
       toggleLabel={head.toggleLabel}
       reorder={reorder}
     />
+  );
+}
+
+/** One report-line writer per campaign and signed-in DM, for the page's life. */
+const dmInitiativeLines = new Map<string, ReturnType<typeof createDmInitiativeLines>>();
+
+/** The DM's typed roll as its report line. The roll itself is already saved: a report
+ *  write that fails goes to diagnostics, never to the roll's toast. */
+function recordDmTypedInitiative(campaignId: string, typed: DmTypedRoll): void {
+  const uid = useAuthStore.getState().user?.uid;
+  if (!uid) return;
+  const key = `${campaignId}|${uid}`;
+  let lines = dmInitiativeLines.get(key);
+  if (!lines) {
+    lines = createDmInitiativeLines(
+      createSessionRecorder({ store: sessionLogStoreFor(campaignId), uid })
+    );
+    dmInitiativeLines.set(key, lines);
+  }
+  void lines(typed).catch((error: unknown) =>
+    diagnosticsLog("warn", "session-log.dm-initiative-failed", { message: String(error) })
   );
 }
 
