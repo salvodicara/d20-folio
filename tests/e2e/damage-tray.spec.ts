@@ -142,8 +142,9 @@ for (const size of ["desktop", "mobile"] as const) {
       .first()
       .click();
     await page.getByRole("button", { name: /^Slot di livello 2/ }).click();
+    // The cast happened: its concentration is running.
     await expect(
-      page.getByRole("button", { name: "Annulla: Hai usato Blocca Persone" })
+      page.getByRole("button", { name: /^Blocca Persone \d+ round rimasti/ }).first()
     ).toBeVisible();
     await expect(page.getByRole("dialog", { name: /su chi\?/i })).toHaveCount(0);
     await expect(page.getByTestId("damage-tray")).toHaveCount(0);
