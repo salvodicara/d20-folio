@@ -212,9 +212,9 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   ),
   {
     id: "monk-uncanny-metabolism",
-    verdict: "by-hand",
-    evidence: ["feature-action-effects.test.ts"],
-    note: "one tap works; nothing prompts it at initiative",
+    verdict: "auto",
+    evidence: ["feature-action-effects.test.ts", "uncanny-metabolism-offer.test.tsx"],
+    note: "offered at the first initiative roll (a toast), one tap runs it",
   },
   // Wizard
   {

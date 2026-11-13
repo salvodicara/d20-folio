@@ -347,6 +347,7 @@
     "maintainedEndedToast": "Effect ended",
     "effectTimerShort_one": "{{count}} round left",
     "effectTimerShort_other": "{{count}} rounds left",
+    "initiativeOffer": "You rolled Initiative: {{name}} is ready",
     "initiativeTopUp": "{{source}}: regained uses on Initiative",
     "zeroHpPending_disintegrated": "{{source}}: if no feature keeps you up, you are turned to dust",
     "zeroHpPending_dies": "{{source}}: if no feature keeps you up, you die",

@@ -347,6 +347,7 @@
     "maintainedEndedToast": "Effetto terminato",
     "effectTimerShort_one": "{{count}} round rimasto",
     "effectTimerShort_other": "{{count}} round rimasti",
+    "initiativeOffer": "Hai tirato l'iniziativa: {{name}} è pronto",
     "initiativeTopUp": "{{source}}: usi recuperati all'Iniziativa",
     "zeroHpPending_disintegrated": "{{source}}: se nessuna capacità ti tiene in piedi, diventi polvere",
     "zeroHpPending_dies": "{{source}}: se nessuna capacità ti tiene in piedi, muori",
