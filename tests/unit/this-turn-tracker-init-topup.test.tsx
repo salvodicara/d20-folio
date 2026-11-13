@@ -35,6 +35,7 @@ import {
 } from "@/features/campaigns/global-combat-context";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import { useAuthStore } from "@/stores/authStore";
 
 /** A Monk (L15) with Perfect Focus, its Focus-point tracker drained to 0 remaining
  *  (used: 15) — the exact fixture `character-store-rest.test.ts` proves refills to a
@@ -103,6 +104,7 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     useCombatStatusStore.setState({ status: gatheringStatus(), pip: null });
     // The shell has read this character's campaigns (the sheet's usual state).
     usePartyRosterStore.setState({ party: null, resolvedFor: MOCK_CHARACTER.id });
+    useAuthStore.setState({ user: { uid: "u1" } as never });
   });
 
   it("tops up Perfect Focus on the first encounter roll despite the stale solo roll, and writes the CAMPAIGN table", async () => {
@@ -227,7 +229,7 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
   // The rules lane's audit, 2026-11-13: the campaigns can be read before the fight's
   // live listener answers. The pip, built from the campaigns, already lists the fight for
   // this character: the roll keeps waiting for the status, never goes solo.
-  it("campaigns read and a fight listed for the character, its status not here yet: the roll waits for it", async () => {
+  it("campaigns read and a fight listed for the character, its status not here yet: the roll goes to that fight", async () => {
     useCombatStatusStore.setState({
       status: null,
       pip: {
@@ -253,11 +255,7 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     const input = document.querySelector(".init-edit-input") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "18" } });
     fireEvent.keyDown(input, { key: "Enter" });
-    expect(useCombatStore.getState().initiative).toBe("");
-    expect(setEncounterInitiative).not.toHaveBeenCalled();
-    act(() => {
-      useCombatStatusStore.setState({ status: gatheringStatus() });
-    });
+    // The pip, read with the campaigns, names the fight: the roll needs no live status.
     await waitFor(() =>
       expect(setEncounterInitiative).toHaveBeenCalledWith("camp-1", "u1", 18)
     );
