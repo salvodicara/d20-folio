@@ -21,6 +21,7 @@ import {
   SANDBOX_USERS,
   signInAs,
   test,
+  turnWriteSent,
   watchErrors,
 } from "./helpers";
 
@@ -151,6 +152,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     // error page on reload (#1158).
     const action = bard.locator('.econ-tok[data-kind="action"]');
     await expect(action).toHaveAttribute("data-state", "open");
+    const written = turnWriteSent(bard, "spell-vicious-mockery");
     await bard.getByRole("button", { name: "Cast: Vicious Mockery" }).click();
     // Walk the cast's questions (a target, then the roll) until the dialog closes.
     const dialog = bard.locator("dialog[open]");
@@ -163,6 +165,7 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
       await bard.waitForTimeout(500);
     }
     await expect(action).toHaveAttribute("data-state", "spent");
+    await written;
     await bard.reload();
     await expect(action, "the sheet comes back with the Action spent").toHaveAttribute(
       "data-state",
