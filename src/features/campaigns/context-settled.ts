@@ -8,7 +8,7 @@
  * them, and needs the live status only for what only it holds.
  */
 import { useCombatStatusStore } from "./combat-status-store";
-import { partyKnown } from "./party-roster";
+import { PARTY_WAIT_MS, partyKnown, usePartyRosterStore } from "./party-roster";
 
 /** Where a sheet's initiative roll goes. */
 export type RollTarget =
@@ -38,4 +38,36 @@ export function rollTargetOf(characterId: string, uid: string): RollTarget | nul
       firstRoll: entry.state === "needs-roll",
     };
   return { kind: "solo" };
+}
+
+/** The fight of `characterId` is known in full: the campaigns are read, and either its
+ *  live status is here or no campaign lists a fight for it. A turn action needs this
+ *  (the live status carries the turn's key); a roll needs only `rollTargetOf`. */
+export function fightKnown(characterId: string): boolean {
+  if (!partyKnown(characterId)) return false;
+  const { status, pip } = useCombatStatusStore.getState();
+  if (status?.characterId === characterId) return true;
+  return !pip?.entries.some((entry) => entry.characterId === characterId);
+}
+
+/** Resolves `true` once the fight of `characterId` is known, or `false` after `ms`. */
+export function fightKnownSoon(
+  characterId: string,
+  ms = PARTY_WAIT_MS
+): Promise<boolean> {
+  if (fightKnown(characterId)) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      stopParty();
+      stopStatus();
+      resolve(fightKnown(characterId));
+    };
+    const timer = setTimeout(done, ms);
+    const check = () => {
+      if (fightKnown(characterId)) done();
+    };
+    const stopParty = usePartyRosterStore.subscribe(check);
+    const stopStatus = useCombatStatusStore.subscribe(check);
+  });
 }
