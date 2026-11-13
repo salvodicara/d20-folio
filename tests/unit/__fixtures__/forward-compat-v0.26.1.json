@@ -1,0 +1,48 @@
+{
+  "release": "v0.26.1",
+  "generatedBy": "node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts --baseline-root <release app> --release <name> --write-fixture <this file>",
+  "lists": {
+    "turnEconomy.action.economyCategory": [
+      "attack",
+      "dash",
+      "disengage",
+      "hide",
+      "utilize"
+    ],
+    "turnEconomy.action.triggerEvents": ["attack", "bonus-extend"],
+    "damage types": [
+      "acid",
+      "bludgeoning",
+      "cold",
+      "fire",
+      "force",
+      "lightning",
+      "necrotic",
+      "piercing",
+      "poison",
+      "psychic",
+      "radiant",
+      "slashing",
+      "thunder"
+    ],
+    "conditions": [
+      "blinded",
+      "charmed",
+      "deafened",
+      "exhaustion",
+      "frightened",
+      "grappled",
+      "incapacitated",
+      "invisible",
+      "paralyzed",
+      "petrified",
+      "poisoned",
+      "prone",
+      "restrained",
+      "stunned",
+      "unconscious"
+    ],
+    "creature sizes": ["Tiny", "Small", "Medium", "Large", "Huge", "Gargantuan"],
+    "familiar creature types": ["celestial", "fey", "fiend"]
+  }
+}
