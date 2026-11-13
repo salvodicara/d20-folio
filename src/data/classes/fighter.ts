@@ -212,7 +212,10 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
         type: "while-active",
         activeKey: "fighter-action-surge",
         duration: { kind: "timed", minutes: 0, maxRounds: 1 },
-        grants: [{ type: "extra-action", slot: "action", count: 1 }],
+        // "one additional action, except the Magic action" (SRD 5.2.1).
+        grants: [
+          { type: "extra-action", slot: "action", count: 1, excludedActions: ["magic"] },
+        ],
       },
     ],
     source: "SRD",

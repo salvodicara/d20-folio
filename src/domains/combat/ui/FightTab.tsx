@@ -34,7 +34,7 @@ import {
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
-import { missingRollers } from "@/features/campaigns/combat-lifecycle";
+import { isAttached, missingRollers } from "@/features/campaigns/combat-lifecycle";
 import { encounterRollFor } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
@@ -91,7 +91,7 @@ export function FightTab({
     {
       uid,
       isDm,
-      hasCharacter: Boolean(campaign.memberDetails[uid]?.characterId),
+      hasCharacter: isAttached(campaign.memberDetails[uid]),
       rolled: campaign.encounterInit?.[uid] != null,
       missing: missingRollers({ ...campaign, encounter }).length,
     },
@@ -102,7 +102,9 @@ export function FightTab({
   );
   const roll = rolling && (
     <RollDialog
-      bonus={bonuses[myId] ?? 0}
+      // Null until the party's sheets are read: the roll orders the fight by everyone's
+      // bonus and reports its total, so it waits for them (rehearsal, 2026-11-13).
+      bonus={party.ready ? (bonuses[myId] ?? 0) : null}
       onClose={() => setRolling(false)}
       onRoll={(d20) =>
         move(
@@ -404,6 +406,8 @@ function useDmTools(
 interface Party {
   pcs: Record<string, PcLive>;
   concentration: Record<string, PartyChip[]>;
+  /** Every character's sheet has been read (or failed to): the bonuses are known. */
+  ready: boolean;
 }
 
 /** Every character's live facts (the old hub's assembly: their sheet and combat state
@@ -449,7 +453,10 @@ function useParty(
           { kind: "conc", label: concentrationLabel(spell, locale) },
         ];
     }
-    return { pcs, concentration };
+    const ready = refs.every(
+      (ref) => docs[ref.uid] && docs[ref.uid]?.status !== "loading"
+    );
+    return { pcs, concentration, ready };
   }, [refs, docs, states, encounterInit, locale, effectsOn]);
 }
 

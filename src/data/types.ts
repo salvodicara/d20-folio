@@ -1691,8 +1691,23 @@ export interface ActionDamageReduction {
   damageTypesByLevel: Readonly<Record<number, ReadonlyArray<DamageType>>>;
 }
 
-/** Stable semantic category used by restricted/alternate combat-economy actions. */
-export type ActionEconomyCategory = "attack" | "dash" | "disengage" | "hide" | "utilize";
+/** An action's category for restricted extra actions; "magic" is casting a spell
+ *  (the Magic action Action Surge's extra action can't be). The saved turn stores it,
+ *  and its reader keeps exactly these values: add a category here, never elsewhere. */
+export const ACTION_ECONOMY_CATEGORIES = [
+  "attack",
+  "dash",
+  "disengage",
+  "hide",
+  "utilize",
+  "magic",
+] as const;
+export type ActionEconomyCategory = (typeof ACTION_ECONOMY_CATEGORIES)[number];
+
+/** Turn events a committed action produces (an attack, a Bonus Action that keeps a
+ *  state going). The saved turn stores them; its reader keeps exactly these values. */
+export const TURN_TRIGGER_EVENTS = ["attack", "bonus-extend"] as const;
+export type TurnTriggerEvent = (typeof TURN_TRIGGER_EVENTS)[number];
 
 export interface SrdActionDef extends EffectRiders {
   /** Optional stable suffix when one feature declares several actions of the same type. */

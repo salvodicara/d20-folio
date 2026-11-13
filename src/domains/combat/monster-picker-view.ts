@@ -1,11 +1,15 @@
 /**
  * What the new campaign page's monster picker reads (Direction's blocker 2). The bestiary
  * rows come from the compendium picker; this adds the DM's homebrew monsters in the
- * same shape, turns a picked one into the add move's input, and grades the fight as it
+ * same shape, turns the picks into the add move's inputs (each group's initiative rolled), and grades the fight as it
  * would be with the picked creatures (the DDB-style readout, on the 2024 SRD
  * encounter-building budgets the classic `EncounterBudgetReadout` uses). Pure.
  */
-import { customMonsterToInput } from "@/features/campaigns/encounter-monster-input";
+import { MONSTERS } from "@/data/monsters";
+import {
+  customMonsterToInput,
+  toMonsterInput,
+} from "@/features/campaigns/encounter-monster-input";
 import type { MonsterInput } from "@/lib/play/encounter";
 import { totalLevel } from "@/lib/classes";
 import {
@@ -15,7 +19,8 @@ import {
   type BudgetVerdict,
 } from "@/lib/encounter-difficulty";
 import type { LibraryEntry } from "@/lib/library";
-import { xpForCr } from "@/lib/monster";
+import type { Locale } from "@/lib/locale";
+import { monsterInitiative, xpForCr } from "@/lib/monster";
 import type { CampaignDoc, CustomMonster } from "@/types/campaign";
 
 /** One picker row, bestiary or homebrew. `cr` is null for an un-costed creature. */
@@ -51,17 +56,35 @@ export function homebrewPickerMonsters(
   }));
 }
 
-/** A picked homebrew monster as the add move's input (`addMonstersMove`). */
-export function homebrewMonsterInput(
-  entries: ReadonlyArray<LibraryEntry>,
-  id: string,
-  count: number,
-  initiative: number | null
-): MonsterInput | null {
-  const entry = entries.find((candidate) => candidate.id === id);
-  return entry && isMonster(entry)
-    ? customMonsterToInput(entry.item, count, initiative)
-    : null;
+/**
+ * The picks as the fight's creatures, each group rolling its initiative as it enters:
+ * d20 + the stat block's bonus (a homebrew creature prints none: the plain d20), one
+ * roll a group (SRD 5.2.1, Initiative), as D&D Beyond's Encounter Builder and Foundry
+ * roll the monsters' initiative for the DM. A pick that no longer resolves is skipped.
+ */
+export function pickedMonsterInputs(
+  picks: ReadonlyArray<{ kind: "srd" | "homebrew"; id: string; count: number }>,
+  library: ReadonlyArray<LibraryEntry>,
+  locale: Locale,
+  d20: () => number
+): MonsterInput[] {
+  return picks.flatMap(({ kind, id, count }) => {
+    if (kind === "homebrew") {
+      const entry = library.find((candidate) => candidate.id === id);
+      return entry && isMonster(entry)
+        ? [customMonsterToInput(entry.item, count, d20())]
+        : [];
+    }
+    const m = MONSTERS.find((x) => x.id === id);
+    return m
+      ? [
+          {
+            ...toMonsterInput(m, locale, count),
+            initiative: d20() + monsterInitiative(m),
+          },
+        ]
+      : [];
+  });
 }
 
 /**

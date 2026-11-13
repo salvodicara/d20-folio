@@ -62,6 +62,16 @@
     "repeatSavePassed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: riuscito",
     "repeatSaveFailed": "Azione usata per ripetere il TS su {{ability}} contro {{condition}}: fallito",
     "trackerSpent_one": "Speso un uso di {{name}}",
-    "trackerSpent_other": "Spesi {{count}} usi di {{name}}"
+    "trackerSpent_other": "Spesi {{count}} usi di {{name}}",
+    "restRecovery": {
+      "line": "{{line}}: {{details}}",
+      "hp": "+{{count}} PF",
+      "hitDiceSpent_one": "{{count}} Dado Vita",
+      "hitDiceSpent_other": "{{count}} Dadi Vita",
+      "hitDiceRegained_one": "{{count}} Dado Vita recuperato",
+      "hitDiceRegained_other": "{{count}} Dadi Vita recuperati",
+      "resource": "{{resource}} +{{count}}"
+    },
+    "levelUp": "Sale al livello {{level}} ({{class}})"
   }
 }

@@ -2554,8 +2554,12 @@
 }
 /* A dialog's confirm is the filled primary of its footer (BG3's lit confirm; the owner's
    2026-11-10 choice of the blue BG3 button, as «Fine turno»): every dialog, through the
-   shared footer; its Cancel stays outlined. */
-.fui dialog.f-dlg .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
+   shared footer, and the creation step's «Avanti»; Cancel and «Indietro» stay outlined.
+   A failed save's reroll takes that weight in the body (BG3 shows the Inspiration
+   reroll as «Continue»), and that dialog's confirm steps down to outlined. */
+.fui dialog.f-dlg .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]),
+.fui dialog.f-dlg .f-reroll .f-btn[data-kind="primary"]:not([aria-disabled="true"]),
+.fui .f-create-step > .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
   border: 2px solid var(--lit-hi);
   background: radial-gradient(circle at 50% 35%, var(--lit-mid), var(--lit-deep) 78%);
   box-shadow: 0 0 14px var(--lit-glow);
@@ -2564,6 +2568,11 @@
 .fui
   dialog.f-dlg
   .f-pn-foot
+  .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover,
+.fui dialog.f-dlg .f-reroll .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover,
+.fui
+  .f-create-step
+  > .f-pn-foot
   .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover {
   border-color: var(--lit-hi);
   filter: brightness(1.2);
@@ -5621,6 +5630,11 @@
     color: var(--danger);
     font-size: var(--fs-sm);
   }
+  /* the page ends clear of the fixed bar: its last card (the HP choice) is never under
+     «Conferma» */
+  .fui .f-lvl {
+    padding-bottom: 96px;
+  }
 }
 
 @media (max-width: 400px) {
@@ -6657,4 +6671,27 @@
 }
 .fui .f-notfound h1 {
   margin: 0;
+}
+
+/* «Torna alla campagna» above a party member's sheet (the DM's view; D&D Beyond's
+   back-to-campaign link). The phone has it in its own top bar. */
+.fui .f-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+.fui .f-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--gold);
+  font-weight: 700;
+}
+@media (max-width: 640px) {
+  .fui .f-crumb {
+    display: none;
+  }
 }

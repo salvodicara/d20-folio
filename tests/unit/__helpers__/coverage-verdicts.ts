@@ -407,7 +407,12 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
     id: "elf:fey-ancestry",
     verdict: "auto",
     evidence: ["species-condition-advantages.test.ts", "grants.test.ts"],
-    note: "carries Trance's sleep immunity (label only)",
+  },
+  {
+    id: "elf:trance",
+    verdict: "auto",
+    evidence: ["species-condition-advantages.test.ts"],
+    note: "magic can't put you to sleep (#1101)",
   },
   { id: "orc:adrenaline-rush", verdict: "auto", evidence: ["grants-phase-c.test.ts"] },
   {

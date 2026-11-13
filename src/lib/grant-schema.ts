@@ -863,6 +863,8 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
           literalSchema("utilize"),
         ])
       ),
+      /** Actions this extra action can't be (Action Surge: the Magic action). */
+      excludedActions: arraySchema(literalSchema("magic")),
       maxAttacks: numberSchema,
     }
   ),

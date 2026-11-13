@@ -7,6 +7,7 @@ import { execFileSync } from "node:child_process";
 import { test as base, expect, type Page } from "@playwright/test";
 import { visibleWithin } from "../e2e/visible-within";
 import { teamFixtureName } from "../e2e/team-fixture";
+import { SESSION_GAP_MS } from "../../src/lib/session-log/recorder";
 
 /**
  * The rehearsal's `test`: the browser contexts a test opens itself (a DM, a player)
@@ -36,15 +37,55 @@ export const PLAYER_BARD = "dev-player-bard";
  *  written in public code): the full name, and the first word some rows show. */
 export const BARD_NAME = teamFixtureName("bard") ?? "";
 export const BARD_FIRST = BARD_NAME.split(" ")[0] ?? "";
+export const PALADIN_NAME = teamFixtureName("paladin") ?? "";
 
-/** The emulator project's Firestore REST root (read-only checks, never writes). */
+/** The emulator project's Firestore REST root (read-only checks; the one write is
+ *  {@link startNewSitting}'s). */
 const FIRESTORE =
   "http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents";
+const OWNER = { Authorization: "Bearer owner" };
+
+/**
+ * Make the sandbox campaign's next gesture open a new sitting of its session log, as
+ * an evening played after a long pause does (`nextSessionId`): every stored sitting's
+ * last write moves back past the gap. Lines already stored keep their own times. A
+ * spec that reads one evening's report then reads only its own lines, whatever the
+ * earlier specs of the same day recorded.
+ */
+export async function startNewSitting(): Promise<void> {
+  const logs = `${FIRESTORE}/campaigns/${SANDBOX_CAMPAIGN}/sessionLogs`;
+  const response = await fetch(`${logs}?pageSize=300&mask.fieldPaths=lastAt`, {
+    headers: OWNER,
+  });
+  if (!response.ok) throw new Error(`session logs: HTTP ${String(response.status)}`);
+  const body = (await response.json()) as {
+    documents?: Array<{
+      name: string;
+      fields?: { lastAt?: { integerValue?: string; doubleValue?: number } };
+    }>;
+  };
+  // Each one moves by the same span, so the newest stays the newest.
+  const back = SESSION_GAP_MS + 60 * 60 * 1000;
+  for (const doc of body.documents ?? []) {
+    const id = doc.name.split("/").at(-1) ?? "";
+    const lastAt = Number(
+      doc.fields?.lastAt?.integerValue ?? doc.fields?.lastAt?.doubleValue ?? Date.now()
+    );
+    const patched = await fetch(`${logs}/${id}?updateMask.fieldPaths=lastAt`, {
+      method: "PATCH",
+      headers: { ...OWNER, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: { lastAt: { integerValue: String(Math.round(lastAt - back)) } },
+      }),
+    });
+    if (!patched.ok) throw new Error(`session log ${id}: HTTP ${String(patched.status)}`);
+  }
+}
 
 /** The DM's characters, read straight from the emulator. */
 export async function ownerCharacterIds(): Promise<string[]> {
   const response = await fetch(`${FIRESTORE}/users/dev-owner/characters`, {
-    headers: { Authorization: "Bearer owner" },
+    headers: OWNER,
   });
   const body = (await response.json()) as { documents?: Array<{ name: string }> };
   return (body.documents ?? []).map((doc) => doc.name.split("/").at(-1) ?? "");
@@ -295,4 +336,20 @@ export async function rollEachHero(dm: Page): Promise<void> {
     await input.fill(String(15 - i));
     await input.press("Enter");
   }
+}
+
+/**
+ * Resolves once the page has sent the saved turn holding `actionId` (a Firestore write
+ * of `turnEconomy` naming it). A reload waits for it: a reload within a second of an
+ * act can still lose its write (#1178), which this step does not test.
+ */
+export function turnWriteSent(page: Page, actionId: string): Promise<unknown> {
+  return page.waitForRequest(
+    (request) => {
+      if (!request.url().includes("Firestore/Write/channel")) return false;
+      const body = decodeURIComponent((request.postData() ?? "").replace(/\+/g, " "));
+      return body.includes("turnEconomy") && body.includes(actionId);
+    },
+    { timeout: 15_000 }
+  );
 }

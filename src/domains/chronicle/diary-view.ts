@@ -1,14 +1,17 @@
 /**
  * The Diario's automatic report: one played evening as the blocks a table remembers —
- * exploration, each fight (its rounds, its foes, how it ended) and each rest with what it
- * restored. Built on `buildReport`, so corrections, hidden and moved lines already apply;
+ * exploration, each fight (its rounds, its foes, how it ended), each rest with what it
+ * restored, and a character's progress (a level-up). Built on `buildReport`, so corrections, hidden and moved lines already apply;
  * notes stay where they were written. Each block carries the time of its first line.
  */
+import { isInferredFight } from "@/lib/session-log/infer-fights";
 import type { ReportSection, SessionEntry } from "@/lib/session-log";
 
 export type DiaryBlock =
   | { kind: "explore"; at: number; entries: SessionEntry[] }
   | { kind: "rest"; at: number; entries: SessionEntry[] }
+  /** A character's progress outside a fight: a level-up (not exploration). */
+  | { kind: "progress"; at: number; entries: SessionEntry[] }
   | {
       kind: "fight";
       encounterId: string;
@@ -20,6 +23,10 @@ export type DiaryBlock =
       /** Each creature's own name, for its lines. */
       names: Record<string, string>;
       outcome?: "victory" | "ended";
+      /** Worked out from the blows (nobody started a fight): its heading says so. */
+      inferred: boolean;
+      /** When it ended (its end marker); absent while it runs. */
+      endedAt?: number;
     };
 
 /** What a rest gives back: these lines right after a rest belong to it. */
@@ -44,6 +51,7 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
       blocks.push({
         kind: "fight",
         encounterId: section.encounterId,
+        inferred: isInferredFight(section),
         at: first.at,
         entries,
         rounds: Math.max(0, ...section.rounds.map((r) => r.round ?? 0)),
@@ -52,16 +60,19 @@ export function diaryBlocks(sections: readonly ReportSection[]): DiaryBlock[] {
           ...new Set(Object.values(section.names).map((n) => n.replace(/\s+\d+$/, ""))),
         ],
         ...(section.outcome ? { outcome: section.outcome } : {}),
+        ...(section.endedAt !== undefined ? { endedAt: section.endedAt } : {}),
       });
       continue;
     }
     for (const entry of section.entries) {
       const last = blocks[blocks.length - 1];
       const kind =
-        entry.event.kind === "rest" ||
-        (last?.kind === "rest" && RECOVERY.has(entry.event.kind))
-          ? "rest"
-          : "explore";
+        entry.event.kind === "level-up"
+          ? "progress"
+          : entry.event.kind === "rest" ||
+              (last?.kind === "rest" && RECOVERY.has(entry.event.kind))
+            ? "rest"
+            : "explore";
       if (last?.kind === kind) last.entries.push(entry);
       else blocks.push({ kind, at: entry.at, entries: [entry] });
     }

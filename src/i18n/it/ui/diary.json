@@ -21,6 +21,9 @@
     "copied": "Copiato: incollalo dove vuoi.",
     "pasteChronicle": "Incolla la cronaca",
     "saveFailed": "Non salvata: controlla la connessione e riprova.",
-    "saved": "Cronaca della sessione salvata."
+    "saved": "Cronaca della sessione salvata.",
+    "victory": "Vittoria",
+    "progress": "Progressi",
+    "inferredFight": "{{title}} (dedotto)"
   }
 }

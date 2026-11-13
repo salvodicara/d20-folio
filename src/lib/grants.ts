@@ -1750,6 +1750,7 @@ export interface AggregatedGrants {
     slot: "action" | "bonus";
     count: number;
     allowedActions?: ReadonlyArray<ActionEconomyCategory>;
+    excludedActions?: ReadonlyArray<ActionEconomyCategory>;
     maxAttacks?: number;
   }>;
   /** True when an active effect prevents actions for the current turn. */
@@ -4163,6 +4164,7 @@ export function evaluateGrants(
           slot: g.slot,
           count: g.count,
           ...(g.allowedActions ? { allowedActions: g.allowedActions } : {}),
+          ...(g.excludedActions ? { excludedActions: g.excludedActions } : {}),
           ...(g.maxAttacks !== undefined ? { maxAttacks: g.maxAttacks } : {}),
         });
         break;

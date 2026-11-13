@@ -21,6 +21,9 @@
     "copied": "Copied: paste it wherever you like.",
     "pasteChronicle": "Paste the chronicle",
     "saveFailed": "Not saved: check your connection and try again.",
-    "saved": "Session chronicle saved."
+    "saved": "Session chronicle saved.",
+    "victory": "Victory",
+    "progress": "Progress",
+    "inferredFight": "{{title}} (inferred)"
   }
 }

@@ -92,6 +92,7 @@ import {
   type SelectedAction,
 } from "@/stores/combatStore";
 import {
+  restoreCurrentTurn,
   snapshotTurnEconomy,
   syncCombatFromSession,
   syncCombatTurnContext,
@@ -108,6 +109,7 @@ import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
+  noLegalTargetTypes,
   targetStepFor,
   type TargetRoster,
   withSelfRecipient,
@@ -127,8 +129,14 @@ import { sheetEncounter } from "@/features/character/center/turn-state";
 import { useDamageTrayStore } from "@/features/character/center/damage-tray-store";
 import { offerMaterialCost } from "@/features/character/center/material-cost-offer";
 import { DamageTray } from "@/features/character/center/DamageTray";
-import { damageTrayPlan, rollsToHit } from "@/lib/play/damage-tray";
+import {
+  damageTrayPlan,
+  rollsToHit,
+  saveAloneOnTheLine,
+  savesOnTheLine,
+} from "@/lib/play/damage-tray";
 import { useAttackOutcomeStore } from "./attack-outcome-store";
+import { useSaveOutcomeStore } from "./save-outcome-store";
 import { useLocale } from "@/hooks/useLocale";
 import {
   resolveTrackers,
@@ -751,7 +759,16 @@ export function TurnEconomyProvider({
     ): void => {
       const openId = useCharacterStore.getState().character?.id ?? null;
       const scoped = sheetEncounter(status, openId);
+      // Read before the context sync: its reset is written back as the stored turn.
+      const stored = useCharacterStore.getState().combatTurnEconomy;
       const result = syncCombatTurnContext(scoped);
+      // A reload in a campaign fight: the fight's first status reads as a fight this
+      // sheet had not seen and resets the turn. When the stored turn is THIS turn (its
+      // key names the fight, the round and whose turn it is), bring it back; any other
+      // stored turn never matches (the rules lane's cast-reload rehearsal, 2026-11-13).
+      if (scoped && openId) {
+        restoreCurrentTurn(stored, turnEconomyKey(scoped, openId, 0), locale);
+      }
       if (result === null) return;
       useUndoStore.getState().purgeTurnScoped();
       if (result === "encounter-ended") {
@@ -1003,6 +1020,7 @@ export function TurnEconomyProvider({
     // An attack with no target in Folio asks its result on its own row (no modal):
     // the newest use takes the chips, anything else retires them.
     offerAttackOutcome(action, targets, loggedId);
+    offerSaveOutcome(action, targets, loggedId);
     offerFollowUps(action, targets, loggedId, occurrenceId);
     // A use that makes a form (Wild Shape) asks which one next.
     if (action.assumesForm) setFormPickerSpellId(action.assumesForm);
@@ -1026,6 +1044,37 @@ export function TurnEconomyProvider({
           dc: check.dc,
           verdict: t(succeeded ? "combatLog.checkSuccess" : "combatLog.checkFailure"),
         });
+  }
+
+  /** A save spell with nothing to apply (Command) asks each creature's save on the
+   *  row just used; any other use takes the chips away. */
+  function offerSaveOutcome(
+    action: ResolvedAction,
+    targets: ReadonlyArray<string>,
+    loggedId: string | null
+  ): void {
+    const store = useSaveOutcomeStore.getState();
+    const asked = loggedId ? savesOnTheLine(action, targets, selfCombatantId()) : [];
+    // Cast with nobody named (solo): its one save, and the damage when it deals some.
+    const alone =
+      loggedId && asked.length === 0 ? saveAloneOnTheLine(action, targets) : null;
+    if (loggedId && alone) {
+      store.offer({ logId: loggedId, actionId: action.id, targets: [], alone });
+      return;
+    }
+    if (!loggedId || asked.length === 0) {
+      store.clear();
+      return;
+    }
+    const rows = targetRoster().rows;
+    store.offer({
+      logId: loggedId,
+      actionId: action.id,
+      targets: asked.map((id) => ({
+        id,
+        name: rows.find((row) => row.id === id)?.name ?? id,
+      })),
+    });
   }
 
   /** Open the damage tray when the use has something to apply to its targets. */
@@ -1429,7 +1478,7 @@ export function TurnEconomyProvider({
     _slot: EconomySlot,
     opt: CastCommitOption,
     metamagicIds: ReadonlyArray<string> = [],
-    _ridesPip?: boolean,
+    ridesPip?: boolean,
     execution: ActionExecution = TURN_EXECUTION
   ) {
     const characterId = character?.id;
@@ -1444,6 +1493,22 @@ export function TurnEconomyProvider({
       !!liveSession &&
       castReadiesSpell(action, useCombatStore.getState().selected.action, liveSession);
     const heldAction = readies ? { ...action, concentration: true } : action;
+    // In a fight a cast spends the slot its casting time names, like any other row: an
+    // Action spell takes the Action (Quickened: the Bonus Action). Not a readied
+    // release (Ready took the Action), a ritual, or a cast riding an attack swing.
+    const economySlot = castEconomySlot(action.type, metamagicIds);
+    // A cantrip that replaces one attack of an Attack action already open (War
+    // Magic) rides that action: it takes no Action of its own.
+    const combat = useCombatStore.getState();
+    const ridesOpenAttack =
+      isPipAttack(action) && combat.attacksUsed % combat.attackBudget !== 0;
+    const occupiesSlot =
+      inEncounter() &&
+      !readies &&
+      !execution.ritual &&
+      !ridesPip &&
+      !ridesOpenAttack &&
+      (economySlot === "action" || economySlot === "bonus");
     if (!canCommit() || !(await confirmConcentrationBreak(heldAction)) || !canCommit())
       return;
     const itemPayment = castItemPayment(action, opt);
@@ -1497,6 +1562,13 @@ export function TurnEconomyProvider({
         const resourceCommit = resourceCycle?.apply() ?? null;
         if (resourceCycle && !resourceCommit) return null;
         const cs = useCharacterStore.getState();
+        if (
+          occupiesSlot &&
+          !appendWithinActionRules(toSelectedAction(action, economySlot, opt))
+        ) {
+          seal?.()?.();
+          return null;
+        }
         const spends = castOptionSpends(opt, metamagicIds);
         paySpends(spends);
         // Casting is an act: it ends a Hide (Verbal) and an Invisibility held now.
@@ -1537,6 +1609,7 @@ export function TurnEconomyProvider({
         }
         const undo = seal?.() ?? null;
         if (!readies) offerAttackOutcome(action, targets, loggedId);
+        if (!readies) offerSaveOutcome(action, targets, loggedId);
         if (!readies) offerFollowUps(action, targets, loggedId);
         if (!readies) offerDispel(action.spellId, opt.level, targets);
         // A spell that leaves an area (Spirit Guardians, Moonbeam) puts it on the fight.
@@ -1563,7 +1636,7 @@ export function TurnEconomyProvider({
           return true;
         };
       },
-      { turnScoped: false }
+      { turnScoped: occupiesSlot }
     );
     clearPendingResolution(action);
   }
@@ -3046,13 +3119,28 @@ export function TurnEconomyProvider({
       pool: wishDuplicatePool(),
       opener,
       onPrepared: (prepared, commit) => {
-        const step = targetStepFor(prepared, targetRoster());
+        const roster = targetRoster();
+        const step = targetStepFor(prepared, roster);
         if (!step) {
+          sayNoLegalTarget(prepared, roster);
           commit(() => undefined, { action: prepared });
           return;
         }
         setTargetRequest({ characterId: character.id, action: prepared, step, commit });
       },
+    });
+  }
+
+  /** A type-limited spell with no such creature in the fight: say why nobody is
+   *  offered (the cast still goes on, its save asked on the row). */
+  function sayNoLegalTarget(action: ResolvedAction, roster: TargetRoster): void {
+    const types = noLegalTargetTypes(action, roster);
+    if (!types) return;
+    showToast({
+      message: t("combat.noLegalTarget", {
+        types: types.map((type) => t(`srd.creatureType_${type}`)).join(" / "),
+      }),
+      duration: 4000,
     });
   }
 
@@ -3090,8 +3178,10 @@ export function TurnEconomyProvider({
     prepareResolution(
       executable,
       (prepared, commit) => {
-        const step = targetStepFor(prepared, targetRoster());
+        const roster = targetRoster();
+        const step = targetStepFor(prepared, roster);
         if (!step) {
+          sayNoLegalTarget(prepared, roster);
           commit(() => undefined, { action: prepared });
           return;
         }

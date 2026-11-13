@@ -1,6 +1,6 @@
 /**
  * One evening's automatic report as blocks (exploration, each fight with its rounds and
- * foes, each rest), each with its time, its lines and the notes signed by their player:
+ * foes, how it ended and its time span; each rest), each with its time, its lines and the notes signed by their player:
  * the Diario's session page and the sheet's «Resoconto» show an evening the same way.
  */
 import { useTranslation } from "react-i18next";
@@ -37,9 +37,14 @@ export function ReportBlocks({
           <h4 className="f-lbl">
             {
               // the separator never starts a line
-              [blockTitle(block, t), ...blockMeta(block, t), time(block.at)].join(
-                "\u00a0· "
-              )
+              [
+                blockTitle(block, t),
+                ...blockMeta(block, t),
+                // an ended fight reads from its start to its end
+                block.kind === "fight" && block.endedAt !== undefined
+                  ? `${time(block.at)}–${time(block.endedAt)}`
+                  : time(block.at),
+              ].join("\u00a0· ")
             }
           </h4>
           {block.entries.map((entry) => (
@@ -62,15 +67,20 @@ type T = ReturnType<typeof useTranslation>["t"];
 function blockTitle(block: DiaryBlock, t: T): string {
   if (block.kind === "explore") return t("diary.explore");
   if (block.kind === "rest") return t("character.rest");
-  return block.foes.length
+  if (block.kind === "progress") return t("diary.progress");
+  const title = block.foes.length
     ? t("diary.fightWith", { foes: block.foes.join(", ") })
     : t("campaignScreen.tabFight");
+  // A fight the app worked out from the blows says so, as on every report surface.
+  return block.inferred ? t("diary.inferredFight", { title }) : title;
 }
 
 function blockMeta(block: DiaryBlock, t: T): string[] {
-  return block.kind === "fight" && block.rounds > 0
-    ? [t("diary.rounds", { count: block.rounds })]
-    : [];
+  if (block.kind !== "fight") return [];
+  return [
+    ...(block.rounds > 0 ? [t("diary.rounds", { count: block.rounds })] : []),
+    ...(block.outcome === "victory" ? [t("diary.victory")] : []),
+  ];
 }
 
 function TimelineLine({

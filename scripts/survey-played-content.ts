@@ -35,6 +35,14 @@ interface ParsedCharacter {
   race?: string;
   classes?: ReadonlyArray<{ classId: string; subclassId?: string; level: number }>;
   features?: ReadonlyArray<{ srdId?: string; custom?: boolean }>;
+  spells?: ReadonlyArray<{
+    srdId?: string;
+    custom?: boolean;
+    prepared?: boolean;
+    alwaysPrepared?: boolean;
+  }>;
+  weapons?: ReadonlyArray<{ srdId?: string; custom?: boolean }>;
+  equipment?: ReadonlyArray<{ srdId?: string; custom?: boolean }>;
 }
 interface ClassTable {
   id: string;
@@ -54,6 +62,8 @@ interface EngineModules {
   ) => { ok: true; character: ParsedCharacter } | { ok: false; error: string };
   classTables: ReadonlyArray<ClassTable>;
   classFeatures: ReadonlyArray<ClassFeature>;
+  getMagicItem: (id: string) => unknown;
+  getEquipment: (id: string) => { category: string } | undefined;
 }
 
 async function engineExport(file: string, name: string): Promise<unknown> {
@@ -71,6 +81,8 @@ const engine = {
   ),
   classTables: await engineExport("data/classes.ts", "classTables"),
   classFeatures: await engineExport("data/classes.ts", "classFeatures"),
+  getMagicItem: await engineExport("data/magic-items/index.ts", "getMagicItem"),
+  getEquipment: await engineExport("data/equipment.ts", "getEquipment"),
 } as EngineModules;
 
 // ── The pure survey ──────────────────────────────────────────────────────────
@@ -93,9 +105,21 @@ export interface PlayedContentSurvey {
   customFeatures: number;
   /** Class feature id gained in a character's next two levels → characters. */
   upcoming: Record<string, number>;
+  /** Catalogue spell id on a sheet → characters holding it, and how many prepare it
+   *  (always-prepared counts as prepared). */
+  spells: Record<string, { characters: number; prepared: number }>;
+  /** Homebrew spells on sheets: counted, never named. */
+  customSpells: number;
+  /** Catalogue item id carried (weapons and equipment) → characters, and its kind. */
+  items: Record<string, { characters: number; kind: ItemKind }>;
+  /** Homebrew items on sheets: counted, never named. */
+  customItems: number;
   /** Documents that couldn't be read, by reason code (counts only). */
   unreadable: Record<string, number>;
 }
+
+/** What an item is, for ordering the check: magic items first. */
+export type ItemKind = "magic" | "weapon" | "armor" | "shield" | "gear" | "tool" | "pack";
 
 const add = (map: Record<string, number>, key: string) => {
   map[key] = (map[key] ?? 0) + 1;
@@ -132,6 +156,10 @@ export function surveyPlayedContent(
     features: {},
     customFeatures: 0,
     upcoming: {},
+    spells: {},
+    customSpells: 0,
+    items: {},
+    customItems: 0,
     unreadable: {},
   };
   const parents = sources
@@ -161,6 +189,34 @@ export function surveyPlayedContent(
           next.add(id);
       }
       for (const id of next) add(survey.upcoming, id);
+    }
+    const spellSeen = new Map<string, boolean>();
+    for (const spell of character.spells ?? []) {
+      if (spell.custom || !spell.srdId) {
+        survey.customSpells += 1;
+        continue;
+      }
+      const prepared = spell.prepared === true || spell.alwaysPrepared === true;
+      spellSeen.set(spell.srdId, (spellSeen.get(spell.srdId) ?? false) || prepared);
+    }
+    for (const [id, prepared] of spellSeen) {
+      const row = (survey.spells[id] ??= { characters: 0, prepared: 0 });
+      row.characters += 1;
+      if (prepared) row.prepared += 1;
+    }
+    const itemSeen = new Set<string>();
+    for (const item of [...(character.weapons ?? []), ...(character.equipment ?? [])]) {
+      if (item.custom || !item.srdId) {
+        survey.customItems += 1;
+        continue;
+      }
+      if (itemSeen.has(item.srdId)) continue;
+      itemSeen.add(item.srdId);
+      const kind: ItemKind = engine.getMagicItem(item.srdId)
+        ? "magic"
+        : ((engine.getEquipment(item.srdId)?.category as ItemKind | undefined) ?? "gear");
+      const row = (survey.items[item.srdId] ??= { characters: 0, kind });
+      row.characters += 1;
     }
     const seen = new Set<string>();
     for (const feature of character.features ?? []) {

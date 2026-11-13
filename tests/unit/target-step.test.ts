@@ -15,6 +15,7 @@ import { getSpellById, spells } from "@/data/spells";
 import { activityFromSpell } from "@/lib/activities";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
 import {
+  noLegalTargetTypes,
   targetStepFor,
   withSelfRecipient,
   type TargetRoster,
@@ -228,6 +229,14 @@ describe("out of a fight: the party («Il gruppo»)", () => {
     expect(targetStepFor(spellAction("bless"), FIGHT)?.party).toBeUndefined();
   });
 
+  it("Calm Emotions reaches every Humanoid in its sphere, friend or foe", () => {
+    expect(combatResolutionSpec(spellAction("calm-emotions"))).toMatchObject({
+      targetAffinity: "any",
+      targetCreatureTypes: ["humanoid"],
+      targetCap: Infinity,
+    });
+  });
+
   it("Charm Person, Hold Person and Dominate Person offer only Humanoids; an unknown type stays", () => {
     const typed: TargetRoster = {
       ...FIGHT,
@@ -255,6 +264,71 @@ describe("out of a fight: the party («Il gruppo»)", () => {
     }
     // A spell with no type limit still offers the Zombie.
     expect(ids(spellAction("command"), typed)).toContain("m-zomb");
+    // Calm Emotions: every Humanoid, friend or foe; never the Zombie.
+    const calm = ids(spellAction("calm-emotions"), typed) ?? [];
+    expect(calm).toContain("m-gob1");
+    expect(calm).toContain("pc-bren");
+    expect(calm).not.toContain("m-zomb");
+  });
+});
+
+describe("noLegalTargetTypes: a type-limited spell with no such creature in the fight", () => {
+  // The 2024 goblins are Fey and the Ogre a Giant: Hold Person (a Humanoid) has no one.
+  const FEY_AND_GIANT: TargetRoster = {
+    ...FIGHT,
+    rows: [
+      ...FIGHT.rows.filter((row) => row.kind === "pc"),
+      {
+        id: "m-gob1",
+        kind: "monster",
+        side: "enemy",
+        name: "Goblin",
+        creatureType: "fey",
+      },
+      {
+        id: "m-ogre",
+        kind: "monster",
+        side: "enemy",
+        name: "Ogre",
+        creatureType: "giant",
+      },
+    ],
+  };
+
+  it("names the types the spell needs when the fight holds none of them", () => {
+    expect(noLegalTargetTypes(spellAction("hold-person"), FEY_AND_GIANT)).toEqual([
+      "humanoid",
+    ]);
+  });
+
+  it("says nothing when a creature of that type is there, or its type is unknown", () => {
+    const withHumanoid: TargetRoster = {
+      ...FEY_AND_GIANT,
+      rows: [
+        ...FEY_AND_GIANT.rows,
+        {
+          id: "m-band",
+          kind: "monster",
+          side: "enemy",
+          name: "Bandit",
+          creatureType: "humanoid",
+        },
+      ],
+    };
+    expect(noLegalTargetTypes(spellAction("hold-person"), withHumanoid)).toBeNull();
+    const withUnknown: TargetRoster = {
+      ...FEY_AND_GIANT,
+      rows: [
+        ...FEY_AND_GIANT.rows,
+        { id: "m-odd", kind: "monster", side: "enemy", name: "Shade" },
+      ],
+    };
+    expect(noLegalTargetTypes(spellAction("hold-person"), withUnknown)).toBeNull();
+  });
+
+  it("says nothing for a spell with no type limit, or with no fight to look at", () => {
+    expect(noLegalTargetTypes(spellAction("command"), FEY_AND_GIANT)).toBeNull();
+    expect(noLegalTargetTypes(spellAction("hold-person"), SOLO)).toBeNull();
   });
 });
 

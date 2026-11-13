@@ -17,10 +17,13 @@ import {
 import { NO_DEFENSES, type DamageDefenses } from "@/lib/damage-intake";
 import {
   damageTrayPlan,
+  saveAloneOnTheLine,
+  savesOnTheLine,
   initialTrayRow,
   parseRolledTotal,
   previewHp,
   rowAmount,
+  rowAmountByType,
   rowConditions,
   rowNeedsTotal,
   setAttackOutcome,
@@ -194,14 +197,69 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     expect(damageTrayPlan(lay, [], ME)).toBeNull();
   });
 
-  it("a save with nothing else to apply opens no tray: no tap added (Command)", () => {
+  it("a save with nothing else to apply asks on the cast's line, never in a tray (Command)", () => {
     expect(damageTrayPlan(action("spell-command"), [FOE], ME)).toBeNull();
+    expect(savesOnTheLine(action("spell-command"), [FOE, ME], ME)).toEqual([FOE]);
+    // Nobody else named: nothing to ask.
+    expect(savesOnTheLine(action("spell-command"), [], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-command"), [ME], ME)).toEqual([]);
+    // A save the tray already asks (Fireball, Hold Person), or no save at all.
+    expect(savesOnTheLine(action("spell-fireball"), [FOE], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-hold-person"), [FOE], ME)).toEqual([]);
+    expect(savesOnTheLine(action("spell-magic-missile"), [FOE], ME)).toEqual([]);
   });
 
   it("a failed save's push rides the tray (Thunderwave)", () => {
     const wave = plan(action("spell-thunderwave"));
     expect(wave.failNotes).toEqual(["Pushed up to 10 ft away"]);
     expect(plan(action("spell-fireball")).failNotes).toBeUndefined();
+  });
+
+  it("a save spell cast with nobody named asks its one save on the line (Vicious Mockery solo)", () => {
+    expect(saveAloneOnTheLine(action("spell-vicious-mockery"), [])).toEqual({
+      damage: true,
+    });
+    expect(saveAloneOnTheLine(action("spell-command"), [])).toEqual({ damage: false });
+    // Someone named: the tray or the per-creature line asks instead.
+    expect(saveAloneOnTheLine(action("spell-vicious-mockery"), [FOE])).toBeNull();
+    // Cast on oneself, or no save at all: nothing to ask.
+    expect(saveAloneOnTheLine(action("spell-command"), [ME])).toBeNull();
+    expect(saveAloneOnTheLine(action("spell-magic-missile"), [])).toBeNull();
+  });
+
+  it("a spell that doesn't resolve on its cast asks no save on its row (Detect Thoughts, Flaming Sphere)", () => {
+    // Detect Thoughts' save comes on a later «probe deeper»; Flaming Sphere's when
+    // the sphere rams or a creature ends its turn beside it.
+    const all = resolveActions(doc, "spellbook").map((row) => localizeAction(row, "en"));
+    for (const id of ["spell-detect-thoughts", "spell-flaming-sphere"]) {
+      const cast = all.find((a) => a.id === id);
+      if (!cast) throw new Error(`no ${id}`);
+      expect(savesOnTheLine(cast, [FOE], ME), id).toEqual([]);
+      expect(saveAloneOnTheLine(cast, []), id).toBeNull();
+    }
+  });
+
+  it("every dart on one target: the tray says to roll them all (Magic Missile)", () => {
+    expect(plan(action("spell-magic-missile")).dice).toBe("3 × (1d4+1)");
+    // Split over two creatures, each row asks its own darts.
+    expect(plan(action("spell-magic-missile"), [FOE, "monster-2"]).perTarget).toBe(true);
+  });
+
+  it("Ice Knife: the Piercing rides the hit on the first target only, the Cold each save", () => {
+    const knife = plan(action("spell-ice-knife"), [FOE, "monster-2"]);
+    const totals = { piercing: 6, cold: 7 };
+    const row = (id: string) => initialTrayRow(knife, id);
+    // The struck goblin, hit and failed: both parts.
+    expect(rowAmountByType(totals, row(FOE), knife)).toBe(13);
+    // Missed but failed the save: the Cold still lands.
+    expect(
+      rowAmountByType(totals, setAttackOutcome(row(FOE), "miss", knife), knife)
+    ).toBe(7);
+    // Hit but saved: the Piercing only.
+    expect(rowAmountByType(totals, toggleSaved(row(FOE), knife), knife)).toBe(6);
+    // The neighbour: never the Piercing; the Cold on a failed save.
+    expect(rowAmountByType(totals, row("monster-2"), knife)).toBe(7);
+    expect(rowAmountByType(totals, toggleSaved(row("monster-2"), knife), knife)).toBe(0);
   });
 
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
