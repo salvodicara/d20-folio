@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocText } from "@/lib/loc-text";
-import { ACTION_ECONOMY_CATEGORIES, TURN_TRIGGER_EVENTS } from "@/data/types";
+import { TURN_ECONOMY_CATEGORIES, TURN_TRIGGER_EVENTS } from "@/lib/combat-state-codec";
 import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
@@ -16,6 +16,7 @@ vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 
 import { combatStateWriteData, parseCombatState } from "@/lib/combat-state-io";
 import { parseLegacyCombatChild } from "@/lib/combat-state-codec";
+import { breadcrumbSnapshot } from "@/lib/diagnostics/logger";
 import { defaultCombatState, sessionToCombatState } from "@/lib/combat-state";
 import { economyClaimsForTurn } from "@/lib/combat-economy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
@@ -568,7 +569,7 @@ describe("combat-state IO — full persistence contract", () => {
     return [only, state];
   };
 
-  it.each(ACTION_ECONOMY_CATEGORIES.map((category, index) => [category, index] as const))(
+  it.each(TURN_ECONOMY_CATEGORIES.map((category, index) => [category, index] as const))(
     "saves and reads back the %s economy category",
     (economyCategory, index) => {
       const [only, state] = onlyAction(`action-${economyCategory}`, index, {
@@ -589,6 +590,67 @@ describe("combat-state IO — full persistence contract", () => {
       expect(parsed.ok && parsed.state.turnEconomy?.selected[only.slot]).toEqual([only]);
     }
   );
+
+  describe("a turn value this build doesn't know (written by a newer build)", () => {
+    const storedWith = (extra: Record<string, unknown>): Record<string, unknown> => {
+      const [, state] = onlyAction("held", 0, {});
+      const data = combatStateWriteData(state);
+      const turn = data.turnEconomy as {
+        selected: { action: Record<string, unknown>[] };
+      };
+      Object.assign(turn.selected.action[0] ?? {}, extra);
+      return data;
+    };
+
+    it("drops an unknown category and keeps the sheet and the action", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const parsed = parseCombatState(storedWith({ economyCategory: "teleport" }));
+      expect(parsed.ok).toBe(true);
+      const kept = parsed.ok ? parsed.state.turnEconomy?.selected.action : undefined;
+      expect(kept).toEqual([action("held", "action", LOC_TEXTS.custom)]);
+      // Logged by key only, once per page load however often snapshots re-parse.
+      parseCombatState(storedWith({ economyCategory: "teleport" }));
+      expect(warn.mock.calls).toEqual([
+        ["[combat-state] dropped unknown turn value: selected.action[0].economyCategory"],
+      ]);
+      expect(
+        breadcrumbSnapshot().filter((c) => c.event === "combat-state.unknown-turn-value")
+      ).toHaveLength(1);
+      warn.mockRestore();
+    });
+
+    it("drops an unknown turn event and keeps the known ones", () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const parsed = parseCombatState(storedWith({ triggerEvents: ["attack", "blink"] }));
+      expect(
+        parsed.ok && parsed.state.turnEconomy?.selected.action[0]?.triggerEvents
+      ).toEqual(["attack"]);
+      const alone = parseCombatState(storedWith({ triggerEvents: ["blink"] }));
+      expect(alone.ok && alone.state.turnEconomy?.selected.action[0]).toEqual(
+        action("held", "action", LOC_TEXTS.custom)
+      );
+      vi.restoreAllMocks();
+    });
+
+    it("still refuses every other fault in the same turn", () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const data = storedWith({ economyCategory: "teleport" });
+      (data.turnEconomy as Record<string, unknown>).attackSwings = [{ actionId: "" }];
+      expect(parseCombatState(data)).toMatchObject({
+        ok: false,
+        where: "canonical:turnEconomy",
+      });
+      expect(parseCombatState(storedWith({ economyCategory: 7 }))).toMatchObject({
+        ok: false,
+      });
+      expect(
+        parseCombatState(storedWith({ triggerEvents: ["attack", 7] }))
+      ).toMatchObject({
+        ok: false,
+      });
+      vi.restoreAllMocks();
+    });
+  });
 
   it("hydrates the parsed receipt once for its exact turn and preserves cadence/prerequisite facts", () => {
     const parsed = parseState(combatStateWriteData(completeState()));
