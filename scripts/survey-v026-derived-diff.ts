@@ -65,7 +65,7 @@ export const EXPECTED: readonly ExpectedRule[] = [
   // attack move for an INT or WIS caster. A High Elf's chosen cantrip (any Wizard
   // cantrip) outside this list reads as unexpected: trace it to this fix by hand.
   {
-    fix: "#owed-pick-defaults",
+    fix: "#1187",
     path: /^actions\.spell-(dancing-lights|faerie-fire|darkness|prestidigitation|detect-magic|misty-step|druidcraft|longstrider|pass-without-trace|minor-illusion|speak-with-animals|mending|thaumaturgy|poison-spray|ray-of-sickness|hold-person|chill-touch|false-life|ray-of-enfeeblement|fire-bolt|hellish-rebuke)\.(attackBonus|saveDC)$/,
   },
 ];
