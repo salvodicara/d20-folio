@@ -121,6 +121,13 @@ async function currentHp(page: Page): Promise<number> {
   return Number(text?.match(/(\d+) \//)?.[1]);
 }
 
+/** The AC the Play screen's shield badge shows. */
+async function armorClass(page: Page): Promise<number> {
+  return Number(
+    await page.locator(".f-badge[data-shape='shield'] b").first().textContent()
+  );
+}
+
 test("a campaign fight, from initiative to the end, with the DM and two players", async ({
   browser,
 }) => {
@@ -220,10 +227,13 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   });
 
   await test.step("Paladin casts Warding Bond on Bard", async () => {
+    const acBefore = await armorClass(bard);
     await cast(paladin, "Warding Bond", [BARD_NAME]);
     expect
       .soft(await showsEffect(bard, "Warding Bond"), "Bard's sheet lists Warding Bond")
       .toBe(true);
+    // Warding Bond: +1 bonus to AC, on the Bard's own sheet.
+    await settles(() => armorClass(bard), acBefore + 1, "Bard's AC rises by 1");
   });
 
   await test.step("the DM has the tools to run the fight (finding 2, open)", async () => {
