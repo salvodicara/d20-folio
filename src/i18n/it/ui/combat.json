@@ -79,6 +79,7 @@
     "undoneToast": "Annullato: {{action}}",
     "redoneToast": "Ripetuto: {{action}}",
     "redoUnavailable": "Impossibile ripetere: le risorse sono cambiate",
+    "noLegalTarget": "Nessun bersaglio valido in questo scontro ({{types}})",
     "undoControl": "Annulla: {{action}}",
     "redoControl": "Ripeti: {{action}}",
     "cast": "Lancia",
