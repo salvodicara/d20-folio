@@ -126,7 +126,9 @@ export function resolveSpellAbility(
     return character.speciesSpellAbility ?? unpickedSpeciesAbility(character);
   }
   const primary = character.spellcasting?.ability;
-  if (primary == null) return null;
+  // A feat's spell, feat unanswered, on a character with no casting class: the same
+  // honest default as an unpicked species ability, never no DC at all.
+  if (primary == null) return feat ? unpickedSpeciesAbility(character) : null;
   // Prepared through one class (a multiclass Cleric/Bard's Cure Wounds): that
   // class's ability, when the character casts with it.
   if (!("custom" in ref) && ref.viaClass) {

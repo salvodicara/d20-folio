@@ -60,6 +60,14 @@ export const EXPECTED: readonly ExpectedRule[] = [
   },
   // Magical Discoveries offers the right spells (the Lore Bard's prepared list).
   { fix: "#868", path: /^spells\.bard\./ },
+  // An unpicked species spellcasting ability reads the character's own INT/WIS/CHA
+  // casting ability, not Charisma: an elf, gnome or tiefling lineage spell's DC and
+  // attack move for an INT or WIS caster. A High Elf's chosen cantrip (any Wizard
+  // cantrip) outside this list reads as unexpected: trace it to this fix by hand.
+  {
+    fix: "#owed-pick-defaults",
+    path: /^actions\.spell-(dancing-lights|faerie-fire|darkness|prestidigitation|detect-magic|misty-step|druidcraft|longstrider|pass-without-trace|minor-illusion|speak-with-animals|mending|thaumaturgy|poison-spray|ray-of-sickness|hold-person|chill-touch|false-life|ray-of-enfeeblement|fire-bolt|hellish-rebuke)\.(attackBonus|saveDC)$/,
+  },
 ];
 
 // ── The pure comparison ───────────────────────────────────────────────────────
