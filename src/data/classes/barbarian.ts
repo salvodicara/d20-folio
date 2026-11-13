@@ -367,6 +367,8 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         id: "instinctive-pounce",
         type: "granted-action",
         slot: "free",
+        requiresActionThisTurn: "barbarian-rage-bonus",
+        maxUsesPerTurn: 1,
         effects: [{ kind: "self-move", fraction: 0.5 }],
       },
     ],

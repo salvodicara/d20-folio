@@ -2501,6 +2501,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       /** A hard cap on uses per turn (Horde Breaker: "Once on each of your turns"). */
       maxUsesPerTurn: numberSchema,
       name: LOCALE_TEXT_SCHEMA,
+      /** Another action that must already be used this turn (Tactical Shift rides a
+       *  Second Wind; Instinctive Pounce the Bonus Action that enters Rage). */
+      requiresActionThisTurn: stringSchema,
       saveAbility: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),
