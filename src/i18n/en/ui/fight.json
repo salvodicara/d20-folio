@@ -73,6 +73,7 @@
       "conditionOn": "Condition added to {{name}}",
       "conditionOff": "Condition removed from {{name}}",
       "addN": "Add {{count}}"
-    }
+    },
+    "rollWaiting": "Reading the party's bonuses…"
   }
 }

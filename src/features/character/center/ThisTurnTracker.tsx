@@ -198,54 +198,6 @@ export function ThisTurnTracker({
   // An assumed form changes the scores the aggregate derives (M2).
   const activeForm = useCharacterStore((s) => s.character?.session.activeForm);
 
-  // S4 — rolling Initiative tops up the listed trackers (Persistent Rage, Battle
-  // Master Relentless, Superior Inspiration, Archdruid, Perfect Focus). Fires when
-  // the field goes from EMPTY to a value (= the player just rolled this combat),
-  // never on every keystroke of a multi-digit edit. Override-first: a toast names
-  // the source and offers Undo.
-  //
-  // SINGLE SOURCE OF TRUTH (INIT-3): `combatStore.initiative` holds the canonical raw d20
-  // ROLL — the SAME value the campaign encounter + the `combat/state.initiativeRoll`
-  // subdoc store. The total (roll + bonus) is DERIVED for display, never stored. The input
-  // below edits that raw d20 roll directly; `rollInitiative` receives the raw roll string.
-  function rollInitiative(roll: string) {
-    // "First roll of THIS fight" gates the S4 top-ups: in an encounter that is an empty
-    // `encounterInit` row (`gc.initiativeRoll === null` — a stale SOLO roll lingering in
-    // `combatStore.initiative` is irrelevant, its home is separate now); solo it is the
-    // blank combat-store string.
-    const wasEmpty = gc ? gc.initiativeRoll === null : initiative === "";
-    if (gc) {
-      // ENCOUNTER — the roll's ONE home is the campaign doc's `encounterInit` table
-      // (the member's own-row grant / the DM's unconstrained branch both authorize it).
-      // Dynamic import so this module's static graph stays Firebase-free (the same
-      // discipline as `advanceSharedTurn`). NEVER written to the combat store/subdoc —
-      // that would resurrect the dual-home drift this re-architecture deleted.
-      const myUid = gc.myId.startsWith("pc-") ? gc.myId.slice(3) : gc.myId;
-      const campaignId = gc.campaignId;
-      const value = roll === "" ? null : Number(roll);
-      const bonus = gc.initiativeBonus;
-      void import("@/features/campaigns/campaign-io")
-        .then(({ setEncounterInitiative }) =>
-          setEncounterInitiative(campaignId, myUid, value)
-        )
-        // The roll is a session-report line too ("Lyra: initiative 15").
-        .then(() =>
-          value === null
-            ? null
-            : import("@/features/campaigns/combat-lifecycle-io").then(
-                ({ recordOwnInitiative }) =>
-                  recordOwnInitiative(campaignId, myUid, value, bonus)
-              )
-        )
-        .catch((e: unknown) => console.error("Initiative roll failed", e));
-    } else {
-      if (roll !== "") logSoloFightStart();
-      setInitiative(roll);
-    }
-    if (!wasEmpty || roll === "") return;
-    applyFirstRollTopUps(t, locale);
-  }
-
   // Coin re-arm — mis-tap recovery WITHOUT a button (owner-ratified 2026-07-03):
   // tapping a SPENT economy coin sends that slot back to available, in place, with
   // a 5s undo toast (the same immediate-commit-with-undo idiom). It re-arms the
@@ -411,6 +363,55 @@ export function ThisTurnTracker({
     fadingPenalties,
     activeForm,
   ]);
+  // S4 — rolling Initiative tops up the listed trackers (Persistent Rage, Battle
+  // Master Relentless, Superior Inspiration, Archdruid, Perfect Focus). Fires when
+  // the field goes from EMPTY to a value (= the player just rolled this combat),
+  // never on every keystroke of a multi-digit edit. Override-first: a toast names
+  // the source and offers Undo.
+  //
+  // SINGLE SOURCE OF TRUTH (INIT-3): `combatStore.initiative` holds the canonical raw d20
+  // ROLL — the SAME value the campaign encounter + the `combat/state.initiativeRoll`
+  // subdoc store. The total (roll + bonus) is DERIVED for display, never stored. The input
+  // below edits that raw d20 roll directly; `rollInitiative` receives the raw roll string.
+  function rollInitiative(roll: string) {
+    // "First roll of THIS fight" gates the S4 top-ups: in an encounter that is an empty
+    // `encounterInit` row (`gc.initiativeRoll === null` — a stale SOLO roll lingering in
+    // `combatStore.initiative` is irrelevant, its home is separate now); solo it is the
+    // blank combat-store string.
+    const wasEmpty = gc ? gc.initiativeRoll === null : initiative === "";
+    if (gc) {
+      // ENCOUNTER — the roll's ONE home is the campaign doc's `encounterInit` table
+      // (the member's own-row grant / the DM's unconstrained branch both authorize it).
+      // Dynamic import so this module's static graph stays Firebase-free (the same
+      // discipline as `advanceSharedTurn`). NEVER written to the combat store/subdoc —
+      // that would resurrect the dual-home drift this re-architecture deleted.
+      const myUid = gc.myId.startsWith("pc-") ? gc.myId.slice(3) : gc.myId;
+      const campaignId = gc.campaignId;
+      const value = roll === "" ? null : Number(roll);
+      // The sheet's own bonus, the one its chip shows: the fight's row has it only once
+      // the party's sheets are read (0 before), and the stored roll is the raw d20.
+      const bonus = initBonus;
+      void import("@/features/campaigns/campaign-io")
+        .then(({ setEncounterInitiative }) =>
+          setEncounterInitiative(campaignId, myUid, value)
+        )
+        // The roll is a session-report line too ("Lyra: initiative 15").
+        .then(() =>
+          value === null
+            ? null
+            : import("@/features/campaigns/combat-lifecycle-io").then(
+                ({ recordOwnInitiative }) =>
+                  recordOwnInitiative(campaignId, myUid, value, bonus)
+              )
+        )
+        .catch((e: unknown) => console.error("Initiative roll failed", e));
+    } else {
+      if (roll !== "") logSoloFightStart();
+      setInitiative(roll);
+    }
+    if (!wasEmpty || roll === "") return;
+    applyFirstRollTopUps(t, locale);
+  }
 
   if (!character || !charData) return null;
 

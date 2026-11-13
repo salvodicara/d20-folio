@@ -346,7 +346,13 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
         ],
         afterEffect: {
           duration: { kind: "target-turn-boundary", turns: 1, phase: "turn-end" },
-          grants: [{ type: "turn-economy-block" }, { type: "speed-cap", maxFt: 0 }],
+          // "the target is Incapacitated and has a Speed of 0": no Reactions, and a
+          // Concentration breaks (the condition), beside the blocked turn.
+          grants: [
+            { type: "turn-economy-block" },
+            { type: "speed-cap", maxFt: 0 },
+            { type: "state-condition", condition: "incapacitated" },
+          ],
         },
       },
     ],

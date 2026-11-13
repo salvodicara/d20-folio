@@ -15,11 +15,11 @@
 
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { coralinoCard, freezeMotion, seedLang, seedUI } from "./surfaces";
-import { firstWord, teamFixtureName } from "./team-fixture";
+import { firstWord, devHeroName } from "./team-fixture";
 
 // The team heroes' names are personal data in the pack: read, never written here.
-const BARD = firstWord(teamFixtureName("bard"));
-const PALADIN = firstWord(teamFixtureName("paladin"));
+const BARD = firstWord(devHeroName("bard"));
+const PALADIN = firstWord(devHeroName("paladin"));
 
 const tray = (page: Page) => page.getByTestId("damage-tray");
 const row = (page: Page, id: string) =>
@@ -137,7 +137,8 @@ for (const leg of [
       await tray(page).getByRole("textbox", { name: "Totale tirato" }).fill("59");
       await tray(page)
         .getByRole("button", {
-          name: new RegExp(`${PALADIN} ha superato il TS`),
+          // the tray names the hero in full («Bren Ironbeard … ha superato il TS»)
+          name: new RegExp(`${PALADIN}.* ha superato il TS`),
         })
         .click(); // tap 3
       await expect(

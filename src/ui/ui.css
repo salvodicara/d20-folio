@@ -2554,8 +2554,11 @@
 }
 /* A dialog's confirm is the filled primary of its footer (BG3's lit confirm; the owner's
    2026-11-10 choice of the blue BG3 button, as «Fine turno»): every dialog, through the
-   shared footer, and the creation step's «Avanti»; Cancel and «Indietro» stay outlined. */
+   shared footer, and the creation step's «Avanti»; Cancel and «Indietro» stay outlined.
+   A failed save's reroll takes that weight in the body (BG3 shows the Inspiration
+   reroll as «Continue»), and that dialog's confirm steps down to outlined. */
 .fui dialog.f-dlg .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]),
+.fui dialog.f-dlg .f-reroll .f-btn[data-kind="primary"]:not([aria-disabled="true"]),
 .fui .f-create-step > .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
   border: 2px solid var(--lit-hi);
   background: radial-gradient(circle at 50% 35%, var(--lit-mid), var(--lit-deep) 78%);
@@ -2566,6 +2569,7 @@
   dialog.f-dlg
   .f-pn-foot
   .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover,
+.fui dialog.f-dlg .f-reroll .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover,
 .fui
   .f-create-step
   > .f-pn-foot

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocText } from "@/lib/loc-text";
+import { TURN_ECONOMY_CATEGORIES, TURN_TRIGGER_EVENTS } from "@/lib/combat-state-codec";
 import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
@@ -15,6 +16,7 @@ vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 
 import { combatStateWriteData, parseCombatState } from "@/lib/combat-state-io";
 import { parseLegacyCombatChild } from "@/lib/combat-state-codec";
+import { breadcrumbSnapshot } from "@/lib/diagnostics/logger";
 import { defaultCombatState, sessionToCombatState } from "@/lib/combat-state";
 import { economyClaimsForTurn } from "@/lib/combat-economy";
 import { combatOutcomePrerequisiteMet } from "@/lib/combat-outcomes";
@@ -206,6 +208,11 @@ function completeState(): CombatState {
           }),
           action("dash-action", "action", LOC_TEXTS.srd, {
             economyCategory: "dash",
+          }),
+          // A cast is the Magic action (#1140): it must survive the round trip, or the
+          // canonical check refuses the whole document.
+          action("spell-fireball", "action", LOC_TEXTS.srd, {
+            economyCategory: "magic",
           }),
         ],
         bonus: [
@@ -534,34 +541,116 @@ describe("combat-state IO — full persistence contract", () => {
     ]);
   });
 
-  it.each([
-    ["attack", "action", LOC_TEXTS.custom],
-    ["dash", "action", LOC_TEXTS.srd],
-    ["disengage", "bonus", LOC_TEXTS.lit],
-    ["hide", "bonus", LOC_TEXTS.ui],
-    ["utilize", "free", LOC_TEXTS.custom],
-  ] as const)(
-    "preserves the %s category in the %s slot with its LocText variant",
-    (economyCategory, slot, name) => {
-      const state = completeState();
-      const only = action(`action-${economyCategory}`, slot, name, { economyCategory });
-      const turn = state.turnEconomy;
-      if (!turn) throw new Error("missing turn economy");
-      turn.selected = { action: [], bonus: [], free: [] };
-      turn.selected[slot].push(only);
-      // Receipts/swings name the actions we just dropped; clear them so the stored
-      // document stays canonical for the strict reader.
-      turn.attacksUsed = 0;
-      turn.attackSwings = [];
-      turn.outcomeReceipts = [];
-      turn.reactionUsed = false;
-      turn.reactionUsedId = null;
-      turn.reactionOutcomeOccurrenceId = null;
+  // Fed from the type's own lists: a value added to one of them is saved and read back
+  // here, so a reader that doesn't know it fails this test instead of refusing a
+  // player's sheet (#1158).
+  const SLOTS = ["action", "bonus", "free"] as const;
+  const NAMES = [LOC_TEXTS.custom, LOC_TEXTS.srd, LOC_TEXTS.lit, LOC_TEXTS.ui];
+  const onlyAction = (
+    id: string,
+    index: number,
+    extra: Partial<PersistedTurnAction>
+  ): [PersistedTurnAction, CombatState] => {
+    const state = completeState();
+    const slot = SLOTS[index % SLOTS.length] ?? "action";
+    const only = action(id, slot, NAMES[index % NAMES.length] ?? LOC_TEXTS.custom, extra);
+    const turn = state.turnEconomy;
+    if (!turn) throw new Error("missing turn economy");
+    turn.selected = { action: [], bonus: [], free: [] };
+    turn.selected[slot].push(only);
+    // Receipts/swings name the actions we just dropped; clear them so the stored
+    // document stays canonical for the strict reader.
+    turn.attacksUsed = 0;
+    turn.attackSwings = [];
+    turn.outcomeReceipts = [];
+    turn.reactionUsed = false;
+    turn.reactionUsedId = null;
+    turn.reactionOutcomeOccurrenceId = null;
+    return [only, state];
+  };
 
-      const parsed = parseState(combatStateWriteData(state));
-      expect(parsed.turnEconomy?.selected[slot]).toEqual([only]);
+  it.each(TURN_ECONOMY_CATEGORIES.map((category, index) => [category, index] as const))(
+    "saves and reads back the %s economy category",
+    (economyCategory, index) => {
+      const [only, state] = onlyAction(`action-${economyCategory}`, index, {
+        economyCategory,
+      });
+      const parsed = parseCombatState(combatStateWriteData(state));
+      expect(parsed.ok && parsed.state.turnEconomy?.selected[only.slot]).toEqual([only]);
     }
   );
+
+  it.each(TURN_TRIGGER_EVENTS.map((event, index) => [event, index] as const))(
+    "saves and reads back the %s turn event",
+    (event, index) => {
+      const [only, state] = onlyAction(`action-${event}`, index, {
+        triggerEvents: [event],
+      });
+      const parsed = parseCombatState(combatStateWriteData(state));
+      expect(parsed.ok && parsed.state.turnEconomy?.selected[only.slot]).toEqual([only]);
+    }
+  );
+
+  describe("a turn value this build doesn't know (written by a newer build)", () => {
+    const storedWith = (extra: Record<string, unknown>): Record<string, unknown> => {
+      const [, state] = onlyAction("held", 0, {});
+      const data = combatStateWriteData(state);
+      const turn = data.turnEconomy as {
+        selected: { action: Record<string, unknown>[] };
+      };
+      Object.assign(turn.selected.action[0] ?? {}, extra);
+      return data;
+    };
+
+    it("drops an unknown category and keeps the sheet and the action", () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const parsed = parseCombatState(storedWith({ economyCategory: "teleport" }));
+      expect(parsed.ok).toBe(true);
+      const kept = parsed.ok ? parsed.state.turnEconomy?.selected.action : undefined;
+      expect(kept).toEqual([action("held", "action", LOC_TEXTS.custom)]);
+      // Logged by key only, once per page load however often snapshots re-parse.
+      parseCombatState(storedWith({ economyCategory: "teleport" }));
+      expect(warn.mock.calls).toEqual([
+        ["[combat-state] dropped unknown turn value: selected.action[0].economyCategory"],
+      ]);
+      expect(
+        breadcrumbSnapshot().filter((c) => c.event === "combat-state.unknown-turn-value")
+      ).toHaveLength(1);
+      warn.mockRestore();
+    });
+
+    it("drops an unknown turn event and keeps the known ones", () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const parsed = parseCombatState(storedWith({ triggerEvents: ["attack", "blink"] }));
+      expect(
+        parsed.ok && parsed.state.turnEconomy?.selected.action[0]?.triggerEvents
+      ).toEqual(["attack"]);
+      const alone = parseCombatState(storedWith({ triggerEvents: ["blink"] }));
+      expect(alone.ok && alone.state.turnEconomy?.selected.action[0]).toEqual(
+        action("held", "action", LOC_TEXTS.custom)
+      );
+      vi.restoreAllMocks();
+    });
+
+    it("still refuses every other fault in the same turn", () => {
+      vi.spyOn(console, "warn").mockImplementation(() => {});
+      const data = storedWith({ economyCategory: "teleport" });
+      (data.turnEconomy as Record<string, unknown>).attackSwings = [{ actionId: "" }];
+      expect(parseCombatState(data)).toMatchObject({
+        ok: false,
+        where: "canonical:turnEconomy",
+      });
+      expect(parseCombatState(storedWith({ economyCategory: 7 }))).toMatchObject({
+        ok: false,
+      });
+      expect(
+        parseCombatState(storedWith({ triggerEvents: ["attack", 7] }))
+      ).toMatchObject({
+        ok: false,
+      });
+      vi.restoreAllMocks();
+    });
+  });
 
   it("hydrates the parsed receipt once for its exact turn and preserves cadence/prerequisite facts", () => {
     const parsed = parseState(combatStateWriteData(completeState()));
@@ -604,7 +693,11 @@ describe("combat-state IO — full persistence contract", () => {
     expect(restored.outcomeOrdinal).toBe(5);
     expect(
       economyClaimsForTurn(restored.selected.action, restored.attacksUsed, 2)
-    ).toEqual([{ category: "attack", attackCount: 2 }, { category: "dash" }]);
+    ).toEqual([
+      { category: "attack", attackCount: 2 },
+      { category: "dash" },
+      { category: "magic" },
+    ]);
 
     useCombatStore.getState().endCombat();
     syncCombatFromSession("char-2", 8, "18", turn, `${turn.key}:next-turn`, "en");
