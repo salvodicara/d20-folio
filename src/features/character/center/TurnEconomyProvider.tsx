@@ -92,6 +92,7 @@ import {
   type SelectedAction,
 } from "@/stores/combatStore";
 import {
+  restoreCurrentTurn,
   snapshotTurnEconomy,
   syncCombatFromSession,
   syncCombatTurnContext,
@@ -757,7 +758,16 @@ export function TurnEconomyProvider({
     ): void => {
       const openId = useCharacterStore.getState().character?.id ?? null;
       const scoped = sheetEncounter(status, openId);
+      // Read before the context sync: its reset is written back as the stored turn.
+      const stored = useCharacterStore.getState().combatTurnEconomy;
       const result = syncCombatTurnContext(scoped);
+      // A reload in a campaign fight: the fight's first status reads as a fight this
+      // sheet had not seen and resets the turn. When the stored turn is THIS turn (its
+      // key names the fight, the round and whose turn it is), bring it back; any other
+      // stored turn never matches (the rules lane's cast-reload rehearsal, 2026-11-13).
+      if (scoped && openId) {
+        restoreCurrentTurn(stored, turnEconomyKey(scoped, openId, 0), locale);
+      }
       if (result === null) return;
       useUndoStore.getState().purgeTurnScoped();
       if (result === "encounter-ended") {
@@ -1486,11 +1496,17 @@ export function TurnEconomyProvider({
     // Action spell takes the Action (Quickened: the Bonus Action). Not a readied
     // release (Ready took the Action), a ritual, or a cast riding an attack swing.
     const economySlot = castEconomySlot(action.type, metamagicIds);
+    // A cantrip that replaces one attack of an Attack action already open (War
+    // Magic) rides that action: it takes no Action of its own.
+    const combat = useCombatStore.getState();
+    const ridesOpenAttack =
+      isPipAttack(action) && combat.attacksUsed % combat.attackBudget !== 0;
     const occupiesSlot =
       inEncounter() &&
       !readies &&
       !execution.ritual &&
       !ridesPip &&
+      !ridesOpenAttack &&
       (economySlot === "action" || economySlot === "bonus");
     if (!canCommit() || !(await confirmConcentrationBreak(heldAction)) || !canCommit())
       return;
