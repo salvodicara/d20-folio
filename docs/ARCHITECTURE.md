@@ -157,6 +157,25 @@ peer-damage.ts`; plus the `combat/spends` append when the ledger flag is on), so
   `vite.config.ts`) that precaches the app shell and catalogue chunks. Proven by
   `tests/e2e-offline/offline-it.spec.ts`.
 
+### What a sheet knows about its campaign (the «context settled» contract)
+
+The shell reads the user's campaigns first, then each fight's live status from a slower
+second listener, then the party's sheets. A sheet can be clicked before any of them arrives.
+Every action that branches on campaign or fight data follows these rules
+(`src/features/campaigns/context-settled.ts`; coordinator, 2026-11-13):
+
+1. It reads that data only through `context-settled` (`rollTargetOf`, `fightKnown`), never
+   the status, the pip or the party store directly.
+2. «Campaigns read» is `partyKnown` (`resolvedFor`). A fight the pip lists counts as a fight
+   even before its live status arrives; it is never «no fight».
+3. While what it needs is unread, the action waits (`partyKnownSoon` / `fightKnownSoon`,
+   4 s at most) and shows it is working (`aria-busy`; no second press).
+4. Still unread after the wait, it writes nothing and says why. The player's input stays;
+   a wrong write (a solo roll, a dropped Action) is the defect, no write the safe failure.
+5. A missing value is unknown, never 0: a row whose live state has not arrived is
+   `liveUnknown`, and nothing acts on its placeholders (HP 0, bonus 0, AC 0).
+6. A restore never writes: reading back a stored turn or state puts it on screen only.
+
 ## Play log, undo, session log
 
 - **Events as data.** The character's own log is `LogEntry { event: CombatEvent, ts, id }`
