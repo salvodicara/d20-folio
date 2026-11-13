@@ -144,7 +144,33 @@ test("classic UI: a campaign fight, a hit from the DM's device, a rest and a lev
     await expect(endTurn, "Bard's turn reaches the sheet").toBeEnabled({
       timeout: 15_000,
     });
-    await endTurn.click();
+  });
+
+  await test.step("Bard casts an Action cantrip, reloads: the sheet is there and the Action stays spent", async () => {
+    // A cast in a fight once saved a turn the reader refused, and the sheet showed its
+    // error page on reload (#1158).
+    const action = bard.locator('.econ-tok[data-kind="action"]');
+    await expect(action).toHaveAttribute("data-state", "open");
+    await bard.getByRole("button", { name: "Cast: Vicious Mockery" }).click();
+    // Walk the cast's questions (a target, then the roll) until the dialog closes.
+    const dialog = bard.locator("dialog[open]");
+    for (let step = 0; step < 4 && (await dialog.count()) > 0; step++) {
+      const next = dialog
+        .getByRole("button", { name: /^(Cast|Confirm|Skip|Done)$/ })
+        .first();
+      if (await next.isVisible()) await next.click();
+      else await bard.keyboard.press("Escape");
+      await bard.waitForTimeout(500);
+    }
+    await expect(action).toHaveAttribute("data-state", "spent");
+    await bard.reload();
+    await expect(action, "the sheet comes back with the Action spent").toHaveAttribute(
+      "data-state",
+      "spent",
+      { timeout: 60_000 }
+    );
+    await expectNoCrash(bard);
+    await bard.getByRole("button", { name: "End Turn" }).click();
   });
 
   await test.step("the DM ends the encounter", async () => {

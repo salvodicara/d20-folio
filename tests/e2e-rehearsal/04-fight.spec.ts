@@ -186,6 +186,19 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
     ).toBeVisible();
   });
 
+  await test.step("Paladin reloads mid-fight: the sheet is there and the Action stays spent", async () => {
+    // A cast in a fight once saved a turn the reader refused, and the sheet showed its
+    // error page on reload (#1158). Bless took the turn's Action: after the reload,
+    // Warding Bond (an Action spell, a slot still free) still reads «Used».
+    await paladin.reload();
+    await expect(paladin.locator(".f-char")).toBeVisible({ timeout: 60_000 });
+    await expect(
+      actionRow(paladin, "Warding Bond").getByRole("button", {
+        name: /^Used: Warding\sBond/,
+      })
+    ).toBeVisible({ timeout: 15_000 });
+  });
+
   await test.step("the turns move on to Paladin's next turn", async () => {
     // Each player ends their own turn («End turn» shows only on it) until Paladin's
     // Action is free again.
