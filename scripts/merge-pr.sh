@@ -57,11 +57,15 @@ behind_main() {
 # Wait until every check on $head has finished (latest run per name); echo "ok" when
 # all are green and every required check is among them, else the names that are not.
 checks_verdict() {
-  local head="$1" runs pending missing bad
+  local head="$1" n="$2" runs pending missing bad suites labelled
   while :; do
     runs="$(gh api "repos/$REPO/commits/$head/check-runs?per_page=100" \
-      --jq '[.check_runs[]|{name,status,conclusion,started_at}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null)"
+      --jq '[.check_runs[]|{name,status,conclusion,started_at,suite:.check_suite.id}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null)"
     if [ -z "$runs" ] || [ "$(jq length <<<"$runs")" -eq 0 ]; then sleep 30; continue; fi
+    # A verify-fix is judged by its own CI, not by its branch's dispatched Verify.
+    suites="$(branch_verify_suites "$REPO" "$head" 2>/dev/null)" || { sleep 30; continue; }
+    labelled="$(pr_is_verify_fix "$REPO" "$n" 2>/dev/null)" || { sleep 30; continue; }
+    runs="$(filter_branch_verify "$runs" "${suites:-[]}" "$labelled")"
     pending="$(jq '[.[]|select(.status!="completed")]|length' <<<"$runs")"
     missing=""
     for name in "${REQUIRED[@]}"; do
@@ -98,7 +102,7 @@ merge_one() {
       continue
     fi
     say "#$n: up to date at ${head:0:9}, waiting for its checks…"
-    verdict="$(checks_verdict "$head")"
+    verdict="$(checks_verdict "$head" "$n")"
     if [ "$verdict" != ok ]; then
       say "✗ #$n not green on ${head:0:9}: $verdict (nothing merged)."
       return 1

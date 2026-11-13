@@ -82,11 +82,17 @@ round() {
 
   # 1. The app PR's own checks (the CI the ruleset requires) must all be finished and
   #    green on its head. Fail CLOSED: an empty or failed read means wait, never go on.
-  local appHead0 runs bad run conclusion dir composed since packMainBefore verdict
+  local appHead0 runs bad run conclusion dir composed since packMainBefore verdict suites labelled
   appHead0="$(gh pr view "$app" --repo "$APP_REPO" --json headRefOid --jq .headRefOid)"
   while :; do
     runs="$(gh api "repos/$APP_REPO/commits/$appHead0/check-runs?per_page=100" \
-      --jq '[.check_runs[]|{name,status,conclusion,started_at}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null || true)"
+      --jq '[.check_runs[]|{name,status,conclusion,started_at,suite:.check_suite.id}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null || true)"
+    # A verify-fix is judged by its own CI, not by its branch's dispatched Verify.
+    if [ -n "$runs" ]; then
+      suites="$(branch_verify_suites "$APP_REPO" "$appHead0" 2>/dev/null)" || { sleep 30; continue; }
+      labelled="$(pr_is_verify_fix "$APP_REPO" "$app" 2>/dev/null)" || { sleep 30; continue; }
+      runs="$(filter_branch_verify "$runs" "${suites:-[]}" "$labelled")"
+    fi
     if [ -n "$runs" ] && [ "$(jq length <<<"$runs")" -gt 0 ] &&
       [ "$(jq '[.[]|select(.status!="completed")]|length' <<<"$runs")" -eq 0 ]; then
       break

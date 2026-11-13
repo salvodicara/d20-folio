@@ -36,3 +36,37 @@ verify_gate() {
       ;;
   esac
 }
+
+# The check-runs a branch's own dispatched Verify left on the PR head (`gh workflow run
+# verify.yml --ref <branch>`, how a fix is proven) carry other lanes' reds while main is
+# red. For a PR labelled verify-fix they are reported in one line and do not block: the
+# gate is the PR's own CI. For any other PR they still block, so a lane cannot ignore
+# its own red Verify (coordinator, 2026-11-13).
+#
+# `filter_branch_verify <runs> <verify-suite-ids> <labelled>`: `runs` is the head's
+# check-runs as [{name,status,conclusion,started_at,suite}], `verify-suite-ids` the
+# check-suite ids of the Verify workflow runs on that head, `labelled` "true" or not.
+# Prints the runs the merge is judged by.
+filter_branch_verify() {
+  local runs="$1" suites="$2" labelled="$3" dropped
+  if [ "$labelled" != true ]; then
+    printf '%s' "$runs"
+    return 0
+  fi
+  dropped="$(jq -r --argjson s "$suites" \
+    '.[]|select(.suite as $id|$s|index($id))|select(.conclusion!="success")|.name' <<<"$runs" |
+    paste -sd ',' -)"
+  [ -n "$dropped" ] && echo "  (the branch's own Verify, not blocking a verify-fix: $dropped)" >&2
+  jq -c --argjson s "$suites" '[.[]|select(.suite as $id|$s|index($id)|not)]' <<<"$runs"
+}
+
+# `branch_verify_suites <repo> <head>`: the check-suite ids of the Verify runs on head.
+branch_verify_suites() {
+  gh api "repos/$1/actions/runs?head_sha=$2&per_page=100" \
+    --jq '[.workflow_runs[]|select(.name=="Verify")|.check_suite_id]'
+}
+
+# `pr_is_verify_fix <repo> <pr>`: "true" when the PR carries the verify-fix label.
+pr_is_verify_fix() {
+  gh pr view "$2" --repo "$1" --json labels --jq '[.labels[].name]|any(. == "verify-fix")'
+}

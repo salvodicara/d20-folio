@@ -57,3 +57,51 @@ describe("which run decides", () => {
     expect(verdict([{ status: "completed", conclusion: "cancelled" }])).toBe("");
   });
 });
+
+// Coordinator, 2026-11-13: a fix is proven by dispatching Verify on its branch, and that
+// run's red jobs (other lanes' clusters) sit on the PR head. The merge then refused the
+// fix itself. A verify-fix is judged by its own CI; any other PR still is not let off.
+describe("filter_branch_verify", () => {
+  const runs = [
+    { name: "typecheck + lint", status: "completed", conclusion: "success", suite: 1 },
+    { name: "e2e (shard 1/8)", status: "completed", conclusion: "failure", suite: 9 },
+    {
+      name: "unit (composed, shard 1/3)",
+      status: "completed",
+      conclusion: "failure",
+      suite: 9,
+    },
+  ];
+  const judged = (labelled: string) => {
+    const run = spawnSync(
+      "bash",
+      [
+        "-c",
+        'source scripts/lib/verify-gate.sh; filter_branch_verify "$RUNS" "$SUITES" "$LABELLED"',
+      ],
+      {
+        env: {
+          ...process.env,
+          RUNS: JSON.stringify(runs),
+          SUITES: "[9]",
+          LABELLED: labelled,
+        },
+        encoding: "utf8",
+      }
+    );
+    return {
+      names: (JSON.parse(run.stdout) as Array<{ name: string }>).map((r) => r.name),
+      note: run.stderr,
+    };
+  };
+
+  it("a verify-fix: the branch's Verify jobs are named in one line and do not block", () => {
+    const { names, note } = judged("true");
+    expect(names).toEqual(["typecheck + lint"]);
+    expect(note).toContain("e2e (shard 1/8),unit (composed, shard 1/3)");
+  });
+
+  it("any other PR: its branch's red Verify still blocks", () => {
+    expect(judged("false").names).toHaveLength(3);
+  });
+});
