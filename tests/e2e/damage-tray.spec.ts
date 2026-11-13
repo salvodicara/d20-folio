@@ -2,7 +2,7 @@
  * The damage tray (owner 2026-10-12), Italian, dark theme, desktop and phone:
  *  (a) Parola Guaritrice on myself — type the roll, Applica, the hero's HP persist;
  *  (b) Palla di Fuoco on three monsters, one "Salvato" — one total, three rows;
- *  (c) Blocca Persone on a goblin — no number, the Paralizzato chip.
+ *  (c) Blocca Persone with only Fey and Giants in the fight — no one to target, no tray.
  * Saves review shots under REVIEW_SHOTS when set, else in the test output dir.
  */
 import { test, expect, type Locator, type Page } from "@playwright/test";
@@ -131,28 +131,34 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(tray).toBeHidden();
   });
 
-  test(`(c) Blocca Persone on a goblin (it, dark, ${size})`, async ({ page }) => {
+  test(`(c) Blocca Persone finds no Humanoid among the goblins (it, dark, ${size})`, async ({
+    page,
+  }) => {
+    // Hold Person targets a Humanoid; the 2024 goblins are Fey and the Ogre a Giant
+    // (#1129), so no one is offered: no target step, no tray, the cast is recorded.
     await openEvoker(page, size);
     await page
       .getByRole("button", { name: /^Lancia: Blocca Persone/ })
       .first()
       .click();
     await page.getByRole("button", { name: /^Slot di livello 2/ }).click();
-    const picker = page.getByRole("dialog", { name: /su chi\?/i });
-    await picker.locator('.cl-target[data-side="enemy"]').first().click();
-
-    const tray = page.getByTestId("damage-tray");
-    await expect(tray).toBeVisible();
-    await expect(tray.getByRole("textbox")).toHaveCount(0);
-    await expect(tray).toContainText(/Paralizzato · TS SAG · CD \d+/);
-    await expect(tray.getByRole("button", { name: "Paralizzato" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    );
-    await expectFits(page, tray);
+    // The cast happened: its concentration is running.
+    await expect(
+      page.getByRole("button", { name: /^Blocca Persone \d+ round rimasti/ }).first()
+    ).toBeVisible();
+    await expect(page.getByRole("dialog", { name: /su chi\?/i })).toHaveCount(0);
+    await expect(page.getByTestId("damage-tray")).toHaveCount(0);
     await page.screenshot({ path: shotPath(`c-blocca-persone-${size}.png`) });
 
-    await tray.getByRole("button", { name: "Applica" }).click();
-    await expect(tray).toBeHidden();
+    // The cast stays undoable: the snackbar on desktop, the signet's ⟲ coin on the phone.
+    if (size === "mobile") await page.locator(".signet-fab").click();
+    const undo =
+      size === "mobile"
+        ? page.locator(".signet-chain").getByRole("button", { name: /^Annulla: / })
+        : page.getByRole("button", { name: "Annulla: Hai usato Blocca Persone" });
+    await undo.click();
+    await expect(
+      page.getByRole("button", { name: /^Blocca Persone \d+ round rimasti/ })
+    ).toHaveCount(0);
   });
 }

@@ -252,6 +252,32 @@ describe("PlayTab action derivations", () => {
   // NOT `selected.action` (which holds only the anonymous "attack-group" entry).
   // The reveal gate reading `selected.action` alone never opened, so Two-Weapon
   // Fighting was silently broken for every Fighter/Ranger/Barbarian dual-wielder.
+  // The other side of War Magic (#1140): with no feature letting a cantrip replace an
+  // attack, a cantrip is the Magic action, so after one swing has opened the Attack
+  // action it reads «Used» like any other Action, even with a swing still left.
+  it("without War Magic, a cantrip after an attack reads 'Used' (the Attack action holds the Action)", async () => {
+    const doc = buildDevScenario("twf-extra-attack");
+    if (!doc) throw new Error("missing dev scenario");
+    doc.character.spells = [{ srdId: "fire-bolt" }];
+    doc.character.spellcasting = {
+      ...doc.character.spellcasting,
+      ability: "INT",
+    } as typeof doc.character.spellcasting;
+    useCharacterStore.setState({ character: doc, loading: false, error: null });
+    renderPage();
+    await waitFor(() => expect(useCombatStore.getState().attackBudget).toBe(2));
+    expect(ctaButton("Fire Bolt")).toBeEnabled();
+
+    fireEvent.click(screen.getByLabelText("Attack: Dagger"));
+    await waitFor(() => expect(useCombatStore.getState().attacksUsed).toBe(1));
+
+    await waitFor(() => {
+      const fireBolt = ctaButton("Fire Bolt");
+      expect(fireBolt).toHaveAttribute("aria-label", "Used: Fire Bolt");
+      expect(fireBolt).toBeDisabled();
+    });
+  });
+
   it("RA-13 — an Extra-Attack martial's committed Light main swing reveals the off-hand (attackSwingIds path)", async () => {
     useCharacterStore.setState({
       character: buildDevScenario("twf-extra-attack"),
