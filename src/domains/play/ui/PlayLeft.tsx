@@ -72,7 +72,30 @@ export function PlayLeft({
             // A pool with something left spends one on a tap (prototype «Tocca per
             // spendere»), with its undo toast.
             const spend = readonly ? null : resourceSpend(r);
-            return spend ? (
+            // A spell slot refills one spent use (Font of Inspiration), as the classic
+            // rail's «Spend a slot →».
+            const refill =
+              r.slotRecover && !readonly ? (
+                <Button
+                  key={`${r.id}-refill`}
+                  kind="quiet"
+                  onClick={() =>
+                    registerUndoableToast(
+                      {
+                        message: t("combat.slotToTrackerRecoverToast", {
+                          name: label(r),
+                        }),
+                      },
+                      () =>
+                        useCharacterStore.getState().recoverTrackerFromSpellSlot(r.id),
+                      { turnScoped: false }
+                    )
+                  }
+                >
+                  {t("combat.slotToTrackerRecover", { name: label(r) })}
+                </Button>
+              ) : null;
+            const row = spend ? (
               <button
                 key={r.id}
                 type="button"
@@ -113,6 +136,7 @@ export function PlayLeft({
                 {body}
               </div>
             );
+            return refill ? [row, refill] : row;
           })}
         </Panel>
       )}
