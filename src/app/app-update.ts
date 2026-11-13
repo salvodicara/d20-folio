@@ -101,16 +101,10 @@ export async function reloadWhenSaved(
   reload();
 }
 
-/** The app's Reload: the Firestore writes first (loaded on demand, off the entry chunk). */
+/** The app's Reload: the Firestore writes first (their module loads on demand). */
 export function reloadApp(): void {
   void reloadWhenSaved(
-    async () => {
-      const [{ waitForPendingWrites }, { db }] = await Promise.all([
-        import("firebase/firestore"),
-        import("@/lib/firebase"),
-      ]);
-      await waitForPendingWrites(db);
-    },
+    () => import("@/lib/pending-writes-io").then(({ pendingWrites }) => pendingWrites()),
     () => window.location.reload(),
     3_000
   );
