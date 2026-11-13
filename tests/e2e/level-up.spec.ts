@@ -8,10 +8,10 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
-import { firstWord, teamFixtureName } from "./team-fixture";
+import { firstWord, devHeroName } from "./team-fixture";
 
 // Derived from the pack fixture at runtime — no name literal ships publicly.
-const HERO_NAME = teamFixtureName("bard");
+const HERO_NAME = devHeroName("bard");
 const HERO_FIRST = firstWord(HERO_NAME);
 import { seedLang } from "./surfaces";
 import { settledBox } from "./ready";
