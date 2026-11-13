@@ -51,13 +51,38 @@ export function turnEconomyKey(
     : `solo:${characterId}:${soloRound}`;
 }
 
+/**
+ * A cast's Action is the Magic action, and only spells produce it: their rows are
+ * `spell-<id>` (catalogue and pack) or `custom-spell-<instance>` (homebrew). The client
+ * live today (v0.26.1) refuses a whole combat/state whose stored turn says «magic» (its
+ * closed list predates it; forward-compat check, 2026-11-13), so a cast's category is
+ * never stored: it is derived back from the row on restore. Every other category is
+ * stored as before.
+ */
+const SPELL_ROW = /^(custom-)?spell-/;
+
+function storedCategory(
+  action: SelectedAction
+): Pick<PersistedTurnAction, "economyCategory"> {
+  return action.economyCategory && action.economyCategory !== "magic"
+    ? { economyCategory: action.economyCategory }
+    : {};
+}
+
+function restoredCategory(
+  action: PersistedTurnAction
+): Pick<SelectedAction, "economyCategory"> {
+  if (action.economyCategory) return { economyCategory: action.economyCategory };
+  return SPELL_ROW.test(action.id) ? { economyCategory: "magic" } : {};
+}
+
 function persistedAction(action: SelectedAction): PersistedTurnAction {
   return {
     id: action.id,
     name: action.nameLoc ?? { custom: action.name },
     slot: action.slot,
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
-    ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...storedCategory(action),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
     ...(action.outcomeOccurrenceId
       ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
@@ -104,7 +129,7 @@ function selectedAction(action: PersistedTurnAction, locale: Locale): SelectedAc
     nameLoc: action.name,
     slot: action.slot,
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
-    ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...restoredCategory(action),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
     ...(action.outcomeOccurrenceId
       ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
