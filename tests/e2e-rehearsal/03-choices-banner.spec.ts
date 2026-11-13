@@ -34,12 +34,20 @@ test("«Scelte da completare» lists the owed choices and clears once they are m
   // Each ask takes as many picks as it names ("Scegli 2 …"), one otherwise: the first offers.
   const dialog = page.locator("dialog[open]");
   await expect(dialog).toBeVisible();
+  // An option is a chip or, for a class pick, a slot of the level-up's pick grid.
+  const options = ".f-chips button, .f-pick button.f-slot";
   for (const ask of await dialog.locator(".f-ask").all()) {
-    const chips = ask.locator(".f-chips button");
+    const chips = ask.locator(options);
     if ((await chips.count()) === 0) continue;
     const need = Number((await ask.innerText()).match(/\b(\d+)\b/)?.[1] ?? 1);
-    const picked = await ask.locator(".f-chips button[aria-pressed=true]").count();
-    const open = ask.locator(".f-chips button[aria-pressed=false]");
+    const picked = await ask
+      .locator(
+        ".f-chips button[aria-pressed=true], .f-pick button.f-slot[aria-pressed=true]"
+      )
+      .count();
+    const open = ask.locator(
+      ".f-chips button[aria-pressed=false], .f-pick button.f-slot[aria-pressed=false]"
+    );
     for (let i = picked; i < need; i++) await open.first().click();
   }
   await dialog.getByRole("button", { name: "Salva" }).click();
