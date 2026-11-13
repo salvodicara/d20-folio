@@ -25,13 +25,18 @@ function namesWith(
   };
 }
 
-/** A character's own report (no campaign): every `pc-…` is the character itself; any
- *  other creature is not, so a cast on a monster never reads as cast on the caster. */
-export function useOwnReportNames(name: string, locale: Locale): SessionReportNames {
+/** A character's own report (no campaign): every `pc-…` is the character itself; a
+ *  creature is named as the fight's roster shows it (`roster`: id → name, the names the
+ *  tray and the initiative rail read), and is never the caster. */
+export function useOwnReportNames(
+  name: string,
+  locale: Locale,
+  roster: Readonly<Record<string, string>> = {}
+): SessionReportNames {
   return useMemo(
     () =>
-      namesWith((id) => (id.startsWith("pc-") ? name || undefined : undefined), locale),
-    [name, locale]
+      namesWith((id) => (id.startsWith("pc-") ? name || undefined : roster[id]), locale),
+    [name, locale, roster]
   );
 }
 

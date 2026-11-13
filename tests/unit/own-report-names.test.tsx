@@ -19,6 +19,16 @@ describe("useOwnReportNames", () => {
     expect(result.current.pc("monster-2")).toBeUndefined();
   });
 
+  it("names a creature by the name the fight's roster shows (the tray's, the rail's)", () => {
+    const { result } = renderHook(() =>
+      useOwnReportNames("Pyra", "it", { "monster-2": "Goblin Chief" })
+    );
+    expect(result.current.pc("monster-2")).toBe("Goblin Chief");
+    // an id no roster knows: not the character
+    expect(result.current.pc("monster-9")).toBeUndefined();
+    expect(result.current.pc("pc-me")).toBe("Pyra");
+  });
+
   it("a cast on a monster it doesn't know never reads as cast on the caster", () => {
     const { result } = renderHook(() => useOwnReportNames("Pyra", "it"));
     const names = result.current;
