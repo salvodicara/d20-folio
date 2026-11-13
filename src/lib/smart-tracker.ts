@@ -6626,6 +6626,9 @@ export function grantedActionRows(
       ...(activity.cost.maxUsesPerTurn !== undefined
         ? { maxUsesPerTurn: activity.cost.maxUsesPerTurn }
         : {}),
+      ...(granted.requiresActionThisTurn
+        ? { requiresActionThisTurn: granted.requiresActionThisTurn }
+        : {}),
       pinned: pinned.has(activity.id),
       defaultPinned: false,
       ...(description ? { description } : {}),

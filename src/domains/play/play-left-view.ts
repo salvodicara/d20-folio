@@ -12,6 +12,7 @@ import {
   type SaveCheckSkillRow,
 } from "@/lib/views/saves-checks-view";
 import type { SheetEvent } from "@/lib/play/sheet-events";
+import { getSpellSlotTrackerRecovery } from "@/lib/smart-tracker";
 import type { CharacterDoc } from "@/types/character";
 
 export interface PlayResource {
@@ -19,6 +20,8 @@ export interface PlayResource {
   row: ResourceRow;
   left: number;
   max: number;
+  /** A spell slot can refill one spent use now (Font of Inspiration). */
+  slotRecover?: boolean;
 }
 
 export interface PlaySkill {
@@ -58,8 +61,15 @@ export function playLeftView(doc: CharacterDoc, locale: Locale): PlayLeftView {
   const ranked = [...skills].sort(
     (a, b) => Number(b.proficient) - Number(a.proficient) || b.bonus - a.bonus
   );
+  const refillable = getSpellSlotTrackerRecovery(doc);
   return {
-    resources: resourcesView(doc, locale).map(pool),
+    resources: resourcesView(doc, locale)
+      .map(pool)
+      .map((r) =>
+        r.row.kind === "class-resource" && refillable.has(r.id)
+          ? { ...r, slotRecover: true }
+          : r
+      ),
     topSkills: ranked.slice(0, TOP),
     allSkills: skills,
   };

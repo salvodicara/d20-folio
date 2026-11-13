@@ -348,6 +348,8 @@ export const FIGHTER_FEATURES: SrdClassFeatureData[] = [
         id: "tactical-shift",
         type: "granted-action",
         slot: "free",
+        requiresActionThisTurn: "fighter-second-wind-bonus",
+        maxUsesPerTurn: 1,
         effects: [{ kind: "self-move", fraction: 0.5, noOpportunityAttacks: true }],
       },
     ],

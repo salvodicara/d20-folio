@@ -258,7 +258,8 @@ describe("free rows from the catalogue text", () => {
       5,
       "fighter-tactical-shift",
       "tactical-shift",
-      undefined,
+      // once, riding the Second Wind used this turn
+      1,
       "Tactical Shift",
       "Spostamento Tattico",
     ],

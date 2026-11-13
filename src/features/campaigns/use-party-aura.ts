@@ -82,7 +82,8 @@ export function usePartyAura(
           partyAurasOf(campaign),
           openCharacterId,
           now,
-          character.session.activeFeatures ?? []
+          character.session.activeFeatures ?? [],
+          published?.bonus ?? null
         )
       : null;
   const receivedKey = JSON.stringify(received);
