@@ -50,6 +50,7 @@ export function PickGrid({
   chips,
   count,
   locale,
+  searchLabel,
   onToggle,
 }: {
   label: string;
@@ -66,6 +67,8 @@ export function PickGrid({
   /** How many to pick: the learned row shows that many slots (BG3). */
   count?: number;
   locale: Locale;
+  /** The name filter's label for a long list that isn't spells («Cerca armi»). */
+  searchLabel?: string;
   onToggle: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -90,15 +93,27 @@ export function PickGrid({
     filtering && levels.length > 1 ? (levels.at(-1) ?? null) : null
   );
   const [focus, setFocus] = useState<string | null>(null);
+  // A long list of other options (about 38 weapons to master) narrows by name too.
+  const byName = !spells && options.length > SPELL_FILTER_FROM;
+  const needle = query.trim().toLocaleLowerCase(locale);
   // A long list narrows by name and level; the picks stay on top whatever the filter.
-  const shown = filtering
+  const shown = byName
     ? [
         ...options.filter((o) => picked.includes(o.id)),
-        ...filterSpellRows(spellRows, query, level)
-          .filter((r) => !picked.includes(r.id))
-          .map((r) => ({ id: r.id, label: r.name })),
+        ...options.filter(
+          (o) =>
+            !picked.includes(o.id) &&
+            (needle === "" || o.label.toLocaleLowerCase(locale).includes(needle))
+        ),
       ]
-    : options;
+    : filtering
+      ? [
+          ...options.filter((o) => picked.includes(o.id)),
+          ...filterSpellRows(spellRows, query, level)
+            .filter((r) => !picked.includes(r.id))
+            .map((r) => ({ id: r.id, label: r.name })),
+        ]
+      : options;
   const levelName = (n: number) =>
     n === 0 ? t("spells.cantrip") : t("spells.level", { level: n });
   const inspectedId = focus ?? picked[0] ?? null;
@@ -196,11 +211,11 @@ export function PickGrid({
     ) : null;
   return (
     <>
-      {filtering && (
+      {(filtering || byName) && (
         <div className="f-lvl-tools">
           <Field
-            label={t("spells.pick.search")}
-            placeholder={t("spells.pick.searchHint")}
+            label={byName ? (searchLabel ?? t("common.search")) : t("spells.pick.search")}
+            {...(byName ? {} : { placeholder: t("spells.pick.searchHint") })}
             type="search"
             autoComplete="off"
             value={query}

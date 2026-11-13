@@ -9,6 +9,9 @@
  * too, as the creation class step's chips. Hidden on a read-only sheet and when
  * nothing is owed.
  */
+import type { InfoKind } from "@/domains/spells/option-info";
+import type { ClassPickKind } from "@/lib/owed-class-picks";
+import type { ArtKind } from "@/ui";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -32,6 +35,19 @@ import type { AbilityCode } from "@/types/ability";
 import { Button, Chip, Dialog } from "@/ui";
 
 const ABILITIES = ["INT", "WIS", "CHA"] as const;
+
+/** The art and the card each owed class pick wears, as on the level-up. */
+const PICK_ART: Partial<Record<ClassPickKind, ArtKind>> = {
+  weaponMasteries: "equipment",
+  fightingStyles: "feat",
+};
+const PICK_INFO: Partial<Record<ClassPickKind, InfoKind>> = {
+  weaponMasteries: "weapon",
+  fightingStyles: "feat",
+  invocations: "invocation",
+  metamagic: "metamagic",
+  maneuvers: "maneuver",
+};
 
 export function PlaySpeciesChoices({
   doc,
@@ -227,22 +243,25 @@ function SpeciesChoicesDialog({
           <div key={row.key} className="f-ask">
             <span className="f-lbl">{row.source}</span>
             <p className="f-help">{row.title}</p>
-            <div className="f-chips">
-              {row.options.map((o) => (
-                <Chip
-                  key={o.id}
-                  pressed={(classPicks[row.key] ?? []).includes(o.id)}
-                  onClick={() =>
-                    setClassPicks({
-                      ...classPicks,
-                      [row.key]: togglePick(classPicks[row.key] ?? [], o.id, row.owed),
-                    })
-                  }
-                >
-                  {o.name}
-                </Chip>
-              ))}
-            </div>
+            {/* The level-up's pick grid: art, the card, and a name filter on a long
+                list (about 38 weapons to master, a whole spellbook). */}
+            <PickGrid
+              label={row.title}
+              options={row.options.map((o) => ({ id: o.id, label: o.name }))}
+              picked={classPicks[row.key] ?? []}
+              spells={row.pick === "cantrips" || row.pick === "spellbook"}
+              {...(PICK_ART[row.pick] ? { art: PICK_ART[row.pick] } : {})}
+              {...(PICK_INFO[row.pick] ? { info: PICK_INFO[row.pick] } : {})}
+              count={row.owed}
+              locale={locale}
+              searchLabel={row.searchPlaceholder}
+              onToggle={(id) =>
+                setClassPicks({
+                  ...classPicks,
+                  [row.key]: togglePick(classPicks[row.key] ?? [], id, row.owed),
+                })
+              }
+            />
           </div>
         ))}
       </div>

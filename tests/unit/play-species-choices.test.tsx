@@ -158,3 +158,32 @@ describe("PlaySpeciesChoices", () => {
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   });
 });
+
+describe("PlaySpeciesChoices: a long owed list can be searched", () => {
+  // A Paladin 5 owes 2 Weapon Masteries out of about 38 weapons: the new Play offers
+  // the level-up's pick grid with a name filter, as the classic list does.
+  it("narrows the weapons by name and stores the two picked", () => {
+    const base = makeCharacterDoc({
+      race: asRaceId("dwarf"),
+      classes: [{ classId: "paladin", level: 5 }],
+    });
+    useCharacterStore.getState().setCharacter(base);
+    render(<Banner />);
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    const search = screen.getByRole("searchbox", { name: /search/i });
+    fireEvent.change(search, { target: { value: "long" } });
+    expect(screen.getByRole("button", { name: /^Longsword/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /^Greataxe/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /^Longsword/ }));
+    fireEvent.change(search, { target: { value: "axe" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Greataxe/ }));
+    // the first pick stays shown whatever the filter (its slot and the grid's top)
+    expect(screen.getAllByRole("button", { name: /^Longsword/ }).length).toBeGreaterThan(
+      0
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(
+      useCharacterStore.getState().character?.character.classes[0]?.weaponMasteries
+    ).toEqual(["longsword", "greataxe"]);
+  }, 15_000);
+});
