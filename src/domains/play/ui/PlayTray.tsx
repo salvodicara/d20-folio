@@ -157,20 +157,22 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
     >
       {rubric && <p className="f-help f-ask">{rubric}</p>}
       {plan.damageTypeChoices && (
-        <div className="f-chips f-ask" role="group" aria-label={t("common.damageType")}>
-          {plan.damageTypeChoices.map((type) => (
-            <Chip
-              key={type}
-              pressed={plan.damageType === type}
-              onClick={() => {
-                setPickedType(type);
-                // each row meets the new type's defenses
-                setEdited(new Map());
-              }}
-            >
-              {t(`srd.damage_${type}`)}
-            </Chip>
-          ))}
+        <div className="f-ask">
+          <div className="f-chips" role="group" aria-label={t("common.damageType")}>
+            {plan.damageTypeChoices.map((type) => (
+              <Chip
+                key={type}
+                pressed={plan.damageType === type}
+                onClick={() => {
+                  setPickedType(type);
+                  // each row meets the new type's defenses
+                  setEdited(new Map());
+                }}
+              >
+                {t(`srd.damage_${type}`)}
+              </Chip>
+            ))}
+          </div>
         </div>
       )}
       {types.length > 0 ? (
