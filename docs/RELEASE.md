@@ -80,89 +80,61 @@ initiative.
 If the SHA's Verify run was superseded (cancelled by a newer merge) or the content pack moved
 after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml --ref main`.
 
-### Migrate before you deploy (ADR-0009)
+### Before you deploy: stored data and the live client (ADR-0009)
 
-**The next version's draft** lives in `docs/release/vX.Y.Z-draft.md` (now `v0.26.0-draft.md`): the
+**The next version's draft** lives in `docs/release/vX.Y.Z-draft.md` (now `v0.26.2-draft.md`): the
 player-facing notes and the "Dati e compatibilità" list (migrations, writers held off until old
 clients are gone, what an old client sees). Sessions add to it through PRs; the release starts from it.
 
-**Pending for the next deploy (2026-10-24): item resources.** Since #386, 17 catalogue items declare
-item-owned `resources`, so every owned copy needs `scripts/migrate-item-resources.ts` applied before
-the client that reads them ships; otherwise it shows a full counter. Run it through the
-`live-data-migration` skill (snapshot → `--check` dry-run → owner's yes → `--apply --backup <dir>` →
-`--check` green). `deploy.yml` runs its `--check` and refuses to promote while anything is pending.
+**Pending migrations: none (2026-11-13).** `deploy.yml` runs four read-only checks after composing
+the pack: `migrate-custom-identity.ts`, `migrate-character-parents.ts`, `migrate-item-resources.ts`
+and `migrate-monk-base-speed.ts`, each with `--check`. A pending change or an unreadable stored
+document stops the promotion; the workflow never applies anything. A new migration goes through the
+`live-data-migration` skill (snapshot → `--check` → owner's yes → `--apply --backup <fresh dir>` →
+`--check` green) before the client that needs it ships, and its `--check` joins `deploy.yml`.
 
-**State (2026-09-03):** both P1 migrations are applied and `--check`-green on production; the P1 deploy is
-pending. Immediately before that deploy re-run both `--check`; if the identity check reports pending
-changes (the deployed pre-P1 client strips `instanceId`s on autosave), re-apply it — idempotent, same
-deterministic ids — then deploy, then delete both scripts in the next commit.
+**A stored-shape change needs a migration or a tolerant reader.** That covers a new or renamed
+field, and also **a new value in a stored closed list** (an enum the reader checks: economy
+categories, trigger events, condition ids, sizes…). The live client's strict reader refuses the
+whole document over one value it does not know: in v0.26.1 a cast's new category «magic» broke the
+sheet (#1158). Write only values the live release knows, or ship the tolerant reader first.
 
-Before deploying a SHA that reads a new persisted shape, run the migration(s) listed under
-the pending migrations with `--check` green against production; a deploy
-with a pending migration is refused. Both prepared migrations are read-only in `--check`; each needs
-`GOOGLE_APPLICATION_CREDENTIALS` pointing at a `d20-folio` service-account key.
+**The checks before a deploy** (all read-only; output is counts only):
 
-**Before the first apply, confirm the deployed SHA is at or after `77ea77a`.** An older client
-strips `instanceId` from custom entries on every autosave, so migrating in front of it would let a
-live player un-migrate their own character inside the migration→deploy window.
+1. **Build the live release locally**, from the SHAs of the last deploy run and the pack it
+   checked out:
 
-**Run them IN THIS ORDER — identity first, then parents:**
+   ```sh
+   bash scripts/setup-deployed-baseline.sh /absolute/fresh/dir <app-sha> <pack-sha>
+   ```
 
-```sh
-# 1 — identity. Every custom sheet entry and library id gains a stable `instanceId`.
-node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts --check
-node --import ./scripts/alias-loader.mjs scripts/migrate-custom-identity.ts \
-  --apply --backup /absolute/fresh/private/dir-1
+2. **Forward compatibility (local): the live client reads what this tree writes.** Any refused
+   value blocks the deploy.
 
-# 2 — parents. Every parent becomes v1 (`state: {}`, `revision`), every character gets a
-#     `combat/state` child carrying its play session.
-node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts --check
-node --import ./scripts/alias-loader.mjs scripts/migrate-character-parents.ts \
-  --apply --backup /absolute/fresh/private/dir-2
-```
+   ```sh
+   node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts \
+     --baseline-root /absolute/fresh/dir/app
+   ```
 
-The order is not a preference: the cutover HYDRATES each legacy family through
-`parseCharacterEnvelope`, and that codec now REQUIRES `instanceId` on every custom entry. Run the
-parent cutover first and every character carrying a custom item is refused with `invalid-envelope`.
-Each `--backup` directory must be absolute, private and **fresh** (the script refuses an existing
-one), so use a new directory per run.
+   CI runs the same check against the live release's frozen shape
+   (`tests/unit/forward-compat-gate.test.ts`). After each deploy, refresh that fixture with
+   `--release vX.Y.Z --write-fixture tests/unit/__fixtures__/forward-compat-vX.Y.Z.json`.
 
-**Any single issue blocks the whole apply.** `--apply` runs a complete preflight and refuses the
-entire batch if the plan reports even one issue — there is no partial apply. Hand-fix the reported
-document (identified by its path hash and issue code), re-run `--check`, then apply.
+3. **Stored documents still load (production):** `scripts/survey-v026-compat.ts`. Its `--detail`
+   shows each rewrite's shape, for example «number → absent».
+4. **Derived numbers (production):** `scripts/survey-v026-derived-diff.ts`, with
+   `--baseline-root` set to the release's `app` directory and `--detail` to trace a field to its
+   catalogue ids. Every changed field must match a merged rules fix listed in its `EXPECTED`; an
+   unexpected one is a bug to look at before the deploy.
 
-**Re-run both `--check` immediately before the deploy**, not just before the apply: a player editing
-a character between the apply and the deploy can reintroduce an unmigrated document. `--check` proves
-the corpus is loadable by the client about to ship — for `migrate-character-parents.ts` that includes
-every ALREADY-marked parent (empty `state`, a `build` the codec hydrates), not only the ones it cut
-over.
+Checks 3 and 4 read production: only the coordinator runs them, with the operator's credential.
 
-`deploy.yml` runs these two read-only checks, in order, after composing the pack and
-authenticating with its existing service-account credential. Pending changes or
-invalid stored data stop promotion before any Firebase deployment; the workflow
-does not apply migrations automatically.
+**Hosting and rules ship together.** `deploy.yml` deploys Hosting plus the Firestore/Storage rules
+in one run. Rules ahead of the client would deny the old client's saves; never split them.
 
-`scripts/alias-loader.mjs` composes the private content pack exactly as the app does, so a migration
-resolves the same ids and catalogues the client would. `migrate-character-parents.ts` hydrates
-through the SRD-aware codec and therefore PROVES the pack composed before it plans anything, in every
-mode: with the `content-pack` symlink missing or `VITE_CONTENT_PACK=0` exported it refuses with
-`Refusing: content pack not composed — the plan would rewrite pack-only references` and exits 1,
-rather than quietly rewriting a pack-only spell reference.
-
-An `--apply` run commits at most 500 documents in ONE atomic batch. `migrate-character-parents.ts`
-writes up to two documents per character (the parent and its `combat/state`), so it migrates at most
-**~250 characters per run**; it refuses rather than splitting the batch, and a corpus larger than that
-needs the write ceiling revisited before the run rather than a partial apply.
-
-**Deploy ordering — hosting and rules ship together.** `deploy.yml` deploys Hosting plus the
-Firestore/Storage rules in one run, which is what P1 requires: the new rules demand the `revision`
-compare-and-set on every build write, so deploying them AHEAD of the client would deny every save
-from the still-running old client. Never split them into two runs.
-
-**After the deploy, tell open tabs to reload.** An installed PWA tab keeps its old JavaScript until
-it is reloaded; its build writes carry no `revision` and are simply denied by the new rules (the
-sheet shows a save error). That is refused, not destructive — the fix is a reload, and no stored
-document is harmed in the meantime.
+**After the deploy, open tabs reload.** An open tab keeps its old JavaScript until it reloads. The
+app shows «A new version is ready — Reload» once the new service worker takes over; until then,
+saves the new rules refuse show a save error, and no stored document is harmed.
 
 ## What goes in `CHANGELOG.md`
 
