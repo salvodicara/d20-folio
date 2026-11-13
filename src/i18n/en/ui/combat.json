@@ -80,6 +80,7 @@
     "undoneToast": "Undone: {{action}}",
     "redoneToast": "Redone: {{action}}",
     "redoUnavailable": "Can't redo: the resources have changed",
+    "noLegalTarget": "No valid target in this fight ({{types}})",
     "undoControl": "Undo: {{action}}",
     "redoControl": "Redo: {{action}}",
     "cast": "Cast",

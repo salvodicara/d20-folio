@@ -187,3 +187,26 @@ function stateEndsOnHolderActs(action: ResolvedAction): boolean {
       (g.duration.endsEarlyOn?.length ?? 0) > 0
   );
 }
+
+/**
+ * The creature types a type-limited spell needs (Hold Person: a Humanoid) when the
+ * fight has creatures but none of them can be its target: the cast still goes on
+ * with nobody named, and the player is told why. `null` when the spell has no type
+ * limit, when someone (or a creature of unknown type) qualifies, or with no fight.
+ */
+export function noLegalTargetTypes(
+  action: ResolvedAction,
+  roster: TargetRoster
+): ReadonlyArray<CreatureType> | null {
+  const types = combatResolutionSpec(action).targetCreatureTypes;
+  const targeting = action.summary.targeting;
+  if (!types?.length || !targeting || roster.party) return null;
+  const others = (step: TargetStep | null) =>
+    step?.candidates.filter((candidate) => !candidate.self).length ?? 0;
+  if (others(targetStepFor(action, roster)) > 0) return null;
+  const unlimited = {
+    ...action,
+    summary: { ...action.summary, targeting: { ...targeting, creatureTypes: undefined } },
+  };
+  return others(targetStepFor(unlimited, roster)) > 0 ? types : null;
+}
