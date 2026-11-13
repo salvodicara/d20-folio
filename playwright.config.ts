@@ -95,6 +95,7 @@ export default defineConfig({
       testIgnore: [
         /portrait-export-journey\.spec\.ts/,
         /ui-play-fidelity\.spec\.ts/,
+        /ui-reroll-weight\.spec\.ts/,
         /ui-avatars\.spec\.ts/,
         /ui-long-text\.spec\.ts/,
         /ui-pips\.spec\.ts/,
