@@ -29,6 +29,7 @@ import {
   startNewSitting,
   test,
   watchErrors,
+  endEncounterOnServer,
 } from "./helpers";
 import {
   BARD_D20,
@@ -82,14 +83,8 @@ async function openLiveTab(dm: Page): Promise<void> {
 
 /** End a running encounter without a Chronicle entry; then none runs. */
 async function endEncounter(dm: Page): Promise<void> {
-  const end = dm.getByRole("button", { name: "End encounter" });
-  const run = dm.getByRole("button", { name: "Run encounter" });
-  await expect(end.or(run).first()).toBeVisible({ timeout: 60_000 });
-  if (await end.isVisible()) {
-    await end.click();
-    await dm.getByRole("dialog").getByRole("button", { name: "Skip" }).click();
-  }
-  await expect(run).toBeVisible();
+  // Read from the server, not the page (see `endEncounterOnServer`).
+  await endEncounterOnServer(dm);
 }
 
 /** The optional «On whom?» step: no one. */
@@ -147,15 +142,7 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
   const dm = await seat(browser);
 
   await test.step("no encounter is running; the evening starts a new sitting", async () => {
-    await openLiveTab(dm);
     await endEncounter(dm);
-    await dm.reload();
-    await expect(
-      dm.getByRole("button", { name: "Run encounter" }),
-      "the end is on the server"
-    ).toBeVisible({
-      timeout: 30_000,
-    });
     await startNewSitting();
   });
 

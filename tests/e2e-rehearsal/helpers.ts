@@ -10,12 +10,17 @@ import { teamFixtureName } from "../e2e/team-fixture";
 import { SESSION_GAP_MS } from "../../src/lib/session-log/recorder";
 
 /**
- * The rehearsal's `test`: the browser contexts a test opens itself (a DM, a player)
- * close when it ends. Playwright closes only the ones its fixtures made, so the next
- * spec used to run beside every earlier spec's open tabs, still listening and writing.
+ * The rehearsal's `test`. When a test ends, passed or failed:
+ * - the browser contexts it opened itself (a DM, a player) close. Playwright closes only
+ *   the ones its fixtures made, so the next spec used to run beside every earlier spec's
+ *   open tabs, still listening and writing;
+ * - the sandbox campaign's fight, if one still runs, is removed on the emulator. The
+ *   specs share one emulator and run in order: a fight one spec left open (failed before
+ *   its end, or ended on screen with the write still on its way) ran into the next
+ *   (CI, 2026-11-13). Every spec starts with no fight, whatever ran before it.
  */
-export const test = base.extend<{ closeOpenedContexts: undefined }>({
-  closeOpenedContexts: [
+export const test = base.extend<{ leaveTheTableClean: undefined }>({
+  leaveTheTableClean: [
     async ({ browser }, use) => {
       const before = new Set(browser.contexts());
       await use(undefined);
@@ -25,6 +30,7 @@ export const test = base.extend<{ closeOpenedContexts: undefined }>({
           .filter((context) => !before.has(context))
           .map((context) => context.close())
       );
+      await clearSandboxFight();
     },
     { auto: true },
   ],
@@ -39,8 +45,8 @@ export const BARD_NAME = teamFixtureName("bard") ?? "";
 export const BARD_FIRST = BARD_NAME.split(" ")[0] ?? "";
 export const PALADIN_NAME = teamFixtureName("paladin") ?? "";
 
-/** The emulator project's Firestore REST root (read-only checks; the one write is
- *  {@link startNewSitting}'s). */
+/** The emulator project's Firestore REST root (read-only checks; the writes are
+ *  {@link startNewSitting}'s and the fixture's fight cleanup). */
 const FIRESTORE =
   "http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents";
 const OWNER = { Authorization: "Bearer owner" };
@@ -85,6 +91,53 @@ export async function startNewSitting(): Promise<void> {
     });
     if (!patched.ok) throw new Error(`session log ${id}: HTTP ${String(patched.status)}`);
   }
+}
+
+/** Remove the sandbox campaign's fight on the emulator, as an end leaves it: no
+ *  `encounter`, an empty `encounterInit`. A no-op with no fight running. */
+async function clearSandboxFight(): Promise<void> {
+  if (!(await encounterRunning())) return;
+  const response = await fetch(
+    `${FIRESTORE}/campaigns/${SANDBOX_CAMPAIGN}?updateMask.fieldPaths=encounter&updateMask.fieldPaths=encounterInit`,
+    {
+      method: "PATCH",
+      headers: { ...OWNER, "Content-Type": "application/json" },
+      // `encounter` is in the mask but not in the body: the field is deleted.
+      body: JSON.stringify({ fields: { encounterInit: { mapValue: {} } } }),
+    }
+  );
+  if (!response.ok) throw new Error(`campaign: HTTP ${String(response.status)}`);
+}
+
+/** Whether the sandbox campaign has a fight running, read straight from the emulator
+ *  (an end deletes the campaign's `encounter`). */
+export async function encounterRunning(): Promise<boolean> {
+  const response = await fetch(
+    `${FIRESTORE}/campaigns/${SANDBOX_CAMPAIGN}?mask.fieldPaths=encounter`,
+    { headers: OWNER }
+  );
+  if (!response.ok) throw new Error(`campaign: HTTP ${String(response.status)}`);
+  const body = (await response.json()) as {
+    fields?: { encounter?: { nullValue?: null; mapValue?: unknown } };
+  };
+  return body.fields?.encounter?.mapValue !== undefined;
+}
+
+/**
+ * End the sandbox campaign's running fight from the DM's hub, and wait until the server
+ * has it. The hub can show «Run encounter» for a moment while it loads, and a click on
+ * «End encounter» is shown at once while its write is still on its way: both read the
+ * server instead (CI, 2026-11-13: a fight a spec left open ran into the next spec).
+ */
+export async function endEncounterOnServer(dm: Page): Promise<void> {
+  await expect(async () => {
+    if (!(await encounterRunning())) return;
+    await dm.goto(`/campaigns/${SANDBOX_CAMPAIGN}`);
+    await dm.getByRole("tab", { name: "Live" }).click();
+    await dm.getByRole("button", { name: "End encounter" }).click({ timeout: 30_000 });
+    await dm.getByRole("dialog").getByRole("button", { name: "Skip" }).click();
+    await expect.poll(encounterRunning, { timeout: 15_000 }).toBe(false);
+  }).toPass({ timeout: 150_000, intervals: [1_000, 5_000] });
 }
 
 /** The DM's characters, read straight from the emulator. */

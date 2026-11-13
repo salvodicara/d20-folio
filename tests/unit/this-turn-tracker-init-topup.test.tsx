@@ -224,6 +224,46 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     );
   });
 
+  // The rules lane's audit, 2026-11-13: the campaigns can be read before the fight's
+  // live listener answers. The pip, built from the campaigns, already lists the fight for
+  // this character: the roll keeps waiting for the status, never goes solo.
+  it("campaigns read and a fight listed for the character, its status not here yet: the roll waits for it", async () => {
+    useCombatStatusStore.setState({
+      status: null,
+      pip: {
+        primaryId: "camp-1",
+        entries: [
+          {
+            campaignId: "camp-1",
+            campaignName: "Camp",
+            state: "needs-roll",
+            round: 1,
+            characterId: MOCK_CHARACTER.id,
+            heroName: null,
+            actorName: null,
+            epoch: 5,
+          } as never,
+        ],
+      },
+    });
+    usePartyRosterStore.setState({ party: null, resolvedFor: MOCK_CHARACTER.id });
+    loadMonkWithDrainedFocus("");
+    const view = mount();
+    fireEvent.click(view.container.querySelector(".vital-init") as HTMLElement);
+    const input = document.querySelector(".init-edit-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "18" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    expect(useCombatStore.getState().initiative).toBe("");
+    expect(setEncounterInitiative).not.toHaveBeenCalled();
+    act(() => {
+      useCombatStatusStore.setState({ status: gatheringStatus() });
+    });
+    await waitFor(() =>
+      expect(setEncounterInitiative).toHaveBeenCalledWith("camp-1", "u1", 18)
+    );
+    expect(useCombatStore.getState().initiative).toBe("");
+  });
+
   // Coordinator, 2026-11-13: a wrong solo write is the defect; no write is the safe
   // failure. When the fight still can't be read, the roller keeps the number and says so.
   it("the campaigns never read: nothing is written, the typed roll stays, and the sheet says why", async () => {
