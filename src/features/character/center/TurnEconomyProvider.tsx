@@ -37,7 +37,11 @@ import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-
 import { standingAtCommit, standingEffectsForTargets } from "@/lib/play/standing-effects";
 import { standingOnClock } from "@/lib/play/campaign-effects";
 import { concentrationBudgetRounds } from "@/lib/spell-duration";
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import {
+  partyKnown,
+  partyKnownSoon,
+  usePartyRosterStore,
+} from "@/features/campaigns/party-roster";
 import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import { dispelSpell } from "@/features/character/center/dispel-commit";
 import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
@@ -110,6 +114,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
   noLegalTargetTypes,
+  recipientStateKey,
   targetStepFor,
   type TargetRoster,
   withSelfRecipient,
@@ -3118,16 +3123,7 @@ export function TurnEconomyProvider({
       characterId: character.id,
       pool: wishDuplicatePool(),
       opener,
-      onPrepared: (prepared, commit) => {
-        const roster = targetRoster();
-        const step = targetStepFor(prepared, roster);
-        if (!step) {
-          sayNoLegalTarget(prepared, roster);
-          commit(() => undefined, { action: prepared });
-          return;
-        }
-        setTargetRequest({ characterId: character.id, action: prepared, step, commit });
-      },
+      onPrepared: askTargetsThenCommit,
     });
   }
 
@@ -3175,20 +3171,34 @@ export function TurnEconomyProvider({
       ...(intent?.spared ? { spared: intent.spared } : {}),
     };
     const executable = execution.ritual ? asRitualAction(action) : action;
-    prepareResolution(
-      executable,
-      (prepared, commit) => {
-        const roster = targetRoster();
-        const step = targetStepFor(prepared, roster);
-        if (!step) {
-          sayNoLegalTarget(prepared, roster);
-          commit(() => undefined, { action: prepared });
-          return;
-        }
-        setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
-      },
-      execution
-    );
+    prepareResolution(executable, askTargetsThenCommit, execution);
+  }
+
+  /**
+   * The «Su chi?» step, then the commit. Out of a fight, a state left on its recipient
+   * offers the party, so the cast waits (briefly) for the shell to have read it: a click
+   * right after opening the sheet would otherwise spend the slot on no one.
+   */
+  function askTargetsThenCommit(prepared: ResolvedAction, commit: PreparedCommit): void {
+    const ask = () => {
+      const roster = targetRoster();
+      const step = targetStepFor(prepared, roster);
+      if (!step) {
+        sayNoLegalTarget(prepared, roster);
+        commit(() => undefined, { action: prepared });
+        return;
+      }
+      setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
+    };
+    const doc = useCharacterStore.getState().character;
+    const waits =
+      doc &&
+      !useCombatStatusStore.getState().status &&
+      recipientStateKey(prepared) &&
+      combatEffectsV26On() &&
+      !partyKnown(doc.id);
+    if (waits) void partyKnownSoon(doc.id).then(ask);
+    else ask();
   }
 
   /** This player's combatant id: the live encounter's, else the uid-derived one. */

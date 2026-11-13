@@ -392,15 +392,25 @@ export function GlobalCombatMount(): null {
   );
   useEffect(() => {
     if (devParty) {
-      setParty(devParty);
+      setParty(devParty, devParty.characterId);
       return;
     }
+    // Until the campaigns are read, the party is unknown (a cast waits for it), not none.
     setParty(
       effectsCampaignId && clockCampaign && uid && openCharacterId
         ? partyRosterOf(clockCampaign, uid, openCharacterId)
-        : null
+        : null,
+      campaignsSettled ? openCharacterId : null
     );
-  }, [devParty, effectsCampaignId, clockCampaign, uid, openCharacterId, setParty]);
+  }, [
+    devParty,
+    effectsCampaignId,
+    clockCampaign,
+    uid,
+    openCharacterId,
+    campaignsSettled,
+    setParty,
+  ]);
 
   // Concentration out of a fight: what my Concentration held on the campaign ends with
   // it, and the undo of that end brings the same effects back. The first look only

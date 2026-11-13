@@ -26,7 +26,7 @@ vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
   writeCampaignEffects,
 }));
 
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import { type PartyRoster, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { usePlayPromptStore } from "@/features/character/center/playPromptStore";
@@ -48,7 +48,9 @@ afterEach(() => {
   writeCampaignEffects.mockClear();
 });
 
-async function castWardingBondOnTheParty(): Promise<string[]> {
+async function castWardingBondOnTheParty(
+  partyArrives: "before" | "after-the-click" = "before"
+): Promise<string[]> {
   const doc = makeCharacterDoc({
     classId: "cleric",
     level: 5,
@@ -63,20 +65,19 @@ async function castWardingBondOnTheParty(): Promise<string[]> {
   });
   useAuthStore.setState({ user: { uid: "u1" } as User });
   useCombatStatusStore.setState({ status: null });
-  usePartyRosterStore.setState({
-    party: {
-      campaignId: "camp-1",
-      characterId: doc.id,
-      selfId: "pc-u1",
-      minute: 600,
-      members: [
-        {
-          ref: { kind: "pc", combatantId: "pc-u2", memberUid: "u2", characterId: "c2" },
-          name: "Ally",
-        },
-      ],
-    },
-  });
+  const party: PartyRoster = {
+    campaignId: "camp-1",
+    characterId: doc.id,
+    selfId: "pc-u1",
+    minute: 600,
+    members: [
+      {
+        ref: { kind: "pc", combatantId: "pc-u2", memberUid: "u2", characterId: "c2" },
+        name: "Ally",
+      },
+    ],
+  };
+  if (partyArrives === "before") usePartyRosterStore.setState({ party });
   let api: ReturnType<typeof useTurnEconomy> | null = null;
   function Probe() {
     api = useTurnEconomy();
@@ -95,6 +96,9 @@ async function castWardingBondOnTheParty(): Promise<string[]> {
   act(() => {
     api?.executeAction(action);
   });
+  // The shell's campaign listener can answer after the sheet is already clickable.
+  if (partyArrives === "after-the-click")
+    act(() => usePartyRosterStore.getState().setParty(party, doc.id));
   await waitFor(() => expect(usePlayPromptStore.getState().open.target).toBeDefined());
   const choices =
     usePlayPromptStore.getState().open.target?.request.step.candidates.map((c) => c.id) ??
@@ -124,6 +128,21 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
       expect(written[0]?.payload).toEqual({
         kind: "grant-group",
         activeKey: "spell-warding-bond",
+      });
+    }
+  );
+
+  it(
+    "waits for the party when the cast comes before the campaign is read",
+    { timeout: 20000 },
+    async () => {
+      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+      // Rehearsal 2026-11-13: the Paladin cast Warding Bond a moment after opening the
+      // sheet; the party was not known yet, so the slot went with no one bonded.
+      const choices = await castWardingBondOnTheParty("after-the-click");
+      expect(choices).toContain("pc-u2");
+      await waitFor(() => expect(writeCampaignEffects).toHaveBeenCalled(), {
+        timeout: 8000,
       });
     }
   );

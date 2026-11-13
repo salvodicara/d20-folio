@@ -29,11 +29,42 @@ export interface PartyRoster {
 
 export const usePartyRosterStore = create<{
   party: PartyRoster | null;
-  setParty: (party: PartyRoster | null) => void;
+  /** The open character whose party the shell has read (a party, or none). */
+  resolvedFor: string | null;
+  setParty: (party: PartyRoster | null, resolvedFor: string | null) => void;
 }>((set) => ({
   party: null,
-  setParty: (party) => set({ party }),
+  resolvedFor: null,
+  setParty: (party, resolvedFor) => set({ party, resolvedFor }),
 }));
+
+/** How long a cast waits for the shell to read the party before it goes on without. */
+export const PARTY_WAIT_MS = 4000;
+
+/** The party of `characterId` is known: read by the shell, a party or none. */
+export function partyKnown(characterId: string): boolean {
+  const { party, resolvedFor } = usePartyRosterStore.getState();
+  return resolvedFor === characterId || party?.characterId === characterId;
+}
+
+/**
+ * Resolves once the party of `characterId` is known, or after `ms`. The shell reads
+ * the campaign after the sheet can already be clicked (rehearsal, 2026-11-13).
+ */
+export function partyKnownSoon(characterId: string, ms = PARTY_WAIT_MS): Promise<void> {
+  if (partyKnown(characterId)) return Promise.resolve();
+  return new Promise((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    const unsubscribe = usePartyRosterStore.subscribe(() => {
+      if (partyKnown(characterId)) done();
+    });
+  });
+}
 
 /** The party of `uid`'s character `characterId` in `campaign`. */
 export function partyRosterOf(
