@@ -31,6 +31,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process, { argv as processArgv } from "node:process";
+import { register } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
@@ -97,40 +98,94 @@ export function writtenDoc(doc: CharacterDoc): Record<string, unknown> {
   };
 }
 
-/** One turn whose Action is `action`, in the canonical stored form. */
-function turnWith(action: Partial<Selected>): unknown {
-  const seed = {
-    key: "3:pc-x",
-    selected: {
-      action: [{ id: "spell-fire-bolt", name: { custom: "Fire Bolt" }, slot: "action" }],
-      bonus: [],
-      free: [],
-    },
-  };
-  const canonical = canonicalCombatField("turnEconomy", seed) as {
-    selected: { action: Array<Record<string, unknown>> };
-  };
-  const copy = structuredClone(canonical);
-  Object.assign(copy.selected.action[0] ?? {}, action);
-  return copy;
+/** One Action as the combat store takes it (the fields this survey sets). */
+interface WriterAction {
+  id: string;
+  name: string;
+  nameLoc: { custom: string };
+  slot: "action";
+  economyCategory?: ActionEconomyCategory;
+  triggerEvents?: TriggerEvent[];
 }
 
-export function buildInput(): CompatInput {
+/** The app's turn writer: the combat store and `snapshotTurnEconomy`. Passed in, because
+ *  its modules read Vite's env at load (the script loads them after registering
+ *  `vite-env-hooks`; a test imports them directly). Typed by shape, so the scripts'
+ *  project does not compile the store's browser-only modules. */
+export interface TurnWriter<State = unknown> {
+  store: {
+    getState(): State & {
+      endCombat(): void;
+      selectAction(action: WriterAction): unknown;
+    };
+  };
+  snapshot(state: State, key: string): NonNullable<CombatState["turnEconomy"]>;
+}
+
+/** The turn the real writer stores for one Action, in the canonical stored form. A
+ *  cast's row is a spell row; any other a feature row. */
+function storedTurn<State>(
+  writer: TurnWriter<State>,
+  action: Partial<WriterAction>
+): { turnEconomy: unknown; stored: Partial<Selected> } {
+  writer.store.getState().endCombat();
+  const id = action.economyCategory === "magic" ? "spell-fire-bolt" : "base-action";
+  writer.store
+    .getState()
+    .selectAction({ id, name: id, nameLoc: { custom: id }, slot: "action", ...action });
+  const snapshot = writer.snapshot(writer.store.getState(), "3:pc-x");
+  writer.store.getState().endCombat();
+  return {
+    turnEconomy: canonicalCombatField("turnEconomy", snapshot),
+    stored: snapshot.selected.action[0] ?? {},
+  };
+}
+
+/** One case per value the writer actually stores; a value of the type it never stores
+ *  (since #1168, «magic») is listed apart: information, never a problem. */
+function writerCases<State>(
+  writer: TurnWriter<State>,
+  list: string,
+  values: readonly string[],
+  action: (value: string) => Partial<WriterAction>,
+  storedValue: (stored: Partial<Selected>) => string | undefined,
+  base: Record<string, unknown>,
+  notStored: Record<string, string[]>
+): CompatCase[] {
+  return values.flatMap((value) => {
+    const { turnEconomy, stored } = storedTurn(writer, action(value));
+    if (storedValue(stored) !== value) {
+      (notStored[list] ??= []).push(value);
+      return [];
+    }
+    return [{ list, value, doc: { ...base, turnEconomy } }];
+  });
+}
+
+export function buildInput<State>(
+  writer: TurnWriter<State>
+): CompatInput & { notStored: Record<string, string[]> } {
   const base = writtenDoc(MOCK_CHARACTER);
+  const notStored: Record<string, string[]> = {};
   const cases: CompatCase[] = [
-    ...Object.keys(ECONOMY_CATEGORIES).map((value) => ({
-      list: "turnEconomy.action.economyCategory",
-      value,
-      doc: {
-        ...base,
-        turnEconomy: turnWith({ economyCategory: value as ActionEconomyCategory }),
-      },
-    })),
-    ...Object.keys(TRIGGER_EVENTS).map((value) => ({
-      list: "turnEconomy.action.triggerEvents",
-      value,
-      doc: { ...base, turnEconomy: turnWith({ triggerEvents: [value as TriggerEvent] }) },
-    })),
+    ...writerCases(
+      writer,
+      "turnEconomy.action.economyCategory",
+      Object.keys(ECONOMY_CATEGORIES),
+      (value) => ({ economyCategory: value as ActionEconomyCategory }),
+      (stored) => stored.economyCategory,
+      base,
+      notStored
+    ),
+    ...writerCases(
+      writer,
+      "turnEconomy.action.triggerEvents",
+      Object.keys(TRIGGER_EVENTS),
+      (value) => ({ triggerEvents: [value as TriggerEvent] }),
+      (stored) => stored.triggerEvents?.[0],
+      base,
+      notStored
+    ),
     { list: "character", value: "mock", doc: base },
     ...Object.keys(DEV_SCENARIOS).flatMap((id, index) => {
       const doc = buildDevScenario(id);
@@ -165,7 +220,7 @@ export function buildInput(): CompatInput {
       values: [...FAMILIAR_CREATURE_TYPES],
     },
   ];
-  return { cases, lists };
+  return { cases, lists, notStored };
 }
 
 export interface ForwardCompatSurvey {
@@ -179,12 +234,15 @@ export interface ForwardCompatSurvey {
   characters: { written: number; accepted: number; refused: Record<string, number> };
   /** The play-state lists: values this tree can store that the live list lacks. */
   playStateLists: Record<string, string[] | "absent in the live release">;
+  /** Information only: values of a closed list's type that this tree's writer never
+   *  stores, so the live client never meets them. */
+  notStored: Record<string, string[]>;
   /** 0 when the live client reads everything this tree can write. */
   problems: number;
 }
 
 export function summarize(
-  input: CompatInput,
+  input: CompatInput & { notStored?: Record<string, string[]> },
   live: CompatOutput,
   current: CompatOutput["cases"]
 ): ForwardCompatSurvey {
@@ -219,8 +277,13 @@ export function summarize(
       (n, v) => n + (Array.isArray(v) ? v.length : 1),
       0
     );
-  void input;
-  return { closedLists, characters, playStateLists, problems };
+  return {
+    closedLists,
+    characters,
+    playStateLists,
+    notStored: input.notStored ?? {},
+    problems,
+  };
 }
 
 /**
@@ -266,7 +329,19 @@ async function run(): Promise<void> {
   const root = rootIndex > 0 ? processArgv[rootIndex + 1] : undefined;
   if (!root)
     throw new Error("--baseline-root /absolute/path/to/the/deployed/release is required");
-  const input = buildInput();
+  // The writer's modules read Vite's env at load: give them one first.
+  register(new URL("./lib/vite-env-hooks.mjs", import.meta.url));
+  // Loaded by URL, as `derived-probe.ts` loads the engine: the scripts' project then does
+  // not compile the store's browser-only modules.
+  const app = (file: string) => new URL(`../src/${file}.ts`, import.meta.url).href;
+  const [{ useCombatStore }, { snapshotTurnEconomy }] = (await Promise.all([
+    import(app("stores/combatStore")),
+    import(app("features/character/center/combat-hydration")),
+  ])) as [
+    { useCombatStore: TurnWriter["store"] },
+    { snapshotTurnEconomy: TurnWriter["snapshot"] },
+  ];
+  const input = buildInput({ store: useCombatStore, snapshot: snapshotTurnEconomy });
   const dir = await mkdtemp(join(tmpdir(), "folio-forward-compat-"));
   try {
     const inFile = join(dir, "in.json");
