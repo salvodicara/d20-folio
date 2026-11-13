@@ -74,6 +74,9 @@
       "conditionOff": "Condizione tolta a {{name}}",
       "addN": "Aggiungi {{count}}"
     },
-    "rollWaiting": "Leggo i bonus del gruppo…"
+    "rollWaiting": "Leggo i bonus del gruppo…",
+    "refused": {
+      "notAttached": "Il tuo personaggio non è agganciato a questa campagna: aggancialo dalla scheda Gruppo, poi tira."
+    }
   }
 }
