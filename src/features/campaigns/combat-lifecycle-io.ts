@@ -24,7 +24,11 @@ import {
   toCampaignDoc,
   writeCampaignCombatEffect,
 } from "./campaign-io";
-import { createSessionRecorder, type SessionRecorder } from "@/lib/session-log";
+import {
+  createSessionRecorder,
+  type SeenRound,
+  type SessionRecorder,
+} from "@/lib/session-log";
 
 import { recordCondition } from "./combat-chronicle";
 import { useCampaignStore } from "./campaignStore";
@@ -182,7 +186,8 @@ export async function rollIntoCombat(
           input.uid,
           input.roll,
           input.bonuses[`pc-${input.uid}`] ?? 0,
-          recorder
+          recorder,
+          fightOf(done)
         );
   const retractLine = async () => {
     if (line) await recorder.retract(line).catch(() => null);
@@ -220,11 +225,25 @@ export async function recordOwnInitiative(
   recorder: Pick<SessionRecorder, "record"> = createSessionRecorder({
     store: sessionLogStoreFor(campaignId),
     uid,
-  })
+  }),
+  /** The fight the roll went into, when known (see {@link fightOf}). */
+  seen?: SeenRound
 ): Promise<string | null> {
   return recorder
-    .record({ kind: "initiative", actor: `pc-${uid}`, roll, total: roll + bonus })
+    .record(
+      { kind: "initiative", actor: `pc-${uid}`, roll, total: roll + bonus },
+      seen ? { seen } : undefined
+    )
     .catch(() => null);
+}
+
+/**
+ * The fight a roll went into, stamped on its report line. The fight's start marker is
+ * written by the pages that see the fight, after the roll that started it, so the roll's
+ * line can reach the log first: the stamp keeps it in its fight (the session fold).
+ */
+function fightOf(move: { epoch: number; round: number }): SeenRound {
+  return { encounterId: String(move.epoch), round: Math.max(1, move.round) };
 }
 
 /** Pass the turn (anyone at the table in a lifecycle fight). `expectedCurrentId` is the
@@ -343,16 +362,20 @@ export async function rollForMissing(
   if (!done) return null;
   // One report line per roll: "Il Master tira per Lyra: 14" (written at once; a
   // v0.25.0 report shows it as a neutral newer-version line).
+  const seen = fightOf(done);
   const lines = await Promise.all(
     Object.entries(done.rolled).map(([uid, roll]) =>
       recorder
-        .record({
-          kind: "initiative",
-          actor: `pc-${uid}`,
-          roll,
-          total: roll + (input.bonuses[`pc-${uid}`] ?? 0),
-          rolledBy: "dm",
-        })
+        .record(
+          {
+            kind: "initiative",
+            actor: `pc-${uid}`,
+            roll,
+            total: roll + (input.bonuses[`pc-${uid}`] ?? 0),
+            rolledBy: "dm",
+          },
+          { seen }
+        )
         .catch(() => null)
     )
   );
