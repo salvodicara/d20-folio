@@ -188,6 +188,12 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   await test.step("Paladin casts Bless on Bard; Bard's sheet shows it", async () => {
     await cast(paladin, "Bless", [BARD_NAME]);
     expect.soft(await showsEffect(bard, "Bless"), "Bard's sheet lists Bless").toBe(true);
+    // Bless took the turn's Action: a second Action spell waits for the next turn.
+    await expect(
+      actionRow(paladin, "Warding Bond").getByRole("button", {
+        name: /^Used: Warding\sBond/,
+      })
+    ).toBeVisible();
   });
 
   await test.step("the DM has the tools to run the fight (finding 2, open)", async () => {
