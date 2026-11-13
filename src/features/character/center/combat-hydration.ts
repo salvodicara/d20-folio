@@ -178,6 +178,21 @@ function turnIsBaseline(): boolean {
   );
 }
 
+/**
+ * Bring back the stored turn when it is the fight's current turn and the live turn is still
+ * untouched. A reload in a campaign fight needs it: the fight's first status reads as a fight
+ * the sheet had not seen and resets the turn (see `syncCombatTurnContext`).
+ */
+export function restoreCurrentTurn(
+  turnEconomy: CombatState["turnEconomy"],
+  currentTurnKey: string,
+  locale: Locale
+): void {
+  if (turnEconomy?.key === currentTurnKey && turnIsBaseline()) {
+    restoreTurnEconomy(turnEconomy, locale);
+  }
+}
+
 export function syncCombatFromSession(
   characterId: string,
   combatRound: number,
@@ -195,9 +210,7 @@ export function syncCombatFromSession(
     if (store.fightStarted !== soloFightStarted) store.setFightStarted(soloFightStarted);
     // Covers the char-doc-first / combat-subdoc-second load ordering without ever
     // overwriting a newer local commit: a late snapshot hydrates only a baseline turn.
-    if (currentTurnKey && turnEconomy?.key === currentTurnKey && turnIsBaseline()) {
-      restoreTurnEconomy(turnEconomy, locale);
-    }
+    if (currentTurnKey) restoreCurrentTurn(turnEconomy, currentTurnKey, locale);
     return false;
   }
   // Fresh character — reset then seed (a switch must not inherit A's round/roll).
