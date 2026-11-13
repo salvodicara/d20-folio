@@ -64,13 +64,18 @@ export async function startNewSitting(): Promise<void> {
       fields?: { lastAt?: { integerValue?: string; doubleValue?: number } };
     }>;
   };
-  // Each one moves by the same span, so the newest stays the newest.
-  const back = SESSION_GAP_MS + 60 * 60 * 1000;
-  for (const doc of body.documents ?? []) {
-    const id = doc.name.split("/").at(-1) ?? "";
-    const lastAt = Number(
+  const sittings = (body.documents ?? []).map((doc) => ({
+    id: doc.name.split("/").at(-1) ?? "",
+    lastAt: Number(
       doc.fields?.lastAt?.integerValue ?? doc.fields?.lastAt?.doubleValue ?? Date.now()
-    );
+    ),
+  }));
+  // Each one moves by the same span, so the newest stays the newest. The span puts the
+  // newest a gap and an hour before now, even when a spec's faked clock wrote it in
+  // the future (an hour ahead: it stayed the open sitting, and the next evening joined it).
+  const newest = Math.max(Date.now(), ...sittings.map((s) => s.lastAt));
+  const back = SESSION_GAP_MS + 60 * 60 * 1000 + (newest - Date.now());
+  for (const { id, lastAt } of sittings) {
     const patched = await fetch(`${logs}/${id}?updateMask.fieldPaths=lastAt`, {
       method: "PATCH",
       headers: { ...OWNER, "Content-Type": "application/json" },

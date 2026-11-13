@@ -20,7 +20,7 @@ import { addMonster, beginEncounterTurns, startEncounter } from "@/lib/play/enco
 import { assertNonEmptyString } from "@/lib/non-empty-string";
 import type { CharacterDoc, SessionState } from "@/types/character";
 import type { RawMap } from "../../scripts/lib/migration-kit";
-import { surveyV026Compat } from "../../scripts/survey-v026-compat";
+import { rewriteShape, surveyV026Compat } from "../../scripts/survey-v026-compat";
 import { makeCharacterDoc } from "./_helpers";
 
 const SCRIPT = resolve(__dirname, "../../scripts/survey-v026-compat.ts");
@@ -349,5 +349,44 @@ describe("the survey script", () => {
       const text = readFileSync(resolve(__dirname, "../..", file), "utf8");
       expect(text, file).not.toMatch(/COMBAT_EFFECTS_V26|combatEffectsV26On/);
     }
+  });
+});
+
+// Deploy surveys, 2026-11-12: `rewrites build.speed 1`. A save that rewrites a stored
+// value on a live character must be understood: `--detail` says the rewrite's shape
+// (absent → value, number → same or different number…), never a value or an id.
+describe("--detail: the shape of each rewrite", () => {
+  it("names the shape from the two values, never the values", () => {
+    expect(rewriteShape(undefined, 30)).toBe("absent → number");
+    expect(rewriteShape(30, undefined)).toBe("number → absent");
+    expect(rewriteShape(30, 30)).toBe("number → same number");
+    expect(rewriteShape(40, 30)).toBe("number → different number");
+    expect(rewriteShape("30", 30)).toBe("string → same number");
+    expect(rewriteShape("fast", 30)).toBe("string → number");
+    expect(rewriteShape({ a: 1 }, { a: 2 })).toBe("object → different object");
+  });
+
+  it("counts each rewritten path by shape, only with the flag", async () => {
+    const [parent, child] = character("users/u1/characters/a");
+    if (!parent || !child) throw new Error("fixture");
+    const build = { ...(parent.data.build as RawMap), speed: "30" };
+    const documents = [
+      { path: "users/u1", data: {} },
+      { ...parent, data: { ...parent.data, build } },
+      child,
+    ];
+    const accounts = [{ uid: "u1", customClaims: {} }];
+    const plain = await surveyV026Compat({ documents, accounts, catalogue });
+    expect(plain.kinds.character.rewrites["build.speed"]).toBe(1);
+    expect(plain.kinds.character.rewriteShapes).toBeUndefined();
+    const detailed = await surveyV026Compat(
+      { documents, accounts, catalogue },
+      { detail: true }
+    );
+    // The writer drops a speed stored as text (the reader ignored it already).
+    expect(detailed.kinds.character.rewriteShapes?.["build.speed"]).toEqual({
+      "string → absent": 1,
+    });
+    expect(JSON.stringify(detailed)).not.toMatch(/u1|"30"/);
   });
 });

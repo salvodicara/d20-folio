@@ -93,6 +93,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
+import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
@@ -871,6 +872,8 @@ function ActionLine({
   const { executeAction, commitRollReaction } = useTurnEconomy();
   const fight = useSheetCombat();
   const readonly = useSheetReadonly();
+  // A cast that waits for the party (read just after the sheet opens) shows it works.
+  const waiting = usePartyRosterStore((s) => s.castWaiting === row.action.id);
   const { cta } = row;
   const reason = cta.reason ? blockReasonLine(cta.reason, t, locale) : null;
   // A weapon-binding spell (Magic Weapon, Shillelagh) asks which weapon first.
@@ -881,7 +884,8 @@ function ActionLine({
   // Help in a fight asks «Su chi?» then «Per chi?» (the effect needs the v0.26 rules).
   const [helping, setHelping] = useState<HelpView | null>(null);
   const [checking, setChecking] = useState<CheckEntry[] | null>(null);
-  const [familiar, setFamiliar] = useState(false);
+  // Find Familiar's form picker: open for a cast, or for a cast as a Ritual.
+  const [familiar, setFamiliar] = useState<false | "cast" | "ritual">(false);
   // A use on another creature's roll (Cutting Words) asks on whom and which roll.
   const [rolling, setRolling] = useState<RollReactionView | null>(null);
   const cast = () => {
@@ -918,7 +922,7 @@ function ActionLine({
     }
     // Find Familiar asks the form (and its creature type), then casts.
     if (row.spellId === FIND_FAMILIAR_SPELL_ID && doc) {
-      setFamiliar(true);
+      setFamiliar("cast");
       return;
     }
     // Hide, Escape, Search/Study/Influence ask the d20 rolled at the table first.
@@ -947,6 +951,16 @@ function ActionLine({
           round: useCombatStore.getState().round,
         });
     }
+  };
+  // A Ritual needs no slot and no free cast (2024: any Ritual spell you have
+  // prepared, or a Wizard's from the book): never greyed out by spent slots. Find
+  // Familiar still asks its form first.
+  const castRitual = () => {
+    if (row.spellId === FIND_FAMILIAR_SPELL_ID && doc) {
+      setFamiliar("ritual");
+      return;
+    }
+    executeAction(row.action, { ritual: true });
   };
   const sub = [
     // On the Spells tab the level is the group's header: not said again per row.
@@ -1011,32 +1025,46 @@ function ActionLine({
         // not prepared: only a Ritual casts it (no slot), else nothing to cast
         <Button
           kind="ghost"
-          disabled={!spell.ritual || cta.state.disabled}
+          disabled={!spell.ritual}
           aria-label={`${t(spell.ritual ? "spells.castRitual" : VERB_KEY[cta.verb])}: ${row.name}`}
-          onClick={() => executeAction(row.action, { ritual: true })}
+          onClick={castRitual}
         >
           {t(spell.ritual ? "spells.castRitual" : VERB_KEY[cta.verb])}
         </Button>
       ) : (
         !readonly && (
-          <Button
-            kind="ghost"
-            disabled={cta.state.disabled}
-            data-live={cta.state.emphasis || undefined}
-            data-dim={cta.state.dimmed || undefined}
-            title={
-              cta.attacksLeft
-                ? t("combat.attacksRemainingStatus", {
-                    remaining: cta.attacksLeft.remaining,
-                    total: cta.attacksLeft.total,
-                  })
-                : undefined
-            }
-            aria-label={`${cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}: ${row.name}`}
-            onClick={cast}
-          >
-            {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
-          </Button>
+          <>
+            {/* a prepared Ritual spell can still be cast as a Ritual (the classic card's
+              «Rituale» beside «Lancia») */}
+            {spell?.ritual && (
+              <Button
+                kind="ghost"
+                aria-label={`${t("spells.castRitual")}: ${row.name}`}
+                onClick={castRitual}
+              >
+                {t("spells.castRitual")}
+              </Button>
+            )}
+            <Button
+              kind="ghost"
+              disabled={cta.state.disabled}
+              busy={waiting}
+              data-live={cta.state.emphasis || undefined}
+              data-dim={cta.state.dimmed || undefined}
+              title={
+                cta.attacksLeft
+                  ? t("combat.attacksRemainingStatus", {
+                      remaining: cta.attacksLeft.remaining,
+                      total: cta.attacksLeft.total,
+                    })
+                  : undefined
+              }
+              aria-label={`${cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}: ${row.name}`}
+              onClick={cast}
+            >
+              {cta.state.spent ? t("combat.used") : t(VERB_KEY[cta.verb])}
+            </Button>
+          </>
         )
       )}
       {/* an attack with no target is completed on the row just used (Hit · Miss ·
@@ -1061,7 +1089,12 @@ function ActionLine({
             formIds={aggregateCharacterGrants(doc.character, doc.session).familiarFormIds}
             locale={locale}
             onClose={() => setFamiliar(false)}
-            onSummoned={() => executeAction(row.action)}
+            onSummoned={() =>
+              executeAction(
+                row.action,
+                familiar === "ritual" ? { ritual: true } : undefined
+              )
+            }
           />
         </Suspense>
       )}

@@ -114,7 +114,11 @@ function Initiative({
   // «Entra nella zona»: the creature that walked in, then the tray on it.
   const enterZone = (zoneId: string, targetId: string) => {
     const zone = activeZones(liveEffects).find((z) => z.id === zoneId);
-    if (zone) openZoneTray(zone, targetId, locale);
+    // Never silent: a zone the open sheet can't play says so (as PlayZoneHits does).
+    if (zone && !openZoneTray(zone, targetId, locale))
+      useToastStore
+        .getState()
+        .showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
   };
   const bandLabel = (band: HpBandValue) =>
     band === "down"
