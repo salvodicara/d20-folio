@@ -908,13 +908,13 @@
     "summary": "Concentrazione piena + dado Arti Marziali + livello PF"
   },
   "paladin-abjure-foes": {
-    "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità per presentare il tuo simbolo sacro. Ogni nemico entro 18 m deve effettuare un TS di Saggezza o essere Spaventato per 1 minuto (TS pone fine).",
+    "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità e presentare il tuo simbolo sacro o la tua arma. Scegli un numero di creature pari al tuo modificatore di Carisma (minimo una) che puoi vedere entro 18 m. Ognuna effettua un TS di Saggezza contro la CD dei tuoi incantesimi o è Spaventata per 1 minuto o finché non subisce danni. Mentre è Spaventata così, nei suoi turni può fare solo una di queste cose: muoversi, effettuare un'azione o un'Azione Bonus.",
     "name": "Abiurare Nemici",
-    "gist": "Azione Magica, 1 Incanalare Divinità: nemici entro 18 m, TS Saggezza o Spaventati 1 minuto"
+    "gist": "Azione Magica, 1 Incanalare Divinità: creature pari al mod. di Carisma entro 18 m, TS Saggezza o Spaventate 1 minuto, finché non subiscono danni"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
-    "description": "Incanalare Divinità: i nemici entro 18 m effettuano un TS su SAG o sono Spaventati.",
-    "summary": "Nemici entro 18 m: TS Sag o Spaventati"
+    "description": "Incanalare Divinità: fino al tuo modificatore di CAR in creature (min. 1) entro 18 m effettuano un TS su SAG o sono Spaventate per 1 minuto, finché non subiscono danni.",
+    "summary": "Creature pari al mod. CAR entro 18 m: TS Sag o Spaventate"
   },
   "paladin-aura-expansion": {
     "description": "La tua Aura di Protezione e Aura di Coraggio si estendono ora a 9 metri.",
