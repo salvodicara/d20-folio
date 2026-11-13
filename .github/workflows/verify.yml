@@ -100,12 +100,18 @@ jobs:
       - name: Typecheck (composed)
         run: pnpm typecheck
       # One eslint process over the public tree AND the pack held every type-aware
-      # program at once and died at the 4 GB heap after ~11 min, intermittently
+      # program at once and died at the default ~4 GB heap after ~11 min, intermittently
       # (2026-11-12). Two processes, each its own heap; `time -v` prints each one's peak
-      # resident memory, so the margin is measured, not guessed.
+      # resident memory. Measured on run 43331340765: public tree 4.5 GB RSS (8 min 38),
+      # pack 2.9 GB (29 s). The public half alone sits at the default limit, so each
+      # process gets a 7 GB heap: ~55% over the measured peak, inside the 16 GB runner.
       - name: Lint (composed, public tree)
+        env:
+          NODE_OPTIONS: --max-old-space-size=7168
         run: /usr/bin/time -v pnpm exec eslint . --no-error-on-unmatched-pattern --max-warnings 0 2> >(tee lint-public.time >&2)
       - name: Lint (composed, pack)
+        env:
+          NODE_OPTIONS: --max-old-space-size=7168
         run: /usr/bin/time -v pnpm exec eslint 'content-pack/**/*.{ts,tsx}' --no-error-on-unmatched-pattern --max-warnings 0 2> >(tee lint-pack.time >&2)
       - name: Lint peak memory
         if: always()
