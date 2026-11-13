@@ -31,6 +31,13 @@ import { IconPicker } from "@/components/shared/icon-picker";
 import { DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
 import type { TFunction } from "i18next";
 import { createItemInstanceId } from "@/lib/item-resources";
+import {
+  readItemEffects,
+  writeItemEffects,
+  type HomebrewItemKind,
+  type ItemEffects,
+} from "@/lib/homebrew-item-effects";
+import { ItemEffectsFields } from "./ItemEffectsFields";
 import { editHomebrewText, homebrewText } from "@/lib/views/homebrew-text-view";
 import { useLocale } from "@/hooks/useLocale";
 import type { LibraryDraft } from "@/lib/library";
@@ -336,6 +343,16 @@ export function CustomEquipmentForm({
         ? String(seedGear.acBonus)
         : ""
   );
+  // The optional effects (attunement, +N, charges, rarity), opened with the item's
+  // current ones; everything else its mechanics declare is kept on save.
+  const [effects, setEffects] = useState<ItemEffects>(() =>
+    readItemEffects(seed?.mechanics)
+  );
+  const kind: HomebrewItemKind = isWeapon ? "weapon" : isArmor ? "armor" : "item";
+  const mechanicsFor = (k: HomebrewItemKind) => {
+    const mechanics = writeItemEffects(seed?.mechanics, k, effects);
+    return { mechanics };
+  };
 
   function handleCreate() {
     if (!name.trim()) return;
@@ -352,6 +369,7 @@ export function CustomEquipmentForm({
         attackStat,
         properties,
         description: authoredDescription(),
+        ...mechanicsFor("weapon"),
         instanceId: seedWeapon?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
@@ -387,6 +405,7 @@ export function CustomEquipmentForm({
               ...(armorCategory === "medium" ? { maxDex: 2 } : {}),
             },
         acBonus: undefined,
+        ...mechanicsFor("armor"),
         instanceId: seedGear?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
@@ -418,6 +437,7 @@ export function CustomEquipmentForm({
         isPotion: trackingMode === "consumable" && isPotion,
         potionFormula:
           trackingMode === "consumable" && isPotion ? potionFormula : undefined,
+        ...mechanicsFor("item"),
         instanceId: seedGear?.instanceId ?? createItemInstanceId(),
       };
       if (libraryEdit) {
@@ -499,7 +519,7 @@ export function CustomEquipmentForm({
 
           {isWeapon ? (
             <>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <FormField label={t("custom.damageDie")}>
                   <Input
                     type="text"
@@ -543,7 +563,7 @@ export function CustomEquipmentForm({
               </FormField>
             </>
           ) : isArmor ? (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <FormField label={t("custom.armorCategory")}>
                 <Select
                   value={armorCategory}
@@ -571,17 +591,20 @@ export function CustomEquipmentForm({
             </div>
           ) : (
             <>
-              {/* Level 1: Track uses checkbox */}
-              <CheckboxField
-                checked={trackingMode !== "none"}
-                onCheckedChange={(c) => {
-                  setTrackingMode(c ? "tracked" : "none");
-                  if (!c) setIsPotion(false);
-                }}
-                label={t("equipment.trackUses")}
-                hint={t("equipment.trackUsesHint")}
-                className="text-[0.72rem] text-text-primary"
-              />
+              {/* Level 1: Track uses checkbox — not beside «Cariche»: one way to
+                  count uses (D&D Beyond's single «Has Charges»). */}
+              {!effects.charges && (
+                <CheckboxField
+                  checked={trackingMode !== "none"}
+                  onCheckedChange={(c) => {
+                    setTrackingMode(c ? "tracked" : "none");
+                    if (!c) setIsPotion(false);
+                  }}
+                  label={t("equipment.trackUses")}
+                  hint={t("equipment.trackUsesHint")}
+                  className="text-[0.72rem] text-text-primary"
+                />
+              )}
 
               {/* Level 2: Auto-remove sub-option — only when tracked */}
               {trackingMode !== "none" && (
@@ -621,6 +644,13 @@ export function CustomEquipmentForm({
               )}
             </>
           )}
+
+          <ItemEffectsFields
+            kind={kind}
+            value={effects}
+            onChange={setEffects}
+            countsUses={kind === "item" && trackingMode !== "none"}
+          />
         </div>
       </ModalScroll>
 

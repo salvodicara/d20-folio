@@ -13,7 +13,7 @@
     "source": "Source",
     "sourcePlaceholder": "Homebrew, Feat, etc.",
     "emoji": "Emoji",
-    "totalUses": "Total Uses",
+    "totalUses": "Total uses",
     "totalUsesPlaceholder": "PB, CHA, 3",
     "recovery": "Recovery",
     "recoveryLong": "Long Rest",
@@ -50,6 +50,11 @@
     "libraryDeleteMessage": "It leaves your custom list. Characters already using it keep their copy.",
     "libraryFull": "Added to the sheet. Your custom list is full ({{max}}), so it wasn't kept there.",
     "editSpell": "Edit Custom Spell",
-    "editEquipment": "Edit Custom Equipment"
+    "editEquipment": "Edit Custom Equipment",
+    "addEffect": "Add effect",
+    "magicBonus": "Magic bonus",
+    "chargesReturn": "How many return",
+    "chargesReturnPlaceholder": "all, 3 or 1d6+1",
+    "recoveryDawn": "At dawn"
   }
 }
