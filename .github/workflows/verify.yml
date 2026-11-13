@@ -1,4 +1,7 @@
 name: Verify
+# A lockstep run names its pack commit, so the merge gate can tell which trees it proved
+# (scripts/lib/verify-gate.sh, lockstep_proves_main).
+run-name: ${{ inputs.pack_sha && format('Verify + pack {0}', inputs.pack_sha) || 'Verify' }}
 
 # The COMPOSED behavioural verdict, once per merge to main:
 # the full Playwright e2e matrix (chromium + mobile + portrait-sw) sharded
