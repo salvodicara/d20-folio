@@ -50,6 +50,7 @@ vi.mock("@/features/campaigns/campaign-io", () => ({
 }));
 
 import {
+  buildReport,
   createMemorySessionLogStore,
   createSessionRecorder,
   foldSession,
@@ -250,5 +251,49 @@ describe("the DM's roll for whoever is missing", () => {
       expect(roll).toBeLessThanOrEqual(20);
       expect(Number.isInteger(roll)).toBe(true);
     }
+  });
+});
+
+describe("an initiative line joins its fight, whatever write lands first", () => {
+  // The fight's start marker is written by the pages that see the fight (the DM's
+  // mirror), after the roll that started it: the rolls' own lines can reach the log
+  // first. The second session-report rehearsal saw the DM's «Roll for the missing» line
+  // missing from its fight in the Journal.
+  it("the starting roll and the DM's roll for the missing, both before the marker", async () => {
+    store.set("campaigns/camp", { ...campaign(), dmUid: "dm" });
+    const log = createMemorySessionLogStore();
+    const at = (uid: string) =>
+      createSessionRecorder({
+        store: log,
+        uid,
+        now: () => new Date(2026, 10, 5, 21),
+      });
+    await rollIntoCombat("camp", { uid: "ana", roll: 13, bonuses }, at("ana"));
+    await rollForMissing("camp", { uid: "dm", bonuses }, () => 17, at("dm"));
+    const epoch = String((campaign().encounter as { epoch: number }).epoch);
+    // The DM's mirror catches up: the fight's start and its first round.
+    const mirror = at("dm");
+    await mirror.record(
+      { kind: "encounter-start", encounterId: epoch },
+      {
+        id: `enc:${epoch}:start`,
+      }
+    );
+    await mirror.record(
+      { kind: "round-start", round: 1 },
+      { id: `enc:${epoch}:round:1` }
+    );
+
+    const report = buildReport(foldSession(log.items("2026-11-05"), { dmUid: "dm" }));
+    expect(report.map((section) => section.kind)).toEqual(["encounter"]);
+    const fight = report[0];
+    if (fight?.kind !== "encounter") throw new Error("no fight");
+    expect(fight.encounterId).toBe(epoch);
+    expect(
+      fight.rounds.flatMap((round) => round.entries.map((entry) => entry.event))
+    ).toEqual([
+      { kind: "initiative", actor: "pc-ana", roll: 13, total: 15 },
+      { kind: "initiative", actor: "pc-ben", roll: 17, total: 18, rolledBy: "dm" },
+    ]);
   });
 });

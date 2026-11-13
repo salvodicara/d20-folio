@@ -109,6 +109,7 @@ import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
+  noLegalTargetTypes,
   targetStepFor,
   type TargetRoster,
   withSelfRecipient,
@@ -3118,13 +3119,28 @@ export function TurnEconomyProvider({
       pool: wishDuplicatePool(),
       opener,
       onPrepared: (prepared, commit) => {
-        const step = targetStepFor(prepared, targetRoster());
+        const roster = targetRoster();
+        const step = targetStepFor(prepared, roster);
         if (!step) {
+          sayNoLegalTarget(prepared, roster);
           commit(() => undefined, { action: prepared });
           return;
         }
         setTargetRequest({ characterId: character.id, action: prepared, step, commit });
       },
+    });
+  }
+
+  /** A type-limited spell with no such creature in the fight: say why nobody is
+   *  offered (the cast still goes on, its save asked on the row). */
+  function sayNoLegalTarget(action: ResolvedAction, roster: TargetRoster): void {
+    const types = noLegalTargetTypes(action, roster);
+    if (!types) return;
+    showToast({
+      message: t("combat.noLegalTarget", {
+        types: types.map((type) => t(`srd.creatureType_${type}`)).join(" / "),
+      }),
+      duration: 4000,
     });
   }
 
@@ -3162,8 +3178,10 @@ export function TurnEconomyProvider({
     prepareResolution(
       executable,
       (prepared, commit) => {
-        const step = targetStepFor(prepared, targetRoster());
+        const roster = targetRoster();
+        const step = targetStepFor(prepared, roster);
         if (!step) {
+          sayNoLegalTarget(prepared, roster);
           commit(() => undefined, { action: prepared });
           return;
         }
