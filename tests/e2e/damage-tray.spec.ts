@@ -149,5 +149,16 @@ for (const size of ["desktop", "mobile"] as const) {
     await expect(page.getByRole("dialog", { name: /su chi\?/i })).toHaveCount(0);
     await expect(page.getByTestId("damage-tray")).toHaveCount(0);
     await page.screenshot({ path: shotPath(`c-blocca-persone-${size}.png`) });
+
+    // The cast stays undoable: the snackbar on desktop, the signet's ⟲ coin on the phone.
+    if (size === "mobile") await page.locator(".signet-fab").click();
+    const undo =
+      size === "mobile"
+        ? page.locator(".signet-chain").getByRole("button", { name: /^Annulla: / })
+        : page.getByRole("button", { name: "Annulla: Hai usato Blocca Persone" });
+    await undo.click();
+    await expect(
+      page.getByRole("button", { name: /^Blocca Persone \d+ round rimasti/ })
+    ).toHaveCount(0);
   });
 }
