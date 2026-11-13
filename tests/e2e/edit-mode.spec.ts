@@ -11,12 +11,12 @@
  */
 
 import { test, expect, type Page } from "@playwright/test";
-import { teamFixtureName } from "./team-fixture";
+import { devHeroName } from "./team-fixture";
 
 // The fixture-bound wrap tests assert the PACK fixture's rendered name — the
 // long two-word display name whose fold shape the No-Truncation Rule pins. The
 // literal never ships publicly: it is derived from the pack fixture at runtime.
-const HERO_NAME = teamFixtureName("bard");
+const HERO_NAME = devHeroName("bard");
 const HERO = HERO_NAME ?? "";
 
 /** The pressed edit toggle's accessible name is "Done editing" on both homes. */
