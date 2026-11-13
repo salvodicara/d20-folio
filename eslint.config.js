@@ -18,6 +18,10 @@ export default tseslint.config(
       // build (CI's lint job) the package types do not exist yet.
       "packages/*/smoke",
       ".claude",
+      // The Cloud Functions package lints itself, with its own config and tsconfig
+      // (`functions/eslint.config.mjs`, the CI «functions» job). Linting it here too
+      // loaded a third TypeScript program into this process for the same files.
+      "functions",
     ],
   },
   {
