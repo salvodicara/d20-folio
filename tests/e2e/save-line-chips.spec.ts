@@ -73,14 +73,30 @@ test("Command: the saves on the row, no tray (it, dark, phone)", async ({ page }
   ).toBeDisabled();
 });
 
-test("Calm Emotions: the saves on the row, no tray (it, dark, phone)", async ({
+test("Calm Emotions with no Humanoid in the fight: the save on the row, no tray (it, dark, phone)", async ({
   page,
 }) => {
+  // Calm Emotions affects Humanoids (#1129); this fight holds Fey goblins and a Giant,
+  // so nobody is offered: the cast goes on with its one save asked on the row.
   await open(page);
-  await castOn(page, "Calmare Emozioni", ["Goblin Chief"]);
+  await page
+    .getByRole("button", { name: /^Lancia: Calmare Emozioni/ })
+    .first()
+    .click();
+  await page
+    .getByRole("button", { name: /\(base\)/ })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: /^Usata: Calmare Emozioni/ }).first()
+  ).toBeVisible();
+  await expect(page.getByRole("dialog", { name: /su chi\?/i })).toHaveCount(0);
   await expect(page.getByTestId("damage-tray")).toHaveCount(0);
-  await expect(page.getByRole("group", { name: "Goblin Chief" })).toBeVisible();
-  await page.getByRole("group", { name: "Goblin Chief" }).scrollIntoViewIfNeeded();
+  const failed = page.getByRole("button", { name: "Fallito" }).first();
+  await expect(failed).toBeVisible();
+  await failed.click();
+  await expect(failed).toHaveAttribute("aria-pressed", "true");
+  await failed.scrollIntoViewIfNeeded();
   await page.screenshot({ path: shotPath("save-line-calm-emotions-phone.png") });
 
   const overflow = await page.evaluate(

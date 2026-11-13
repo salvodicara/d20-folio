@@ -92,6 +92,7 @@ import {
   type SelectedAction,
 } from "@/stores/combatStore";
 import {
+  restoreCurrentTurn,
   snapshotTurnEconomy,
   syncCombatFromSession,
   syncCombatTurnContext,
@@ -757,7 +758,16 @@ export function TurnEconomyProvider({
     ): void => {
       const openId = useCharacterStore.getState().character?.id ?? null;
       const scoped = sheetEncounter(status, openId);
+      // Read before the context sync: its reset is written back as the stored turn.
+      const stored = useCharacterStore.getState().combatTurnEconomy;
       const result = syncCombatTurnContext(scoped);
+      // A reload in a campaign fight: the fight's first status reads as a fight this
+      // sheet had not seen and resets the turn. When the stored turn is THIS turn (its
+      // key names the fight, the round and whose turn it is), bring it back; any other
+      // stored turn never matches (the rules lane's cast-reload rehearsal, 2026-11-13).
+      if (scoped && openId) {
+        restoreCurrentTurn(stored, turnEconomyKey(scoped, openId, 0), locale);
+      }
       if (result === null) return;
       useUndoStore.getState().purgeTurnScoped();
       if (result === "encounter-ended") {
