@@ -257,6 +257,7 @@ describe("PlayTab action derivations", () => {
   // action it reads «Used» like any other Action, even with a swing still left.
   it("without War Magic, a cantrip after an attack reads 'Used' (the Attack action holds the Action)", async () => {
     const doc = buildDevScenario("twf-extra-attack");
+    if (!doc) throw new Error("missing dev scenario");
     doc.character.spells = [{ srdId: "fire-bolt" }];
     doc.character.spellcasting = {
       ...doc.character.spellcasting,
