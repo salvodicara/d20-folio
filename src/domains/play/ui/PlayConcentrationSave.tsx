@@ -37,7 +37,7 @@ import { useToastStore } from "@/stores/toastStore";
 import type { FailedSaveReroll } from "@/lib/character-d20-tests";
 import type { CharacterDoc } from "@/types/character";
 import type { PendingConcentrationSave } from "@/types/combat-state";
-import { Button, Chip, Dialog } from "@/ui";
+import { Button, Dialog } from "@/ui";
 import { usePostRollEntry, type PostRollCommit } from "./PostRollEntry";
 
 /** The reroll a picked offer makes of the failed save (as the classic banner reads it). */
@@ -288,7 +288,8 @@ function Prompt({
                 {t("common.cancel")}
               </Button>
               <Button
-                kind="primary"
+                // a failed roll with a reroll at hand: the reroll is the lit button (BG3)
+                kind={failsNow ? "ghost" : "primary"}
                 disabled={!roll.valid}
                 onClick={() => {
                   apply(roll.entry());
@@ -329,10 +330,16 @@ function Prompt({
             </div>
           )}
           {failsNow && (
-            <div className="f-chips" role="group" aria-label={t("combat.rerollOffers")}>
+            <div
+              className="f-acts f-reroll"
+              role="group"
+              aria-label={t("combat.rerollOffers")}
+            >
               {choices.map((offer) => (
-                <Chip
+                <Button
                   key={offer.action.id}
+                  kind="primary"
+                  wide
                   onClick={() => {
                     roll.reset();
                     setRerollWith(offer);
@@ -344,7 +351,7 @@ function Prompt({
                         bonus: offer.reaction.bonus,
                       })
                     : t("combat.rerollOffer", { name: offer.action.name })}
-                </Chip>
+                </Button>
               ))}
             </div>
           )}
