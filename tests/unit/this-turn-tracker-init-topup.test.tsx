@@ -11,7 +11,7 @@
  * campaign doc) and must NOT touch the solo store (no dual home).
  */
 import { describe, it, expect, beforeEach } from "vitest";
-import { render, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { vi } from "vitest";
 
@@ -34,6 +34,7 @@ import {
   type GlobalCombat,
 } from "@/features/campaigns/global-combat-context";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 
 /** A Monk (L15) with Perfect Focus, its Focus-point tracker drained to 0 remaining
  *  (used: 15) — the exact fixture `character-store-rest.test.ts` proves refills to a
@@ -100,6 +101,8 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     });
     useCharacterStore.setState({ character: null, loading: false, error: null });
     useCombatStatusStore.setState({ status: gatheringStatus(), pip: null });
+    // The shell has read this character's campaigns (the sheet's usual state).
+    usePartyRosterStore.setState({ party: null, resolvedFor: MOCK_CHARACTER.id });
   });
 
   it("tops up Perfect Focus on the first encounter roll despite the stale solo roll, and writes the CAMPAIGN table", async () => {
@@ -178,5 +181,31 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     expect(
       useCharacterStore.getState().character?.session.trackers["monk-focus"]
     ).toEqual({ used: 11 });
+  });
+
+  // Rehearsal on CI, 2026-11-13 (classic-sheet-initiative): a member rolled from the
+  // sheet a moment after opening it, before the shell had read the campaign: no fight
+  // was visible yet, so the roll went to a solo fight and never reached the DM's card.
+  it("a roll before the sheet has read its campaigns waits, then joins the DM's fight", async () => {
+    useCombatStatusStore.setState({ status: null, pip: null });
+    usePartyRosterStore.setState({ party: null, resolvedFor: null });
+    loadMonkWithDrainedFocus("");
+    const view = mount();
+    fireEvent.click(view.container.querySelector(".vital-init") as HTMLElement);
+    const input = document.querySelector(".init-edit-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "18" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    // Nothing is decided yet: no solo roll, no campaign write.
+    expect(useCombatStore.getState().initiative).toBe("");
+    expect(setEncounterInitiative).not.toHaveBeenCalled();
+    // The shell reads the campaign: the DM's fight is running.
+    act(() => {
+      useCombatStatusStore.setState({ status: gatheringStatus(), pip: null });
+      usePartyRosterStore.setState({ party: null, resolvedFor: MOCK_CHARACTER.id });
+    });
+    await waitFor(() =>
+      expect(setEncounterInitiative).toHaveBeenCalledWith("camp-1", "u1", 18)
+    );
+    expect(useCombatStore.getState().initiative).toBe("");
   });
 });

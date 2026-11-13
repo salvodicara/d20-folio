@@ -64,7 +64,9 @@ import { StatusLedge } from "./StatusLedge";
 import { concentrationRoundsLeft, deriveStatuses } from "@/lib/status";
 import { useTurnEconomy } from "./useTurnEconomy";
 import { endSoloWorldEncounter } from "./solo-world-turn";
-import { useTurnState, useSheetCombat } from "./turn-state";
+import { sheetEncounter, useTurnState, useSheetCombat } from "./turn-state";
+import { partyKnown, partyKnownSoon } from "@/features/campaigns/party-roster";
+import { useCombatStatusStore } from "@/features/campaigns/combat-status-store";
 import { MovementSlider } from "./MovementSlider";
 import {
   DIFFICULT_TERRAIN_COST_PER_FOOT,
@@ -374,19 +376,37 @@ export function ThisTurnTracker({
   // subdoc store. The total (roll + bonus) is DERIVED for display, never stored. The input
   // below edits that raw d20 roll directly; `rollInitiative` receives the raw roll string.
   function rollInitiative(roll: string) {
+    // Encounter or solo is read from the shared fight status. Until the shell has read
+    // this character's campaigns, no fight is visible yet even when the DM runs one: a
+    // roll then waits for that read (a few seconds at most) instead of starting a solo
+    // fight the DM never sees (rehearsal on CI, 2026-11-13).
+    const characterId = character?.id;
+    if (!gc && roll !== "" && characterId && !partyKnown(characterId)) {
+      void partyKnownSoon(characterId).then(() =>
+        commitInitiative(
+          roll,
+          sheetEncounter(useCombatStatusStore.getState().status, characterId)
+        )
+      );
+      return;
+    }
+    commitInitiative(roll, gc);
+  }
+
+  function commitInitiative(roll: string, fight: typeof gc) {
     // "First roll of THIS fight" gates the S4 top-ups: in an encounter that is an empty
-    // `encounterInit` row (`gc.initiativeRoll === null` — a stale SOLO roll lingering in
-    // `combatStore.initiative` is irrelevant, its home is separate now); solo it is the
+    // `encounterInit` row (`fight.initiativeRoll === null` — a stale SOLO roll lingering
+    // in `combatStore.initiative` is irrelevant, its home is separate now); solo it is the
     // blank combat-store string.
-    const wasEmpty = gc ? gc.initiativeRoll === null : initiative === "";
-    if (gc) {
+    const wasEmpty = fight ? fight.initiativeRoll === null : initiative === "";
+    if (fight) {
       // ENCOUNTER — the roll's ONE home is the campaign doc's `encounterInit` table
       // (the member's own-row grant / the DM's unconstrained branch both authorize it).
       // Dynamic import so this module's static graph stays Firebase-free (the same
       // discipline as `advanceSharedTurn`). NEVER written to the combat store/subdoc —
       // that would resurrect the dual-home drift this re-architecture deleted.
-      const myUid = gc.myId.startsWith("pc-") ? gc.myId.slice(3) : gc.myId;
-      const campaignId = gc.campaignId;
+      const myUid = fight.myId.startsWith("pc-") ? fight.myId.slice(3) : fight.myId;
+      const campaignId = fight.campaignId;
       const value = roll === "" ? null : Number(roll);
       // The sheet's own bonus, the one its chip shows: the fight's row has it only once
       // the party's sheets are read (0 before), and the stored roll is the raw d20.

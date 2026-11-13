@@ -27,6 +27,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import {
   abilityModifier,
@@ -423,6 +424,8 @@ describe("ThisTurnTracker — the shared InitVital stores the raw roll (INIT-3)"
       movementUsedFt: 0,
     });
     useCharacterStore.setState({ character: null, loading: false, error: null });
+    // The shell has read the campaigns: no fight, so the roll is a solo one at once.
+    usePartyRosterStore.setState({ party: null, resolvedFor: MOCK_CHARACTER.id });
   });
 
   it("typing a d20 roll stores the RAW roll (INIT-3 SSOT) and DERIVES the total", () => {
