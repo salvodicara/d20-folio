@@ -20,12 +20,13 @@
  *  - a monster → only the `effect-given` log line (players cannot write monster HP).
  * Skip (or closing) applies nothing: the use stays logged exactly as it was.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { DamageTrayPanel } from "@/components/shared/DamageTrayPanel";
 import { Dialog } from "@/components/ui/dialog";
-import { rowAmount, rowDamageParts } from "@/lib/play/damage-tray";
+import { rowAmount, rowDamageParts, withDamageTypeChoice } from "@/lib/play/damage-tray";
+import type { DamageType } from "@/types/damage";
 import { useCharacterStore } from "@/stores/characterStore";
 
 import { applyTray } from "./apply-tray";
@@ -53,12 +54,19 @@ export function DamageTray() {
 
 function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
   const { t } = useTranslation();
-  const { plan } = offer;
+  // A damage of one type the player picks: the pick decides each target's defense.
+  const [pickedType, setPickedType] = useState<DamageType | undefined>(
+    offer.plan.damageType
+  );
+  const plan = pickedType ? withDamageTypeChoice(offer.plan, pickedType) : offer.plan;
   const targets = useTrayTargets(plan);
 
   return (
     <DamageTrayPanel
+      // a new type rebuilds every row against that type's defenses
+      key={plan.damageType ?? "tray"}
       title={offer.actionName}
+      {...(plan.damageTypeChoices ? { onPickType: setPickedType } : {})}
       plan={plan}
       targets={targets}
       // What to roll at the table (a potion's 2d4+2), so no bonus is forgotten.
@@ -67,7 +75,7 @@ function DamageTrayContent({ offer }: { offer: DamageTrayOffer }) {
         : {})}
       onApply={(rows, totals) => {
         applyTray(
-          offer,
+          { ...offer, plan },
           targets,
           rows,
           rows.map((row, i) => (plan.effect ? rowAmount(totals[i] ?? 0, row, plan) : 0)),

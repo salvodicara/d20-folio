@@ -55,7 +55,7 @@ export function FamiliarEnhancementsCard({
   }
   if (view.damageTypeConversion.length > 0) {
     rows.push({
-      label: t("familiar.damageConversion"),
+      label: t("common.damageType"),
       value: view.damageTypeConversion.map((dt) => t(`srd.damage_${dt}`)).join(" / "),
     });
   }

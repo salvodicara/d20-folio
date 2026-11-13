@@ -43,6 +43,7 @@ import {
   toggleSaved,
   toggleWilling,
   offersWilling,
+  withDamageTypeChoice,
   rowTakesState,
   knockOutOffer,
   type DamageTrayPlan,
@@ -99,7 +100,12 @@ function DamagePenaltyNote({ locale }: { locale: Locale }) {
 
 function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale }) {
   const { t } = useTranslation();
-  const { plan } = offer;
+  // A damage of one type the player picks (Chromatic Orb, Empowered Strikes): the
+  // picked type decides each target's defense.
+  const [pickedType, setPickedType] = useState<DamageType | undefined>(
+    offer.plan.damageType
+  );
+  const plan = pickedType ? withDamageTypeChoice(offer.plan, pickedType) : offer.plan;
   const targets = useTrayTargets(plan);
   const [edited, setEdited] = useState<ReadonlyMap<string, TrayRow>>(() => new Map());
   const [total, setTotal] = useState("");
@@ -116,7 +122,7 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
   const apply = () => {
     if (!form.canApply) return;
     applyTray(
-      offer,
+      { ...offer, plan },
       targets,
       form.rows,
       form.amounts.map((v) => v ?? 0),
@@ -150,6 +156,23 @@ function TrayDialog({ offer, locale }: { offer: DamageTrayOffer; locale: Locale 
       }
     >
       {rubric && <p className="f-help f-ask">{rubric}</p>}
+      {plan.damageTypeChoices && (
+        <div className="f-chips f-ask" role="group" aria-label={t("common.damageType")}>
+          {plan.damageTypeChoices.map((type) => (
+            <Chip
+              key={type}
+              pressed={plan.damageType === type}
+              onClick={() => {
+                setPickedType(type);
+                // each row meets the new type's defenses
+                setEdited(new Map());
+              }}
+            >
+              {t(`srd.damage_${type}`)}
+            </Chip>
+          ))}
+        </div>
+      )}
       {types.length > 0 ? (
         <div className="f-ask f-tray-types">
           {types.map((type, i) => (
