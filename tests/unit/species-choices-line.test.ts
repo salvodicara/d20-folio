@@ -36,4 +36,28 @@ describe("the owed-choices sentence", () => {
     );
     expect(line).toMatch(says);
   });
+
+  it.each([
+    ["it", "Abile", /Abile: hai 4 abilità, la tua build ne dà almeno 5/],
+    ["en", "Skillful", /Skillful: you have 4 skills, your build gives at least 5/],
+  ] as const)(
+    "%s: says why it asks for an any-skill pick",
+    async (locale, label, says) => {
+      await i18n.loadLanguages(locale);
+      const t = i18n.getFixedT(locale);
+      const line = speciesChoicesLine(
+        [
+          {
+            kind: "slot",
+            slotId: "race:human:skillful::skill-slot-0",
+            label,
+            short: { have: 4, need: 5 },
+          },
+        ],
+        t,
+        locale
+      );
+      expect(line).toMatch(says);
+    }
+  );
 });

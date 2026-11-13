@@ -28,7 +28,13 @@ export type PendingSpeciesItem =
   | { kind: "bundle"; bundleKey: string; label: string }
   | { kind: "ability" }
   | { kind: "feat"; label: string }
-  | { kind: "slot"; slotId: string; label: string }
+  | {
+      kind: "slot";
+      slotId: string;
+      label: string;
+      /** An any-skill pick asked because the stored skills fall short. */
+      short?: { have: number; need: number };
+    }
   | {
       kind: "feat-ability";
       featId: string;
@@ -81,9 +87,27 @@ export function pendingSpeciesItems(
     }
   }
   if (pending.spellAbility) items.push({ kind: "ability" });
+  // Why an any-skill pick is asked: the trait's stored-skills shortfall.
+  const shortOf = (slotId: string) => {
+    for (const c of unresolvedBuildChoices(character, session)) {
+      if (
+        c.kind === "skill" &&
+        c.short &&
+        slotId.startsWith(`race:${character.race}:${c.traitId}::`)
+      )
+        return c.short;
+    }
+    return undefined;
+  };
   for (const list of Object.values(pending.slots) as { slotId: string }[][]) {
     for (const { slotId } of list) {
-      items.push({ kind: "slot", slotId, label: raceTraitNameOfSlot(slotId, locale) });
+      const short = shortOf(slotId);
+      items.push({
+        kind: "slot",
+        slotId,
+        label: raceTraitNameOfSlot(slotId, locale),
+        ...(short ? { short } : {}),
+      });
     }
   }
   for (const { featId, abilities } of pending.featAbilities) {
@@ -125,6 +149,17 @@ export function speciesChoicesLine(
         }),
       ]
     : [];
+  for (const item of items) {
+    if (item.kind === "slot" && item.short) {
+      parts.push(
+        t("play.speciesChoices.skillShortNote", {
+          name: item.label,
+          have: String(item.short.have),
+          need: String(item.short.need),
+        })
+      );
+    }
+  }
   if (items.some((item) => item.kind === "ability")) {
     parts.push(
       t("play.speciesChoices.abilityNote", {
