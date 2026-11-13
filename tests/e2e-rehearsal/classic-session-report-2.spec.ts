@@ -13,9 +13,8 @@
  * starts a new sitting (`startNewSitting`), so the report holds only this spec's lines.
  *
  * Both players roll their own initiative on their sheets (the turn band's roll), which
- * writes the report's initiative line. The DM's typed roll on the hub card writes none
- * (finding, 2026-11-12): the forgotten encounter's Paladin roll is typed by the DM and
- * has no line.
+ * writes the report's initiative line. The DM's typed roll on the hub card writes one too
+ * (#1162): the forgotten encounter's Paladin roll is typed by the DM, «rolled by the DM».
  */
 import { expect, type Browser, type Page } from "@playwright/test";
 import {
@@ -44,6 +43,7 @@ import {
   levelUpLine,
   markMiss,
   markSave,
+  dmInitiative,
   ownInitiative,
   PALADIN_D20,
   PALADIN_WEAPON,
@@ -313,10 +313,15 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
         },
         // The solo start makes one blow a fight.
         { heading: "Encounter 2 (inferred)", lines: soloLines() },
-        // Never ended; the DM's typed roll for Paladin writes no line.
+        // Never ended. The DM's typed roll for Paladin is a line too (#1162); the d20 is
+        // the hub's, so only its shape is known. Written at once: in either order.
         {
           heading: "Encounter 3",
-          lines: [ownInitiative(BARD_NAME, forgottenInitiative)],
+          lines: [
+            ownInitiative(BARD_NAME, forgottenInitiative),
+            dmInitiative(PALADIN_NAME),
+          ],
+          unordered: true,
         },
         // The rest leaves the forgotten encounter: after it, outside it.
         { heading: "Outside combat", lines: [`${BARD_NAME} takes a long rest`] },
