@@ -25,8 +25,9 @@
  *      (the species marker its grant may name, then the class) — exactly what
  *      the spell read before the answer was stored.
  *   3. `ref.speciesSpellAbility` — a DEFERRED species pick: read the live
- *      `character.speciesSpellAbility`, defaulting to `SPECIES_SPELL_ABILITY_DEFAULT`
- *      when the player hasn't chosen yet. Custom spells can't carry this marker.
+ *      `character.speciesSpellAbility`; while unpicked, the character's own casting
+ *      ability when it is INT, WIS or CHA, else `SPECIES_SPELL_ABILITY_DEFAULT`.
+ *      Custom spells can't carry this marker.
  *   4. `ref.viaClass` — the class the spell is prepared through, when the
  *      character casts with that class (two copies, two abilities).
  *   5. the OWNING class's spellcasting ability — the spell's owning caster class
@@ -52,6 +53,21 @@ import {
  * player sets `character.speciesSpellAbility` to change it.
  */
 export const SPECIES_SPELL_ABILITY_DEFAULT: AbilityCode = "CHA";
+
+/**
+ * The species spell ability shown while the player hasn't picked it yet (the banner
+ * still asks): the character's own casting ability when it is one of the species'
+ * three (INT, WIS, CHA), so an elf Wizard's lineage spells don't read a Charisma DC;
+ * Charisma otherwise.
+ */
+function unpickedSpeciesAbility(
+  character: Pick<CharacterData, "spellcasting">
+): AbilityCode {
+  const own = character.spellcasting?.ability;
+  return own === "INT" || own === "WIS" || own === "CHA"
+    ? own
+    : SPECIES_SPELL_ABILITY_DEFAULT;
+}
 
 /**
  * The feat whose "ability increased by this feat" casts `ref`, if any: its
@@ -107,7 +123,7 @@ export function resolveSpellAbility(
   const answered = feat ? featAbilityOf(character, feat) : null;
   if (answered) return answered;
   if (!("custom" in ref) && ref.speciesSpellAbility) {
-    return character.speciesSpellAbility ?? SPECIES_SPELL_ABILITY_DEFAULT;
+    return character.speciesSpellAbility ?? unpickedSpeciesAbility(character);
   }
   const primary = character.spellcasting?.ability;
   if (primary == null) return null;

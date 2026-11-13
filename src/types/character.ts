@@ -855,10 +855,10 @@ export interface CharacterData {
    * is "choose when you select this species" (2024 Tiefling Fiendish Legacy +
    * Otherworldly Presence; future "choose-one" lineages). Resolved by
    * `resolveSpellAbility` for any spell ref carrying `speciesSpellAbility: true`.
-   * Optional + safe default: when absent the resolver falls back to
-   * `SPECIES_SPELL_ABILITY_DEFAULT` ("CHA"), so existing/legacy characters and
-   * non-Tiefling species are unaffected. Override-first: the creation/level-up
-   * wizard PICKER that sets this is a UI-layer follow-up.
+   * Optional: while absent (the «Scelte da completare» banner asks for it) the
+   * resolver reads the character's own casting ability when it is INT, WIS or CHA,
+   * else `SPECIES_SPELL_ABILITY_DEFAULT` ("CHA"), so no lineage spell shows a DC from
+   * an ability the character doesn't cast with.
    */
   speciesSpellAbility?: AbilityCode;
 
