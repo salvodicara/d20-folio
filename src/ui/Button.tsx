@@ -10,6 +10,7 @@ export function Button({
   icon,
   wide,
   disabled,
+  busy,
   onClick,
   children,
   ...rest
@@ -17,6 +18,8 @@ export function Button({
   kind?: Kind;
   icon?: IconName;
   wide?: boolean;
+  /** Working on the press (a wait the player caused): a spinner, no second press. */
+  busy?: boolean;
   children: ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
@@ -25,10 +28,11 @@ export function Button({
       className={wide ? "f-btn f-wide" : "f-btn"}
       data-kind={kind}
       aria-disabled={disabled || undefined}
+      aria-busy={busy || undefined}
       // an icon button keeps its name when a narrow screen hides the label
       aria-label={icon && typeof children === "string" ? children : undefined}
       {...rest}
-      onClick={disabled ? undefined : onClick}
+      onClick={disabled || busy ? undefined : onClick}
     >
       {icon && <Icon name={icon} />}
       {icon ? <span className="f-btn-lab">{children}</span> : children}

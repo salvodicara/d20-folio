@@ -93,6 +93,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
+import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
@@ -871,6 +872,8 @@ function ActionLine({
   const { executeAction, commitRollReaction } = useTurnEconomy();
   const fight = useSheetCombat();
   const readonly = useSheetReadonly();
+  // A cast that waits for the party (read just after the sheet opens) shows it works.
+  const waiting = usePartyRosterStore((s) => s.castWaiting === row.action.id);
   const { cta } = row;
   const reason = cta.reason ? blockReasonLine(cta.reason, t, locale) : null;
   // A weapon-binding spell (Magic Weapon, Shillelagh) asks which weapon first.
@@ -1045,6 +1048,7 @@ function ActionLine({
             <Button
               kind="ghost"
               disabled={cta.state.disabled}
+              busy={waiting}
               data-live={cta.state.emphasis || undefined}
               data-dim={cta.state.dimmed || undefined}
               title={

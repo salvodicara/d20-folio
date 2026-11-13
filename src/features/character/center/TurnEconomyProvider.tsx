@@ -3180,12 +3180,15 @@ export function TurnEconomyProvider({
    * right after opening the sheet would otherwise spend the slot on no one.
    */
   function askTargetsThenCommit(prepared: ResolvedAction, commit: PreparedCommit): void {
-    const ask = () => {
+    const ask = (partyMissing = false) => {
       const roster = targetRoster();
       const step = targetStepFor(prepared, roster);
       if (!step) {
         sayNoLegalTarget(prepared, roster);
         commit(() => undefined, { action: prepared });
+        // The slot is never spent in silence: the party never came, so no one got it.
+        if (partyMissing)
+          showToast({ message: t("play.partyNotLoaded"), duration: 6000 });
         return;
       }
       setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
@@ -3197,8 +3200,16 @@ export function TurnEconomyProvider({
       recipientStateKey(prepared) &&
       combatEffectsV26On() &&
       !partyKnown(doc.id);
-    if (waits) void partyKnownSoon(doc.id).then(ask);
-    else ask();
+    if (!waits) {
+      ask();
+      return;
+    }
+    // The pressed row shows it is working while the party is read.
+    usePartyRosterStore.setState({ castWaiting: prepared.id });
+    void partyKnownSoon(doc.id).then((known) => {
+      usePartyRosterStore.setState({ castWaiting: null });
+      ask(!known);
+    });
   }
 
   /** This player's combatant id: the live encounter's, else the uid-derived one. */

@@ -2,4 +2,4 @@
 "d20-folio": patch
 ---
 
-A buff cast on an ally right after opening the sheet waits a moment for the party, so it asks whom to target instead of spending the slot on no one.
+A buff cast on an ally right after opening the sheet waits a moment for the party, so it asks whom to target instead of spending the slot on no one. While it waits, its button shows it is working; if the party never loads, the cast goes through and a message says it had no target.

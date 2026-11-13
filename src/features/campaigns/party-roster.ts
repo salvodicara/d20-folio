@@ -31,10 +31,13 @@ export const usePartyRosterStore = create<{
   party: PartyRoster | null;
   /** The open character whose party the shell has read (a party, or none). */
   resolvedFor: string | null;
+  /** The action whose cast waits for the party: its row shows it busy. */
+  castWaiting: string | null;
   setParty: (party: PartyRoster | null, resolvedFor: string | null) => void;
 }>((set) => ({
   party: null,
   resolvedFor: null,
+  castWaiting: null,
   setParty: (party, resolvedFor) => set({ party, resolvedFor }),
 }));
 
@@ -48,16 +51,20 @@ export function partyKnown(characterId: string): boolean {
 }
 
 /**
- * Resolves once the party of `characterId` is known, or after `ms`. The shell reads
- * the campaign after the sheet can already be clicked (rehearsal, 2026-11-13).
+ * Resolves `true` once the party of `characterId` is known, or `false` after `ms`.
+ * The shell reads the campaign after the sheet can already be clicked (rehearsal,
+ * 2026-11-13).
  */
-export function partyKnownSoon(characterId: string, ms = PARTY_WAIT_MS): Promise<void> {
-  if (partyKnown(characterId)) return Promise.resolve();
+export function partyKnownSoon(
+  characterId: string,
+  ms = PARTY_WAIT_MS
+): Promise<boolean> {
+  if (partyKnown(characterId)) return Promise.resolve(true);
   return new Promise((resolve) => {
     const done = () => {
       clearTimeout(timer);
       unsubscribe();
-      resolve();
+      resolve(partyKnown(characterId));
     };
     const timer = setTimeout(done, ms);
     const unsubscribe = usePartyRosterStore.subscribe(() => {
