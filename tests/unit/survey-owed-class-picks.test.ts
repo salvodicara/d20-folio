@@ -87,4 +87,20 @@ describe("surveyOwedClassPicks", () => {
     expect(survey.masteryPathsElsewhere).toEqual({ "build.masteries": 1 });
     expect(JSON.stringify(survey)).not.toMatch(/dagger/);
   });
+
+  it("counts a Bard 9 short of Expertise (Bard Expertise at 2 and 9, two skills each)", () => {
+    const bard = makeCharacterDoc({
+      classes: [{ classId: "bard", level: 9 }],
+      skills: {
+        performance: "expertise",
+        persuasion: "expertise",
+        insight: "proficient",
+        stealth: "proficient",
+      },
+    });
+    const survey = surveyOwedClassPicks(family(bard, "users/u1/characters/a"));
+    expect(survey.byClass.bard?.expertise).toEqual({ characters: 1, picks: 2 });
+    // Counts only: never a skill id.
+    expect(JSON.stringify(survey)).not.toMatch(/insight|stealth|performance/);
+  });
 });
