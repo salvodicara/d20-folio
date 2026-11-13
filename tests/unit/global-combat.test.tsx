@@ -402,6 +402,32 @@ describe("GlobalCombatMount — concentration-owned persistent effects", () => {
     );
   });
 
+  // Design lane, 2026-11-13: rolling into a campaign fight dropped the roller's
+  // Concentration. On the first look at a fresh fight the member's live state has not
+  // arrived, so the own row reads 0 HP (and 0 max HP): that is no knockout.
+  it("keeps concentration while the own row's live state has not arrived (0 HP of 0)", async () => {
+    const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
+    setCharacterConcentration("char-1", "hypnotic-pattern");
+    mount();
+    const encounter = campaign.encounter;
+    if (!encounter) throw new Error("expected encounter fixture");
+    encounter.order = [`pc-${UID}`];
+    h.state.live = {
+      encounter,
+      view: buildEncounterView(encounter, {}, false),
+      myCombatState: null,
+      myMaxHp: 0,
+    };
+    act(() => h.state.campaignsCb?.([campaign]));
+    // Let every effect run, then the concentration is still held.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(useCharacterStore.getState().character?.session.concentration).toBe(
+      "hypnotic-pattern"
+    );
+  });
+
   it("revokes the previous source, not the replacement, on a concentration swap", async () => {
     const campaign = campWithEnc("c1", "char-1", 500, { [UID]: 12 }, `pc-${UID}`);
     setCharacterConcentration("char-1", "heroism");

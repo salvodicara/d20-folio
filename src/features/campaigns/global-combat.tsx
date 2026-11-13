@@ -546,7 +546,9 @@ export function GlobalCombatMount(): null {
     if (
       current?.id === status.characterId &&
       current.session.concentration &&
-      (ownRow?.currentHp === 0 ||
+      // `down`, not a bare 0 HP: before the member's live state arrives the own row
+      // reads 0 HP of 0, and that dropped a roller's Concentration (2026-11-13).
+      (ownRow?.down === true ||
         effectiveSessionConditions({
           ...current.session,
           encounterEffects: effects,
