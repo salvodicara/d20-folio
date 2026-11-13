@@ -101,13 +101,15 @@ type Translate = (key: string, args?: Record<string, string>) => string;
 
 /**
  * The banner's sentence: the named choices, then the ability on its own — an unset
- * one already reads Charisma, so it says so («oggi usa Carisma — scegli quella giusta»)
- * — then the feats that ask which ability their increase raised.
+ * one already reads the character's own casting ability, so it names it («oggi usa
+ * Intelligenza — scegli quella giusta») — then the feats whose +1 waits for its ability.
  */
 export function speciesChoicesLine(
   items: readonly PendingSpeciesItem[],
   t: Translate,
-  locale: Locale
+  locale: Locale,
+  /** The ability the species spells use until the pick (its name, localized). */
+  abilityToday?: string
 ): string {
   const names = items.flatMap((item) =>
     item.kind === "ability" || item.kind === "feat-ability" || item.kind === "class-pick"
@@ -124,7 +126,11 @@ export function speciesChoicesLine(
       ]
     : [];
   if (items.some((item) => item.kind === "ability")) {
-    parts.push(t("play.speciesChoices.abilityNote"));
+    parts.push(
+      t("play.speciesChoices.abilityNote", {
+        ability: abilityToday ?? t("abilities.CHA"),
+      })
+    );
   }
   const feats = items.flatMap((item) =>
     item.kind === "feat-ability" ? [item.label] : []

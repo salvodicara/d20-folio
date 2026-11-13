@@ -9,6 +9,7 @@
  * too, as the creation class step's chips. Hidden on a read-only sheet and when
  * nothing is owed.
  */
+import { unpickedSpeciesAbility } from "@/lib/resolve-spell-ability";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -55,7 +56,12 @@ export function PlaySpeciesChoices({
       <p>
         <b>{t("play.speciesChoices.title")}</b>
         {" · "}
-        {speciesChoicesLine(items, t, locale)}
+        {speciesChoicesLine(
+          items,
+          t,
+          locale,
+          t(`abilities.${unpickedSpeciesAbility(doc.character)}`)
+        )}
       </p>
       <Button kind="primary" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {t("play.speciesChoices.open")}
