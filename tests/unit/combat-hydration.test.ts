@@ -234,6 +234,35 @@ describe("Combat sync — async character arrival", () => {
     expect(restored.movementLocked).toBe(true);
   });
 
+  // The client live today (v0.26.1) refuses a whole combat/state whose stored turn holds
+  // economy category «magic» (the forward-compat check, 2026-11-13): a stale tab, a
+  // second device or the DM's member view would show the sheet's error page. A cast's
+  // category is not stored; the cast is derived back from its spell row on restore.
+  it("stores a cast's Action with no category, and restores it as a cast (magic)", () => {
+    const key = "encounter:camp:9:3:pc-member";
+    const row = (
+      id: string,
+      slot: "action" | "bonus" | "free",
+      economyCategory: "magic" | "dash"
+    ) => ({ id, name: id, nameLoc: { custom: id }, slot, economyCategory });
+    useCombatStore.getState().selectAction(row("spell-fire-bolt", "action", "magic"));
+    useCombatStore.getState().selectAction(row("custom-spell-abc", "bonus", "magic"));
+    useCombatStore.getState().selectAction(row("base-dash", "free", "dash"));
+    const categories = (turn: {
+      selected: Record<"action" | "bonus" | "free", Array<{ economyCategory?: string }>>;
+    }) =>
+      (["action", "bonus", "free"] as const).flatMap((slot) =>
+        turn.selected[slot].map((a) => a.economyCategory)
+      );
+    const persisted = snapshotTurnEconomy(useCombatStore.getState(), key);
+    expect(categories(persisted)).toEqual([undefined, undefined, "dash"]);
+    expect(JSON.stringify(persisted)).not.toContain('"magic"');
+    useCombatStore.getState().endCombat();
+
+    makeArriver()("char-1", 1, "", persisted, key);
+    expect(categories(useCombatStore.getState())).toEqual(["magic", "magic", "dash"]);
+  });
+
   it("does not re-emit a server-confirmed baseline turn as a local change", () => {
     const key = "solo:char-1:1";
     const persisted = snapshotTurnEconomy(useCombatStore.getState(), key);
