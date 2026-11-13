@@ -375,22 +375,26 @@ export function ThisTurnTracker({
   // ROLL — the SAME value the campaign encounter + the `combat/state.initiativeRoll`
   // subdoc store. The total (roll + bonus) is DERIVED for display, never stored. The input
   // below edits that raw d20 roll directly; `rollInitiative` receives the raw roll string.
-  function rollInitiative(roll: string) {
+  function rollInitiative(roll: string): Promise<string | null> | undefined {
     // Encounter or solo is read from the shared fight status. Until the shell has read
     // this character's campaigns, no fight is visible yet even when the DM runs one: a
-    // roll then waits for that read (a few seconds at most) instead of starting a solo
-    // fight the DM never sees (rehearsal on CI, 2026-11-13).
+    // roll then waits for that read (a few seconds at most; the roller shows it works)
+    // instead of starting a solo fight the DM never sees (rehearsal on CI, 2026-11-13).
+    // Still unread after the wait: nothing is written and the roller says why, keeping
+    // the typed roll (a wrong solo write is the defect; no write is the safe failure).
     const characterId = character?.id;
     if (!gc && roll !== "" && characterId && !partyKnown(characterId)) {
-      void partyKnownSoon(characterId).then(() =>
+      return partyKnownSoon(characterId).then((known) => {
+        if (!known) return t("character.initiativeFightUnread");
         commitInitiative(
           roll,
           sheetEncounter(useCombatStatusStore.getState().status, characterId)
-        )
-      );
-      return;
+        );
+        return null;
+      });
     }
     commitInitiative(roll, gc);
+    return undefined;
   }
 
   function commitInitiative(roll: string, fight: typeof gc) {

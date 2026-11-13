@@ -14499,6 +14499,45 @@ button.party-avatar-btn:focus-visible {
   min-width: auto;
   cursor: text;
 }
+/* A roll that waits (the sheet's campaigns not read yet): the same small turning ring as
+   a busy button in the new UI (ui.css, #1171), beside the math; no second commit. */
+.vital-init-edit[aria-busy="true"] {
+  cursor: progress;
+}
+.vital-init-edit[aria-busy="true"] .vi-math::after {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-inline-start: 6px;
+  vertical-align: -1px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: vi-spin 0.8s linear infinite;
+}
+@keyframes vi-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vital-init-edit[aria-busy="true"] .vi-math::after {
+    animation: none;
+    opacity: 0.6;
+  }
+}
+/* Why a roll was not saved: one plain line under the roller, the typed roll kept. */
+.vital-init-edit:has(.vi-note) {
+  flex-wrap: wrap;
+}
+.vital-init-edit .vi-note {
+  flex-basis: 100%;
+  max-width: 16rem;
+  font-size: var(--text-micro);
+  color: var(--text-secondary);
+  white-space: normal;
+}
 /* B8 — the un-rolled initiative chip GLOWS when the player is in combat but hasn't
    entered their d20 yet, pulling focus to the one action that matters. A gold accent
    ring (over the carved resting shadow) + the canonical "earn the eye" opacity pulse

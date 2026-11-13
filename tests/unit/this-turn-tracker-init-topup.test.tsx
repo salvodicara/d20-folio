@@ -195,10 +195,12 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     const input = document.querySelector(".init-edit-input") as HTMLInputElement;
     fireEvent.change(input, { target: { value: "18" } });
     fireEvent.keyDown(input, { key: "Enter" });
-    // Nothing is decided yet: no solo roll, no campaign write.
+    // Nothing is decided yet: no solo roll, no campaign write; the roller shows it works.
     expect(useCombatStore.getState().initiative).toBe("");
     expect(setEncounterInitiative).not.toHaveBeenCalled();
+    expect(document.querySelector('.vital-init-edit[aria-busy="true"]')).not.toBeNull();
     // The shell reads the campaign: the DM's fight is running.
+    recordOwnInitiative.mockClear();
     act(() => {
       useCombatStatusStore.setState({ status: gatheringStatus(), pip: null });
       usePartyRosterStore.setState({ party: null, resolvedFor: MOCK_CHARACTER.id });
@@ -206,6 +208,48 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     await waitFor(() =>
       expect(setEncounterInitiative).toHaveBeenCalledWith("camp-1", "u1", 18)
     );
+    // The same total the chip showed: the d20 and the sheet's own bonus.
+    await waitFor(() => expect(recordOwnInitiative).toHaveBeenCalled());
+    const [, , roll, bonus] = recordOwnInitiative.mock.calls[0] as unknown as [
+      string,
+      string,
+      number,
+      number,
+    ];
+    expect(roll).toBe(18);
+    expect(bonus).not.toBe(0);
     expect(useCombatStore.getState().initiative).toBe("");
+    await waitFor(() =>
+      expect(document.querySelector('.vital-init-edit[aria-busy="true"]')).toBeNull()
+    );
+  });
+
+  // Coordinator, 2026-11-13: a wrong solo write is the defect; no write is the safe
+  // failure. When the fight still can't be read, the roller keeps the number and says so.
+  it("the campaigns never read: nothing is written, the typed roll stays, and the sheet says why", async () => {
+    vi.useFakeTimers();
+    try {
+      useCombatStatusStore.setState({ status: null, pip: null });
+      usePartyRosterStore.setState({ party: null, resolvedFor: null });
+      loadMonkWithDrainedFocus("");
+      const view = mount();
+      fireEvent.click(view.container.querySelector(".vital-init") as HTMLElement);
+      const input = document.querySelector(".init-edit-input") as HTMLInputElement;
+      fireEvent.change(input, { target: { value: "18" } });
+      fireEvent.keyDown(input, { key: "Enter" });
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4_000);
+      });
+      expect(setEncounterInitiative).not.toHaveBeenCalled();
+      expect(useCombatStore.getState().initiative).toBe("");
+      expect(document.querySelector<HTMLInputElement>(".init-edit-input")?.value).toBe(
+        "18"
+      );
+      expect(
+        document.querySelector('.vital-init-edit [role="alert"]')?.textContent
+      ).toMatch(/can't read the campaign's fight yet/i);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
