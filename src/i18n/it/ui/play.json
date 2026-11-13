@@ -325,7 +325,9 @@
         "fightingStyles_one": "{{count}} Stile di Combattimento",
         "fightingStyles_other": "{{count}} Stili di Combattimento",
         "spellbook_one": "{{count}} incantesimo per il libro",
-        "spellbook_other": "{{count}} incantesimi per il libro"
+        "spellbook_other": "{{count}} incantesimi per il libro",
+        "expertise_one": "{{count}} abilità per la Maestria",
+        "expertise_other": "{{count}} abilità per la Maestria"
       },
       "spellbookTitle_one": "Aggiungi {{count}} incantesimo al tuo libro: resta non preparato",
       "spellbookTitle_other": "Aggiungi {{count}} incantesimi al tuo libro: restano non preparati"

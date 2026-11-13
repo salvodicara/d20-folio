@@ -282,6 +282,66 @@ describe("applyOwedClassPicks", () => {
     ]);
   });
 
+  it("Expertise: a Bard 9 or a Rogue 6 with only two Expertise skills owes two more", () => {
+    // SRD 5.2.1: Bard Expertise at levels 2 and 9, Rogue at 1 and 6, two skills each.
+    const skills = {
+      acrobatics: "expertise",
+      performance: "expertise",
+      persuasion: "proficient",
+      deception: "proficient",
+      insight: "proficient",
+    } as const;
+    const bard = build([{ classId: "bard", level: 9 }], { skills: { ...skills } });
+    expect(owedClassPicks(bard)).toContainEqual({
+      classId: "bard",
+      pick: "expertise",
+      owed: 2,
+    });
+    const rogue = build([{ classId: "rogue", level: 6 }], { skills: { ...skills } });
+    expect(owedClassPicks(rogue)).toContainEqual({
+      classId: "rogue",
+      pick: "expertise",
+      owed: 2,
+    });
+    // At Bard 8 the two it holds are all it has earned.
+    const bard8 = build([{ classId: "bard", level: 8 }], { skills: { ...skills } });
+    expect(owedClassPicks(bard8).some((o) => o.pick === "expertise")).toBe(false);
+  });
+
+  it("Expertise is never asked beyond the proficient skills left to raise", () => {
+    const c = build([{ classId: "bard", level: 9 }], {
+      skills: { performance: "expertise", persuasion: "proficient" },
+    });
+    expect(owedClassPicks(c)).toContainEqual({
+      classId: "bard",
+      pick: "expertise",
+      owed: 1,
+    });
+  });
+
+  it("an Expertise answer raises the skills, cut to what is owed, and the debt is gone", () => {
+    const c = build([{ classId: "bard", level: 2 }], {
+      skills: {
+        performance: "proficient",
+        persuasion: "proficient",
+        insight: "proficient",
+      },
+    });
+    const next = applyOwedClassPicks(c, [
+      {
+        classId: "bard",
+        pick: "expertise",
+        ids: ["performance", "persuasion", "insight"],
+      },
+    ]);
+    expect(next.skills).toMatchObject({
+      performance: "expertise",
+      persuasion: "expertise",
+      insight: "proficient",
+    });
+    expect(owedClassPicks(next).some((o) => o.pick === "expertise")).toBe(false);
+  });
+
   it("an answer for a pick that isn't owed writes nothing", () => {
     const c = build(
       [{ classId: "warlock", level: 5, invocationChoices: INVOCATIONS.slice(0, 5) }],
@@ -367,5 +427,27 @@ describe("level-up and the report agree", () => {
       })
     );
     expect(owedClassPicks(after.character)).toEqual([]);
+  });
+});
+
+describe("«Scelte da completare» — Expertise", () => {
+  it("names the owed Expertise and lists the proficient skills, in Italian", async () => {
+    const { owedClassPickRows, owedClassPickLabel } =
+      await import("@/lib/views/owed-class-picks-view");
+    const c = build([{ classId: "bard", level: 9 }], {
+      skills: {
+        performance: "expertise",
+        persuasion: "expertise",
+        insight: "proficient",
+        stealth: "proficient",
+      },
+    });
+    const row = owedClassPickRows(c, "it").find((r) => r.pick === "expertise");
+    expect(row?.title).toBe("Scegli 2 abilità per la Maestria");
+    expect(row?.options.map((o) => o.id)).toEqual(["insight", "stealth"]);
+    expect(row?.options.map((o) => o.name)).toEqual(["Intuizione", "Furtività"]);
+    expect(owedClassPickLabel("expertise", 2, "bard", "it")).toBe(
+      "2 abilità per la Maestria (Bardo)"
+    );
   });
 });

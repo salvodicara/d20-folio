@@ -13,7 +13,7 @@
  *
  * Pure module — no React, no locale reads.
  */
-import { getFeaturesAtLevel } from "@/data/classes";
+import { getClassTable, getFeaturesAtLevel } from "@/data/classes";
 import { isExpertisePlaceholder, EXPERTISE_PICKS_PER_GRANT } from "@/lib/expertise-pick";
 import { isFightingStylePlaceholder, listFightingStyles } from "@/lib/fighting-style";
 import {
@@ -65,6 +65,13 @@ function featuresThrough(classId: string, level: number, subclassId: string) {
   return out;
 }
 
+/** How many times the class table grants Expertise through `level`. */
+export function expertiseGrantsThrough(classId: string, level: number): number {
+  return (getClassTable(classId)?.levels ?? [])
+    .filter((row) => row.level <= level)
+    .reduce((n, row) => n + row.featureIds.filter(isExpertisePlaceholder).length, 0);
+}
+
 export function classChoiceNeeds(
   classId: string,
   level: number,
@@ -88,9 +95,9 @@ export function classChoiceNeeds(
       ? weaponMasteryCountForClass(classId, level)
       : 0,
     invocations: has(isInvocationPlaceholder) ? invocationsKnownAt(level) : 0,
-    expertise:
-      features.filter((f) => isExpertisePlaceholder(f.id)).length *
-      EXPERTISE_PICKS_PER_GRANT,
+    // The table lists Expertise at each level that grants it (Bard 2 and 9, Rogue 1
+    // and 6); the feature itself is defined once, at its first level.
+    expertise: expertiseGrantsThrough(classId, level) * EXPERTISE_PICKS_PER_GRANT,
   };
 }
 
