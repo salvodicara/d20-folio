@@ -7,7 +7,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
-import { createAppUpdateWatch } from "@/app/app-update";
+import { createAppUpdateWatch, reloadWhenSaved } from "@/app/app-update";
 
 /** A stand-in for `navigator.serviceWorker` and the page's visibility. */
 function fakeEnv(opts: { controlled: boolean }) {
@@ -82,5 +82,41 @@ describe("the new-version watch", () => {
     expect(watch.ready()).toBe(false);
     fake.takeOver();
     expect(watch.ready()).toBe(true);
+  });
+});
+
+// Coordinator, 2026-11-13: «Reload» must not lose what the player just did. An open
+// dialog covers the bar (the scrim and the native modal sit above the dock), so a typed
+// number cannot be lost; an action tapped a moment before may still be on its way to the
+// server (#1178), so the reload waits for the pending writes, a few seconds at most.
+describe("Reload waits for the pending writes", () => {
+  it("reloads once the writes are on the server", async () => {
+    const reload = vi.fn();
+    let settle: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => (settle = resolve));
+    const done = reloadWhenSaved(() => pending, reload, 3_000);
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(reload).not.toHaveBeenCalled();
+    settle();
+    await done;
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("reloads anyway after the cap (offline: the writes wait in the local queue)", async () => {
+    vi.useFakeTimers();
+    const reload = vi.fn();
+    const done = reloadWhenSaved(() => new Promise<void>(() => undefined), reload, 3_000);
+    await vi.advanceTimersByTimeAsync(2_999);
+    expect(reload).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    await done;
+    expect(reload).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it("a failed wait still reloads", async () => {
+    const reload = vi.fn();
+    await reloadWhenSaved(() => Promise.reject(new Error("no db")), reload, 3_000);
+    expect(reload).toHaveBeenCalledTimes(1);
   });
 });

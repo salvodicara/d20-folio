@@ -23,7 +23,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import { WifiOff, Download, RefreshCw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { appUpdate } from "@/app/app-update";
+import { appUpdate, reloadApp } from "@/app/app-update";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
 import { useSaveStore } from "@/stores/saveStore";
 import { Button } from "@/components/ui/button";
@@ -88,7 +88,9 @@ export function PWABanner() {
 
       {/* A new version is ready — the install prompt's own carved-gilt strip (the
           pattern of Gmail's «a new version is available» bar and vite-plugin-pwa's
-          ReloadPrompt): one action, Reload, and a close. Announced politely. */}
+          ReloadPrompt): one action, Reload, and a close. Announced politely. An
+          open dialog covers it (scrim / native modal above the dock), so a typed
+          value is never lost; Reload waits for the writes still on their way. */}
       {updateReady && (
         <div
           role="status"
@@ -101,7 +103,7 @@ export function PWABanner() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => window.location.reload()}>
+            <Button size="sm" onClick={reloadApp}>
               {t("pwa.reload")}
             </Button>
             <IconButton onClick={appUpdate.dismiss} aria-label={t("common.close")}>

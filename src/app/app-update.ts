@@ -81,3 +81,37 @@ export const appUpdate: AppUpdateWatch =
         now: () => Date.now(),
       })
     : idle;
+
+/**
+ * Reload once the writes still on their way are on the server, `capMs` at most. An
+ * action tapped a moment before «Reload» may not have left yet (#1178); offline, the
+ * writes wait in the local queue and the cap lets the reload happen anyway.
+ */
+export async function reloadWhenSaved(
+  pendingWrites: () => Promise<void>,
+  reload: () => void,
+  capMs: number
+): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const cap = new Promise<void>((resolve) => {
+    timer = setTimeout(resolve, capMs);
+  });
+  await Promise.race([pendingWrites().catch(() => undefined), cap]);
+  clearTimeout(timer);
+  reload();
+}
+
+/** The app's Reload: the Firestore writes first (loaded on demand, off the entry chunk). */
+export function reloadApp(): void {
+  void reloadWhenSaved(
+    async () => {
+      const [{ waitForPendingWrites }, { db }] = await Promise.all([
+        import("firebase/firestore"),
+        import("@/lib/firebase"),
+      ]);
+      await waitForPendingWrites(db);
+    },
+    () => window.location.reload(),
+    3_000
+  );
+}
