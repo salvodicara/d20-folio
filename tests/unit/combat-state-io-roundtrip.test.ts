@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { LocText } from "@/lib/loc-text";
+import { ACTION_ECONOMY_CATEGORIES, TURN_TRIGGER_EVENTS } from "@/data/types";
 import type { CombatState, PersistedTurnAction } from "@/types/combat-state";
 import type { ActiveCombatEffect, CombatEffectOp } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
@@ -539,32 +540,53 @@ describe("combat-state IO — full persistence contract", () => {
     ]);
   });
 
-  it.each([
-    ["attack", "action", LOC_TEXTS.custom],
-    ["dash", "action", LOC_TEXTS.srd],
-    ["disengage", "bonus", LOC_TEXTS.lit],
-    ["hide", "bonus", LOC_TEXTS.ui],
-    ["utilize", "free", LOC_TEXTS.custom],
-  ] as const)(
-    "preserves the %s category in the %s slot with its LocText variant",
-    (economyCategory, slot, name) => {
-      const state = completeState();
-      const only = action(`action-${economyCategory}`, slot, name, { economyCategory });
-      const turn = state.turnEconomy;
-      if (!turn) throw new Error("missing turn economy");
-      turn.selected = { action: [], bonus: [], free: [] };
-      turn.selected[slot].push(only);
-      // Receipts/swings name the actions we just dropped; clear them so the stored
-      // document stays canonical for the strict reader.
-      turn.attacksUsed = 0;
-      turn.attackSwings = [];
-      turn.outcomeReceipts = [];
-      turn.reactionUsed = false;
-      turn.reactionUsedId = null;
-      turn.reactionOutcomeOccurrenceId = null;
+  // Fed from the type's own lists: a value added to one of them is saved and read back
+  // here, so a reader that doesn't know it fails this test instead of refusing a
+  // player's sheet (#1158).
+  const SLOTS = ["action", "bonus", "free"] as const;
+  const NAMES = [LOC_TEXTS.custom, LOC_TEXTS.srd, LOC_TEXTS.lit, LOC_TEXTS.ui];
+  const onlyAction = (
+    id: string,
+    index: number,
+    extra: Partial<PersistedTurnAction>
+  ): [PersistedTurnAction, CombatState] => {
+    const state = completeState();
+    const slot = SLOTS[index % SLOTS.length] ?? "action";
+    const only = action(id, slot, NAMES[index % NAMES.length] ?? LOC_TEXTS.custom, extra);
+    const turn = state.turnEconomy;
+    if (!turn) throw new Error("missing turn economy");
+    turn.selected = { action: [], bonus: [], free: [] };
+    turn.selected[slot].push(only);
+    // Receipts/swings name the actions we just dropped; clear them so the stored
+    // document stays canonical for the strict reader.
+    turn.attacksUsed = 0;
+    turn.attackSwings = [];
+    turn.outcomeReceipts = [];
+    turn.reactionUsed = false;
+    turn.reactionUsedId = null;
+    turn.reactionOutcomeOccurrenceId = null;
+    return [only, state];
+  };
 
-      const parsed = parseState(combatStateWriteData(state));
-      expect(parsed.turnEconomy?.selected[slot]).toEqual([only]);
+  it.each(ACTION_ECONOMY_CATEGORIES.map((category, index) => [category, index] as const))(
+    "saves and reads back the %s economy category",
+    (economyCategory, index) => {
+      const [only, state] = onlyAction(`action-${economyCategory}`, index, {
+        economyCategory,
+      });
+      const parsed = parseCombatState(combatStateWriteData(state));
+      expect(parsed.ok && parsed.state.turnEconomy?.selected[only.slot]).toEqual([only]);
+    }
+  );
+
+  it.each(TURN_TRIGGER_EVENTS.map((event, index) => [event, index] as const))(
+    "saves and reads back the %s turn event",
+    (event, index) => {
+      const [only, state] = onlyAction(`action-${event}`, index, {
+        triggerEvents: [event],
+      });
+      const parsed = parseCombatState(combatStateWriteData(state));
+      expect(parsed.ok && parsed.state.turnEconomy?.selected[only.slot]).toEqual([only]);
     }
   );
 

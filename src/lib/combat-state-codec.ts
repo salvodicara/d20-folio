@@ -18,6 +18,7 @@ import { normalizeConcentrationRef } from "@/lib/concentration";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
 import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+import { ACTION_ECONOMY_CATEGORIES, TURN_TRIGGER_EVENTS } from "@/data/types";
 
 const STRICT_V1_FIELDS = [
   "activeEffects",
@@ -25,6 +26,11 @@ const STRICT_V1_FIELDS = [
   "turnEconomy",
   "appliedEncounterEffects",
 ] as const;
+
+/** Whether a stored value is one of a closed list's members. */
+function isOneOf<T extends string>(list: ReadonlyArray<T>, value: unknown): value is T {
+  return (list as ReadonlyArray<unknown>).includes(value);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -331,20 +337,15 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
           const action = candidate as Record<string, unknown>;
           const name = parseLocText(action.name);
           if (typeof action.id !== "string" || action.id.length === 0 || !name) return [];
-          const economyCategory =
-            action.economyCategory === "attack" ||
-            action.economyCategory === "dash" ||
-            action.economyCategory === "disengage" ||
-            action.economyCategory === "hide" ||
-            action.economyCategory === "utilize" ||
-            // A cast is the Magic action (#1140).
-            action.economyCategory === "magic"
-              ? action.economyCategory
-              : undefined;
+          const economyCategory = isOneOf(
+            ACTION_ECONOMY_CATEGORIES,
+            action.economyCategory
+          )
+            ? action.economyCategory
+            : undefined;
           const triggerEvents = Array.isArray(action.triggerEvents)
-            ? action.triggerEvents.filter(
-                (event): event is "attack" | "bonus-extend" =>
-                  event === "attack" || event === "bonus-extend"
+            ? action.triggerEvents.filter((event: unknown) =>
+                isOneOf(TURN_TRIGGER_EVENTS, event)
               )
             : [];
           return [
