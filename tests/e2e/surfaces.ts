@@ -21,7 +21,7 @@ import { expect, type Page } from "@playwright/test";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SURFACE_ROUTES, type SurfaceRoute } from "./surface-census";
-import { firstWord, teamFixtureName } from "./team-fixture";
+import { firstWord, devHeroName } from "./team-fixture";
 import { visibleWithin } from "./visible-within";
 
 export type Theme = "dark" | "light";
@@ -1150,7 +1150,7 @@ const RUNTIME: Record<string, SurfaceRuntime> = {
     // The attached hero's first name, derived from the pack fixture at runtime
     // (no name literal ships publicly); a never-matching sentinel when absent.
     ready: readyText(
-      new RegExp(firstWord(teamFixtureName("bard")) || "__pack-absent__", "i")
+      new RegExp(firstWord(devHeroName("bard")) || "__pack-absent__", "i")
     ),
   },
   // The unified Party section running an encounter — the INLINE initiative tracker

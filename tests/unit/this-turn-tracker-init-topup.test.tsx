@@ -135,6 +135,35 @@ describe("ThisTurnTracker — S4 top-up on the first ENCOUNTER roll (B26, SSOT)"
     expect(useCombatStore.getState().initiative).toBe("15");
   });
 
+  // Rehearsal, 2026-11-13: the report line read the d20 alone («rolls initiative: 12»
+  // for a 12 rolled with +3). The fight's status gives the viewer's bonus only once the
+  // party's sheets are read (it is 0 before); the sheet knows its own bonus already.
+  it("the report line's total takes the sheet's own bonus, even before the fight's rows know it", async () => {
+    recordOwnInitiative.mockClear();
+    loadMonkWithDrainedFocus("");
+    useCombatStatusStore.setState({
+      status: { ...gatheringStatus(), initiativeBonus: 0 },
+      pip: null,
+    });
+    const view = mount();
+    const shown = (view.container.querySelector(".vital-init") as HTMLElement).title;
+    fireEvent.click(view.container.querySelector(".vital-init") as HTMLElement);
+    const input = document.querySelector(".init-edit-input") as HTMLInputElement;
+    fireEvent.change(input, { target: { value: "12" } });
+    fireEvent.keyDown(input, { key: "Enter" });
+    await waitFor(() => expect(recordOwnInitiative).toHaveBeenCalled());
+    const [, , roll, bonus] = recordOwnInitiative.mock.calls[0] as unknown as [
+      string,
+      string,
+      number,
+      number,
+    ];
+    expect(roll).toBe(12);
+    // The mock monk's own initiative bonus (DEX), the one its chip shows.
+    expect(bonus).not.toBe(0);
+    expect(shown).toBeTruthy();
+  });
+
   it("SOLO (no encounter status): the roll writes the combat store, never the campaign seam", () => {
     useCombatStatusStore.setState({ status: null, pip: null });
     loadMonkWithDrainedFocus(""); // solo roll starts blank (the solo empty-gate path)
