@@ -170,7 +170,11 @@ describe("PlaySpeciesChoices: a long owed list can be searched", () => {
     useCharacterStore.getState().setCharacter(base);
     render(<Banner />);
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    // the slots say what they are: «Picked: 0 of 2»
+    expect(screen.getByText("Picked: 0 of 2")).toBeTruthy();
     const search = screen.getByRole("searchbox", { name: /search/i });
+    // the hint sits inside the field, not as a label above it
+    expect(search.getAttribute("placeholder")).toMatch(/search/i);
     fireEvent.change(search, { target: { value: "long" } });
     expect(screen.getByRole("button", { name: /^Longsword/ })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /^Greataxe/ })).toBeNull();
@@ -181,6 +185,7 @@ describe("PlaySpeciesChoices: a long owed list can be searched", () => {
     expect(screen.getAllByRole("button", { name: /^Longsword/ }).length).toBeGreaterThan(
       0
     );
+    expect(screen.getByText("Picked: 2 of 2")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(
       useCharacterStore.getState().character?.character.classes[0]?.weaponMasteries

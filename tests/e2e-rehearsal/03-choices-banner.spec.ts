@@ -39,7 +39,11 @@ test("«Scelte da completare» lists the owed choices and clears once they are m
   for (const ask of await dialog.locator(".f-ask").all()) {
     const chips = ask.locator(options);
     if ((await chips.count()) === 0) continue;
-    const need = Number((await ask.innerText()).match(/\b(\d+)\b/)?.[1] ?? 1);
+    // The pick grid says it: «Scelte: 0 di 2»; a chip ask names its count, else one.
+    const text = await ask.innerText();
+    const need = Number(
+      text.match(/Scelte: \d+ di (\d+)/)?.[1] ?? text.match(/\b(\d+)\b/)?.[1] ?? 1
+    );
     const picked = await ask
       .locator(
         ".f-chips button[aria-pressed=true], .f-pick button.f-slot[aria-pressed=true]"
