@@ -29,7 +29,7 @@ import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { Locale } from "@/lib/locale";
 import { tieLast, tieTails } from "@/lib/text-ties";
-import { Art, Button, Chip, Field, type ArtKind } from "@/ui";
+import { Art, Button, Chip, Icon, type ArtKind } from "@/ui";
 
 const SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
@@ -50,6 +50,7 @@ export function PickGrid({
   chips,
   count,
   locale,
+  searchLabel,
   onToggle,
 }: {
   label: string;
@@ -66,6 +67,8 @@ export function PickGrid({
   /** How many to pick: the learned row shows that many slots (BG3). */
   count?: number;
   locale: Locale;
+  /** The name filter's label for a long list that isn't spells («Cerca armi»). */
+  searchLabel?: string;
   onToggle: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -90,15 +93,30 @@ export function PickGrid({
     filtering && levels.length > 1 ? (levels.at(-1) ?? null) : null
   );
   const [focus, setFocus] = useState<string | null>(null);
+  // A long list of other options (about 38 weapons to master) narrows by name too.
+  const byName = !spells && options.length > SPELL_FILTER_FROM;
+  const needle = query.trim().toLocaleLowerCase(locale);
+  const searchText = byName
+    ? (searchLabel ?? t("common.search"))
+    : t("spells.pick.search");
   // A long list narrows by name and level; the picks stay on top whatever the filter.
-  const shown = filtering
+  const shown = byName
     ? [
         ...options.filter((o) => picked.includes(o.id)),
-        ...filterSpellRows(spellRows, query, level)
-          .filter((r) => !picked.includes(r.id))
-          .map((r) => ({ id: r.id, label: r.name })),
+        ...options.filter(
+          (o) =>
+            !picked.includes(o.id) &&
+            (needle === "" || o.label.toLocaleLowerCase(locale).includes(needle))
+        ),
       ]
-    : options;
+    : filtering
+      ? [
+          ...options.filter((o) => picked.includes(o.id)),
+          ...filterSpellRows(spellRows, query, level)
+            .filter((r) => !picked.includes(r.id))
+            .map((r) => ({ id: r.id, label: r.name })),
+        ]
+      : options;
   const levelName = (n: number) =>
     n === 0 ? t("spells.cantrip") : t("spells.level", { level: n });
   const inspectedId = focus ?? picked[0] ?? null;
@@ -196,16 +214,20 @@ export function PickGrid({
     ) : null;
   return (
     <>
-      {filtering && (
+      {(filtering || byName) && (
         <div className="f-lvl-tools">
-          <Field
-            label={t("spells.pick.search")}
-            placeholder={t("spells.pick.searchHint")}
-            type="search"
-            autoComplete="off"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          {/* The compendium's search box: an icon, the hint inside the field. */}
+          <label className="f-srch">
+            <Icon name="u-search" />
+            <input
+              type="search"
+              autoComplete="off"
+              value={query}
+              placeholder={searchText}
+              aria-label={searchText}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
           {levels.length > 1 && (
             <div className="f-chips" role="group" aria-label={t("spells.pick.byLevel")}>
               <Chip pressed={level === null} onClick={() => setLevel(null)}>
@@ -241,11 +263,22 @@ export function PickGrid({
         ) : (
           <div className="f-slotbook" role="group" aria-label={label}>
             {count !== undefined && count > 0 && (
+              <p className="f-help f-slots-cap">
+                {t("spells.pick.slots", {
+                  picked: String(Math.min(picked.length, count)),
+                  count: String(count),
+                })}
+              </p>
+            )}
+            {count !== undefined && count > 0 && (
               // BG3's learned row: the picks so far, then empty slots up to the count.
               <div className="f-slotrow f-slotrow-picked">
-                <span className="f-slotrow-l" aria-hidden="true">
-                  {createElement(FolioBookIcon)}
-                </span>
+                {/* The spellbook's icon for spells; other picks need none. */}
+                {spells && (
+                  <span className="f-slotrow-l" aria-hidden="true">
+                    {createElement(FolioBookIcon)}
+                  </span>
+                )}
                 <div className="f-slots-run">
                   {picked.map((id) => slot({ id, label: names.get(id) ?? id }, true))}
                   {Array.from({ length: Math.max(0, count - picked.length) }, (_, n) => (

@@ -79,7 +79,7 @@
       "none": "Nessun incantesimo corrisponde.",
       "unpick": "Togli",
       "ritual": "rituale",
-      "searchHint": "Cerca per nome…"
+      "slots": "Scelte: {{picked}} di {{count}}"
     }
   }
 }
