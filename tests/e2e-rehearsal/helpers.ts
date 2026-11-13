@@ -337,3 +337,19 @@ export async function rollEachHero(dm: Page): Promise<void> {
     await input.press("Enter");
   }
 }
+
+/**
+ * Resolves once the page has sent the saved turn holding `actionId` (a Firestore write
+ * of `turnEconomy` naming it). A reload waits for it: a reload within a second of an
+ * act can still lose its write (#1178), which this step does not test.
+ */
+export function turnWriteSent(page: Page, actionId: string): Promise<unknown> {
+  return page.waitForRequest(
+    (request) => {
+      if (!request.url().includes("Firestore/Write/channel")) return false;
+      const body = decodeURIComponent((request.postData() ?? "").replace(/\+/g, " "));
+      return body.includes("turnEconomy") && body.includes(actionId);
+    },
+    { timeout: 15_000 }
+  );
+}
