@@ -306,6 +306,7 @@
       "body": "Your species asks you to choose: {{items}}.",
       "open": "Finish",
       "abilityNote": "Species spellcasting ability: it uses {{ability}} today. Choose the right one.",
+      "skillShortNote": "{{name}}: you have {{have}} skills, your build gives at least {{need}}. Choose the missing one.",
       "featAbilityNote": "{{feats}}: choose the ability (+1 not applied yet).",
       "featAbilityLabel": "Ability increased by {{feat}}",
       "classBody": "Your class lets you choose more: {{items}}.",

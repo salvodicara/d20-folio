@@ -96,6 +96,31 @@ describe("SpeciesChoicesBanner", () => {
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   });
 
+  it("asks a Human short of skills for Skillful, saying why; trusts one with the full count", () => {
+    const base = makeCharacterDoc(MASTERED);
+    const human = (skills: string[]) =>
+      useCharacterStore.getState().setCharacter({
+        ...base,
+        character: {
+          ...base.character,
+          race: asRaceId("human"),
+          humanOriginFeat: "alert",
+          skills: Object.fromEntries(skills.map((id) => [id, "proficient" as const])),
+          spells: [],
+        },
+      });
+    const four = ["athletics", "acrobatics", "history", "religion"];
+    human(four);
+    const { unmount } = render(<SpeciesChoicesBanner />);
+    expect(screen.getByRole("group", { name: "Choices to finish" }).textContent).toMatch(
+      /Skillful: you have 4 skills, your build gives at least \d+/
+    );
+    unmount();
+    human([...four, "stealth", "arcana", "nature", "medicine"]);
+    render(<SpeciesChoicesBanner />);
+    expect(screen.queryByText(/Skillful/)).toBeNull();
+  });
+
   it("asks a Human's never-chosen Versatile feat and sets it on Save", () => {
     const base = makeCharacterDoc(MASTERED);
     useCharacterStore.getState().setCharacter({

@@ -306,6 +306,7 @@
       "body": "La tua specie ti fa scegliere: {{items}}.",
       "open": "Completa",
       "abilityNote": "Caratteristica per gli incantesimi della specie: oggi usa {{ability}}. Scegli quella giusta.",
+      "skillShortNote": "{{name}}: hai {{have}} abilità, la tua build ne dà almeno {{need}}. Scegli quella mancante.",
       "featAbilityNote": "{{feats}}: scegli la caratteristica (+1 non ancora applicato).",
       "featAbilityLabel": "Caratteristica aumentata da {{feat}}",
       "classBody": "La tua classe ti fa scegliere ancora: {{items}}.",
