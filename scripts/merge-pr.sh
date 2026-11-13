@@ -10,6 +10,9 @@
 #   3. merge with the head pinned (`sha`), so a push in the meantime is never merged
 #      unchecked. If main moved first (another merge landed), go back to 1.
 #
+# Before anything, main's newest finished Verify must have passed, or the PR must carry
+# the `verify-fix` label (scripts/lib/verify-gate.sh).
+#
 # It fails CLOSED: a read that errors or comes back empty means wait, never merge (an
 # empty read once let a red PR through, 2026-11-10).
 #
@@ -33,6 +36,9 @@ REQUIRED=(
 
 say() { printf '%s\n' "$*" >&2; }
 
+# shellcheck source=lib/verify-gate.sh
+source "$(dirname "$0")/lib/verify-gate.sh"
+
 # Retry a read until it succeeds with a non-empty answer.
 read_until() {
   local out
@@ -51,11 +57,15 @@ behind_main() {
 # Wait until every check on $head has finished (latest run per name); echo "ok" when
 # all are green and every required check is among them, else the names that are not.
 checks_verdict() {
-  local head="$1" runs pending missing bad
+  local head="$1" n="$2" runs pending missing bad suites labelled
   while :; do
     runs="$(gh api "repos/$REPO/commits/$head/check-runs?per_page=100" \
-      --jq '[.check_runs[]|{name,status,conclusion,started_at}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null)"
+      --jq '[.check_runs[]|{name,status,conclusion,started_at,suite:.check_suite.id}]|group_by(.name)|map(max_by(.started_at))' 2>/dev/null)"
     if [ -z "$runs" ] || [ "$(jq length <<<"$runs")" -eq 0 ]; then sleep 30; continue; fi
+    # A verify-fix is judged by its own CI, not by its branch's dispatched Verify.
+    suites="$(branch_verify_suites "$REPO" "$head" 2>/dev/null)" || { sleep 30; continue; }
+    labelled="$(pr_is_verify_fix "$REPO" "$n" 2>/dev/null)" || { sleep 30; continue; }
+    runs="$(filter_branch_verify "$runs" "${suites:-[]}" "$labelled")"
     pending="$(jq '[.[]|select(.status!="completed")]|length' <<<"$runs")"
     missing=""
     for name in "${REQUIRED[@]}"; do
@@ -73,6 +83,8 @@ refusal() { sed -n 's/.*"message":"\([^"]*\)".*/\1/p' <<<"$1" | head -1; }
 
 merge_one() {
   local n="$1" state head behind verdict title branch out
+  # A red main stops the line: only a verify-fix PR merges until Verify is green.
+  verify_gate "$REPO" "$n" || return 1
   for attempt in 1 2 3 4 5; do
     state="$(read_until pr_field "$n" state)"
     [ "$state" = MERGED ] && { say "#$n: already merged"; return 0; }
@@ -90,7 +102,7 @@ merge_one() {
       continue
     fi
     say "#$n: up to date at ${head:0:9}, waiting for its checks…"
-    verdict="$(checks_verdict "$head")"
+    verdict="$(checks_verdict "$head" "$n")"
     if [ "$verdict" != ok ]; then
       say "✗ #$n not green on ${head:0:9}: $verdict (nothing merged)."
       return 1

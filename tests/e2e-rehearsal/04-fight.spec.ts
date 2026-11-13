@@ -1,9 +1,10 @@
 /**
  * Rehearsal 4 — a campaign fight with the DM. Three people, each in their own browser
  * with their own account: the DM on the campaign page, Bard (Lore Bard) and
- * Paladin (Paladin 5) on their sheets. Initiative, Bless on an ally, Warding Bond,
- * a hit the DM calls landing through the bond, Cutting Words as a reaction, the end
- * of the fight; Warding Bond (1 hour, no Concentration) outlives it.
+ * Paladin (Paladin 5) on their sheets. Initiative, Bless on an ally, Warding Bond on the
+ * next turn (one Magic action a turn), a hit the DM calls landing through the bond,
+ * Cutting Words as a reaction, the end of the fight; Warding Bond (1 hour, no
+ * Concentration) outlives it.
  */
 import { expect, type Browser, type Page } from "@playwright/test";
 import {
@@ -177,6 +178,28 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   await test.step("Paladin casts Bless on Bard; Bard's sheet shows it", async () => {
     await cast(paladin, "Bless", [BARD_NAME]);
     expect.soft(await showsEffect(bard, "Bless"), "Bard's sheet lists Bless").toBe(true);
+    // Bless took the turn's Action: a second Action spell waits for the next turn.
+    await expect(
+      actionRow(paladin, "Warding Bond").getByRole("button", {
+        name: /^Used: Warding\sBond/,
+      })
+    ).toBeVisible();
+  });
+
+  await test.step("the turns move on to Paladin's next turn", async () => {
+    // Each player ends their own turn («End turn» shows only on it) until Paladin's
+    // Action is free again.
+    const wardingBond = actionRow(paladin, "Warding Bond").getByRole("button", {
+      name: /^Cast: Warding\sBond/,
+    });
+    for (let i = 0; i < 6 && !(await wardingBond.isVisible()); i++) {
+      for (const page of [paladin, bard]) {
+        const end = page.locator("[data-end-turn]");
+        if (await end.isVisible()) await end.click();
+      }
+      await wardingBond.waitFor({ timeout: 5_000 }).catch(() => undefined);
+    }
+    await expect(wardingBond, "Paladin's Action is free on the next turn").toBeVisible();
   });
 
   await test.step("Paladin casts Warding Bond on Bard", async () => {
