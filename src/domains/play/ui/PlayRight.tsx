@@ -114,7 +114,11 @@ function Initiative({
   // «Entra nella zona»: the creature that walked in, then the tray on it.
   const enterZone = (zoneId: string, targetId: string) => {
     const zone = activeZones(liveEffects).find((z) => z.id === zoneId);
-    if (zone) openZoneTray(zone, targetId, locale);
+    // Never silent: a zone the open sheet can't play says so (as PlayZoneHits does).
+    if (zone && !openZoneTray(zone, targetId, locale))
+      useToastStore
+        .getState()
+        .showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
   };
   const bandLabel = (band: HpBandValue) =>
     band === "down"
@@ -323,7 +327,13 @@ function OwnReport({
   const { t } = useTranslation();
   const log = useCharacterStore((s) => s.character?.session.logEntries);
   const name = useCharacterStore((s) => s.character?.character.name ?? "");
-  const names = useOwnReportNames(name, locale);
+  // The fight's creatures by the names the tray and the initiative rail show.
+  const fight = useSheetCombat();
+  const roster = useMemo(
+    () => Object.fromEntries((fight?.view.rows ?? []).map((row) => [row.id, row.name])),
+    [fight?.view.rows]
+  );
+  const names = useOwnReportNames(name, locale, roster);
   const sections = useMemo(
     () => sessionReportSections(sheetSessionEntries(log ?? [], ME)),
     [log]

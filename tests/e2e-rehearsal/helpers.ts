@@ -64,13 +64,18 @@ export async function startNewSitting(): Promise<void> {
       fields?: { lastAt?: { integerValue?: string; doubleValue?: number } };
     }>;
   };
-  // Each one moves by the same span, so the newest stays the newest.
-  const back = SESSION_GAP_MS + 60 * 60 * 1000;
-  for (const doc of body.documents ?? []) {
-    const id = doc.name.split("/").at(-1) ?? "";
-    const lastAt = Number(
+  const sittings = (body.documents ?? []).map((doc) => ({
+    id: doc.name.split("/").at(-1) ?? "",
+    lastAt: Number(
       doc.fields?.lastAt?.integerValue ?? doc.fields?.lastAt?.doubleValue ?? Date.now()
-    );
+    ),
+  }));
+  // Each one moves by the same span, so the newest stays the newest. The span puts the
+  // newest a gap and an hour before now, even when a spec's faked clock wrote it in
+  // the future (an hour ahead: it stayed the open sitting, and the next evening joined it).
+  const newest = Math.max(Date.now(), ...sittings.map((s) => s.lastAt));
+  const back = SESSION_GAP_MS + 60 * 60 * 1000 + (newest - Date.now());
+  for (const { id, lastAt } of sittings) {
     const patched = await fetch(`${logs}/${id}?updateMask.fieldPaths=lastAt`, {
       method: "PATCH",
       headers: { ...OWNER, "Content-Type": "application/json" },
@@ -336,4 +341,20 @@ export async function rollEachHero(dm: Page): Promise<void> {
     await input.fill(String(15 - i));
     await input.press("Enter");
   }
+}
+
+/**
+ * Resolves once the page has sent the saved turn holding `actionId` (a Firestore write
+ * of `turnEconomy` naming it). A reload waits for it: a reload within a second of an
+ * act can still lose its write (#1178), which this step does not test.
+ */
+export function turnWriteSent(page: Page, actionId: string): Promise<unknown> {
+  return page.waitForRequest(
+    (request) => {
+      if (!request.url().includes("Firestore/Write/channel")) return false;
+      const body = decodeURIComponent((request.postData() ?? "").replace(/\+/g, " "));
+      return body.includes("turnEconomy") && body.includes(actionId);
+    },
+    { timeout: 15_000 }
+  );
 }

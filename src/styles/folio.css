@@ -1780,6 +1780,18 @@ textarea.input::-webkit-resizer {
   position: absolute;
   inset: calc((var(--touch-min) - 100%) / -2);
 }
+/* The homebrew item form's «Rimuovi» on each effect: the same invisible hit-slop to
+   the 44px floor on a touch screen, without growing the small button. */
+@media (pointer: coarse) {
+  .item-effect-remove {
+    position: relative;
+  }
+  .item-effect-remove::before {
+    content: "";
+    position: absolute;
+    inset: calc((var(--touch-min) - 100%) / -2);
+  }
+}
 .search .clear-btn .icon {
   width: 14px;
   height: 14px;

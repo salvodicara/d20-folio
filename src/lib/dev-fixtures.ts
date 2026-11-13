@@ -17,6 +17,7 @@ import type { CharacterDoc } from "@/types/character";
 import { applyCombatToSession } from "@/lib/combat-state";
 import { packFixtures } from "@pack";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
+import { DEV_HERO_NAMES } from "@/lib/dev-hero-names";
 
 /** Route-id prefix that maps to a team fixture by its role (`team-bard`). */
 const DEV_FIXTURE_PREFIX = "team-";
@@ -43,20 +44,22 @@ function fixtureName(id: string): string {
   return `${ROLE_KEY}${role}`;
 }
 
+// The made-up name each role's sheet shows in dev: its own dependency-free module, so
+// the e2e specs read the same names the screens show.
+export { DEV_HERO_NAMES } from "@/lib/dev-hero-names";
+
 /**
- * The made-up name each role's sheet shows in dev. The fixtures are real players'
- * characters, and the dev screens reach every screenshot a session takes, so a live
- * character's name never shows (owner, 2026-11-12). The bard and the paladin keep the
- * names the dev campaign's member snapshots already use for them.
+ * The stand-in for a team sheet the pack does not carry (an SRD-only dev server): the
+ * mock hero under its role's made-up name, so a dev party of three reads as three
+ * people, never one hero three times. Null for an id that names no role.
  */
-export const DEV_HERO_NAMES: Readonly<Record<string, string>> = {
-  barbarian: "Torva Rocciadura",
-  bard: "Coralino di Sanvaldo",
-  monk: "Kai Ventoquieto",
-  paladin: "Bren Ironbeard of the Thunderhold",
-  rogue: "Nessa Mezzanotte",
-  wizard: "Ilario Lumevera",
-};
+export function devHeroStandIn(id: string, mock: CharacterDoc): CharacterDoc | null {
+  if (!id.startsWith(DEV_FIXTURE_PREFIX)) return null;
+  const name = DEV_HERO_NAMES[id.slice(DEV_FIXTURE_PREFIX.length)];
+  return name
+    ? { ...mock, id, character: { ...mock.character, name: assertNonEmptyString(name) } }
+    : null;
+}
 
 /** True when the route id names one of the team fixtures. */
 export function isDevFixtureId(id: string): boolean {

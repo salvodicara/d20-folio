@@ -119,11 +119,15 @@ test.describe("Combat live-play loop (cockpit)", () => {
     // DISABLES to "Used" (no inline Undo toggle exists)…
     const used = page.getByRole("button", { name: "Used: Dash", exact: true });
     await expect(used).toBeDisabled();
-    // Other non-spell actions share the spent token, while spells remain usable.
+    // Other actions share the spent token. Casting is the Magic action (2024), so an
+    // Action spell is spent too; a Bonus Action spell stays live.
     await expect(
       page.getByRole("button", { name: "Used: Dodge", exact: true })
     ).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Cast: Mage Hand" })).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: "Used: Mage Hand", exact: true })
+    ).toBeDisabled();
+    await expect(page.getByRole("button", { name: /^Cast: Healing Word/ })).toBeEnabled();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     // …while the bonus board stays live (its own token is unspent).
     await expect(
@@ -238,17 +242,20 @@ test.describe("Combat live-play loop (cockpit)", () => {
     await expect(page.getByText(/break concentration/i)).toBeVisible();
     await page.getByRole("button", { name: /cast anyway/i }).click();
 
-    // Concentration swaps to Bane; casting stays available while resources remain.
+    // Concentration swaps to Bane; the cast took the turn's Action (the Magic action).
     await expect(badge).toContainText(/Bane/i);
     await expect(
-      page.getByRole("button", { name: "Cast: Bane", exact: true })
-    ).toBeEnabled();
+      page.getByRole("button", { name: "Used: Bane", exact: true })
+    ).toBeDisabled();
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
     // Undo via the cast's snackbar (the one visible Undo — the CTA grammar):
-    // concentration is restored.
+    // concentration is restored and the Action is free again.
     await page.getByRole("button", { name: "Undo", exact: true }).click();
     await expect(badge).toContainText(/Hypnotic Pattern/i);
+    await expect(
+      page.getByRole("button", { name: "Cast: Bane", exact: true })
+    ).toBeEnabled();
   });
 
   // ── Extra Attack (the double-attack answer) — scn-barbarian-extra-attack ─────
