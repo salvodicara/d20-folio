@@ -369,7 +369,7 @@
     "ridersOnHit": "Quando colpisci",
     "riderSummaryAria": "Quando colpisci, anche: {{detail}}",
     "riderFloor": "considera {{below}} come {{to}}",
-    "riderReroll": "ritira i dadi bassi",
+    "riderReroll": "tira i danni due volte, tieni uno dei due",
     "riderSpendsResource": "spende 1 uso",
     "riderSpendsHitDie": "consuma 1 Dado Vita",
     "riderScopeAttackOrSpell": "su un attacco o un incantesimo",

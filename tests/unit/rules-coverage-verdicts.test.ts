@@ -27,7 +27,7 @@ const survey = {
   classLevels: { "rogue:11": 1, "paladin:6": 1, "wizard:5": 1 },
   subclasses: {},
   species: {},
-  features: {},
+  features: { "savage-attacker": 1 },
   upcoming: {},
 };
 
@@ -36,6 +36,10 @@ const held = (extra: readonly CoverageVerdict[] = []) =>
   [];
 const of = (id: string, extra?: readonly CoverageVerdict[]) =>
   held(extra).find((row) => row.id === id);
+const feat = (id: string) =>
+  playedCoverage(survey)
+    .find((s) => s.title === "Feats and picked features")
+    ?.rows.find((row) => row.id === id);
 
 /**
  * True when a screen on the base branch (the PR's base in CI, else origin/main) already
@@ -58,7 +62,7 @@ function landedOnBase(fn: string): boolean {
 
 describe("code-checked verdicts in the played-content view", () => {
   it("the acceptance rows read the code's truth, not the declaration", () => {
-    expect(of("rogue-reliable-talent")).toMatchObject({
+    expect(feat("savage-attacker")).toMatchObject({
       coverage: "auto",
       verdict: "by-hand",
     });
@@ -92,7 +96,7 @@ describe("code-checked verdicts in the played-content view", () => {
     const md = playedCoverageMarkdown(survey);
     expect(md).toContain("| Entry | Id | Characters | Code-checked | Declared |");
     expect(md).toMatch(
-      /\| rogue-reliable-talent \| 1 \| By hand \([^|]*\) \| Declared auto ⚠ \|/
+      /\| savage-attacker \| \d+ \| By hand \([^|]*\) \| Declared auto ⚠ \|/
     );
   });
 });
