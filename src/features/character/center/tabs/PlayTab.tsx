@@ -25,6 +25,7 @@
  * - Reactions commit immediately too (their own section, same grammar).
  */
 
+import { usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { AttackOutcomeChips } from "@/features/character/center/AttackOutcomeChips";
 import { SaveOutcomeChips } from "@/features/character/center/SaveOutcomeChips";
 import {} from "@/lib/compute";
@@ -1572,6 +1573,8 @@ function CombatActionCard({
   // Mid-swings the card wears the struck-gold emphasis instead of the ring
   // (`cta.spent` is false while `attackLive`), so exactly one signal shows at a time.
   const occupant = selected || (cta.spent && attackOccupant);
+  // The action waits for this character's fight to reach the sheet.
+  const waiting = usePartyRosterStore((s) => s.castWaiting === action.id);
   // CTA verb by source — the explicit commit affordance (the flagship gesture).
   // An item-pool cast casts a spell (from the item's charges), so it takes the
   // spell "Cast" verb + a descriptive aria ("Cast a spell from <item>") — the
@@ -1675,6 +1678,7 @@ function CombatActionCard({
       // DISABLED — never a tap that toasts "already used". Reversal lives on
       // the undo system (5s toast · masthead · ⌘Z), not on the card.
       ctaDisabled={cta.disabled}
+      ctaBusy={waiting}
       // B2 — the persistent inline "why you can't use this" line (Stunned / No
       // uses left), never shown on a spent card (the "Used" label says it). A
       // condition-blocked card DIMS but stays tappable (the toast guard is the
