@@ -7,12 +7,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
+import { snapshotTurnEconomy } from "@/features/character/center/combat-hydration";
 import { parseCombatState } from "@/lib/combat-state-codec";
+import { useCombatStore } from "@/stores/combatStore";
 import { readCases } from "../../scripts/lib/forward-compat-probe";
 import { buildInput, summarize } from "../../scripts/survey-forward-compat";
 
 describe("the forward-compat check", () => {
-  const input = buildInput();
+  const input = buildInput({ store: useCombatStore, snapshot: snapshotTurnEconomy });
 
   it("writes one document per value of each closed list, and every dev character", () => {
     const byList = (list: string) =>

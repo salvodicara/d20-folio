@@ -31,12 +31,12 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import process, { argv as processArgv } from "node:process";
+import { register } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 
 import type { ActionEconomyCategory } from "@/data/types";
 import { CREATURE_SIZE_ORDER } from "@/data/types";
-import { snapshotTurnEconomy } from "@/features/character/center/combat-hydration";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { canonicalCombatField, parseCombatState } from "@/lib/combat-state-codec";
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
@@ -47,7 +47,6 @@ import { CONDITION_IDS } from "@/types/condition";
 import type { CombatState } from "@/types/combat-state";
 import type { CharacterDoc } from "@/types/character";
 import { DAMAGE_TYPES } from "@/types/damage";
-import { useCombatStore, type SelectedAction } from "@/stores/combatStore";
 
 import {
   readCases,
@@ -99,19 +98,43 @@ export function writtenDoc(doc: CharacterDoc): Record<string, unknown> {
   };
 }
 
-/** The turn the real writer (`snapshotTurnEconomy`) stores for one Action, in the
- *  canonical stored form. A cast's row is a spell row; any other a feature row. */
-function storedTurn(action: Partial<SelectedAction>): {
-  turnEconomy: unknown;
-  stored: Partial<Selected>;
-} {
-  useCombatStore.getState().endCombat();
+/** One Action as the combat store takes it (the fields this survey sets). */
+interface WriterAction {
+  id: string;
+  name: string;
+  nameLoc: { custom: string };
+  slot: "action";
+  economyCategory?: ActionEconomyCategory;
+  triggerEvents?: TriggerEvent[];
+}
+
+/** The app's turn writer: the combat store and `snapshotTurnEconomy`. Passed in, because
+ *  its modules read Vite's env at load (the script loads them after registering
+ *  `vite-env-hooks`; a test imports them directly). Typed by shape, so the scripts'
+ *  project does not compile the store's browser-only modules. */
+export interface TurnWriter<State = unknown> {
+  store: {
+    getState(): State & {
+      endCombat(): void;
+      selectAction(action: WriterAction): unknown;
+    };
+  };
+  snapshot(state: State, key: string): NonNullable<CombatState["turnEconomy"]>;
+}
+
+/** The turn the real writer stores for one Action, in the canonical stored form. A
+ *  cast's row is a spell row; any other a feature row. */
+function storedTurn<State>(
+  writer: TurnWriter<State>,
+  action: Partial<WriterAction>
+): { turnEconomy: unknown; stored: Partial<Selected> } {
+  writer.store.getState().endCombat();
   const id = action.economyCategory === "magic" ? "spell-fire-bolt" : "base-action";
-  useCombatStore
+  writer.store
     .getState()
     .selectAction({ id, name: id, nameLoc: { custom: id }, slot: "action", ...action });
-  const snapshot = snapshotTurnEconomy(useCombatStore.getState(), "3:pc-x");
-  useCombatStore.getState().endCombat();
+  const snapshot = writer.snapshot(writer.store.getState(), "3:pc-x");
+  writer.store.getState().endCombat();
   return {
     turnEconomy: canonicalCombatField("turnEconomy", snapshot),
     stored: snapshot.selected.action[0] ?? {},
@@ -120,16 +143,17 @@ function storedTurn(action: Partial<SelectedAction>): {
 
 /** One case per value the writer actually stores; a value of the type it never stores
  *  (since #1168, «magic») is listed apart: information, never a problem. */
-function writerCases(
+function writerCases<State>(
+  writer: TurnWriter<State>,
   list: string,
   values: readonly string[],
-  action: (value: string) => Partial<SelectedAction>,
+  action: (value: string) => Partial<WriterAction>,
   storedValue: (stored: Partial<Selected>) => string | undefined,
   base: Record<string, unknown>,
   notStored: Record<string, string[]>
 ): CompatCase[] {
   return values.flatMap((value) => {
-    const { turnEconomy, stored } = storedTurn(action(value));
+    const { turnEconomy, stored } = storedTurn(writer, action(value));
     if (storedValue(stored) !== value) {
       (notStored[list] ??= []).push(value);
       return [];
@@ -138,11 +162,14 @@ function writerCases(
   });
 }
 
-export function buildInput(): CompatInput & { notStored: Record<string, string[]> } {
+export function buildInput<State>(
+  writer: TurnWriter<State>
+): CompatInput & { notStored: Record<string, string[]> } {
   const base = writtenDoc(MOCK_CHARACTER);
   const notStored: Record<string, string[]> = {};
   const cases: CompatCase[] = [
     ...writerCases(
+      writer,
       "turnEconomy.action.economyCategory",
       Object.keys(ECONOMY_CATEGORIES),
       (value) => ({ economyCategory: value as ActionEconomyCategory }),
@@ -151,6 +178,7 @@ export function buildInput(): CompatInput & { notStored: Record<string, string[]
       notStored
     ),
     ...writerCases(
+      writer,
       "turnEconomy.action.triggerEvents",
       Object.keys(TRIGGER_EVENTS),
       (value) => ({ triggerEvents: [value as TriggerEvent] }),
@@ -301,7 +329,19 @@ async function run(): Promise<void> {
   const root = rootIndex > 0 ? processArgv[rootIndex + 1] : undefined;
   if (!root)
     throw new Error("--baseline-root /absolute/path/to/the/deployed/release is required");
-  const input = buildInput();
+  // The writer's modules read Vite's env at load: give them one first.
+  register(new URL("./lib/vite-env-hooks.mjs", import.meta.url));
+  // Loaded by URL, as `derived-probe.ts` loads the engine: the scripts' project then does
+  // not compile the store's browser-only modules.
+  const app = (file: string) => new URL(`../src/${file}.ts`, import.meta.url).href;
+  const [{ useCombatStore }, { snapshotTurnEconomy }] = (await Promise.all([
+    import(app("stores/combatStore")),
+    import(app("features/character/center/combat-hydration")),
+  ])) as [
+    { useCombatStore: TurnWriter["store"] },
+    { snapshotTurnEconomy: TurnWriter["snapshot"] },
+  ];
+  const input = buildInput({ store: useCombatStore, snapshot: snapshotTurnEconomy });
   const dir = await mkdtemp(join(tmpdir(), "folio-forward-compat-"));
   try {
     const inFile = join(dir, "in.json");
