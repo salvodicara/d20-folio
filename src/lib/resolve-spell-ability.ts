@@ -60,7 +60,7 @@ export const SPECIES_SPELL_ABILITY_DEFAULT: AbilityCode = "CHA";
  * three (INT, WIS, CHA), so an elf Wizard's lineage spells don't read a Charisma DC;
  * Charisma otherwise.
  */
-function unpickedSpeciesAbility(
+export function unpickedSpeciesAbility(
   character: Pick<CharacterData, "spellcasting">
 ): AbilityCode {
   const own = character.spellcasting?.ability;
