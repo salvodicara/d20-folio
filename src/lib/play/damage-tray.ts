@@ -43,6 +43,15 @@ export type TrayEffect = "damage" | "heal" | "temp-hp";
 /** The per-target multiplier, on Foundry dnd5e's scale: ¼ is a resistant target that
  *  saved for half (halve, then halve again). */
 export type TrayMultiplier = "0" | "0.25" | "0.5" | "1" | "2";
+
+/** What one damage type rides, when an action's types ride different facts. */
+export interface TypeGate {
+  resolution: "attack" | "save" | "automatic";
+  /** Only the first declared target takes it (Ice Knife's shard). */
+  primaryOnly: boolean;
+  onSave: "half" | "none";
+  onMiss: "half" | "none";
+}
 export const TRAY_MULTIPLIERS: readonly TrayMultiplier[] = ["0", "0.25", "0.5", "1", "2"];
 
 export interface DamageTrayPlan {
@@ -68,6 +77,9 @@ export interface DamageTrayPlan {
    *  the tray can then take one total per type, each meeting its own defense
    *  ({@link rowAmountByType}). */
   damageTypes?: DamageType[];
+  /** Each type's own gate, when the types ride different facts (Ice Knife: the
+   *  Piercing on the attack's hit, first target only; the Cold on each save). */
+  typeGates?: Partial<Record<DamageType, TypeGate>>;
   /** A floor on low damage-die faces (Great Weapon Fighting: a 1 or 2 counts as a
    *  3): a screen that takes the faces typed applies it with {@link applyDieFaceFloor}. */
   dieFloor?: {
@@ -266,6 +278,7 @@ export function damageTrayPlan(
     ...(split ? { perTarget: true as const } : {}),
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),
+    ...(types.size > 1 ? typeGatesOf(action) : {}),
     ...(effect === "damage" && s.damage && s.damageIfHurt
       ? { hurtDice: { base: s.damage, hurt: s.damageIfHurt } }
       : {}),
@@ -368,6 +381,42 @@ export function saveAloneOnTheLine(
   if (spec.kind !== "save") return null;
   if (!action.summary.saveAbility && action.summary.saveDC === undefined) return null;
   return { damage: spec.hasDamage };
+}
+
+/** Each type's gate, when the action's types ride different facts (a hybrid: an
+ *  attack part and a save part). Absent when every type rides the same fact. */
+function typeGatesOf(action: ResolvedAction): Pick<DamageTrayPlan, "typeGates"> {
+  const parts = combatDamageParts(action).filter((part) => !part.optional);
+  if (new Set(parts.map((part) => part.resolution)).size < 2) return {};
+  const gates: Partial<Record<DamageType, TypeGate>> = {};
+  for (const part of parts)
+    for (const type of part.damageTypes)
+      gates[type] = {
+        resolution: part.resolution,
+        primaryOnly: part.target === "primary",
+        onSave: part.damageOnSave === "half" ? "half" : "none",
+        onMiss: part.damageOnMiss === "half" ? "half" : "none",
+      };
+  return { typeGates: gates };
+}
+
+/** How much of one type a row takes by its gate (1, ½ or 0); null when the type
+ *  rides the row's own multiplier. A hand-picked multiplier always wins. */
+function typeFactor(
+  row: TrayRow,
+  plan: DamageTrayPlan,
+  type: DamageType
+): TrayMultiplier | null {
+  const gate = plan.typeGates?.[type];
+  if (!gate || row.multiplier !== factsMultiplier(row, plan)) return null;
+  if (gate.primaryOnly && plan.targets[0] !== row.targetId) return "0";
+  if (gate.resolution === "attack" && row.attack === "miss")
+    return gate.onMiss === "half" ? "0.5" : "0";
+  if (gate.resolution === "save" && (row.evades || row.saved)) {
+    if (row.evades) return row.saved ? "0" : "0.5";
+    return gate.onSave === "half" ? "0.5" : "0";
+  }
+  return "1";
 }
 
 /** The weapon's floor on low damage-die faces, when one applies. */
@@ -783,7 +832,10 @@ export function rowAmountByType(
   let sum = 0;
   for (const [type, total] of Object.entries(totals) as Array<[DamageType, number]>) {
     const amount = Math.max(0, Math.floor(total));
-    const afterRow = applyMultiplier(amount, row.multiplier);
+    const afterRow = applyMultiplier(
+      amount,
+      typeFactor(row, plan, type) ?? row.multiplier
+    );
     const own = row.defenseOn ? row.partDefense?.[type] : undefined;
     sum += own ? applyMultiplier(afterRow, defenseMultiplier(own)) : afterRow;
   }
@@ -813,7 +865,10 @@ export function rowDamageParts(
   const parts: DamageInstance[] = input.byType
     ? (Object.entries(input.byType) as Array<[DamageType, number]>).map(
         ([type, total]) => ({
-          amount: applyMultiplier(Math.max(0, Math.floor(total)), pre.multiplier),
+          amount: applyMultiplier(
+            Math.max(0, Math.floor(total)),
+            typeFactor(row, plan, type) ?? pre.multiplier
+          ),
           type,
           delivery,
         })

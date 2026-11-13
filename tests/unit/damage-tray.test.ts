@@ -23,6 +23,7 @@ import {
   parseRolledTotal,
   previewHp,
   rowAmount,
+  rowAmountByType,
   rowConditions,
   rowNeedsTotal,
   setAttackOutcome,
@@ -242,6 +243,23 @@ describe("damageTrayPlan + rows over the catalogue", () => {
     expect(plan(action("spell-magic-missile")).dice).toBe("3 × (1d4+1)");
     // Split over two creatures, each row asks its own darts.
     expect(plan(action("spell-magic-missile"), [FOE, "monster-2"]).perTarget).toBe(true);
+  });
+
+  it("Ice Knife: the Piercing rides the hit on the first target only, the Cold each save", () => {
+    const knife = plan(action("spell-ice-knife"), [FOE, "monster-2"]);
+    const totals = { piercing: 6, cold: 7 };
+    const row = (id: string) => initialTrayRow(knife, id);
+    // The struck goblin, hit and failed: both parts.
+    expect(rowAmountByType(totals, row(FOE), knife)).toBe(13);
+    // Missed but failed the save: the Cold still lands.
+    expect(
+      rowAmountByType(totals, setAttackOutcome(row(FOE), "miss", knife), knife)
+    ).toBe(7);
+    // Hit but saved: the Piercing only.
+    expect(rowAmountByType(totals, toggleSaved(row(FOE), knife), knife)).toBe(6);
+    // The neighbour: never the Piercing; the Cold on a failed save.
+    expect(rowAmountByType(totals, row("monster-2"), knife)).toBe(7);
+    expect(rowAmountByType(totals, toggleSaved(row("monster-2"), knife), knife)).toBe(0);
   });
 
   it("nothing to apply, no tray (Mage Armor; damage without a target)", () => {
