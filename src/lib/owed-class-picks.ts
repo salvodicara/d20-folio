@@ -15,7 +15,11 @@
  *     a gap, so a player who has the count is never asked;
  *   - spellbook — the Wizard's book (6, then 2 per Wizard level) vs the levelled Wizard
  *     spells on the sheet (`wizard-spellbook.ts`); the picks land in the book, not
- *     prepared.
+ *     prepared;
+ *   - expertise — two skills each time the table grants Expertise (Bard 2 and 9, Rogue
+ *     1 and 6) vs the skills at Expertise, never more than the proficient skills left
+ *     to raise. Expertise from elsewhere (a feat) counts as held, so the player is
+ *     never asked for more than the classes give.
  *
  * The counts are the level-up's own (`invocationsKnownAt`, `metamagicKnownAt`,
  * `maneuversKnownAt`, `weaponMasteryCountForClass`, the table's `cantripsKnown`),
@@ -25,6 +29,7 @@
  * Pure module — no React, no store.
  */
 import { getClassTable } from "@/data/classes";
+import { expertiseGrantsThrough } from "@/lib/creation/class-choices";
 import { getSpellById, spells as allSpells } from "@/data/spells";
 import { isWeaponProficient } from "@/lib/compute";
 import {
@@ -33,6 +38,11 @@ import {
   listFightingStyles,
 } from "@/lib/fighting-style";
 import { eligibleInvocations, invocationsKnownAt } from "@/lib/invocation-pick";
+import {
+  applyExpertisePicks,
+  EXPERTISE_PICKS_PER_GRANT,
+  listExpertiseEligibleSkills,
+} from "@/lib/expertise-pick";
 import { applyClassPicks } from "@/lib/level-up-commit";
 import {
   eligibleManeuvers,
@@ -54,7 +64,8 @@ export type ClassPickKind =
   | "maneuvers"
   | "weaponMasteries"
   | "fightingStyles"
-  | "spellbook";
+  | "spellbook"
+  | "expertise";
 
 export interface OwedClassPick {
   classId: string;
@@ -70,7 +81,7 @@ export interface ClassPickAnswer {
 }
 
 export type BuildForClassPicks = Partial<
-  Pick<CharacterData, "classes" | "spells" | "features">
+  Pick<CharacterData, "classes" | "spells" | "features" | "skills">
 >;
 
 const ORDER: readonly ClassPickKind[] = [
@@ -81,6 +92,7 @@ const ORDER: readonly ClassPickKind[] = [
   "fightingStyles",
   "cantrips",
   "spellbook",
+  "expertise",
 ];
 
 function entries(build: BuildForClassPicks): ClassEntry[] {
@@ -150,6 +162,33 @@ function heldFightingStyles(build: BuildForClassPicks): string[] {
   );
 }
 
+/** The Expertise picks each class still owes: the classes' grants minus the skills at
+ *  Expertise, capped by the proficient skills left to raise, set against the classes
+ *  in order. */
+function expertiseOwed(build: BuildForClassPicks): Map<string, number> {
+  const out = new Map<string, number>();
+  const skills = build.skills ?? {};
+  const held = Object.values(skills).filter((v) => v === "expertise").length;
+  const earned = entries(build).map(
+    (e) =>
+      [
+        e.classId,
+        expertiseGrantsThrough(e.classId, levelOf(e)) * EXPERTISE_PICKS_PER_GRANT,
+      ] as const
+  );
+  const total = earned.reduce((n, [, x]) => n + x, 0);
+  let left = Math.min(
+    Math.max(0, total - held),
+    listExpertiseEligibleSkills(skills).length
+  );
+  for (const [classId, x] of earned) {
+    const owed = Math.min(left, x);
+    if (owed > 0) out.set(classId, (out.get(classId) ?? 0) + owed);
+    left -= owed;
+  }
+  return out;
+}
+
 /** Every class pick the character owes, per class, in a stable order. */
 export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
   const out: OwedClassPick[] = [];
@@ -157,6 +196,7 @@ export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
     (f) => "srdId" in f && isManeuverPlaceholder(f.srdId)
   );
   const cantrips = cantripsOwed(build);
+  const expertise = expertiseOwed(build);
   // Styles held (style feats among the features), set against each class's
   // Fighting Style slots in class order.
   let stylesHeld = heldFightingStyles(build).length;
@@ -189,6 +229,7 @@ export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
               level
             )
           : 0,
+      expertise: expertise.get(e.classId) ?? 0,
     };
     // The slots the sheet holds open (`<class>-fighting-style` placeholders).
     const styleSlots = (build.features ?? []).filter(
@@ -228,6 +269,10 @@ export function applyOwedClassPicks(
         ...next,
         spells: [...next.spells, ...ids.map((srdId) => ({ srdId, prepared: false }))],
       };
+      continue;
+    }
+    if (answer.pick === "expertise") {
+      next = { ...next, skills: applyExpertisePicks(next.skills, ids) };
       continue;
     }
     if (answer.pick === "fightingStyles") {
@@ -291,6 +336,8 @@ export function classPickPool(
         )
       );
     }
+    case "expertise":
+      return listExpertiseEligibleSkills(build.skills ?? {});
     case "spellbook": {
       const known = new Set(
         (build.spells ?? []).flatMap((s) => ("custom" in s ? [] : [s.srdId]))

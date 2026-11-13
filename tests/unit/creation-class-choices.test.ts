@@ -18,7 +18,7 @@ import {
   type CreationDraft,
   type CreationDraftAction,
 } from "@/lib/creation/draft";
-import type { ClassChoicePicks } from "@/lib/creation/class-choices";
+import { classChoiceNeeds, type ClassChoicePicks } from "@/lib/creation/class-choices";
 
 const apply = (draft: CreationDraft, ...actions: CreationDraftAction[]) =>
   actions.reduce(creationDraftReducer, draft);
@@ -96,6 +96,19 @@ describe("the class's level-1 choices at creation", () => {
     expect(rogue.classOptions.expertise).toEqual(
       expect.arrayContaining(["athletics", "intimidation"])
     );
+  });
+
+  it("Expertise follows the class table: Bard 2 + 9, Rogue 1 + 6, two skills each time", () => {
+    // SRD 5.2.1 Bard Features: Expertise at levels 2 and 9; Rogue Features: 1 and 6.
+    const expertise = (classId: string, level: number) =>
+      classChoiceNeeds(classId, level, "").expertise;
+    expect(expertise("bard", 1)).toBe(0);
+    expect(expertise("bard", 2)).toBe(2);
+    expect(expertise("bard", 8)).toBe(2);
+    expect(expertise("bard", 9)).toBe(4);
+    expect(expertise("rogue", 1)).toBe(2);
+    expect(expertise("rogue", 5)).toBe(2);
+    expect(expertise("rogue", 6)).toBe(4);
   });
 
   it("a class change drops the class's picks and bundles, never the species'", () => {
