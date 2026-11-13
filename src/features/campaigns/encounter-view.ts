@@ -136,8 +136,13 @@ export interface EncounterCombatantView {
   maxHp: number;
   /** Current Temporary HP from the owning play-state document. */
   tempHp: number;
-  /** Fully down/defeated at 0 current HP. */
+  /** Fully down/defeated at 0 current HP (never while the live state is unknown). */
   down: boolean;
+  /** PC only, set while the member's live state (HP, AC, bonus…) has not arrived: those
+   *  fields then hold placeholders (0, "") that mean «unknown», never a real 0, and a
+   *  reader that acts on them checks this first (a fresh fight's own row read 0 HP and
+   *  dropped the roller's Concentration, 2026-11-13). */
+  liveUnknown?: true;
   /** The DM-only ambush flag (always false in a non-DM view — those rows are filtered). */
   hidden: boolean;
   // ── PC identity (present on `kind === "pc"`) ──
@@ -213,7 +218,8 @@ export function buildEncounterView(
         currentHp: live?.currentHp ?? 0,
         maxHp: live?.maxHp ?? 0,
         tempHp: live?.tempHp ?? 0,
-        down: (live?.maxHp ?? 0) > 0 && (live?.currentHp ?? 0) === 0,
+        down: live !== undefined && live.maxHp > 0 && live.currentHp === 0,
+        ...(live === undefined ? { liveUnknown: true as const } : {}),
         hidden: c.hidden ?? false,
         memberUid: c.memberUid,
         characterId: c.characterId,

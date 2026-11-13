@@ -15,6 +15,7 @@ import {
   SANDBOX_CAMPAIGN,
   SANDBOX_USERS,
   signInAs,
+  storedConcentration,
   test,
   watchErrors,
 } from "./helpers";
@@ -71,7 +72,11 @@ test("classic UI: members roll initiative from their sheets and land in the DM's
   browser,
 }) => {
   test.setTimeout(300_000);
-  reseedHero(SANDBOX_USERS.bard);
+  // Bard holds Concentration (Heroism) while rolling into the fight: the fight's first
+  // look must not read Bard's row as 0 HP and drop it (2026-11-13).
+  reseedHero(SANDBOX_USERS.bard, {
+    state: { concentration: "heroism", concentrationCastLevel: 1 },
+  });
   reseedHero(SANDBOX_USERS.paladin);
   const dm = await seat(browser);
   const bard = await seat(browser, SANDBOX_USERS.bard.email);
@@ -117,6 +122,18 @@ test("classic UI: members roll initiative from their sheets and land in the DM's
           { message: "the roll reaches the DM's card", timeout: 30_000 }
         )
         .toBe(`Initiative: ${String(total)}`);
+    }
+  });
+
+  await test.step("Bard still concentrates after rolling into the fight (on the server)", async () => {
+    // The drop came on the fight's first look, so the roll above has passed it; check
+    // over a few seconds that nothing writes it away later either.
+    for (let read = 0; read < 3; read++) {
+      expect(
+        await storedConcentration(PLAYER_BARD, SANDBOX_USERS.bard.characterId),
+        "Bard's Concentration"
+      ).toBe("heroism");
+      await bard.waitForTimeout(2_000);
     }
   });
 

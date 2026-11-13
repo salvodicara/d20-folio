@@ -49,6 +49,27 @@ function withMonster(
   };
 }
 
+describe("a member whose live state has not arrived", () => {
+  // 2026-11-13: the first look at a fresh fight read the own row as 0 HP and dropped
+  // the roller's Concentration. A missing value is unknown, never 0, never «down».
+  it("is marked unknown and never down; once the state arrives, 0 HP is down", () => {
+    const fight = encounter();
+    const unread = buildEncounterView(fight, {}, false).rows.find((r) => r.kind === "pc");
+    expect(unread?.liveUnknown).toBe(true);
+    expect(unread?.down).toBe(false);
+    const known = buildEncounterView(fight, { "pc-u1": pcLive }, false).rows.find(
+      (r) => r.kind === "pc"
+    );
+    expect(known?.liveUnknown).toBeUndefined();
+    const knockedOut = buildEncounterView(
+      fight,
+      { "pc-u1": { ...pcLive, currentHp: 0 } },
+      false
+    ).rows.find((r) => r.kind === "pc");
+    expect(knockedOut?.down).toBe(true);
+  });
+});
+
 describe("encounter scalar view", () => {
   it("projects each monster's scalar HP and keeps every batch member targetable", () => {
     const state = withMonster(encounter(), "monster-2", (monster) => ({

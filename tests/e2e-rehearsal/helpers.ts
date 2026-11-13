@@ -87,6 +87,35 @@ export async function startNewSitting(): Promise<void> {
   }
 }
 
+/** The spell a hero concentrates on, as stored on the emulator ("" when none). */
+export async function storedConcentration(
+  uid: string,
+  characterId: string
+): Promise<string> {
+  const response = await fetch(
+    `${FIRESTORE}/users/${uid}/characters/${characterId}/combat/state?mask.fieldPaths=playState.state.concentration`,
+    { headers: OWNER }
+  );
+  if (!response.ok) throw new Error(`combat state: HTTP ${String(response.status)}`);
+  const body = (await response.json()) as {
+    fields?: {
+      playState?: {
+        mapValue?: {
+          fields?: {
+            state?: {
+              mapValue?: { fields?: { concentration?: { stringValue?: string } } };
+            };
+          };
+        };
+      };
+    };
+  };
+  return (
+    body.fields?.playState?.mapValue?.fields?.state?.mapValue?.fields?.concentration
+      ?.stringValue ?? ""
+  );
+}
+
 /** The DM's characters, read straight from the emulator. */
 export async function ownerCharacterIds(): Promise<string[]> {
   const response = await fetch(`${FIRESTORE}/users/dev-owner/characters`, {
