@@ -8,6 +8,41 @@
 # The newest run that passed or failed (gh lists newest first); "" when none did.
 VERIFY_GATE_JQ='[.[]|select(.status=="completed" and (.conclusion=="success" or .conclusion=="failure"))][0].conclusion // ""'
 
+# The private pack every Verify composes with.
+VERIFY_PACK_REPO="salvodicara/d20-folio-content"
+
+# `lockstep_proves_main <repo>`: true when a passed Verify dispatched by a lockstep merge
+# (its run name carries «+ pack <sha>») ran on the very trees main and the pack's main
+# have now. A squash merge of an up-to-date pair puts exactly that tree on main, and
+# main's own Verify of it takes ~45 minutes (coordinator, 2026-11-13). Main's own
+# finished Verify of its current commit still decides; any read that fails says no.
+lockstep_proves_main() {
+  local repo="$1" main_sha main_tree pack_tree decided runs sha title pack
+  main_sha="$(gh api "repos/$repo/commits/main" --jq .sha)" || return 1
+  [ -n "$main_sha" ] || return 1
+  decided="$(gh run list --repo "$repo" --workflow verify.yml --branch main --limit 30 \
+    --json status,conclusion,headSha \
+    --jq '[.[]|select(.status=="completed" and (.conclusion=="success" or .conclusion=="failure"))][0].headSha // ""')" ||
+    return 1
+  [ "$decided" = "$main_sha" ] && return 1
+  main_tree="$(gh api "repos/$repo/commits/$main_sha" --jq .commit.tree.sha)" || return 1
+  pack_tree="$(gh api "repos/$VERIFY_PACK_REPO/commits/main" --jq .commit.tree.sha)" ||
+    return 1
+  [ -n "$main_tree" ] && [ -n "$pack_tree" ] || return 1
+  runs="$(gh api "repos/$repo/actions/workflows/verify.yml/runs?event=workflow_dispatch&status=success&per_page=30" \
+    --jq '.workflow_runs[]|"\(.head_sha) \(.display_title)"')" || return 1
+  while read -r sha title; do
+    pack="${title##*+ pack }"
+    [ -n "$sha" ] && [ "$pack" != "$title" ] || continue
+    [ "$(gh api "repos/$repo/commits/$sha" --jq .commit.tree.sha)" = "$main_tree" ] || continue
+    if [ "$(gh api "repos/$VERIFY_PACK_REPO/commits/$pack" --jq .commit.tree.sha)" = "$pack_tree" ]; then
+      echo "main's tree passed Verify as a lockstep run ($sha + pack $pack)." >&2
+      return 0
+    fi
+  done <<<"$runs"
+  return 1
+}
+
 verify_gate() {
   local repo="$1" pr="$2" verdict labelled
   if ! verdict="$(gh run list --repo "$repo" --workflow verify.yml --branch main --limit 30 \
@@ -15,6 +50,7 @@ verify_gate() {
     echo "✗ #$pr: could not read main's Verify runs (nothing merged)." >&2
     return 1
   fi
+  if [ "$verdict" != success ] && lockstep_proves_main "$repo"; then verdict=success; fi
   case "$verdict" in
     success) return 0 ;;
     failure)
