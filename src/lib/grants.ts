@@ -974,6 +974,8 @@ export interface GrantedAction {
   reactionTrigger?: ReactionTrigger;
   /** A hard cap on uses per turn. */
   maxUsesPerTurn?: number;
+  /** Another action that must already be used this turn. */
+  requiresActionThisTurn?: string;
   /** What using it does, as structured effects. */
   effects?: ReadonlyArray<CatalogueEffect>;
 }
@@ -3935,6 +3937,9 @@ export function evaluateGrants(
           ...(g.saveDcAbility ? { saveDcAbility: g.saveDcAbility } : {}),
           ...(g.reactionTrigger ? { reactionTrigger: g.reactionTrigger } : {}),
           ...(g.maxUsesPerTurn !== undefined ? { maxUsesPerTurn: g.maxUsesPerTurn } : {}),
+          ...(g.requiresActionThisTurn
+            ? { requiresActionThisTurn: g.requiresActionThisTurn }
+            : {}),
           ...(g.effects ? { effects: g.effects } : {}),
         });
         break;

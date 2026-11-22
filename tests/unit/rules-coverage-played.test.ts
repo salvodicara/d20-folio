@@ -58,12 +58,12 @@ describe("the played-content coverage view", () => {
     expect(row("Feats and picked features", "no-such-feature")?.coverage).toBe("missing");
   });
 
-  it("lists each species trait and the features of the next two levels", () => {
+  it("lists each species trait and the features of the next four levels", () => {
     const dwarf = playedCoverage(survey)
       .find((s) => s.title === "Species traits")
       ?.rows.filter((r) => r.id.startsWith("dwarf:"));
     expect(dwarf?.length).toBeGreaterThan(0);
-    expect(row("Next two levels", "rogue-cunning-strike")).toMatchObject({
+    expect(row("Next four levels", "rogue-cunning-strike")).toMatchObject({
       characters: 2,
     });
   });
