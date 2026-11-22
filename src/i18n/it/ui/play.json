@@ -1,5 +1,6 @@
 {
   "play": {
+    "partyNotLoaded": "Gruppo non ancora caricato: lanciato senza bersaglio",
     "hpTitle": "Punti ferita",
     "temp": "+{{count}} temporanei",
     "proficiency": "Competenza",

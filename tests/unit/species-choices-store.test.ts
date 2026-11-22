@@ -96,6 +96,22 @@ describe("species choices through the store", () => {
     expect(useCharacterStore.getState().character).toBe(before);
   });
 
+  it("a feat taken twice: the answer goes to the copy still unanswered", () => {
+    const doc = makeCharacterDoc();
+    useCharacterStore.getState().setCharacter({
+      ...doc,
+      character: {
+        ...doc.character,
+        features: [{ srdId: "grappler", featAbility: "STR" }, { srdId: "grappler" }],
+      },
+    });
+    useCharacterStore.getState().setFeatAbility("grappler", "DEX");
+    expect(useCharacterStore.getState().character?.character.features).toEqual([
+      { srdId: "grappler", featAbility: "STR" },
+      { srdId: "grappler", featAbility: "DEX" },
+    ]);
+  });
+
   it("owed invocations chosen on the sheet land on the Warlock entry; read-only writes nothing", () => {
     // Warlock Features table, Eldritch Invocations: 3 at L2.
     const doc = makeCharacterDoc({

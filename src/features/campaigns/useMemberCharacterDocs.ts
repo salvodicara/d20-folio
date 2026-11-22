@@ -33,7 +33,7 @@ import { useEffect, useState } from "react";
 import { getFullCharacter } from "@/lib/firestore";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
+import { devHeroStandIn, isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
 import type { CharacterDoc } from "@/types/character";
 import { readDevCharacter } from "@/lib/dev-character-document";
@@ -58,14 +58,16 @@ export async function resolveDevDoc(
   uid = "mock-uid"
 ): Promise<CharacterDoc> {
   let seed: CharacterDoc;
+  const standIn = (): CharacterDoc =>
+    devHeroStandIn(characterId, MOCK_CHARACTER) ?? { ...MOCK_CHARACTER, id: characterId };
   if (isDevFixtureId(characterId)) {
     const doc = await loadDevFixture(characterId);
-    seed = doc ?? { ...MOCK_CHARACTER, id: characterId };
+    seed = doc ?? standIn();
   } else if (isDevScenarioRouteId(characterId)) {
     const { buildDevScenario } = await import("@/lib/dev-scenarios");
     seed = buildDevScenario(characterId) ?? { ...MOCK_CHARACTER, id: characterId };
   } else {
-    seed = { ...MOCK_CHARACTER, id: characterId };
+    seed = standIn();
   }
   return readDevCharacter(uid, seed);
 }

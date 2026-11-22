@@ -155,6 +155,46 @@ function flatten(
   }
 }
 
+/** The aggregate's defense sets (Sets, which `flatten` skips): each member one
+ *  `defenses.<field>.<value>` entry, so a resistance, an immunity or a source-bound
+ *  immunity («magic can't put you to sleep») gained or lost shows as a diff. A field
+ *  one engine lacks is simply absent (an «added» or «removed» model change). */
+const DEFENSE_FIELDS = [
+  "damageResistances",
+  "damageImmunities",
+  "damageVulnerabilities",
+  "conditionImmunities",
+  "damageSourceResistances",
+] as const;
+
+export function defenses(aggregate: RawMap, out: Record<string, number | string>): void {
+  for (const field of DEFENSE_FIELDS) {
+    const value: unknown = aggregate[field];
+    const members: readonly unknown[] =
+      value instanceof Set
+        ? Array.from(value as Set<unknown>)
+        : Array.isArray(value)
+          ? (value as unknown[])
+          : [];
+    for (const member of members) {
+      if (typeof member === "string") out[`defenses.${field}.${member}`] = 1;
+    }
+  }
+  if (aggregate.allDamageResistance === true) out["defenses.allDamageResistance"] = 1;
+  const bySource: unknown = aggregate.sourceConditionImmunities;
+  if (Array.isArray(bySource)) {
+    for (const entry of bySource) {
+      if (
+        isRecord(entry) &&
+        typeof entry.condition === "string" &&
+        typeof entry.sourceId === "string"
+      )
+        out[`defenses.sourceConditionImmunities.${entry.condition}:${entry.sourceId}`] =
+          1;
+    }
+  }
+}
+
 function classIdsOf(character: unknown): string[] {
   const classes =
     isRecord(character) && Array.isArray(character.classes) ? character.classes : [];
@@ -197,6 +237,7 @@ export function probeCharacter(
       flatten(summary, `actions.${action.id}`, stats, 1);
     }
     const aggregate = engine.aggregateCharacterGrants(character, session);
+    defenses(aggregate, stats);
     const exhaustion =
       isRecord(session) && typeof session.exhaustion === "number"
         ? session.exhaustion

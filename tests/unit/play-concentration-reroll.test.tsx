@@ -95,6 +95,36 @@ describe("PlayConcentrationSave reroll", () => {
     expect(live.character?.session.inspiration).toBe(false);
   });
 
+  // BG3 shows the Inspiration reroll on a failed roll at the weight of «Continue»: the
+  // reroll is the wide lit button and «Confirm» steps down to a plain one.
+  it("on a failed roll the reroll is the lit wide button and Confirm is plain", () => {
+    render(<Live />);
+    fireEvent.click(screen.getByRole("button", { name: "Roll the die" }));
+    fireEvent.change(screen.getAllByRole("textbox")[0] as HTMLElement, {
+      target: { value: "5" },
+    });
+    const offer = screen.getByRole("button", { name: /^Indomitable: reroll \+13$/ });
+    expect(offer).toHaveAttribute("data-kind", "primary");
+    expect(offer).toHaveClass("f-wide");
+    expect(screen.getByRole("button", { name: "Confirm" })).toHaveAttribute(
+      "data-kind",
+      "ghost"
+    );
+  });
+
+  it("on a held roll nothing changes: Confirm stays the lit button", () => {
+    render(<Live />);
+    fireEvent.click(screen.getByRole("button", { name: "Roll the die" }));
+    fireEvent.change(screen.getAllByRole("textbox")[0] as HTMLElement, {
+      target: { value: "19" },
+    });
+    expect(screen.queryByRole("button", { name: /reroll/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Confirm" })).toHaveAttribute(
+      "data-kind",
+      "primary"
+    );
+  });
+
   it("without Heroic Inspiration nothing is offered for it", () => {
     const doc = makeCharacterDoc(
       { classes: [{ classId: "bard", level: 3 }] },

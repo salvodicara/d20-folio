@@ -152,7 +152,7 @@ export function PlaySheet({
   if (!doc || doc.id !== characterId) {
     return (
       <main id="main" className="f-page f-sheet">
-        <p role="status">{t(error ? "campaignScreen.notFound" : "character.loading")}</p>
+        <p role="status">{t(error ? "character.notFound" : "character.loading")}</p>
       </main>
     );
   }

@@ -10,7 +10,7 @@ import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import { asRaceId } from "@/data/srd-names";
 import type { CharacterDoc } from "@/types/character";
-import { probeCorpus, type ProbeSource } from "../../scripts/lib/derived-probe";
+import { defenses, probeCorpus, type ProbeSource } from "../../scripts/lib/derived-probe";
 import {
   fieldPattern,
   assertSameComposition,
@@ -109,6 +109,40 @@ describe("the comparison", () => {
     expect(unexpected.byField).toEqual({
       ac: { changed: { expected: 0, unexpected: 1 } },
     });
+  });
+
+  // Deploy surveys, 2026-11-12: 12 characters differed by fields only one release has,
+  // and the summary said `withUnexpected: 0`. A reader takes 0 as clean: every
+  // unexpected diff counts there; a moved number has its own count.
+  it("an unexpected field only one release has counts as unexpected, beside the moved numbers", () => {
+    const survey = surveyDerivedDiff(
+      [{ ok: true, stats: { ac: 14 } }],
+      [{ ok: true, stats: { ac: 14, "actions.weapon-whip.reachFt": 10 } }]
+    );
+    expect(survey.withUnexpected).toBe(1);
+    expect(survey.withUnexpectedChange).toBe(0);
+    expect(survey.byField).toEqual({
+      "actions.*.reachFt": { added: { expected: 0, unexpected: 1 } },
+    });
+  });
+
+  it("v0.26.2's model changes are named: the improvised weapon (#1105), Thunderwave's push (#1129)", () => {
+    const survey = surveyDerivedDiff(
+      [{ ok: true, stats: { ac: 14 } }],
+      [
+        {
+          ok: true,
+          stats: {
+            ac: 14,
+            "actions.improvised-weapon.attackBonus": 2,
+            "actions.improvised-weapon.weaponRange.thrown.farFt": 60,
+            "actions.spell-thunderwave.effectRiders.0.feet": 10,
+          },
+        },
+      ]
+    );
+    expect(survey.withUnexpected).toBe(0);
+    expect(survey.byFix).toEqual({ "#1105": 1, "#1129": 1 });
   });
 
   it("reports counts and folded field patterns only: no ids, no values", () => {
@@ -225,5 +259,38 @@ describe("it never writes", () => {
         /\.doc\(|\.collection\(|\.ref\b|writeBatch|runTransaction|bulkWriter|\.batch\(|recursiveDelete/
       );
     }
+  });
+});
+
+// The probe was blind to defenses (deploy surveys, 2026-11-12): a resistance or an
+// immunity gained or lost, such as Trance's «magic can't put you to sleep», moved
+// nothing it compared. The aggregate's defense sets are now entries of their own.
+describe("the probe reads the defenses", () => {
+  it("each resistance, immunity and source-bound immunity is one entry", () => {
+    const out: Record<string, number | string> = {};
+    defenses(
+      {
+        damageResistances: new Set(["poison"]),
+        conditionImmunities: new Set(["charmed"]),
+        sourceConditionImmunities: [{ condition: "unconscious", sourceId: "elf-trance" }],
+        allDamageResistance: false,
+      },
+      out
+    );
+    expect(out).toEqual({
+      "defenses.damageResistances.poison": 1,
+      "defenses.conditionImmunities.charmed": 1,
+      "defenses.sourceConditionImmunities.unconscious:elf-trance": 1,
+    });
+  });
+
+  it("a stored dwarf's poison resistance reaches the probe", async () => {
+    const dwarf = makeCharacterDoc({
+      race: asRaceId("dwarf"),
+      classId: "fighter",
+      level: 1,
+    });
+    const [read] = await probeCorpus(family(dwarf, "users/u1/characters/d"));
+    expect(read?.ok && read.stats["defenses.damageResistances.poison"]).toBe(1);
   });
 });
