@@ -6,7 +6,7 @@
  * Shared across all pages (Combat, Spells, Features, Equipment).
  */
 
-import { restRecovery } from "@/lib/play/rest-recovery";
+import { restRecovery, restResources } from "@/lib/play/rest-recovery";
 import { docAtClock } from "@/lib/play/campaign-clock";
 import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock";
 import type { TableRules } from "@/lib/table-rules";
@@ -3045,7 +3045,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().logEvent({
       kind: "rest",
       restKind: "long",
-      ...(rested ? restRecovery(beforeRest.session, rested.session) : {}),
+      ...(rested
+        ? restRecovery(
+            beforeRest.session,
+            rested.session,
+            restResources(resolveTrackers(beforeRest))
+          )
+        : {}),
     });
     for (const event of fades) get().logEvent(event);
     // Wholesale trio replacement (HP → full, death saves → 0): persist the whole
@@ -3081,7 +3087,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     get().logEvent({
       kind: "rest",
       restKind: "short",
-      ...(rested ? restRecovery(beforeRest.session, rested.session) : {}),
+      ...(rested
+        ? restRecovery(
+            beforeRest.session,
+            rested.session,
+            restResources(resolveTrackers(beforeRest))
+          )
+        : {}),
     });
     persistCombat(get);
     // Undo-stack FENCE (§5.4 case 9): a rest rewrites the resource baseline (pact
@@ -3489,7 +3501,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const features = character.character.features;
-    const index = features.findIndex((f) => !("custom" in f) && f.srdId === featId);
+    // A feat taken twice: answer the copy still unanswered, the one the banner lists.
+    const copies = features.flatMap((f, i) =>
+      !("custom" in f) && f.srdId === featId ? [i] : []
+    );
+    const index =
+      copies.find((i) => {
+        const f = features[i];
+        return f !== undefined && !("custom" in f) && !f.featAbility;
+      }) ??
+      copies[0] ??
+      -1;
     const feat = features[index];
     if (!feat || "custom" in feat || feat.featAbility === ability) return;
     const next = [...features];

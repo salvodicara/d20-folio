@@ -153,12 +153,15 @@ export function allyAuraOffers(
 }
 
 /** The one aura bonus an ally's saves take: the best fresh aura of another member the
- *  ally doesn't stand outside of. On by default; null when there is none. */
+ *  ally doesn't stand outside of. On by default; null when there is none. A paladin
+ *  with its own aura (`ownBonus`) takes only what the best one adds above its own: the
+ *  same feature doesn't stack (SRD 5.2.1, Combining Game Effects). */
 export function allyAura(
   party: ReadonlyArray<PartyAura>,
   selfCharacterId: string,
   nowMs: number,
-  activeFeatures: ReadonlyArray<string>
+  activeFeatures: ReadonlyArray<string>,
+  ownBonus: number | null = null
 ): { from: string; name: string; bonus: number } | null {
   const out = new Set(activeFeatures);
   const best = party
@@ -169,7 +172,7 @@ export function allyAura(
         !out.has(outOfAuraKey(member.characterId))
     )
     .sort((a, b) => b.aura.bonus - a.aura.bonus)[0];
-  return best
-    ? { from: best.characterId, name: best.name, bonus: best.aura.bonus }
-    : null;
+  if (!best) return null;
+  const bonus = best.aura.bonus - (ownBonus ?? 0);
+  return bonus > 0 ? { from: best.characterId, name: best.name, bonus } : null;
 }

@@ -80,6 +80,9 @@ export interface DamageTrayPlan {
   /** Each type's own gate, when the types ride different facts (Ice Knife: the
    *  Piercing on the attack's hit, first target only; the Cold on each save). */
   typeGates?: Partial<Record<DamageType, TypeGate>>;
+  /** The types the player picks one of for the one number (Chromatic Orb, a Monk's
+   *  Empowered Strikes); `damageType` holds the pick ({@link withDamageTypeChoice}). */
+  damageTypeChoices?: DamageType[];
   /** A floor on low damage-die faces (Great Weapon Fighting: a 1 or 2 counts as a
    *  3): a screen that takes the faces typed applies it with {@link applyDieFaceFloor}. */
   dieFloor?: {
@@ -206,12 +209,20 @@ export function damageTrayPlan(
         : null;
   const condition = items.find((item) => item.kind === "condition");
   const s = action.summary;
+  // A part whose type the player picks (Chromatic Orb, Empowered Strikes) is one
+  // number of one type: the first choice until the player picks another.
+  const damageParts = effect === "damage" ? combatDamageParts(action) : [];
+  const choicePart = damageParts.find(
+    (part) => !part.optional && part.typeMode === "choice" && part.damageTypes.length > 1
+  );
   const types = new Set(
-    effect === "damage"
-      ? combatDamageParts(action).flatMap((part) =>
-          part.optional ? [] : [...part.damageTypes]
-        )
-      : []
+    damageParts.flatMap((part) =>
+      part.optional
+        ? []
+        : part === choicePart
+          ? part.damageTypes.slice(0, 1)
+          : [...part.damageTypes]
+    )
   );
   const hasSave = Boolean(s.saveAbility || s.saveDC);
   const riderSave =
@@ -279,6 +290,9 @@ export function damageTrayPlan(
     ...(types.size === 1 ? { damageType: [...types][0] } : {}),
     ...(types.size > 1 ? { damageTypes: [...types] } : {}),
     ...(types.size > 1 ? typeGatesOf(action) : {}),
+    ...(choicePart && types.size === 1
+      ? { damageTypeChoices: [...choicePart.damageTypes] }
+      : {}),
     ...(effect === "damage" && s.damage && s.damageIfHurt
       ? { hurtDice: { base: s.damage, hurt: s.damageIfHurt } }
       : {}),
@@ -1068,4 +1082,14 @@ export function knockOutOffer(
   return hp !== undefined && hp.current > 0 && amount >= hp.current + hp.temp
     ? "knock-out"
     : null;
+}
+
+/** The plan with the player's picked damage type, when it is one of its choices; the
+ *  same plan otherwise. Rows built from it meet that type's defenses. */
+export function withDamageTypeChoice(
+  plan: DamageTrayPlan,
+  type: DamageType
+): DamageTrayPlan {
+  if (!plan.damageTypeChoices?.includes(type) || plan.damageType === type) return plan;
+  return { ...plan, damageType: type };
 }
