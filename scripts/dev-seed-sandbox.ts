@@ -9,8 +9,8 @@
  * initial documents.
  */
 
-import { teamFixturePath } from "./team-fixture";
-import { existsSync, readFileSync } from "node:fs";
+import { assertNoPrivateTerms, sandboxEnvelope } from "./team-fixture";
+import { existsSync } from "node:fs";
 import { env, exit } from "node:process";
 import { dirname, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -87,12 +87,13 @@ function loadPlayers(): Array<SandboxPlayer & { envelope: CharacterEnvelope }> {
     );
     return [];
   }
-  return PLAYER_SPECS.map((player) => ({
-    ...player,
-    envelope: JSON.parse(
-      readFileSync(teamFixturePath(ROOT, player.fixture) ?? player.fixture, "utf8")
-    ) as CharacterEnvelope,
-  }));
+  // Each fixture as the sandbox seeds it: a made-up name, no player name or lore (a CI
+  // run's logs and screenshots must never carry a real player's character).
+  return PLAYER_SPECS.map((player) => {
+    const envelope = sandboxEnvelope(ROOT, player.fixture);
+    if (!envelope) throw new Error(`no team fixture for the role ${player.fixture}`);
+    return { ...player, envelope: envelope as unknown as CharacterEnvelope };
+  });
 }
 
 async function upsertAuthUser(
@@ -168,6 +169,10 @@ async function run(): Promise<void> {
         updatedAt: now,
       },
       Timestamp.now()
+    );
+    assertNoPrivateTerms(
+      { parent, child, member: sandboxMemberCharacter(player.envelope) },
+      ROOT
     );
     const characterPath = `users/${player.uid}/characters/${player.characterId}`;
     await db.doc(characterPath).set(parent);
