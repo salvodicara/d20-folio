@@ -15999,6 +15999,17 @@ button.econ-tok-filter:active .econ-disc {
 }
 /* The rider chip never absorbs its wrapper's pointer events — the BUTTON owns
    the tap (spend) / popover (info), so the whole token is one hit target. */
+/* A rider whose toggle is off: the chip dims and the plain reason sits beside it
+   (the CTA's `.cc-reason` line). */
+.rider-chip[data-off] {
+  opacity: 0.45;
+  filter: saturate(0.6);
+}
+.rider-token-off {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .rider-chip {
   pointer-events: none;
 }

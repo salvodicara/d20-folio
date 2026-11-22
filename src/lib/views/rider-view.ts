@@ -267,7 +267,10 @@ export function summarizeRiders(
   // die-mods / heal are roll annotations, not extra dice — they don't earn a dice
   // chip on the closed face (they live in the expanded strip), but they DO count
   // toward the overflow so "+N more, expand" stays honest.
-  const damageRiders = riders.filter((r) => r.kind === "damage");
+  // A rider whose toggle is off (Brutal Strike without Reckless Attack) is not
+  // extra damage right now: it earns no dice chip on the closed face; the expanded
+  // strip shows it dimmed with what it needs.
+  const damageRiders = riders.filter((r) => r.kind === "damage" && !r.needsActive);
   const nonDamage = riders.length - damageRiders.length;
 
   const shown = damageRiders.slice(0, RIDER_CHIP_CAP);
