@@ -73,4 +73,26 @@ describe("formatOwnerDigest", () => {
     expect(msg?.html).not.toContain("<script>");
     expect(msg?.html).not.toContain("<b>x</b>");
   });
+
+  // 2026-11-22: 25 multi-tab lease lines (Firestore retries them itself) filled the
+  // digest as errors. Old clients still send them, so the digest leaves them out too.
+  it("leaves the harmless multi-tab lease line out of the errors, and says how many", () => {
+    const lease = report({
+      event: "runtime.console",
+      message:
+        "@firebase/firestore: Firestore (12.13.0): Failed to obtain primary lease for action 'X'.",
+    });
+    const msg = formatOwnerDigest({ signups: [], errors: [lease, lease, report()] });
+    expect(msg?.subject).toBe("d20 Folio today: 1 new error");
+    expect(msg?.text).not.toContain("primary lease for action");
+    expect(msg?.text).toContain("2 known-harmless lines left out");
+  });
+
+  it("sends nothing when the only new lines are known-harmless", () => {
+    const lease = report({
+      event: "runtime.console",
+      message: "Failed to obtain primary lease",
+    });
+    expect(formatOwnerDigest({ signups: [], errors: [lease] })).toBeNull();
+  });
 });

@@ -6,6 +6,8 @@
 import { describe, expect, it } from "vitest";
 
 import { restRecovery } from "@/lib/play/rest-recovery";
+import { MOCK_CHARACTER } from "@/lib/mock";
+import { grantSourceLabel, localizeTrackers } from "@/lib/views/tracker-view";
 
 const session = (patch: {
   hp?: number;
@@ -18,6 +20,9 @@ const session = (patch: {
     Object.entries(patch.trackers ?? {}).map(([id, used]) => [id, { used }])
   ),
 });
+
+/** The trackers the character has (`resolveTrackers`). */
+const HAS = new Set(["bardic-inspiration", "rage"]);
 
 describe("restRecovery", () => {
   it("a short rest: the Hit Points it healed, the Hit Dice it spent, the uses that came back", () => {
@@ -32,7 +37,8 @@ describe("restRecovery", () => {
           hp: 30,
           hitDiceUsed: 3,
           trackers: { "bardic-inspiration": 1, rage: 0 },
-        })
+        }),
+        HAS
       )
     ).toEqual({
       hpRegained: 8,
@@ -45,18 +51,52 @@ describe("restRecovery", () => {
     expect(
       restRecovery(
         session({ hp: 10, hitDiceUsed: 4 }),
-        session({ hp: 52, hitDiceUsed: 0 })
+        session({ hp: 52, hitDiceUsed: 0 }),
+        HAS
       )
     ).toEqual({ hpRegained: 42, hitDiceRegained: 4 });
   });
 
   it("nothing came back: no field at all", () => {
-    expect(restRecovery(session({}), session({}))).toEqual({});
+    expect(restRecovery(session({}), session({}), HAS)).toEqual({});
   });
 
   it("a tracker the rest created or spent is not a recovery", () => {
     expect(
-      restRecovery(session({ trackers: { a: 0 } }), session({ trackers: { a: 1, b: 0 } }))
+      restRecovery(
+        session({ trackers: { a: 0 } }),
+        session({ trackers: { a: 1, b: 0 } }),
+        new Set(["a", "b"])
+      )
     ).toEqual({});
+  });
+
+  it("a resource the rest fully reset (its entry dropped) came back in full", () => {
+    // Font of Inspiration: a short rest gives every Bardic Inspiration back, and the
+    // session drops the reset tracker (walkthrough 2026-11-13, the line said nothing).
+    expect(
+      restRecovery(session({ trackers: { "bardic-inspiration": 2 } }), session({}), HAS)
+    ).toEqual({ recovered: [{ resource: "bardic-inspiration", count: 2 }] });
+  });
+
+  it("an entry the rest cleared that the character has no tracker for came back as nothing", () => {
+    // A legacy item tracker the long rest only cleans away.
+    expect(
+      restRecovery(session({ trackers: { "winged-boots": 2 } }), session({}), HAS)
+    ).toEqual({});
+  });
+});
+
+describe("the rest line names what came back", () => {
+  it("each tracker reads as its Resources row does, in Italian and English, never its id", () => {
+    // Lyra's trackers: Bardic Inspiration, Second Wind, Action Surge and Elven
+    // Lineage's free casts. The log names a recovered one with `grantSourceLabel`,
+    // as `ActionLog` passes it; the Resources panel with `localizeTrackers`.
+    for (const locale of ["it", "en"] as const) {
+      const rows = localizeTrackers(MOCK_CHARACTER, locale);
+      expect(rows.length).toBeGreaterThan(2);
+      for (const row of rows)
+        expect(grantSourceLabel(row.id, locale), row.id).toBe(row.label);
+    }
   });
 });

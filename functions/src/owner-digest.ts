@@ -57,12 +57,30 @@ function signupLine(user: NewUserLike): string {
   return `${name} <${email}>`;
 }
 
+/**
+ * Lines a client reports as errors that are not app errors. Firestore logs the first
+ * with `console.error` when a second tab cannot take the multi-tab persistence lease,
+ * then retries on its own (2026-11-22: 25 of them filled the digest). The client now
+ * records it as a warning; clients on an older version still send it, so the digest
+ * leaves it out too. Matched on the SDK's exact wording.
+ */
+const KNOWN_HARMLESS: ReadonlyArray<{ event: string; message: RegExp }> = [
+  { event: "runtime.console", message: /Failed to obtain primary lease/ },
+];
+function knownHarmless(report: DigestReport): boolean {
+  return KNOWN_HARMLESS.some(
+    (rule) => rule.event === report.event && rule.message.test(report.message)
+  );
+}
+
 /** `null` when nothing is new: no email is sent. */
 export function formatOwnerDigest(input: {
   signups: readonly NewUserLike[];
   errors: readonly DigestReport[];
 }): MailMessage | null {
-  const { signups, errors } = input;
+  const { signups } = input;
+  const errors = input.errors.filter((report) => !knownHarmless(report));
+  const leftOut = input.errors.length - errors.length;
   if (signups.length === 0 && errors.length === 0) return null;
 
   const headline = [
@@ -74,7 +92,15 @@ export function formatOwnerDigest(input: {
     sections.push({ title: "New sign-ups", lines: signups.map(signupLine) });
   }
   if (errors.length > 0) {
-    sections.push({ title: "New errors", lines: errorLines(errors) });
+    sections.push({
+      title: "New errors",
+      lines: [
+        ...errorLines(errors),
+        ...(leftOut > 0
+          ? [`(${leftOut} known-harmless lines left out: the multi-tab lease warning)`]
+          : []),
+      ],
+    });
   }
 
   const text = [

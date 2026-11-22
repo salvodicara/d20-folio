@@ -678,7 +678,17 @@ export function createDebouncedSave(
       },
       (err: unknown) => {
         const msg = err instanceof Error ? err.message : "Save failed";
-        diagnosticsLog("error", "character.save-rejected", { message: msg });
+        diagnosticsLog("error", "character.save-rejected", {
+          message: msg,
+          // Whether the sheet is shared (its save also writes the public projection under
+          // its own rule) and whether the rules refused it (a stale revision: another
+          // tab or device saved first). Production reports could not say (2026-11-22).
+          shared: data.shared,
+          conflict:
+            typeof err === "object" &&
+            err !== null &&
+            (err as { code?: unknown }).code === "permission-denied",
+        });
         saveStatusCallbacks.onError(msg);
         callbacks?.onRejected?.(data, err);
       }

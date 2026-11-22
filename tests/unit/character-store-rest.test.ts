@@ -256,6 +256,14 @@ describe("long-rest tracker recovery", () => {
     expect(store().character?.session.trackers).toEqual({
       "wings-of-flying": { used: 1 },
     } satisfies SessionState["trackers"]);
+    // The rest line says what came back: the class resource, never a legacy item
+    // tracker the rest only cleared away.
+    const rest = store()
+      .character?.session.logEntries.map((entry) => entry.event)
+      .findLast((event) => event.kind === "rest");
+    expect(rest).toMatchObject({
+      recovered: [{ resource: "fighter-second-wind", count: 1 }],
+    });
   });
 });
 
@@ -290,6 +298,34 @@ describe("shortRest — tracker recovery", () => {
     expect(trk["fighter-action-surge"]).toBeUndefined(); // full recovery → omitted (used:0)
     expect(trk["fighter-second-wind"]).toEqual({ used: 1 }); // 2 − 1 (Second Wind regains 1)
     expect(trk["fighter-indomitable"]).toEqual({ used: 1 }); // long-rest → untouched
+  });
+
+  it("the short rest's log line carries the class resources it gave back", () => {
+    store().setCharacter(
+      mk(
+        {
+          features: [{ srdId: "fighter-action-surge" }, { srdId: "fighter-second-wind" }],
+        },
+        {
+          trackers: {
+            "fighter-action-surge": { used: 1 },
+            "fighter-second-wind": { used: 2 },
+          },
+        }
+      )
+    );
+    store().shortRest();
+    const rest = store()
+      .character?.session.logEntries.map((entry) => entry.event)
+      .findLast((event) => event.kind === "rest");
+    expect(rest).toMatchObject({
+      kind: "rest",
+      restKind: "short",
+      recovered: [
+        { resource: "fighter-action-surge", count: 1 },
+        { resource: "fighter-second-wind", count: 1 },
+      ],
+    });
   });
 
   it("preserves an indefinite homebrew concentration and HP through a short rest", () => {

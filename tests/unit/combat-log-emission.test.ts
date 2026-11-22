@@ -197,12 +197,17 @@ describe("combat-log emission at the state-seam", () => {
     store().logEvent({ kind: "hp-damage", amount: 1, current: 29, max: 40 });
     store().longRest();
     // With what it gave back (walkthrough 2026-11-12, M2): the sheet's Hit Points and
-    // Hit Dice, read before and after the rest.
+    // Hit Dice, read before and after the rest, and the class uses it recharged (the
+    // mock's 2 Bardic Inspiration and 1 Second Wind; walkthrough 2026-11-13).
     expect(last()).toEqual({
       kind: "rest",
       restKind: "long",
       hpRegained: 10,
       hitDiceRegained: 2,
+      recovered: [
+        { resource: "bard-bardic-inspiration", count: 2 },
+        { resource: "fighter-second-wind", count: 1 },
+      ],
     });
     // The pre-rest entry survives (the log is not wiped by a rest).
     expect(events().some((e) => e.kind === "hp-damage")).toBe(true);
