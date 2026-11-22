@@ -9,7 +9,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { privateTermPaths, sandboxEnvelope } from "../../scripts/team-fixture";
+import {
+  identityWordPaths,
+  privateTermPaths,
+  sandboxEnvelope,
+  teamFixturePath,
+} from "../../scripts/team-fixture";
 import { sandboxMemberCharacter } from "../../scripts/lib/sandbox-character";
 import { DEV_HERO_NAMES } from "@/lib/dev-hero-names";
 
@@ -25,6 +30,10 @@ describe.skipIf(!packed)("the sandbox seed holds no private term", () => {
       expect(envelope.build.player ?? "").toBe("");
       expect(privateTermPaths(envelope, ROOT)).toEqual([]);
       expect(privateTermPaths(sandboxMemberCharacter(envelope), ROOT)).toEqual([]);
+      // Independent of the pack's term list (which misses some roles): no word of any
+      // fixture's real character or player name survives anywhere in the envelope.
+      expect(identityWordPaths(envelope, ROOT)).toEqual([]);
+      expect(identityWordPaths(sandboxMemberCharacter(envelope), ROOT)).toEqual([]);
     });
   }
 
@@ -40,5 +49,18 @@ describe.skipIf(!packed)("the sandbox seed holds no private term", () => {
     );
     expect(found).toEqual(["build/notes"]);
     expect(privateTermPaths({ build: { notes: "clean" } }, ROOT)).toEqual([]);
+  });
+
+  it("the identity check finds a real name's word in any kept field, by path only", () => {
+    // A word of a real character name, read from the pack at run time.
+    const file = teamFixturePath(ROOT, "rogue");
+    if (!file) throw new Error("no rogue fixture");
+    const fixture = JSON.parse(readFileSync(file, "utf8")) as { build: { name: string } };
+    const word = fixture.build.name.split(/\s+/).find((w) => w.length >= 4);
+    if (!word) throw new Error("no name word");
+    expect(
+      identityWordPaths({ build: { equipment: [{ notes: `x ${word} y` }] } }, ROOT)
+    ).toEqual(["build/equipment/*/notes"]);
+    expect(identityWordPaths({ build: { notes: "clean" } }, ROOT)).toEqual([]);
   });
 });

@@ -41,6 +41,16 @@ export function sandboxEnvelope(root: string, role: string): SandboxEnvelope | n
   const envelope = JSON.parse(readFileSync(file, "utf8")) as SandboxEnvelope;
   const build: SandboxEnvelope["build"] = { ...envelope.build, name, player: "" };
   delete build.quote;
+  // Item and spell notes are free text too (one held a real name, 2026-11-22).
+  for (const list of ["equipment", "weapons", "spells"] as const) {
+    const items = build[list];
+    if (Array.isArray(items))
+      build[list] = items.map((item: unknown) =>
+        item && typeof item === "object" && "notes" in item
+          ? { ...item, notes: "" }
+          : item
+      );
+  }
   if (build.lore && typeof build.lore === "object") {
     const lore = { ...(build.lore as Record<string, unknown>) };
     for (const field of PERSONAL_TEXT) if (field in lore) lore[field] = "";
@@ -75,9 +85,59 @@ export function privateTermPaths(value: unknown, root: string): string[] {
   return [...hits];
 }
 
-/** Refuse to seed `documents` that hold a private term (paths only in the message). */
+/** The words (four letters or more) of every team fixture's real character and player
+ *  name, read from the pack at run time. Empty when the pack is absent. */
+function identityWords(root: string): string[] {
+  const manifest = resolvePath(root, "content-pack", "fixtures", "team-roles.json");
+  if (!existsSync(manifest)) return [];
+  const roles = Object.keys(JSON.parse(readFileSync(manifest, "utf8")) as object);
+  const words = new Set<string>();
+  for (const role of roles) {
+    const file = teamFixturePath(root, role);
+    if (!file || !existsSync(file)) continue;
+    const { build } = JSON.parse(readFileSync(file, "utf8")) as {
+      build?: { name?: unknown; player?: unknown };
+    };
+    for (const text of [build?.name, build?.player])
+      if (typeof text === "string")
+        for (const word of text.split(/[^\p{L}]+/u))
+          if (word.length >= 4) words.add(word.toLowerCase());
+  }
+  return [...words];
+}
+
+/**
+ * The JSON paths of every string in `value` that holds, as a whole word in any case, a
+ * word of a team fixture's real character or player name. Independent of the pack's
+ * term list, which does not name every fixture.
+ */
+export function identityWordPaths(value: unknown, root: string): string[] {
+  const words = identityWords(root);
+  if (words.length === 0) return [];
+  const patterns = words.map((word) => new RegExp(`(?<!\\p{L})${word}(?!\\p{L})`, "iu"));
+  const hits = new Set<string>();
+  const walk = (node: unknown, path: string[]): void => {
+    if (typeof node === "string") {
+      if (patterns.some((pattern) => pattern.test(node))) hits.add(path.join("/"));
+    } else if (Array.isArray(node)) {
+      for (const item of node) walk(item, [...path, "*"]);
+    } else if (node && typeof node === "object") {
+      for (const [key, item] of Object.entries(node)) walk(item, [...path, key]);
+    }
+  };
+  walk(value, []);
+  return [...hits];
+}
+
+/** Refuse to seed `documents` that hold a private term or a word of a real name (paths
+ *  only in the message). */
 export function assertNoPrivateTerms(documents: unknown, root: string): void {
-  const hits = privateTermPaths(documents, root);
+  const hits = [
+    ...new Set([
+      ...privateTermPaths(documents, root),
+      ...identityWordPaths(documents, root),
+    ]),
+  ];
   if (hits.length > 0)
     throw new Error(
       `Refusing to seed: a private term in ${hits.slice(0, 5).join(", ")}${
