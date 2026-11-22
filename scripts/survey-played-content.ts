@@ -3,7 +3,7 @@
  * READ-ONLY survey: what the owner's groups actually play, to rank the rules work by
  * it (coordinator, 2026-11-12). For every stored character it counts its classes at
  * their levels, its subclasses, its species, the catalogue features on its sheet
- * (feats, boons, picked features) and the class features it gains in its next two
+ * (feats, boons, picked features) and the class features it gains in its next four
  * levels. It never writes.
  *
  * Output: catalogue ids (public SRD or pack ids) and counts only. Never a user, a
@@ -88,7 +88,7 @@ const engine = {
 // ── The pure survey ──────────────────────────────────────────────────────────
 
 /** How far ahead "the next levels" look. */
-const LOOKAHEAD = 2;
+const LOOKAHEAD = 4;
 
 export interface PlayedContentSurvey {
   format: "d20-folio-played-content-survey-v1";
@@ -103,7 +103,7 @@ export interface PlayedContentSurvey {
   features: Record<string, number>;
   /** Custom (homebrew) features on sheets: counted, never named. */
   customFeatures: number;
-  /** Class feature id gained in a character's next two levels → characters. */
+  /** Class feature id gained in a character's next four levels → characters. */
   upcoming: Record<string, number>;
   /** Catalogue spell id on a sheet → characters holding it, and how many prepare it
    *  (always-prepared counts as prepared). */

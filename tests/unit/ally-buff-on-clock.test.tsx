@@ -26,7 +26,12 @@ vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
   writeCampaignEffects,
 }));
 
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import {
+  PARTY_WAIT_MS,
+  type PartyRoster,
+  usePartyRosterStore,
+} from "@/features/campaigns/party-roster";
+import { useToastStore } from "@/stores/toastStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { usePlayPromptStore } from "@/features/character/center/playPromptStore";
@@ -43,12 +48,16 @@ afterEach(() => {
   usePlayPromptStore.setState({ open: {} });
   vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
-  usePartyRosterStore.setState({ party: null });
+  usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
+  useToastStore.setState({ toasts: [] });
+  vi.useRealTimers();
   useUndoStore.getState().clear(null);
   writeCampaignEffects.mockClear();
 });
 
-async function castWardingBondOnTheParty(): Promise<string[]> {
+async function castWardingBondOnTheParty(
+  partyArrives: "before" | "after-the-click" | "never" = "before"
+): Promise<string[]> {
   const doc = makeCharacterDoc({
     classId: "cleric",
     level: 5,
@@ -63,20 +72,19 @@ async function castWardingBondOnTheParty(): Promise<string[]> {
   });
   useAuthStore.setState({ user: { uid: "u1" } as User });
   useCombatStatusStore.setState({ status: null });
-  usePartyRosterStore.setState({
-    party: {
-      campaignId: "camp-1",
-      characterId: doc.id,
-      selfId: "pc-u1",
-      minute: 600,
-      members: [
-        {
-          ref: { kind: "pc", combatantId: "pc-u2", memberUid: "u2", characterId: "c2" },
-          name: "Ally",
-        },
-      ],
-    },
-  });
+  const party: PartyRoster = {
+    campaignId: "camp-1",
+    characterId: doc.id,
+    selfId: "pc-u1",
+    minute: 600,
+    members: [
+      {
+        ref: { kind: "pc", combatantId: "pc-u2", memberUid: "u2", characterId: "c2" },
+        name: "Ally",
+      },
+    ],
+  };
+  if (partyArrives === "before") usePartyRosterStore.setState({ party });
   let api: ReturnType<typeof useTurnEconomy> | null = null;
   function Probe() {
     api = useTurnEconomy();
@@ -95,7 +103,23 @@ async function castWardingBondOnTheParty(): Promise<string[]> {
   act(() => {
     api?.executeAction(action);
   });
+  if (partyArrives !== "before") {
+    // While the cast waits for the party, its row shows it is working.
+    expect(usePartyRosterStore.getState().castWaiting).toBe(action.id);
+    expect(usePlayPromptStore.getState().open.target).toBeUndefined();
+  }
+  // The shell's campaign listener can answer after the sheet is already clickable.
+  if (partyArrives === "after-the-click")
+    act(() => usePartyRosterStore.getState().setParty(party, doc.id));
+  if (partyArrives === "never") {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PARTY_WAIT_MS);
+    });
+    expect(usePartyRosterStore.getState().castWaiting).toBeNull();
+    return [];
+  }
   await waitFor(() => expect(usePlayPromptStore.getState().open.target).toBeDefined());
+  expect(usePartyRosterStore.getState().castWaiting).toBeNull();
   const choices =
     usePlayPromptStore.getState().open.target?.request.step.candidates.map((c) => c.id) ??
     [];
@@ -125,6 +149,36 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
         kind: "grant-group",
         activeKey: "spell-warding-bond",
       });
+    }
+  );
+
+  it(
+    "waits for the party when the cast comes before the campaign is read",
+    { timeout: 20000 },
+    async () => {
+      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+      // Rehearsal 2026-11-13: the Paladin cast Warding Bond a moment after opening the
+      // sheet; the party was not known yet, so the slot went with no one bonded.
+      const choices = await castWardingBondOnTheParty("after-the-click");
+      expect(choices).toContain("pc-u2");
+      await waitFor(() => expect(writeCampaignEffects).toHaveBeenCalled(), {
+        timeout: 8000,
+      });
+    }
+  );
+
+  it(
+    "when the party never comes, the cast goes through and says it had no target",
+    { timeout: 20000 },
+    async () => {
+      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      await castWardingBondOnTheParty("never");
+      expect(usePlayPromptStore.getState().open.target).toBeUndefined();
+      expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
+        "Party not loaded yet: cast with no target"
+      );
+      expect(writeCampaignEffects).not.toHaveBeenCalled();
     }
   );
 });
