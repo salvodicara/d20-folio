@@ -97,3 +97,21 @@ describe("an ally's sheet", () => {
     expect(io.setMemberAura).not.toHaveBeenCalled();
   });
 });
+
+describe("a paladin's sheet in another paladin's aura", () => {
+  it("takes only what the better aura adds above its own (+3 own, +5 received → +2)", () => {
+    // the ally here is a second paladin (CHA 16: its own aura is +3)
+    useCharacterStore.setState({ character: { ...paladin(), id: "char-ally" } });
+    const { rerender } = renderHook(({ c }) => usePartyAura(c, "uid-ally", "char-ally"), {
+      initialProps: { c: campaign({ bonus: 5, reachFt: 10, at: Date.now() }) },
+    });
+    expect(useCharacterStore.getState().character?.session.partyAura).toEqual({
+      from: "char-pal",
+      name: "Aldric",
+      bonus: 2,
+    });
+    // a weaker or equal aura adds nothing: the paladin's own counts
+    rerender({ c: campaign({ bonus: 3, reachFt: 10, at: Date.now() }) });
+    expect(useCharacterStore.getState().character?.session.partyAura).toBeUndefined();
+  });
+});

@@ -169,9 +169,8 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   { id: "barbarian-primal-knowledge", verdict: "auto", evidence: ["grants.test.ts"] },
   {
     id: "barbarian-instinctive-pounce",
-    verdict: "by-hand",
-    evidence: ["conformance/11-movement.test.ts"],
-    note: "a separate free row, not attached to Rage",
+    verdict: "auto",
+    evidence: ["self-move-provider.test.tsx", "conformance/11-movement.test.ts"],
   },
   {
     id: "barbarian-extra-attack",
