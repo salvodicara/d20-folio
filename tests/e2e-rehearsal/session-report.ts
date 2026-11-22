@@ -48,6 +48,8 @@ export const INFERRED_HEADING = "Encounter 1 (inferred)";
 export interface ReportSection {
   heading: string;
   lines: string[];
+  /** A fight's round headings («Round 2»), once it reached a second round. */
+  rounds?: string[];
 }
 
 /** Text as read, with the non-breaking spaces the UI ties words with made plain. */
@@ -55,13 +57,16 @@ export function plain(text: string): string {
   return text.replace(/\u00a0/g, " ").trim();
 }
 
-/** The report's markdown (`## heading`, `- line`) as its sections. */
+/** The report's markdown (`## heading`, `### round`, `- line`) as its sections. */
 export function markdownSections(markdown: string): ReportSection[] {
   const sections: ReportSection[] = [];
   for (const line of markdown.split("\n")) {
     if (line.startsWith("## "))
       sections.push({ heading: plain(line.slice(3)), lines: [] });
-    else if (line.startsWith("- ")) sections.at(-1)?.lines.push(plain(line.slice(2)));
+    else if (line.startsWith("### ")) {
+      const section = sections.at(-1);
+      if (section) (section.rounds ??= []).push(plain(line.slice(4)));
+    } else if (line.startsWith("- ")) sections.at(-1)?.lines.push(plain(line.slice(2)));
   }
   return sections;
 }

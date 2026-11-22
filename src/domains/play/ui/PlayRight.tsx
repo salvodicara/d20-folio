@@ -327,7 +327,13 @@ function OwnReport({
   const { t } = useTranslation();
   const log = useCharacterStore((s) => s.character?.session.logEntries);
   const name = useCharacterStore((s) => s.character?.character.name ?? "");
-  const names = useOwnReportNames(name, locale);
+  // The fight's creatures by the names the tray and the initiative rail show.
+  const fight = useSheetCombat();
+  const roster = useMemo(
+    () => Object.fromEntries((fight?.view.rows ?? []).map((row) => [row.id, row.name])),
+    [fight?.view.rows]
+  );
+  const names = useOwnReportNames(name, locale, roster);
   const sections = useMemo(
     () => sessionReportSections(sheetSessionEntries(log ?? [], ME)),
     [log]
