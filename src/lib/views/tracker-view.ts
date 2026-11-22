@@ -495,6 +495,13 @@ export function grantSourceLabel(sourceId: string, locale: Locale): string {
   // them through the race SRD catalogue (Orc Relentless Endurance, etc.), else a
   // race-trait source would surface its raw session id.
   if (sourceId.startsWith("race:")) {
+    // A species' free cast (`race:<raceId>:<trait.id>:<spellId>`, Elven Lineage's
+    // Detect Magic) is named after its spell, as its Resources row is: a rest line
+    // that gives it back must never show the raw id (walkthrough 2026-11-13).
+    const segments = sourceId.split(":");
+    const spellId = segments.length >= 4 ? segments[segments.length - 1] : undefined;
+    if (spellId && hasSrd("spell", spellId, "name", locale))
+      return localizeSrd("spell", spellId, "name", locale);
     const raceLabel = raceTraitSourceLabel(sourceId, locale);
     if (raceLabel) return raceLabel;
   }

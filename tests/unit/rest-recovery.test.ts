@@ -6,6 +6,8 @@
 import { describe, expect, it } from "vitest";
 
 import { restRecovery } from "@/lib/play/rest-recovery";
+import { MOCK_CHARACTER } from "@/lib/mock";
+import { grantSourceLabel, localizeTrackers } from "@/lib/views/tracker-view";
 
 const session = (patch: {
   hp?: number;
@@ -82,5 +84,19 @@ describe("restRecovery", () => {
     expect(
       restRecovery(session({ trackers: { "winged-boots": 2 } }), session({}), HAS)
     ).toEqual({});
+  });
+});
+
+describe("the rest line names what came back", () => {
+  it("each tracker reads as its Resources row does, in Italian and English, never its id", () => {
+    // Lyra's trackers: Bardic Inspiration, Second Wind, Action Surge and Elven
+    // Lineage's free casts. The log names a recovered one with `grantSourceLabel`,
+    // as `ActionLog` passes it; the Resources panel with `localizeTrackers`.
+    for (const locale of ["it", "en"] as const) {
+      const rows = localizeTrackers(MOCK_CHARACTER, locale);
+      expect(rows.length).toBeGreaterThan(2);
+      for (const row of rows)
+        expect(grantSourceLabel(row.id, locale), row.id).toBe(row.label);
+    }
   });
 });
