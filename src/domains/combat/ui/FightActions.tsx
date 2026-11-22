@@ -11,7 +11,10 @@ export function RollDialog({
   onRoll,
   roll,
 }: {
-  bonus: number;
+  /** The roller's initiative bonus; null while it is not known yet (the party's sheets
+   *  still loading): the dialog says so and «Conferma» waits, so a roll is never ordered
+   *  or reported without it. */
+  bonus: number | null;
   onClose: () => void;
   onRoll: (d20: number) => void;
   /** The sheet's roll (D&D Beyond's roll with Advantage, BG3's roll modifiers): with
@@ -44,13 +47,14 @@ export function RollDialog({
       : Math.min(first, other)
     : first;
   const valid = ok(first) && (!two || ok(other));
-  const sign = bonus >= 0 ? "+" : "−";
-  const helpText = valid
-    ? t("fight.rollTotal", {
-        bonus: `${sign}${Math.abs(bonus)}`,
-        total: d20 + bonus,
-      })
-    : t("fight.rollHelp", { bonus: `${sign}${Math.abs(bonus)}` });
+  const known = bonus !== null;
+  const sign = (bonus ?? 0) >= 0 ? "+" : "−";
+  const shown = `${sign}${Math.abs(bonus ?? 0)}`;
+  const helpText = !known
+    ? t("fight.rollWaiting")
+    : valid
+      ? t("fight.rollTotal", { bonus: shown, total: d20 + bonus })
+      : t("fight.rollHelp", { bonus: shown });
   return (
     <Dialog
       open
@@ -65,7 +69,7 @@ export function RollDialog({
           </Button>
           <Button
             kind="primary"
-            disabled={!valid}
+            disabled={!valid || !known}
             onClick={() => {
               if (paid) roll?.paidAdvantage?.onPay(paid);
               onRoll(d20);

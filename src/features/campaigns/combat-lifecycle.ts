@@ -105,6 +105,8 @@ export interface RollPlan {
   /** The roller's roll before this one (its undo restores it). */
   previous: number | null;
   epoch: number;
+  /** The fight's round once the roll is in. */
+  round: number;
 }
 
 /**
@@ -139,6 +141,7 @@ export function planRoll(
       started: false,
       previous,
       epoch: live.epoch,
+      round: live.round,
     };
   }
   const { seeds, uids } = attached(campaign);
@@ -157,6 +160,7 @@ export function planRoll(
     started: starting,
     previous,
     epoch: fight.epoch,
+    round: fight.round,
   };
 }
 
@@ -224,6 +228,8 @@ export interface MissingRollPlan {
   /** This move started the fight. */
   started: boolean;
   epoch: number;
+  /** The fight's round once the rolls are in. */
+  round: number;
 }
 
 /** Whose initiative is missing: every PC in the fight without a roll, or, with no fight
@@ -269,9 +275,9 @@ export function planRollForMissing(
     patch = { ...patch, ...plan.patch };
     current = { ...current, ...plan.patch };
   }
-  const epoch = current.encounter?.epoch;
-  if (Object.keys(rolled).length === 0 || epoch === undefined) return null;
-  return { patch, rolled, started, epoch };
+  const fight = current.encounter;
+  if (Object.keys(rolled).length === 0 || !fight) return null;
+  return { patch, rolled, started, epoch: fight.epoch, round: fight.round };
 }
 
 /**

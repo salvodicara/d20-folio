@@ -33,6 +33,7 @@ import { create } from "zustand";
 import type { TrackerUnit } from "@/data/types";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
+import type { TurnTriggerEvent } from "@/data/types";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import { allocateCombatOutcomeOccurrenceId } from "@/lib/combat-outcomes";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -77,7 +78,7 @@ export interface SelectedAction {
   economyCategory?: EconomyActionCategory;
   /** Deterministic turn events this committed action produced. Active-state
    * duration rules consume these persisted facts after route changes. */
-  triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
+  triggerEvents?: ReadonlyArray<TurnTriggerEvent>;
   /** Exact reviewed occurrence owned by this economy occupant. */
   outcomeOccurrenceId?: string;
   /** What resource this action consumed when used (deducted immediately). */

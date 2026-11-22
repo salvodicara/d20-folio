@@ -24,9 +24,19 @@ export function openZoneTray(
   // The spell's own row that deals the zone's damage: the recurring one while the
   // spell runs (Spirit Guardians), else the cast (an instant zone).
   const rows = localizeActions(doc, locale).filter((a) => a.spellId === zone.spellId);
-  const found = rows
-    .map((action) => ({ action, plan: damageTrayPlan(action, [targetId], status.myId) }))
-    .find((entry) => entry.plan !== null);
+  const planFor = (action: (typeof rows)[number]) => ({
+    action,
+    plan: damageTrayPlan(action, [targetId], status.myId),
+  });
+  // A zone whose cast resolves nothing (Spike Growth) and that has no recurring row
+  // plays its cast row as the repeat use the zone's trigger is.
+  const found =
+    rows.map(planFor).find((entry) => entry.plan !== null) ??
+    rows
+      .map((action) =>
+        planFor({ ...action, summary: { ...action.summary, recurringUse: true } })
+      )
+      .find((entry) => entry.plan !== null);
   if (!found?.plan) return false;
   const { action, plan } = found;
   const budget = getSpellById(zone.spellId)?.budget;

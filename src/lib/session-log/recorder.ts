@@ -56,6 +56,9 @@ export function nextSessionId(head: SessionHead | null, now: Date): string {
 interface ItemOptions {
   id?: string;
   sessionId?: string;
+  /** The fight this line belongs to, when the caller knows it better than the device's
+   *  view (a roll that started the fight, written before any page saw it). */
+  seen?: SeenRound;
 }
 
 export interface SessionRecorder {
@@ -93,7 +96,7 @@ export function createSessionRecorder(deps: {
     const named = options?.sessionId;
     const sessionId = named ?? nextSessionId(await deps.store.latest(), at);
     const id = options?.id ?? newId();
-    const seen = draft.type === "event" ? deps.seen?.() : undefined;
+    const seen = draft.type === "event" ? (options?.seen ?? deps.seen?.()) : undefined;
     const item: LogItem = {
       ...draft,
       id,

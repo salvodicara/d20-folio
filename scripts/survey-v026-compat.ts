@@ -31,6 +31,8 @@
  *
  * Run with (the operator provides GOOGLE_APPLICATION_CREDENTIALS):
  *   node --import ./scripts/alias-loader.mjs scripts/survey-v026-compat.ts
+ * `--detail` adds, per rewritten character field, the rewrite's shape («number →
+ * different number», «absent → number»…) and how many documents: shapes, no values.
  */
 
 /// <reference types="node" />
@@ -171,6 +173,9 @@ export interface KindReport {
   changedOnRead: Record<string, number>;
   /** Field path → how many documents a v0.26 writer would rewrite it on (next save). */
   rewrites: Record<string, number>;
+  /** With `--detail` only: per rewritten path, the rewrite's shape (`rewriteShape`) and
+   *  how many documents. Shapes only: never a value or an id. */
+  rewriteShapes?: Record<string, Record<string, number>>;
 }
 
 export interface V026CompatSurvey {
@@ -250,6 +255,44 @@ export function changedPaths(before: unknown, after: unknown, prefix = ""): stri
   return out;
 }
 
+function kindOf(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
+/**
+ * The shape of one rewrite, from the stored value to the written one, with no value in
+ * it: «absent → number», «number → same number», «number → different number», «string →
+ * same number» (a "30" stored as text)… What a deploy reader needs to tell a harmless
+ * normalisation from a value a player would see change.
+ */
+export function rewriteShape(before: unknown, after: unknown): string {
+  if (before === undefined) return `absent → ${kindOf(after)}`;
+  if (after === undefined) return `${kindOf(before)} → absent`;
+  const from = kindOf(before);
+  const to = kindOf(after);
+  if (from === "number" && to === "number")
+    return before === after ? "number → same number" : "number → different number";
+  if (from === "string" && to === "number" && Number(before) === after)
+    return "string → same number";
+  if (from === to) return `${from} → different ${to}`;
+  return `${from} → ${to}`;
+}
+
+/** The value at a dotted path under `root` (`build.speed` under the build), or
+ *  undefined; a `*` segment (an id-keyed map) is not followed. */
+function valueAt(root: unknown, path: string, prefix: string): unknown {
+  const rest = path.startsWith(`${prefix}.`) ? path.slice(prefix.length + 1) : null;
+  if (rest === null) return undefined;
+  let value: unknown = plain(root);
+  for (const key of rest.split(".")) {
+    if (key === "*" || !isRecord(value)) return undefined;
+    value = value[key];
+  }
+  return value;
+}
+
 /** The reason code a reader's thrown quarantine carries. */
 function reasonOf(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -292,7 +335,10 @@ function combatFault(combat: unknown): [string, string[]] {
 }
 
 /** Survey the corpus. Pure: no credentials, no Firebase. */
-export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSurvey> {
+export async function surveyV026Compat(
+  corpus: V026Corpus,
+  options: { detail?: boolean } = {}
+): Promise<V026CompatSurvey> {
   const kinds = {
     user: emptyReport(),
     character: emptyReport(),
@@ -347,15 +393,24 @@ export async function surveyV026Compat(corpus: V026Corpus): Promise<V026CompatSu
       try {
         const doc = await engine.hydrateStoredCharacter("x", data, combat);
         const build = engine.serializeCharacterEnvelope(doc).build;
+        const writtenPlay = engine.sessionToPlayStateV1(doc.session);
         const rewrites = [
           ...changedPaths(data.build, build, "build"),
-          ...changedPaths(
-            playState,
-            engine.sessionToPlayStateV1(doc.session),
-            "playState"
-          ),
+          ...changedPaths(playState, writtenPlay, "playState"),
         ];
         read(kinds.character, [], rewrites);
+        if (options.detail) {
+          const shapes = (kinds.character.rewriteShapes ??= {});
+          for (const path of rewrites) {
+            const [root, written, prefix] = path.startsWith("build")
+              ? [data.build, build, "build"]
+              : [playState, writtenPlay, "playState"];
+            bump(
+              (shapes[path] ??= {}),
+              rewriteShape(valueAt(root, path, prefix), valueAt(written, path, prefix))
+            );
+          }
+        }
       } catch (error) {
         const [where, paths] = combatFault(combat);
         reject(kinds.character, reasonOf(error), where, paths);
@@ -485,7 +540,10 @@ async function run(): Promise<void> {
       uid: user.uid,
       customClaims: user.customClaims ?? {},
     }));
-    const survey = await surveyV026Compat({ documents, accounts, catalogue, truncated });
+    const survey = await surveyV026Compat(
+      { documents, accounts, catalogue, truncated },
+      { detail: processArgv.includes("--detail") }
+    );
     console.log(JSON.stringify(survey, null, 2));
   } finally {
     await deleteApp(app);

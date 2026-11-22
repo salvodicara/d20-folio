@@ -12,7 +12,7 @@
 import { doc, onSnapshot, runTransaction, serverTimestamp } from "firebase/firestore";
 
 import { DEV_BYPASS_AUTH as DEV_BYPASS } from "@/lib/dev-bypass";
-import { updateDevDocument } from "@/lib/dev-document-store";
+import { readDevDocument, updateDevDocument } from "@/lib/dev-document-store";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { db } from "@/lib/firebase";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
@@ -24,7 +24,11 @@ import {
   toCampaignDoc,
   writeCampaignCombatEffect,
 } from "./campaign-io";
-import { createSessionRecorder, type SessionRecorder } from "@/lib/session-log";
+import {
+  createSessionRecorder,
+  type SeenRound,
+  type SessionRecorder,
+} from "@/lib/session-log";
 
 import { recordCondition } from "./combat-chronicle";
 import { useCampaignStore } from "./campaignStore";
@@ -53,6 +57,7 @@ import {
   planUndoBeats,
   planReopen,
   planRoll,
+  isAttached,
   planRollForMissing,
   planUnrollMissing,
   combatPatchFields,
@@ -91,18 +96,34 @@ function setDevKeptFight(campaignId: string, fight: EncounterState | null): void
   for (const listener of devKeptListeners.get(campaignId) ?? []) listener(fight);
 }
 
+/** A move refused for a reason that is not someone else moving first: the toast says
+ *  the reason in plain words (`fight.refused.<reason>`), never «already changed». */
+export class CombatMoveRefused extends Error {
+  readonly reason: "notAttached";
+  constructor(reason: "notAttached") {
+    super(`combat move refused: ${reason}`);
+    this.reason = reason;
+  }
+}
+
 /** Apply one planned move to the campaign: a transaction in the app, the store locally. */
 async function applyMove<T>(campaignId: string, plan: Planner<T>): Promise<T | null> {
   if (import.meta.env.DEV && DEV_BYPASS) {
-    const campaign = useCampaignStore.getState().campaign;
-    if (!campaign || campaign.id !== campaignId) return null;
+    // The campaign page holds the campaign in the store; a sheet does not, so its moves
+    // (the sheet's «Tira l'iniziativa») read the local replica, else the seeded fixture.
+    const held = useCampaignStore.getState().campaign;
+    const inStore = held?.id === campaignId ? held : null;
+    const campaign =
+      inStore ??
+      readDevDocument<CampaignDoc>("campaign", campaignId) ??
+      (await import("./dev-fixture")).resolveDevCampaign(campaignId);
     const planned = plan({
       ...campaign,
       endedEncounter: devKeptFights.get(campaignId) ?? null,
     });
     if (!planned) return null;
     const { endedEncounter, ...fields } = planned.patch;
-    useCampaignStore.getState().setCampaign({ ...campaign, ...fields });
+    if (inStore) useCampaignStore.getState().setCampaign({ ...inStore, ...fields });
     // The local replica too: any other local campaign write re-emits it, and a replica
     // without the move would bring the old rolls back over the store.
     updateDevDocument<CampaignDoc>("campaign", campaignId, campaign, (current) => ({
@@ -167,10 +188,15 @@ export async function rollIntoCombat(
     uid: input.uid,
   })
 ): Promise<CombatUndo | null> {
+  const refusal: { reason?: "notAttached" } = {};
   const done = await applyMove(campaignId, (campaign) => {
     const plan = planRoll(campaign, { ...input, now: Date.now() });
+    // Not a stale-state conflict: the roller has no character the fight can take in.
+    if (!plan && !campaign.encounter && !isAttached(campaign.memberDetails[input.uid]))
+      refusal.reason = "notAttached";
     return plan && { patch: plan.patch, result: plan };
   });
+  if (!done && refusal.reason) throw new CombatMoveRefused(refusal.reason);
   if (!done) return null;
   // The player's own roll is a report line too ("Lyra: initiative 15"), as the DM's
   // roll for a missing player already is; taking a roll back writes none.
@@ -182,7 +208,8 @@ export async function rollIntoCombat(
           input.uid,
           input.roll,
           input.bonuses[`pc-${input.uid}`] ?? 0,
-          recorder
+          recorder,
+          fightOf(done)
         );
   const retractLine = async () => {
     if (line) await recorder.retract(line).catch(() => null);
@@ -220,11 +247,25 @@ export async function recordOwnInitiative(
   recorder: Pick<SessionRecorder, "record"> = createSessionRecorder({
     store: sessionLogStoreFor(campaignId),
     uid,
-  })
+  }),
+  /** The fight the roll went into, when known (see {@link fightOf}). */
+  seen?: SeenRound
 ): Promise<string | null> {
   return recorder
-    .record({ kind: "initiative", actor: `pc-${uid}`, roll, total: roll + bonus })
+    .record(
+      { kind: "initiative", actor: `pc-${uid}`, roll, total: roll + bonus },
+      seen ? { seen } : undefined
+    )
     .catch(() => null);
+}
+
+/**
+ * The fight a roll went into, stamped on its report line. The fight's start marker is
+ * written by the pages that see the fight, after the roll that started it, so the roll's
+ * line can reach the log first: the stamp keeps it in its fight (the session fold).
+ */
+function fightOf(move: { epoch: number; round: number }): SeenRound {
+  return { encounterId: String(move.epoch), round: Math.max(1, move.round) };
 }
 
 /** Pass the turn (anyone at the table in a lifecycle fight). `expectedCurrentId` is the
@@ -343,16 +384,20 @@ export async function rollForMissing(
   if (!done) return null;
   // One report line per roll: "Il Master tira per Lyra: 14" (written at once; a
   // v0.25.0 report shows it as a neutral newer-version line).
+  const seen = fightOf(done);
   const lines = await Promise.all(
     Object.entries(done.rolled).map(([uid, roll]) =>
       recorder
-        .record({
-          kind: "initiative",
-          actor: `pc-${uid}`,
-          roll,
-          total: roll + (input.bonuses[`pc-${uid}`] ?? 0),
-          rolledBy: "dm",
-        })
+        .record(
+          {
+            kind: "initiative",
+            actor: `pc-${uid}`,
+            roll,
+            total: roll + (input.bonuses[`pc-${uid}`] ?? 0),
+            rolledBy: "dm",
+          },
+          { seen }
+        )
         .catch(() => null)
     )
   );

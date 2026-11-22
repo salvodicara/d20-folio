@@ -37,7 +37,11 @@ import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-
 import { standingAtCommit, standingEffectsForTargets } from "@/lib/play/standing-effects";
 import { standingOnClock } from "@/lib/play/campaign-effects";
 import { concentrationBudgetRounds } from "@/lib/spell-duration";
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import {
+  partyKnown,
+  partyKnownSoon,
+  usePartyRosterStore,
+} from "@/features/campaigns/party-roster";
 import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import { dispelSpell } from "@/features/character/center/dispel-commit";
 import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
@@ -92,6 +96,7 @@ import {
   type SelectedAction,
 } from "@/stores/combatStore";
 import {
+  restoreCurrentTurn,
   snapshotTurnEconomy,
   syncCombatFromSession,
   syncCombatTurnContext,
@@ -104,10 +109,13 @@ import {
   registerUndoableResult,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import { fightKnown, fightKnownSoon } from "@/features/campaigns/context-settled";
 import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
+  noLegalTargetTypes,
+  recipientStateKey,
   targetStepFor,
   type TargetRoster,
   withSelfRecipient,
@@ -248,6 +256,7 @@ import { isCustomSpell, type SrdSpellRef } from "@/types/character";
 import { WISH_ID, wishDuplicatePool, wishStressDice } from "@/lib/play/wish";
 import { isWishStressed } from "@/lib/wish-state";
 import { opensSelfFormPicker } from "@/lib/polymorph";
+import { useActionRequestStore } from "./action-request-store";
 
 /** The Wizard Arcane Recovery feature's stable srdId (its tracker id too). */
 const ARCANE_RECOVERY_FEATURE_ID = "wizard-arcane-recovery";
@@ -615,6 +624,25 @@ export function TurnEconomyProvider({
     targets?: ReadonlyArray<string>;
   };
   const pendingResolutionRef = useRef<PendingResolution | null>(null);
+  // An action asked for by an offer outside the sheet (Uncanny Metabolism at the first
+  // initiative roll) runs as a tap on its row would.
+  const handleSelectRef = useRef<(action: ResolvedAction) => void>(() => undefined);
+  useEffect(() => {
+    handleSelectRef.current = (action) => handleSelect(action);
+  });
+  useEffect(
+    () =>
+      useActionRequestStore.subscribe((state, prev) => {
+        if (!state.request || state.request === prev.request) return;
+        const doc = useCharacterStore.getState().character;
+        const action = doc
+          ? localizeActions(doc, locale).find((a) => a.id === state.request?.actionId)
+          : undefined;
+        if (action) handleSelectRef.current(action);
+      }),
+    [locale]
+  );
+
   const pendingResolutionFor = (action: ResolvedAction): PendingResolution | null => {
     const pending = pendingResolutionRef.current;
     return pending?.actionId === action.id ? pending : null;
@@ -757,7 +785,16 @@ export function TurnEconomyProvider({
     ): void => {
       const openId = useCharacterStore.getState().character?.id ?? null;
       const scoped = sheetEncounter(status, openId);
+      // Read before the context sync: its reset is written back as the stored turn.
+      const stored = useCharacterStore.getState().combatTurnEconomy;
       const result = syncCombatTurnContext(scoped);
+      // A reload in a campaign fight: the fight's first status reads as a fight this
+      // sheet had not seen and resets the turn. When the stored turn is THIS turn (its
+      // key names the fight, the round and whose turn it is), bring it back; any other
+      // stored turn never matches (the rules lane's cast-reload rehearsal, 2026-11-13).
+      if (scoped && openId) {
+        restoreCurrentTurn(stored, turnEconomyKey(scoped, openId, 0), locale);
+      }
       if (result === null) return;
       useUndoStore.getState().purgeTurnScoped();
       if (result === "encounter-ended") {
@@ -3107,25 +3144,55 @@ export function TurnEconomyProvider({
       characterId: character.id,
       pool: wishDuplicatePool(),
       opener,
-      onPrepared: (prepared, commit) => {
-        const step = targetStepFor(prepared, targetRoster());
-        if (!step) {
-          commit(() => undefined, { action: prepared });
-          return;
-        }
-        setTargetRequest({ characterId: character.id, action: prepared, step, commit });
-      },
+      onPrepared: askTargetsThenCommit,
+    });
+  }
+
+  /** A type-limited spell with no such creature in the fight: say why nobody is
+   *  offered (the cast still goes on, its save asked on the row). */
+  function sayNoLegalTarget(action: ResolvedAction, roster: TargetRoster): void {
+    const types = noLegalTargetTypes(action, roster);
+    if (!types) return;
+    showToast({
+      message: t("combat.noLegalTarget", {
+        types: types.map((type) => t(`srd.creatureType_${type}`)).join(" / "),
+      }),
+      duration: 4000,
     });
   }
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
+    const doc = useCharacterStore.getState().character;
+    // Every turn action enters here. When the campaigns are read and one lists this
+    // character's fight (the pip says «Your turn») but the fight's live status has not
+    // reached the sheet, an action would count on the no-fight turn, and the fight's
+    // arrival would then reset the turn: the Action comes back (classic rehearsal,
+    // 2026-11-13). So it waits, its row busy; still unknown after the wait, nothing is
+    // spent and a toast says why. Before the campaigns are read nothing waits yet: that
+    // window belongs to the settled-context work.
+    if (doc && partyKnown(doc.id) && !fightKnown(doc.id)) {
+      usePartyRosterStore.setState({ castWaiting: action.id });
+      void fightKnownSoon(doc.id).then((known) => {
+        usePartyRosterStore.setState({ castWaiting: null });
+        if (!known) {
+          showToast({ message: t("campaignContext.unread"), duration: 6000 });
+          return;
+        }
+        executeSettled(action, intent);
+      });
+      return;
+    }
+    executeSettled(action, intent);
+  }
+
+  function executeSettled(action: ResolvedAction, intent?: ExecuteActionIntent): void {
+    const doc = useCharacterStore.getState().character;
     // The classic sheet asks which weapon a binding names (a screen that draws its
     // own prompts asks before calling, and passes the weapon).
-    const doc = useCharacterStore.getState().character;
     if (renderPrompts && !intent?.weapon && doc) {
       const step = weaponPickStep(doc, action, locale);
       if (step.kind === "bind") {
-        executeAction(action, { ...intent, weapon: step.weapon });
+        executeSettled(action, { ...intent, weapon: step.weapon });
         return;
       }
       if (step.kind === "ask") {
@@ -3149,18 +3216,45 @@ export function TurnEconomyProvider({
       ...(intent?.spared ? { spared: intent.spared } : {}),
     };
     const executable = execution.ritual ? asRitualAction(action) : action;
-    prepareResolution(
-      executable,
-      (prepared, commit) => {
-        const step = targetStepFor(prepared, targetRoster());
-        if (!step) {
-          commit(() => undefined, { action: prepared });
-          return;
-        }
-        setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
-      },
-      execution
-    );
+    prepareResolution(executable, askTargetsThenCommit, execution);
+  }
+
+  /**
+   * The «Su chi?» step, then the commit. Out of a fight, a state left on its recipient
+   * offers the party, so the cast waits (briefly) for the shell to have read it: a click
+   * right after opening the sheet would otherwise spend the slot on no one.
+   */
+  function askTargetsThenCommit(prepared: ResolvedAction, commit: PreparedCommit): void {
+    const ask = (partyMissing = false) => {
+      const roster = targetRoster();
+      const step = targetStepFor(prepared, roster);
+      if (!step) {
+        sayNoLegalTarget(prepared, roster);
+        commit(() => undefined, { action: prepared });
+        // The slot is never spent in silence: the party never came, so no one got it.
+        if (partyMissing)
+          showToast({ message: t("play.partyNotLoaded"), duration: 6000 });
+        return;
+      }
+      setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
+    };
+    const doc = useCharacterStore.getState().character;
+    const waits =
+      doc &&
+      !useCombatStatusStore.getState().status &&
+      recipientStateKey(prepared) &&
+      combatEffectsV26On() &&
+      !partyKnown(doc.id);
+    if (!waits) {
+      ask();
+      return;
+    }
+    // The pressed row shows it is working while the party is read.
+    usePartyRosterStore.setState({ castWaiting: prepared.id });
+    void partyKnownSoon(doc.id).then((known) => {
+      usePartyRosterStore.setState({ castWaiting: null });
+      ask(!known);
+    });
   }
 
   /** This player's combatant id: the live encounter's, else the uid-derived one. */

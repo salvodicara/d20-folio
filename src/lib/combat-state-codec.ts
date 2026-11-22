@@ -18,6 +18,19 @@ import { normalizeConcentrationRef } from "@/lib/concentration";
 import { conformActiveCombatEffects } from "@/lib/combat-effect-io";
 import { parseCombatOutcomeReceipt } from "@/lib/combat-outcomes";
 import { parsePersistedPlayStateV1 } from "@/lib/session-state-codec";
+import {
+  ACTION_ECONOMY_CATEGORIES,
+  TURN_TRIGGER_EVENTS as TRIGGER_EVENTS,
+} from "@/data/types";
+import { diagnosticsLog } from "@/lib/diagnostics/logger";
+
+/** The economy categories the saved turn's reader keeps (the type's own list). */
+export const TURN_ECONOMY_CATEGORIES: ReadonlyArray<
+  (typeof ACTION_ECONOMY_CATEGORIES)[number]
+> = Object.freeze([...ACTION_ECONOMY_CATEGORIES]);
+/** The turn events the saved turn's reader keeps (the type's own list). */
+export const TURN_TRIGGER_EVENTS: ReadonlyArray<(typeof TRIGGER_EVENTS)[number]> =
+  Object.freeze([...TRIGGER_EVENTS]);
 
 const STRICT_V1_FIELDS = [
   "activeEffects",
@@ -25,6 +38,11 @@ const STRICT_V1_FIELDS = [
   "turnEconomy",
   "appliedEncounterEffects",
 ] as const;
+
+/** Whether a stored value is one of a closed list's members. */
+function isOneOf<T extends string>(list: ReadonlyArray<T>, value: unknown): value is T {
+  return (list as ReadonlyArray<unknown>).includes(value);
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -243,7 +261,11 @@ function parseStoredCombatState(
               pendingConcentrationSaves
             )
           ? "canonical:pendingConcentrationSaves"
-          : !presentFieldIsCanonical(data, "turnEconomy", turnEconomy)
+          : !presentFieldIsCanonical(
+                withoutUnknownTurnValues(data),
+                "turnEconomy",
+                turnEconomy
+              )
             ? "canonical:turnEconomy"
             : !presentFieldIsCanonical(data, "appliedEncounterEffects", applied)
               ? "canonical:appliedEncounterEffects"
@@ -313,6 +335,62 @@ function parsePendingConcentrationSaves(value: unknown): PendingConcentrationSav
   return pending;
 }
 
+const SLOTS = ["action", "bonus", "free"] as const;
+const reportedUnknownTurnValues = new Set<string>();
+
+/**
+ * The stored document with the turn values this build doesn't know taken out: an
+ * economy category or a turn event a newer build wrote. The reader drops exactly
+ * these, so the canonical check must not refuse the sheet for them (#1158); every
+ * other difference still refuses it. Each dropped path is logged once per page load,
+ * by key only.
+ */
+function withoutUnknownTurnValues(
+  data: Readonly<Record<string, unknown>>
+): Readonly<Record<string, unknown>> {
+  const turn = data.turnEconomy;
+  if (!isRecord(turn) || !isRecord(turn.selected)) return data;
+  const dropped: string[] = [];
+  const selected: Record<string, unknown> = { ...turn.selected };
+  for (const slot of SLOTS) {
+    const rows = selected[slot];
+    if (!Array.isArray(rows)) continue;
+    selected[slot] = rows.map((row: unknown, index) => {
+      if (!isRecord(row)) return row;
+      const { economyCategory, triggerEvents, ...rest } = row;
+      const kept: Record<string, unknown> = { ...rest };
+      const unknownCategory =
+        typeof economyCategory === "string" &&
+        !isOneOf(TURN_ECONOMY_CATEGORIES, economyCategory);
+      if (unknownCategory) dropped.push(`selected.${slot}[${index}].economyCategory`);
+      else if (economyCategory !== undefined) kept.economyCategory = economyCategory;
+      if (Array.isArray(triggerEvents)) {
+        const known = triggerEvents.filter(
+          (event: unknown) =>
+            typeof event !== "string" || isOneOf(TURN_TRIGGER_EVENTS, event)
+        );
+        if (known.length < triggerEvents.length) {
+          dropped.push(`selected.${slot}[${index}].triggerEvents`);
+        }
+        if (known.length > 0 || known.length === triggerEvents.length) {
+          kept.triggerEvents = known;
+        }
+      } else if (triggerEvents !== undefined) {
+        kept.triggerEvents = triggerEvents;
+      }
+      return kept;
+    });
+  }
+  if (dropped.length === 0) return data;
+  for (const path of dropped) {
+    if (reportedUnknownTurnValues.has(path)) continue;
+    reportedUnknownTurnValues.add(path);
+    console.warn(`[combat-state] dropped unknown turn value: ${path}`);
+    diagnosticsLog("warn", "combat-state.unknown-turn-value", { path });
+  }
+  return { ...data, turnEconomy: { ...turn, selected } };
+}
+
 function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
   if (typeof value !== "object" || value === null) return undefined;
   const row = value as Record<string, unknown>;
@@ -331,20 +409,12 @@ function parseTurnEconomy(value: unknown): CombatState["turnEconomy"] {
           const action = candidate as Record<string, unknown>;
           const name = parseLocText(action.name);
           if (typeof action.id !== "string" || action.id.length === 0 || !name) return [];
-          const economyCategory =
-            action.economyCategory === "attack" ||
-            action.economyCategory === "dash" ||
-            action.economyCategory === "disengage" ||
-            action.economyCategory === "hide" ||
-            action.economyCategory === "utilize" ||
-            // A cast is the Magic action (#1140).
-            action.economyCategory === "magic"
-              ? action.economyCategory
-              : undefined;
+          const economyCategory = isOneOf(TURN_ECONOMY_CATEGORIES, action.economyCategory)
+            ? action.economyCategory
+            : undefined;
           const triggerEvents = Array.isArray(action.triggerEvents)
-            ? action.triggerEvents.filter(
-                (event): event is "attack" | "bonus-extend" =>
-                  event === "attack" || event === "bonus-extend"
+            ? action.triggerEvents.filter((event: unknown) =>
+                isOneOf(TURN_TRIGGER_EVENTS, event)
               )
             : [];
           return [

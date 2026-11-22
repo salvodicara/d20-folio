@@ -51,13 +51,38 @@ export function turnEconomyKey(
     : `solo:${characterId}:${soloRound}`;
 }
 
+/**
+ * A cast's Action is the Magic action, and only spells produce it: their rows are
+ * `spell-<id>` (catalogue and pack) or `custom-spell-<instance>` (homebrew). The client
+ * live today (v0.26.1) refuses a whole combat/state whose stored turn says «magic» (its
+ * closed list predates it; forward-compat check, 2026-11-13), so a cast's category is
+ * never stored: it is derived back from the row on restore. Every other category is
+ * stored as before.
+ */
+const SPELL_ROW = /^(custom-)?spell-/;
+
+function storedCategory(
+  action: SelectedAction
+): Pick<PersistedTurnAction, "economyCategory"> {
+  return action.economyCategory && action.economyCategory !== "magic"
+    ? { economyCategory: action.economyCategory }
+    : {};
+}
+
+function restoredCategory(
+  action: PersistedTurnAction
+): Pick<SelectedAction, "economyCategory"> {
+  if (action.economyCategory) return { economyCategory: action.economyCategory };
+  return SPELL_ROW.test(action.id) ? { economyCategory: "magic" } : {};
+}
+
 function persistedAction(action: SelectedAction): PersistedTurnAction {
   return {
     id: action.id,
     name: action.nameLoc ?? { custom: action.name },
     slot: action.slot,
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
-    ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...storedCategory(action),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
     ...(action.outcomeOccurrenceId
       ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
@@ -104,7 +129,7 @@ function selectedAction(action: PersistedTurnAction, locale: Locale): SelectedAc
     nameLoc: action.name,
     slot: action.slot,
     ...(action.isAttackGroup ? { isAttackGroup: true } : {}),
-    ...(action.economyCategory ? { economyCategory: action.economyCategory } : {}),
+    ...restoredCategory(action),
     ...(action.triggerEvents?.length ? { triggerEvents: action.triggerEvents } : {}),
     ...(action.outcomeOccurrenceId
       ? { outcomeOccurrenceId: action.outcomeOccurrenceId }
@@ -178,6 +203,21 @@ function turnIsBaseline(): boolean {
   );
 }
 
+/**
+ * Bring back the stored turn when it is the fight's current turn and the live turn is still
+ * untouched. A reload in a campaign fight needs it: the fight's first status reads as a fight
+ * the sheet had not seen and resets the turn (see `syncCombatTurnContext`).
+ */
+export function restoreCurrentTurn(
+  turnEconomy: CombatState["turnEconomy"],
+  currentTurnKey: string,
+  locale: Locale
+): void {
+  if (turnEconomy?.key === currentTurnKey && turnIsBaseline()) {
+    restoreTurnEconomy(turnEconomy, locale);
+  }
+}
+
 export function syncCombatFromSession(
   characterId: string,
   combatRound: number,
@@ -195,9 +235,7 @@ export function syncCombatFromSession(
     if (store.fightStarted !== soloFightStarted) store.setFightStarted(soloFightStarted);
     // Covers the char-doc-first / combat-subdoc-second load ordering without ever
     // overwriting a newer local commit: a late snapshot hydrates only a baseline turn.
-    if (currentTurnKey && turnEconomy?.key === currentTurnKey && turnIsBaseline()) {
-      restoreTurnEconomy(turnEconomy, locale);
-    }
+    if (currentTurnKey) restoreCurrentTurn(turnEconomy, currentTurnKey, locale);
     return false;
   }
   // Fresh character — reset then seed (a switch must not inherit A's round/roll).

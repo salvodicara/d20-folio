@@ -32,6 +32,7 @@ REQUIRED=(
   "design rules (Linux)"
   "functions"
   "partition guards (composed)"
+  "e2e smoke"
 )
 
 say() { printf '%s\n' "$*" >&2; }

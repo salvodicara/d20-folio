@@ -22,6 +22,7 @@ import {
   stepCombatTurnBack,
   subscribeToEndedCombat,
   type CombatUndo,
+  CombatMoveRefused,
 } from "@/features/campaigns/combat-lifecycle-io";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import type { MonsterInput } from "@/lib/play/encounter";
@@ -59,6 +60,10 @@ export function useFightMove(onToast: Toaster) {
         });
       })
       .catch((error: unknown) => {
+        if (error instanceof CombatMoveRefused) {
+          onToast(t(`fight.refused.${error.reason}`));
+          return;
+        }
         diagnosticsLog("warn", "combat.move-failed", { message: String(error) });
         onToast(t("fight.failed"));
       });

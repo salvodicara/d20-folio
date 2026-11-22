@@ -35,6 +35,7 @@
 import type { SessionState } from "@/types/character";
 import type { LocText } from "@/lib/loc-text";
 import type { EconomyActionCategory } from "@/lib/combat-economy";
+import type { TurnTriggerEvent } from "@/data/types";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 import type { CombatOutcomeReceipt } from "@/types/combat-outcome";
 import type { ConcentrationRef } from "@/types/ids";
@@ -47,7 +48,7 @@ export interface PersistedTurnAction {
   slot: "action" | "bonus" | "free";
   isAttackGroup?: boolean;
   economyCategory?: EconomyActionCategory;
-  triggerEvents?: ReadonlyArray<"attack" | "bonus-extend">;
+  triggerEvents?: ReadonlyArray<TurnTriggerEvent>;
   /** Exact reviewed occurrence owned by this economy occupant. */
   outcomeOccurrenceId?: string;
 }

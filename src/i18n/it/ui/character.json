@@ -209,6 +209,7 @@
     "flatDamageReduction": "{{types}} −{{amount}}",
     "flatDamageReductionInHeavyArmor": "con armatura pesante",
     "deadLabel": "Morto",
-    "stableLabel": "0 PF · Stabile"
+    "stableLabel": "0 PF · Stabile",
+    "initiativeFightUnread": "Non riesco ancora a leggere lo scontro della campagna. Riprova tra un momento."
   }
 }

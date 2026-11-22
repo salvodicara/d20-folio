@@ -63,4 +63,16 @@ describe("ResourceRail — held states", () => {
     );
     expect(useCharacterStore.getState().character?.session.concentration).toBe("");
   });
+
+  it("Bless lit on me: its +1d4 reads on every attack and save, not «next»", () => {
+    loadCleric(["spell-bless"]);
+    render(
+      <MemoryRouter>
+        <ResourceRail />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("Every attack +1d4")).toBeTruthy();
+    expect(screen.getByText("Every save +1d4")).toBeTruthy();
+    expect(screen.queryByText(/^Next (attack|save) \+1d4$/)).toBeNull();
+  });
 });
