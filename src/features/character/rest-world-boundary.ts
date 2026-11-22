@@ -52,7 +52,7 @@
  * boundaries and are never conflated with a rest.
  */
 
-import { restRecovery } from "@/lib/play/rest-recovery";
+import { restRecovery, restResources } from "@/lib/play/rest-recovery";
 import { advanceTimeOfDay, restCrossesDawn } from "@/lib/play/time";
 import { LONG_REST_MINUTES, SHORT_REST_MINUTES } from "@/lib/play/rests";
 import i18next from "i18next";
@@ -646,7 +646,13 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
   live.logEvent({
     kind: "rest",
     restKind: kind,
-    ...(rested ? restRecovery(before.session, rested.session) : {}),
+    ...(rested
+      ? restRecovery(
+          before.session,
+          rested.session,
+          restResources(resolveTrackers(before))
+        )
+      : {}),
     ...(entered.hitDiceSpent ? { hitDiceSpent: entered.hitDiceSpent } : {}),
   });
   for (const event of fades) live.logEvent(event);

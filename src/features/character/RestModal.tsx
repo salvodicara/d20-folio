@@ -318,6 +318,17 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                 highlight
               />
             )}
+            {/* Either rest: what it recharged (a short rest gives Font of Inspiration's
+                dice back; walkthrough 2026-11-13, the summary showed only HP). */}
+            {summary.trackersRestored > 0 && (
+              <SummaryRow
+                label={t("rest.trackersReset")}
+                value={t("rest.trackersRestoredValue", {
+                  count: summary.trackersRestored,
+                })}
+                highlight
+              />
+            )}
             {summary.itemResourceUnitsRecovered > 0 && (
               <SummaryRow
                 label={t("rest.itemResourcesRecovered")}
@@ -341,15 +352,6 @@ function RestFlow({ onClose }: { onClose: () => void }) {
                   <SummaryRow
                     label={t("rest.slotsRestored")}
                     value={t("rest.slotsRestoredValue", { count: summary.slotsRestored })}
-                    highlight
-                  />
-                )}
-                {summary.trackersRestored > 0 && (
-                  <SummaryRow
-                    label={t("rest.trackersReset")}
-                    value={t("rest.trackersRestoredValue", {
-                      count: summary.trackersRestored,
-                    })}
                     highlight
                   />
                 )}

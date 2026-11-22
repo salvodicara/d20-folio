@@ -61,6 +61,18 @@ describe("RestModal — clear short-rest input", () => {
     expect(store().character?.session.hitDice.used).toBe(3);
   });
 
+  it("says the uses a short rest recharged (Font of Inspiration and Second Wind)", async () => {
+    seed();
+    openRest();
+    fireEvent.click(confirm());
+    await screen.findByText("Short Rest Complete");
+    // Walkthrough 2026-11-13: the summary showed only the Hit Points.
+    expect(screen.getByText("Features recharged")).toBeInTheDocument();
+    expect(screen.getByText("Features recharged").parentElement).toHaveTextContent(
+      "3 uses"
+    ); // 2 Bardic Inspiration + 1 Second Wind
+  });
+
   it("clears the old roll when the dice count changes and adds CON once per die", async () => {
     seed();
     openRest();
