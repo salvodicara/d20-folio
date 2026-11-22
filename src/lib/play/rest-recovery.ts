@@ -12,11 +12,23 @@ interface RestSide {
   trackers: Readonly<Record<string, { used: number }>>;
 }
 
-export function restRecovery(before: RestSide, after: RestSide): RestRecovery {
+/**
+ * `resources` are the trackers the character has (`resolveTrackers`). A rest that
+ * fully resets one of them drops its entry (no entry = 0 used), so a missing entry
+ * counts as all uses back; any other entry the rest clears (a legacy item tracker)
+ * came back as nothing (walkthrough 2026-11-13: Font of Inspiration went unsaid).
+ */
+export function restRecovery(
+  before: RestSide,
+  after: RestSide,
+  resources: ReadonlySet<string>
+): RestRecovery {
   const hp = after.hp.current - before.hp.current;
   const dice = after.hitDice.used - before.hitDice.used;
   const recovered = Object.entries(before.trackers).flatMap(([resource, state]) => {
-    const count = state.used - (after.trackers[resource]?.used ?? state.used);
+    const left =
+      after.trackers[resource]?.used ?? (resources.has(resource) ? 0 : state.used);
+    const count = state.used - left;
     return count > 0 ? [{ resource, count }] : [];
   });
   return {
@@ -25,4 +37,11 @@ export function restRecovery(before: RestSide, after: RestSide): RestRecovery {
     ...(dice < 0 ? { hitDiceRegained: -dice } : {}),
     ...(recovered.length > 0 ? { recovered } : {}),
   };
+}
+
+/** The ids of the trackers a character has, for {@link restRecovery}. */
+export function restResources(
+  trackers: ReadonlyArray<{ id: string }>
+): ReadonlySet<string> {
+  return new Set(trackers.map((tracker) => tracker.id));
 }
