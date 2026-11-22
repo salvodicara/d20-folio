@@ -150,9 +150,9 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   { id: "rogue-evasion", verdict: "auto", evidence: ["evasion-tray.test.ts"] },
   {
     id: "rogue-reliable-talent",
-    verdict: "by-hand",
+    verdict: "auto",
     evidence: ["reliable-talent.test.ts", "play-check.test.tsx"],
-    note: "automatic on the check entries (Hide, escape, Search/Study/Influence) on both UIs; checks rolled at the table keep the rail note",
+    note: "the floor applies wherever the sheet takes the d20 (Hide, escape, Search/Study/Influence) on both UIs; other checks are rolled at the table, where the sheet shows only the bonus",
   },
   { id: "rogue-uncanny-dodge", verdict: "auto", evidence: ["damage-stages.test.ts"] },
   // Barbarian
@@ -212,9 +212,9 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   ),
   {
     id: "monk-uncanny-metabolism",
-    verdict: "by-hand",
-    evidence: ["feature-action-effects.test.ts"],
-    note: "one tap works; nothing prompts it at initiative",
+    verdict: "auto",
+    evidence: ["feature-action-effects.test.ts", "uncanny-metabolism-offer.test.tsx"],
+    note: "offered at the first initiative roll (a toast), one tap runs it",
   },
   // Wizard
   {
@@ -254,8 +254,8 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   {
     id: "savage-attacker",
     verdict: "by-hand",
-    evidence: ["rider-view.test.ts"],
-    note: "no once-per-turn tracking",
+    evidence: ["rider-view.test.ts", "savage-attacker-label.test.ts"],
+    note: "a reminder on the weapon row («roll the damage twice, keep either», 1/turn); rolled at the table, no use tracking",
   },
   // Code-checked by the rules lane (2026-11-12), the played rows that were unproven.
   {
@@ -399,9 +399,12 @@ export const PUBLIC_VERDICTS: readonly CoverageVerdict[] = [
   },
   {
     id: "elf:elven-lineage",
-    verdict: "by-hand",
-    evidence: ["species-lineage-spells.test.ts"],
-    note: "High Elf cantrip swap after a Long Rest not offered",
+    verdict: "auto",
+    evidence: [
+      "species-lineage-spells.test.ts",
+      "high-elf-cantrip-swap.test.ts",
+      "play-cantrip-swap.test.tsx",
+    ],
   },
   {
     id: "elf:fey-ancestry",
