@@ -10,11 +10,14 @@ Verify already proved green; it never re-verifies or builds anything new.
 
 1. **Owner's word.** Get an explicit yes for this deploy, in this conversation. Done when the owner has
    said yes to this SHA.
-2. **Migrations first.** Read "Pending for the next deploy" in `docs/RELEASE.md` and the
-   "Dati e compatibilità" list in `docs/release/vX.Y.Z-draft.md`, and run each one (and
-   any other the SHA's new stored shape needs) through the `live-data-migration` skill to completion.
-   Done when every pending migration's `--check` is green against production; `deploy.yml` re-runs
-   those checks and refuses to promote otherwise.
+2. **Stored data and the live client.** Follow "Before you deploy" in `docs/RELEASE.md` and the
+   "Dati e compatibilità" list in `docs/release/vX.Y.Z-draft.md`:
+   - every pending migration through the `live-data-migration` skill, its `--check` green;
+   - the forward-compat check against the live release (`survey-forward-compat.ts --baseline-root`),
+     with no refused value;
+   - the compat survey (`--detail`) and the derived diff, with no unexpected change.
+     A new value in a stored closed list is a stored-shape change. Done when all of them are green;
+     `deploy.yml` re-runs the migration checks and refuses to promote otherwise.
 3. **Dispatch.** From a clean checkout equal to `origin/main`: `just deploy`. It only dispatches
    `deploy.yml`, which waits for green CI + Verify, refuses an unverified content-pack commit, backs up
    Firestore, deploys Functions, then Hosting with the Firestore/Storage rules, and requires SAFE-01
