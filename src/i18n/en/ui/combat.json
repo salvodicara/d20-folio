@@ -43,7 +43,7 @@
     "repeatSaveSucceeded": "Saved: end it",
     "counteredToast": "Countered: {{name}} · level {{level}} slot back",
     "counteredAria": "Countered: {{name}}. Get its level {{level}} slot back",
-    "countered": "Countered",
+    "countered": "Countered?",
     "declareApplyFailed": "Couldn't apply the effect. The DM can correct it from the encounter.",
     "resolveNextRollAdjustment": "Next {{roll}} {{sign}}{{dice}}",
     "resolveEachRollAdjustment": "Every {{roll}} {{sign}}{{dice}}",

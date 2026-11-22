@@ -43,7 +43,7 @@
     "repeatSaveSucceeded": "Riuscito: termina",
     "counteredToast": "Contrastato: {{name}} · slot di {{level}}° livello ripreso",
     "counteredAria": "Contrastato: {{name}}. Riprendi lo slot di {{level}}° livello",
-    "countered": "Contrastato",
+    "countered": "Contrastato?",
     "declareApplyFailed": "Impossibile applicare l'effetto. Il DM può correggerlo dallo scontro.",
     "resolveNextRollAdjustment": "Prossimo {{roll}} {{sign}}{{dice}}",
     "resolveEachRollAdjustment": "Ogni {{roll}} {{sign}}{{dice}}",
