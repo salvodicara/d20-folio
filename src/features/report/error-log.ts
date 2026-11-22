@@ -74,8 +74,22 @@ function record(source: ErrorLogEntry["source"], args: unknown[]): void {
   buffer.push({ t: Date.now(), source, message });
   if (buffer.length > capacity) buffer.shift();
   // Also feed the structured diagnostics breadcrumb ring (ADR-0008) — a report
-  // that fires later carries the same runtime errors this ring already holds.
-  diagnosticsLog("error", `runtime.${source}`, { message });
+  // that fires later carries the same runtime errors this ring already holds. A line
+  // known to be harmless stays a warning: only error-level events are auto-reported.
+  diagnosticsLog(knownHarmless(message) ? "warn" : "error", `runtime.${source}`, {
+    message,
+  });
+}
+
+/**
+ * Console lines that are not app errors. Firestore logs the first one with
+ * `console.error` when a second tab cannot take the multi-tab persistence lease
+ * (`persistentMultipleTabManager`, lib/firebase.ts), then retries on its own; it filled
+ * the owner's digest as an «error» (2026-11-22). Matched on the SDK's exact wording.
+ */
+const KNOWN_HARMLESS = [/Failed to obtain primary lease/];
+function knownHarmless(message: string): boolean {
+  return KNOWN_HARMLESS.some((pattern) => pattern.test(message));
 }
 
 /**
