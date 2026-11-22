@@ -225,6 +225,9 @@ export interface UniversalCardProps {
   onCommit?: () => void;
   /** Disable the CTA (economy spent / out of resources). */
   ctaDisabled?: boolean;
+  /** The action waits for something it needs (the campaign's fight): the button
+   *  shows a spinner, is announced busy and takes no second press. */
+  ctaBusy?: boolean;
   /**
    * A quiet, persistent inline REASON the CTA is unavailable right now (B2 — the
    * BG3 at-a-glance can/cannot): "Stunned" / "No uses left" / "Reaction spent".
@@ -338,6 +341,7 @@ export function UniversalCard({
   ctaLabel,
   onCommit,
   ctaDisabled,
+  ctaBusy = false,
   ctaReason,
   followUp,
   ctaDimmed,
@@ -542,7 +546,8 @@ export function UniversalCard({
                   ctaCommitted && "is-committed",
                   ctaDimmed && "is-dimmed"
                 )}
-                disabled={ctaDisabled}
+                disabled={ctaDisabled || ctaBusy}
+                aria-busy={ctaBusy || undefined}
                 title={ctaTitle}
                 aria-label={ctaAriaLabel}
                 onClick={(e) => {
