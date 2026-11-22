@@ -79,7 +79,7 @@
       "none": "No spell matches.",
       "unpick": "Remove",
       "ritual": "ritual",
-      "searchHint": "Search by name…"
+      "slots": "Picked: {{picked}} of {{count}}"
     }
   }
 }

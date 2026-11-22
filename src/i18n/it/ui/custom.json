@@ -13,7 +13,7 @@
     "source": "Fonte",
     "sourcePlaceholder": "Homebrew, Talento, ecc.",
     "emoji": "Emoji",
-    "totalUses": "Usi Totali",
+    "totalUses": "Usi totali",
     "totalUsesPlaceholder": "BC, CAR, 3",
     "recovery": "Recupero",
     "recoveryLong": "Riposo Lungo",
@@ -50,6 +50,11 @@
     "libraryDeleteMessage": "Esce dal tuo elenco personalizzato. I personaggi che lo usano già mantengono la loro copia.",
     "libraryFull": "Aggiunto alla scheda. Il tuo elenco personalizzato è pieno ({{max}}), quindi non è stato conservato.",
     "editSpell": "Modifica Incantesimo Personalizzato",
-    "editEquipment": "Modifica Equipaggiamento Personalizzato"
+    "editEquipment": "Modifica Equipaggiamento Personalizzato",
+    "addEffect": "Aggiungi effetto",
+    "magicBonus": "Bonus magico",
+    "chargesReturn": "Quante tornano",
+    "chargesReturnPlaceholder": "tutte, 3 o 1d6+1",
+    "recoveryDawn": "All'alba"
   }
 }

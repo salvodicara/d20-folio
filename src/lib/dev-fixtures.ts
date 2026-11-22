@@ -48,6 +48,19 @@ function fixtureName(id: string): string {
 // the e2e specs read the same names the screens show.
 export { DEV_HERO_NAMES } from "@/lib/dev-hero-names";
 
+/**
+ * The stand-in for a team sheet the pack does not carry (an SRD-only dev server): the
+ * mock hero under its role's made-up name, so a dev party of three reads as three
+ * people, never one hero three times. Null for an id that names no role.
+ */
+export function devHeroStandIn(id: string, mock: CharacterDoc): CharacterDoc | null {
+  if (!id.startsWith(DEV_FIXTURE_PREFIX)) return null;
+  const name = DEV_HERO_NAMES[id.slice(DEV_FIXTURE_PREFIX.length)];
+  return name
+    ? { ...mock, id, character: { ...mock.character, name: assertNonEmptyString(name) } }
+    : null;
+}
+
 /** True when the route id names one of the team fixtures. */
 export function isDevFixtureId(id: string): boolean {
   return fixtureName(id) in packFixtures;

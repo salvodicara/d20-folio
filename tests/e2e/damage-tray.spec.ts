@@ -135,13 +135,17 @@ for (const size of ["desktop", "mobile"] as const) {
     page,
   }) => {
     // Hold Person targets a Humanoid; the 2024 goblins are Fey and the Ogre a Giant
-    // (#1129), so no one is offered: no target step, no tray, the cast is recorded.
+    // (#1129), so no one is offered: the player is told why, no tray, the cast is recorded.
     await openEvoker(page, size);
     await page
       .getByRole("button", { name: /^Lancia: Blocca Persone/ })
       .first()
       .click();
     await page.getByRole("button", { name: /^Slot di livello 2/ }).click();
+    // The player is told why nobody was offered.
+    await expect(
+      page.getByText("Nessun bersaglio valido in questo scontro (Umanoide)")
+    ).toBeVisible();
     // The cast happened: its concentration is running.
     await expect(
       page.getByRole("button", { name: /^Blocca Persone \d+ round rimasti/ }).first()

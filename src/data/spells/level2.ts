@@ -284,6 +284,8 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
+    // The save comes on a later Magic action («probe deeper»), never on the cast.
+    resolveOnCast: false,
     source: "SRD",
   },
   {
