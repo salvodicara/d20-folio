@@ -910,7 +910,7 @@
   "paladin-abjure-foes": {
     "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità e presentare il tuo simbolo sacro o la tua arma. Scegli un numero di creature pari al tuo modificatore di Carisma (minimo una) che puoi vedere entro 18 m. Ognuna effettua un TS di Saggezza contro la CD dei tuoi incantesimi o è Spaventata per 1 minuto o finché non subisce danni. Mentre è Spaventata così, nei suoi turni può fare solo una di queste cose: muoversi, effettuare un'azione o un'Azione Bonus.",
     "name": "Abiurare Nemici",
-    "gist": "Azione Magica, 1 Incanalare Divinità: creature pari al mod. di Carisma entro 18 m, TS Saggezza o Spaventate 1 minuto, finché non subiscono danni"
+    "gist": "Incanalare Divinità: mod. CAR creature a 18 m, TS Sag o Spaventate 1 min (fine ai danni)"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
     "description": "Incanalare Divinità: fino al tuo modificatore di CAR in creature (min. 1) entro 18 m effettuano un TS su SAG o sono Spaventate per 1 minuto, finché non subiscono danni.",
