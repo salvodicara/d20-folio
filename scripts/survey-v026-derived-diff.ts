@@ -64,6 +64,14 @@ export const EXPECTED: readonly ExpectedRule[] = [
   { fix: "#1105", path: /^actions\.improvised-weapon\./ },
   // v0.26.2: Thunderwave's push is a rider with its distance (the second spell fold).
   { fix: "#1129", path: /^actions\.spell-thunderwave\.effectRiders\./ },
+  // An unpicked species spellcasting ability reads the character's own INT/WIS/CHA
+  // casting ability, not Charisma: an elf, gnome or tiefling lineage spell's DC and
+  // attack move for an INT or WIS caster. A High Elf's chosen cantrip (any Wizard
+  // cantrip) outside this list reads as unexpected: trace it to this fix by hand.
+  {
+    fix: "#1187",
+    path: /^actions\.spell-(dancing-lights|faerie-fire|darkness|prestidigitation|detect-magic|misty-step|druidcraft|longstrider|pass-without-trace|minor-illusion|speak-with-animals|mending|thaumaturgy|poison-spray|ray-of-sickness|hold-person|chill-touch|false-life|ray-of-enfeeblement|fire-bolt|hellish-rebuke)\.(attackBonus|saveDC)$/,
+  },
 ];
 
 // ── The pure comparison ───────────────────────────────────────────────────────

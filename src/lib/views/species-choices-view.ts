@@ -28,7 +28,13 @@ export type PendingSpeciesItem =
   | { kind: "bundle"; bundleKey: string; label: string }
   | { kind: "ability" }
   | { kind: "feat"; label: string }
-  | { kind: "slot"; slotId: string; label: string }
+  | {
+      kind: "slot";
+      slotId: string;
+      label: string;
+      /** An any-skill pick asked because the stored skills fall short. */
+      short?: { have: number; need: number };
+    }
   | {
       kind: "feat-ability";
       featId: string;
@@ -81,9 +87,27 @@ export function pendingSpeciesItems(
     }
   }
   if (pending.spellAbility) items.push({ kind: "ability" });
+  // Why an any-skill pick is asked: the trait's stored-skills shortfall.
+  const shortOf = (slotId: string) => {
+    for (const c of unresolvedBuildChoices(character, session)) {
+      if (
+        c.kind === "skill" &&
+        c.short &&
+        slotId.startsWith(`race:${character.race}:${c.traitId}::`)
+      )
+        return c.short;
+    }
+    return undefined;
+  };
   for (const list of Object.values(pending.slots) as { slotId: string }[][]) {
     for (const { slotId } of list) {
-      items.push({ kind: "slot", slotId, label: raceTraitNameOfSlot(slotId, locale) });
+      const short = shortOf(slotId);
+      items.push({
+        kind: "slot",
+        slotId,
+        label: raceTraitNameOfSlot(slotId, locale),
+        ...(short ? { short } : {}),
+      });
     }
   }
   for (const { featId, abilities } of pending.featAbilities) {
@@ -101,13 +125,15 @@ type Translate = (key: string, args?: Record<string, string>) => string;
 
 /**
  * The banner's sentence: the named choices, then the ability on its own — an unset
- * one already reads Charisma, so it says so («oggi usa Carisma — scegli quella giusta»)
- * — then the feats that ask which ability their increase raised.
+ * one already reads the character's own casting ability, so it names it («oggi usa
+ * Intelligenza — scegli quella giusta») — then the feats whose +1 waits for its ability.
  */
 export function speciesChoicesLine(
   items: readonly PendingSpeciesItem[],
   t: Translate,
-  locale: Locale
+  locale: Locale,
+  /** The ability the species spells use until the pick (its name, localized). */
+  abilityToday?: string
 ): string {
   const names = items.flatMap((item) =>
     item.kind === "ability" || item.kind === "feat-ability" || item.kind === "class-pick"
@@ -123,8 +149,23 @@ export function speciesChoicesLine(
         }),
       ]
     : [];
+  for (const item of items) {
+    if (item.kind === "slot" && item.short) {
+      parts.push(
+        t("play.speciesChoices.skillShortNote", {
+          name: item.label,
+          have: String(item.short.have),
+          need: String(item.short.need),
+        })
+      );
+    }
+  }
   if (items.some((item) => item.kind === "ability")) {
-    parts.push(t("play.speciesChoices.abilityNote"));
+    parts.push(
+      t("play.speciesChoices.abilityNote", {
+        ability: abilityToday ?? t("abilities.CHA"),
+      })
+    );
   }
   const feats = items.flatMap((item) =>
     item.kind === "feat-ability" ? [item.label] : []
