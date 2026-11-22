@@ -2,7 +2,7 @@
  * Audit 2026-11-13, items 2+3 (red until the «campaign context settled» helper): a cast
  * in the first moments after the sheet opens, while this character's fight has not
  * arrived yet, must wait for the fight: the target step then offers the fight's
- * creatures, and a buff on an ally lands in the fight's effects — never on the campaign
+ * ally, and a buff on an ally lands in the fight's effects — never on the campaign
  * clock (where the DM's fight never sees it), never on no one.
  *
  * (2a) the campaigns are read (party known) but the fight's live status is still on its
@@ -60,7 +60,12 @@ afterEach(() => {
   vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
   useCombatStatusStore.setState({ status: null, pip: null });
-  usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
+  usePartyRosterStore.setState({
+    party: null,
+    resolvedFor: null,
+    castWaiting: null,
+    readerMounted: false,
+  });
   useToastStore.setState({ toasts: [] });
   useUndoStore.getState().clear(null);
   io.appendPersistentCombatEffect.mockClear();
@@ -139,6 +144,11 @@ async function castWardingBondInTheGap(campaignsRead: boolean): Promise<string[]
         ref: { kind: "pc", combatantId: "pc-u2", memberUid: "u2", characterId: "c2" },
         name: "Ally",
       },
+      // In the party but not in this fight: only the party list offers them.
+      {
+        ref: { kind: "pc", combatantId: "pc-u3", memberUid: "u3", characterId: "c3" },
+        name: "Away",
+      },
     ],
   };
   // «Campaigns read, fight pending» (the engine lane's contract): the party is resolved and
@@ -146,6 +156,8 @@ async function castWardingBondInTheGap(campaignsRead: boolean): Promise<string[]
   // status has not answered yet.
   const pip = fightPip(doc.id);
   useCombatStatusStore.setState({ status: null, pip: null });
+  // The shell that reads the campaigns is mounted.
+  usePartyRosterStore.getState().setReaderMounted(true);
   if (campaignsRead) {
     usePartyRosterStore.getState().setParty(party, doc.id);
     useCombatStatusStore.setState({ pip });
@@ -168,9 +180,22 @@ async function castWardingBondInTheGap(campaignsRead: boolean): Promise<string[]
   act(() => {
     api?.executeAction(action);
   });
-  // The shell answers a moment later: this character's fight (and, in 2b, the campaigns).
+  // In the gap the cast asks nothing yet: a target picked now would be written where
+  // no fight is (the campaign clock), before the fight the pip already shows arrives.
+  expect(usePlayPromptStore.getState().open.target).toBeUndefined();
+  // The shell answers in its real order: the campaigns first (in 2b), then, a moment
+  // later, this character's fight.
+  if (!campaignsRead) {
+    act(() => {
+      usePartyRosterStore.getState().setParty(party, doc.id);
+      useCombatStatusStore.setState({ pip });
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    });
+    expect(usePlayPromptStore.getState().open.target).toBeUndefined();
+  }
   act(() => {
-    if (!campaignsRead) usePartyRosterStore.getState().setParty(party, doc.id);
     useCombatStatusStore.setState({ status: fight(doc.id), pip });
   });
   await waitFor(() => expect(usePlayPromptStore.getState().open.target).toBeDefined(), {
@@ -188,13 +213,15 @@ describe("a cast before this character's fight is read (settled-context gap)", (
     ["(2a) campaigns read, fight still on its way", true],
     ["(2b) nothing read yet", false],
   ] as const)(
-    "%s: waits for the fight, offers its creatures, lands the buff in the fight",
+    "%s: waits for the fight and lands the buff in the fight",
     { timeout: 20000 },
     async (_label, campaignsRead) => {
       vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       const choices = await castWardingBondInTheGap(campaignsRead);
-      // the fight's roster, not the party list: the goblin is there to target
-      expect(choices).toContain("goblin");
+      // Warding Bond takes a willing ally (never the goblin), from the fight's list:
+      // the party member who is not in this fight is not offered.
+      expect(choices).toContain("pc-u2");
+      expect(choices).not.toContain("pc-u3");
       await waitFor(() => expect(io.appendPersistentCombatEffect).toHaveBeenCalled(), {
         timeout: 3000,
       });

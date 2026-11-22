@@ -18,7 +18,7 @@ import {
   useCombatStatusStore,
   type GlobalCombat,
 } from "@/features/campaigns/global-combat-context";
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import { END_TURN_WAITING, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
 import { buildScenario } from "@/lib/dev-scenarios";
@@ -33,7 +33,9 @@ const ME = "pc-u1";
 let select: ((action: ResolvedAction) => void) | null = null;
 let endTurn: (() => void) | null = null;
 function Probe() {
-  const { handleSelect, handleEndTurn } = useTurnEconomy();
+  // A Dash on either sheet enters through `executeAction` (the classic Play tab's
+  // `commitAction`), so the test does too.
+  const { executeAction: handleSelect, handleEndTurn } = useTurnEconomy();
   useEffect(() => {
     select = handleSelect;
     endTurn = handleEndTurn;
@@ -105,7 +107,13 @@ beforeEach(() => {
   useUIStore.setState({ sheetMode: "play" });
   useToastStore.setState({ toasts: [], timers: {} });
   useCombatStatusStore.setState({ status: null, pip: null });
-  usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
+  usePartyRosterStore.setState({
+    party: null,
+    resolvedFor: null,
+    castWaiting: null,
+    // The shell that reads the campaigns is mounted and hasn't answered yet.
+    readerMounted: true,
+  });
   useCombatStore.getState().endCombat();
 });
 afterEach(() => useCombatStatusStore.setState({ status: null, pip: null }));
@@ -186,5 +194,45 @@ describe("a turn action before the fight is read (settled-context gap)", () => {
         (e) => e.event.kind === "turn-end"
       )
     ).toBe(false);
+  }, 15000);
+
+  it("End Turn when the fight never arrives ends nothing and says why", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const character = buildScenario({
+        name: "Brakka",
+        raceId: "human",
+        classId: "fighter",
+        level: 3,
+        background: "soldier",
+        abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+      });
+      useCharacterStore.setState({ character, loading: false, error: null });
+      render(
+        <MemoryRouter>
+          <TurnEconomyProvider>
+            <Probe />
+          </TurnEconomyProvider>
+        </MemoryRouter>
+      );
+      const roundBefore = useCombatStore.getState().round;
+      act(() => {
+        campaignsRead(character.id);
+      });
+      act(() => {
+        endTurn?.();
+      });
+      expect(usePartyRosterStore.getState().castWaiting).toBe(END_TURN_WAITING);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4100);
+      });
+      expect(usePartyRosterStore.getState().castWaiting).toBeNull();
+      expect(useCombatStore.getState().round).toBe(roundBefore);
+      expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
+        "Can't read the campaign yet. Try again in a moment."
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   }, 15000);
 });

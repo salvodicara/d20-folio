@@ -59,7 +59,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   useAuthStore.setState({ user: { uid: "u1" } as User });
   useToastStore.setState({ toasts: [], timers: {} });
-  usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
+  usePartyRosterStore.setState({
+    party: null,
+    resolvedFor: null,
+    castWaiting: null,
+    // The shell that reads the campaigns is mounted and hasn't answered yet.
+    readerMounted: true,
+  });
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -101,6 +107,42 @@ describe("a rest before the campaign is read (settled-context gap)", () => {
         () => expect(io.stepCampaignClock).toHaveBeenCalledWith("c1", 480, "u1"),
         { timeout: 3000 }
       );
+    }
+  );
+
+  it(
+    "a campaign never read: no rest, and a message says to try again",
+    { timeout: 15000 },
+    async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      try {
+        const base = structuredClone(MOCK_CHARACTER);
+        base.session.hp = { current: 5, temp: 0 };
+        useCharacterStore.setState({
+          character: base,
+          readonly: false,
+          loading: false,
+          error: null,
+        });
+        render(
+          <ItemResourceCommandContext.Provider value={commands()}>
+            <RestModal open onClose={() => {}} />
+          </ItemResourceCommandContext.Provider>
+        );
+        fireEvent.click(screen.getByText("Long Rest"));
+        fireEvent.click(screen.getByRole("button", { name: "Complete rest" }));
+        await vi.advanceTimersByTimeAsync(4100);
+        await vi.waitFor(() =>
+          expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
+            "Can't read the campaign yet. Try again in a moment."
+          )
+        );
+        // Not rested: the HP are where they were.
+        expect(useCharacterStore.getState().character?.session.hp.current).toBe(5);
+        expect(io.stepCampaignClock).not.toHaveBeenCalled();
+      } finally {
+        vi.useRealTimers();
+      }
     }
   );
 });

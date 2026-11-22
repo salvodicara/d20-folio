@@ -13327,6 +13327,28 @@ textarea.input.sess-notes-edit {
   transform: translateY(2px);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
+/* A waiting End Turn: the same spinner, on the gilded button (the label hidden). */
+.endturn[aria-busy="true"] {
+  cursor: progress;
+  position: relative;
+}
+.endturn[aria-busy="true"] > * {
+  visibility: hidden;
+}
+.endturn[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in oklab, currentColor 35%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+}
+[data-motion="auto"] .endturn[aria-busy="true"]::after {
+  animation: spin 640ms linear infinite;
+}
 /* A waiting action: the classic `.btn.loading` spinner on the action button. */
 .cc-btn[aria-busy="true"] {
   cursor: progress;
