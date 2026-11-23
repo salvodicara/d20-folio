@@ -92,6 +92,13 @@ import {
   pendingApplies,
 } from "@/features/campaigns/combat-reconcile";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import {
+  CAMPAIGNS_CONFIRM_MS,
+  CAMPAIGNS_READ_ATTEMPTS,
+  playsSolo,
+  retryDelayMs,
+  useCampaignsReadStore,
+} from "@/features/campaigns/campaigns-read";
 import type { CampaignDoc, EncounterPc } from "@/types/campaign";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCampaignClockProjection } from "@/features/campaigns/campaign-clock-projection";
@@ -199,30 +206,75 @@ export function GlobalCombatMount(): null {
   );
 
   // ONE live listener over the user's shared campaigns — re-fires the moment an encounter
-  // starts/ends, so the pip lights/clears with no reload.
+  // starts/ends, so the pip lights/clears with no reload. The list renders from the first
+  // snapshot, cache included; «read» (what actions trust) waits for the server, offline,
+  // or the confirm deadline, and a read error is never «no campaigns» (#1217,
+  // campaigns-read.ts).
+  const setReadFailed = useCampaignsReadStore((s) => s.setFailed);
   useEffect(() => {
     let cancelled = false;
-    const settle = (next: CampaignDoc[]): void => {
+    let confirmTimer: ReturnType<typeof setTimeout> | undefined;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let unsub: () => void = () => {};
+    const confirm = (): void => {
       if (cancelled) return;
-      setCampaigns(next);
+      clearTimeout(confirmTimer);
+      setReadFailed(false);
       setCampaignsSettled(true);
     };
     if (!uid) {
-      void Promise.resolve().then(() => settle([]));
+      void Promise.resolve().then(() => {
+        if (cancelled) return;
+        setCampaigns([]);
+        confirm();
+      });
       return () => {
         cancelled = true;
       };
     }
-    const unsub = subscribeToSharedCampaigns(
-      uid,
-      settle,
-      () => settle([]) // offline / denied — quietly empty, a later snapshot recovers
-    );
+    const attach = (attempt: number): void => {
+      let arrived = false;
+      unsub = subscribeToSharedCampaigns(
+        uid,
+        (next, meta) => {
+          if (cancelled) return;
+          setCampaigns(next);
+          if (!meta?.fromCache || !navigator.onLine) {
+            confirm();
+            return;
+          }
+          if (arrived) return;
+          arrived = true;
+          clearTimeout(confirmTimer);
+          confirmTimer = setTimeout(confirm, CAMPAIGNS_CONFIRM_MS);
+        },
+        () => {
+          // Firestore stops a listener for good after an error: attach it again.
+          if (cancelled) return;
+          clearTimeout(confirmTimer);
+          if (attempt < CAMPAIGNS_READ_ATTEMPTS) {
+            retryTimer = setTimeout(() => {
+              if (!cancelled) attach(attempt + 1);
+            }, retryDelayMs(attempt));
+            return;
+          }
+          setReadFailed(true);
+          // Unread, never «no campaigns» — unless this character is in none.
+          if (playsSolo(useCharacterStore.getState().character?.id ?? null)) {
+            setCampaigns([]);
+            setCampaignsSettled(true);
+          }
+        }
+      );
+    };
+    attach(1);
     return () => {
       cancelled = true;
+      clearTimeout(confirmTimer);
+      clearTimeout(retryTimer);
       unsub();
     };
-  }, [uid]);
+  }, [uid, setReadFailed]);
 
   // Overlay the optimistic open campaign over the Firestore-synced list, so the viewer's
   // own un-echoed encounter edits drive the pip immediately (see `overlayOpenCampaign`).
