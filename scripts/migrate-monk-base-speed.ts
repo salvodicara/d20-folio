@@ -8,6 +8,8 @@
  * twice. The rule, for a character with Monk levels:
  *   - stored base = species base + Unarmored Movement at its Monk level → species base;
  *   - stored base = species base → unchanged;
+ *   - no stored base (absent or empty) → unchanged: the codec stores none when it equals
+ *     the species default, and the reader re-derives it from the species;
  *   - anything else → an issue (`unexpected-speed`), never a guess.
  * Characters without Monk levels are out of scope.
  *
@@ -129,6 +131,14 @@ export function planMonkBaseSpeed(
         code: "unknown-species",
         detail: "Species not found",
       });
+      unchanged();
+      continue;
+    }
+    // Absent or empty: the codec stores no speed when it equals the species default, and
+    // the reader re-derives it from the species (`character-minimal` rehydrate), in
+    // v0.26.1 and on main. Nothing is stored to correct.
+    if (build.speed === undefined || build.speed === "") {
+      counts.alreadyBase += 1;
       unchanged();
       continue;
     }
