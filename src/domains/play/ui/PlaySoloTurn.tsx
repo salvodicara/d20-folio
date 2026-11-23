@@ -44,7 +44,14 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { Button, Dialog, Field } from "@/ui";
 
-export function useSoloTurn(locale: Locale, passTurn?: () => void) {
+/** A campaign fight's End Turn: the classic End Turn that passes the turn, and whether
+ *  it is still waiting for the fight to reach the sheet (the button shows it works). */
+export interface PassTurn {
+  passTurn: () => void;
+  passing?: boolean;
+}
+
+export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
   const { t } = useTranslation();
   // re-read the model when the stores it reads change
   useCombatStore((s) => s.round);
@@ -71,7 +78,7 @@ export function useSoloTurn(locale: Locale, passTurn?: () => void) {
     setPrompts(left);
     if (left.length > 0) return;
     if (solo) endTurn(t);
-    else passTurn?.();
+    else campaign?.passTurn();
   };
   const answer = (m: MaintainedPrompt) =>
     askOrEnd(prompts.filter((x) => x.activeKey !== m.activeKey));
@@ -113,6 +120,7 @@ export function useSoloTurn(locale: Locale, passTurn?: () => void) {
       kind="primary"
       icon="u-next"
       data-end-turn=""
+      busy={myTurn && campaign?.passing}
       onClick={() => askOrEnd(maintenanceDue())}
     >
       {t("play.endTurn")}

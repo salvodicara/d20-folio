@@ -1,0 +1,238 @@
+/**
+ * Audit 2026-11-13 (red until the «campaign context settled» helper), the turn in the
+ * first moments after the sheet opens, before the shell has read the campaigns and the
+ * fight:
+ * - item 12: a turn action counts as out of combat — no Action is spent — so once the
+ *   fight arrives the player can act twice. The action must count in the fight;
+ * - item 8: End Turn takes the solo path — the round goes up and a solo turn completes
+ *   on the shared fight's engine. It must not end a solo turn the fight doesn't have.
+ */
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, render } from "@testing-library/react";
+import { useEffect } from "react";
+import { MemoryRouter } from "react-router";
+
+vi.mock("@/lib/firebase", () => ({}));
+
+import {
+  useCombatStatusStore,
+  type GlobalCombat,
+} from "@/features/campaigns/global-combat-context";
+import { END_TURN_WAITING, usePartyRosterStore } from "@/features/campaigns/party-roster";
+import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
+import { useTurnEconomy } from "@/features/character/center/useTurnEconomy";
+import { buildScenario } from "@/lib/dev-scenarios";
+import type { ResolvedAction } from "@/lib/smart-tracker";
+import { localizeActions } from "@/lib/views/combat-action-view";
+import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
+import { useToastStore } from "@/stores/toastStore";
+import { useUIStore } from "@/stores/uiStore";
+
+const ME = "pc-u1";
+let select: ((action: ResolvedAction) => void) | null = null;
+let endTurn: (() => void) | null = null;
+function Probe() {
+  // A Dash on either sheet enters through `executeAction` (the classic Play tab's
+  // `commitAction`), so the test does too.
+  const { executeAction: handleSelect, handleEndTurn } = useTurnEconomy();
+  useEffect(() => {
+    select = handleSelect;
+    endTurn = handleEndTurn;
+  }, [handleSelect, handleEndTurn]);
+  return null;
+}
+
+/** «Campaigns read, fight pending» (the engine lane's contract): the party is resolved and
+ *  the campaigns snapshot's pip lists this character's fight; its live status is not here. */
+function campaignsRead(characterId: string): void {
+  usePartyRosterStore.getState().setParty(null, characterId);
+  useCombatStatusStore.setState({
+    pip: {
+      primaryId: "camp-1",
+      entries: [
+        {
+          campaignId: "camp-1",
+          campaignName: "Campaign",
+          role: "pc",
+          state: "your-turn",
+          round: 1,
+          heroName: "Brakka",
+          characterId,
+          actorName: null,
+        },
+      ],
+    },
+  });
+}
+
+function fightArrives(characterId: string): void {
+  const rows = [
+    { id: ME, kind: "pc", side: "ally", name: "Brakka" },
+    {
+      id: "monster-1",
+      kind: "monster",
+      side: "enemy",
+      name: "Goblin",
+      currentHp: 7,
+      maxHp: 7,
+      tempHp: 0,
+    },
+  ] as unknown as GlobalCombat["view"]["rows"];
+  useCombatStatusStore.setState({
+    status: {
+      campaignId: "camp-1",
+      encounter: {
+        nextMonsterOrdinal: 2,
+        round: 1,
+        currentCombatantId: ME,
+        epoch: 1,
+        status: "active",
+        combatants: [],
+      },
+      view: { rows, turnOrderIds: rows.map((r) => r.id), currentId: ME },
+      myId: ME,
+      characterId,
+      gathering: false,
+      isMyTurn: true,
+      initiativeBonus: 0,
+      initiativeRoll: 12,
+      round: 1,
+    } as unknown as GlobalCombat,
+  });
+}
+
+beforeEach(() => {
+  select = null;
+  useUIStore.setState({ sheetMode: "play" });
+  useToastStore.setState({ toasts: [], timers: {} });
+  useCombatStatusStore.setState({ status: null, pip: null });
+  usePartyRosterStore.setState({
+    party: null,
+    resolvedFor: null,
+    castWaiting: null,
+    // The shell that reads the campaigns is mounted and hasn't answered yet.
+    readerMounted: true,
+  });
+  useCombatStore.getState().endCombat();
+});
+afterEach(() => useCombatStatusStore.setState({ status: null, pip: null }));
+
+describe("a turn action before the fight is read (settled-context gap)", () => {
+  it("a Dash taken before the fight arrives spends that turn's Action", async () => {
+    const character = buildScenario({
+      name: "Brakka",
+      raceId: "human",
+      classId: "fighter",
+      level: 3,
+      background: "soldier",
+      abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    });
+    useCharacterStore.setState({ character, loading: false, error: null });
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider>
+          <Probe />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    const dash = localizeActions(character, "en").find((a) => /dash/i.test(a.id));
+    if (!dash) throw new Error("no Dash");
+    await act(async () => {
+      select?.(dash);
+      await Promise.resolve();
+    });
+    // The shell answers a moment later: the campaigns, then this character's fight.
+    act(() => {
+      campaignsRead(character.id);
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+      fightArrives(character.id);
+    });
+    await vi.waitFor(
+      () =>
+        expect(useCombatStore.getState().selected.action.map((a) => a.id)).toContain(
+          dash.id
+        ),
+      { timeout: 3000 }
+    );
+  }, 15000);
+
+  it("End Turn before the fight arrives does not end a solo turn", async () => {
+    const character = buildScenario({
+      name: "Brakka",
+      raceId: "human",
+      classId: "fighter",
+      level: 3,
+      background: "soldier",
+      abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+    });
+    useCharacterStore.setState({ character, loading: false, error: null });
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider>
+          <Probe />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    const roundBefore = useCombatStore.getState().round;
+    await act(async () => {
+      endTurn?.();
+      await Promise.resolve();
+    });
+    act(() => {
+      campaignsRead(character.id);
+    });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+      fightArrives(character.id);
+    });
+    expect(useCombatStore.getState().round).toBe(roundBefore);
+    expect(
+      (useCharacterStore.getState().character?.session.logEntries ?? []).some(
+        (e) => e.event.kind === "turn-end"
+      )
+    ).toBe(false);
+  }, 15000);
+
+  it("End Turn when the fight never arrives ends nothing and says why", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const character = buildScenario({
+        name: "Brakka",
+        raceId: "human",
+        classId: "fighter",
+        level: 3,
+        background: "soldier",
+        abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 12, CHA: 8 },
+      });
+      useCharacterStore.setState({ character, loading: false, error: null });
+      render(
+        <MemoryRouter>
+          <TurnEconomyProvider>
+            <Probe />
+          </TurnEconomyProvider>
+        </MemoryRouter>
+      );
+      const roundBefore = useCombatStore.getState().round;
+      act(() => {
+        campaignsRead(character.id);
+      });
+      act(() => {
+        endTurn?.();
+      });
+      expect(usePartyRosterStore.getState().castWaiting).toBe(END_TURN_WAITING);
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(4100);
+      });
+      expect(usePartyRosterStore.getState().castWaiting).toBeNull();
+      expect(useCombatStore.getState().round).toBe(roundBefore);
+      expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
+        "Can't read the campaign yet. Try again in a moment."
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  }, 15000);
+});

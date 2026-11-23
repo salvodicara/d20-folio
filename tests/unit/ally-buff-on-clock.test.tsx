@@ -48,7 +48,12 @@ afterEach(() => {
   usePlayPromptStore.setState({ open: {} });
   vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
-  usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
+  usePartyRosterStore.setState({
+    party: null,
+    resolvedFor: null,
+    castWaiting: null,
+    readerMounted: false,
+  });
   useToastStore.setState({ toasts: [] });
   vi.useRealTimers();
   useUndoStore.getState().clear(null);
@@ -85,6 +90,8 @@ async function castWardingBondOnTheParty(
     ],
   };
   if (partyArrives === "before") usePartyRosterStore.setState({ party });
+  // The shell that reads the campaigns is mounted and hasn't answered yet.
+  else usePartyRosterStore.getState().setReaderMounted(true);
   let api: ReturnType<typeof useTurnEconomy> | null = null;
   function Probe() {
     api = useTurnEconomy();
@@ -168,7 +175,7 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
   );
 
   it(
-    "when the party never comes, the cast goes through and says it had no target",
+    "when the campaign is never read, nothing is spent and a message says to try again",
     { timeout: 20000 },
     async () => {
       vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
@@ -176,9 +183,12 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
       await castWardingBondOnTheParty("never");
       expect(usePlayPromptStore.getState().open.target).toBeUndefined();
       expect(useToastStore.getState().toasts.map((toast) => toast.message)).toContain(
-        "Party not loaded yet: cast with no target"
+        "Can't read the campaign yet. Try again in a moment."
       );
       expect(writeCampaignEffects).not.toHaveBeenCalled();
+      // The slot is not spent: the cast never ran.
+      const slots = useCharacterStore.getState().character?.session.spellSlots;
+      expect(Object.values(slots ?? {}).filter((slot) => slot.used > 0)).toEqual([]);
     }
   );
 });

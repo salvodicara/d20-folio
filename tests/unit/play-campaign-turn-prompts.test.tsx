@@ -61,9 +61,10 @@ function fight(characterId: string, current: string): GlobalCombat {
 }
 
 let passTurn = vi.fn();
+let passing = false;
 
 function Strip() {
-  const turn = useSoloTurn("en", passTurn);
+  const turn = useSoloTurn("en", { passTurn, passing });
   return (
     <>
       {turn.controls}
@@ -88,6 +89,7 @@ const raging = () => useCharacterStore.getState().character?.session.activeFeatu
 
 beforeEach(() => {
   passTurn = vi.fn();
+  passing = false;
   useCombatStore.getState().endCombat();
 });
 
@@ -126,6 +128,14 @@ describe("a campaign fight, on my turn", () => {
     fireEvent.click(screen.getByRole("button", { name: "End turn" }));
     expect(passTurn).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(/is about to end/)).toBeNull();
+  });
+
+  it("End Turn waiting for the fight to reach the sheet: the button shows it works", () => {
+    passing = true;
+    open(makeCharacterDoc({}));
+    expect(
+      screen.getByRole("button", { name: "End turn" }).getAttribute("aria-busy")
+    ).toBe("true");
   });
 
   it("the fight is the DM's: no «Start combat» and no «End combat»", () => {
