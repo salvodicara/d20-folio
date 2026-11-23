@@ -8,6 +8,7 @@
     "details": "Dettagli errore",
     "backHome": "Torna ai miei personaggi",
     "report": "Segnala il problema",
-    "sectionMessage": "Impossibile mostrare questa sezione. Il resto della pagina è a posto."
+    "sectionMessage": "Impossibile mostrare questa sezione. Il resto della pagina è a posto.",
+    "backToClassic": "Torna all'interfaccia classica"
   }
 }

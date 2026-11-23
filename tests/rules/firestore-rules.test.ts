@@ -180,6 +180,32 @@ describe("firestore.rules — /users + the owner-ratified data-driven admin role
     await assertFails(updateDoc(doc(blocked, "users", "blocked"), { status: "active" }));
   });
 
+  // «Try the new interface» (#1233): the player's own boolean opt-in, nothing else.
+  it("a non-admin CAN set ONLY their own newUi, and only to a boolean", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertSucceeds(updateDoc(doc(db, "users", "member"), { newUi: true }));
+    await assertSucceeds(updateDoc(doc(db, "users", "member"), { newUi: false }));
+    await assertSucceeds(
+      updateDoc(doc(db, "users", "member"), {
+        newUi: true,
+        lastActiveAt: Timestamp.now(),
+      })
+    );
+    await assertFails(updateDoc(doc(db, "users", "member"), { newUi: "yes" }));
+    await assertFails(updateDoc(doc(db, "users", "member"), { newUi: { on: true } }));
+    await assertFails(updateDoc(doc(db, "users", "outsider"), { newUi: true }));
+    await assertFails(
+      updateDoc(doc(db, "users", "member"), { newUi: true, role: "admin" })
+    );
+    await assertFails(
+      updateDoc(doc(db, "users", "member"), { newUi: true, status: "active" })
+    );
+    const blocked = testEnv.authenticatedContext("blocked").firestore();
+    await assertFails(
+      updateDoc(doc(blocked, "users", "blocked"), { newUi: true, status: "active" })
+    );
+  });
+
   it("an admin CAN update any user — block/unblock + grant role", async () => {
     const admin = testEnv.authenticatedContext(ADMIN_UID).firestore();
     await assertSucceeds(updateDoc(doc(admin, "users", "member"), { status: "blocked" }));

@@ -15,6 +15,12 @@
     "themeHelp": "Choose a fixed theme or follow your system.",
     "languageHelp": "All rules text follows the SRD translation.",
     "noIdentity": "Signed in",
-    "openAdmin": "Open admin tools"
+    "openAdmin": "Open admin tools",
+    "newUi": "Try the new interface",
+    "newUiHelp": "A redesigned Folio, still being finished. Your characters stay the same, and you can switch back here at any time.",
+    "uiClassic": "Classic",
+    "uiNew": "New",
+    "newUiOffline": "You need a connection to switch interface.",
+    "newUiFailed": "Couldn't save your choice. Try again."
   }
 }

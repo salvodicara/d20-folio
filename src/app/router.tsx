@@ -5,7 +5,9 @@ import {
   Route,
   Navigate,
 } from "react-router";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
+import { setNewUiFrame } from "@/stores/uiStore";
+import { useNewUi } from "./new-ui-choice";
 import { AppShell } from "./AppShell";
 import { importCockpit, importCampaigns } from "./route-prefetch";
 import { ensureSrdKind } from "@/i18n";
@@ -101,140 +103,147 @@ const SharedCharacterView = lazy(() =>
 // DEV-ONLY living type specimen of the Gilded Plate system (BG3-identity
 // epic) — lazy like every route; the prod branch is a stub so Rolldown drops
 // the chunk from production builds entirely.
-// The new campaign page replaces the old hub only in the VITE_NEW_UI preview build.
-const NEW_UI = import.meta.env.VITE_NEW_UI === "1";
-const CampaignScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/campaign/ui/CampaignScreen").then((m) => ({
-        default: m.CampaignScreen,
-      }))
-    )
-  : null;
-
-// The new character sheet's Play screen replaces the cockpit in the VITE_NEW_UI build.
-const PlayScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/play/ui/PlayScreen").then((m) => ({ default: m.PlayScreen }))
-    )
-  : null;
-
-// The new character list («I tuoi personaggi») replaces the roster in the same build.
-const RosterScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/roster/ui/RosterScreen").then((m) => ({
-        default: m.RosterScreen,
-      }))
-    )
-  : null;
-
-// The new creation («Nuovo personaggio») replaces the wizard in the same build.
-const CreationScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/creation/ui/CreationScreen").then((m) => ({
-        default: m.CreationScreen,
-      }))
-    )
-  : null;
-
-// The new campaign list and settings replace the old pages in the same build.
-const CampaignsScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/campaign/ui/CampaignsScreen").then((m) => ({
-        default: m.CampaignsScreen,
-      }))
-    )
-  : null;
-const SettingsScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/account/ui/SettingsScreen").then((m) => ({
-        default: m.SettingsScreen,
-      }))
-    )
-  : null;
-
-// The invite link, the new legal page and the unknown page, in the same build.
-const JoinScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/campaign/ui/JoinScreen").then((m) => ({ default: m.JoinScreen }))
-    )
-  : null;
-const LegalScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/legal/ui/LegalScreen").then((m) => ({ default: m.LegalScreen }))
-    )
-  : null;
-const NotFoundScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/legal/ui/NotFoundScreen").then((m) => ({
-        default: m.NotFoundScreen,
-      }))
-    )
-  : null;
-
-// A character share link (public), on the new Play sheet.
-const SharedScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/play/ui/SharedScreen").then((m) => ({ default: m.SharedScreen }))
-    )
-  : null;
-
-// The DM's read-only view of a party member, on the new Play sheet.
-const MemberSheetScreen = NEW_UI
-  ? lazy(() =>
-      import("@/domains/campaign/ui/MemberSheetScreen").then((m) => ({
-        default: m.MemberSheetScreen,
-      }))
-    )
-  : null;
-
-// The new Compendium replaces the codex in the same build (the monster catalogue
-// gates the render, as for the codex).
-const CompendiumScreen = NEW_UI
-  ? lazy(() =>
-      Promise.all([
-        import("@/domains/compendium/ui/CompendiumScreen"),
-        ensureSrdKind("monster"),
-      ]).then(([m]) => ({ default: m.CompendiumScreen }))
-    )
-  : null;
-
-// The new UI's frame, mounted only around the screens already rebuilt (same flag).
-const NewAppShell = NEW_UI
-  ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
-  : null;
-
-// The new UI's design-system stories (/ui): dev and the VITE_NEW_UI preview only, stripped from production.
-const UiStoriesPage =
-  import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1"
+// The route tree for one interface (#1233): `NEW_UI` is this page load's choice
+// (`useNewUi`), not a build constant, so every build ships both interfaces. The new
+// screens stay lazy chunks; the tree is built once per choice.
+function buildRouter(NEW_UI: boolean) {
+  // The new campaign page replaces the old hub when the new interface is on.
+  const CampaignScreen = NEW_UI
     ? lazy(() =>
-        import("./routes/ui-stories").then((m) => ({ default: m.UiStoriesPage }))
+        import("@/domains/campaign/ui/CampaignScreen").then((m) => ({
+          default: m.CampaignScreen,
+        }))
       )
+    : null;
+
+  // The new character sheet's Play screen replaces the cockpit in the VITE_NEW_UI build.
+  const PlayScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/play/ui/PlayScreen").then((m) => ({ default: m.PlayScreen }))
+      )
+    : null;
+
+  // The new character list («I tuoi personaggi») replaces the roster in the same build.
+  const RosterScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/roster/ui/RosterScreen").then((m) => ({
+          default: m.RosterScreen,
+        }))
+      )
+    : null;
+
+  // The new creation («Nuovo personaggio») replaces the wizard in the same build.
+  const CreationScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/creation/ui/CreationScreen").then((m) => ({
+          default: m.CreationScreen,
+        }))
+      )
+    : null;
+
+  // The new campaign list and settings replace the old pages in the same build.
+  const CampaignsScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/campaign/ui/CampaignsScreen").then((m) => ({
+          default: m.CampaignsScreen,
+        }))
+      )
+    : null;
+  const SettingsScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/account/ui/SettingsScreen").then((m) => ({
+          default: m.SettingsScreen,
+        }))
+      )
+    : null;
+
+  // The invite link, the new legal page and the unknown page, in the same build.
+  const JoinScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/campaign/ui/JoinScreen").then((m) => ({
+          default: m.JoinScreen,
+        }))
+      )
+    : null;
+  const LegalScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/legal/ui/LegalScreen").then((m) => ({ default: m.LegalScreen }))
+      )
+    : null;
+  const NotFoundScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/legal/ui/NotFoundScreen").then((m) => ({
+          default: m.NotFoundScreen,
+        }))
+      )
+    : null;
+
+  // A character share link (public), on the new Play sheet.
+  const SharedScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/play/ui/SharedScreen").then((m) => ({
+          default: m.SharedScreen,
+        }))
+      )
+    : null;
+
+  // The DM's read-only view of a party member, on the new Play sheet.
+  const MemberSheetScreen = NEW_UI
+    ? lazy(() =>
+        import("@/domains/campaign/ui/MemberSheetScreen").then((m) => ({
+          default: m.MemberSheetScreen,
+        }))
+      )
+    : null;
+
+  // The new Compendium replaces the codex in the same build (the monster catalogue
+  // gates the render, as for the codex).
+  const CompendiumScreen = NEW_UI
+    ? lazy(() =>
+        Promise.all([
+          import("@/domains/compendium/ui/CompendiumScreen"),
+          ensureSrdKind("monster"),
+        ]).then(([m]) => ({ default: m.CompendiumScreen }))
+      )
+    : null;
+
+  // The new UI's frame, mounted only around the screens already rebuilt (same flag).
+  const NewAppShell = NEW_UI
+    ? lazy(() => import("./NewAppShell").then((m) => ({ default: m.NewAppShell })))
+    : null;
+
+  // The new UI's design-system stories (/ui): dev and the VITE_NEW_UI preview only, stripped from production.
+  const UiStoriesPage =
+    import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1"
+      ? lazy(() =>
+          import("./routes/ui-stories").then((m) => ({ default: m.UiStoriesPage }))
+        )
+      : () => null;
+  const SpecimensPage = import.meta.env.DEV
+    ? lazy(() => import("./routes/specimens").then((m) => ({ default: m.SpecimensPage })))
     : () => null;
-const SpecimensPage = import.meta.env.DEV
-  ? lazy(() => import("./routes/specimens").then((m) => ({ default: m.SpecimensPage })))
-  : () => null;
 
-// A DATA router (createBrowserRouter), not the legacy <BrowserRouter><Routes> — the
-// data router is what enables `useBlocker` (the creation-wizard "discard your new
-// character?" navigation guard) and any future loaders/actions. The route TREE is
-// unchanged; `createRoutesFromElements` accepts the same `<Route>` JSX. The heavy
-// routes are `React.lazy`; ONE persistent Suspense boundary lives in AppShell around
-// its <Outlet> (fallback: FolioLoader region), so the shell chrome AND the boundary
-// stay mounted across every navigation — the previous page keeps painting until the
-// next chunk resolves (no per-route boundary that blanks + flashes on the first
-// eager→lazy leg). Only a genuinely cold fetch surfaces the loader (~250ms delay).
-const router = createBrowserRouter(
-  createRoutesFromElements(
-    // ROOT error net — a fullscreen, recoverable fallback for anything that throws
-    // before/around the shell (login, the auth guard). React Router catches route
-    // render errors itself, so an `errorElement` here (not just the React
-    // <ErrorBoundary> around <RouterProvider>) is what stops the bare white
-    // "Unexpected Application Error!" screen.
-    <Route errorElement={<RouteErrorBoundary variant="fullscreen" />}>
-      {/* Public */}
-      <Route path="/login" element={<LoginPage />} />
+  // A DATA router (createBrowserRouter), not the legacy <BrowserRouter><Routes> — the
+  // data router is what enables `useBlocker` (the creation-wizard "discard your new
+  // character?" navigation guard) and any future loaders/actions. The route TREE is
+  // unchanged; `createRoutesFromElements` accepts the same `<Route>` JSX. The heavy
+  // routes are `React.lazy`; ONE persistent Suspense boundary lives in AppShell around
+  // its <Outlet> (fallback: FolioLoader region), so the shell chrome AND the boundary
+  // stay mounted across every navigation — the previous page keeps painting until the
+  // next chunk resolves (no per-route boundary that blanks + flashes on the first
+  // eager→lazy leg). Only a genuinely cold fetch surfaces the loader (~250ms delay).
+  return createBrowserRouter(
+    createRoutesFromElements(
+      // ROOT error net — a fullscreen, recoverable fallback for anything that throws
+      // before/around the shell (login, the auth guard). React Router catches route
+      // render errors itself, so an `errorElement` here (not just the React
+      // <ErrorBoundary> around <RouterProvider>) is what stops the bare white
+      // "Unexpected Application Error!" screen.
+      <Route errorElement={<RouteErrorBoundary variant="fullscreen" />}>
+        {/* Public */}
+        <Route path="/login" element={<LoginPage />} />
 
-      {/* Legal & attribution — PUBLIC (the SRD/CC-BY attribution must read
+        {/* Legal & attribution — PUBLIC (the SRD/CC-BY attribution must read
           pre-auth; the login footer links it) yet mounted INSIDE the shell so it
           carries the SAME Topbar / realm-nav / footer chrome as every other
           surface — no page may stand outside the shell (owner 2026-07-07: a
@@ -245,10 +254,10 @@ const router = createBrowserRouter(
           is simply mounted a second time here, ABOVE the AuthGuard — no new
           layout mechanism. Its own in-shell error net mirrors the protected one,
           so a render fault shows the recoverable region panel with the nav intact. */}
-      <Route element={<AppShell />}>
-        <Route errorElement={<RouteErrorBoundary variant="region" />}>
-          {!LegalScreen && <Route path="/legal" element={<LegalPage />} />}
-          {/* A character share link. PUBLIC by design — the viewer has no account
+        <Route element={<AppShell />}>
+          <Route errorElement={<RouteErrorBoundary variant="region" />}>
+            {!LegalScreen && <Route path="/legal" element={<LegalPage />} />}
+            {/* A character share link. PUBLIC by design — the viewer has no account
               (that is the feature), and the server-side grant is the character
               doc's own `shared` flag, so this route enforces nothing: a link to an
               unshared/revoked/deleted character simply resolves to the one quiet
@@ -258,48 +267,14 @@ const router = createBrowserRouter(
               character id without a collection-group query, an index, and a
               broader rules grant, all of which the doc-path URL makes unnecessary
               (`docs/ARCHITECTURE.md` → "Public share links"). */}
-          {!SharedScreen && (
-            <Route path="/view/:uid/:charId" element={<SharedCharacterView />} />
-          )}
-        </Route>
-      </Route>
-
-      {/* VITE_NEW_UI: the legal page in the new frame, still public (no account shown). */}
-      {NewAppShell && LegalScreen && (
-        <Route
-          element={
-            <Suspense fallback={null}>
-              <NewAppShell />
-            </Suspense>
-          }
-        >
-          <Route errorElement={<RouteErrorBoundary variant="region" />}>
-            <Route path="/legal" element={<LegalScreen />} />
-            {SharedScreen && (
-              <Route path="/view/:uid/:charId" element={<SharedScreen />} />
+            {!SharedScreen && (
+              <Route path="/view/:uid/:charId" element={<SharedCharacterView />} />
             )}
           </Route>
         </Route>
-      )}
 
-      {/* DEV-ONLY crash probe (fullscreen): throws directly under the ROOT error
-          net, so the fullscreen fallback (+ its crash-report entry) is a drivable,
-          a11y/visual-covered surface. Stripped from the prod bundle. */}
-      {import.meta.env.DEV && <Route path="/_crash-root" element={<CrashProbe />} />}
-
-      {/* DEV-ONLY typography specimens: three font-trio sections for the
-          BG3-identity epic, screenshot-driven owner pick. Public (outside the
-          auth guard) so it can be captured without a session; stripped from
-          the prod bundle by the same DEV fold as the crash probes. */}
-      {import.meta.env.DEV && <Route path="/_specimens" element={<SpecimensPage />} />}
-      {(import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1") && (
-        <Route path="/ui" element={<UiStoriesPage />} />
-      )}
-
-      {/* Protected — the new flat-hub shell */}
-      <Route element={<AuthGuard />}>
-        {/* VITE_NEW_UI: the rebuilt screens live in the new frame. */}
-        {NewAppShell && CampaignScreen && (
+        {/* VITE_NEW_UI: the legal page in the new frame, still public (no account shown). */}
+        {NewAppShell && LegalScreen && (
           <Route
             element={
               <Suspense fallback={null}>
@@ -308,111 +283,153 @@ const router = createBrowserRouter(
             }
           >
             <Route errorElement={<RouteErrorBoundary variant="region" />}>
-              <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
-              {MemberSheetScreen && (
-                <Route
-                  path="/campaigns/:campaignId/sheets/:memberUid"
-                  element={<MemberSheetScreen />}
-                />
+              <Route path="/legal" element={<LegalScreen />} />
+              {SharedScreen && (
+                <Route path="/view/:uid/:charId" element={<SharedScreen />} />
               )}
-              {PlayScreen && (
-                <Route path="/characters/:characterId" element={<PlayScreen />} />
-              )}
-              {/* «Sali di livello» opens over the Play screen. */}
-              {PlayScreen && (
-                <Route
-                  path="/characters/:characterId/level-up"
-                  element={<PlayScreen />}
-                />
-              )}
-              {RosterScreen && <Route path="/characters" element={<RosterScreen />} />}
-              {CreationScreen && (
-                <Route path="/characters/new" element={<CreationScreen />} />
-              )}
-              {CompendiumScreen && (
-                <Route path="/compendium" element={<CompendiumScreen />} />
-              )}
-              {CampaignsScreen && (
-                <Route path="/campaigns" element={<CampaignsScreen />} />
-              )}
-              {SettingsScreen && <Route path="/settings" element={<SettingsScreen />} />}
-              {JoinScreen && <Route path="/join/:code" element={<JoinScreen />} />}
-              {NotFoundScreen && <Route path="*" element={<NotFoundScreen />} />}
             </Route>
           </Route>
         )}
-        <Route element={<AppShell />}>
-          {/* In-shell error net — a render crash on any surface (e.g. a malformed
+
+        {/* DEV-ONLY crash probe (fullscreen): throws directly under the ROOT error
+          net, so the fullscreen fallback (+ its crash-report entry) is a drivable,
+          a11y/visual-covered surface. Stripped from the prod bundle. */}
+        {import.meta.env.DEV && <Route path="/_crash-root" element={<CrashProbe />} />}
+
+        {/* DEV-ONLY typography specimens: three font-trio sections for the
+          BG3-identity epic, screenshot-driven owner pick. Public (outside the
+          auth guard) so it can be captured without a session; stripped from
+          the prod bundle by the same DEV fold as the crash probes. */}
+        {import.meta.env.DEV && <Route path="/_specimens" element={<SpecimensPage />} />}
+        {(import.meta.env.DEV || import.meta.env.VITE_NEW_UI === "1") && (
+          <Route path="/ui" element={<UiStoriesPage />} />
+        )}
+
+        {/* Protected — the new flat-hub shell */}
+        <Route element={<AuthGuard />}>
+          {/* VITE_NEW_UI: the rebuilt screens live in the new frame. */}
+          {NewAppShell && CampaignScreen && (
+            <Route
+              element={
+                <Suspense fallback={null}>
+                  <NewAppShell />
+                </Suspense>
+              }
+            >
+              <Route errorElement={<RouteErrorBoundary variant="region" />}>
+                <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
+                {MemberSheetScreen && (
+                  <Route
+                    path="/campaigns/:campaignId/sheets/:memberUid"
+                    element={<MemberSheetScreen />}
+                  />
+                )}
+                {PlayScreen && (
+                  <Route path="/characters/:characterId" element={<PlayScreen />} />
+                )}
+                {/* «Sali di livello» opens over the Play screen. */}
+                {PlayScreen && (
+                  <Route
+                    path="/characters/:characterId/level-up"
+                    element={<PlayScreen />}
+                  />
+                )}
+                {RosterScreen && <Route path="/characters" element={<RosterScreen />} />}
+                {CreationScreen && (
+                  <Route path="/characters/new" element={<CreationScreen />} />
+                )}
+                {CompendiumScreen && (
+                  <Route path="/compendium" element={<CompendiumScreen />} />
+                )}
+                {CampaignsScreen && (
+                  <Route path="/campaigns" element={<CampaignsScreen />} />
+                )}
+                {SettingsScreen && (
+                  <Route path="/settings" element={<SettingsScreen />} />
+                )}
+                {JoinScreen && <Route path="/join/:code" element={<JoinScreen />} />}
+                {NotFoundScreen && <Route path="*" element={<NotFoundScreen />} />}
+              </Route>
+            </Route>
+          )}
+          <Route element={<AppShell />}>
+            {/* In-shell error net — a render crash on any surface (e.g. a malformed
               character doc) shows a recoverable panel in the content area while the
               persistent nav stays mounted, so the user can simply walk away from
               the broken surface instead of being stranded on a white screen. */}
-          <Route errorElement={<RouteErrorBoundary variant="region" />}>
-            {/* The roster is canonical at /characters; `/` redirects there. */}
-            <Route index element={<Navigate to="/characters" replace />} />
-            <Route path="/characters" element={<RosterPage />} />
-            {/* Creation — static `new` ranks above the dynamic `:characterId`. */}
-            <Route path="/characters/new" element={<CreationWizard />} />
-            {/* Character cockpit — tab is in-view state, not a sub-route. */}
-            {!PlayScreen && (
-              <Route path="/characters/:characterId" element={<CharacterCockpit />} />
-            )}
-            {/* Level-up — the full-screen wizard-F flow (own route so it gets the
+            <Route errorElement={<RouteErrorBoundary variant="region" />}>
+              {/* The roster is canonical at /characters; `/` redirects there. */}
+              <Route index element={<Navigate to="/characters" replace />} />
+              <Route path="/characters" element={<RosterPage />} />
+              {/* Creation — static `new` ranks above the dynamic `:characterId`. */}
+              <Route path="/characters/new" element={<CreationWizard />} />
+              {/* Character cockpit — tab is in-view state, not a sub-route. */}
+              {!PlayScreen && (
+                <Route path="/characters/:characterId" element={<CharacterCockpit />} />
+              )}
+              {/* Level-up — the full-screen wizard-F flow (own route so it gets the
                 useBlocker leave-confirm + beforeunload, like creation). */}
-            {PlayScreen ? (
-              // The classic wizard takes the levels the new screen does not draw yet.
+              {PlayScreen ? (
+                // The classic wizard takes the levels the new screen does not draw yet.
+                <Route
+                  path="/characters/:characterId/level-up/classic"
+                  element={<LevelUpWizard />}
+                />
+              ) : (
+                <Route
+                  path="/characters/:characterId/level-up"
+                  element={<LevelUpWizard />}
+                />
+              )}
+              {/* Campaigns */}
+              {!CampaignsScreen && (
+                <Route path="/campaigns" element={<CampaignsListPage />} />
+              )}
+              {!CampaignScreen && (
+                <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
+              )}
+              {/* T4 — DM reads a party member's full sheet, read-only. */}
+              {!MemberSheetScreen && (
+                <Route
+                  path="/campaigns/:campaignId/sheets/:memberUid"
+                  element={<MemberSheetView />}
+                />
+              )}
+              {/* Shareable invite link (#33) — auto-joins, then redirects to the hub. */}
+              {!JoinScreen && (
+                <Route path="/join/:code" element={<JoinCampaignRoute />} />
+              )}
+              {/* Compendium */}
+              {!CompendiumScreen && (
+                <Route path="/compendium" element={<CompendiumPage />} />
+              )}
+              {/* Settings */}
+              {!SettingsScreen && <Route path="/settings" element={<SettingsPage />} />}
+              {/* Admin — role-gated console, lazy + admin-only. */}
+              <Route path="/admin" element={<AdminPage />} />
+              {/* Admin reads ANY user's character, read-only (admin override grant). */}
               <Route
-                path="/characters/:characterId/level-up/classic"
-                element={<LevelUpWizard />}
+                path="/admin/users/:uid/characters/:charId"
+                element={<AdminSheetView />}
               />
-            ) : (
-              <Route
-                path="/characters/:characterId/level-up"
-                element={<LevelUpWizard />}
-              />
-            )}
-            {/* Campaigns */}
-            {!CampaignsScreen && (
-              <Route path="/campaigns" element={<CampaignsListPage />} />
-            )}
-            {!CampaignScreen && (
-              <Route path="/campaigns/:campaignId" element={<CampaignHubPage />} />
-            )}
-            {/* T4 — DM reads a party member's full sheet, read-only. */}
-            {!MemberSheetScreen && (
-              <Route
-                path="/campaigns/:campaignId/sheets/:memberUid"
-                element={<MemberSheetView />}
-              />
-            )}
-            {/* Shareable invite link (#33) — auto-joins, then redirects to the hub. */}
-            {!JoinScreen && <Route path="/join/:code" element={<JoinCampaignRoute />} />}
-            {/* Compendium */}
-            {!CompendiumScreen && (
-              <Route path="/compendium" element={<CompendiumPage />} />
-            )}
-            {/* Settings */}
-            {!SettingsScreen && <Route path="/settings" element={<SettingsPage />} />}
-            {/* Admin — role-gated console, lazy + admin-only. */}
-            <Route path="/admin" element={<AdminPage />} />
-            {/* Admin reads ANY user's character, read-only (admin override grant). */}
-            <Route
-              path="/admin/users/:uid/characters/:charId"
-              element={<AdminSheetView />}
-            />
-            {/* DEV-ONLY crash probe (region): throws inside the IN-SHELL error
+              {/* DEV-ONLY crash probe (region): throws inside the IN-SHELL error
                 net, so the region fallback (+ its crash-report entry) is a
                 drivable, a11y/visual-covered surface. Stripped from prod. */}
-            {import.meta.env.DEV && <Route path="/_crash" element={<CrashProbe />} />}
-            {/* Catch-all — recoverable 404 inside the shell. */}
-            {!NotFoundScreen && <Route path="*" element={<NotFoundPage />} />}
+              {import.meta.env.DEV && <Route path="/_crash" element={<CrashProbe />} />}
+              {/* Catch-all — recoverable 404 inside the shell. */}
+              {!NotFoundScreen && <Route path="*" element={<NotFoundPage />} />}
+            </Route>
           </Route>
         </Route>
       </Route>
-    </Route>
-  )
-);
+    )
+  );
+}
 
 export function AppRouter() {
+  const newUi = useNewUi();
+  const router = useMemo(() => buildRouter(newUi), [newUi]);
+  useLayoutEffect(() => setNewUiFrame(newUi), [newUi]);
   return (
     <>
       <RouterProvider router={router} />

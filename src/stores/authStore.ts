@@ -23,6 +23,8 @@ export interface UserProfile {
     language: Locale;
     theme: "dark" | "light" | "system";
   };
+  /** «Try the new interface» (#1233): the player's opt-in. Absent or false = classic. */
+  newUi?: boolean;
 }
 
 interface AuthState {

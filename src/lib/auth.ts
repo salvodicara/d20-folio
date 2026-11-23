@@ -154,7 +154,7 @@ async function ensureUserDocument(user: User): Promise<void> {
  * Returns null if user document doesn't exist.
  */
 /** Firestore user document shape (for type-safe access) */
-interface FirestoreUserDoc {
+export interface FirestoreUserDoc {
   uid: string;
   email: string;
   displayName: string;
@@ -169,6 +169,8 @@ interface FirestoreUserDoc {
     language: Locale;
     theme: "dark" | "light" | "system";
   } | null;
+  /** «Try the new interface» (#1233). Optional: absent on every older document. */
+  newUi?: unknown;
 }
 
 async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
@@ -179,7 +181,11 @@ async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
     return null;
   }
 
-  const data = userSnap.data() as FirestoreUserDoc;
+  return toUserProfile(userSnap.data() as FirestoreUserDoc);
+}
+
+/** The stored user document as the app's profile. Only a literal `true` opts in. */
+export function toUserProfile(data: FirestoreUserDoc): UserProfile {
   const profile: UserProfile = {
     uid: data.uid,
     email: data.email,
@@ -194,6 +200,7 @@ async function fetchUserProfile(uid: string): Promise<UserProfile | null> {
       language: data.settings?.language ?? "en",
       theme: data.settings?.theme ?? "dark",
     },
+    newUi: data.newUi === true,
   };
 
   return profile;
