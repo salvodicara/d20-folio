@@ -1,7 +1,6 @@
 {
   "campaignContext": {
     "unread": "Can't read the campaign yet. Try again in a moment.",
-    "failed": "Couldn't reach your campaign, so this wasn't done. Reload to try again.",
-    "reload": "Reload"
+    "failed": "Couldn't reach your campaign, so this wasn't done. Reload to try again."
   }
 }

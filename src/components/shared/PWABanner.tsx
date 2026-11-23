@@ -104,7 +104,7 @@ export function PWABanner() {
           </div>
           <div className="flex items-center gap-2">
             <Button size="sm" onClick={reloadApp}>
-              {t("pwa.reload")}
+              {t("common.reload")}
             </Button>
             <IconButton onClick={appUpdate.dismiss} aria-label={t("common.close")}>
               <X className="h-3.5 w-3.5" />

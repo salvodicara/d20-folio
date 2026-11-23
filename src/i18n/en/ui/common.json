@@ -89,6 +89,7 @@
     "skip": "Skip",
     "resistance": "Resistance",
     "coins": "Coins",
-    "customize": "Customize"
+    "customize": "Customize",
+    "reload": "Reload"
   }
 }
