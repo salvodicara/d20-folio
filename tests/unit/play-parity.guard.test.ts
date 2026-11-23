@@ -15,48 +15,37 @@ import { describe, expect, it } from "vitest";
 
 type Answer =
   | { covered: string } // the new-UI module that covers it
+  | { partial: string; missing: string } // a mounted new-UI module covers part; what is not
   | { model: string; pending: string } // the headless model is ready; the control is not
   | { pending: string } // the owner of the new control still to build
   | { na: string }; // not a prompt (a display row): why
 
 /** Component-level classic prompts, by function name. */
 const COMPONENTS: Record<string, Answer> = {
-  AddDefensePicker: {
-    model: "src/domains/play/forms-defenses-view.ts",
-    pending: "direction: the control on screen",
-  },
+  AddDefensePicker: { covered: "src/domains/play/ui/PlayDefenses.tsx" },
   BestiaryFormPicker: { covered: "src/domains/play/ui/PlayFormPicker.tsx" },
-  BestiarySummonPicker: {
-    model: "src/domains/play/forms-defenses-view.ts",
-    pending: "direction: the control on screen",
+  BestiarySummonPicker: { covered: "src/domains/play/ui/PlayCompanions.tsx" },
+  ChoiceRePicker: {
+    partial: "src/domains/play/ui/PlayRestSummary.tsx",
+    missing:
+      "re-picking maneuvers, metamagic, invocations or weapon masteries outside a level-up",
   },
-  ChoiceRePicker: { pending: "direction: the grant-bundle re-pick (rest batch)" },
-  ChoiceResistancePicker: {
-    model: "src/domains/play/reactions-resistance-view.ts",
-    pending: "direction: the control on screen",
-  },
+  ChoiceResistancePicker: { covered: "src/domains/play/ui/PlayDefenses.tsx" },
   ConcentrationSaveBanner: { covered: "src/domains/play/ui/PlayConcentrationSave.tsx" },
   ConcentrationSavePrompt: { covered: "src/domains/play/ui/PlayConcentrationSave.tsx" },
   DamageTray: { covered: "src/domains/play/ui/PlayTray.tsx" },
   DefenseRow: { na: "a display row of the sheet's defenses" },
   DyingBanner: { covered: "src/domains/play/ui/PlayDown.tsx" },
-  FamiliarFormPicker: {
-    model: "src/domains/play/forms-defenses-view.ts",
-    pending: "direction: the control on screen",
-  },
+  FamiliarFormPicker: { covered: "src/domains/play/ui/PlayFamiliarPicker.tsx" },
   HpEditPopover: { covered: "src/domains/play/ui/PlayHp.tsx" },
   ItemResourceRailRow: { covered: "src/domains/play/ui/PlayLeft.tsx" },
   LogEntryRow: { covered: "src/domains/play/ui/PlayRight.tsx" },
-  OffListReactionRow: {
-    model: "src/domains/play/reactions-resistance-view.ts",
-    pending: "direction: the control on screen",
-  },
+  OffListReactionRow: { covered: "src/domains/play/ui/PlayReactionExtras.tsx" },
   PipRow: { na: "the death-save gems, a display of the track" },
-  PromptedBanner: { pending: "direction: Wish's follow-up on the turn strip" },
-  ReadiedSpellRow: {
-    model: "src/domains/play/reactions-resistance-view.ts",
-    pending: "direction: the control on screen",
+  PromptedBanner: {
+    na: "a scroll-into-view wrapper for the tracker's prompts, not a prompt",
   },
+  ReadiedSpellRow: { covered: "src/domains/play/ui/PlayReactionExtras.tsx" },
   RollReactionDialog: { covered: "src/domains/play/ui/PlayCentre.tsx" },
   SpeciesChoicesBanner: { covered: "src/domains/play/ui/PlaySpeciesChoices.tsx" },
   SummaryRow: { covered: "src/domains/play/ui/PlayRest.tsx" },
@@ -66,60 +55,40 @@ const COMPONENTS: Record<string, Answer> = {
 /** Store-level classic prompts (direction's inventory, 2026-11-09). */
 const SELECTORS: Record<string, Answer> = {
   applyFirstRollTopUps: { covered: "src/domains/play/sheet-initiative-roll.ts" },
-  resolveStartOfTurnRegen: {
-    model: "src/domains/play/turn-start-notes.ts",
-    pending: "direction: the control on screen",
-  },
-  resolveRound1DamageDoubles: {
-    model: "src/domains/play/turn-start-notes.ts",
-    pending: "direction: the control on screen",
-  },
-  toggleSurprise: {
-    model: "src/domains/play/roll-dialog-state.ts",
-    pending: "direction: the control on screen",
-  },
+  resolveStartOfTurnRegen: { covered: "src/domains/play/ui/PlayTurnStart.tsx" },
+  resolveRound1DamageDoubles: { covered: "src/domains/play/ui/PlayTurnStart.tsx" },
+  toggleSurprise: { covered: "src/domains/play/ui/PlayCentre.tsx" },
   maintenancePrompts: {
-    model: "src/domains/play/turn-model.ts",
-    pending: "direction: the control on screen",
+    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
+    missing:
+      "asked only in a fight without a campaign (PlayCentre renders the solo controls only then); a campaign fight's End Turn is not checked here",
   },
   pendingWish: {
-    model: "src/domains/play/turn-model.ts",
-    pending: "direction: the control on screen",
+    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
+    missing: "the duplicate and Wish Stress buttons; the note shows only in a solo game",
   },
   timeStopTurns: {
-    model: "src/domains/play/turn-model.ts",
-    pending: "direction: the control on screen",
+    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
+    missing:
+      "offered only in a fight without a campaign (PlayCentre renders the solo notes only then)",
   },
   extraTurnOffer: {
-    model: "src/domains/play/turn-model.ts",
-    pending: "direction: the control on screen",
+    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
+    missing:
+      "offered only in a fight without a campaign (PlayCentre renders the solo notes only then)",
   },
   standUp: {
-    model: "src/domains/play/turn-model.ts",
-    pending: "direction: the control on screen",
+    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
+    missing:
+      "«Rialzati» shows only in a fight without a campaign (PlayCentre renders the solo controls only then)",
   },
-  soloEndTurn: {
-    model: "src/domains/play/turn-model.ts",
-    pending: "direction: the control on screen",
-  },
-  concentrationDrop: {
-    model: "src/domains/play/concentration-model.ts",
-    pending: "direction: the control on screen",
-  },
+  soloEndTurn: { covered: "src/domains/play/ui/PlaySoloTurn.tsx" },
+  concentrationDrop: { covered: "src/domains/play/ui/PlayConcentration.tsx" },
   critAtZero: { covered: "src/domains/play/ui/PlayDown.tsx" },
-  deathSaveAdvantage: {
-    model: "src/domains/play/roll-dialog-state.ts",
-    pending: "direction: the control on screen",
-  },
+  deathSaveAdvantage: { covered: "src/domains/play/ui/PlayDown.tsx" },
   heldInspiration: { covered: "src/domains/play/ui/PlayInspiration.tsx" },
-  afterHitOptions: {
-    model: "src/domains/play/after-hit-options.ts",
-    pending: "direction: the control on screen",
-  },
-  checkEntry: {
-    model: "src/domains/play/check-entry.ts",
-    pending: "direction: the control on screen",
-  },
+  afterHitOptions: { covered: "src/domains/play/ui/PlayAfterHit.tsx" },
+  checkEntry: { covered: "src/domains/play/ui/PlayCheck.tsx" },
 };
 
 /**
@@ -165,7 +134,7 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   "Rename the campaign": {
     classic: "src/features/campaigns/CampaignHubPage.tsx",
     answer: {
-      model: "src/features/campaigns/campaignStore.ts",
+      // The shared store (its rename action is ready) feeds every campaign control.
       pending: "direction: the control on screen",
     },
   },
@@ -186,7 +155,7 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   "Hide a creature, reveal its HP, ally or enemy, reorder the turns": {
     classic: "src/features/campaigns/party-encounter.tsx",
     answer: {
-      model: "src/features/campaigns/combat-lifecycle-io.ts",
+      // combat-lifecycle-io's hide/reveal writes are ready; the new Fight tab only honours them.
       pending: "direction: the control on screen",
     },
   },
@@ -223,6 +192,52 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
 const PROMPT_FUNCTION =
   /^(?:export )?function ([A-Z][A-Za-z]*(?:Banner|Prompt|Picker|Row|Popover|Dialog|Tray))\b/gm;
 
+const PLAY_SCREEN = "src/domains/play/ui/PlayScreen.tsx";
+const CAMPAIGN_SCREEN = "src/domains/campaign/ui/CampaignScreen.tsx";
+
+const IMPORT =
+  /(?:import|export)[^"']*?from\s*["']([^"']+)["']|import\(\s*["']([^"']+)["']\s*\)/g;
+
+/** Resolve one import specifier to a source file, or null for a package. */
+function resolveImport(from: string, spec: string): string | null {
+  let base: string;
+  if (spec.startsWith("@/")) base = `src/${spec.slice(2)}`;
+  else if (spec.startsWith(".")) base = join(from.replace(/\/[^/]*$/, ""), spec);
+  else return null;
+  for (const ext of ["", ".ts", ".tsx", "/index.ts", "/index.tsx"]) {
+    const path = `${base}${ext}`;
+    if (existsSync(path) && statSync(path).isFile()) return path;
+  }
+  return null;
+}
+
+/** Every source file imported, step by step, from `entry` (the entry included). */
+function reachableFrom(entry: string): Set<string> {
+  const seen = new Set<string>();
+  const queue = [entry];
+  while (queue.length > 0) {
+    const file = queue.pop() as string;
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const m of readFileSync(file, "utf8").matchAll(IMPORT)) {
+      const next = resolveImport(file, m[1] ?? m[2] ?? "");
+      if (next && !seen.has(next)) queue.push(next);
+    }
+  }
+  return seen;
+}
+
+/** The new-UI controls (src/domains/…/ui) on the screen that import `model` directly. */
+function usersOnScreen(model: string, screen: string): string[] {
+  return [...reachableFrom(screen)].filter(
+    (file) =>
+      /^src\/domains\/[^/]+\/ui\//.test(file) &&
+      [...readFileSync(file, "utf8").matchAll(IMPORT)].some(
+        (m) => resolveImport(file, m[1] ?? m[2] ?? "") === model
+      )
+  );
+}
+
 function classicPromptNames(dir: string): Set<string> {
   const names = new Set<string>();
   for (const entry of readdirSync(dir)) {
@@ -252,10 +267,45 @@ describe("Play parity: every classic prompt has an answer on the new Play screen
   it("each covering module exists", () => {
     const answers = [...Object.values(COMPONENTS), ...Object.values(SELECTORS)];
     const gone = answers.flatMap((a) => {
-      const path = "covered" in a ? a.covered : "model" in a ? a.model : null;
+      const path =
+        "covered" in a
+          ? a.covered
+          : "partial" in a
+            ? a.partial
+            : "model" in a
+              ? a.model
+              : null;
       return path && !existsSync(path) ? [path] : [];
     });
     expect(gone).toEqual([]);
+  });
+
+  // A covering module must be on screen: imported, step by step, from the Play screen.
+  it("each covering module is mounted on the Play screen", () => {
+    const mounted = reachableFrom(PLAY_SCREEN);
+    const answers = [...Object.values(COMPONENTS), ...Object.values(SELECTORS)];
+    const offScreen = answers.flatMap((a) =>
+      "covered" in a && !mounted.has(a.covered)
+        ? [a.covered]
+        : "partial" in a && !mounted.has(a.partial)
+          ? [a.partial]
+          : []
+    );
+    expect(offScreen).toEqual([]);
+  });
+
+  // A «pending» row goes stale when a mounted control starts using its model: the
+  // 11-09 rows stayed pending after their controls shipped (re-inventory, #1228).
+  it("no pending prompt's model is already used by a control on the Play screen", () => {
+    const stale = Object.entries({ ...COMPONENTS, ...SELECTORS }).flatMap(([name, a]) =>
+      "model" in a && usersOnScreen(a.model, PLAY_SCREEN).length > 0
+        ? [`${name}: ${usersOnScreen(a.model, PLAY_SCREEN).join(", ")}`]
+        : []
+    );
+    expect(
+      stale,
+      "mark these covered by the control, or say what is still missing"
+    ).toEqual([]);
   });
 
   it("each store-level prompt still exists in the classic code, or is retired here", () => {
@@ -303,5 +353,26 @@ describe("Campaign parity: every classic-only feature has an answer", () => {
       return path && !existsSync(path) ? [path] : [];
     });
     expect(gone).toEqual([]);
+  });
+
+  // No campaign row is covered yet, so this holds trivially until the first one is.
+  it("each covering module is mounted on the campaign screen", () => {
+    const mounted = reachableFrom(CAMPAIGN_SCREEN);
+    const offScreen = Object.values(CAMPAIGN).flatMap(({ answer }) =>
+      "covered" in answer && !mounted.has(answer.covered) ? [answer.covered] : []
+    );
+    expect(offScreen).toEqual([]);
+  });
+
+  it("no pending feature's model is already used by a control on the campaign screen", () => {
+    const stale = Object.entries(CAMPAIGN).flatMap(([name, { answer }]) =>
+      "model" in answer && usersOnScreen(answer.model, CAMPAIGN_SCREEN).length > 0
+        ? [`${name}: ${usersOnScreen(answer.model, CAMPAIGN_SCREEN).join(", ")}`]
+        : []
+    );
+    expect(
+      stale,
+      "mark these covered by the control, or say what is still missing"
+    ).toEqual([]);
   });
 });
