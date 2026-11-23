@@ -211,6 +211,8 @@ export function GlobalCombatMount(): null {
   // or the confirm deadline, and a read error is never «no campaigns» (#1217,
   // campaigns-read.ts).
   const setReadFailed = useCampaignsReadStore((s) => s.setFailed);
+  const readFailed = useCampaignsReadStore((s) => s.failed);
+  const attachment = useCampaignsReadStore((s) => s.attachment);
   useEffect(() => {
     let cancelled = false;
     let confirmTimer: ReturnType<typeof setTimeout> | undefined;
@@ -219,7 +221,6 @@ export function GlobalCombatMount(): null {
     const confirm = (): void => {
       if (cancelled) return;
       clearTimeout(confirmTimer);
-      setReadFailed(false);
       setCampaignsSettled(true);
     };
     if (!uid) {
@@ -232,42 +233,53 @@ export function GlobalCombatMount(): null {
         cancelled = true;
       };
     }
-    const attach = (attempt: number): void => {
-      let arrived = false;
+    // The failures in a row; any snapshot resets it, so a long session survives
+    // occasional errors.
+    let failures = 0;
+    const attach = (): void => {
+      // The confirm deadline runs from attach: a cached answer that arrives after it
+      // counts at once.
+      const attachedAt = Date.now();
+      let waiting = false;
       unsub = subscribeToSharedCampaigns(
         uid,
         (next, meta) => {
           if (cancelled) return;
+          failures = 0;
+          setReadFailed(false);
           setCampaigns(next);
           if (!meta?.fromCache || !navigator.onLine) {
             confirm();
             return;
           }
-          if (arrived) return;
-          arrived = true;
-          clearTimeout(confirmTimer);
-          confirmTimer = setTimeout(confirm, CAMPAIGNS_CONFIRM_MS);
+          if (waiting) return;
+          waiting = true;
+          const left = CAMPAIGNS_CONFIRM_MS - (Date.now() - attachedAt);
+          if (left <= 0) confirm();
+          else confirmTimer = setTimeout(confirm, left);
         },
-        () => {
+        (err) => {
           // Firestore stops a listener for good after an error: attach it again.
           if (cancelled) return;
           clearTimeout(confirmTimer);
-          if (attempt < CAMPAIGNS_READ_ATTEMPTS) {
+          failures += 1;
+          if (failures < CAMPAIGNS_READ_ATTEMPTS) {
             retryTimer = setTimeout(() => {
-              if (!cancelled) attach(attempt + 1);
-            }, retryDelayMs(attempt));
+              if (!cancelled) attach();
+            }, retryDelayMs(failures));
             return;
           }
+          // Unread, never «no campaigns»: the list is kept for display, actions refuse
+          // with Reload (a solo character is settled below, per open character).
+          diagnosticsLog("error", "campaigns.read-failed", {
+            code: (err as { code?: unknown }).code ?? "unknown",
+          });
+          setCampaignsSettled(false);
           setReadFailed(true);
-          // Unread, never «no campaigns» — unless this character is in none.
-          if (playsSolo(useCharacterStore.getState().character?.id ?? null)) {
-            setCampaigns([]);
-            setCampaignsSettled(true);
-          }
         }
       );
     };
-    attach(1);
+    attach();
     return () => {
       cancelled = true;
       clearTimeout(confirmTimer);
@@ -452,7 +464,11 @@ export function GlobalCombatMount(): null {
       effectsCampaignId && clockCampaign && uid && openCharacterId
         ? partyRosterOf(clockCampaign, uid, openCharacterId)
         : null,
-      campaignsSettled ? openCharacterId : null
+      // A campaigns read that keeps failing still settles a character in no campaign:
+      // solo play keeps working (#1217). Decided for whichever character is open.
+      campaignsSettled || (readFailed && playsSolo(openCharacterId))
+        ? openCharacterId
+        : null
     );
   }, [
     devParty,
@@ -461,6 +477,9 @@ export function GlobalCombatMount(): null {
     uid,
     openCharacterId,
     campaignsSettled,
+    readFailed,
+    // `playsSolo` reads the attachment: re-decide when it arrives or changes.
+    attachment,
     setParty,
   ]);
 
