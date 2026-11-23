@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { installErrorLog, getErrorLog, clearErrorLog } from "@/features/report/error-log";
+import { breadcrumbSnapshot } from "@/lib/diagnostics/logger";
 
 describe("error-log ring buffer", () => {
   let uninstall: () => void = () => undefined;
@@ -114,5 +115,24 @@ describe("error-log ring buffer", () => {
 
     console.error(new TypeError("bad value"));
     expect(getErrorLog()[0]?.message).toContain("TypeError: bad value");
+  });
+
+  // Coordinator, 2026-11-22: the owner's digest counted 25 of these as errors. Firestore
+  // logs it with console.error when a second tab cannot take the multi-tab persistence
+  // lease, and retries on its own: a warning breadcrumb, never an auto-reported error.
+  it("records the Firestore multi-tab lease line as a warning, not an error", () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    uninstall = installErrorLog();
+    console.error(
+      "@firebase/firestore: Firestore (12.13.0): Failed to obtain primary lease for action 'Collect garbage'."
+    );
+    console.error("boom");
+    const crumbs = breadcrumbSnapshot().filter((c) => c.event === "runtime.console");
+    const lease = crumbs.find((c) => String(c.data?.message).includes("primary lease"));
+    const boom = crumbs.find((c) => String(c.data?.message).includes("boom"));
+    expect(lease?.level).toBe("warn");
+    expect(boom?.level).toBe("error");
+    // It stays in the bug-report ring like any other console line.
+    expect(getErrorLog().some((e) => e.message.includes("primary lease"))).toBe(true);
   });
 });

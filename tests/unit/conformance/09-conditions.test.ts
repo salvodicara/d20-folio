@@ -346,7 +346,8 @@ describe("conformance · 9. conditions and exhaustion", () => {
     () => {
       const abjure = getSrdFeatureSource("paladin-abjure-foes");
       expect(abjure).toBeDefined();
-      // Frightened, ending on damage, limiting the turn to one of move/action/bonus.
+      // Frightened, ending on damage. The «one of move / action / Bonus Action» limit
+      // is the table's to apply; the feature's text states it (abjure-foes-text.test.ts).
       const text = JSON.stringify(abjure);
       expect(text).toContain('"frightened"');
       expect(text).toContain("target-damaged");
