@@ -174,7 +174,11 @@ export function subscribeCombatState(
         }
         const parsed = parseCombatState(state);
         if (!parsed.ok) {
-          diagnosticsLog("error", "combat-state.invalid", { reason: parsed.reason });
+          diagnosticsLog("error", "combat-state.invalid", {
+            reason: parsed.reason,
+            // Which check refused it (`<step>:<field>`, keys only, never a value).
+            where: parsed.where,
+          });
           onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
           return;
         }
@@ -197,7 +201,11 @@ export function subscribeCombatState(
       }
       const parsed = parseCombatState(snap.data());
       if (!parsed.ok) {
-        diagnosticsLog("error", "combat-state.invalid", { reason: parsed.reason });
+        diagnosticsLog("error", "combat-state.invalid", {
+          reason: parsed.reason,
+          // Which check refused it (`<step>:<field>`, keys only, never a value).
+          where: parsed.where,
+        });
         onError?.(new TypeError(`Invalid combat state: ${parsed.reason}`));
         return;
       }
