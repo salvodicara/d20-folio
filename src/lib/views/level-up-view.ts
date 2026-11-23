@@ -321,8 +321,8 @@ export function fightingStyleOptions(
  * Compendium facet and the Features re-pick use, so the property reads in the
  * active locale ("Topple" / "Rovesciamento") instead of the raw English token.
  */
-export function weaponMasteryOptions(locale: Locale): LevelUpOptionVM[] {
-  return listMasterableWeapons().map((w) => ({
+export function weaponMasteryOptions(locale: Locale, classId: string): LevelUpOptionVM[] {
+  return listMasterableWeapons(classId).map((w) => ({
     id: w.id,
     label: localizeSrd("equipment", w.id, "name", locale),
     searchEn: localizeSrd("equipment", w.id, "name", "en"),
