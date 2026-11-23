@@ -24,6 +24,7 @@
  * by the leaf surfaces (`ThisTurnTracker`, the Play-tab cards).
  */
 
+import { unreadNotice } from "@/features/campaigns/campaigns-read";
 import { castTriggerFacts, firedCastTriggers } from "@/lib/smart-tracker";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { featureNameLoc } from "@/lib/srd-feature-lookup";
@@ -2779,7 +2780,7 @@ export function TurnEconomyProvider({
       void fightSettledSoon(doc.id).then((known) => {
         usePartyRosterStore.setState({ castWaiting: null });
         if (!known) {
-          showToast({ message: t("campaignContext.unread"), duration: 6000 });
+          showToast(unreadNotice(t));
           return;
         }
         endTurnSettled();
@@ -3189,7 +3190,7 @@ export function TurnEconomyProvider({
       void fightSettledSoon(doc.id).then((known) => {
         usePartyRosterStore.setState({ castWaiting: null });
         if (!known) {
-          showToast({ message: t("campaignContext.unread"), duration: 6000 });
+          showToast(unreadNotice(t));
           return;
         }
         executeSettled(action, intent);

@@ -6,6 +6,7 @@
  * (rest-world-boundary.ts), applies a Short Rest's heal and its spent Hit Point Dice,
  * and ends the current fight. A rest is the undo stack's fence: it is not undone.
  */
+import { unreadNotice } from "@/features/campaigns/campaigns-read";
 import { clockFor } from "@/lib/play/clock";
 import { campaignsRead, campaignsReadSoon } from "@/features/campaigns/context-settled";
 import { useRef, useState } from "react";
@@ -49,10 +50,7 @@ export function useRestCommit() {
     setCommitting(true);
     try {
       if (!(await campaignsReadSoon(reviewed.id))) {
-        useToastStore.getState().showToast({
-          message: t("campaignContext.unread"),
-          duration: 6000,
-        });
+        useToastStore.getState().showToast(unreadNotice(t));
         return null;
       }
     } finally {

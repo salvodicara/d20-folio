@@ -1,5 +1,7 @@
 {
   "campaignContext": {
-    "unread": "Non riesco ancora a leggere la campagna. Riprova tra un momento."
+    "unread": "Non riesco ancora a leggere la campagna. Riprova tra un momento.",
+    "failed": "Non riesco a raggiungere la tua campagna, quindi l'azione non è stata fatta. Ricarica per riprovare.",
+    "reload": "Ricarica"
   }
 }
