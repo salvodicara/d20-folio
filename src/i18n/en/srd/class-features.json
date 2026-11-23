@@ -63,7 +63,7 @@
     "name": "Improved Brutal Strike"
   },
   "barbarian-improved-brutal-strike": {
-    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (before the start of your next turn, the next attack roll made by another creature against the target gains a +5 bonus; once per turn).",
+    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (before the start of your next turn, the next attack roll made by another creature against the target gains a +5 bonus; an attack roll can gain only one Sundering Blow bonus).",
     "name": "Improved Brutal Strike"
   },
   "barbarian-indomitable-might": {

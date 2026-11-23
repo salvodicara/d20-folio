@@ -74,7 +74,7 @@
     "gist": "Colpo Brutale infligge 2d10 e applica due effetti diversi"
   },
   "barbarian-improved-brutal-strike": {
-    "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (prima dell'inizio del tuo turno successivo, il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5; una volta per turno).",
+    "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (prima dell'inizio del tuo turno successivo, il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5; un tiro per colpire può ottenere un solo bonus di Colpo Distruttivo).",
     "name": "Colpo Brutale Migliorato",
     "gist": "Nuove opzioni di Colpo Brutale: Svantaggio al prossimo TS, o +5 al prossimo attacco altrui"
   },

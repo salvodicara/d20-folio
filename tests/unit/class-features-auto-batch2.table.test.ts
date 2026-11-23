@@ -59,7 +59,10 @@ describe("the catalogue text each case encodes", () => {
     ["barbarian-greater-brutal-strike", "Your Brutal Strike damage increases to 2d10"],
     ["barbarian-brutal-strike", "that roll mustn't have Disadvantage"],
     ["barbarian-brutal-strike", "only one Hamstring Blow at a time, the most recent"],
-    ["barbarian-improved-brutal-strike", "+5 bonus; once per turn"],
+    [
+      "barbarian-improved-brutal-strike",
+      "an attack roll can gain only one Sundering Blow bonus",
+    ],
     [
       "ranger-relentless-hunter",
       "Taking damage can't break your Concentration on Hunter's Mark",
@@ -161,6 +164,17 @@ describe("Brutal Strike — an extra die on one Strength attack per turn", () =>
     };
     expect(offered(true)).toContain("1d10");
     expect(offered(false)).not.toContain("1d10");
+  });
+
+  it("Reckless Attack ends at the start of your next turn, so the die needs it again each turn", () => {
+    const doc = withFeatures("barbarian", 9, [
+      "barbarian-reckless-attack",
+      "barbarian-brutal-strike",
+    ]);
+    const reckless = resolveActions(doc).find(
+      (a) => a.activatesKey === "barbarian-reckless-attack"
+    );
+    expect(reckless?.activeTurnBoundary).toEqual({ turns: 1, phase: "turn-start" });
   });
 
   it("the rider chip says what it needs: «needs Reckless Attack» / «richiede Attacco Irruento»", async () => {
