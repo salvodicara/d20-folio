@@ -259,3 +259,29 @@ describe("attunement on the Play inventory", () => {
     expect(pack.find((i) => i.name === "Pozione di Guarigione")?.attune).toBeUndefined();
   });
 });
+
+describe("the item pane's moves (#1230)", () => {
+  const doc = (): CharacterDoc => {
+    const d = structuredClone(MOCK_CHARACTER);
+    d.character.equipment = [
+      { srdId: "chain-shirt", instanceId: "armor", quantity: 1, equipped: true },
+      { srdId: "leather-armor", instanceId: "spare", quantity: 1 },
+      { srdId: "torch", instanceId: "torch", quantity: 4 },
+    ];
+    return d;
+  };
+  const items = () => playInventoryView(doc(), "en").groups.flatMap((g) => g.items);
+  const byName = (re: RegExp) => items().find((i) => re.test(i.name));
+
+  it("each item says where it is stored, so the pane can change it", () => {
+    expect(byName(/torch/i)?.source).toEqual({ list: "equipment", idx: 2 });
+    expect(items().find((i) => i.line?.kind === "damage")?.source.list).toBe("weapons");
+  });
+
+  it("armor can be put on or taken off; a torch cannot; weapons are always at hand", () => {
+    expect(byName(/chain shirt/i)?.equip).toEqual({ equipped: true });
+    expect(byName(/leather/i)?.equip).toEqual({ equipped: false });
+    expect(byName(/torch/i)?.equip).toBeUndefined();
+    expect(items().find((i) => i.source.list === "weapons")?.equip).toBeUndefined();
+  });
+});
