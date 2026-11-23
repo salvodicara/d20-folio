@@ -25,7 +25,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck, LogOut, Palette, Languages, Sparkles } from "lucide-react";
+import { ShieldCheck, LogOut, Palette, Languages, LayoutTemplate } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Portrait } from "@/components/shared/Portrait";
 import { Section } from "@/components/shared/Section";
@@ -144,7 +144,7 @@ export function SettingsPage() {
             {/* #1233: the per-player opt-in (GitHub's feature preview, Gmail's «Try the
                 new Gmail»): a choice that reloads the page into it, and back. */}
             <SettingRow
-              icon={Sparkles}
+              icon={LayoutTemplate}
               name={t("settings.newUi")}
               help={t("settings.newUiHelp")}
               control={
