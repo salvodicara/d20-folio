@@ -87,6 +87,7 @@
     "editNamed": "Edit {{name}}",
     "share": "Share",
     "skip": "Skip",
-    "resistance": "Resistance"
+    "resistance": "Resistance",
+    "reload": "Reload"
   }
 }

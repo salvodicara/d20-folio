@@ -69,6 +69,6 @@ export function unreadNotice(
   return {
     message: t("campaignContext.failed"),
     duration: 10_000,
-    action: { label: t("campaignContext.reload"), run: reload },
+    action: { label: t("common.reload"), run: reload },
   };
 }

@@ -2,7 +2,6 @@
   "pwa": {
     "installPrompt": "Installa d20 Folio per l'accesso offline",
     "install": "Installa",
-    "updateReady": "È pronta una nuova versione.",
-    "reload": "Ricarica"
+    "updateReady": "È pronta una nuova versione."
   }
 }

@@ -87,6 +87,7 @@
     "editNamed": "Modifica {{name}}",
     "share": "Condividi",
     "skip": "Salta",
-    "resistance": "Resistenza"
+    "resistance": "Resistenza",
+    "reload": "Ricarica"
   }
 }

@@ -8,6 +8,8 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { unreadNotice, useCampaignsReadStore } from "@/features/campaigns/campaigns-read";
 import en from "@/i18n/en/ui/campaignContext.json";
 import itCatalogue from "@/i18n/it/ui/campaignContext.json";
+import enCommon from "@/i18n/en/ui/common.json";
+import itCommon from "@/i18n/it/ui/common.json";
 
 const t = (key: string): string => key;
 
@@ -28,7 +30,7 @@ describe("unreadNotice", () => {
     const reload = vi.fn();
     const notice = unreadNotice(t, reload);
     expect(notice.message).toBe("campaignContext.failed");
-    expect(notice.action?.label).toBe("campaignContext.reload");
+    expect(notice.action?.label).toBe("common.reload");
     notice.action?.run();
     expect(reload).toHaveBeenCalledOnce();
   });
@@ -36,7 +38,8 @@ describe("unreadNotice", () => {
   it("every key it uses exists in English and Italian", () => {
     for (const catalogue of [en, itCatalogue]) {
       const keys = Object.keys(catalogue.campaignContext);
-      expect(keys).toEqual(expect.arrayContaining(["unread", "failed", "reload"]));
+      expect(keys).toEqual(expect.arrayContaining(["unread", "failed"]));
     }
+    for (const common of [enCommon, itCommon]) expect(common.common.reload).toBeTruthy();
   });
 });
