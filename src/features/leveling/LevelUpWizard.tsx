@@ -1113,6 +1113,7 @@ export function LevelUpWizard() {
                         onChange={setChoicePicks}
                         existingSkillIds={ownedSkillIds}
                         existingSpellIds={existingSpellIds}
+                        knownLanguageIds={new Set(charData.languageIds)}
                         proficientSkillIds={
                           new Set(
                             Object.entries(charData.skills)
@@ -1169,6 +1170,7 @@ export function LevelUpWizard() {
                     onChange={setChoicePicks}
                     existingSkillIds={ownedSkillIds}
                     existingSpellIds={existingSpellIds}
+                    knownLanguageIds={new Set(charData.languageIds)}
                     proficientSkillIds={
                       new Set(
                         Object.entries(charData.skills)
@@ -1441,6 +1443,7 @@ export function LevelUpWizard() {
                 onChange={setChoicePicks}
                 existingSkillIds={ownedSkillIds}
                 existingSpellIds={existingSpellIds}
+                knownLanguageIds={new Set(charData.languageIds)}
                 proficientSkillIds={
                   new Set(
                     Object.entries(charData.skills)
