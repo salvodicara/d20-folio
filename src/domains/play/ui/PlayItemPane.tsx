@@ -160,7 +160,7 @@ export function PlayCoinPane({
       open
       onClose={onClose}
       color="res"
-      title={t("play.coins.title")}
+      title={t("common.coins")}
       closeLabel={t("common.close")}
       actions={
         readonly ? undefined : (

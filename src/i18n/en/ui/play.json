@@ -455,7 +455,6 @@
       "again": "Breathe again"
     },
     "coins": {
-      "title": "Coins",
       "open": "Manage coins",
       "total": "Worth {{gp}} gp in all",
       "adjust": "Add or take",
