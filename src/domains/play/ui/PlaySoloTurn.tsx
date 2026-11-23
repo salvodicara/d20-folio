@@ -44,11 +44,15 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { Button, Dialog, Field } from "@/ui";
 
-/** A campaign fight's End Turn: the classic End Turn that passes the turn, and whether
- *  it is still waiting for the fight to reach the sheet (the button shows it works). */
+/** The sheet is in a campaign: its fight's End Turn is the classic one that passes the
+ *  turn, and `passing` says it is still waiting for the fight to reach the sheet (the
+ *  button shows it works). A campaign never runs the solo fight, even before its own
+ *  fight reaches the turn model. */
 export interface PassTurn {
   passTurn: () => void;
   passing?: boolean;
+  /** The sheet has a campaign or a shared fight: never the solo fight's controls. */
+  inCampaign: boolean;
 }
 
 export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
@@ -67,7 +71,7 @@ export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [turns, setTurns] = useState("");
   const extend = useExtendMaintained(locale);
-  const solo = view.mode === "solo";
+  const solo = view.mode === "solo" && !campaign?.inCampaign;
   // A campaign fight, my turn: the turn's prompts, never the fight's start or end.
   const myTurn = view.mode === "encounter" && view.phase === "my-turn" && view.canEndTurn;
 
@@ -77,8 +81,8 @@ export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
   const askOrEnd = (left: MaintainedPrompt[]) => {
     setPrompts(left);
     if (left.length > 0) return;
-    if (solo) endTurn(t);
-    else campaign?.passTurn();
+    if (myTurn && campaign) campaign.passTurn();
+    else endTurn(t);
   };
   const answer = (m: MaintainedPrompt) =>
     askOrEnd(prompts.filter((x) => x.activeKey !== m.activeKey));

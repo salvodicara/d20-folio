@@ -662,7 +662,11 @@ function TurnStrip({
   // End Turn waits for this character's fight to reach the sheet: the button is busy.
   const endTurnWaiting = usePartyRosterStore((s) => s.castWaiting === END_TURN_WAITING);
   // A campaign fight's End Turn asks first, then passes the turn the classic way.
-  const solo = useSoloTurn(locale, { passTurn: handleEndTurn, passing: endTurnWaiting });
+  const solo = useSoloTurn(locale, {
+    passTurn: handleEndTurn,
+    passing: endTurnWaiting,
+    inCampaign: Boolean(campaign || fight),
+  });
   const { round, phase, currentActorName } = useTurnState();
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
   const rollOffer = readonly
@@ -725,7 +729,7 @@ function TurnStrip({
           ))}
         </ul>
         {/* solo: the whole fight; a campaign fight: my turn's End Turn and «Rialzati» */}
-        {(fight || !campaign) && solo.controls}
+        {solo.controls}
         {/* whose turn it is has rolled already: «Fine turno» is the strip's one action */}
         {rollOffer && campaign && !(fight && phase === "my-turn") && (
           <Button
@@ -762,7 +766,7 @@ function TurnStrip({
       {((solo.active && !campaign) || (fight && phase === "my-turn")) && (
         <PlayTurnStart doc={doc} round={fight ? round : solo.round} locale={locale} />
       )}
-      {(fight || !campaign) && solo.notes}
+      {solo.notes}
       <ReadiedNote locale={locale} />
       {!fight && <AfterHitNote locale={locale} />}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}

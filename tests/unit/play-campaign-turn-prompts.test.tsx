@@ -64,7 +64,7 @@ let passTurn = vi.fn();
 let passing = false;
 
 function Strip() {
-  const turn = useSoloTurn("en", { passTurn, passing });
+  const turn = useSoloTurn("en", { passTurn, passing, inCampaign: true });
   return (
     <>
       {turn.controls}
@@ -167,5 +167,25 @@ describe("a campaign fight, not my turn", () => {
     open(makeCharacterDoc({}, { conditions: ["prone"] }), "monster-1");
     expect(screen.queryByRole("button", { name: "End turn" })).toBeNull();
     expect(screen.queryByRole("button", { name: /^Stand up/ })).toBeNull();
+  });
+});
+
+describe("a campaign whose fight has not reached the turn model yet", () => {
+  it("never offers the solo fight's start or end inside a campaign", () => {
+    useCharacterStore.setState({
+      character: makeCharacterDoc({}),
+      readonly: false,
+      loading: false,
+    });
+    render(
+      <MemoryRouter>
+        <TurnEconomyProvider renderPrompts={false}>
+          <Strip />
+        </TurnEconomyProvider>
+      </MemoryRouter>
+    );
+    expect(screen.queryByRole("button", { name: "Start combat" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "End fight" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "End turn" })).toBeNull();
   });
 });
