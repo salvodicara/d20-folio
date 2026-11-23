@@ -2,9 +2,9 @@
  * What the open sheet knows about its campaign's fight, in three states (the engine
  * and rules lanes' contract, 2026-11-22):
  *   - settled: the campaigns are read for C, and either the fight's live status is for
- *     C or no pip entry lists C;
- *   - pending: a reader is mounted and has not answered, or a pip entry lists C
- *     without its status;
+ *     C or the pip's primary entry is not C's (only that fight gets a live status);
+ *   - pending: a reader is mounted and has not answered, or the pip's primary entry
+ *     lists C without its status;
  *   - no reader (no shell mounted, or the dev bypass): settled at once, never waited on.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -74,6 +74,22 @@ describe("fightContext", () => {
     // Even with no reader flag: a listed fight without its status is never settled.
     usePartyRosterStore.getState().setReaderMounted(false);
     expect(fightContext(C)).toBe("pending");
+  });
+
+  it("C is listed only in the non-primary fight: settled, no live status will come (#1219)", () => {
+    usePartyRosterStore.getState().setReaderMounted(true);
+    usePartyRosterStore.getState().setParty(null, C);
+    useCombatStatusStore.setState({
+      pip: {
+        primaryId: "camp-1",
+        entries: [
+          ...pip("someone-else").entries,
+          ...pip(C).entries.map((entry) => ({ ...entry, campaignId: "camp-2" })),
+        ],
+      },
+      status: status("someone-else"),
+    });
+    expect(fightContext(C)).toBe("settled");
   });
 
   it("the fight's status for C has arrived: settled", () => {
