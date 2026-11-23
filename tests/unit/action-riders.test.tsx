@@ -282,9 +282,9 @@ describe("a rider whose toggle is off (Brutal Strike without Reckless Attack, #1
     needsActive: "Reckless Attack",
   };
 
-  it("the closed card shows no die for it", () => {
-    render(<RiderSummary riders={[off]} />);
-    expect(screen.queryByText("+1d10")).not.toBeInTheDocument();
+  it("the closed card neither shows nor counts it", () => {
+    const { container } = render(<RiderSummary riders={[off]} />);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it("the open card shows it dimmed, with what it needs, and never as a button", () => {

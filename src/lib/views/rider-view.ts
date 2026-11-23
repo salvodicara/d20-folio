@@ -261,16 +261,17 @@ export function summarizeRiders(
   riders: ReadonlyArray<RiderVM>,
   damageOutcome: (damageTypeId: string | undefined) => string
 ): RiderSummaryVM | null {
+  // A rider whose toggle is off (Brutal Strike without Reckless Attack) is nothing on
+  // a hit right now: the closed face neither shows nor counts it; the expanded strip
+  // shows it dimmed with what it needs.
+  riders = riders.filter((r) => !r.needsActive);
   if (riders.length === 0) return null;
 
   // The dice chips come from DAMAGE riders only (they carry `+Nd_` extra damage).
   // die-mods / heal are roll annotations, not extra dice — they don't earn a dice
   // chip on the closed face (they live in the expanded strip), but they DO count
   // toward the overflow so "+N more, expand" stays honest.
-  // A rider whose toggle is off (Brutal Strike without Reckless Attack) is not
-  // extra damage right now: it earns no dice chip on the closed face; the expanded
-  // strip shows it dimmed with what it needs.
-  const damageRiders = riders.filter((r) => r.kind === "damage" && !r.needsActive);
+  const damageRiders = riders.filter((r) => r.kind === "damage");
   const nonDamage = riders.length - damageRiders.length;
 
   const shown = damageRiders.slice(0, RIDER_CHIP_CAP);
