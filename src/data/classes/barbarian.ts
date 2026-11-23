@@ -510,13 +510,12 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     level: 3,
     // Dynamic damage rider: the d6 count scales with the Rage Damage bonus,
     // resolved at the character's level by `resolveRiderDice`. `dice` is the
-    // L1 fallback. `damageType` shows the modal Strength-weapon type
-    // (slashing — greataxe/greatsword); RAW the type matches the weapon used.
-    // RAW (barbarian:path-of-the-berserker, L3 Frenzy): the extra damage applies
-    // only "if you use Reckless Attack WHILE YOUR RAGE IS ACTIVE" — so the rider
-    // is wrapped in the `barbarian-rage` `while-active` block (an inactive
-    // while-active drops its inner grants), mirroring Zealot Divine Fury. The
-    // "used Reckless Attack" condition stays narrative (no reckless-hit event).
+    // L1 fallback. "The damage has the same type as the weapon or Unarmed Strike
+    // used" (`same-as-weapon`). RAW (SRD 5.2.1, L3 Frenzy): the extra damage applies
+    // only "if you use Reckless Attack while your Rage is active", so the rider sits
+    // in the `barbarian-rage` `while-active` block (an inactive while-active drops
+    // its inner grants) and needs Reckless Attack up (`requiresActiveKey`); off,
+    // its chip says so, as Brutal Strike's does.
     grants: [
       {
         type: "while-active",
@@ -525,9 +524,10 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
           {
             type: "damage-rider",
             dice: levelDice("barbarian", "2d6", { 1: "2d6", 9: "3d6", 16: "4d6" }),
-            damageType: "slashing",
+            damageType: "same-as-weapon",
             appliesTo: "melee-weapon",
             oncePerTurn: true,
+            requiresActiveKey: "barbarian-reckless-attack",
           },
         ],
       },
