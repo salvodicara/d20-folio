@@ -28,7 +28,7 @@ function load(edit: (doc: CharacterDoc) => void): void {
   const doc = structuredClone(MOCK_CHARACTER);
   doc.character.weapons = [];
   doc.character.equipment = [];
-  doc.character.abilityScores = { ...doc.character.abilityScores, dex: 14 };
+  doc.character.abilityScores = { ...doc.character.abilityScores, DEX: 14 };
   doc.session.currency = { pp: 0, gp: 10, ep: 0, sp: 3, cp: 0 };
   edit(doc);
   useCharacterStore.setState({ character: doc, loading: false, error: null });
