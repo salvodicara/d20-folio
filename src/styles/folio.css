@@ -1054,10 +1054,17 @@ svg.icon[stroke],
   height: 40px;
 }
 
+/* The label hides under the spinner on every variant, and the spinner is drawn in
+   the label's own ink (`currentColor`): only the text fill goes transparent, so a
+   variant's colour (same specificity, declared later) still reaches the ring. */
 .btn.loading {
   cursor: progress;
-  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none !important;
   position: relative;
+}
+.btn.loading > * {
+  visibility: hidden;
 }
 .btn.loading::after {
   content: "";
@@ -1071,8 +1078,8 @@ svg.icon[stroke],
   margin: auto;
   width: 14px;
   height: 14px;
-  border: 2px solid color-mix(in oklab, var(--text-primary) 35%, transparent);
-  border-top-color: var(--text-primary);
+  border: 2px solid color-mix(in oklab, currentColor 35%, transparent);
+  border-top-color: currentColor;
   border-radius: 50%;
 }
 [data-motion="auto"] .btn.loading::after {
@@ -1082,7 +1089,7 @@ svg.icon[stroke],
    kill-switch stalls the spin at a random angle). Degrade to a steady FULL
    ring at reduced opacity — it reads as "busy", never broken. */
 [data-motion="reduced"] .btn.loading::after {
-  border-color: color-mix(in oklab, var(--text-primary) 32%, transparent);
+  border-color: color-mix(in oklab, currentColor 32%, transparent);
   opacity: 0.7;
 }
 @keyframes spin {
