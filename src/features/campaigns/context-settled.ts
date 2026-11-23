@@ -41,13 +41,18 @@ export function rollTargetOf(characterId: string, uid: string): RollTarget | nul
 }
 
 /** The fight of `characterId` is known in full: the campaigns are read, and either its
- *  live status is here or no campaign lists a fight for it. A turn action needs this
+ *  live status is here or the pip's primary fight (the only one with a live status) is
+ *  not its fight. A turn action needs this
  *  (the live status carries the turn's key); a roll needs only `rollTargetOf`. */
 export function fightKnown(characterId: string): boolean {
   if (!partyKnown(characterId)) return false;
   const { status, pip } = useCombatStatusStore.getState();
   if (status?.characterId === characterId) return true;
-  return !pip?.entries.some((entry) => entry.characterId === characterId);
+  // Only the pip's primary fight gets a live status (`useLiveEncounter(uid,
+  // primaryId)`): a character in another fight on the account waits for none, or it
+  // would wait forever (#1219).
+  const primary = pip?.entries.find((entry) => entry.campaignId === pip.primaryId);
+  return primary?.characterId !== characterId;
 }
 
 /** Resolves `true` once the fight of `characterId` is known, or `false` after `ms`. */
