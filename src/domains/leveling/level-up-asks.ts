@@ -194,19 +194,19 @@ export function levelUpAsks(
   const featBoost = chosenFeat ? featAsi(chosenFeat) : null;
   if (plan.needsAsi) {
     const open = ABILITIES.filter((code) => c.abilityScores[code] < 20);
-    if (!plan.isEpicBoonGate) {
-      rows.push({
-        key: "asiMode",
-        title: t("levelUp.titleBoon"),
-        count: 1,
-        picked: [a.asi.mode],
-        options: [
-          { id: "plus2", label: t("levelUp.asi.plus2") },
-          { id: "plus1_1", label: t("levelUp.asi.plus1_1") },
-          { id: "feat", label: t("levelUp.asi.feat") },
-        ],
-      });
-    }
+    // Level 19 too: «an Epic Boon feat … or another feat» (SRD 5.2.1), and Ability
+    // Score Improvement is a General feat, so the +2 / +1+1 / feat choice stays.
+    rows.push({
+      key: "asiMode",
+      title: t("levelUp.titleBoon"),
+      count: 1,
+      picked: [a.asi.mode],
+      options: [
+        { id: "plus2", label: t("levelUp.asi.plus2") },
+        { id: "plus1_1", label: t("levelUp.asi.plus1_1") },
+        { id: "feat", label: t("levelUp.asi.feat") },
+      ],
+    });
     if (a.asi.mode === "plus2") {
       rows.push({
         key: "asiPlusTwo",
