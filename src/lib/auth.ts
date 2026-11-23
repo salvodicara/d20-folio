@@ -319,6 +319,10 @@ export function initAuthListener(): () => void {
         }
       }
 
+      // A sign-in after a sign-out (or another account) is not ready until THIS
+      // account's profile is read: it carries the interface choice (#1233), so a
+      // screen shown earlier would paint the classic interface, then swap.
+      if (store.profile?.uid !== user.uid) store.setInitialized(false);
       store.setUser(user);
 
       void fetchUserProfile(user.uid)

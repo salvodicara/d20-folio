@@ -1,7 +1,7 @@
 /**
  * Which frame each screen opens in, per interface (#1233). With the player's toggle on,
  * the rebuilt screens open in the new frame, but the campaign hub, its member sheet and
- * the campaign list stay classic for everyone until they reach parity (Coordinator,
+ * the campaign list (and the invite link that lands in the hub) stay classic for everyone until they reach parity (Coordinator,
  * 2026-11-23). The VITE_NEW_UI build (preview, rehearsal) still opens them new.
  */
 import { describe, expect, it, vi } from "vitest";
@@ -21,7 +21,7 @@ function inClassicFrame(routes: RouteObject[], path: string): boolean {
   );
 }
 
-const CAMPAIGN = ["/campaigns/c1", "/campaigns/c1/sheets/u2", "/campaigns"];
+const CAMPAIGN = ["/campaigns/c1", "/campaigns/c1/sheets/u2", "/campaigns", "/join/abc"];
 const REBUILT = ["/characters", "/characters/c1", "/compendium", "/settings"];
 
 describe("routes per interface", () => {

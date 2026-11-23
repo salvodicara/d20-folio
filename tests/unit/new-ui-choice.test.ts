@@ -10,7 +10,12 @@
  */
 import { describe, expect, it, vi } from "vitest";
 
-import { chooseNewUi, classicHref, uiOverride } from "@/app/new-ui-choice";
+import {
+  chooseNewUi,
+  classicHref,
+  honouredOverride,
+  uiOverride,
+} from "@/app/new-ui-choice";
 
 describe("uiOverride: the one-page-load choice in the address", () => {
   it("reads ?ui=classic and ?ui=new", () => {
@@ -35,6 +40,15 @@ describe("classicHref: the way back from a broken new screen", () => {
     expect(uiOverride(new URL(classicHref("https://x.test/c?ui=new")).search)).toBe(
       "classic"
     );
+  });
+});
+
+describe("honouredOverride: what a build accepts from the address", () => {
+  it("?ui=classic everywhere, ?ui=new only in development", () => {
+    expect(honouredOverride("classic", false)).toBe("classic");
+    expect(honouredOverride("new", false)).toBeNull();
+    expect(honouredOverride("new", true)).toBe("new");
+    expect(honouredOverride(null, true)).toBeNull();
   });
 });
 

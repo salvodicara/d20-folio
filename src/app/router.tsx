@@ -163,7 +163,7 @@ export function buildRouter(NEW_UI: boolean, NEW_CAMPAIGN: boolean) {
     : null;
 
   // The invite link, the new legal page and the unknown page, in the same build.
-  const JoinScreen = NEW_UI
+  const JoinScreen = NEW_CAMPAIGN
     ? lazy(() =>
         import("@/domains/campaign/ui/JoinScreen").then((m) => ({
           default: m.JoinScreen,

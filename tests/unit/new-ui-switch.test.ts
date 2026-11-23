@@ -17,7 +17,11 @@ vi.mock("firebase/firestore", () => ({
   updateDoc: h.updateDoc,
 }));
 
-import { saveNewUi, withoutUiOverride } from "@/features/account/new-ui-switch";
+import {
+  SAVE_TIMEOUT_MS,
+  saveNewUi,
+  withoutUiOverride,
+} from "@/features/account/new-ui-switch";
 
 let online = true;
 const reload = vi.fn<(href: string) => void>();
@@ -42,6 +46,16 @@ describe("saveNewUi", () => {
     await expect(saveNewUi("u1", true, reload)).resolves.toBe("offline");
     expect(h.updateDoc).not.toHaveBeenCalled();
     expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("a connection that never answers counts as offline, and nothing reloads", async () => {
+    vi.useFakeTimers();
+    h.updateDoc.mockReturnValue(new Promise<void>(() => undefined));
+    const result = saveNewUi("u1", true, reload);
+    await vi.advanceTimersByTimeAsync(SAVE_TIMEOUT_MS);
+    await expect(result).resolves.toBe("offline");
+    expect(reload).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it("a refused write keeps the page as it is", async () => {

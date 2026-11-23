@@ -6,8 +6,9 @@
  * device and no automatic reload can loop (a blocked storage, a second tab, a second
  * account). Two overrides sit above it:
  *   - the `VITE_NEW_UI=1` build (the preview server, the rehearsal) forces the new UI;
- *   - `?ui=classic` / `?ui=new` decides for one page load, with no write and no storage.
- *     `?ui=classic` beats everything: it is the way back when the new UI cannot render.
+ *   - `?ui=classic` decides for one page load, with no write and no storage, and beats
+ *     everything: it is the way back when the new UI cannot render. `?ui=new` works only
+ *     in development (players opt in from Settings).
  */
 import { useAuthStore } from "@/stores/authStore";
 
@@ -31,9 +32,20 @@ export function chooseNewUi(input: {
   return input.optedIn === true;
 }
 
+/** The override a build honours: `?ui=classic` always (the way back); `?ui=new` only in
+ *  development, since players opt in from Settings. */
+export function honouredOverride(
+  override: UiOverride | null,
+  dev: boolean
+): UiOverride | null {
+  return override === "new" && !dev ? null : override;
+}
+
 /** The address override, read once when the app starts: it holds for this page load. */
 export const BOOT_UI_OVERRIDE: UiOverride | null =
-  typeof window === "undefined" ? null : uiOverride(window.location.search);
+  typeof window === "undefined"
+    ? null
+    : honouredOverride(uiOverride(window.location.search), import.meta.env.DEV);
 
 /** Whether this page load shows the new interface (re-renders when the profile loads). */
 export function useNewUi(): boolean {
