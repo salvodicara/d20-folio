@@ -441,7 +441,9 @@ export function AppRouter() {
   useLayoutEffect(() => setNewUiFrame(newUi), [newUi]);
   return (
     <>
-      <RouterProvider router={router} />
+      {/* Keyed per interface: RouterProvider keeps the first router's state, so a new
+          route tree (the profile's choice arriving, a sign-out) must remount it. */}
+      <RouterProvider key={`${newUi}-${newCampaign}`} router={router} />
       {/* Global overlays — store-driven, no router context needed, so they sit
           beside the provider (lifted out of the old router body in the data-router
           swap). */}
