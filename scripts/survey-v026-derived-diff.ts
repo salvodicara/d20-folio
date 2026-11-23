@@ -64,6 +64,14 @@ export const EXPECTED: readonly ExpectedRule[] = [
   { fix: "#1105", path: /^actions\.improvised-weapon\./ },
   // v0.26.2: Thunderwave's push is a rider with its distance (the second spell fold).
   { fix: "#1129", path: /^actions\.spell-thunderwave\.effectRiders\./ },
+  // v0.26.2 (pack fold 2): a heal row's condition cure now counts its one condition,
+  // and two subclass rows are new (a once-per-turn condition with a turn-edge lifetime
+  // on one target; a reroll paid from a once-per-activation use).
+  { fix: "#1097", path: /^actions\.[^.]+\.conditionRemoval\.max$/ },
+  {
+    fix: "#1097",
+    path: /^actions\.[^.]+-free\.(conditionApplication\.lifetime\.turns|targeting\.maxTargets|uses\.(current|total))$/,
+  },
 ];
 
 // ── The pure comparison ───────────────────────────────────────────────────────
