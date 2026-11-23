@@ -268,3 +268,29 @@ describe("RiderSummary — the always-visible collapsed-face damage cluster (#87
     expect(more?.querySelector(".uc-rider-stack")).not.toBeNull();
   });
 });
+
+describe("a rider whose toggle is off (Brutal Strike without Reckless Attack, #1211)", () => {
+  const off: RiderVM = {
+    id: "damage:2",
+    kind: "damage",
+    source: "Brutal Strike",
+    sourceLoc: { lit: { en: "Brutal Strike", it: "Colpo Brutale" } },
+    oncePerTurn: true,
+    spend: null,
+    dice: "1d10",
+    damageTypeId: "slashing",
+    needsActive: "Reckless Attack",
+  };
+
+  it("the closed card shows no die for it", () => {
+    render(<RiderSummary riders={[off]} />);
+    expect(screen.queryByText("+1d10")).not.toBeInTheDocument();
+  });
+
+  it("the open card shows it dimmed, with what it needs, and never as a button", () => {
+    const { container } = render(<ActionRiders riders={[off]} onSpend={vi.fn()} />);
+    expect(container.querySelector(".rider-chip[data-off]")).not.toBeNull();
+    expect(screen.getByText("needs Reckless Attack")).toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
+  });
+});
