@@ -60,6 +60,7 @@ import {
 } from "@/features/campaigns/campaigns-read";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
 const OPEN = MOCK_CHARACTER.id;
@@ -77,6 +78,7 @@ beforeEach(() => {
   useCharacterStore.getState().setCharacter(MOCK_CHARACTER);
   usePartyRosterStore.setState({ party: null, resolvedFor: null });
   useCampaignsReadStore.setState({ attachment: null, failed: false });
+  useCombatStatusStore.setState({ status: null, pip: null });
 });
 
 afterEach(() => {
@@ -94,6 +96,45 @@ const deliver = (meta?: Meta): void => {
 const fail = (): void => {
   act(() => h.state.errorCb?.(new Error("permission-denied")));
 };
+/** Every attempt fails. */
+const exhaust = (): void => {
+  for (let i = 0; i < CAMPAIGNS_READ_ATTEMPTS; i += 1) {
+    fail();
+    act(() => {
+      vi.advanceTimersByTime(30_000);
+    });
+  }
+};
+/** A campaign whose fight lists the open character (as `global-combat.test.tsx`). */
+function fightFor(characterId: string): CampaignDoc {
+  const at = new Date(0);
+  return {
+    id: "camp-1",
+    name: "Camp",
+    createdAt: at,
+    updatedAt: at,
+    createdBy: "dm-other",
+    dmUid: "dm-other",
+    members: ["dm-other", "u1"],
+    memberDetails: {
+      "dm-other": { displayName: "GM", characterId: null, role: "dm" },
+      u1: { displayName: "You", characterId, role: "player" },
+    },
+    status: "active",
+    inviteCode: "camp-1",
+    treasury: { pp: 0, gp: 0, ep: 0, sp: 0, cp: 0 },
+    treasuryLog: [],
+    encounter: {
+      nextMonsterOrdinal: 1,
+      round: 1,
+      currentCombatantId: null,
+      epoch: 1,
+      status: "active",
+      combatants: [{ kind: "pc", id: "pc-u1", memberUid: "u1", characterId }],
+    },
+    encounterInit: {},
+  };
+}
 
 describe("«campaigns read» waits for the server, never a stale cache (#1217)", () => {
   it("online, a cached snapshot is not read; the server's answer that follows is", () => {
@@ -170,5 +211,76 @@ describe("«campaigns read» waits for the server, never a stale cache (#1217)",
   it("the deadline sits below the actions' own wait", async () => {
     const { PARTY_WAIT_MS } = await import("@/features/campaigns/party-roster");
     expect(CAMPAIGNS_CONFIRM_MS).toBeLessThan(PARTY_WAIT_MS);
+  });
+
+  it("a failure with no sheet open, then a solo sheet: its attachment settles it", () => {
+    useCharacterStore.getState().setCharacter(null);
+    mount();
+    exhaust();
+    act(() => {
+      useCharacterStore.getState().setCharacter(MOCK_CHARACTER);
+    });
+    expect(read()).toBe(false);
+    act(() => {
+      useCampaignsReadStore.getState().setAttachment(OPEN, false);
+    });
+    expect(read()).toBe(true);
+  });
+
+  it("after a failure, switching from a solo sheet to an attached one is not read", () => {
+    useCampaignsReadStore.setState({
+      attachment: { characterId: OPEN, attached: false },
+    });
+    mount();
+    exhaust();
+    expect(read()).toBe(true);
+    const other = { ...MOCK_CHARACTER, id: "other-hero" };
+    act(() => {
+      useCharacterStore.getState().setCharacter(other);
+      useCampaignsReadStore.getState().setAttachment(other.id, true);
+    });
+    expect(usePartyRosterStore.getState().resolvedFor).toBeNull();
+  });
+
+  it("errors with good snapshots between them never use up the attempts", () => {
+    mount();
+    for (let i = 0; i < CAMPAIGNS_READ_ATTEMPTS + 2; i += 1) {
+      fail();
+      act(() => {
+        vi.advanceTimersByTime(30_000);
+      });
+      deliver({ fromCache: false });
+    }
+    expect(h.subscribeToSharedCampaigns).toHaveBeenCalledTimes(
+      CAMPAIGNS_READ_ATTEMPTS + 3
+    );
+    expect(useCampaignsReadStore.getState().failed).toBe(false);
+    expect(read()).toBe(true);
+  });
+
+  it("a read that fails for good after a good one makes the campaigns unread again", () => {
+    useCampaignsReadStore.setState({ attachment: { characterId: OPEN, attached: true } });
+    mount();
+    deliver({ fromCache: false });
+    expect(read()).toBe(true);
+    exhaust();
+    expect(read()).toBe(false);
+    expect(useCampaignsReadStore.getState().failed).toBe(true);
+  });
+
+  it("a cached answer that arrives after the deadline counts at once", () => {
+    mount();
+    act(() => {
+      vi.advanceTimersByTime(CAMPAIGNS_CONFIRM_MS + 10);
+    });
+    deliver({ fromCache: true });
+    expect(read()).toBe(true);
+  });
+
+  it("a cached campaign's fight shows on the pip while the campaigns are still unread", () => {
+    mount();
+    act(() => h.state.campaignsCb?.([fightFor(OPEN)], { fromCache: true }));
+    expect(read()).toBe(false);
+    expect(useCombatStatusStore.getState().pip?.entries.length).toBe(1);
   });
 });
