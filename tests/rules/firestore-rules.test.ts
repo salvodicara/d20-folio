@@ -198,7 +198,7 @@ describe("firestore.rules — /users + the owner-ratified data-driven admin role
       updateDoc(doc(db, "users", "member"), { newUi: true, role: "admin" })
     );
     await assertFails(
-      updateDoc(doc(db, "users", "member"), { newUi: true, status: "active" })
+      updateDoc(doc(db, "users", "member"), { newUi: true, status: "blocked" })
     );
     const blocked = testEnv.authenticatedContext("blocked").firestore();
     await assertFails(

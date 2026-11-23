@@ -106,9 +106,14 @@ const SharedCharacterView = lazy(() =>
 // The route tree for one interface (#1233): `NEW_UI` is this page load's choice
 // (`useNewUi`), not a build constant, so every build ships both interfaces. The new
 // screens stay lazy chunks; the tree is built once per choice.
-function buildRouter(NEW_UI: boolean) {
+// `NEW_CAMPAIGN`: the campaign hub, its member sheet and the campaign list follow the new
+// interface only on the VITE_NEW_UI build until they reach parity (Coordinator,
+// 2026-11-23): with the player's toggle they stay classic, the same for everyone.
+// Exported for the per-interface route test; the router module is never hot-swapped.
+// eslint-disable-next-line react-refresh/only-export-components
+export function buildRouter(NEW_UI: boolean, NEW_CAMPAIGN: boolean) {
   // The new campaign page replaces the old hub when the new interface is on.
-  const CampaignScreen = NEW_UI
+  const CampaignScreen = NEW_CAMPAIGN
     ? lazy(() =>
         import("@/domains/campaign/ui/CampaignScreen").then((m) => ({
           default: m.CampaignScreen,
@@ -142,7 +147,7 @@ function buildRouter(NEW_UI: boolean) {
     : null;
 
   // The new campaign list and settings replace the old pages in the same build.
-  const CampaignsScreen = NEW_UI
+  const CampaignsScreen = NEW_CAMPAIGN
     ? lazy(() =>
         import("@/domains/campaign/ui/CampaignsScreen").then((m) => ({
           default: m.CampaignsScreen,
@@ -188,7 +193,7 @@ function buildRouter(NEW_UI: boolean) {
     : null;
 
   // The DM's read-only view of a party member, on the new Play sheet.
-  const MemberSheetScreen = NEW_UI
+  const MemberSheetScreen = NEW_CAMPAIGN
     ? lazy(() =>
         import("@/domains/campaign/ui/MemberSheetScreen").then((m) => ({
           default: m.MemberSheetScreen,
@@ -308,7 +313,7 @@ function buildRouter(NEW_UI: boolean) {
         {/* Protected — the new flat-hub shell */}
         <Route element={<AuthGuard />}>
           {/* VITE_NEW_UI: the rebuilt screens live in the new frame. */}
-          {NewAppShell && CampaignScreen && (
+          {NewAppShell && (
             <Route
               element={
                 <Suspense fallback={null}>
@@ -317,7 +322,9 @@ function buildRouter(NEW_UI: boolean) {
               }
             >
               <Route errorElement={<RouteErrorBoundary variant="region" />}>
-                <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
+                {CampaignScreen && (
+                  <Route path="/campaigns/:campaignId" element={<CampaignScreen />} />
+                )}
                 {MemberSheetScreen && (
                   <Route
                     path="/campaigns/:campaignId/sheets/:memberUid"
@@ -428,7 +435,9 @@ function buildRouter(NEW_UI: boolean) {
 
 export function AppRouter() {
   const newUi = useNewUi();
-  const router = useMemo(() => buildRouter(newUi), [newUi]);
+  // The campaign screens are not at parity yet: new only on the VITE_NEW_UI build.
+  const newCampaign = newUi && import.meta.env.VITE_NEW_UI === "1";
+  const router = useMemo(() => buildRouter(newUi, newCampaign), [newUi, newCampaign]);
   useLayoutEffect(() => setNewUiFrame(newUi), [newUi]);
   return (
     <>
