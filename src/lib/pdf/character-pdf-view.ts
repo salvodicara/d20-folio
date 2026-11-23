@@ -688,7 +688,7 @@ export function buildCharacterPdfViewModel(
     alignment: t("lore.alignment"),
     languages: t("lore.languages"),
     attunement: t("pdf.sheet.attunement"),
-    coins: t("pdf.sheet.coins"),
+    coins: t("common.coins"),
     spellSlots: t("spells.slots"),
     total: t("spells.slotTotalLabel"),
     expended: t("pdf.sheet.expended"),
