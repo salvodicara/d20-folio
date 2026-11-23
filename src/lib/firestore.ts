@@ -486,7 +486,12 @@ function rosterDoc(id: string, data: Record<string, unknown>): RosterCharacterDo
 export function subscribeToCharacter(
   uid: string,
   charId: string,
-  callback: (doc: CharacterDoc | null, meta: { hasPendingWrites: boolean }) => void,
+  /** `meta.attached`: the document names a campaign (`attachedCampaignId`, the lock the
+   *  rules keep), so «campaigns read» may matter to this character (#1217). */
+  callback: (
+    doc: CharacterDoc | null,
+    meta: { hasPendingWrites: boolean; attached: boolean }
+  ) => void,
   onError?: (err: Error) => void
 ): () => void {
   let token = 0;
@@ -500,7 +505,13 @@ export function subscribeToCharacter(
     { includeMetadataChanges: true },
     (snap) => {
       const my = ++token;
-      const meta = { hasPendingWrites: snap.metadata.hasPendingWrites };
+      const attachedTo: unknown = snap.exists()
+        ? snap.data().attachedCampaignId
+        : undefined;
+      const meta = {
+        hasPendingWrites: snap.metadata.hasPendingWrites,
+        attached: typeof attachedTo === "string" && attachedTo !== "",
+      };
       if (!snap.exists()) {
         callback(null, meta);
         return;

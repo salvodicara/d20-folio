@@ -60,7 +60,7 @@ const {
       charId: string,
       cb: (
         d: import("@/types/character").CharacterDoc | null,
-        meta: { hasPendingWrites: boolean }
+        meta: { hasPendingWrites: boolean; attached?: boolean }
       ) => void,
       onError?: (err: Error) => void
     ) => () => void
@@ -1195,4 +1195,24 @@ it("a parent snapshot inside the queued play-write window preserves a local HP e
   });
   expect(useCharacterStore.getState().character?.session.hp.current).toBe(30);
   expect(writeCombatStateMock.mock.calls.at(-1)?.[2].hp.current).toBe(30);
+});
+
+describe("useCharacterSubscription — the character's campaign attachment (#1217)", () => {
+  it("publishes whether the open character is attached to a campaign, from its own snapshot", async () => {
+    const { useCampaignsReadStore } = await import("@/features/campaigns/campaigns-read");
+    useCampaignsReadStore.setState({ attachment: null });
+    renderHook(() => useCharacterSubscription("char1"));
+    const cb = subscribeMock.mock.calls.at(-1)?.[2];
+    if (!cb) throw new Error("subscription callback not captured");
+    act(() => cb(doc(), { hasPendingWrites: false, attached: false }));
+    expect(useCampaignsReadStore.getState().attachment).toEqual({
+      characterId: "char1",
+      attached: false,
+    });
+    act(() => cb(doc(), { hasPendingWrites: false, attached: true }));
+    expect(useCampaignsReadStore.getState().attachment).toEqual({
+      characterId: "char1",
+      attached: true,
+    });
+  });
 });

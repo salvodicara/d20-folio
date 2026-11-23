@@ -19,6 +19,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { useCampaignsReadStore } from "@/features/campaigns/campaigns-read";
 import { useEffect, useRef } from "react";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -628,6 +629,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       characterId,
       (doc, meta) => {
         if (quarantined) return;
+        // Whether this character is in a campaign (#1217): solo play never waits for a
+        // campaigns read that keeps failing.
+        if (typeof meta.attached === "boolean")
+          useCampaignsReadStore.getState().setAttachment(characterId, meta.attached);
         reconciler.receiveParent(doc, meta);
         publishResolvedPair();
       },
