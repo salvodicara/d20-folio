@@ -1,5 +1,6 @@
 {
   "common": {
+    "damageType": "Damage type",
     "save": "Save",
     "saveChanges": "Save changes",
     "cancel": "Cancel",

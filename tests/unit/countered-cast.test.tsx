@@ -106,11 +106,13 @@ describe("the turn meter's Countered", () => {
       </MemoryRouter>
     );
     const live = () => useCharacterStore.getState().character;
-    fireEvent.click(
-      screen.getByRole("button", {
-        name: "Countered: Fireball. Get its level 3 slot back",
-      })
-    );
+    const countered = screen.getByRole("button", {
+      name: "Countered: Fireball. Get its level 3 slot back",
+    });
+    // The button asks; beside the spell's name a bare «Countered» read as a status
+    // (classic walkthrough, #1213).
+    expect(countered).toHaveTextContent(/^Countered\?$/);
+    fireEvent.click(countered);
     expect(live()?.session.spellSlots["3"]?.used ?? 0).toBe(0);
     expect(live()?.session.logEntries.at(-1)?.event).toMatchObject({
       kind: "spell-countered",

@@ -2614,7 +2614,7 @@ trigger each state).
 
 ## 15. The d20-Folio Checklist (companion to the `impeccable` skill)
 
-The generic `impeccable` skill (`.claude/skills/impeccable/`, github.com/pbakaus/impeccable) supplies
+The generic `impeccable` skill (the shared global copy, github.com/pbakaus/impeccable) supplies
 the general design craft + anti-slop guidance and reads `PRODUCT.md` + this file for project context.
 This section is the project-specific audit checklist that guidance can't know on its own — run it
 against every surface being designed or changed, alongside whichever `impeccable` command applies

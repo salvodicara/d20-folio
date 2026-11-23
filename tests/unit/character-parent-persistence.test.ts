@@ -221,6 +221,33 @@ describe("character parent persistence (v1: the child owns the play session)", (
     expect(outcomes.onRejected.mock.calls[0]?.[0]).toEqual(second);
   });
 
+  // Coordinator, 2026-11-22: four production refusals could not say why. The event now
+  // says whether the sheet is shared and whether the rules refused a stale revision.
+  it("a refused save is reported with shared and conflict, never the sheet", async () => {
+    const { breadcrumbSnapshot } = await import("@/lib/diagnostics/logger");
+    const doc = { ...makeCharacterDoc(), id: "c1", shared: true };
+    const pending = createDebouncedSave("u1", "c1");
+    harness.commits.mockRejectedValueOnce(
+      Object.assign(new Error("Missing or insufficient permissions."), {
+        code: "permission-denied",
+      })
+    );
+    pending.save(doc, {});
+    await pending.flush();
+    harness.commits.mockRejectedValueOnce(
+      Object.assign(new Error("offline"), { code: "unavailable" })
+    );
+    pending.save({ ...doc, shared: false }, {});
+    await pending.flush();
+    const refused = breadcrumbSnapshot().filter(
+      (c) => c.event === "character.save-rejected"
+    );
+    expect(refused.slice(-2).map((c) => [c.data?.shared, c.data?.conflict])).toEqual([
+      [true, true],
+      [false, false],
+    ]);
+  });
+
   it("allocates the generation AT SEND: a superseded payload consumes none", async () => {
     vi.useFakeTimers();
     try {

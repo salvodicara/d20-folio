@@ -12,6 +12,7 @@
  * rows follow `targets`, keeping each target's choices while it stays picked.
  */
 import { useRef, useState, type ReactNode, type Ref } from "react";
+import type { DamageType } from "@/types/damage";
 import { useTranslation } from "react-i18next";
 import { Info } from "lucide-react";
 
@@ -76,6 +77,7 @@ export function DamageTrayPanel({
   totalHint,
   onApply,
   onSkip,
+  onPickType,
 }: {
   title: string;
   /** The line under the title; defaults to what the plan deals and its save. */
@@ -88,6 +90,8 @@ export function DamageTrayPanel({
   /** `totals[i]` is row i's rolled total (the shared one unless the plan splits). */
   onApply: (rows: TrayRow[], totals: number[]) => void;
   onSkip: () => void;
+  /** A damage of one type the player picks (Chromatic Orb): the chips that pick it. */
+  onPickType?: (type: DamageType) => void;
 }) {
   const { t } = useTranslation();
   const { language: locale } = useLocale();
@@ -148,6 +152,25 @@ export function DamageTrayPanel({
         field.focus();
       }}
     >
+      {plan.damageTypeChoices && onPickType && (
+        <div
+          role="group"
+          aria-label={t("common.damageType")}
+          className="flex flex-wrap gap-2 px-[var(--sp-6)] pt-[var(--sp-4)]"
+        >
+          {plan.damageTypeChoices.map((type) => (
+            <button
+              key={type}
+              type="button"
+              className="fchip"
+              aria-pressed={plan.damageType === type}
+              onClick={() => onPickType(type)}
+            >
+              {t(`srd.damage_${type}`)}
+            </button>
+          ))}
+        </div>
+      )}
       {plan.effect !== null && !plan.perTarget && (
         <div className="flex flex-col gap-1 px-[var(--sp-6)] pt-[var(--sp-4)]">
           <label
