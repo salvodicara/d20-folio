@@ -7,7 +7,7 @@
  * the DM's turn order steps them.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 vi.mock("@/lib/firebase", () => ({
@@ -121,6 +121,16 @@ describe("a campaign fight, on my turn", () => {
     });
     expect(raging()).not.toContain(RAGE);
     expect(passTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it("«Extend» spends this turn's Bonus Action, keeps Rage, then the turn passes once", async () => {
+    open(barbarian());
+    fireEvent.click(screen.getByRole("button", { name: "End turn" }));
+    fireEvent.click(screen.getByRole("button", { name: "Extend (Bonus Action)" }));
+    await waitFor(() => expect(passTurn).toHaveBeenCalledTimes(1));
+    expect(useCombatStore.getState().selected.bonus.length).toBe(1);
+    expect(raging()).toContain(RAGE);
+    expect(screen.queryByText(/is about to end/)).toBeNull();
   });
 
   it("nothing due: End Turn passes the turn at once", () => {
