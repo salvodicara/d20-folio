@@ -1,6 +1,5 @@
 {
   "play": {
-    "partyNotLoaded": "Party not loaded yet: cast with no target",
     "hpTitle": "Hit points",
     "temp": "+{{count}} temporary",
     "proficiency": "Proficiency",
