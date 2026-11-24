@@ -351,8 +351,10 @@ describe("LevelUpWizard — level 19: an Epic Boon or another feat", () => {
     expect(screen.getByRole("button", { name: "+2 to One" })).toBeTruthy();
     // It opens on the feats (the SRD recommends a boon): the list's category filter
     // offers the Epic Boons and the General feats together.
-    expect(screen.getByRole("button", { name: /^Epic Boon/ })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^General/ })).toBeTruthy();
+    const facets = document.querySelector<HTMLElement>(".wiz-facets");
+    if (!facets) throw new Error("no category filter");
+    expect(within(facets).getByRole("button", { name: /^Epic Boon/ })).toBeTruthy();
+    expect(within(facets).getByRole("button", { name: /^General/ })).toBeTruthy();
   });
 });
 
