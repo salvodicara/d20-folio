@@ -13,6 +13,7 @@ import { NewToasts } from "./NewToasts";
 import { CombatPip } from "@/domains/combat/ui/CombatPip";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { useAfterLoad } from "./use-after-load";
+import { useCampaignReader } from "@/features/campaigns/campaign-reader";
 import { useAuthStore } from "@/stores/authStore";
 import { signOut } from "@/lib/auth";
 
@@ -39,6 +40,8 @@ export function NewAppShell() {
   const onSheet = useMatch("/characters/:characterId/*") !== null;
   const afterLoad = useAfterLoad();
   const background = onSheet || afterLoad;
+  // The lazy campaign reader (`GlobalCombatMount`) is rendered whenever `background` is.
+  useCampaignReader(background);
   // A Google account always has a name; the email stands in when it doesn't.
   const name = user?.displayName || user?.email || "";
   // ⌘K / Ctrl+K anywhere, or the header's search, opens the app's search.

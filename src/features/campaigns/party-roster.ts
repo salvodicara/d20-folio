@@ -33,13 +33,25 @@ export const usePartyRosterStore = create<{
   resolvedFor: string | null;
   /** The action whose cast waits for the party: its row shows it busy. */
   castWaiting: string | null;
+  /**
+   * A shell that reads the campaigns is mounted (`GlobalCombatMount`). With none (a test,
+   * a screen without the shell, the dev bypass) nothing will ever answer, so nothing
+   * waits for it. Set only by the shell, never guessed from timing.
+   */
+  readerMounted: boolean;
   setParty: (party: PartyRoster | null, resolvedFor: string | null) => void;
+  setReaderMounted: (mounted: boolean) => void;
 }>((set) => ({
   party: null,
   resolvedFor: null,
   castWaiting: null,
+  readerMounted: false,
   setParty: (party, resolvedFor) => set({ party, resolvedFor }),
+  setReaderMounted: (readerMounted) => set({ readerMounted }),
 }));
+
+/** `castWaiting` while End Turn waits for this character's fight (its button busy). */
+export const END_TURN_WAITING = "end-turn";
 
 /** How long a cast waits for the shell to read the party before it goes on without. */
 export const PARTY_WAIT_MS = 4000;
