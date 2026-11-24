@@ -6768,3 +6768,8 @@
     display: none;
   }
 }
+
+/* «Gestisci incantesimi»: the tab bar, then the tab's content with room to breathe */
+.fui .f-tabs + .f-stack {
+  margin-top: 16px;
+}

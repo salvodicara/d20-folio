@@ -21,6 +21,10 @@ beforeEach(() => {
   useUndoStore.getState().clear();
   const doc = makeCharacterDoc({ classId: "wizard", level: 3 });
   doc.character.spells = [{ srdId: "magic-missile", prepared: true }];
+  doc.character.spellSlots = [
+    { level: 1, total: 4 },
+    { level: 2, total: 2 },
+  ];
   useCharacterStore.setState({ character: doc, loading: false, error: null });
 });
 
@@ -44,5 +48,14 @@ describe("adding a spell from «Manage spells»", () => {
     search("magic missile");
     expect(screen.queryByRole("button", { name: "Add: Magic Missile" })).toBeNull();
     expect(screen.getByText("Already yours")).toBeTruthy();
+  });
+
+  it("offers only the levels the character can cast, and says so", () => {
+    render(<PlayAddSpell />);
+    search("fireball");
+    expect(screen.queryByRole("button", { name: "Add: Fireball" })).toBeNull();
+    expect(screen.getByText("Up to level 2: the spells you can cast.")).toBeTruthy();
+    search("misty step");
+    expect(screen.getByRole("button", { name: "Add: Misty Step" })).toBeTruthy();
   });
 });

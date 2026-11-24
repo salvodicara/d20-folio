@@ -3,7 +3,8 @@
  * «Manage Spells», the one window where a caster both learns and prepares. The list,
  * its search and the write are the Compendium's own (`spellSpec` in add mode, as the
  * classic Add Spell picker): the character's own class list first, a spell already on
- * the sheet marked «Già tra i tuoi», one tap adds it with the 5 s undo. Preparing it
+ * the sheet marked «Già tra i tuoi», only the levels it can cast, one tap adds it
+ * with the 5 s undo. Preparing it
  * is then the other tab's.
  */
 import { useTranslation } from "react-i18next";
@@ -23,6 +24,15 @@ export function PlayAddSpell() {
   const { t } = useTranslation();
   const picker = useCompendiumPicker(spellSpec, { mode: "add" });
   type Spell = (typeof picker.filtered)[number];
+  // D&D Beyond's «Manage Spells» lists up to the highest level you can cast: the
+  // highest level with a slot (pact slots included); cantrips always.
+  const maxLevel = Math.max(
+    0,
+    ...(picker.ctx.character?.character.spellSlots ?? [])
+      .filter((slot) => slot.total > 0)
+      .map((slot) => slot.level)
+  );
+  const castable = picker.filtered.filter((s) => s.level <= maxLevel);
   const nameOf = (s: Spell) => spellSpec.nameText(s, picker.ctx).find(Boolean) ?? s.id;
   const add = (s: Spell) =>
     registerUndoableToast(
@@ -52,8 +62,11 @@ export function PlayAddSpell() {
         value={picker.query}
         onChange={(e) => picker.setQuery(e.target.value)}
       />
+      {maxLevel > 0 && (
+        <p className="f-help">{t("play.spells.upToLevel", { level: maxLevel })}</p>
+      )}
       <div className="f-add-list">
-        {picker.filtered.slice(0, SHOWN).map((s) => {
+        {castable.slice(0, SHOWN).map((s) => {
           const name = nameOf(s);
           const added = picker.isAdded(s);
           return (
@@ -83,7 +96,7 @@ export function PlayAddSpell() {
             </div>
           );
         })}
-        {picker.count === 0 && <p className="f-quiet">{t("spells.pick.none")}</p>}
+        {castable.length === 0 && <p className="f-quiet">{t("spells.pick.none")}</p>}
       </div>
     </div>
   );
