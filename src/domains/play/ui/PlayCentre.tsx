@@ -22,6 +22,7 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 
 import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
+import { PlayCoinPane, PlayItemPane } from "./PlayItemPane";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
 import { PlaySituations } from "./PlaySituations";
@@ -335,6 +336,9 @@ function InventoryPane({
   const readonly = useSheetReadonly();
   const view = playInventoryView(doc, locale);
   const [scroll, setScroll] = useState<PlayItem["scroll"] | null>(null);
+  const [opened, setOpened] = useState<string | null>(null);
+  const [coinsOpen, setCoinsOpen] = useState(false);
+  const openItem = view.groups.flatMap((g) => g.items).find((i) => i.key === opened);
   const actions = new Map(
     playActionsView(doc, locale, turn)
       .groups.flatMap((g) => g.rows)
@@ -376,15 +380,26 @@ function InventoryPane({
           })}
         </p>
       )}
-      {coins.length > 0 && (
-        <p className="f-coins">
-          {coins.map((c) => (
+      {/* The coins open their pane (D&D Beyond's «Manage Coin»), even when empty. */}
+      <button
+        type="button"
+        className="f-coins f-coins-open"
+        aria-haspopup="dialog"
+        aria-label={t("play.coins.open")}
+        onClick={() => setCoinsOpen(true)}
+      >
+        {coins.length > 0 ? (
+          coins.map((c) => (
             <span key={c} className="f-coin" data-coin={c}>
               <b>{view.coins[c]}</b> {t(`equipment.currencyAbbr.${c}`)}
             </span>
-          ))}
-        </p>
-      )}
+          ))
+        ) : (
+          <span className="f-coin" data-coin="gp">
+            <b>0</b> {t("equipment.currencyAbbr.gp")}
+          </span>
+        )}
+      </button>
       {view.formMerges && (
         <p className="f-note" data-c="res" role="status">
           {t("play.form.gearHint")}
@@ -415,11 +430,17 @@ function InventoryPane({
               <div key={i.key} className="f-act f-item">
                 <ItemIcon item={i} />
                 <div className="f-row-main">
-                  <div className="f-row-t">
+                  {/* The name opens the item's pane (D&D Beyond: tap the row). */}
+                  <button
+                    type="button"
+                    className="f-row-t f-row-open"
+                    aria-haspopup="dialog"
+                    onClick={() => setOpened(i.key)}
+                  >
                     {/* the last two words together: a long name never ends on one alone */}
                     {i.name.replace(/ (\S+)$/, "\u00a0$1")}
                     {i.quantity > 1 && `\u00a0×\u2060${String(i.quantity)}`}
-                  </div>
+                  </button>
                   {sub.length > 0 && <div className="f-row-s">{sub.join(" · ")}</div>}
                   {/* Wild Shape merges gear: it works only if the table rules it worn. */}
                   {i.formGear && !readonly && (
@@ -485,6 +506,23 @@ function InventoryPane({
           })}
         </section>
       ))}
+      {openItem && (
+        <PlayItemPane
+          item={openItem}
+          line={line(openItem)}
+          locale={locale}
+          readonly={readonly}
+          onClose={() => setOpened(null)}
+        />
+      )}
+      {coinsOpen && (
+        <PlayCoinPane
+          coins={view.coins}
+          locale={locale}
+          readonly={readonly}
+          onClose={() => setCoinsOpen(false)}
+        />
+      )}
       {scroll && (
         <PlayScrollPick
           doc={doc}

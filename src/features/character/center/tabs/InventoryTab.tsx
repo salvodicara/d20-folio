@@ -21,13 +21,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Plus } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
-import { useLibraryStore } from "@/stores/libraryStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { computeAC, isHeavyArmorEquipped } from "@/lib/compute";
+import { computeAC } from "@/lib/compute";
 import { effectiveEquipmentForItemResources } from "@/lib/aggregate-character";
-import { resolveActiveStatesEndingOn } from "@/lib/smart-tracker";
 import { formatWeight } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import { getEquipment } from "@/data/equipment";
@@ -52,8 +50,11 @@ import { GearCard } from "./inventory/GearCard";
 import { inventoryItemDisplayName } from "./inventory/inventory-card-helpers";
 import { useItemResourceSpend } from "@/features/character/useItemResourceSpend";
 import { sellItem } from "@/features/character/center/purchase-offer";
-import { armorCategoryOf, wearArmor } from "@/lib/play/armor-donning";
-import { showArmorToast } from "@/features/character/center/armor-toast";
+import {
+  deleteItem,
+  toggleEquipped,
+  updateItemField,
+} from "@/features/character/inventory-commands";
 
 type CurrencyKey = "gp" | "sp" | "cp" | "pp" | "ep";
 // Order = highest→lowest denomination, ep last. The displayed abbreviation is
@@ -247,100 +248,12 @@ export function InventoryTab() {
   );
 
   const handleDeleteWeapon = useCallback(
-    (weapon: WeaponRowVM) => {
-      const char = useCharacterStore.getState().character;
-      if (!char) return;
-      const removed = char.character.weapons[weapon.idx];
-      if (!removed) return;
-      const message = t("common.deleted", { name: weapon.name });
-      registerUndoableToast(
-        { message },
-        () => {
-          const cur = useCharacterStore.getState().character;
-          if (!cur) return null;
-          const list = [...cur.character.weapons];
-          list.splice(weapon.idx, 1);
-          useCharacterStore.getState().setCharacter({
-            ...cur,
-            character: { ...cur.character, weapons: list },
-          });
-          return () => {
-            const current = useCharacterStore.getState().character;
-            if (!current) return;
-            const restored = [...current.character.weapons];
-            restored.splice(weapon.idx, 0, removed);
-            useCharacterStore.getState().setCharacter({
-              ...current,
-              character: { ...current.character, weapons: restored },
-            });
-          };
-        },
-        { turnScoped: false }
-      );
-    },
+    (weapon: WeaponRowVM) => deleteItem("weapons", weapon.idx, weapon.name, t),
     [t]
   );
 
   const handleDeleteEquipment = useCallback(
-    (item: ItemRowVM) => {
-      const char = useCharacterStore.getState().character;
-      if (!char) return;
-      const removed = char.character.equipment[item.idx];
-      if (!removed) return;
-      const instanceId = "custom" in removed ? undefined : removed.instanceId;
-      const priorResourceState = instanceId
-        ? char.session.itemResources?.[instanceId]
-        : undefined;
-      const message = t("common.deleted", { name: item.name });
-      registerUndoableToast(
-        { message },
-        () => {
-          const store = useCharacterStore.getState();
-          if (instanceId) {
-            if (!store.removeItemResourceInstance(instanceId)) return null;
-          } else {
-            const cur = store.character;
-            if (!cur || cur.character.equipment[item.idx] !== removed) return null;
-            const list = [...cur.character.equipment];
-            list.splice(item.idx, 1);
-            store.setCharacter({
-              ...cur,
-              character: { ...cur.character, equipment: list },
-            });
-          }
-          return () => {
-            const current = useCharacterStore.getState().character;
-            if (!current) return false;
-            if (
-              instanceId &&
-              current.character.equipment.some(
-                (ref) => !("custom" in ref) && ref.instanceId === instanceId
-              )
-            ) {
-              return false;
-            }
-            const restored = [...current.character.equipment];
-            restored.splice(Math.min(item.idx, restored.length), 0, removed);
-            useCharacterStore.getState().setCharacter({
-              ...current,
-              character: { ...current.character, equipment: restored },
-              session:
-                instanceId && priorResourceState
-                  ? {
-                      ...current.session,
-                      itemResources: {
-                        ...current.session.itemResources,
-                        [instanceId]: priorResourceState,
-                      },
-                    }
-                  : current.session,
-            });
-            return true;
-          };
-        },
-        { turnScoped: false }
-      );
-    },
+    (item: ItemRowVM) => deleteItem("equipment", item.idx, item.name, t),
     [t]
   );
 
@@ -355,40 +268,14 @@ export function InventoryTab() {
   );
 
   const updateWeaponField = useCallback(
-    (idx: number, field: string, value: ItemFieldValue) => {
-      const store = useCharacterStore.getState();
-      const char = store.character;
-      if (!char) return;
-      const weaponsCopy = [...char.character.weapons];
-      const ref = weaponsCopy[idx];
-      if (!ref) return;
-      weaponsCopy[idx] = { ...ref, [field]: value === "" ? undefined : value };
-      const next = { ...char.character, weapons: weaponsCopy };
-      store.setCharacter({ ...char, character: next });
-      // Custom IS the library: an edited homebrew weapon updates its entry (no-op for
-      // an SRD ref). The library write itself is debounced in the persistence seam.
-      if ("custom" in ref) {
-        useLibraryStore.getState().syncFromCharacter(next, "weapon", ref.instanceId);
-      }
-    },
+    (idx: number, field: string, value: ItemFieldValue) =>
+      updateItemField("weapons", idx, field, value),
     []
   );
 
   const updateEquipmentField = useCallback(
-    (idx: number, field: string, value: ItemFieldValue) => {
-      const store = useCharacterStore.getState();
-      const char = store.character;
-      if (!char) return;
-      const equipCopy = [...char.character.equipment];
-      const ref = equipCopy[idx];
-      if (!ref) return;
-      equipCopy[idx] = { ...ref, [field]: value === "" ? undefined : value };
-      const next = { ...char.character, equipment: equipCopy };
-      store.setCharacter({ ...char, character: next });
-      if ("custom" in ref) {
-        useLibraryStore.getState().syncFromCharacter(next, "equipment", ref.instanceId);
-      }
-    },
+    (idx: number, field: string, value: ItemFieldValue) =>
+      updateItemField("equipment", idx, field, value),
     []
   );
 
@@ -488,54 +375,11 @@ export function InventoryTab() {
   }, [view]);
 
   const toggleEquip = useCallback(
-    (idx: number, name?: string) => {
-      const store = useCharacterStore.getState();
-      const char = store.character;
-      if (!char) return;
-      const ref = char.character.equipment[idx];
-      if (!ref) return;
-      const equipping = !(ref.equipped ?? false);
-      // One body armor at a time: putting armor on takes the worn one off.
-      const { equipment: equipCopy, doffed } = wearArmor(
-        char.character.equipment,
-        idx,
-        getEquipment
-      );
-      const effectiveEquipment = effectiveEquipmentForItemResources(
-        equipCopy,
-        char.session.itemResources
-      );
-      const newAC = computeAC(
-        effectiveEquipment,
-        char.character.abilityScores,
-        getEquipment,
-        char.character.features
-      );
-      const nextCharacter = {
-        ...char,
-        character: { ...char.character, equipment: equipCopy, ac: newAC },
-      };
-      store.setCharacter(nextCharacter);
-      if (isHeavyArmorEquipped(effectiveEquipment, getEquipment)) {
-        for (const key of resolveActiveStatesEndingOn(nextCharacter, "heavy-armor")) {
-          store.setActiveFeature(key, false);
-        }
-      }
-      // SRD don / doff time as the reason line, ONE toast per tap (a swap reads as one
-      // change). Never blocks: the toggle above already applied (override everywhere).
-      const onCategory = armorCategoryOf(ref, getEquipment);
-      const offIdx = doffed[0];
-      const offRef = offIdx === undefined ? undefined : char.character.equipment[offIdx];
-      const offCategory = offRef && armorCategoryOf(offRef, getEquipment);
-      const offName = viewRef.current?.armor.find((r) => r.idx === offIdx)?.name;
-      if (onCategory && name) {
-        showArmorToast(
-          t,
-          { name, category: onCategory, equipping },
-          offCategory && offName ? { name: offName, category: offCategory } : undefined
-        );
-      }
-    },
+    (idx: number, name?: string) =>
+      toggleEquipped(idx, t, {
+        name,
+        nameOf: (i) => viewRef.current?.armor.find((r) => r.idx === i)?.name,
+      }),
     [t]
   );
 

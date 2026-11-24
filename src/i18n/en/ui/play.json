@@ -173,7 +173,11 @@
       "refusedOnly": "Attunement only for: {{who}}.",
       "spellcasters": "spellcasters",
       "attunedTo": "those attuned to {{item}}",
-      "refusedLimitHint": "End one to free a slot."
+      "refusedLimitHint": "End one to free a slot.",
+      "weightEach": "{{weight}} each",
+      "oneLess": "One fewer",
+      "oneMore": "One more",
+      "removeItem": "Remove from inventory"
     },
     "tray": {
       "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",
@@ -448,6 +452,20 @@
       "left_other": "{{count}} rounds of air left",
       "out": "Out of air: you gain 1 Exhaustion level at the end of each turn.",
       "again": "Breathe again"
+    },
+    "coins": {
+      "open": "Manage coins",
+      "total": "Worth {{gp}} gp in all",
+      "adjust": "Add or take",
+      "take": "Take",
+      "addedToast": "Added: {{coins}}",
+      "takenToast": "Took: {{coins}}",
+      "rate": {
+        "pp": "1 pp = 10 gp",
+        "ep": "2 ep = 1 gp",
+        "sp": "10 sp = 1 gp",
+        "cp": "100 cp = 1 gp"
+      }
     }
   }
 }

@@ -29,8 +29,9 @@ players opt in one by one with the per-user toggle (#1233).
 | Resource notes and conversions                                | Missing (one slot→tracker refill exists)                                                      |
 | Proficiencies (armor, weapons, tools, languages), skill edits | Missing (skill proficiency dot only)                                                          |
 | Senses and other speeds                                       | Partial: walking speed only                                                                   |
-| Items: add, sell, remove, quantity, equip                     | Missing (inventory is display + use + attune)                                                 |
-| Coins: add, remove                                            | Missing (display only)                                                                        |
+| Items: quantity, equip, remove                                | Present: the item pane (`PlayItemPane`), opened from the item's name                          |
+| Items: add, sell                                              | Missing                                                                                       |
+| Coins: add, take                                              | Present: the coin pane (`PlayCoinPane`), opened from the coin row                             |
 | Add spells, custom spells, wizard spellbook copy              | Missing (prepare and cantrip swap exist)                                                      |
 | Share, PDF, snapshots history                                 | Partial: JSON export from the roster only                                                     |
 | Playbook editing, situational rules reference                 | Missing (playbook is read-only)                                                               |

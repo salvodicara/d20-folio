@@ -173,7 +173,11 @@
       "refusedOnly": "Sintonia riservata a: {{who}}.",
       "spellcasters": "incantatori",
       "attunedTo": "chi è in sintonia con {{item}}",
-      "refusedLimitHint": "Termina una sintonia per liberare un posto."
+      "refusedLimitHint": "Termina una sintonia per liberare un posto.",
+      "weightEach": "{{weight}} l'uno",
+      "oneLess": "Uno in meno",
+      "oneMore": "Uno in più",
+      "removeItem": "Rimuovi dall'inventario"
     },
     "tray": {
       "ifAtOrBelow": "Se ha {{max}} punti ferita o meno: {{then}}.",
@@ -448,6 +452,20 @@
       "left_other": "Ancora {{count}} round d'aria",
       "out": "Senz'aria: a ogni fine turno guadagni 1 livello di Indebolimento.",
       "again": "Respira di nuovo"
+    },
+    "coins": {
+      "open": "Gestisci le monete",
+      "total": "In tutto valgono {{gp}} mo",
+      "adjust": "Aggiungi o togli",
+      "take": "Togli",
+      "addedToast": "Aggiunte: {{coins}}",
+      "takenToast": "Tolte: {{coins}}",
+      "rate": {
+        "pp": "1 mp = 10 mo",
+        "ep": "2 me = 1 mo",
+        "sp": "10 ma = 1 mo",
+        "cp": "100 mr = 1 mo"
+      }
     }
   }
 }

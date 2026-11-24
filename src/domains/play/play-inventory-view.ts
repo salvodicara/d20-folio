@@ -35,6 +35,11 @@ export type ItemLine =
 
 export interface PlayItem {
   key: string;
+  /** Where it is stored: the item pane's moves (quantity, equip, remove) act on it. */
+  source: { list: "weapons" | "equipment"; idx: number };
+  /** Armor, a shield or a wearable magic item: whether it is on. Weapons are always
+   *  at hand and a torch is never worn, so neither has it. */
+  equip?: { equipped: boolean };
   name: string;
   quantity: number;
   /** Pounds, for one. */
@@ -135,6 +140,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
   };
   const weapon = (w: WeaponRowVM): PlayItem => ({
     key: `w-${w.id}-${String(w.idx)}`,
+    source: { list: "weapons", idx: w.idx },
     name: w.name,
     quantity: w.quantity,
     weight: w.weight,
@@ -170,6 +176,8 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
   };
   const plainItem = (i: ItemRowVM): PlayItem => ({
     key: i.rowId,
+    source: { list: "equipment", idx: i.idx },
+    ...(i.armorAc || i.wearable ? { equip: { equipped: i.equipped } } : {}),
     name: i.name,
     quantity: i.quantity,
     weight: i.weight,
