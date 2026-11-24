@@ -1303,6 +1303,10 @@
     "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
     "name": "Epic Boon"
   },
+  "warlock-fiend-patron-fiend-spells": {
+    "name": "Fiend Spells",
+    "description": "When you reach a Warlock level specified in the Fiend Spells table, you thereafter always have the listed spells prepared. Warlock level 3: Burning Hands, Command, Scorching Ray, Suggestion. Level 5: Fireball, Stinking Cloud. Level 7: Fire Shield, Wall of Fire. Level 9: Geas, Insect Plague."
+  },
   "warlock-fiend-patron-dark-ones-blessing": {
     "description": "When you reduce an enemy to 0 HP, you gain Temporary Hit Points equal to your Charisma modifier + your Warlock level (minimum 1). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 HP.",
     "name": "Dark One's Blessing"

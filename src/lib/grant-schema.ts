@@ -1152,6 +1152,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       /** Only spells of a level the character has slots for (Magical
        *  Discoveries): the picker caps `maxLevel` at the highest slot it knows. */
       castableOnly: booleanSchema,
+      /** The lowest spell level the pick may have (Mystic Arcanum: exactly level 6,
+       *  with `maxLevel` 6). Absent = level 1. */
+      minLevel: numberSchema,
       /** A cantrip is a valid pick too (Magical Discoveries). */
       includeCantrips: booleanSchema,
       ritualOnly: booleanSchema,

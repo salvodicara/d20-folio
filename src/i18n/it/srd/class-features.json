@@ -1497,6 +1497,11 @@
     "name": "Dono Epico",
     "gist": "Ottieni un talento Dono Epico o un altro talento per cui sei idoneo"
   },
+  "warlock-fiend-patron-fiend-spells": {
+    "name": "Incantesimi Immondi",
+    "description": "Quando raggiungi un livello da Warlock indicato nella tabella degli Incantesimi Immondi, da quel momento hai sempre preparati gli incantesimi elencati. Livello da Warlock 3: Mani Brucianti, Comando, Raggio Rovente, Suggestione. Livello 5: Palla di Fuoco, Nube Maleodorante. Livello 7: Scudo di Fuoco, Muro di Fuoco. Livello 9: Costrizione, Piaga degli Insetti.",
+    "gist": "Incantesimi immondi sempre preparati: Mani Brucianti, Palla di Fuoco e altri"
+  },
   "warlock-fiend-patron-dark-ones-blessing": {
     "description": "Quando riduci un nemico a 0 PF, ottieni PF temporanei pari al modificatore di Carisma + livello da Warlock (minimo 1). Ottieni questo beneficio anche se qualcun altro riduce un nemico entro 3 metri da te a 0 PF.",
     "name": "Benedizione dell'Oscuro",
