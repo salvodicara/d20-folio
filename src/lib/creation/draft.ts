@@ -540,6 +540,7 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     classId: draft.classId,
     level: draft.level,
     subclassId: draft.subclassId,
+    bundleChoices: draft.lineageChoices,
     backgroundId: draft.backgroundId,
     humanFeat: draft.humanFeat,
     bgFeat: backgroundFeat,
