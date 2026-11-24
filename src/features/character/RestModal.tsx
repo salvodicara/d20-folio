@@ -550,7 +550,8 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             <Button
               type="submit"
               className="flex-1"
-              disabled={committing || shortRestHeal === null || !diceCountValid}
+              disabled={shortRestHeal === null || !diceCountValid}
+              loading={committing}
             >
               {t("rest.completeRest")}
             </Button>
@@ -674,7 +675,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             <Button
               onClick={() => void handleLongRestConfirm()}
               className="flex-1"
-              disabled={committing}
+              loading={committing}
             >
               {t("rest.completeRest")}
             </Button>

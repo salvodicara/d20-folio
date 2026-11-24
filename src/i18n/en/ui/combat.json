@@ -123,6 +123,7 @@
     "damageBreakdown": "Damage breakdown",
     "healBreakdown": "Healing breakdown",
     "whileActiveNote": "active",
+    "riderNeedsActive": "needs {{name}}",
     "heal": "Heal",
     "healRollLabel": "Roll {{dice}}, then apply",
     "healRollField": "Your {{dice}} roll",

@@ -1283,7 +1283,7 @@ export function LevelUpWizard() {
             {needsWeaponMastery && weaponMasteryCount > 0 && (
               <WizardPickList
                 label={t("levelUp.chooseWeaponMastery", { n: weaponMasteryCount })}
-                options={weaponMasteryOptions(locale).map(
+                options={weaponMasteryOptions(locale, classId).map(
                   (vm): WizardPickOption => ({
                     id: vm.id,
                     name: vm.label,

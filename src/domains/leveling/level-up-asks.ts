@@ -290,7 +290,7 @@ export function levelUpAsks(
       title: t("levelUp.chooseWeaponMastery", { n: newMasteries }),
       count: newMasteries,
       picked: a.weaponMasteries,
-      options: weaponMasteryOptions(locale)
+      options: weaponMasteryOptions(locale, classId)
         .filter((o) => !masteredAlready.includes(o.id))
         .map((o) => ({ id: o.id, label: o.label })),
     });

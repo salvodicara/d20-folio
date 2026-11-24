@@ -275,7 +275,7 @@ export function classPickPool(
       return ids(eligibleManeuvers(level, entry?.maneuverChoices ?? []));
     case "weaponMasteries": {
       const mastered = new Set(entry?.weaponMasteries ?? []);
-      return ids(listMasterableWeapons().filter((w) => !mastered.has(w.id)));
+      return ids(listMasterableWeapons(classId).filter((w) => !mastered.has(w.id)));
     }
     case "fightingStyles": {
       const held = new Set(heldFightingStyles(build));
