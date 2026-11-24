@@ -155,7 +155,9 @@
       "manage": "Manage spells",
       "always": "always prepared",
       "overLimit": "That's more than your class allows: fine if your DM agrees.",
-      "via": "through"
+      "via": "through",
+      "alreadyYours": "Already yours",
+      "addedToast": "Spell added: {{name}}"
     },
     "inv": {
       "pack": "Pack",
