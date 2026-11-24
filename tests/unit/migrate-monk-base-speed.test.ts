@@ -72,6 +72,22 @@ describe("migrate-monk-base-speed", () => {
     expect(plan.changedDocuments).toEqual([]);
   });
 
+  it("an absent or empty stored speed is the species base already: no issue, no write", () => {
+    // The codec drops `speed` when it equals the species default (BUILD_PASSTHROUGH) and
+    // the reader re-derives an absent or empty one from the species (character-minimal
+    // rehydrate), in v0.26.1 and on main: nothing is stored to correct.
+    const absent = {
+      path: CHAR(9),
+      data: { schema: 3, build: { name: "C9", race: "human", classes: [monk(3)] } },
+    };
+    const sources = [absent, doc(10, "human", [monk(6)], "")];
+    const plan = planMonkBaseSpeed(sources);
+    expect(plan.issues).toEqual([]);
+    expect(plan.changedDocuments).toEqual([]);
+    expect(plan.counts).toEqual({ characters: 2, monks: 2, toReset: 0, alreadyBase: 2 });
+    expect(verifyMonkBaseSpeedCorpus(sources)).toEqual([]);
+  });
+
   it("reports counts and hashes, never a path or a name", () => {
     const text = JSON.stringify(reportForMonkBaseSpeed(planMonkBaseSpeed(sources)));
     expect(text).not.toMatch(/users\/|C1|human/);

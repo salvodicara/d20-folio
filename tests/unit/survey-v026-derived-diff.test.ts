@@ -145,6 +145,35 @@ describe("the comparison", () => {
     expect(survey.byFix).toEqual({ "#1105": 1, "#1129": 1 });
   });
 
+  it("v0.26.2's pack fold 2 rows are named (#1097): a cure's count, a free row's lifetime, targets and uses", () => {
+    const survey = surveyDerivedDiff(
+      [{ ok: true, stats: { ac: 14 } }],
+      [
+        {
+          ok: true,
+          stats: {
+            ac: 14,
+            "actions.feature-a-heal-row.conditionRemoval.max": 1,
+            "actions.feature-b-free.conditionApplication.lifetime.turns": 1,
+            "actions.feature-b-free.targeting.maxTargets": 1,
+            "actions.feature-c-free.uses.current": 1,
+            "actions.feature-c-free.uses.total": 1,
+          },
+        },
+      ]
+    );
+    expect(survey.withUnexpected).toBe(0);
+    expect(survey.byFix).toEqual({ "#1097": 1 });
+  });
+
+  it("a free row's other new field stays unexpected", () => {
+    const survey = surveyDerivedDiff(
+      [{ ok: true, stats: { ac: 14 } }],
+      [{ ok: true, stats: { ac: 14, "actions.feature-c-free.attackBonus": 5 } }]
+    );
+    expect(survey.withUnexpected).toBe(1);
+  });
+
   it("reports counts and folded field patterns only: no ids, no values", () => {
     expect(fieldPattern("resources.elf-elven-lineage:faerie-fire.total")).toBe(
       "resources.*.total"
