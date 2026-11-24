@@ -128,7 +128,7 @@ export function owedClassPickRows(build: Build, locale: Locale): OwedClassPickRo
         ...base,
         title: t("levelUp.chooseWeaponMastery", { n: owed }),
         searchPlaceholder: t("levelUp.searchWeapons"),
-        options: weaponMasteryOptions(locale)
+        options: weaponMasteryOptions(locale, classId)
           .filter((vm) => !mastered.has(vm.id))
           .map((vm) => fromLevelUp(vm)),
       };
