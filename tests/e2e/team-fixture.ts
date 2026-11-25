@@ -40,9 +40,9 @@ export function teamFixtureName(role: string): string | null {
   return parsed.build?.name ?? null;
 }
 
-/** The name the role's sheet SHOWS under the dev bypass (#1144's made-up
- *  DEV_HERO_NAMES, never a player's real character name), or null when the pack is
- *  absent. For the dev-bypass specs; the rehearsal keeps `teamFixtureName`. */
+/** The name the role's sheet SHOWS in dev and in the emulator sandbox (#1144's made-up
+ *  DEV_HERO_NAMES, never a player's real character name; the sandbox seed gives it too),
+ *  or null when the pack is absent. */
 export function devHeroName(role: string): string | null {
   const file = teamFixtureFile(role);
   if (!file || !existsSync(file)) return null;

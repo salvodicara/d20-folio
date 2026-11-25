@@ -18,7 +18,7 @@
  * come from one player (an inferred fight needs two), so the scenes compose in one
  * evening: one sitting, one report, read once.
  */
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import { BARD_NAME, PALADIN_NAME } from "./helpers";
 import { plain, type ReportSection } from "./session-report";
 import { visibleWithin } from "../e2e/visible-within";
@@ -159,18 +159,27 @@ export async function journalBlocks(dm: Page): Promise<ReportSection[]> {
   return raw.map((b) => ({ heading: plain(b.heading), lines: b.lines.map(plain) }));
 }
 
-/** The classic hub's Journal: the newest sitting's «Automatic report», opened and read
- *  with its round headings. */
+/** The classic hub's Journal, newest evening first: its first row. Older evenings sit in
+ *  the folded «older» detail, whose reports stay in the page but hidden (#1222: a run that
+ *  crosses midnight UTC has two evenings, and the page's last «Automatic report» was then
+ *  yesterday's, covered, so every click missed). */
+export function newestJournalEvening(dm: Page): Locator {
+  return dm.locator("#campaign-panel-journal .sess-item").first();
+}
+
+/** The classic hub's Journal: the newest sitting's «Automatic report» (the last one of the
+ *  newest evening), opened and read with its round headings. */
 export async function classicJournalReport(
   dm: Page,
   campaign: string
 ): Promise<ReportSection[]> {
   await dm.goto(`/campaigns/${campaign}`);
   await dm.getByRole("tab", { name: "Journal" }).click();
-  const toggle = dm.getByRole("button", { name: /^Automatic report/ }).last();
+  const evening = newestJournalEvening(dm);
+  const toggle = evening.getByRole("button", { name: /^Automatic report/ }).last();
   await expect(toggle).toBeVisible({ timeout: 30_000 });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  const body = dm.locator(".sess-report-body").last();
+  const body = evening.locator(".sess-report-body").last();
   await expect(body).toBeVisible();
   const raw = await body.evaluate((root) => {
     const out: Array<{ heading: string; lines: string[]; rounds: string[] }> = [];
