@@ -126,6 +126,7 @@ export type AggregationSession = Pick<
       | "sessionDefenses"
       | "activeForm"
       | "polymorphForm"
+      | "magicJar"
     >
   >;
 
@@ -618,17 +619,29 @@ export function computeCharacterMaxHp(character: CharacterDoc["character"]): num
  */
 export function deriveMaxHp(character: CharacterDoc["character"]): number {
   const level = totalLevel(character);
+  // The breakdown is built ONCE: every sheet read derives the max (#1334).
+  const parts = computeCharacterMaxHpBreakdown(character);
   // An unknown (homebrew) class has no composition: its given `hp.max` is the whole
   // number, inputs included, so they are never added a second time.
-  if (computeCharacterMaxHpBreakdown(character).length === 0) {
-    return Math.max(level, character.hp.max);
-  }
+  if (parts.length === 0) return Math.max(level, character.hp.max);
   const input = (v: unknown) => (Number.isSafeInteger(v) ? (v as number) : 0);
   const adjusted =
-    computeCharacterMaxHp(character) +
-    input(character.hpRolled) +
-    input(character.hpBonus);
+    breakdownTotal(parts) + input(character.hpRolled) + input(character.hpBonus);
   return Math.max(level, adjusted);
+}
+
+/**
+ * THE max-HP base every reader uses (#1334): derived from the build at read
+ * ({@link deriveMaxHp}), so a path that changes a derive input (an attuned item sold
+ * or bought, a feat written outside the level-up) never shows a stale stored number.
+ * At Magic Jar's host stage the host's max replaces the caster's (`possessHost` writes
+ * it to `hp.max`), so the stored number is the base there.
+ */
+export function maxHpBase(
+  character: CharacterDoc["character"],
+  session: Pick<AggregationSession, "magicJar">
+): number {
+  return session.magicJar?.stage === "host" ? character.hp.max : deriveMaxHp(character);
 }
 
 /** The derived max HP without the hand adjustment: what a reset returns to. */
@@ -790,11 +803,11 @@ export function computedInitiativeBreakdown(
 
 /**
  * The EFFECTIVE max HP every play surface clamps/heals/displays against:
- * `stored hp.max + aggregate.hpFlat`.
+ * `maxHpBase + aggregate.hpFlat`.
  *
- * Why a derivation, not a stored value (rule 6 — one source): `hp.max` IS the
- * derived base ({@link deriveMaxHp}: die + CON + `hp-per-level` grants + the player's
- * max-HP inputs, #1315), which every writer re-derives and a reload derives too.
+ * Why a derivation, not a stored value (rule 6 — one source): the base is DERIVED
+ * at read ({@link maxHpBase} → {@link deriveMaxHp}: die + CON + `hp-per-level` grants
+ * + the player's max-HP inputs, #1315/#1334), so no write path can leave it stale.
  * The `hp-flat` boons (Boon of Fortitude +40, an attuned
  * hp-flat item) AND a standing Aid (`hp-flat:5` inside the spell's `while-active`
  * grant — lit only while its toggle is on) are the LIVE transient deltas that are
@@ -813,7 +826,8 @@ export function effectiveMaxHp(
   session: AggregationSession
 ): number {
   const agg = aggregateCharacterGrants(character, session);
-  return Math.max(0, character.hp.max + agg.hpFlat - hpMaxReductionOf(session));
+  const base = maxHpBase(character, session);
+  return Math.max(0, base + agg.hpFlat - hpMaxReductionOf(session));
 }
 
 /** The session's Hit Point maximum reduction (0 when none or malformed). */

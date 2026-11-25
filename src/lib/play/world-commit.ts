@@ -3,6 +3,7 @@
  * write-path seam every vitals, condition and resource transition shares. Pure
  * apart from the journal action id (a random UUID).
  */
+import { maxHpBase } from "@/lib/aggregate-character";
 import {
   boundaryCommitFacts,
   characterTrackerSeeds,
@@ -45,7 +46,7 @@ export function commitWorldVitals(
   const world = characterWorldState(
     doc,
     uid,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );
@@ -85,7 +86,7 @@ export function commitWorldCondition(
   const world = characterWorldState(
     doc,
     uid,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );

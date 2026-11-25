@@ -80,7 +80,8 @@ describe("sheetNumbers", () => {
         speedOverride: 45,
         proficiencyBonusOverride: 6,
         passivePerceptionOverride: 25,
-        hp: { ...base.character.hp, max: base.character.hp.max + 3 },
+        // #1334 — a hand-set max HP is its input, the bonus over the derived max.
+        hpBonus: 3,
       },
     };
     const n = sheetNumbers(doc);
@@ -97,10 +98,11 @@ describe("sheetNumbers", () => {
       expect(breakdownTotal(number.parts ?? [])).toBe(total);
       expect(adjustment(number.parts)?.label).toEqual({ term: "breakdown.override" });
     }
-    // A rolled or hand-pinned max HP is not the by-the-book composition.
+    // A hand-adjusted max HP names its bonus as a row of the composition.
     expect(n.maxHp.total).toBe(deriveCharacter(doc).hp.max);
-    expect(adjustment(n.maxHp.parts)).toEqual({
-      label: { term: "breakdown.override" },
+    expect(breakdownTotal(n.maxHp.parts ?? [])).toBe(n.maxHp.total);
+    expect(n.maxHp.parts).toContainEqual({
+      label: { term: "breakdown.hpBonus" },
       value: 3,
     });
   });

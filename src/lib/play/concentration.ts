@@ -5,6 +5,7 @@
  * `endStatuses` patch) and, when the dropped spell sustains a self Beast form, the
  * form too (body restored, Beast Temp HP retracted).
  */
+import { maxHpBase } from "@/lib/aggregate-character";
 import { getSpellById } from "@/data/spells";
 import { endSummon } from "@/lib/play/companions";
 import { revertBuildFromPrior, selfFormRule } from "@/lib/polymorph";
@@ -149,7 +150,7 @@ function endEngineConcentration(
   if (doc.session.world === undefined) return null;
   const uid = persistedWorldUid(doc.session.world);
   if (uid === null) return null;
-  const world = characterWorldState(doc, uid, doc.character.hp.max);
+  const world = characterWorldState(doc, uid, maxHpBase(doc.character, doc.session));
   if (!world) return null;
   const handle = engineConcentrationHandle(world);
   if (!handle || handle.spellId === null) return null;

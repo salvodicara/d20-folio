@@ -1,4 +1,5 @@
 /** Short-rest input must distinguish dice spent, physical rolls and final HP. */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { RestModal } from "@/features/character/RestModal";
@@ -27,7 +28,7 @@ function seed(con = 14) {
   const doc = structuredClone(MOCK_CHARACTER);
   doc.character.abilityScores.CON = con;
   doc.character.hitDieType = 8;
-  doc.character.hp.max = 30;
+  doc.character = withMaxHpEdit(doc.character, 30);
   doc.session.hp = { current: 10, temp: 0 };
   doc.session.hitDice = { used: 2 };
   useCharacterStore.setState({ character: doc, loading: false, error: null });
