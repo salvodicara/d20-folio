@@ -19,7 +19,8 @@ import { useTranslation } from "react-i18next";
 
 import { spellSpec } from "@/features/compendium/picker";
 import { useCompendiumPicker } from "@/features/compendium/picker/useCompendiumPicker";
-import { copyIntoSpellbook, spellbookEntry } from "@/lib/wizard-spellbook";
+import { copySpellToBook } from "@/features/character/spellbook-commands";
+import { spellbookEntry } from "@/lib/wizard-spellbook";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import type { Locale } from "@/lib/locale";
@@ -32,10 +33,21 @@ import { PlayCustomSpell } from "./PlayCustomSpell";
 /** A long list stays light: the first rows, and the search narrows the rest. */
 const SHOWN = 60;
 
-export function PlayAddSpell({ locale }: { locale: Locale }) {
+export function PlayAddSpell({
+  locale,
+  onCustomChange,
+}: {
+  locale: Locale;
+  /** The homebrew form opened or closed: the window hides its «Fatto» meanwhile. */
+  onCustomChange?: (open: boolean) => void;
+}) {
   const { t } = useTranslation();
   const picker = useCompendiumPicker(spellSpec, { mode: "add" });
-  const [custom, setCustom] = useState(false);
+  const [custom, setCustomState] = useState(false);
+  const setCustom = (open: boolean) => {
+    setCustomState(open);
+    onCustomChange?.(open);
+  };
   // the spell whose copy is being confirmed
   const [asking, setAsking] = useState<string | null>(null);
   const doc = picker.ctx.character;
@@ -71,27 +83,7 @@ export function PlayAddSpell({ locale }: { locale: Locale }) {
     );
   const copy = (s: Spell, pay: boolean) => {
     setAsking(null);
-    registerUndoableToast(
-      { message: t("play.spells.copiedToast", { name: nameOf(s) }) },
-      () => {
-        const store = useCharacterStore.getState();
-        const before = store.character;
-        const next = before ? copyIntoSpellbook(before, s.id, { pay }) : null;
-        if (!before || !next) return null;
-        store.setCharacter(next);
-        // Undo puts back the spell list and the coins as they were.
-        return () => {
-          const now = useCharacterStore.getState().character;
-          if (!now) return;
-          useCharacterStore.getState().setCharacter({
-            ...now,
-            character: { ...now.character, spells: before.character.spells },
-            session: { ...now.session, currency: before.session.currency },
-          });
-        };
-      },
-      { turnScoped: false }
-    );
+    copySpellToBook(s.id, pay, t("play.spells.copiedToast", { name: nameOf(s) }));
   };
   if (custom) return <PlayCustomSpell locale={locale} onDone={() => setCustom(false)} />;
   return (

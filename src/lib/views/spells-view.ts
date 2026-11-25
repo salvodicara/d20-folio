@@ -60,6 +60,7 @@ import { resolveSpellAbility, spellAbilityPinned } from "@/lib/resolve-spell-abi
 import { resolveSpellOwningClassId } from "@/lib/spell-owning-class";
 import { resolveEffectiveSpells } from "@/lib/expanded-spells";
 import { canRitualCast } from "@/lib/ritual";
+import { homebrewSpellMechanics } from "@/lib/homebrew-spells";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { resolveFadingPenaltySources } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
@@ -408,9 +409,13 @@ function buildCustomCardVM(args: {
   idx: number;
   session: SessionState;
   locale: Locale;
+  classId: string;
 }): SpellCardVM {
-  const { ref, idx, session, locale } = args;
+  const { ref, idx, session, locale, classId } = args;
   const isCantrip = ref.level === 0;
+  // A homebrew ritual carries the catalogue's tag in its mechanics.
+  const ritual = !isCantrip && homebrewSpellMechanics(ref)?.ritual === true;
+  const isPrepared = ref.prepared ?? false;
   return {
     key: `custom-${ref.instanceId}`,
     idx,
@@ -433,14 +438,16 @@ function buildCustomCardVM(args: {
     level: ref.level,
     isCantrip,
     concentration: ref.concentration,
-    ritual: false,
+    ritual,
     concentratingNow: holdsCustomSpellConcentration(session.concentration, ref),
-    isPrepared: ref.prepared ?? false,
+    isPrepared,
     isAlwaysPrepared: false,
     prepLocked: true,
     showPrep: true,
     dimmed: false,
-    canRitual: false,
+    canRitual:
+      ritual &&
+      canRitualCast({ spell: { level: ref.level, ritual }, classId, isPrepared }),
     effectWord: null,
     overrideAbility: null,
     attackBonus: null,
@@ -632,7 +639,7 @@ export function buildSpellsViewModel(
     const idx = character.spells.indexOf(ref);
     let vm: SpellCardVM;
     if ("custom" in ref) {
-      vm = buildCustomCardVM({ ref, idx, session, locale });
+      vm = buildCustomCardVM({ ref, idx, session, locale, classId });
     } else {
       const data = spellIndex.get(ref.srdId);
       if (!data) continue; // an unknown srdId has no card to render

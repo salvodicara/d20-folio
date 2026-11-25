@@ -9,6 +9,7 @@ vi.mock("@/lib/firebase", () => ({}));
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { PlayAddSpell } from "@/domains/play/ui/PlayAddSpell";
+import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
 import i18n from "@/i18n";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -233,5 +234,23 @@ describe("«Copy into your spellbook» (D&D Beyond's Manage Spells for a Wizard)
       screen.getByRole("button", { name: "Copia nel libro: Invisibilità" })
     );
     expect(screen.getByRole("button", { name: "Copia e paga 100 mo" })).toBeTruthy();
+  });
+});
+
+describe("the custom spell form inside «Manage spells»", () => {
+  it("hides «Done» while the form is open, so the only way on is to add or go back", async () => {
+    await i18n.changeLanguage("en");
+    HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+      this.open = true;
+    };
+    HTMLDialogElement.prototype.close = function (this: HTMLDialogElement) {
+      this.open = false;
+    };
+    render(<PlayPrepare doc={live()} locale="en" onClose={() => undefined} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Add" }));
+    fireEvent.click(screen.getByRole("button", { name: "Custom spell" }));
+    expect(screen.queryByRole("button", { name: "Done" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Back to the list" }));
+    expect(screen.getByRole("button", { name: "Done" })).toBeTruthy();
   });
 });
