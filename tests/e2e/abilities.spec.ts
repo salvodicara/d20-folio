@@ -97,8 +97,19 @@ test.describe("Abilities Page", () => {
   });
 
   test("displays saving throws", async ({ page }) => {
-    // Bard saves: DEX and CHA — section heading "Saving Throws"
-    await expect(page.getByText("Saving Throws").first()).toBeVisible();
+    // Bard saves: DEX and CHA. In play mode the saves sit in each ability medallion's
+    // save line (the «Saving Throws» rubric exists only in edit mode). This used to read
+    // a page-wide "Saving Throws" text, which matched a sentence inside the closed rules
+    // reference: it passed on hidden text until closed folds stopped painting (#1278).
+    const card = (code: string) =>
+      page
+        .locator(".statcard", { has: page.locator(".sc-label", { hasText: code }) })
+        .first();
+    // Proficient: the save bonus shows, marked; DEX +3 + PB 4, CHA +5 + PB 4.
+    await expect(card("DEX").locator(".sc-save-rest.on")).toHaveText("+7");
+    await expect(card("CHA").locator(".sc-save-rest.on")).toHaveText("+9");
+    // Not proficient: no marked save bonus.
+    await expect(card("STR").locator(".sc-save-rest.on")).toHaveCount(0);
   });
 
   test("displays proficiencies section", async ({ page }) => {

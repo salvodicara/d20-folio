@@ -1196,3 +1196,26 @@ it("a parent snapshot inside the queued play-write window preserves a local HP e
   expect(useCharacterStore.getState().character?.session.hp.current).toBe(30);
   expect(writeCombatStateMock.mock.calls.at(-1)?.[2].hp.current).toBe(30);
 });
+
+// #1275: a phone lock or an app switch fires `visibilitychange → hidden`, often with no
+// `pagehide` after it (the page is frozen, then discarded). The pending build save must
+// leave on `hidden`, as it already does on `pagehide`.
+describe("useCharacterSubscription — the build save leaves when the page is hidden", () => {
+  const setVisibility = (state: "hidden" | "visible"): void => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => state,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  };
+
+  it("flushes the pending build save on hidden, and not on visible", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    debouncedFlush.mockClear();
+    setVisibility("visible");
+    expect(debouncedFlush).not.toHaveBeenCalled();
+    setVisibility("hidden");
+    expect(debouncedFlush).toHaveBeenCalledTimes(1);
+    setVisibility("visible");
+  });
+});

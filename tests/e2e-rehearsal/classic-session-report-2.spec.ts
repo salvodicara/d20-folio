@@ -263,7 +263,9 @@ test("classic UI: a second evening, read back from the hub's Journal", async ({
     ).toBeVisible();
     await openSheet(bard, SANDBOX_USERS.bard.characterId);
     forgottenInitiative = await rollOwnInitiative(bard, BARD_D20);
-    await rollEachHero(dm);
+    // The Bard rolled on the sheet: the DM rolls for the Paladin only, once the Bard's
+    // own roll has reached the hub.
+    await rollEachHero(dm, { pending: 1 });
     await dm
       .getByRole("button", { name: /^Begin (turns|with)/ })
       .first()

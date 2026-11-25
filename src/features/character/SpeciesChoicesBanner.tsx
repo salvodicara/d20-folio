@@ -6,7 +6,9 @@
  * opens them with the sheet's own pickers. Nothing is written until «Salva»; each
  * choice made then leaves the list. The class picks the level table gives and the
  * build lacks (invocations, cantrips, Metamagic, maneuvers, Weapon Mastery) are
- * asked here too, with the level-up wizard's own pick list. The new UI's twin is `PlaySpeciesChoices`;
+ * asked here too, with the level-up wizard's own pick list. So are a Lore Bard's
+ * Magical Discoveries held without their always-prepared mark: preselected, one
+ * «Salva» marks them, with an undo. The new UI's twin is `PlaySpeciesChoices`;
  * both read `pendingSpeciesItems` and write through the same store actions.
  */
 import { useState } from "react";
@@ -26,10 +28,12 @@ import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs, raceName } from "@/lib/views/creation-view";
 import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
 import {
+  discoverySentence,
   pendingSpeciesItems,
   speciesChoicesLine,
 } from "@/lib/views/species-choices-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import { registerUndoableToast } from "@/stores/undoStore";
 import type { AbilityCode } from "@/types/ability";
 import type { CharacterDoc } from "@/types/character";
 
@@ -55,7 +59,7 @@ export function SpeciesChoicesBanner() {
       <span className="conc-banner-text">
         <b>{t("play.speciesChoices.title")}</b>
         {" · "}
-        {speciesChoicesLine(items, t, locale)}
+        {speciesChoicesLine(items, t, locale, doc.character)}
       </span>
       <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
         {t("play.speciesChoices.open")}
@@ -98,7 +102,16 @@ function SpeciesChoicesModal({
   // The class picks owed, each with the level-up's pick list, answered by row key.
   const classRows = owedClassPickRows(doc.character, locale);
   const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
+  // A Lore Bard's Magical Discoveries without their mark: the likely ones preselected,
+  // so confirming them is the one tap on «Salva».
+  const discovery = pendingSpeciesItems(doc.character, doc.session, locale).find(
+    (item) => item.kind === "discovery-mark"
+  );
+  const [discoveryPicks, setDiscoveryPicks] = useState<string[]>(
+    discovery?.preselected ?? []
+  );
   const chosen =
+    discoveryPicks.length > 0 ||
     Object.values(classPicks).some((ids) => ids.length > 0) ||
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
@@ -123,6 +136,14 @@ function SpeciesChoicesModal({
         ids: classPicks[row.key] ?? [],
       }))
     );
+    // Last, so its one undo restores only this mark.
+    if (discoveryPicks.length > 0) {
+      registerUndoableToast(
+        { message: t("play.speciesChoices.discoveryUndo") },
+        () => useCharacterStore.getState().confirmDiscoveries(discoveryPicks),
+        { turnScoped: false }
+      );
+    }
     onClose();
   };
   return (
@@ -132,9 +153,13 @@ function SpeciesChoicesModal({
       // The species these choices belong to (or, when only class picks are owed,
       // the classes), never the add-modals' «Aggiungi».
       rubric={
-        pending.any || classRows.length === 0
+        pending.any
           ? raceName(doc.character.race, locale)
-          : [...new Set(classRows.map((row) => row.source))].join(" · ")
+          : classRows.length > 0
+            ? [...new Set(classRows.map((row) => row.source))].join(" · ")
+            : discovery
+              ? t("play.speciesChoices.discoveryLabel")
+              : raceName(doc.character.race, locale)
       }
       title={t("play.speciesChoices.title")}
       compact
@@ -238,6 +263,33 @@ function SpeciesChoicesModal({
               searchPlaceholder={row.searchPlaceholder}
             />
           ))}
+          {discovery && (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-xs font-semibold text-text-secondary">
+                {t("play.speciesChoices.discoveryLabel")}
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {discovery.candidates.map((spell) => (
+                  <button
+                    key={spell.id}
+                    type="button"
+                    aria-pressed={discoveryPicks.includes(spell.id)}
+                    onClick={() =>
+                      setDiscoveryPicks(
+                        togglePick(discoveryPicks, spell.id, discovery.missing)
+                      )
+                    }
+                    className="fchip fchip-sm"
+                  >
+                    {spell.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-text-secondary">
+                {discoverySentence(doc.character, discoveryPicks, t, locale)}
+              </p>
+            </div>
+          )}
         </div>
       </ModalBody>
       <ModalFoot>
