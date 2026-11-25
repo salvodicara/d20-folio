@@ -2443,6 +2443,9 @@
   "regenerate.components": {
     "material": "Un ruota della preghiera"
   },
+  "regenerate.grants.0": {
+    "label": "Rigenerazione"
+  },
   "reincarnate": {
     "description": "L'incantatore tocca un umanoide defunto o una parte di umanoide defunto. Se la creatura non è morta da più di 10 giorni, l'incantesimo le forma un nuovo corpo e richiama la sua anima all'interno di quel corpo. Si tira 1d10 e si consulta la tabella di seguito per determinare la specie del nuovo corpo, oppure il GM sceglie un'altra specie giocabile.\n\n1d10: specie\n1: Il personaggio tira di nuovo.\n2: Dragonide\n3: Elfo\n4: Gnomo\n5: Goliath\n6: Halfling\n7: Nano\n8: Orchesco\n9: Tiefling\n10: Umano\n\nLa creatura reincarnata compie le scelte indicate nella descrizione della specie scelta e ricorda la sua vita precedente. Conserva le capacità che possedeva nella sua forma originale, ad eccezione del fatto che i tratti della sua specie originaria vengono sostituiti dai tratti della nuova specie.",
     "gist": "Un umanoide morto da non più di 10 giorni rinasce in un corpo di specie casuale",

@@ -201,6 +201,25 @@ export const SRD_SPELLS_LEVEL7: SrdSpellData[] = [
     duration: { kind: "hours", amount: 1 },
     healDice: "4d8",
     effectTag: "heal",
+    targeting: { affinity: "ally", maxTargets: 1 },
+    // SRD 5.2.1: "For the duration, the target regains 1 Hit Point at the start of
+    // each of its turns" (no minimum-HP gate). Regrowing limbs stays prose.
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-regenerate",
+        duration: timedSpellDuration(60),
+        recipient: "selected",
+        grants: [
+          {
+            type: "regen-at-turn-start",
+            amount: "1",
+            condition: "always",
+            requiresMinHp: false,
+          },
+        ],
+      },
+    ],
     source: "SRD",
   },
   {
