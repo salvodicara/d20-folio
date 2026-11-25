@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 import { damageTrayPlan } from "@/lib/play/damage-tray";
 import { conditionEndsOf, fightConditionEnds } from "@/lib/play/fight-condition-ends";
 import type { FightLook } from "@/lib/play/fight-condition-ends";
-import { resolveActions } from "@/lib/smart-tracker";
+import { localizeActions } from "@/lib/views/combat-action-view";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import type { CombatEffectOp } from "@/types/combat-effect";
 import { makeCharacterDoc } from "./_helpers";
@@ -60,7 +60,7 @@ describe("a repeat save that ends a condition, from the rule text", () => {
       abilityScores: { STR: 18, DEX: 12, CON: 14, INT: 10, WIS: 10, CHA: 8 },
       features: [{ srdId: "barbarian-berserker-intimidating-presence" }],
     });
-    const action = resolveActions(berserker, "combat").find((a) =>
+    const action = localizeActions(berserker, "en").find((a) =>
       a.id.includes("intimidating-presence")
     );
     expect(action?.summary.conditionSource).toEqual({
