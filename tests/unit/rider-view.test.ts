@@ -313,7 +313,7 @@ describe("summarizeRiders — the always-visible collapsed-face damage cluster (
   });
 
   it("die-mods/heal count toward the OVERFLOW, never inflate a dice chip", () => {
-    // A worst-case build from the engine: 2 damage riders (a raging Berserker's
+    // A worst-case build from the engine: 2 damage riders (a raging, reckless Berserker's
     // Frenzy + Paladin Radiant Strikes, both melee) + 2 die-mods (Great Weapon
     // Fighting + Savage Attacker) on one Greatsword (verified ground truth;
     // Dueling is two-handed-incompatible per W9 and would never fire here). The
@@ -328,7 +328,8 @@ describe("summarizeRiders — the always-visible collapsed-face damage cluster (
       background: "soldier",
       abilityScores: S,
       weapons: [{ srdId: "greatsword", quantity: 1 }],
-      activeFeatures: ["barbarian-rage"],
+      // Frenzy needs Reckless Attack while raging (SRD 5.2.1, #1235).
+      activeFeatures: ["barbarian-rage", "barbarian-reckless-attack"],
       extraFeatures: [{ srdId: "great-weapon-fighting" }, { srdId: "savage-attacker" }],
     });
     expect(mixed.length).toBeGreaterThan(2);

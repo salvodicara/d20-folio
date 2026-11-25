@@ -128,6 +128,7 @@ export const WARLOCK_TABLE: SrdClassTable = {
     {
       id: "fiend-patron",
       featureIds: [
+        "warlock-fiend-patron-fiend-spells",
         "warlock-fiend-patron-dark-ones-blessing",
         "warlock-fiend-patron-dark-ones-own-luck",
         "warlock-fiend-patron-fiendish-resilience",
@@ -254,13 +255,13 @@ export const WARLOCK_FEATURES: SrdClassFeatureData[] = [
     // spell slot, and you must finish a Long Rest before you can cast it in this
     // way again." Modeled as a Warlock-list choice-spell whose pick is free-
     // castable 1/Long Rest via THIS feature's tracker (mirrors Aberrant
-    // heritage feat's freeCastSource → its 1/LR tracker). NOTE: choice-spell has no
-    // exact-level floor (only maxLevel), so the picker is permissive (≤6th); the
-    // free-cast-1/Long-Rest core is fully wired.
+    // heritage feat's freeCastSource → its 1/LR tracker). `minLevel` = `maxLevel`
+    // makes the pick exactly level 6, as the text says.
     grants: [
       {
         type: "choice-spell",
         classSpellList: "warlock",
+        minLevel: 6,
         maxLevel: 6,
         amount: 1,
         freeCastSource: {
@@ -283,6 +284,7 @@ export const WARLOCK_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-spell",
         classSpellList: "warlock",
+        minLevel: 7,
         maxLevel: 7,
         amount: 1,
         freeCastSource: {
@@ -305,6 +307,7 @@ export const WARLOCK_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-spell",
         classSpellList: "warlock",
+        minLevel: 8,
         maxLevel: 8,
         amount: 1,
         freeCastSource: {
@@ -327,6 +330,7 @@ export const WARLOCK_FEATURES: SrdClassFeatureData[] = [
       {
         type: "choice-spell",
         classSpellList: "warlock",
+        minLevel: 9,
         maxLevel: 9,
         amount: 1,
         freeCastSource: {
@@ -350,6 +354,15 @@ export const WARLOCK_FEATURES: SrdClassFeatureData[] = [
     source: "SRD",
   },
   // Fiend Patron (2024) subclass features
+  {
+    id: "warlock-fiend-patron-fiend-spells",
+    class: "warlock",
+    subclass: "fiend-patron",
+    level: 3,
+    // Descriptive header for the subclass spell table — the always-prepared
+    // spells themselves flow from the subclass's `expandedSpells` map above.
+    source: "SRD",
+  },
   {
     id: "warlock-fiend-patron-dark-ones-blessing",
     class: "warlock",

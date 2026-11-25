@@ -733,7 +733,8 @@ export function LevelUpWizard() {
         updated,
         updatedDoc.session,
         // Compare-and-set base: the generation the wizard opened on.
-        character.revision
+        character.revision,
+        character
       );
       // The level-up's line in the log, and through it the campaign's session.
       recordLevelUp({ from: newLevel - 1, to: newLevel, classId });

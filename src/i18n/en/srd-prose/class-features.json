@@ -581,6 +581,9 @@
   "warlock-epic-boon": {
     "gist": "Gain an Epic Boon feat or another feat you qualify for"
   },
+  "warlock-fiend-patron-fiend-spells": {
+    "gist": "Always prepared fiend spells: Burning Hands, Fireball, Wall of Fire and more by level"
+  },
   "warlock-fiend-patron-dark-ones-blessing": {
     "gist": "Enemy dropped to 0 HP near you (10 ft): Temporary Hit Points = Charisma + Warlock level"
   },

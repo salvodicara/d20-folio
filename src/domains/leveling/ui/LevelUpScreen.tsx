@@ -150,7 +150,8 @@ export function LevelUpScreen({
         doc.id,
         after.character,
         after.session,
-        doc.revision
+        doc.revision,
+        doc
       );
       // The level-up's line in the log, and through it the campaign's session.
       const takeLineBack = recordLevelUp({
@@ -169,7 +170,8 @@ export function LevelUpScreen({
             uid,
             doc.id,
             { character: before.character, session: before.session },
-            doc.revision + 1
+            doc.revision + 1,
+            before
           ).catch((e: unknown) => {
             // The sheet stays levelled when the old one cannot be put back.
             setCharacter(after);
