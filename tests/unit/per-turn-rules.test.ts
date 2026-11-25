@@ -12,10 +12,13 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { damageTrayPlan } from "@/lib/play/damage-tray";
 import { conditionEndsOf, fightConditionEnds } from "@/lib/play/fight-condition-ends";
 import type { FightLook } from "@/lib/play/fight-condition-ends";
+import { resolveActions } from "@/lib/smart-tracker";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import type { CombatEffectOp } from "@/types/combat-effect";
+import { makeCharacterDoc } from "./_helpers";
 
 describe("a repeat save that ends a condition, from the rule text", () => {
   const cases = [
@@ -46,6 +49,31 @@ describe("a repeat save that ends a condition, from the rule text", () => {
         on: "failed-save",
         lifetime: { kind: "timed", minutes: 1, maxRounds: 10 },
       },
+    });
+  });
+
+  it("Intimidating Presence on a real Berserker: DC 8 + STR + PB, any number of chosen creatures", () => {
+    const berserker = makeCharacterDoc({
+      classId: "barbarian",
+      subclassId: "berserker",
+      level: 14,
+      abilityScores: { STR: 18, DEX: 12, CON: 14, INT: 10, WIS: 10, CHA: 8 },
+      features: [{ srdId: "barbarian-berserker-intimidating-presence" }],
+    });
+    const action = resolveActions(berserker, "combat").find((a) =>
+      a.id.includes("intimidating-presence")
+    );
+    expect(action?.summary.conditionSource).toEqual({
+      kind: "feature",
+      id: "barbarian-berserker-intimidating-presence",
+    });
+    // "Each creature of your choice": the picker has no cap.
+    expect(action?.summary.targeting).toEqual({ affinity: "enemy" });
+    // STR 18 (+4), PB +5 at level 14: DC 17. Three chosen creatures all save.
+    expect(action && damageTrayPlan(action, ["m1", "m2", "m3"], "pc-me")).toMatchObject({
+      save: { ability: "WIS", dc: 17, onSave: "none" },
+      conditions: { options: ["frightened"], pickOne: false },
+      targets: ["m1", "m2", "m3"],
     });
   });
 
