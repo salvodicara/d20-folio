@@ -3254,6 +3254,9 @@ export interface SrdClassTable {
   /** Weapon proficiencies — stable {@link ProficiencyToken} ids (`simple-weapons`,
    *  `longswords`); the display resolves via `localizeSrd("proficiency", id, …)`. */
   weaponProficiencies: ProficiencyToken[];
+  /** Weapon Mastery picks only Melee weapons (Barbarian: «Simple or Martial Melee
+   *  weapons»). Every class picks only weapons it is proficient with. */
+  weaponMasteryMeleeOnly?: true;
   /** Skill choices at character creation */
   skillChoices: {
     count: number;

@@ -123,6 +123,7 @@
     "damageBreakdown": "Scomposizione del danno",
     "healBreakdown": "Scomposizione della cura",
     "whileActiveNote": "attiva",
+    "riderNeedsActive": "richiede {{name}}",
     "heal": "Cura",
     "healRollLabel": "Tira {{dice}}, poi applica",
     "healRollField": "Il tuo tiro di {{dice}}",

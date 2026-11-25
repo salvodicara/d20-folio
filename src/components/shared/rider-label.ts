@@ -72,6 +72,10 @@ export function riderQualifiers(
   // SAME `combat.whileActiveNote` key the weapon-damage breakdown shows, so the
   // user sees the extra damage is conditional on the toggle (Rage, Divine Favor).
   if (rider.whileActive) parts.push(t("combat.whileActiveNote"));
+  // A rider whose toggle is off (Brutal Strike without Reckless Attack) says what it
+  // needs, so a player who expects the die sees why it is not offered.
+  if (rider.needsActive)
+    parts.push(t("combat.riderNeedsActive", { name: rider.needsActive }));
   // G14 — an attack-or-spell rider isn't weapon-bound; spell out the scope so the
   // self-side reminder reads "on an attack or a spell" (a species revelation form).
   if (rider.scope === "attack-or-spell") parts.push(t("combat.riderScopeAttackOrSpell"));

@@ -332,7 +332,7 @@ export function FeaturesTab() {
       // adds one more on top (folded onto the primary entry the re-pick writes to).
       const max = weaponMasteryCount(cd, cls, classEntryLevel(cd, cls));
       if (max > 0) {
-        const weapons = listMasterableWeapons();
+        const weapons = listMasterableWeapons(cls);
         groups.push({
           key: "weapon-mastery",
           eyebrow: t("character.weaponMastery"),
