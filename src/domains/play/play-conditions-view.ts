@@ -2,7 +2,8 @@
  * The Play «Condizioni» panel (prototype x-play-cond): each condition the player can
  * take off, with its first effect line, its source's name when the fight knows it,
  * and, for a source-gated one the sheet can't decide (`needsSeesAnswer`), the table's
- * «Non vedo la fonte» answer. Exhaustion is a level (1–6), not a chip. What can be
+ * «Non vedo la fonte» answer, and, for a condition a spell imposes with an end-of-turn
+ * repeat save, the optional «Da cosa?» note the solo strip reads (#1333). Exhaustion is a level (1–6), not a chip. What can be
  * added, and who in the fight could be a condition's source.
  */
 import { SRD_CONDITIONS } from "@/data/conditions";
@@ -10,6 +11,8 @@ import { hasSrd, localizeSrd, localizeSrdList } from "@/i18n/resolver";
 import { conditionSourceInstances, needsSeesAnswer } from "@/lib/condition-sources";
 import { exhaustionOf, exhaustionParts } from "@/lib/compute";
 import type { Locale } from "@/lib/locale";
+import { repeatSaveOriginsFor } from "@/lib/play/solo-repeat-saves";
+import { grantSourceLabel } from "@/lib/views/tracker-view";
 import type { CharacterDoc } from "@/types/character";
 
 /** The fight around the sheet: each combatant with its name when known. */
@@ -31,6 +34,10 @@ export interface ConditionPanelRow {
   source?: string;
   /** «Non vedo la fonte»: the answer's key and whether it is pressed. */
   ask?: { key: string; pressed: boolean };
+  /** «Da cosa?» (#1333): the spells and features that impose it with an end-of-turn
+   *  repeat save, and the one the player named (null: none, «Altro»). Absent when no
+   *  source repeats a save for it. */
+  origin?: { options: { id: string; name: string }[]; chosen: string | null };
 }
 
 export interface ConditionsPanelView {
@@ -62,6 +69,10 @@ export function conditionsPanelView(
   const rows = held.map((id): ConditionPanelRow => {
     const ask = asks.find((a) => a.key === `condition:${id}`);
     const source = nameOf(doc.session.conditionSources?.[id]);
+    const options = repeatSaveOriginsFor(id).map((o) => ({
+      id: o.id,
+      name: grantSourceLabel(o.id, locale),
+    }));
     return {
       id,
       name: localizeSrd("condition", id, "name", locale),
@@ -70,6 +81,9 @@ export function conditionsPanelView(
         : "",
       ...(source ? { source } : {}),
       ...(ask ? { ask: { key: ask.key, pressed: ask.seesSource === false } } : {}),
+      ...(options.length > 0
+        ? { origin: { options, chosen: doc.session.conditionOrigins?.[id] ?? null } }
+        : {}),
     };
   });
   const { level, rules } = exhaustionParts(exhaustionOf(doc.session));

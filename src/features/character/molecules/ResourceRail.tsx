@@ -39,6 +39,7 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
+import { conditionsPanelView } from "@/domains/play/play-conditions-view";
 import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
 // The rail's core vital reads (concentration, exhaustion, slot pips) go
@@ -1612,6 +1613,27 @@ function ConditionStrip({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
+  // «Da cosa?» (#1333): what imposed each condition chip the player put on, for the
+  // solo strip; the same rows as Play's panel (`conditionsPanelView`).
+  const doc = useCharacterStore((s) => s.character);
+  const origins = doc
+    ? conditionsPanelView(doc, locale).rows.flatMap((row) =>
+        row.origin
+          ? [
+              {
+                conditionId: row.id,
+                label: row.name,
+                options: row.origin.options.map((o) => ({ id: o.id, label: o.name })),
+                chosen: row.origin.chosen,
+              },
+            ]
+          : []
+      )
+    : [];
+  const setOrigin = (condition: string, origin: string | null) =>
+    useCharacterStore
+      .getState()
+      .dispatch({ kind: "set-condition-origin", condition, origin });
   // A fading D20 Test penalty (Raise Dead) is lit from the same picker and shows
   // as a chip counting down each Long Rest.
   const statuses = Object.entries(FADING_PENALTIES).map(([id, def]) => {
@@ -1650,6 +1672,8 @@ function ConditionStrip({
       onToggle={onToggle}
       statuses={statuses}
       onToggleStatus={toggleStatus}
+      origins={origins}
+      onOrigin={setOrigin}
     />
   );
 }

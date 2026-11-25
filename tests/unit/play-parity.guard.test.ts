@@ -48,6 +48,7 @@ const COMPONENTS: Record<string, Answer> = {
   },
   ReadiedSpellRow: { covered: "src/domains/play/ui/PlayReactionExtras.tsx" },
   RollReactionDialog: { covered: "src/domains/play/ui/PlayCentre.tsx" },
+  SoloRepeatSaveBanner: { covered: "src/domains/combat/ui/SoloRepeatSavePrompt.tsx" },
   SpeciesChoicesBanner: { covered: "src/domains/play/ui/PlaySpeciesChoices.tsx" },
   SummaryRow: { covered: "src/domains/play/ui/PlayRest.tsx" },
   TransformFormPicker: { covered: "src/domains/play/ui/PlayFormPicker.tsx" },

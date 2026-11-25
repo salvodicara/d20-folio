@@ -20,6 +20,7 @@ import type { TFunction } from "i18next";
 
 import { MAX_UNDO_DEPTH, registerUndoableToast, useUndoStore } from "@/stores/undoStore";
 
+import { raiseSoloRepeatSaves } from "./solo-repeat-save-store";
 import { advanceSoloWorldTurn } from "./solo-world-turn";
 import { advanceSharedTurn } from "./turn-state";
 
@@ -146,6 +147,7 @@ export function storeEndTurnPorts(ui: EndTurnUi): EndTurnPorts {
       ui.readiedSpellLost?.(lost.spell);
       return lost.restore;
     },
+    raiseRepeatSaves: raiseSoloRepeatSaves,
     logTurnEnd: (round) =>
       useCharacterStore.getState().logEvent({ kind: "turn-end", round }),
     removeLogEntry: (id) => useCharacterStore.getState().removeLogEntry(id),
