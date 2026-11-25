@@ -1,4 +1,5 @@
 /** A header number in its frame: Armour Class in a shield, the others in a hexagon.
+ *  With `onOpen` the whole badge is a button that opens the number's pane.
  *  The frames are the approved prototype's SVG (x-play .badge__shape): a gold edge over
  *  a dark fill, and a bronze inner line. A distance's unit is set small («9m»). */
 const SHAPES = {
@@ -18,15 +19,17 @@ export function StatBadge({
   shape,
   value,
   label,
+  onOpen,
 }: {
   shape: "shield" | "hex";
   value: string;
   label: string;
+  onOpen?: () => void;
 }) {
   const s = SHAPES[shape];
   const unit = /^(.*\d)\s*(m|ft|km|mi)$/.exec(value);
-  return (
-    <div className="f-badge" data-shape={shape}>
+  const body = (
+    <>
       <span className="f-badge-frame">
         <svg viewBox={s.box} aria-hidden="true" data-orn="">
           <path className="f-badge-outer" d={s.outer} />
@@ -44,6 +47,22 @@ export function StatBadge({
         </b>
       </span>
       <span className="f-lbl">{label}</span>
+    </>
+  );
+  return onOpen ? (
+    <button
+      type="button"
+      className="f-badge"
+      data-shape={shape}
+      aria-haspopup="dialog"
+      aria-label={`${label} ${value}`}
+      onClick={onOpen}
+    >
+      {body}
+    </button>
+  ) : (
+    <div className="f-badge" data-shape={shape}>
+      {body}
     </div>
   );
 }

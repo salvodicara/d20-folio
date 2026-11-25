@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { playNumberView } from "@/domains/play/play-number-view";
 import { playHeaderView } from "@/domains/play/play-header-view";
 import { concentrationValue } from "@/lib/concentration";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
@@ -155,7 +156,7 @@ describe("playHeaderView: the saving throws on the ability tiles", () => {
     });
   });
 
-  it("a paladin's aura lifts a non-proficient save: the total shows, the aura is its own part", () => {
+  it("a paladin's aura lifts a non-proficient save: the total shows, and its pane lists the aura", () => {
     const aura = makeCharacterDoc(
       {
         classId: "cleric",
@@ -167,7 +168,9 @@ describe("playHeaderView: the saving throws on the ability tiles", () => {
     );
     const str = save(aura, "STR");
     expect(str).toMatchObject({ save: false, saveTotal: 6, showSave: true });
-    expect(str?.saveParts.map((p) => p.value)).toEqual(["+3", "+3"]);
-    expect(str?.saveParts[1]).toMatchObject({ kind: "loc", label: "Aura di Bren" });
+    const pane = playNumberView(aura, "it", { kind: "save", ability: "STR" });
+    expect(pane.total).toBe(str?.saveTotal);
+    expect(pane.parts?.map((p) => p.value)).toEqual(["+3", "+3"]);
+    expect(pane.parts?.[1]).toMatchObject({ kind: "loc", label: "Aura di Bren" });
   });
 });

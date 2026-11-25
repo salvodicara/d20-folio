@@ -481,6 +481,15 @@
         "sp": "10 ma = 1 mo",
         "cp": "100 mr = 1 mo"
       }
+    },
+    "number": {
+      "customize": "Personalizza",
+      "handSet": "Impostato a mano",
+      "override": "Valore fisso",
+      "overrideHelp": "Sostituisce il valore calcolato. «Usa il calcolo» lo riporta.",
+      "useComputed": "Usa il calcolo",
+      "setToast": "{{name}}: valore impostato a mano",
+      "resetToast": "{{name}}: di nuovo calcolato"
     }
   }
 }

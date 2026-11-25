@@ -1,7 +1,7 @@
 /**
  * The Play screen's left column (approved prototype x-play): «Risorse», each pool with
  * what is left of it as pips (numbers alone past eight), and «Abilità», the six skills
- * worth seeing at a glance with all 18 one tap away.
+ * worth seeing at a glance with all 18 one tap away; a skill opens its pane.
  */
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -20,6 +20,8 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Panel } from "@/ui";
 
+import { PlayNumberPane } from "./PlayNumberPane";
+
 const MAX_PIPS = 8;
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 
@@ -37,6 +39,7 @@ export function PlayLeft({
   const view = playLeftView(doc, locale);
   const readonly = useSheetReadonly();
   const [all, setAll] = useState(false);
+  const [skillOpen, setSkillOpen] = useState<string | null>(null);
   const skills = all ? view.allSkills : view.topSkills;
   const label = (r: PlayResource) => {
     const row = r.row;
@@ -141,12 +144,20 @@ export function PlayLeft({
         </Panel>
       )}
       <Panel color="abi" title={t("character.skills")}>
+        {/* A tap opens the skill's pane: where the bonus comes from, «Personalizza». */}
         {skills.map((s) => (
-          <div key={s.id} className="f-skill" data-prof={s.proficient || undefined}>
+          <button
+            key={s.id}
+            type="button"
+            className="f-skill"
+            data-prof={s.proficient || undefined}
+            aria-haspopup="dialog"
+            onClick={() => setSkillOpen(s.id)}
+          >
             <span className="f-lbl">{t(`abilities.${s.ability}_short`)}</span>
             <span className="f-skill-t">{t(`skills.${s.id}`)}</span>
             <b>{signed(s.bonus)}</b>
-          </div>
+          </button>
         ))}
         <Button kind="quiet" onClick={() => setAll(!all)}>
           {all
@@ -154,6 +165,16 @@ export function PlayLeft({
             : t("play.allSkills", { count: view.allSkills.length })}
         </Button>
       </Panel>
+      {skillOpen && (
+        <PlayNumberPane
+          key={skillOpen}
+          numberKey={{ kind: "skill", id: skillOpen }}
+          doc={doc}
+          locale={locale}
+          readonly={readonly}
+          onClose={() => setSkillOpen(null)}
+        />
+      )}
     </div>
   );
 }
