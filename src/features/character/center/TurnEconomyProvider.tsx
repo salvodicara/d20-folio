@@ -86,6 +86,13 @@ import {
 import { useTranslation } from "react-i18next";
 import { validateArcaneRecoveryPlan } from "@/lib/arcane-recovery";
 import { beginCausalUndo, useCharacterStore } from "@/stores/characterStore";
+import { halvedHit } from "@/lib/play/hit-reaction-offer";
+import {
+  closeHitReactionOffer,
+  setHitReactionOffer,
+  useHitReactionOfferStore,
+  type HitReactionSettle,
+} from "@/features/character/hit-reaction-offer-store";
 import {
   useCombatStore,
   type EconomySlot,
@@ -103,6 +110,7 @@ import {
   useUndoStore,
   registerUndoableToast,
   registerUndoableResult,
+  type UndoApplier,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { fightContext, fightSettledSoon } from "@/features/campaigns/context-settled";
@@ -637,6 +645,22 @@ export function TurnEconomyProvider({
       }),
     [locale]
   );
+
+  // The offer after a hit (#1330) is settled here, through the one reaction path; the
+  // banner that draws it lives outside this provider, so it reaches it via its store.
+  const hitSettleRef = useRef<HitReactionSettle | null>(null);
+  useEffect(() => {
+    hitSettleRef.current = { react: reactToHit, attackMisses };
+  });
+  useEffect(() => {
+    useHitReactionOfferStore.setState({
+      settle: {
+        react: (actionId) => hitSettleRef.current?.react(actionId),
+        attackMisses: () => hitSettleRef.current?.attackMisses(),
+      },
+    });
+    return () => useHitReactionOfferStore.setState({ settle: null });
+  }, []);
 
   const pendingResolutionFor = (action: ResolvedAction): PendingResolution | null => {
     const pending = pendingResolutionRef.current;
@@ -2510,7 +2534,6 @@ export function TurnEconomyProvider({
         ? createItemResourcePaymentCycle(itemResourceCommands, preparedResource)
         : null;
     const applyResolution = pendingResolutionFor(action);
-    const outcomeOccurrenceId = applyResolution?.occurrenceId;
     // A use on a roll already rolled says the die to roll at the table.
     const rollCopy = rollPlanCopy(rollPlan);
     const message = rollCopy
@@ -2527,92 +2550,223 @@ export function TurnEconomyProvider({
     if (
       registerUndoableToast(
         { message },
-        () => {
-          if (!guardActionState(action)) return null;
-          if (expendsSpellSlot && !spellSlotExpenditureAvailable()) return null;
-          if (refusedSpeech(action, cast?.metamagicIds)) return null;
-          if (
-            cast
-              ? !castOptionAffordable(cast.option) ||
-                !metamagicAffordable(cast.metamagicIds)
-              : !actionPaymentAffordable(action)
-          ) {
-            return null;
-          }
-          // One causal undo for the reaction (item 4): payment, slot-cast count, the
-          // spent reaction, concentration, the lit state and the log line. A step that
-          // refuses half-way rolls back through the same seal.
-          const seal = beginCausalUndo();
-          const rollback = (): null => {
-            seal?.()?.();
-            return null;
-          };
-          const resourceCommit = resourceCycle?.apply() ?? null;
-          if (resourceCycle && !resourceCommit) return rollback();
-          if (expendsSpellSlot && !commitSpellSlotExpenditure()) return rollback();
-          if (
-            fight &&
-            !markReactionUsed(action.id, outcomeOccurrenceId, applyResolution?.outcomes)
-          ) {
-            return rollback();
-          }
-          const characterStore = useCharacterStore.getState();
-          // Resolve the slot pool once (normal vs Pact for a pure Warlock). A bare
-          // tracker cost an item resource already pays is not spent twice.
-          const bareSpend = cast
-            ? null
-            : bareActionSpend(
-                characterStore.character?.character.spellSlots ?? [],
-                action
-              );
-          const spends = cast
-            ? castOptionSpends(cast.option, cast.metamagicIds)
-            : bareSpend && !(bareSpend.kind === "tracker" && action.resourcePayment)
-              ? [bareSpend]
-              : [];
-          paySpends(spends);
-          // Store the spell's STABLE id (golden rule 7); a custom spell stamps its
-          // name behind the `custom:` marker, never a bare SRD name.
-          const castLevel =
-            cast?.option.level ?? action.slotLevel ?? action.spellLevel ?? undefined;
-          // Casting is an act, a reaction spell too (Shield from hiding is Verbal).
-          endStatesOnActsOf(action);
-          applyActionConcentration(action, castLevel);
-          // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
-          // its standing state on use.
-          const targets = applyResolution?.targets ?? (rollTarget ? [rollTarget] : []);
-          activateActionState(
-            withMetamagicDuration(
-              withSelfRecipient(action, targets, selfCombatantId()),
-              cast?.metamagicIds ?? []
-            ),
-            castLevel
-          );
-          // A STRUCTURED reaction-use line (always the reaction slot → red row).
-          characterStore.logEvent({
-            kind: "reaction-use",
-            action: action.nameLoc,
-            effect: logTypeForAction(action),
-            ...(targets.length > 0 ? { targets: [...targets] } : {}),
-          });
-          applyOnCastRegains(action.spellId, expendedSlotLevel(cast?.option, spends));
-          const undo = seal?.() ?? null;
-          const undoStandings = leaveStandings(action, castLevel, targets);
-          return withResolutionUndo(
-            () => {},
-            applyResolution,
-            () => {
-              const done = undo ? undo() : true;
-              if (done) undoStandings?.();
-              return done;
-            }
-          );
-        },
+        reactionCommit(action, {
+          cast,
+          fight,
+          expendsSpellSlot,
+          resourceCycle,
+          applyResolution,
+          rollTarget,
+        }),
         { turnScoped: fight }
       ) === null
     )
       return;
     clearPendingResolution(action);
+  }
+
+  /**
+   * One reaction use, as an undo entry's `execute`: it marks the Reaction used (in a
+   * fight), pays, lights the reaction's state and logs it, and returns the combined
+   * reverse (null when a guard refuses, with nothing spent). The reaction list's
+   * `handleUseReaction` registers it after its own questions; the offer after a hit
+   * (`reactToHit`) runs it inside its own single undo.
+   */
+  function reactionCommit(
+    action: ResolvedAction,
+    ctx: {
+      cast: { option: CastCommitOption; metamagicIds: ReadonlyArray<string> } | undefined;
+      fight: boolean;
+      expendsSpellSlot: boolean;
+      resourceCycle: ReturnType<typeof createItemResourcePaymentCycle> | null;
+      applyResolution: ReturnType<typeof pendingResolutionFor>;
+      rollTarget: string | undefined;
+    }
+  ): () => UndoApplier | null {
+    const { cast, fight, expendsSpellSlot, resourceCycle, applyResolution, rollTarget } =
+      ctx;
+    const outcomeOccurrenceId = applyResolution?.occurrenceId;
+    return () => {
+      if (!guardActionState(action)) return null;
+      if (expendsSpellSlot && !spellSlotExpenditureAvailable()) return null;
+      if (refusedSpeech(action, cast?.metamagicIds)) return null;
+      if (
+        cast
+          ? !castOptionAffordable(cast.option) || !metamagicAffordable(cast.metamagicIds)
+          : !actionPaymentAffordable(action)
+      ) {
+        return null;
+      }
+      // One causal undo for the reaction (item 4): payment, slot-cast count, the
+      // spent reaction, concentration, the lit state and the log line. A step that
+      // refuses half-way rolls back through the same seal.
+      const seal = beginCausalUndo();
+      const rollback = (): null => {
+        seal?.()?.();
+        return null;
+      };
+      const resourceCommit = resourceCycle?.apply() ?? null;
+      if (resourceCycle && !resourceCommit) return rollback();
+      if (expendsSpellSlot && !commitSpellSlotExpenditure()) return rollback();
+      if (
+        fight &&
+        !markReactionUsed(action.id, outcomeOccurrenceId, applyResolution?.outcomes)
+      ) {
+        return rollback();
+      }
+      const characterStore = useCharacterStore.getState();
+      // Resolve the slot pool once (normal vs Pact for a pure Warlock). A bare
+      // tracker cost an item resource already pays is not spent twice.
+      const bareSpend = cast
+        ? null
+        : bareActionSpend(characterStore.character?.character.spellSlots ?? [], action);
+      const spends = cast
+        ? castOptionSpends(cast.option, cast.metamagicIds)
+        : bareSpend && !(bareSpend.kind === "tracker" && action.resourcePayment)
+          ? [bareSpend]
+          : [];
+      paySpends(spends);
+      // Store the spell's STABLE id (golden rule 7); a custom spell stamps its
+      // name behind the `custom:` marker, never a bare SRD name.
+      const castLevel =
+        cast?.option.level ?? action.slotLevel ?? action.spellLevel ?? undefined;
+      // Casting is an act, a reaction spell too (Shield from hiding is Verbal).
+      endStatesOnActsOf(action);
+      applyActionConcentration(action, castLevel);
+      // S1 — a REACTION-cast while-active BUFF spell (Shield's +5 AC) ESTABLISHES
+      // its standing state on use.
+      const targets = applyResolution?.targets ?? (rollTarget ? [rollTarget] : []);
+      activateActionState(
+        withMetamagicDuration(
+          withSelfRecipient(action, targets, selfCombatantId()),
+          cast?.metamagicIds ?? []
+        ),
+        castLevel
+      );
+      // A STRUCTURED reaction-use line (always the reaction slot → red row).
+      characterStore.logEvent({
+        kind: "reaction-use",
+        action: action.nameLoc,
+        effect: logTypeForAction(action),
+        ...(targets.length > 0 ? { targets: [...targets] } : {}),
+      });
+      applyOnCastRegains(action.spellId, expendedSlotLevel(cast?.option, spends));
+      const undo = seal?.() ?? null;
+      const undoStandings = leaveStandings(action, castLevel, targets);
+      return withResolutionUndo(
+        () => {},
+        applyResolution,
+        () => {
+          const done = undo ? undo() : true;
+          if (done) undoStandings?.();
+          return done;
+        }
+      );
+    };
+  }
+
+  /**
+   * A reaction picked on the offer after a hit (#1330), as ONE undo step. The hit is
+   * taken back, the reaction is used as from the reaction list (`reactionCommit`), and
+   * the same hit is entered again: a lit Uncanny Dodge halves it as it lands, and a
+   * Shield then asks whether the attack still hits. Everything the hit brought (its
+   * Concentration save, temporary HP spent, a fall to 0) follows the paths that made it.
+   */
+  function reactToHit(actionId: string): void {
+    const offer = useHitReactionOfferStore.getState().offer;
+    const doc = useCharacterStore.getState().character;
+    if (!offer || offer.shield || !doc || offer.characterId !== doc.id) return;
+    const choice = offer.choices.find((c) => c.actionId === actionId);
+    const action = localizeActions(doc, locale).find((a) => a.id === actionId);
+    if (!choice || !action) return;
+    const fight = inEncounter();
+    if (fight && useCombatStore.getState().reactionUsed) return;
+    const expendsSpellSlot = action.source === "spell" && action.costsSlot;
+    const seal = beginCausalUndo();
+    const rollback = (): void => {
+      seal?.()?.();
+    };
+    if (!offer.undoHit()) {
+      staleHitOffer(offer.id);
+      return;
+    }
+    if (expendsSpellSlot && !spellSlotExpenditureAvailable()) {
+      rollback();
+      showSpellSlotExpenditureLimit();
+      return;
+    }
+    const reacted = reactionCommit(action, {
+      cast: undefined,
+      fight,
+      expendsSpellSlot,
+      resourceCycle: null,
+      applyResolution: null,
+      rollTarget: undefined,
+    })();
+    const undoHit = reacted ? offer.replayHit() : null;
+    const restore = undoHit ? (seal?.() ?? null) : null;
+    if (!undoHit || !restore) {
+      rollback();
+      staleHitOffer(offer.id);
+      return;
+    }
+    const live = useCharacterStore.getState().character;
+    const shield =
+      choice.kind === "raise-ac" && live
+        ? { ac: sheetNumbers(live).ac.total, name: action.name }
+        : null;
+    setHitReactionOffer(shield ? { ...offer, undoHit, shield } : null);
+    const message = shield
+      ? t("combat.hitReaction.shieldToast", { name: action.name, ac: shield.ac })
+      : t("combat.hitReaction.halvedToast", {
+          name: action.name,
+          taken: halvedHit(offer.amount).taken,
+          amount: offer.amount,
+        });
+    registerUndoableResult(
+      { message },
+      () => {
+        const ok = restore();
+        if (ok) setHitReactionOffer(offer);
+        return ok;
+      },
+      () => reactToHit(actionId),
+      { turnScoped: fight }
+    );
+  }
+
+  /** «It misses» after Shield: the whole hit comes back, with what it brought. One undo. */
+  function attackMisses(): void {
+    const offer = useHitReactionOfferStore.getState().offer;
+    if (!offer?.shield) return;
+    const seal = beginCausalUndo();
+    const restore = offer.undoHit() ? (seal?.() ?? null) : null;
+    if (!restore) {
+      staleHitOffer(offer.id);
+      return;
+    }
+    setHitReactionOffer(null);
+    registerUndoableResult(
+      {
+        message: t("combat.hitReaction.missToast", {
+          name: offer.shield.name,
+          amount: offer.amount,
+        }),
+      },
+      () => {
+        const ok = restore();
+        if (ok) setHitReactionOffer(offer);
+        return ok;
+      },
+      attackMisses,
+      { turnScoped: inEncounter() }
+    );
+  }
+
+  /** The sheet changed since the hit (a save rolled, a heal): the offer can't settle it. */
+  function staleHitOffer(offerId: string): void {
+    closeHitReactionOffer(offerId);
+    showToast({ message: t("combat.hitReaction.staleToast"), duration: 4000 });
   }
 
   // Spend a CONSUMABLE on-hit rider on an attack — debit its backing resource

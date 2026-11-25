@@ -122,7 +122,7 @@ import { getBeast } from "@/data/beasts";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
-import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
+import { effectiveAC, effectiveMaxHp, withEquipment } from "@/lib/aggregate-character";
 import { baseBundleKey, resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
@@ -1323,6 +1323,11 @@ export function beginCausalUndo(): (() => (() => boolean) | null) | null {
       for (const id of linesBefore) {
         if (!kept.has(id)) notifyPlayLog((sink) => sink.removed(characterId, id));
       }
+      // A line the use took out (a hit counted again) comes back to the session log.
+      for (const entry of restored.d20.character.session.logEntries) {
+        if (!linesBefore.has(entry.id))
+          notifyPlayLog((sink) => sink.added(characterId, entry));
+      }
       return true;
     };
   };
@@ -1713,7 +1718,17 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     if (!before) return null;
     const finishDamage = (): (() => boolean) | null => {
       const after = captureD20Command(get());
-      return after ? causalD20CommandUndo(before, after, get) : null;
+      if (!after) return null;
+      const restore = causalD20CommandUndo(before, after, get);
+      // The hit's log lines leave the campaign session log with it.
+      const kept = new Set(before.character.session.logEntries.map((e) => e.id));
+      const added = after.character.session.logEntries.filter((e) => !kept.has(e.id));
+      return () => {
+        if (!restore()) return false;
+        for (const { id } of added)
+          notifyPlayLog((sink) => sink.removed(character.id, id));
+        return true;
+      };
     };
     const taken = takeDamage(character, amount, opts);
     if (!taken) return null;
@@ -2282,12 +2297,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     set({
       character: {
         ...character,
-        character: {
-          ...character.character,
-          equipment: character.character.equipment.filter(
-            (_ref, index) => index !== removeIndex
-          ),
-        },
+        // An attuned item can carry a per-level HP grant or set CON (#1318).
+        character: withEquipment(
+          character.character,
+          character.character.equipment.filter((_ref, index) => index !== removeIndex)
+        ),
         session: { ...character.session, itemResources },
       },
     });

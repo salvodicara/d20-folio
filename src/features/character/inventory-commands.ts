@@ -12,7 +12,10 @@ import type { TFunction } from "i18next";
 
 import { getEquipment } from "@/data/equipment";
 import { showArmorToast } from "@/features/character/center/armor-toast";
-import { effectiveEquipmentForItemResources } from "@/lib/aggregate-character";
+import {
+  effectiveEquipmentForItemResources,
+  withEquipment,
+} from "@/lib/aggregate-character";
 import { computeAC, isHeavyArmorEquipped } from "@/lib/compute";
 import { armorCategoryOf, wearArmor } from "@/lib/play/armor-donning";
 import { negateCurrencyDelta, type CurrencyDelta } from "@/lib/play/material-cost";
@@ -90,10 +93,7 @@ function deleteEquipment(idx: number, name: string, t: TFunction): void {
         if (!cur || cur.character.equipment[idx] !== removed) return null;
         const list = [...cur.character.equipment];
         list.splice(idx, 1);
-        store.setCharacter({
-          ...cur,
-          character: { ...cur.character, equipment: list },
-        });
+        store.setCharacter({ ...cur, character: withEquipment(cur.character, list) });
       }
       return () => {
         const current = useCharacterStore.getState().character;
@@ -110,7 +110,7 @@ function deleteEquipment(idx: number, name: string, t: TFunction): void {
         restored.splice(Math.min(idx, restored.length), 0, removed);
         useCharacterStore.getState().setCharacter({
           ...current,
-          character: { ...current.character, equipment: restored },
+          character: withEquipment(current.character, restored),
           session:
             instanceId && priorResourceState
               ? {

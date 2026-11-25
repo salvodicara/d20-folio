@@ -900,6 +900,22 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Thief's Reflexes: round 1 offers a one-tap second turn (economy refreshed, round stays 1); the encounter shows a second row at Initiative − 10.",
   },
+  // The offer after a hit (#1330). `/characters/scn-hit-reactions`: a Rogue 5 / Wizard 1
+  // with Shield prepared, so an attack's hit entered on the HP control offers both
+  // Uncanny Dodge and Shield.
+  "hit-reactions": {
+    name: "Nell, Quick Ward",
+    raceId: "human",
+    classId: "rogue",
+    level: 5,
+    secondaryClasses: [{ classId: "wizard", level: 1 }],
+    background: "criminal",
+    abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 14, WIS: 10, CHA: 10 },
+    weapons: [{ srdId: "shortsword", quantity: 1 }],
+    spells: [{ srdId: "shield", prepared: true }],
+    exercises:
+      "The reactions a hit offers: Uncanny Dodge halves the hit, Shield raises the AC and asks whether the attack still hits.",
+  },
   // New-UI parity shots (dev only). `/characters/scn-heroic-rally`: a level-18 Champion,
   // Bloodied, so the start of each turn offers Heroic Rally's Hit Points (one tap).
   // `/characters/scn-rage-on`: a Barbarian already Raging, so End Turn without an

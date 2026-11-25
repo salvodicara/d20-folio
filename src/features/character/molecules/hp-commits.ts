@@ -32,6 +32,15 @@ import type { ZeroHpSaver, ZeroHpSaveResult } from "@/lib/play/zero-hp-savers";
 import { deriveDamageDefenses } from "@/lib/views/sheet-view";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
+import { hitReactionChoices } from "@/lib/play/hit-reaction-offer";
+import type { RawResolvedAction } from "@/lib/smart-tracker";
+import { isActionDepleted } from "@/lib/views/action-row-view";
+import { localizeAction } from "@/lib/views/combat-action-view";
+import {
+  closeHitReactionOffer,
+  setHitReactionOffer,
+} from "@/features/character/hit-reaction-offer-store";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
@@ -92,15 +101,66 @@ export function damageDefensesFor(doc: CharacterDoc): DamageDefenses {
 /**
  * Apply one entered hit: the character's own defenses resolve each typed part, then
  * the 0-HP rules apply (RA-03/RA-10). `opts.crit` marks a Critical Hit: at 0 HP it
- * is two death-save failures. Empty / all-zero parts are a no-op.
+ * is two death-save failures. Empty / all-zero parts are a no-op. A hit from an
+ * attack then offers the reactions the rules allow (`hitReactionChoices`, #1330); any
+ * other entry closes an open offer.
  */
 export function commitDamage(
   parts: ReadonlyArray<DamageInstance>,
   opts: DamageOpts | undefined,
   t: TFunction
 ): void {
+  const before = useCharacterStore.getState().character;
+  const reactionUsed = useCombatStore.getState().reactionUsed;
+  const entered = enterDamage(parts, opts, t);
+  if (!entered) return;
+  // A fall is not an attack; every other entered hit is (the HP control's damage).
+  const choices = before
+    ? hitReactionChoices(
+        before,
+        { amount: entered.amount, attack: opts?.landProne === undefined },
+        { reactionUsed },
+        (action) => reactionPayable(before, action)
+      )
+    : [];
+  const offerId = crypto.randomUUID();
+  setHitReactionOffer(
+    before && choices.length > 0
+      ? {
+          id: offerId,
+          characterId: before.id,
+          amount: entered.amount,
+          choices,
+          undoHit: entered.undo,
+          replayHit: () => enterDamage(parts, opts, t)?.undo ?? null,
+        }
+      : null
+  );
+  // Undoing the hit takes its offer with it. Redo repeats the same manual entry.
+  registerUndoableResult(
+    { message: entered.message },
+    () => {
+      const ok = entered.undo();
+      if (ok) closeHitReactionOffer(offerId);
+      return ok;
+    },
+    () => commitDamage(parts, opts, t)
+  );
+}
+
+/**
+ * One entered hit, applied with no undo entry of its own: its message, the damage it
+ * dealt after the character's defenses, and its undo (`commitDamage` registers it; the
+ * offer after a hit enters the same hit again inside a reaction's single undo). Null
+ * when nothing changed.
+ */
+function enterDamage(
+  parts: ReadonlyArray<DamageInstance>,
+  opts: DamageOpts | undefined,
+  t: TFunction
+): { undo: () => boolean; message: string; amount: number } | null {
   const character = useCharacterStore.getState().character;
-  if (!character || !isCharacterAlive(character.status, character.session)) return;
+  if (!character || !isCharacterAlive(character.status, character.session)) return null;
   const defenses = damageDefensesFor(character);
   const max = effectiveMaxHp(character.character, character.session);
   const { current, temp } = vitalHp(character.session);
@@ -109,7 +169,7 @@ export function commitDamage(
   // RA-05 — resolve the ENTERED roll against the character's own defenses
   // (the same pure math the popover previews). Untyped parts pass verbatim.
   const intake = resolveDamageIntake(parts, defenses);
-  if (intake.rawTotal <= 0) return;
+  if (intake.rawTotal <= 0) return null;
   if (intake.netTotal <= 0) {
     // Fully immune / reduced to 0 — nothing changed, so nothing to undo: a
     // plain notice in its own lane (reversal contract §5), showing the math.
@@ -117,7 +177,7 @@ export function commitDamage(
       message: t("combat.noDamageTakenToast", { raw: intake.rawTotal }),
       duration: 4000,
     });
-    return;
+    return null;
   }
   const prev = { current, temp };
   const wasAtZero = atZero;
@@ -151,7 +211,7 @@ export function commitDamage(
   });
   if (!undoHit) {
     if (landsProne) dropProne();
-    return;
+    return null;
   }
   const unstamp = source ? stampSource(beforeDamage, "hp-damage", source) : null;
   // Reverse newest first: the source stamp, the hit, then Prone.
@@ -200,8 +260,7 @@ export function commitDamage(
               prev: prev.current,
               next: newHP,
             });
-  // Redo repeats the same manual damage entry.
-  registerUndoableResult({ message }, undoDamage, () => commitDamage(parts, opts, t));
+  return { undo: undoDamage, message, amount: intake.netTotal };
 }
 
 /**
@@ -277,4 +336,9 @@ export function commitZeroHpSaver(
     () => useCharacterStore.getState().applyZeroHpSaver(saver.sourceId, result),
     { turnScoped: false }
   );
+}
+
+/** Whether a reaction can be paid for now: a use left, a slot to cast it with. */
+export function reactionPayable(doc: CharacterDoc, action: RawResolvedAction): boolean {
+  return !isActionDepleted(doc, localizeAction(action, "en"));
 }

@@ -84,6 +84,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `menu:components/sheet/SettingsDropdown`                           | Character  | todo   |
 | `notice:components/sheet/UndoToasts`                               | Character  | todo   |
 | `notice:features/character/ConcentrationSaveBanner`                | Character  | todo   |
+| `notice:features/character/HitReactionBanner`                      | Character  | todo   |
 | `dialog:features/character/SpeciesChoicesBanner`                   | Character  | todo   |
 | `notice:features/character/DyingBanner`                            | Character  | todo   |
 | `notice:features/roster/RosterBulkBar`                             | Character  | todo   |

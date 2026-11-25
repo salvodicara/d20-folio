@@ -11,6 +11,7 @@
  * «Salva» marks them, with an undo. The new UI's twin is `PlaySpeciesChoices`;
  * both read `pendingSpeciesItems` and write through the same store actions.
  */
+import { unpickedSpeciesAbility } from "@/lib/resolve-spell-ability";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -59,7 +60,13 @@ export function SpeciesChoicesBanner() {
       <span className="conc-banner-text">
         <b>{t("play.speciesChoices.title")}</b>
         {" · "}
-        {speciesChoicesLine(items, t, locale, doc.character)}
+        {speciesChoicesLine(
+          items,
+          t,
+          locale,
+          doc.character,
+          t(`abilities.${unpickedSpeciesAbility(doc.character)}`)
+        )}
       </span>
       <Button variant="secondary" size="sm" onClick={() => setOpen(true)}>
         {t("play.speciesChoices.open")}

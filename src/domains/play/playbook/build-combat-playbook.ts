@@ -15,6 +15,7 @@ import { getClasses } from "@/lib/classes";
 import { vitalSlotUsed } from "@/lib/character-vitals";
 import { hitDicePool } from "@/lib/play/hit-dice";
 import { canRitualCast } from "@/lib/ritual";
+import { reactionTriggersOf } from "@/lib/play/reaction-triggers";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
 import {
   attacksPerActionForCharacter,
@@ -770,19 +771,6 @@ function grantsExtraAction(a: RawResolvedAction): boolean {
       g.type === "while-active" &&
       g.activeKey === a.activatesKey &&
       g.grants.some((inner) => inner.type === "extra-action")
-  );
-}
-
-const TRIGGER_PREFIX = "combat.reactionTrigger_";
-
-/** The reaction trigger tokens the engine stamped as `combat.reactionTrigger_<token>`:
- *  every one when the reaction answers several, else its single one. */
-function reactionTriggersOf(a: RawResolvedAction): string[] {
-  const texts = a.summary.triggers ?? (a.summary.trigger ? [a.summary.trigger] : []);
-  return texts.flatMap((t) =>
-    "ui" in t && t.ui.startsWith(TRIGGER_PREFIX)
-      ? [t.ui.slice(TRIGGER_PREFIX.length)]
-      : []
   );
 }
 

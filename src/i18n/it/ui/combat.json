@@ -675,6 +675,20 @@
     "turnNotEndedOffline": "Sei offline: per finire il turno serve la rete. Il turno è ancora tuo; riprova quando torni online.",
     "turnNotEnded": "Non sono riuscito a finire il turno: è ancora tuo. Riprova.",
     "clockNotMovedOffline": "Sei offline: il riposo è salvato sulla scheda, ma l'orologio della campagna non è avanzato.",
-    "clockNotMoved": "Il riposo è salvato sulla scheda, ma l'orologio della campagna non è avanzato."
+    "clockNotMoved": "Il riposo è salvato sulla scheda, ma l'orologio della campagna non è avanzato.",
+    "hitReaction": {
+      "prompt": "Hai subito {{amount}} danni. Reagisci?",
+      "label": "Reazioni al colpo",
+      "halveHint": "metà danni",
+      "raiseAcHint": "alza la CA",
+      "none": "Nessuna reazione",
+      "shieldAsk": "Ora l'attacco manca (CA {{ac}})?",
+      "misses": "Manca",
+      "stillHits": "Colpisce lo stesso",
+      "halvedToast": "{{name}}: subisci {{taken}} danni invece di {{amount}}",
+      "shieldToast": "{{name}}: CA {{ac}} fino al tuo prossimo turno",
+      "missToast": "{{name}}: l'attacco manca, recuperi {{amount}} PF",
+      "staleToast": "La scheda è cambiata dopo il colpo: usa la reazione dall'elenco"
+    }
   }
 }
