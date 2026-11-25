@@ -365,7 +365,9 @@
         "spellbook_one": "{{count}} spellbook spell",
         "spellbook_other": "{{count}} spellbook spells",
         "expertise_one": "{{count}} Expertise skill",
-        "expertise_other": "{{count}} Expertise skills"
+        "expertise_other": "{{count}} Expertise skills",
+        "wildShapeForms_one": "{{count}} Wild Shape form",
+        "wildShapeForms_other": "{{count}} Wild Shape forms"
       },
       "spellbookTitle_one": "Add {{count}} spell to your spellbook: it stays unprepared",
       "spellbookTitle_other": "Add {{count}} spells to your spellbook: they stay unprepared"

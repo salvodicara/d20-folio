@@ -12,6 +12,7 @@ import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock
 import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
 import { applyOwedClassPicks, type ClassPickAnswer } from "@/lib/owed-class-picks";
+import { learnWildShapeForms } from "@/lib/wild-shape-forms";
 import { markDiscoveries } from "@/lib/magical-discoveries";
 import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import type { ChoicePicks } from "@/lib/feature-choices";
@@ -743,6 +744,11 @@ interface CharacterState {
    * them, each cut to what is owed. Writes nothing for a pick that isn't owed.
    */
   resolveClassPicks: (answers: readonly ClassPickAnswer[]) => void;
+  /**
+   * The Druid's Wild Shape known forms picked in «Scelte da completare»: each eligible
+   * form not yet known, never past the count. Writes nothing on a read-only sheet.
+   */
+  learnWildShapeForms: (ids: readonly string[]) => void;
   /**
    * The player's confirm of a Lore Bard's Magical Discoveries: `spellIds` (from the
    * candidates the sheet flagged) get the always-prepared mark, freeing the Bard's
@@ -3532,6 +3538,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     );
     if (next === charData) return;
     set({ character: { ...character, character: next } });
+  },
+
+  learnWildShapeForms: (ids) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character) return;
+    const next = learnWildShapeForms(character, ids);
+    if (next !== character) set({ character: next });
   },
 
   confirmDiscoveries: (spellIds) => {
