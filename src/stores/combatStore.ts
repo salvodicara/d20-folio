@@ -236,6 +236,10 @@ interface CombatState {
   reflexesTaken: boolean;
   /** The Time Stop turns the player entered, for the round the spell was cast in. */
   timeStopTurns: TimeStopTurns | null;
+  /** The turn-start notes applied THIS turn (Heroic Rally's heal, Heroism's Temporary
+   *  Hit Points), by note id: one tap per turn. `turn` is a fresh token each turn, so
+   *  an older turn's undo toast never clears this turn's mark. Turn-scoped, not persisted. */
+  turnStartApplied: { readonly turn: object; readonly ids: readonly string[] };
 
   // Actions
   setRound: (round: number) => void;
@@ -377,6 +381,9 @@ interface CombatState {
   extraTurn: (source: ExtraTurnSource) => void;
   /** Record the Time Stop count the player rolled (1d4 + 1) for the current round. */
   setTimeStopTurns: (total: number) => void;
+  /** Mark a turn-start note applied this turn; returns its undo. Null when read-only
+   *  or already applied. */
+  markTurnStartApplied: (noteId: string) => (() => void) | null;
 }
 
 const emptySelected = (): CombatState["selected"] => ({
@@ -444,6 +451,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   difficultTerrain: false,
   reflexesTaken: false,
   timeStopTurns: null,
+  turnStartApplied: freshTurnStart(),
 
   setRound: (round) => set({ round }),
   setFightStarted: (started) => set({ fightStarted: started }),
@@ -812,6 +820,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       masteriesThisTurn: [],
       movementLocked: false,
       difficultTerrain: false,
+      turnStartApplied: freshTurnStart(),
     }),
 
   endCombat: () =>
@@ -837,6 +846,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       masteriesThisTurn: [],
       movementLocked: false,
       difficultTerrain: false,
+      turnStartApplied: freshTurnStart(),
       reflexesTaken: false,
       timeStopTurns: null,
       initiative: "",
@@ -881,7 +891,29 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     if (sheetReadonly()) return;
     set((state) => ({ timeStopTurns: { round: state.round, total, taken: 0 } }));
   },
+
+  markTurnStartApplied: (noteId) => {
+    const { turn, ids } = get().turnStartApplied;
+    if (sheetReadonly() || ids.includes(noteId)) return null;
+    set({ turnStartApplied: { turn, ids: [...ids, noteId] } });
+    return () =>
+      set((s) =>
+        s.turnStartApplied.turn === turn
+          ? {
+              turnStartApplied: {
+                turn,
+                ids: s.turnStartApplied.ids.filter((id) => id !== noteId),
+              },
+            }
+          : {}
+      );
+  },
 }));
+
+/** A new turn's turn-start marks: none applied, under a token of its own. */
+function freshTurnStart(): CombatState["turnStartApplied"] {
+  return { turn: {}, ids: [] };
+}
 
 /**
  * The economy a NEW turn starts with — shared by {@link CombatState.endTurn} (which
@@ -910,6 +942,7 @@ function freshTurn(): Pick<
   | "masteriesThisTurn"
   | "movementLocked"
   | "difficultTerrain"
+  | "turnStartApplied"
 > {
   return {
     selected: emptySelected(),
@@ -936,5 +969,6 @@ function freshTurn(): Pick<
     masteriesThisTurn: [],
     movementLocked: false,
     difficultTerrain: false,
+    turnStartApplied: freshTurnStart(),
   };
 }

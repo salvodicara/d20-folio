@@ -44,17 +44,14 @@ import {
   effectiveConditions,
 } from "@/lib/aggregate-character";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
-import {
-  resolveStartOfTurnRegen,
-  resolveRound1DamageDoubles,
-  shownWalkingSpeedFt,
-} from "@/lib/smart-tracker";
+import { shownWalkingSpeedFt } from "@/lib/smart-tracker";
+import { applyTurnStartOffer, useTurnStartNotes } from "@/domains/play/turn-start-notes";
 import { getEquipment } from "@/data/equipment";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { vitalConcentration, vitalExhaustion } from "@/lib/character-vitals";
 import { localeDistance } from "@/lib/utils";
 import { composeTurnLimiters } from "@/lib/views/combat-action-view";
-import { registerUndoableResult, registerUndoableToast } from "@/stores/undoStore";
+import { registerUndoableToast } from "@/stores/undoStore";
 import { InitVital } from "@/features/campaigns/init-vital";
 import { counterableCasts } from "@/lib/play/countered";
 import { useMarkCountered } from "./use-mark-countered";
@@ -183,6 +180,9 @@ export function ThisTurnTracker({
   const extraMovementFt = useCombatStore((s) => s.extraMovementFt);
   // RA-08 — slot-paid casts tracked by the hard one-slot-per-global-turn gate.
   const spellSlotCastsThisTurn = useCombatStore((s) => s.spellSlotCastsThisTurn);
+  // The turn's start (Heroic Rally, Heroism, Burning, the round-1 Death Strike reminder):
+  // the same source as Play's turn strip, one tap per turn.
+  const turnStart = useTurnStartNotes(character, round);
   // Exhaustion reads through the ONE vitals projection seam (session truth
   // reconciled against the persisted engine world).
   const exhaustionLevel = useCharacterStore((s) =>
@@ -579,61 +579,10 @@ export function ThisTurnTracker({
     setTimeStopDraft("");
   }
 
-  // Start-of-turn regen riders (`regen-at-turn-start` — Champion Survivor's
-  // Heroic Rally: 5+CON HP while Bloodied). AX exposure audit — the resolver
-  // existed but nothing mounted it. Surface ONLY the currently-ACTIVE entries
-  // (condition met) as a turn note; the player applies the heal themselves
-  // (override-first, the engine never auto-heals).
-  const activeRegens = lifecycleEligible
-    ? resolveStartOfTurnRegen(character).filter((r) => r.active)
-    : [];
-
-  // Round-1 save-gated damage-doubler notes (Assassin Death Strike): a DISPLAY-ONLY
-  // reminder shown ONLY in combat round 1 (the same round-1 gate Assassinate's
-  // attack advantage uses). The DC is engine-resolved; the app never doubles nor
-  // rolls (golden rule 21) — the DM/player runs the target's save externally.
-  const round1Doubles = round === 1 ? resolveRound1DamageDoubles(character) : [];
-
-  // S8 ONE-TAP — commit a start-of-turn regen's DETERMINISTIC amount (5+CON, no
-  // dice — golden rule 21) through the SAME store healing seam the manual HP
-  // control uses (`applyHealing` clamps to effective max + logs the structured
-  // `hp-heal` event), with an undoable heal toast (mirrors `useHpControls.
-  // applyHeal`: the store's own undo restores the prior slice and drops the heal's
-  // log lines, so an undone regen leaves no trace in the log). Override-first: the HP control stays
-  // editable; this is just the one-tap shortcut so the player needn't re-type it.
-  function applyRegen(amount: number) {
-    // On the session undo stack (the reversal contract; Pattern B — the message
-    // reads the clamped result). At full HP `applyHealing` changes nothing —
-    // no entry, no toast, for a heal that didn't happen.
-    const cs = useCharacterStore.getState();
-    const prevHP = cs.character?.session.hp.current ?? 0;
-    const undo = cs.applyHealing(amount);
-    if (!undo) return;
-    const nextHP = useCharacterStore.getState().character?.session.hp.current ?? prevHP;
-    registerUndoableResult(
-      { message: t("combat.hpHealToast", { val: amount, prev: prevHP, next: nextHP }) },
-      undo,
-      () => applyRegen(amount)
-    );
-  }
-
-  // TEMPORARY-HP variant (Heroism: spellcasting mod at the start of each turn).
-  // DETERMINISTIC (CHA mod, no dice — golden rule 21) so it one-taps through the
-  // store `gainTempHp` seam, where the MAX-WINS rule lives (temp HP don't stack);
-  // undoable via the log-free `setTempHP` restore (mirrors PlayTab's temp-HP card).
-  function applyTurnStartTempHp(amount: number) {
-    // On the session undo stack (Pattern B — the message reads the max-wins
-    // result). With equal-or-higher temp HP already up, nothing changed — no
-    // entry, no toast.
-    const undo = useCharacterStore.getState().gainTempHp(amount);
-    if (!undo) return;
-    const nextTemp = useCharacterStore.getState().character?.session.hp.temp ?? amount;
-    registerUndoableResult(
-      { message: t("combat.tempHpToast", { val: nextTemp }) },
-      undo,
-      () => applyTurnStartTempHp(amount)
-    );
-  }
+  // The turn's start notes show «at the start of each of your turns»: solo the band is
+  // always my turn; in a shared fight only on my turn, never while another acts or the
+  // table gathers. Applying one is `applyTurnStartOffer` (once per turn, undoable).
+  const turnStartShown = phase === "solo" || phase === "my-turn" ? turnStart : [];
 
   // Movement budget — the EFFECTIVE walking Speed in feet, spent in 5-ft
   // increments. Routed through the SAME `effectiveWalkingSpeedFt` chokepoint
@@ -1097,51 +1046,47 @@ export function ThisTurnTracker({
         </div>
       )}
 
-      {/* Start-of-turn regen note — shown only while its condition holds
-          (Bloodied + alive), right where the turn starts. */}
-      {activeRegens.map((r) => (
-        <div key={r.sourceId} className="conc-banner" role="status">
+      {/* The turn's start, on the same notes as Play: Burning's fire damage (entered
+          with Damage, never rolled), a heal or Temporary Hit Points applied in one tap
+          (undoable, once per turn: the note then leaves), the round-1 Death Strike
+          reminder (the app never doubles nor rolls; the table runs the save). Reuses
+          the `conc-banner` recipe (golden rule 3 — no new CSS). */}
+      {turnStartShown.map((note) => (
+        <div key={note.id} className="conc-banner" role="status" data-note={note.id}>
           <span className="conc-banner-mark" aria-hidden />
           <span className="conc-banner-text">
-            {t(r.asTempHp ? "combat.turnStartTempHp" : "combat.turnStartRegen", {
-              amount: r.amount,
-              name: grantSourceLabel(r.sourceId, locale),
-            })}
+            {note.kind === "burning"
+              ? t("combat.burningTurnStart", { dice: note.dice })
+              : note.kind === "death-strike"
+                ? t("combat.round1DamageDouble", {
+                    dc: note.saveDC,
+                    ability: t(`abilities.${note.saveAbility}_short`),
+                    name: grantSourceLabel(note.sourceId, locale),
+                  })
+                : t(
+                    note.kind === "heal"
+                      ? "combat.turnStartRegen"
+                      : "combat.turnStartTempHp",
+                    {
+                      amount: note.amount,
+                      name: grantSourceLabel(note.sourceId, locale),
+                    }
+                  )}
           </span>
-          {/* S8 ONE-TAP — apply the deterministic amount in one tap (undoable),
-              instead of re-typing it into the HP control. A temp-HP grant (Heroism)
-              routes to the max-wins `gainTempHp` seam; a heal (Heroic Rally) to
-              `applyHealing`. Reuses the existing `conc-banner-drop` button recipe
-              (golden rule 3 — no new CSS). */}
-          <button
-            type="button"
-            className="conc-banner-drop"
-            onClick={() =>
-              r.asTempHp ? applyTurnStartTempHp(r.amount) : applyRegen(r.amount)
-            }
-          >
-            {t(
-              r.asTempHp ? "combat.turnStartTempHpApply" : "combat.turnStartRegenApply",
-              {
-                amount: r.amount,
-              }
-            )}
-          </button>
-        </div>
-      ))}
-
-      {/* Round-1 Death Strike reminder — shown only in combat round 1. Display-only
-          (the app models no enemy and never rolls); the DM/player runs the save. */}
-      {round1Doubles.map((d) => (
-        <div key={d.sourceId} className="conc-banner" role="status">
-          <span className="conc-banner-mark" aria-hidden />
-          <span className="conc-banner-text">
-            {t("combat.round1DamageDouble", {
-              dc: d.saveDC,
-              ability: t(`abilities.${d.saveAbility}_short`),
-              name: grantSourceLabel(d.sourceId, locale),
-            })}
-          </span>
+          {(note.kind === "heal" || note.kind === "temp-hp") && (
+            <button
+              type="button"
+              className="conc-banner-drop"
+              onClick={() => applyTurnStartOffer(note, t)}
+            >
+              {t(
+                note.kind === "heal"
+                  ? "combat.turnStartRegenApply"
+                  : "combat.turnStartTempHpApply",
+                { amount: note.amount }
+              )}
+            </button>
+          )}
         </div>
       ))}
 

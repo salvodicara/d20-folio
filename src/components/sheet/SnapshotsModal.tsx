@@ -133,6 +133,7 @@ export function SnapshotsModal({
   function reasonLabel(reason: string) {
     if (reason === "level-up") return t("snapshots.reasonLevelUp");
     if (reason === "manual") return t("snapshots.reasonManual");
+    if (reason === "rescue") return t("snapshots.reasonRescue");
     return reason;
   }
 
