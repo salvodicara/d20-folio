@@ -276,6 +276,17 @@ export async function waitForStoredCharacter(id: string): Promise<number> {
   return hp;
 }
 
+/** The stored generation (`revision`) of an owner's character parent; 0 when none. */
+export async function ownerRevision(id: string): Promise<number> {
+  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+    headers: OWNER,
+  });
+  const body = (await response.json()) as {
+    fields?: { revision?: { integerValue?: string } };
+  };
+  return Number(body.fields?.revision?.integerValue ?? 0);
+}
+
 /** A string field of an owner's character build (`build.<field>`), or null. */
 export async function ownerBuildString(
   id: string,
@@ -393,11 +404,15 @@ export async function levelUp(
     if (clicked === 0) break;
   }
   await expect(page.getByText(/choices? still to make/)).toHaveCount(0);
+  const stored = await ownerRevision(id);
   await confirm.click();
   await expect(page).toHaveURL(new RegExp(`/characters/${id}$`), { timeout: 30_000 });
   await expect(page.locator("main")).toContainText(
     new RegExp(`${opts.className}\\s+${opts.level}\\b`)
   );
+  // The level shows at once and its save lands a moment later (#1276, level-up works
+  // offline), so wait for the server to hold it before the next page load.
+  await expect.poll(() => ownerRevision(id), { timeout: 30_000 }).toBeGreaterThan(stored);
 }
 
 /** The sandbox players (scripts/dev-seed-sandbox.ts), each a real Auth-emulator account. */
