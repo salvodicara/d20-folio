@@ -18,6 +18,7 @@
 import { preloadParentWrite } from "@/lib/parent-write-modules";
 import { queueCharacterSnapshot } from "@/lib/firestore";
 import { diagnosticsLog } from "@/lib/diagnostics";
+import { writesFenced } from "@/lib/shape-gate";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { sessionToCombatState } from "@/lib/combat-state";
@@ -39,6 +40,9 @@ export async function applyLevelUp(input: {
   const store = useCharacterStore.getState();
   const writer = store.wholeSheetWriter;
   if (!writer) throw new Error("The sheet is not open");
+  // #1320 — a newer shape is stored: nothing is applied, and no snapshot is queued.
+  if (writesFenced())
+    throw new Error("shape-fenced: a newer version of the sheet is stored");
   const modules = await preloadParentWrite();
 
   // One synchronous turn from here. The snapshot first: no level-up without it.

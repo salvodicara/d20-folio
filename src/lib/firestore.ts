@@ -845,6 +845,12 @@ export function createDebouncedSave(
     source: WholeSheetSource
   ): Promise<void> {
     if (DEV_BYPASS_AUTH) return Promise.resolve();
+    // #1320 — a newer shape is stored: refused before anything moves, so the pending
+    // edit stays pending (it is the rescue copy's) and no generation is burned.
+    if (writesFenced())
+      return Promise.reject(
+        new Error("shape-fenced: a newer version of the sheet is stored")
+      );
     // The ceremony carries the whole latest sheet: the autosave it supersedes is dropped.
     const superseded = takePending();
     if (timer) clearTimeout(timer);

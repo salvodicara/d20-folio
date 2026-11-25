@@ -31,6 +31,7 @@ vi.mock("@/lib/firestore", () => ({
 
 import { applyLevelUp } from "@/features/leveling/level-up-save";
 import { sessionToCombatState } from "@/lib/combat-state";
+import { closeShapeGate, resetShapeGateForTests } from "@/lib/shape-gate";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 
@@ -40,6 +41,7 @@ let before: CharacterDoc;
 let after: CharacterDoc;
 
 beforeEach(() => {
+  resetShapeGateForTests();
   io.writeCombatState.mockClear();
   useAuthStore.setState({ user: { uid: "u1" } as never });
   h.events.length = 0;
@@ -88,6 +90,21 @@ describe("applyLevelUp", () => {
     await expect(applyLevelUp({ uid: "u1", before, after })).rejects.toThrow();
     expect(useCharacterStore.getState().character?.character).toBe(before.character);
     expect(h.events).toEqual([]);
+  });
+
+  // #1320: a newer shape is stored, every write is fenced. A level-up applies nothing
+  // and queues nothing, not even its snapshot.
+  it("with the shape gate closed nothing is applied or queued", async () => {
+    const writer = vi.fn(never);
+    useCharacterStore.getState().setWholeSheetWriter(writer);
+    closeShapeGate({ rescue: "none" });
+    await expect(applyLevelUp({ uid: "u1", before, after })).rejects.toThrow(
+      /shape-fenced/
+    );
+    await Promise.resolve();
+    expect(useCharacterStore.getState().character?.character).toBe(before.character);
+    expect(h.events).toEqual([]);
+    expect(writer).not.toHaveBeenCalled();
   });
 
   it("a refusal surfaces through `written`", async () => {
