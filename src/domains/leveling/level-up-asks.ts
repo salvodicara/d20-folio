@@ -211,6 +211,9 @@ export function levelUpAsks(
     bundlePicks: a.bundlePicks,
   });
   const rows: AskRow[] = [];
+  // A spell picked before the subclass that grants it always prepared (chosen later on
+  // the same screen) is no longer a pick: it would add nothing.
+  const newSpells = a.newSpells.filter((id) => !plan.alwaysPreparedGained.has(id));
   const ability = (code: string) => ({ id: code, label: t(`abilities.${code}`) });
   const one = (v: string | null) => (v ? [v] : []);
 
@@ -599,7 +602,7 @@ export function levelUpAsks(
         : t("levelUp.screen.chooseSpells", { count: plan.spellsKnownDiff }),
       ...(plan.spellbookPicks ? { help: t("levelUp.screen.spellbookHelp") } : {}),
       count: plan.spellsKnownDiff,
-      picked: a.newSpells,
+      picked: newSpells,
       options: learnableSpellVMs(
         {
           classId,
@@ -657,7 +660,11 @@ export function levelUpAsks(
             allowedLists: plan.widenedSpellLists,
             cantripsOnly: false,
             maxLevel: plan.maxSpellLevel,
-            exclude: new Set([...plan.existingSpellIds, ...a.newSpells]),
+            exclude: new Set([
+              ...plan.existingSpellIds,
+              ...plan.alwaysPreparedGained,
+              ...newSpells,
+            ]),
           },
           locale
         ).map((s) => ({ id: s.id, label: s.name })),
@@ -718,7 +725,7 @@ export function levelUpAsks(
       })),
     });
     if (a.discoverySwap.removeId) {
-      const taken = new Set([...a.newCantrips, ...a.newSpells]);
+      const taken = new Set([...a.newCantrips, ...newSpells]);
       for (const swap of [a.swap, a.cantripSwap]) {
         if (swap.replaceId) taken.add(swap.replaceId);
       }
@@ -761,7 +768,7 @@ export function levelUpAsks(
     maneuvers: plan.needsManeuvers ? a.maneuvers : [],
     invocations: plan.needsInvocations ? a.invocations : [],
     newCantrips: a.newCantrips,
-    newSpells: a.newSpells,
+    newSpells,
     choiceSlots: plan.choiceSlots,
     choicePicks,
     multiclass: plan.mcGrants ? { grants: plan.mcGrants, skillPicks: a.mcSkills } : null,
@@ -908,9 +915,11 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
     case "invocations":
     case "maneuvers":
     case "newCantrips":
-    case "newSpells":
     case "mcSkills":
       return { ...a, [key]: many(a[key]) };
+    case "newSpells":
+      // The row's picks, not the stored ones: a pick the subclass made moot drops.
+      return { ...a, newSpells: many(row.picked) };
     default:
       return a;
   }
