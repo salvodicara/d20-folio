@@ -164,10 +164,13 @@
       "customOpen": "Custom spell",
       "customBack": "Back to the list",
       "customAdd": "Add the spell",
-      "customNameRequired": "Give it a name.",
-      "component_v": "Verbal",
-      "component_s": "Somatic",
-      "component_m": "Material"
+      "copyLabel": "Copy into your spellbook: {{name}}",
+      "copyCost": "copy: {{hours}} h, {{gp}} gp",
+      "copyAsk": "Copy {{name}} into your spellbook: {{hours}} hours and {{gp}} gp (2 hours and 50 gp per spell level).",
+      "copyPay": "Copy and pay {{gp}} gp",
+      "copyShort": "Your gold and platinum don't cover it.",
+      "copyUnpaid": "Copy without paying",
+      "copiedToast": "Copied into your spellbook: {{name}}"
     },
     "inv": {
       "pack": "Pack",
@@ -200,7 +203,6 @@
       "customWeight": "Weight each ({{unit}})",
       "customCost": "Cost each (gp)",
       "optional": "Optional",
-      "customNameRequired": "Give it a name.",
       "customNumber": "Write a number, such as 2 or 0.5.",
       "customAdd": "Add to inventory",
       "costEach": "{{cost}} each"

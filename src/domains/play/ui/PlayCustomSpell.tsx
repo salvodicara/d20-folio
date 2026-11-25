@@ -21,6 +21,12 @@ import type { Locale } from "@/lib/locale";
 import { Button, Chip, Field, TextArea } from "@/ui";
 
 const LEVELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9] as const;
+/** Each component letter's full name, for a screen reader. */
+const COMPONENT_LABEL = {
+  v: "glossary.name.verbal",
+  s: "glossary.name.somatic",
+  m: "spells.material",
+} as const;
 
 export function PlayCustomSpell({
   locale,
@@ -40,7 +46,7 @@ export function PlayCustomSpell({
   const [tried, setTried] = useState(false);
   const set = (patch: Partial<CustomSpellDraft>) => setDraft((d) => ({ ...d, ...patch }));
   const out = customSpellFromDraft(draft, locale);
-  const nameError = tried && !out.ok ? t("play.spells.customNameRequired") : undefined;
+  const nameError = tried && !out.ok ? t("common.nameRequired") : undefined;
   const add = () => {
     setTried(true);
     if (!out.ok) return;
@@ -136,7 +142,7 @@ export function PlayCustomSpell({
           <Chip
             key={c}
             pressed={draft[c]}
-            ariaLabel={t(`play.spells.component_${c}`)}
+            ariaLabel={t(COMPONENT_LABEL[c])}
             onClick={() => set({ [c]: !draft[c] })}
           >
             {c.toUpperCase()}

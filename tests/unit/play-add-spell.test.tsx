@@ -154,3 +154,84 @@ describe("«Custom spell» (D&D Beyond's homebrew spell fields, Foundry's spell 
     expect(screen.getByRole("searchbox")).toBeTruthy();
   });
 });
+
+describe("«Copy into your spellbook» (D&D Beyond's Manage Spells for a Wizard)", () => {
+  // A Wizard 3 whose book is full (6 + 2 × 2 = 10 levelled Wizard spells).
+  const BOOK = [
+    "magic-missile",
+    "shield",
+    "mage-armor",
+    "sleep",
+    "detect-magic",
+    "burning-hands",
+    "feather-fall",
+    "thunderwave",
+    "misty-step",
+    "web",
+  ];
+  const rowOf = (name: string) =>
+    screen.getByText(name, { selector: ".f-row-t" }).closest(".f-add-row") as HTMLElement;
+  const load = (gp: number) => {
+    const doc = live();
+    useCharacterStore.setState({
+      character: {
+        ...doc,
+        character: { ...doc.character, spells: BOOK.map((srdId) => ({ srdId })) },
+        session: { ...doc.session, currency: { pp: 0, gp, ep: 0, sp: 0, cp: 0 } },
+      },
+    });
+  };
+
+  it("a spell outside the full book is copied at its cost: 2 hours and 50 gp a level, and undo gives it all back", () => {
+    load(200);
+    render(<PlayAddSpell locale="en" />);
+    search("invisibility");
+    expect(rowOf("Invisibility").textContent).toContain("Level 2 · copy: 4 h, 100 gp");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy into your spellbook: Invisibility" })
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Copy and pay 100 gp" }));
+    expect(ids().at(-1)).toBe("invisibility");
+    expect(live().session.currency.gp).toBe(100);
+    expect(useUndoStore.getState().undo()).toBe(true);
+    expect(ids()).toEqual(BOOK);
+    expect(live().session.currency.gp).toBe(200);
+  });
+
+  it("when the purse is short it says so, and copying anyway leaves the coins", () => {
+    load(30);
+    render(<PlayAddSpell locale="en" />);
+    search("invisibility");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy into your spellbook: Invisibility" })
+    );
+    expect(screen.queryByRole("button", { name: "Copy and pay 100 gp" })).toBeNull();
+    expect(screen.getByText("Your gold and platinum don't cover it.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Copy without paying" }));
+    expect(ids().at(-1)).toBe("invisibility");
+    expect(live().session.currency.gp).toBe(30);
+  });
+
+  it("while the book owes free picks, the spell is simply added", () => {
+    render(<PlayAddSpell locale="en" />);
+    search("invisibility");
+    expect(screen.getByRole("button", { name: "Add: Invisibility" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Copy into your spellbook/ })).toBeNull();
+  });
+
+  it("speaks Italian", async () => {
+    await i18n.changeLanguage("it");
+    load(200);
+    render(<PlayAddSpell locale="it" />);
+    fireEvent.change(screen.getByRole("searchbox"), {
+      target: { value: "invisibilità" },
+    });
+    expect(rowOf("Invisibilità").textContent).toContain(
+      "Livello 2 · copia: 4 ore, 100 mo"
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copia nel libro: Invisibilità" })
+    );
+    expect(screen.getByRole("button", { name: "Copia e paga 100 mo" })).toBeTruthy();
+  });
+});

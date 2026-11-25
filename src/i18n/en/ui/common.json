@@ -90,6 +90,7 @@
     "resistance": "Resistance",
     "coins": "Coins",
     "customize": "Customize",
-    "reload": "Reload"
+    "reload": "Reload",
+    "nameRequired": "Give it a name."
   }
 }
