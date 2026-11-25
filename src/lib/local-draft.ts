@@ -184,6 +184,8 @@ export interface UnackedSave {
   session: unknown;
   /** The generation it was sent at: a stored sheet at or past it has taken it. */
   revision: number;
+  /** When it was sent (compared with the play trace's time). */
+  at?: number;
 }
 const unackedPrefix = (uid: string) => `folio.unacked.${uid}.`;
 const unackedKey = (uid: string, characterId: string) =>
@@ -202,7 +204,12 @@ export function readUnackedSave(uid: string, characterId: string): UnackedSave |
   if (typeof stored !== "object" || stored === null) return null;
   const s = stored as Record<string, unknown>;
   return "character" in s && "session" in s && typeof s.revision === "number"
-    ? { character: s.character, session: s.session, revision: s.revision }
+    ? {
+        character: s.character,
+        session: s.session,
+        revision: s.revision,
+        ...(typeof s.at === "number" ? { at: s.at } : {}),
+      }
     : null;
 }
 
@@ -210,11 +217,54 @@ export function dropUnackedSave(uid: string, characterId: string): void {
   remove(unackedKey(uid, characterId));
 }
 
+/**
+ * The last PLAY write that left this tab and has not been acknowledged yet (#1320):
+ * the whole sheet at that moment (play edits are whole-sheet facts). Same reason as
+ * {@link UnackedSave}: a reopened tab sends the queued play patch before any listener
+ * sees it, and after a play-shape migration the fence refuses it. Removed when the
+ * write is acknowledged, or when a server play state equal to it shows it landed.
+ */
+export interface UnackedPlay {
+  character: unknown;
+  session: unknown;
+  /** When it was sent (the later of the two traces is the newer sheet). */
+  at: number;
+}
+const unackedPlayPrefix = (uid: string) => `folio.unackedPlay.${uid}.`;
+const unackedPlayKey = (uid: string, characterId: string) =>
+  `${unackedPlayPrefix(uid)}${characterId}`;
+
+export function keepUnackedPlay(
+  uid: string,
+  characterId: string,
+  play: UnackedPlay
+): void {
+  write(unackedPlayKey(uid, characterId), play);
+}
+
+export function readUnackedPlay(uid: string, characterId: string): UnackedPlay | null {
+  const stored = read(unackedPlayKey(uid, characterId));
+  if (typeof stored !== "object" || stored === null) return null;
+  const s = stored as Record<string, unknown>;
+  return "character" in s && "session" in s && typeof s.at === "number"
+    ? { character: s.character, session: s.session, at: s.at }
+    : null;
+}
+
+export function dropUnackedPlay(uid: string, characterId: string): void {
+  remove(unackedPlayKey(uid, characterId));
+}
+
 /** Sign-out: every draft of this account, and no other's. */
 export function clearAccountDrafts(uid: string): void {
   clearCreationDraft(uid);
   try {
-    const prefixes = [levelUpPrefix(uid), rescuePrefix(uid), unackedPrefix(uid)];
+    const prefixes = [
+      levelUpPrefix(uid),
+      rescuePrefix(uid),
+      unackedPrefix(uid),
+      unackedPlayPrefix(uid),
+    ];
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

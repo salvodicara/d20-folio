@@ -1548,3 +1548,66 @@ describe("useCharacterSubscription — the copy records what was unsaved (#1320)
     expect(readRescue1320("u1", "char1", Date.now())?.part).toBe("all");
   });
 });
+
+describe("useCharacterSubscription — play writes leave a trace too (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a play write leaving is traced as the whole sheet, and its acknowledgement clears it", async () => {
+    const { readUnackedPlay } = await import("@/lib/local-draft");
+    let ack: () => void = () => {};
+    writeCombatStateMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          ack = resolve;
+        })
+    );
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => useCharacterStore.getState().setHP(10));
+    await flushPlayWrite();
+    const traced = readUnackedPlay("u1", "char1");
+    expect((traced?.session as { hp: { current: number } } | undefined)?.hp.current).toBe(
+      10
+    );
+    await act(async () => {
+      ack();
+      await Promise.resolve();
+    });
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
+
+  it("a reopened tab whose queued play write was refused keeps a whole-sheet copy", async () => {
+    const { keepUnackedPlay } = await import("@/lib/local-draft");
+    const edited = doc();
+    edited.session = { ...edited.session, hp: { ...edited.session.hp, current: 3 } };
+    keepUnackedPlay("u1", "char1", {
+      character: edited.character,
+      session: edited.session,
+      at: Date.now(),
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // the server's play state does not hold HP 3
+    act(() => tooNewCb("combat")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    const copy = readRescue1320("u1", "char1", Date.now());
+    expect(copy?.part).toBe("all");
+    expect(JSON.stringify(copy?.state)).toContain('"current":3');
+  });
+
+  it("a server play state equal to the traced one proves it landed", async () => {
+    const { keepUnackedPlay, readUnackedPlay } = await import("@/lib/local-draft");
+    const landed = doc();
+    keepUnackedPlay("u1", "char1", {
+      character: landed.character,
+      session: landed.session,
+      at: Date.now(),
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter(landed));
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
+});

@@ -18,7 +18,12 @@
  * the server had either way.
  */
 import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
-import { dropRescueCopy, dropUnackedSave, type RescueCopy } from "@/lib/local-draft";
+import {
+  dropRescueCopy,
+  dropUnackedPlay,
+  dropUnackedSave,
+  type RescueCopy,
+} from "@/lib/local-draft";
 import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -97,6 +102,7 @@ export async function applyRescueCopy(
     useUndoStore.getState().clear();
     dropRescueCopy(uid, current.id);
     dropUnackedSave(uid, current.id);
+    dropUnackedPlay(uid, current.id);
     return "applied";
   }
   const after: CharacterDoc = {
@@ -118,6 +124,7 @@ export async function applyRescueCopy(
   ).catch(() => undefined);
   dropRescueCopy(uid, current.id);
   dropUnackedSave(uid, current.id);
+  dropUnackedPlay(uid, current.id);
   return "applied";
 }
 
@@ -125,4 +132,5 @@ export function discardRescueCopy(uid: string, characterId: string): void {
   dropRescueCopy(uid, characterId);
   // The edit's trace too: a later gate must not bring a discarded edit back.
   dropUnackedSave(uid, characterId);
+  dropUnackedPlay(uid, characterId);
 }

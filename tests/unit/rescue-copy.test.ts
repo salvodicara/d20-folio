@@ -126,3 +126,21 @@ describe("the unacknowledged build save (#1320)", () => {
     expect(readUnackedSave("u1", "c1")).toBeNull();
   });
 });
+
+describe("the unacknowledged play write (#1320)", () => {
+  it("is kept per account and character, with its time, and cleared on sign-out", async () => {
+    const { keepUnackedPlay, readUnackedPlay, dropUnackedPlay } =
+      await import("@/lib/local-draft");
+    keepUnackedPlay("u1", "c1", { character: { a: 1 }, session: { b: 2 }, at: 7 });
+    expect(readUnackedPlay("u1", "c1")).toEqual({
+      character: { a: 1 },
+      session: { b: 2 },
+      at: 7,
+    });
+    dropUnackedPlay("u1", "c1");
+    expect(readUnackedPlay("u1", "c1")).toBeNull();
+    keepUnackedPlay("u1", "c1", { character: {}, session: {}, at: 1 });
+    clearAccountDrafts("u1");
+    expect(readUnackedPlay("u1", "c1")).toBeNull();
+  });
+});

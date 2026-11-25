@@ -61,10 +61,13 @@ import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
 import { closeShapeGate, settleShapeGateRescue, writesFenced } from "@/lib/shape-gate";
 import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import {
+  dropUnackedPlay,
   dropUnackedSave,
   keepRescueCopy,
+  keepUnackedPlay,
   keepUnackedSave,
   readRescueCopy,
+  readUnackedPlay,
   readUnackedSave,
 } from "@/lib/local-draft";
 import {
@@ -467,7 +470,29 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // At most one write per change (src/lib/combat-state-writer.ts): the asks of one
     // command coalesce, and a state the server holds or is about to hold is not resent.
     const writer = createCombatStateWriter({
-      send: (state, base) => writeCombatState(uid, characterId, state, base),
+      send: (state, base) => {
+        // #1320 — the trace of a play write the server has not taken yet (the whole
+        // sheet at this moment): if this tab closes and a newer shape refuses the
+        // queued patch, it is the rescue copy.
+        const shown = useCharacterStore.getState().character;
+        const at = Date.now();
+        if (shown && shown.id === characterId)
+          keepUnackedPlay(user.uid, characterId, {
+            character: shown.character,
+            session: shown.session,
+            at,
+          });
+        const sent = writeCombatState(uid, characterId, state, base);
+        void sent.then(
+          () => {
+            // Acknowledged: retire the trace, unless a newer write traced again since.
+            if (readUnackedPlay(user.uid, characterId)?.at === at)
+              dropUnackedPlay(user.uid, characterId);
+          },
+          () => undefined
+        );
+        return sent;
+      },
       reconciler,
       onRejected: (err) => {
         publishResolvedPair();
@@ -654,18 +679,25 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         lastPendingRef.current.parent ||
         lastPendingRef.current.child;
       const unacked = readUnackedSave(user.uid, characterId);
+      const unackedPlay = readUnackedPlay(user.uid, characterId);
+      // Of the two traces, the later one holds the newer whole sheet.
+      const trace =
+        unackedPlay && (!unacked || (unacked.at ?? 0) <= unackedPlay.at)
+          ? unackedPlay
+          : unacked;
       const local =
         refused ??
         (storeDirty && shown && shown.id === characterId ? shown : null) ??
         pendingParentRef.current ??
-        (unacked
-          ? ({ character: unacked.character, session: unacked.session } as CharacterDoc)
+        (trace
+          ? ({ character: trace.character, session: trace.session } as CharacterDoc)
           : null);
-      const dirty = refused !== null || storeDirty || unacked !== null;
+      const dirty = refused !== null || storeDirty || trace !== null;
       // A copy already kept (an earlier pass, before a reload that still found a newer
       // shape) is never overwritten: it is the player's edit, and its date is theirs.
       if (readRescueCopy(user.uid, characterId, Date.now())) {
         dropUnackedSave(user.uid, characterId);
+        dropUnackedPlay(user.uid, characterId);
         closeShapeGate({ rescue: "kept" });
         return;
       }
@@ -680,7 +712,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           const kept = keepRescueCopy(user.uid, characterId, {
             // Unsaved play edits only exist when the play document had writes pending.
             part:
-              reconciliation.childPending || lastPendingRef.current.child
+              reconciliation.childPending ||
+              lastPendingRef.current.child ||
+              unackedPlay !== null
                 ? "all"
                 : "build",
             savedAt: Date.now(),
@@ -690,7 +724,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             state: envelope.state,
           });
           // Kept: the trace has done its job (a later gate must not bring it back).
-          if (kept) dropUnackedSave(user.uid, characterId);
+          if (kept) {
+            dropUnackedSave(user.uid, characterId);
+            dropUnackedPlay(user.uid, characterId);
+          }
           settleShapeGateRescue(kept ? "kept" : "failed");
         },
         () => settleShapeGateRescue("failed")
@@ -734,6 +771,18 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       (combat, meta) => {
         if (quarantined) return;
         lastPendingRef.current.child = meta.hasPendingWrites;
+        // A SERVER play state equal to the traced one shows the traced write landed.
+        if (!meta.hasPendingWrites && combat) {
+          const trace = readUnackedPlay(user.uid, characterId);
+          if (trace) {
+            const traced = sessionToCombatState(trace.session as CharacterDoc["session"]);
+            if (
+              canonicalJsonEquals(traced.playState, combat.playState) &&
+              canonicalJsonEquals(traced.hp, combat.hp)
+            )
+              dropUnackedPlay(user.uid, characterId);
+          }
+        }
         if (combat === null) {
           quarantine("Invalid character document: missing-combat-state");
           return;
@@ -895,6 +944,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
                   character: sent.character,
                   session: sent.session,
                   revision: sent.revision,
+                  at: Date.now(),
                 });
             },
             onResolved: (sent) => {

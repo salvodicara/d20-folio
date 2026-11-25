@@ -224,6 +224,38 @@ export async function setOwnerCharacterInt(
   if (!response.ok) throw new Error(`set ${field}: HTTP ${String(response.status)}`);
 }
 
+/** Set the play document's `playState.version`, as a play-shape migration does. */
+export async function setOwnerPlayVersion(id: string, version: number): Promise<void> {
+  const response = await fetch(
+    `${FIRESTORE}/users/dev-owner/characters/${id}/combat/state?updateMask.fieldPaths=playState.version`,
+    {
+      method: "PATCH",
+      headers: { ...OWNER, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          playState: {
+            mapValue: { fields: { version: { integerValue: String(version) } } },
+          },
+        },
+      }),
+    }
+  );
+  if (!response.ok) throw new Error(`set play version: HTTP ${String(response.status)}`);
+}
+
+/** The stored current HP of an owner's character (its play document). */
+export async function ownerCurrentHp(id: string): Promise<number | null> {
+  const response = await fetch(
+    `${FIRESTORE}/users/dev-owner/characters/${id}/combat/state`,
+    { headers: OWNER }
+  );
+  const body = (await response.json()) as {
+    fields?: { hp?: { mapValue?: { fields?: { current?: { integerValue?: string } } } } };
+  };
+  const value = body.fields?.hp?.mapValue?.fields?.current?.integerValue;
+  return value === undefined ? null : Number(value);
+}
+
 /** A string field of an owner's character build (`build.<field>`), or null. */
 export async function ownerBuildString(
   id: string,
