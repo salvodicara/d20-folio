@@ -296,9 +296,15 @@ export function reconcileBuildChoices(
 
   // ── Class-fixed fields (re-derive only on a CLASS change; a homebrew class has
   //    no table → leave stored). Saving throws are class-fixed but ALSO manually
-  //    toggleable, so they reset on a class change and persist otherwise.
+  //    toggleable, so they reset on a change of the FIRST class (`classes[0]`, the
+  //    class taken at character level 1 — the only one that grants saves, #1366)
+  //    and persist otherwise, also when a later class overtakes the first.
+  const first = c.classes[0];
+  const firstTable = first ? classTableIndex.get(first.classId) : undefined;
+  if (first && firstTable && prevClasses[0]?.classId !== first.classId) {
+    c.savingThrows = inferSavingThrows(first);
+  }
   if (classChanged && table) {
-    c.savingThrows = inferSavingThrows(primary);
     c.hitDieType = inferHitDie(primary);
   }
   // The chosen spell list belongs to a class that is GONE — clear it; the player
