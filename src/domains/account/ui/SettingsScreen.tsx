@@ -15,6 +15,7 @@ import { LOCALES } from "@/lib/locale";
 import { useNewUiSwitch } from "@/features/account/useNewUiSwitch";
 import { useAuthStore } from "@/stores/authStore";
 import { Button, Chip, Panel } from "@/ui";
+import { MyDataPanel } from "./MyDataPanel";
 import { initialOf } from "@/ui/initial";
 
 export function SettingsScreen() {
@@ -75,6 +76,17 @@ export function SettingsScreen() {
             </Button>
           </div>
         </Panel>
+        {/* #1341 — the player's own copy of everything, and the erasure of the account. */}
+        {user?.email && (
+          <MyDataPanel
+            profile={{
+              uid: user.uid,
+              email: user.email,
+              displayName: profile?.displayName ?? "",
+              createdAt: profile?.createdAt ?? new Date(0),
+            }}
+          />
+        )}
         {isAdmin && (
           <Panel color="log" title={t("nav.admin")}>
             <Button icon="u-settings" onClick={() => void navigate("/admin")}>
