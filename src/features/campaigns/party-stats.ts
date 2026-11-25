@@ -121,6 +121,7 @@ export function hydrateMemberDoc(
   const max = effectiveMaxHp(doc.character, {
     activeFeatures: doc.session.activeFeatures,
     grantBundleChoices: doc.session.grantBundleChoices,
+    magicJar: doc.session.magicJar,
   });
   const hydrated = applyCombatToSession(doc.session, combat, max);
   return hydrated.ok ? { ...doc, session: hydrated.session } : null;

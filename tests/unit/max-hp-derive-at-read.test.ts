@@ -10,6 +10,10 @@ import { effectiveMaxHp, maxHpBase } from "@/lib/aggregate-character";
 import { asRaceId } from "@/data/srd-names";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { deriveCharacter } from "@/lib/views/derive-character";
+import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
+import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
+import { takeDamage } from "@/lib/play/damage";
+import { healBy } from "@/lib/play/vitals";
 import type { CharacterData, CharacterDoc } from "@/types/character";
 
 // Dwarf Monk 3, CON 14 (+2): 24 + Dwarven Toughness 3 = 27 by the book.
@@ -85,5 +89,65 @@ describe("max HP is derived where it is read (#1334)", () => {
       },
     };
     expect(effectiveMaxHp(host, jarred)).toBe(11);
+  });
+});
+
+describe("a level-up counts from the derived max, never the stale stored one (#1334)", () => {
+  const picks = (classId: string): LevelUpPicks => ({
+    classId,
+    asi: null,
+    subclassId: null,
+    fightingStyle: null,
+    expertise: [],
+    weaponMasteries: null,
+    metamagic: [],
+    maneuvers: [],
+    invocations: [],
+    newCantrips: [],
+    newSpells: [],
+    choiceSlots: {
+      skill: [],
+      tool: [],
+      skillOrTool: [],
+      language: [],
+      spell: [],
+      expertise: [],
+      feat: [],
+    },
+    choicePicks: EMPTY_CHOICE_PICKS,
+    multiclass: null,
+    spellMastery: null,
+    signatureSpells: null,
+    swap: { removeId: null, replaceId: null },
+    bundlePicks: {},
+  });
+
+  it("Monk 3 at the derived 33 (stored 27) → Monk 4: current 33 + 10 = 43, at the new max", () => {
+    // CON 19 from the amulet (+4): a Monk level is 5 + 4 + Dwarven Toughness 1 = 10.
+    const doc: CharacterDoc = {
+      ...MOCK_CHARACTER,
+      character: monk({ equipment: [amulet], hp: { max: 27 } }),
+      session: { ...session, hp: { current: 33, temp: 0 } },
+    };
+    const next = commitLevelUp(doc, picks("monk"));
+    expect(effectiveMaxHp(next.character, next.session)).toBe(43);
+    expect(next.session.hp.current).toBe(43);
+  });
+});
+
+describe("current HP above a max that dropped (#1334)", () => {
+  // Monk at 33/33 with the amulet; the amulet is sold without an HP write: max 27.
+  const sold = (): CharacterDoc => ({
+    ...MOCK_CHARACTER,
+    character: monk({ equipment: [], hp: { max: 33 } }),
+    session: { ...session, hp: { current: 33, temp: 0 } },
+  });
+
+  it("the next hit counts from the new max: 27 − 3 = 24, not 33 − 3 = 30", () => {
+    expect(takeDamage(sold(), 3)?.session.hp.current).toBe(24);
+  });
+
+  it("the next heal clamps to the new max: 27", () => {
+    expect(healBy(sold(), 2)?.hp.current).toBe(27);
   });
 });

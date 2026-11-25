@@ -226,7 +226,7 @@ export function levelUp(
   // ability grants): the in-session number is the number a reload derives.
   const derivedMax = deriveMaxHp(updated);
   if (derivedMax !== updated.hp.max) {
-    const gain = derivedMax - character.hp.max;
+    const gain = derivedMax - deriveMaxHp(character);
     for (const change of changes) {
       if (change.type !== "hp") continue;
       change.description = change.description

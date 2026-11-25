@@ -14,7 +14,7 @@
  *
  * Pure module — no React, no store, no Firebase.
  */
-import { deriveMaxHp } from "@/lib/aggregate-character";
+import { deriveMaxHp, maxHpBase } from "@/lib/aggregate-character";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { levelUp } from "@/lib/level-up";
 import { isUmbrellaTool } from "@/lib/tool-names";
@@ -490,7 +490,9 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
       ...doc.session,
       hp: {
         ...doc.session.hp,
-        current: doc.session.hp.current + (updated.hp.max - charData.hp.max),
+        // #1334 — the gain counts from the max the player saw (derived at read).
+        current:
+          doc.session.hp.current + (updated.hp.max - maxHpBase(charData, doc.session)),
       },
       ...(Object.keys(bundlePicks).length > 0
         ? {
