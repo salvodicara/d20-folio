@@ -67,18 +67,21 @@ export function wildShapePickerPool(doc: CharacterDoc): ReadonlyArray<BeastStatB
   return known.length > 0 ? known : eligibleWildShapeForms(doc);
 }
 
-/** How many forms the Druid may still learn: the table's count minus the forms known. */
+/**
+ * How many forms the Druid may still learn: the table's count minus the forms known.
+ * Every stored form counts, even one this session can't resolve (a beast from content
+ * it lacks): a Druid who holds the count is never asked for more.
+ */
 export function wildShapeFormsOwed(doc: CharacterDoc): number {
   const count = knownFormsAt(druidLevel(doc));
   if (count === 0) return 0;
-  const held = usableKnownForms(doc).length;
-  const open = eligibleWildShapeForms(doc).length - held;
-  return Math.max(0, Math.min(count - held, open));
+  const held = storedWildShapeForms(doc).length;
+  return Math.max(0, Math.min(count - held, formSwapOptions(doc).length));
 }
 
 /**
  * What a Druid reaching `level` may learn: the eligible beasts at that level it
- * doesn't know, and how many (the count minus the known forms still eligible).
+ * doesn't know, and how many (the count minus the forms known).
  */
 export function wildShapeFormsAt(
   doc: CharacterDoc,
@@ -86,7 +89,7 @@ export function wildShapeFormsAt(
 ): { owed: number; options: ReadonlyArray<BeastStatBlock> } {
   const known = new Set(storedWildShapeForms(doc));
   const eligible = eligibleWildShapeForms(doc, level);
-  const held = eligible.filter((b) => known.has(b.id)).length;
+  const held = known.size;
   const options = eligible.filter((b) => !known.has(b.id));
   return {
     owed: Math.max(0, Math.min(knownFormsAt(level) - held, options.length)),
@@ -105,7 +108,7 @@ export function learnWildShapeForms(
 ): CharacterDoc {
   const known = storedWildShapeForms(doc);
   const eligible = new Set(eligibleWildShapeForms(doc, level).map((b) => b.id));
-  const room = knownFormsAt(level) - known.filter((id) => eligible.has(id)).length;
+  const room = knownFormsAt(level) - known.length;
   const added = [...new Set(ids)]
     .filter((id) => eligible.has(id) && !known.includes(id))
     .slice(0, Math.max(0, room));

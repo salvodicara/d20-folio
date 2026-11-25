@@ -152,8 +152,19 @@ describe("the forms a Druid still owes", () => {
     expect(wildShapeFormsOwed(doc)).toBe(4);
   });
 
-  it("a duplicate or an unknown id doesn't count as a form known", () => {
-    expect(wildShapeFormsOwed(druid(2, ["wolf", "wolf", "not-a-beast"]))).toBe(3);
+  it("a duplicate counts once", () => {
+    expect(wildShapeFormsOwed(druid(2, ["wolf", "wolf"]))).toBe(3);
+  });
+
+  it("a form this session can't resolve (content it lacks) still counts as known", () => {
+    expect(
+      wildShapeFormsOwed(druid(2, ["wolf", "boar", "panther", "not-loaded-beast"]))
+    ).toBe(0);
+    const doc = learnWildShapeForms(
+      druid(2, ["wolf", "boar", "panther", "not-loaded-beast"]),
+      ["elk"]
+    );
+    expect(doc.character.wildShapeForms).toHaveLength(4);
   });
 });
 
