@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/firebase", () => ({}));
 import { setNumberOverride, storedOverride } from "@/features/character/number-overrides";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { isHandSet } from "@/lib/value-breakdown";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -119,5 +120,20 @@ describe("undo", () => {
     useCharacterStore.setState({ readonly: true });
     setNumberOverride({ kind: "proficiency" }, 6, "x");
     expect(live().character.proficiencyBonusOverride).not.toBe(6);
+  });
+});
+
+describe("a CON pin moves max HP (#1318)", () => {
+  it("pinning CON re-derives the max with the pin; undo puts both back", () => {
+    load((doc) => {
+      doc.character.hp = { max: deriveMaxHp(doc.character) };
+    });
+    const before = live().character.hp.max;
+    const con = live().character.abilityScores.CON;
+    setNumberOverride({ kind: "ability", ability: "CON" }, con + 4, "CON");
+    expect(live().character.hp.max).toBe(deriveMaxHp(live().character));
+    expect(live().character.hp.max).toBeGreaterThan(before);
+    useUndoStore.getState().undo();
+    expect(live().character.hp.max).toBe(before);
   });
 });

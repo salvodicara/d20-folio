@@ -122,7 +122,7 @@ import { getBeast } from "@/data/beasts";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
-import { effectiveAC, effectiveMaxHp } from "@/lib/aggregate-character";
+import { effectiveAC, effectiveMaxHp, withEquipment } from "@/lib/aggregate-character";
 import { baseBundleKey, resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
@@ -2282,12 +2282,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     set({
       character: {
         ...character,
-        character: {
-          ...character.character,
-          equipment: character.character.equipment.filter(
-            (_ref, index) => index !== removeIndex
-          ),
-        },
+        // An attuned item can carry a per-level HP grant or set CON (#1318).
+        character: withEquipment(
+          character.character,
+          character.character.equipment.filter((_ref, index) => index !== removeIndex)
+        ),
         session: { ...character.session, itemResources },
       },
     });
