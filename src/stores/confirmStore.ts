@@ -36,6 +36,9 @@ interface ConfirmState {
   open: boolean;
   /** Options for the active prompt (null when closed). */
   options: ConfirmOptions | null;
+  /** The new UI's shell is mounted and draws the prompt (`NewConfirm`); the classic
+   *  `ConfirmDialog` stands down. */
+  newHost: boolean;
   /** Resolver for the in-flight confirm() promise (null when none pending). */
   _resolve: ((v: boolean) => void) | null;
 
@@ -48,6 +51,7 @@ interface ConfirmState {
 export const useConfirmStore = create<ConfirmState>()((set, get) => ({
   open: false,
   options: null,
+  newHost: false,
   _resolve: null,
 
   confirm: (o) =>
