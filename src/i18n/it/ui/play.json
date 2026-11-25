@@ -169,7 +169,7 @@
       "copyAsk": "Copia {{name}} nel libro degli incantesimi: {{hours}} ore e {{gp}} mo (2 ore e 50 mo per livello).",
       "copyPay": "Copia e paga {{gp}} mo",
       "copyShort": "Oro e platino non bastano.",
-      "copyUnpaid": "Copia senza pagare",
+      "copyUnpaid": "Copia senza pagare (deciso dal master)",
       "copiedToast": "Copiato nel libro: {{name}}"
     },
     "inv": {

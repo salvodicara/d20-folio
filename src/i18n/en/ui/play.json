@@ -169,7 +169,7 @@
       "copyAsk": "Copy {{name}} into your spellbook: {{hours}} hours and {{gp}} gp (2 hours and 50 gp per spell level).",
       "copyPay": "Copy and pay {{gp}} gp",
       "copyShort": "Your gold and platinum don't cover it.",
-      "copyUnpaid": "Copy without paying",
+      "copyUnpaid": "Copy without paying (DM's call)",
       "copiedToast": "Copied into your spellbook: {{name}}"
     },
     "inv": {

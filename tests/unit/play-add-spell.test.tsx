@@ -208,7 +208,9 @@ describe("«Copy into your spellbook» (D&D Beyond's Manage Spells for a Wizard)
     );
     expect(screen.queryByRole("button", { name: "Copy and pay 100 gp" })).toBeNull();
     expect(screen.getByText("Your gold and platinum don't cover it.")).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Copy without paying" }));
+    fireEvent.click(
+      screen.getByRole("button", { name: "Copy without paying (DM's call)" })
+    );
     expect(ids().at(-1)).toBe("invisibility");
     expect(live().session.currency.gp).toBe(30);
   });
