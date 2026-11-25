@@ -276,9 +276,13 @@ export async function waitForStoredCharacter(id: string): Promise<number> {
   return hp;
 }
 
-/** The stored generation (`revision`) of an owner's character parent; 0 when none. */
-export async function ownerRevision(id: string): Promise<number> {
-  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+/** The stored generation (`revision`) of a sandbox character parent (the owner's, or
+ *  a sandbox player's); 0 when none. */
+export async function storedRevision(id: string): Promise<number> {
+  const uid =
+    Object.values(SANDBOX_USERS).find((user) => user.characterId === id)?.uid ??
+    "dev-owner";
+  const response = await fetch(`${FIRESTORE}/users/${uid}/characters/${id}`, {
     headers: OWNER,
   });
   const body = (await response.json()) as {
@@ -404,7 +408,7 @@ export async function levelUp(
     if (clicked === 0) break;
   }
   await expect(page.getByText(/choices? still to make/)).toHaveCount(0);
-  const stored = await ownerRevision(id);
+  const stored = await storedRevision(id);
   await confirm.click();
   await expect(page).toHaveURL(new RegExp(`/characters/${id}$`), { timeout: 30_000 });
   await expect(page.locator("main")).toContainText(
@@ -412,7 +416,9 @@ export async function levelUp(
   );
   // The level shows at once and its save lands a moment later (#1276, level-up works
   // offline), so wait for the server to hold it before the next page load.
-  await expect.poll(() => ownerRevision(id), { timeout: 30_000 }).toBeGreaterThan(stored);
+  await expect
+    .poll(() => storedRevision(id), { timeout: 30_000 })
+    .toBeGreaterThan(stored);
 }
 
 /** The sandbox players (scripts/dev-seed-sandbox.ts), each a real Auth-emulator account. */
