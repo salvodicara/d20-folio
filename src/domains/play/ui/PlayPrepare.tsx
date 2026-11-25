@@ -12,6 +12,7 @@ import { canFlipInStep, type LongRestChange } from "@/domains/play/long-rest-cha
 import { prepareList } from "@/domains/play/play-spells-view";
 import { ActionGlyph } from "@/domains/play/ui/ActionIcon";
 import { PlayCantripSwap } from "@/domains/play/ui/PlayCantripSwap";
+import { PlayFormSwap } from "@/domains/play/ui/PlayFormSwap";
 import { spellPickRows } from "@/domains/spells/spell-pick-rows";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import type { Locale } from "@/lib/locale";
@@ -34,7 +35,8 @@ export function PlayPrepare({
   onClose: () => void;
   /** After a Long Rest: «Cambia incantesimi preparati», within the class's limit. */
   longRest?: LongRestChange;
-  /** The step after a Long Rest: also a cantrip the lineage lets you replace. */
+  /** The step after a Long Rest: also a cantrip the lineage lets you replace, and a
+   *  Druid's known Wild Shape form. */
   afterLongRest?: boolean;
 }) {
   const { t } = useTranslation();
@@ -138,6 +140,7 @@ export function PlayPrepare({
     return (
       <>
         {afterLongRest && <PlayCantripSwap doc={doc} locale={locale} />}
+        {afterLongRest && <PlayFormSwap doc={doc} locale={locale} />}
         {/* the limit, then the count against the most (the level-up's «1/1») */}
         {list.levels.length > 0 && (
           <div className="f-pick-title f-prep-head" role="status">

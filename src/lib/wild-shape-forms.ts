@@ -130,6 +130,11 @@ export function swapKnownForm(
   return forms.map((id) => (id === removeId ? replaceId : id));
 }
 
+/** Whether a Long Rest offers the swap: a Druid with Wild Shape and known forms. */
+export function canSwapFormOnRest(doc: CharacterDoc): boolean {
+  return knownFormsAt(druidLevel(doc)) > 0 && storedWildShapeForms(doc).length > 0;
+}
+
 /** The forms a Long Rest may swap in: the eligible beasts the Druid doesn't know. */
 export function formSwapOptions(doc: CharacterDoc): ReadonlyArray<BeastStatBlock> {
   const known = new Set(storedWildShapeForms(doc));

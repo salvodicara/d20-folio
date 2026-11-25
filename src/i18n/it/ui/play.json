@@ -116,6 +116,7 @@
       "keepPrepared": "Tieni così",
       "cantripTitle": "Dopo il Riposo Lungo",
       "cantripSwap": "{{source}}: cambia il trucchetto, se vuoi",
+      "formSwap": "Forma Selvatica: cambia una forma conosciuta (facoltativo)",
       "diceSpent_one": "{{count}} dado → +{{hp}} PF",
       "diceSpent_other": "{{count}} dadi → +{{hp}} PF"
     },
