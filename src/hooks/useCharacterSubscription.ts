@@ -288,6 +288,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         useCharacterStore
           .getState()
           .setCombatPersistence({ write: (state) => devWriter.write(state) });
+        // A level-up writes nothing to Firestore here, as the restore never did: the
+        // autosave keeps the replica (#1276).
+        useCharacterStore.getState().setWholeSheetWriter(() => Promise.resolve());
 
         const quarantine = (message: string): void => {
           if (quarantined) return;
