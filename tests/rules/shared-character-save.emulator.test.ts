@@ -139,7 +139,10 @@ describe("a shared character saves through the app's own writes", () => {
     };
 
     await expect(
-      replaceCharacterState(OWNER, hero.id, levelled, hero.session, 1)
+      replaceCharacterState(OWNER, hero.id, levelled, hero.session, 1, {
+        ...hero,
+        shared: true,
+      })
     ).resolves.toBeUndefined();
 
     expect((await stored(parentPath()))?.revision).toBe(2);
