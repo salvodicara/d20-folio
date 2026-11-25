@@ -118,6 +118,11 @@ export function freeCastSourcesForSpell(
   const session = character.session;
   const level = characterLevel(character.character);
   const out: FreeCastSource[] = [];
+  let trackers: Map<string, number> | null = null;
+  const ownTrackerTotal = (id: string): number | undefined => {
+    trackers ??= new Map(resolveTrackers(character).map((t) => [t.id, t.total]));
+    return trackers.get(id);
+  };
 
   for (const entry of evaluateGrants(
     grantSources,
@@ -147,12 +152,16 @@ export function freeCastSourcesForSpell(
       });
       continue;
     }
-    const charges = resolveChargesFormula(
-      entry.chargesFormula,
-      entry.chargesPerRest,
-      character,
-      entry.capacityByLevel
-    );
+    // A free cast paying its feature's own tracker (Favored Enemy) has that tracker's
+    // uses, which scale on the owning class's level; otherwise the grant's own count.
+    const charges =
+      ownTrackerTotal(entry.payment.trackerId) ??
+      resolveChargesFormula(
+        entry.chargesFormula,
+        entry.chargesPerRest,
+        character,
+        entry.capacityByLevel
+      );
     const usedNow = session.trackers[entry.payment.trackerId]?.used ?? 0;
     if (usedNow >= charges) continue;
     out.push({
