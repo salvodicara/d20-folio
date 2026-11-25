@@ -172,6 +172,12 @@ const STANDING_SPELLS = [
     recipient: "selected",
     targeting: { affinity: "ally", maxTargets: 1 },
   },
+  // 1 Hit Point at the start of each of the target's turns (`regen-at-turn-start`).
+  {
+    id: "regenerate",
+    recipient: "selected",
+    targeting: { affinity: "ally", maxTargets: 1 },
+  },
   // Utility spells batch 1 (2026-10-24): the cast lights a standing state.
   {
     id: "guidance",
