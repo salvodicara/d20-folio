@@ -1501,6 +1501,7 @@ export function LevelUpWizard() {
                 classId={classId}
                 allowedLists={widenedSpellLists}
                 knownSpells={knownNonCantripRefs}
+                maxSlotLevel={maxSpellLevel}
                 value={swapChoice}
                 onChange={setSwapChoice}
               />

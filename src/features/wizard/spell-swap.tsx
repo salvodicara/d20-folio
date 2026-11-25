@@ -34,6 +34,7 @@ export function WizardSpellSwap({
   knownSpells,
   alsoKnown,
   cantrips = false,
+  maxSlotLevel,
   value,
   onChange,
 }: {
@@ -55,6 +56,10 @@ export function WizardSpellSwap({
   /** Swap a cantrip for another cantrip of the class list (SRD 5.2.1: «Whenever
    *  you gain a Cleric level, you can replace one of your cantrips»). */
   cantrips?: boolean;
+  /** A class swap (SRD 5.2.1 Bard: «another Bard spell for which you have spell
+   *  slots»): the replacement may be any level up to this one. Absent: the same
+   *  level as the removed spell (a feat's Spell Change, Magic Initiate). */
+  maxSlotLevel?: number;
   value: SpellSwapChoice;
   onChange: (choice: SpellSwapChoice) => void;
 }) {
@@ -100,7 +105,11 @@ export function WizardSpellSwap({
           .filter(
             (s) =>
               s.classes.some((c) => allowed.has(c)) &&
-              s.level === removeLevel &&
+              (cantrips
+                ? s.level === 0
+                : maxSlotLevel !== undefined
+                  ? s.level >= 1 && s.level <= maxSlotLevel
+                  : s.level === removeLevel) &&
               !knownIds.has(s.id)
           )
           .map((s) => spellPickVM(s, locale))
@@ -143,7 +152,7 @@ export function WizardSpellSwap({
                     ? "levelUp.swap.cantripReplaceLabel"
                     : "levelUp.swap.replaceLabel"
                 )}
-                {removeLevel != null && !cantrips && (
+                {removeLevel != null && !cantrips && maxSlotLevel === undefined && (
                   <span className="wiz-pick-filter">
                     {t("levelUp.swap.levelFilter", { level: removeLevel })}
                   </span>

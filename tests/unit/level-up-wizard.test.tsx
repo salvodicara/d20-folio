@@ -594,7 +594,7 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
     expect(screen.getByText(swapHead)).toBeInTheDocument();
   });
 
-  it("offers known spells in the removing voice; the replacement gates to the same level", () => {
+  it("offers known spells in the removing voice; the replacement may be any level with slots", () => {
     renderWizard();
     walkToSpellsComplete();
     clickContinue(); // spells → swap
@@ -612,9 +612,13 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
     const entry = document.querySelector('[data-fid="dissonant-whispers"]');
     expect(entry).toHaveAttribute("data-removing");
     expect(entry).not.toHaveAttribute("data-picked");
-    // The replacement phase appears, gated to the removed spell's level.
+    // The replacement phase appears. SRD 5.2.1 Bard: «replace one spell on your list
+    // with another Bard spell for which you have spell slots», so a Bard 4 (slots up to
+    // level 2) may take a level-2 spell for a level-1 one.
     expect(screen.getByText(/2\. Choose your replacement/i)).toBeInTheDocument();
-    expect(screen.getByText(/Level 1 only/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Level 1 only/i)).toBeNull();
+    expect(document.querySelector('[data-fid="hold-person"]')).not.toBeNull();
+    expect(document.querySelector('[data-fid="fear"]')).toBeNull(); // level 3: no slot
   });
 
   // Regression (golden rule 13): the commit step applies the swap via the shared
