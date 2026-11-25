@@ -101,6 +101,7 @@ export function HeaderHpControl() {
     (s) => s.character?.session.grantBundleChoices
   );
   const magicJar = useCharacterStore((s) => s.character?.session.magicJar);
+  const polymorphForm = useCharacterStore((s) => s.character?.session.polymorphForm);
   const level = useCharacterStore((s) =>
     s.character ? totalLevel(s.character.character) : 0
   );
@@ -151,7 +152,7 @@ export function HeaderHpControl() {
   // rule 3), localized here.
   // #1334 — the base is derived at read (`maxHpBase`), so it only differs from the
   // derive at Magic Jar's host stage, whose max has no composition to explain.
-  const storedMax = charData ? maxHpBase(charData, { magicJar }) : max;
+  const storedMax = charData ? maxHpBase(charData, { magicJar, polymorphForm }) : max;
   // #1315 — the derived max includes the player's inputs (rolled surplus, bonus), and
   // the tip names them as rows, so a rolled or adjusted max is still explained.
   const computedBase = charData ? deriveMaxHp(charData) : storedMax;

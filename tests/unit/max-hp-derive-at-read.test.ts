@@ -151,3 +151,25 @@ describe("current HP above a max that dropped (#1334)", () => {
     expect(healBy(sold(), 2)?.hp.current).toBe(27);
   });
 });
+
+describe("Polymorph keeps the caster's own max HP (#1334)", () => {
+  it("a form stamps the Beast's CON on the scores, but the max reads the caster's CON: 27", () => {
+    // The stamped body: the Beast's CON 18 (+4) would read 33.
+    const formed = monk({ abilityScores: { ...monk().abilityScores, CON: 18 } });
+    const polymorphed = {
+      ...session,
+      polymorphForm: {
+        beastId: "brown-bear",
+        spellId: "polymorph",
+        prior: {
+          acOverride: null,
+          speedOverride: null,
+          speedOverrides: {},
+          abilityScores: monk().abilityScores,
+          tempHp: 0,
+        },
+      },
+    };
+    expect(effectiveMaxHp(formed, polymorphed)).toBe(27);
+  });
+});

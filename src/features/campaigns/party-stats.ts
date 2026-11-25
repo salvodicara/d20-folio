@@ -122,6 +122,7 @@ export function hydrateMemberDoc(
     activeFeatures: doc.session.activeFeatures,
     grantBundleChoices: doc.session.grantBundleChoices,
     magicJar: doc.session.magicJar,
+    polymorphForm: doc.session.polymorphForm,
   });
   const hydrated = applyCombatToSession(doc.session, combat, max);
   return hydrated.ok ? { ...doc, session: hydrated.session } : null;

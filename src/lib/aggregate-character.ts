@@ -635,13 +635,17 @@ export function deriveMaxHp(character: CharacterDoc["character"]): number {
  * ({@link deriveMaxHp}), so a path that changes a derive input (an attuned item sold
  * or bought, a feat written outside the level-up) never shows a stale stored number.
  * At Magic Jar's host stage the host's max replaces the caster's (`possessHost` writes
- * it to `hp.max`), so the stored number is the base there.
+ * it to `hp.max`), so the stored number is the base there. A Polymorph form stamps the
+ * Beast's scores on the character, but the caster keeps its own max HP (the form is
+ * Temporary HP), so the derive reads the caster's own scores from the form's prior.
  */
 export function maxHpBase(
   character: CharacterDoc["character"],
-  session: Pick<AggregationSession, "magicJar">
+  session: Pick<AggregationSession, "magicJar" | "polymorphForm">
 ): number {
-  return session.magicJar?.stage === "host" ? character.hp.max : deriveMaxHp(character);
+  if (session.magicJar?.stage === "host") return character.hp.max;
+  const own = session.polymorphForm?.prior.abilityScores;
+  return deriveMaxHp(own ? { ...character, abilityScores: own } : character);
 }
 
 /** The derived max HP without the hand adjustment: what a reset returns to. */
