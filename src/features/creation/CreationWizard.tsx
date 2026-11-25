@@ -49,6 +49,7 @@ import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
 import { createCharacterOffline } from "@/features/creation/create-offline";
+import { clearCreationDraft } from "@/lib/local-draft";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { FEATS_BY_ID } from "@/data/feats";
 import { ALIGNMENT_IDS } from "@/lib/lore-utils";
@@ -326,9 +327,15 @@ export function CreationWizard() {
         void navigate(`/characters/${id}`);
         window.scrollTo({ top: 0, left: 0 });
       };
-      open(
-        await createCharacterOffline({ uid: user.uid, payload: built.payload, open, t })
-      );
+      const id = await createCharacterOffline({
+        uid: user.uid,
+        payload: built.payload,
+        open,
+        t,
+      });
+      // The kept copy above guards the build; the in-progress form can go.
+      clearCreationDraft(user.uid);
+      open(id);
     } catch (err) {
       setError(err instanceof Error ? err.message : t("character.failedCreate"));
       setSaving(false);
