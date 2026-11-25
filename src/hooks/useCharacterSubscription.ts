@@ -20,6 +20,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { useToastStore } from "@/stores/toastStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -817,6 +818,11 @@ export function useCharacterSubscription(characterId: string | undefined): void 
               // change): drop the local payload and republish what the server holds.
               reconcilerRef.current?.rejectParentWrite(sent);
               republishRef.current();
+              // Say it (#1203): the badge alone read as a stuck save.
+              useToastStore.getState().showToast({
+                intent: { kind: "edit-not-saved" },
+                duration: 8000,
+              });
             },
             // Only the restore / level-up ceremony cancels a queued save. It publishes
             // its own whole-document state and its batch echoes back, so republishing the

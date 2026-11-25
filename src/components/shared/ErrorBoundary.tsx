@@ -37,6 +37,8 @@ export interface ErrorFallbackProps {
    * `errorElement` nested inside the persistent shell, so the nav stays usable.
    */
   variant?: "fullscreen" | "region";
+  /** One more way out, shown after the secondary action (#1233: back to classic). */
+  extraAction?: { label: string; run: () => void };
 }
 
 /** Themed, bilingual fallback shown when a descendant render throws — the SAME
@@ -51,6 +53,7 @@ export function ErrorFallback({
   onReset,
   resetLabel,
   variant = "fullscreen",
+  extraAction,
 }: ErrorFallbackProps) {
   const { t } = useTranslation();
   return (
@@ -77,6 +80,11 @@ export function ErrorFallback({
             <Button variant="secondary" onClick={onReset}>
               {resetLabel ?? t("errorBoundary.retry")}
             </Button>
+            {extraAction && (
+              <Button variant="secondary" onClick={extraAction.run}>
+                {extraAction.label}
+              </Button>
+            )}
             {/* The moment of failure is the moment of intent: open the global bug
                 reporter PRE-FILLED with this crash (route · error · stack head), so
                 reporting it is one tap. The dialog is mounted at the app root —

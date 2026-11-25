@@ -316,7 +316,8 @@ export function GlobalCombatMount(): null {
       characterId: myCombatant.characterId,
       gathering: live.encounter.currentCombatantId === null,
       isMyTurn: live.view.currentId === myId,
-      initiativeBonus: myRow?.initiativeBonus ?? 0,
+      // Unknown until the row's live data loads: never a made-up 0.
+      initiativeBonus: myRow?.initiativeBonus ?? null,
       initiativeRoll: myRow?.initiativeRoll ?? null,
       round: live.encounter.round,
     };

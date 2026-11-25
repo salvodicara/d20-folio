@@ -148,6 +148,7 @@ vi.mock("@/lib/mock", () => ({ MOCK_CHARACTER: {} }));
 import { useUndoStore } from "@/stores/undoStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useSaveStore } from "@/stores/saveStore";
+import { useToastStore } from "@/stores/toastStore";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 
 function doc(): CharacterDoc {
@@ -1131,6 +1132,45 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
       );
     });
     expect(openCharacter().character.quote).toBe("other device");
+  });
+
+  // #1203: a save the rules refuse as a conflict (another device saved first) is
+  // dropped for the server's copy; the player is told once. A transient failure
+  // (offline, unavailable) keeps the edit pending and says nothing.
+  async function refusedSave(error: unknown): Promise<void> {
+    renderHook(() => useCharacterSubscription("char1"));
+    await act(async () => {
+      snapshotCb()(doc());
+      combatCb()(sessionToCombatState(doc().session));
+      await Promise.resolve();
+    });
+    act(() => {
+      const cur = openCharacter();
+      useCharacterStore
+        .getState()
+        .setCharacter({ ...cur, character: { ...cur.character, quote: "local" } });
+    });
+    const { callbacks } = lastSave();
+    const sent = sendLastSave();
+    act(() => callbacks.onRejected?.(sent, error));
+  }
+
+  it("a conflict refusal tells the player once that the last change was not saved", async () => {
+    useToastStore.setState({ toasts: [] });
+    await refusedSave(
+      Object.assign(new Error("Missing or insufficient permissions."), {
+        code: "permission-denied",
+      })
+    );
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved" },
+    ]);
+  });
+
+  it("a transient failure (offline) says nothing: the edit is still pending", async () => {
+    useToastStore.setState({ toasts: [] });
+    await refusedSave(Object.assign(new Error("offline"), { code: "unavailable" }));
+    expect(useToastStore.getState().toasts).toEqual([]);
   });
 
   it("a rejected parent write surfaces SaveStatus=error and republishes the remote", async () => {
