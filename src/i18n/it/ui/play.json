@@ -288,7 +288,8 @@
       "exhaustionLevel": "Livello {{level}}: −{{d20}} ai Test con d20 · Velocità −{{speed}}",
       "exhaustionDeath": "Livello {{level}}: il personaggio muore",
       "withSource": "{{name}} · da {{source}}",
-      "fromWhom": "{{name}}: da chi?"
+      "fromWhom": "{{name}}: da chi?",
+      "fromWhat": "{{name}}: da cosa?"
     },
     "help": {
       "title": "Aiuto",

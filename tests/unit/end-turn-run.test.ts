@@ -43,6 +43,7 @@ function ports(over: Partial<EndTurnPorts> = {}) {
     advanceSoloTurn: step("advance", () => calls.push("restore-turn")),
     compactTurnUndo: step("compact", () => calls.push("reinstate-turn-undo")),
     expireReadiedSpell: step("readied", null),
+    raiseRepeatSaves: step("repeat-saves", () => calls.push("restore-repeat-saves")),
     logTurnEnd: (round) => {
       calls.push(`log:${round}`);
       return "log-1";
@@ -64,6 +65,8 @@ describe("runEndTurn", () => {
     expect(calls).toEqual([]);
   });
 
+  // The shared turn raises no solo repeat-save strip (#1333): the fight's own
+  // RepeatSavePrompts ask there, never two prompts for one save.
   it("your shared turn: refills, counts down, asks, hands on, announces; no solo round", () => {
     const { p, calls } = ports({ encounter: () => ({ isMyTurn: true, round: 2 }) });
     runEndTurn(p);
@@ -89,6 +92,7 @@ describe("runEndTurn", () => {
       "advance",
       "boundary:turn-start",
       "readied",
+      "repeat-saves",
       "log:5",
     ]);
     expect(p.announce).toHaveBeenCalledWith([
@@ -103,6 +107,7 @@ describe("runEndTurn", () => {
       "remove-log:log-1",
       "restore-per-turn",
       "restore-timers",
+      "restore-repeat-saves",
       "restore-boundary:turn-start",
       "restore-boundary:turn-end",
       "prompts:0",

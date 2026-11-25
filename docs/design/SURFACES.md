@@ -165,6 +165,7 @@ Kinds: `route` page · `panel` sheet tab / creation step · `tabs` tab bar · `d
 | `route:/legal`                                                     | Other      | todo   |
 | `route:/login`                                                     | Other      | todo   |
 | `route:/settings`                                                  | Other      | todo   |
+| `dialog:app/ShapeGateScreen`                                       | Shell      | todo   |
 | `dialog:app/shell/CommandPalette`                                  | Shell      | todo   |
 | `dialog:components/shared/ConfirmDialog`                           | Shell      | todo   |
 | `dialog:components/shared/ModalShell`                              | Shell      | todo   |

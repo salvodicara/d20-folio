@@ -18,6 +18,7 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { resolveDamageIntake, type DamageInstance } from "@/lib/damage-intake";
 import { effectiveDoc, effectsOnTarget } from "@/lib/play/effective-doc";
@@ -902,7 +903,16 @@ function writePeerCombatEffect(
 ): boolean {
   const effect = peerCombatEffectPatch(before, after);
   if (Object.keys(effect).length === 0) return false;
-  txn.set(ref, { ...effect, updatedAt: serverTimestamp() }, { merge: true });
+  // #1320 — the play shape rides every write (a merge keeps the rest of `playState`).
+  txn.set(
+    ref,
+    {
+      ...effect,
+      playState: { version: PLAY_STATE_VERSION },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
   return true;
 }
 

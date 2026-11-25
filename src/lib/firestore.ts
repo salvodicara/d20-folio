@@ -3,6 +3,8 @@
  * Collection path: /users/{uid}/characters/{charId}
  */
 
+import { closeShapeGate, writesFenced } from "@/lib/shape-gate";
+import { characterShapeTooNew } from "@/lib/shape-numbers";
 import {
   collection,
   doc,
@@ -530,7 +532,10 @@ export function subscribeToCharacter(
   uid: string,
   charId: string,
   callback: (doc: CharacterDoc | null, meta: { hasPendingWrites: boolean }) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  /** #1320 — the stored parent has a newer `schema` than this client knows: it is
+   *  never parsed (an old parser must not read a newer shape). */
+  onTooNew?: (meta: { hasPendingWrites: boolean }) => void
 ): () => void {
   let token = 0;
   let cancelled = false;
@@ -546,6 +551,13 @@ export function subscribeToCharacter(
       const meta = { hasPendingWrites: snap.metadata.hasPendingWrites };
       if (!snap.exists()) {
         callback(null, meta);
+        return;
+      }
+      if (characterShapeTooNew(snap.data())) {
+        // A reader with no handler of its own (a DM's view of a member) must not go
+        // silent: this client stops writing and asks for a reload.
+        if (onTooNew) onTooNew(meta);
+        else closeShapeGate({ rescue: "none" });
         return;
       }
       void parseStoredCharacter(snap.id, snap.data())
@@ -755,6 +767,9 @@ export function createDebouncedSave(
     queued: CharacterDoc,
     callbacks?: DebouncedSaveCallbacks
   ): Promise<void> {
+    // #1320 — a newer shape is on the server: nothing leaves, and no generation is
+    // burned. The payload stays pending, so it is the rescue copy's unsaved edit.
+    if (writesFenced()) return Promise.resolve();
     // Allocate the generation HERE — the write is actually going out now.
     const data = allocateRevision ? { ...queued, revision: allocateRevision() } : queued;
     callbacks?.onSend?.(data);
@@ -975,6 +990,8 @@ export async function restoreCharacterSnapshot(
   source: WholeSheetSource
 ): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
+  if (writesFenced())
+    throw new Error("shape-fenced: a newer version of the sheet is stored");
   if (!Number.isInteger(baseRevision) || baseRevision < 0) {
     throw new TypeError("Invalid character document: invalid-revision");
   }

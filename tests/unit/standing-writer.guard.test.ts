@@ -51,7 +51,7 @@ describe("a state a spell leaves on the creature it names", () => {
 
   it("names the ones cast before a fight (no encounter carries them yet)", () => {
     expect(outOfFight.map((s) => s.id).sort()).toEqual(
-      ["foresight", "heroes-feast", "wind-walk"].filter((id) =>
+      ["foresight", "heroes-feast", "regenerate", "wind-walk"].filter((id) =>
         named.some((s) => s.id === id)
       )
     );

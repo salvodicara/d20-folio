@@ -2603,14 +2603,19 @@
   color: var(--text);
   font-size: var(--fs-sm);
 }
-.fui .f-sheet .f-btn:not([aria-disabled="true"]):hover,
-.fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover {
-  border-color: var(--hover-gold);
-  box-shadow:
-    0 0 0 1px var(--glow-gold-rim),
-    0 0 16px -2px var(--glow-gold);
-  transform: translateY(-1px);
-  filter: brightness(1.18);
+/* Only a real hover lights: a tap on a touch screen leaves `:hover` stuck where the
+   finger was, and a chip shifted under it looked picked (#1333). A pick is
+   `aria-pressed`. */
+@media (hover: hover) {
+  .fui .f-sheet .f-btn:not([aria-disabled="true"]):hover,
+  .fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover {
+    border-color: var(--hover-gold);
+    box-shadow:
+      0 0 0 1px var(--glow-gold-rim),
+      0 0 16px -2px var(--glow-gold);
+    transform: translateY(-1px);
+    filter: brightness(1.18);
+  }
 }
 .fui .f-sheet .f-btn:not([aria-disabled="true"]):active,
 .fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):active {

@@ -24,6 +24,7 @@ import { PlayConcentrationSave } from "@/domains/play/ui/PlayConcentrationSave";
 import { PlayHitReaction } from "@/domains/play/ui/PlayHitReaction";
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
+import { SoloRepeatSavePrompts } from "@/domains/combat/ui/SoloRepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
@@ -509,6 +510,7 @@ function PlayHeader({
             <PlayHitReaction />
             <PlayConcentrationSave doc={doc} />
             {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
+            <SoloRepeatSavePrompts />
             {fight && (
               <HelpedCheck
                 campaignId={fight.campaignId}

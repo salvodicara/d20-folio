@@ -19,6 +19,7 @@
  * Constitution modifier if you are Bloodied and have at least 1 Hit Point."
  */
 import { describe, it, expect } from "vitest";
+import { getSpellById } from "@/data/spells";
 import { asRaceId } from "@/data/srd-names";
 import { asAlignmentId } from "@/lib/lore-utils";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
@@ -257,6 +258,66 @@ describe("resolveStartOfTurnRegen — Heroism per-turn temp HP (real spell data)
 
   it("FAIL-BEFORE: with the toggle OFF, Heroism contributes no entry", () => {
     expect(resolveStartOfTurnRegen(heroismCaster(false))).toEqual([]);
+  });
+});
+
+// ─── Regenerate — 1 HP at the start of each of the target's turns ───────────
+// SRD 5.2.1: "For the duration [1 hour], the target regains 1 Hit Point at the
+// start of each of its turns." No minimum-HP gate.
+
+describe("Regenerate: 1 Hit Point at the start of each of the target's turns", () => {
+  it("the spell gives its target the regain for 1 hour, with no minimum-HP gate", () => {
+    const state = getSpellById("regenerate")?.grants?.find(
+      (g) => g.type === "while-active"
+    );
+    expect(state).toMatchObject({
+      type: "while-active",
+      activeKey: "spell-regenerate",
+      recipient: "selected",
+      duration: { kind: "timed", minutes: 60 },
+      grants: [
+        {
+          type: "regen-at-turn-start",
+          amount: "1",
+          condition: "always",
+          requiresMinHp: false,
+        },
+      ],
+    });
+  });
+
+  function regenerated(current: number): CharacterDoc {
+    const effect: ActiveCombatEffect = {
+      id: "regen-target",
+      actor: { kind: "monster", combatantId: "caster" },
+      target: { kind: "monster", combatantId: "target" },
+      source: { kind: "spell", id: "regenerate", actionId: "spell-regenerate" },
+      payload: { kind: "grant-group", activeKey: "spell-regenerate" },
+      duration: { kind: "encounter" },
+    };
+    return {
+      ...MOCK_CHARACTER,
+      session: {
+        ...MOCK_CHARACTER.session,
+        hp: { ...MOCK_CHARACTER.session.hp, current },
+        activeFeatures: [],
+        encounterEffects: [effect],
+      },
+    };
+  }
+
+  it("the turn start offers a 1 HP heal, even at 0 HP", () => {
+    for (const current of [10, 0]) {
+      expect(resolveStartOfTurnRegen(regenerated(current))).toEqual([
+        {
+          sourceId: "combat-effect:regen-target",
+          amount: 1,
+          condition: "always",
+          active: true,
+          asTempHp: false,
+        },
+      ]);
+    }
   });
 });
 

@@ -18,6 +18,7 @@
     "button": "Cronologia",
     "saving": "Salvataggio…",
     "saveNow": "Salva istantanea",
-    "saveError": "Impossibile salvare l'istantanea."
+    "saveError": "Impossibile salvare l'istantanea.",
+    "reasonRescue": "Prima di applicare le modifiche conservate"
   }
 }

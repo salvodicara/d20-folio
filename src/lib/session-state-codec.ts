@@ -45,6 +45,7 @@ export interface CompactSessionState extends Record<string, unknown> {
   conditions?: string[];
   concentrationConditions?: ReadonlyArray<string>;
   conditionSources?: Record<string, string>;
+  conditionOrigins?: Record<string, string>;
   seesSource?: Record<string, boolean>;
   zoneSpent?: Record<string, number>;
   ammoSpent?: Record<string, number>;
@@ -118,6 +119,7 @@ export const KNOWN_STATE_KEYS: readonly string[] = [
   "conditions",
   "concentrationConditions",
   "conditionSources",
+  "conditionOrigins",
   "seesSource",
   "ammoSpent",
   "zoneSpent",
@@ -381,6 +383,9 @@ export function sessionToState(session: SessionState): CompactSessionState {
   }
   if (session.conditionSources && Object.keys(session.conditionSources).length > 0) {
     state.conditionSources = session.conditionSources;
+  }
+  if (session.conditionOrigins && Object.keys(session.conditionOrigins).length > 0) {
+    state.conditionOrigins = session.conditionOrigins;
   }
   if (session.seesSource && Object.keys(session.seesSource).length > 0) {
     state.seesSource = session.seesSource;
@@ -946,6 +951,8 @@ export function stateToSession(state: Record<string, unknown>): Partial<SessionS
   }
   const conditionSources = typedRecord(state.conditionSources, "string");
   if (conditionSources) session.conditionSources = conditionSources;
+  const conditionOrigins = typedRecord(state.conditionOrigins, "string");
+  if (conditionOrigins) session.conditionOrigins = conditionOrigins;
   const seesSource = typedRecord(state.seesSource, "boolean");
   if (seesSource) session.seesSource = seesSource;
   const ammoSpent = typedRecord(state.ammoSpent, "number");

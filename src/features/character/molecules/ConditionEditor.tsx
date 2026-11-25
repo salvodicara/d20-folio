@@ -50,6 +50,8 @@ export function ConditionEditor({
   immunities,
   statuses = [],
   onToggleStatus,
+  origins = [],
+  onOrigin,
 }: {
   conditions: string[];
   /** Condition ids the creature is immune to: never offered in the picker
@@ -69,6 +71,16 @@ export function ConditionEditor({
   /** Lasting statuses offered in the same picker, shown as chips while they run. */
   statuses?: ReadonlyArray<StatusOptionVM>;
   onToggleStatus?: (statusId: string) => void;
+  /** «Da cosa?» (#1333, cockpit-only): for each active condition a spell imposes
+   *  with an end-of-turn repeat save, the spells to name and the one named (null:
+   *  none, «Other»). An optional note under the chips; it leaves with the condition. */
+  origins?: ReadonlyArray<{
+    conditionId: string;
+    label: string;
+    options: ReadonlyArray<{ id: string; label: string }>;
+    chosen: string | null;
+  }>;
+  onOrigin?: (conditionId: string, origin: string | null) => void;
 }) {
   const { t, i18n } = useTranslation();
   const { language: locale } = useLocale();
@@ -146,6 +158,35 @@ export function ConditionEditor({
           </span>
         ) : null
       )}
+      {onOrigin &&
+        origins
+          .filter((o) => active.has(o.conditionId))
+          .map((o) => (
+            <div
+              key={o.conditionId}
+              role="group"
+              aria-label={t("play.conditions.fromWhat", { name: o.label })}
+              className="flex w-full flex-wrap items-center gap-1.5"
+            >
+              <span className="text-xs text-text-secondary">
+                {t("play.conditions.fromWhat", { name: o.label })}
+              </span>
+              {[...o.options, { id: null, label: t("report.types.other") }].map(
+                (option) => (
+                  <button
+                    key={option.id ?? "other"}
+                    type="button"
+                    className="status-badge sb-toggle"
+                    data-kind={o.chosen === option.id ? "active" : undefined}
+                    aria-pressed={o.chosen === option.id}
+                    onClick={() => onOrigin(o.conditionId, option.id)}
+                  >
+                    <span className="sb-label">{option.label}</span>
+                  </button>
+                )
+              )}
+            </div>
+          ))}
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <button type="button" className="co-add">
