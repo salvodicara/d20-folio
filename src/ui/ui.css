@@ -3190,6 +3190,137 @@
 .fui .f-sheet .f-char-acts > .f-btn {
   text-decoration: none;
 }
+/* The phone's slim strip (D&D Beyond's phone header strip): once the band has scrolled
+   away, one row sticks to the top with the Hit Points, the AC and Danni / Cura. It is
+   in the flow but takes no room (the negative margins), and keeps its box while
+   hidden, so showing it never moves the page; content scrolled under it stays
+   reachable, and focus or a jump lands below it (scroll-margin). */
+.fui .f-strip {
+  display: none;
+}
+@media (max-width: 800px) {
+  .fui .f-sheet {
+    --strip-h: 56px;
+    --strip-pad: 24px;
+  }
+  .fui .f-strip {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    height: calc(var(--strip-h) + env(safe-area-inset-top, 0px));
+    margin: 0 calc(-1 * var(--strip-pad))
+      calc(-1 * var(--strip-h) - env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) var(--strip-pad) 0;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--bar);
+    box-shadow: 0 8px 24px var(--bar-shadow);
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+  }
+  /* the grid's gap is not doubled around the strip's empty row */
+  .fui .f-strip + * {
+    margin-top: -24px;
+  }
+  .fui .f-strip:not([data-on]) {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  /* the page's own controls, not the strip's (a page-wide scroll-padding would
+     scroll the page when a tap focuses the strip itself), never inside a pane */
+  .fui .f-sheet:has(> .f-strip[data-on]) > :not(.f-strip) :not(dialog, dialog *) {
+    scroll-margin-top: calc(var(--strip-h) + 8px);
+  }
+  .fui .f-strip-hp,
+  .fui .f-strip-ac {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: none;
+    color: var(--phone-hp-max);
+    font: 400 var(--fs-sm) var(--font-text);
+    line-height: 44px;
+    white-space: nowrap;
+  }
+  .fui button.f-strip-hp,
+  .fui button.f-strip-ac {
+    cursor: pointer;
+  }
+  .fui .f-strip-hp b,
+  .fui .f-strip-ac b {
+    font-size: var(--fs-phone-num);
+    font-weight: 700;
+    color: var(--white);
+  }
+  .fui .f-strip-hp b[data-hp="ok"] {
+    color: var(--hp);
+  }
+  .fui .f-strip-hp b[data-hp="low"] {
+    color: var(--hp-y);
+  }
+  .fui .f-strip-hp b[data-hp="bad"] {
+    color: var(--hp-r);
+  }
+  .fui .f-strip .f-lbl {
+    margin: 0;
+    font-weight: 700;
+    color: var(--phone-label);
+  }
+  .fui .f-strip .f-char-temp {
+    font-weight: 700;
+    color: var(--temp);
+  }
+  .fui .f-strip-acts {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .fui .f-strip-acts > .f-btn {
+    min-height: 44px;
+    padding: 0 12px;
+    border-color: var(--frame);
+    color: var(--text-hi);
+  }
+}
+@media (max-width: 640px) {
+  .fui .f-sheet {
+    --strip-pad: 16px;
+  }
+}
+/* a narrow phone (360px): the same row, tighter, so «Cura» still fits */
+@media (max-width: 400px) {
+  .fui .f-strip {
+    gap: 4px;
+  }
+  .fui .f-strip-hp,
+  .fui .f-strip-ac {
+    padding: 0 2px;
+  }
+  .fui .f-strip-acts {
+    gap: 4px;
+  }
+  .fui .f-strip-acts > .f-btn {
+    gap: 4px;
+    padding: 0 8px;
+  }
+}
+@media (max-width: 800px) and (prefers-reduced-motion: reduce) {
+  .fui .f-strip {
+    transition: none;
+  }
+  .fui .f-strip:not([data-on]) {
+    transform: none;
+  }
+}
 /* the phone's own top bar: back, then who */
 .fui .f-tb-page {
   display: none;
@@ -3278,6 +3409,7 @@
       "hp hp"
       "stats stats"
       "acts acts"
+      "rests rests"
       "down down"
       "notes notes"
       "chips chips"
@@ -3299,8 +3431,27 @@
     align-self: start;
     font-size: var(--fs-sm);
   }
-  /* the phone header has no header buttons (prototype x-play-m) */
+  /* the rests one tap away (D&D Beyond's phone header: Short / Long Rest), two a
+     row; the campaign stays off the phone band, as before */
   .fui .f-sheet .f-char-acts {
+    grid-area: rests;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .fui .f-sheet .f-char-acts > .f-btn {
+    min-height: 44px;
+    padding: 0 8px;
+  }
+  /* Short and Long rest pair on the first row, whatever else the row holds */
+  .fui .f-sheet .f-char-acts > [data-rest] {
+    order: -1;
+  }
+  .fui .f-sheet .f-char-acts > .f-char-camp {
+    display: none;
+  }
+  .fui .f-sheet .f-char-acts:not(:has(> button)) {
     display: none;
   }
   /* the states stay chips in a row, not full-width pills */
@@ -3828,16 +3979,6 @@
 .fui .f-rest-lines > li {
   padding-left: 16px;
   border-left: 2px solid var(--line-strong);
-}
-.fui .f-rest-phone {
-  display: none;
-}
-@media (max-width: 800px) {
-  .fui .f-rest-phone {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
 }
 .fui .f-rest-dice {
   grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
@@ -6581,10 +6722,12 @@
   font-size: var(--fs-prose);
   line-height: 1.45;
 }
-.fui .f-char-hp-acts > .f-btn:first-child .f-ic {
+.fui .f-char-hp-acts > .f-btn:first-child .f-ic,
+.fui .f-strip-acts > .f-btn:first-child .f-ic {
   color: var(--hp-hi);
 }
-.fui .f-char-hp-acts > .f-btn:last-child .f-ic {
+.fui .f-char-hp-acts > .f-btn:last-child .f-ic,
+.fui .f-strip-acts > .f-btn:last-child .f-ic {
   color: var(--heal);
 }
 .fui .f-sheet .f-char-hp-acts .f-ic {

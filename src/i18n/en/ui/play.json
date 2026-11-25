@@ -1,6 +1,7 @@
 {
   "play": {
     "hpTitle": "Hit points",
+    "strip": "Hit points and AC",
     "temp": "+{{count}} temporary",
     "proficiency": "Proficiency",
     "effects": "Effects",
