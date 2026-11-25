@@ -9,6 +9,7 @@ import {
   signOut as firebaseSignOut,
   type User,
 } from "firebase/auth";
+import { clearAccountDrafts } from "@/lib/local-draft";
 import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "./firebase";
 import { useAuthStore, type UserProfile } from "@/stores/authStore";
@@ -93,6 +94,9 @@ export async function signOut(): Promise<void> {
   store.setLoading(true);
 
   try {
+    // This account's in-progress drafts never outlive its session on this device.
+    const uid = store.user?.uid;
+    if (uid) clearAccountDrafts(uid);
     await firebaseSignOut(auth);
     store.reset();
   } catch (error: unknown) {
