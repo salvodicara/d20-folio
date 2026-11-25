@@ -96,6 +96,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
+import { PlayFeatures } from "./PlayFeatures";
 import { END_TURN_WAITING, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
@@ -192,11 +193,15 @@ function usePlayTurn(doc: CharacterDoc): ActionTurnState {
   );
 }
 
+export type CentreTab = "actions" | "spells" | "inventory" | "features";
+
 export function PlayCentre({
   doc,
   locale,
   campaign = null,
   onShortRest,
+  tab: drivenTab,
+  onTab,
 }: {
   doc: CharacterDoc;
   locale: Locale;
@@ -204,9 +209,14 @@ export function PlayCentre({
   campaign?: CampaignDoc | null;
   /** Opens the Short Rest (the advice line's «riposo breve»); absent read-only. */
   onShortRest?: () => void;
+  /** The open tab when the screen drives it (the phone's «Sezioni» opens Features). */
+  tab?: CentreTab;
+  onTab?: (tab: CentreTab) => void;
 }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<"actions" | "spells" | "inventory">("actions");
+  const [ownTab, setOwnTab] = useState<CentreTab>("actions");
+  const tab = drivenTab ?? ownTab;
+  const setTab = onTab ?? setOwnTab;
   const turn = usePlayTurn(doc);
   const spells = playSpellsView(doc, locale, turn);
   // A tab lands with its content: Spells only for a character with spells.
@@ -216,6 +226,8 @@ export function PlayCentre({
       ? [{ id: "spells" as const, label: t("character.tabs.spells") }]
       : []),
     { id: "inventory" as const, label: t("character.tabs.inventory") },
+    // D&D Beyond's next tab: Features & Traits
+    { id: "features" as const, label: t("character.tabs.features") },
   ];
   const shown = items.some((i) => i.id === tab) ? tab : "actions";
   return (
@@ -227,6 +239,8 @@ export function PlayCentre({
           <ActionsPane doc={doc} locale={locale} turn={turn} onShortRest={onShortRest} />
         ) : shown === "spells" ? (
           <SpellsPane doc={doc} view={spells} locale={locale} />
+        ) : shown === "features" ? (
+          <PlayFeatures doc={doc} locale={locale} />
         ) : (
           <InventoryPane doc={doc} locale={locale} turn={turn} />
         )}
@@ -526,7 +540,7 @@ function InventoryPane({
           onClose={() => setOpened(null)}
         />
       )}
-      {adding && <PlayAddItem onClose={() => setAdding(false)} />}
+      {adding && <PlayAddItem locale={locale} onClose={() => setAdding(false)} />}
       {coinsOpen && (
         <PlayCoinPane
           coins={view.coins}

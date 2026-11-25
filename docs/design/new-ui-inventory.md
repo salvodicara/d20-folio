@@ -23,15 +23,16 @@ players opt in one by one with the per-user toggle (#1233).
 | Defenses                                                                             | Partial: show, temporary add/remove, re-pick (`PlayDefenses`); no permanent edits             |
 | Undo                                                                                 | Partial: «Annulla» on each action's toast; no redo, no ⌘Z                                     |
 | Number panes: breakdown and override (AC, init, speed, PB, abilities, saves, skills) | Present: tap the number (`PlayNumberPane`); HP max, passives, senses missing                  |
-| Features & Traits tab                                                                | Missing                                                                                       |
+| Features & Traits tab                                                                | Partial: read-only «Privilegi» tab (`PlayFeatures`); no spend, notes, homebrew add, re-pick   |
 | Bio (portrait edit, story, alignment, languages)                                     | Missing (portrait shown read-only)                                                            |
 | XP                                                                                   | Missing (read only for the "level up ready" note)                                             |
 | Resource notes and conversions                                                       | Missing (one slot→tracker refill exists)                                                      |
-| Proficiencies (armor, weapons, tools, languages), skill edits                        | Missing (skill proficiency dot only)                                                          |
+| Proficiencies (armor, weapons, tools, languages), skill edits                        | Partial: read-only lists (`PlayProficiencies`); no armor/weapon overrides, no skill dot edits |
 | Senses and other speeds                                                              | Partial: walking speed only                                                                   |
 | Items: quantity, equip, remove                                                       | Present: the item pane (`PlayItemPane`), opened from the item's name                          |
 | Items: add from the catalogue                                                        | Present: «Aggiungi un oggetto» (`PlayAddItem`), the Compendium's own list                     |
-| Items: custom (homebrew) item, sell                                                  | Missing                                                                                       |
+| Items: custom (homebrew) item                                                        | Present: «Oggetto personalizzato» in «Aggiungi un oggetto» (`PlayCustomItem`)                 |
+| Items: sell                                                                          | Missing                                                                                       |
 | Coins: add, take                                                                     | Present: the coin pane (`PlayCoinPane`), opened from the coin row                             |
 | Add spells, custom spells, wizard spellbook copy                                     | Missing (prepare and cantrip swap exist)                                                      |
 | Share, PDF, snapshots history                                                        | Partial: JSON export from the roster only                                                     |

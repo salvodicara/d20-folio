@@ -137,3 +137,59 @@ describe("a CON pin moves max HP (#1318)", () => {
     expect(live().character.hp.max).toBe(before);
   });
 });
+
+describe("max HP is hand-set as its input (#1315): a bonus over the derived max", () => {
+  const derived = () => {
+    load((doc) => {
+      doc.character.hpBonus = undefined;
+      doc.character.hp = { max: deriveMaxHp(doc.character) };
+    });
+    return live().character.hp.max;
+  };
+
+  it("a computed max HP has no stored value", () => {
+    derived();
+    expect(storedOverride(live().character, { kind: "maxHp" })).toBeNull();
+  });
+
+  it("a hand-set max is the sheet's max, stored as the bonus, and explained", () => {
+    const max = derived();
+    setNumberOverride({ kind: "maxHp" }, max + 7, "HP");
+    expect(live().character.hpBonus).toBe(7);
+    expect(live().character.hp.max).toBe(max + 7);
+    expect(storedOverride(live().character, { kind: "maxHp" })).toBe(max + 7);
+    expect(sheetNumbers(live()).maxHp.total).toBe(max + 7);
+  });
+
+  it("the bonus survives a CON change: the max still moves with it", () => {
+    const max = derived();
+    setNumberOverride({ kind: "maxHp" }, max + 7, "HP");
+    const con = live().character.abilityScores.CON;
+    setNumberOverride({ kind: "ability", ability: "CON" }, con + 2, "CON");
+    expect(live().character.hp.max).toBe(deriveMaxHp(live().character));
+    expect(live().character.hp.max).toBeGreaterThan(max + 7);
+  });
+
+  it("reset drops the bonus and re-derives the max; undo puts the hand-set max back", () => {
+    const max = derived();
+    setNumberOverride({ kind: "maxHp" }, max + 7, "HP");
+    setNumberOverride({ kind: "maxHp" }, null, "HP");
+    expect(live().character.hpBonus).toBeUndefined();
+    expect(live().character.hp.max).toBe(max);
+    useUndoStore.getState().undo();
+    expect(live().character.hp.max).toBe(max + 7);
+    expect(live().character.hpBonus).toBe(7);
+  });
+});
+
+it("a stored max that differs from the derived one counts as hand-set too (as its breakdown says)", () => {
+  load((doc) => {
+    doc.character.hpBonus = undefined;
+    doc.character.hp = { max: deriveMaxHp(doc.character) - 4 };
+  });
+  const c = live().character;
+  expect(storedOverride(c, { kind: "maxHp" })).toBe(c.hp.max);
+  expect(isHandSet(sheetNumbers(live()).maxHp.parts)).toBe(true);
+  setNumberOverride({ kind: "maxHp" }, null, "HP");
+  expect(live().character.hp.max).toBe(deriveMaxHp(live().character));
+});

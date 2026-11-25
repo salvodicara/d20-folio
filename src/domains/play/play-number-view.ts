@@ -38,6 +38,8 @@ export function playNumberView(
         return n.speed;
       case "proficiency":
         return n.proficiencyBonus;
+      case "maxHp":
+        return n.maxHp;
       case "ability":
         return n.abilities[key.ability];
       case "save":
