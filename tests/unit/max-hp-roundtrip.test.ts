@@ -4,7 +4,7 @@ import {
   parseCharacterEnvelope,
 } from "@/lib/character-codec";
 import { minimizeCharacter, rehydrateCharacter } from "@/lib/character-minimal";
-import { computeCharacterMaxHp } from "@/lib/aggregate-character";
+import { computeCharacterMaxHp, effectiveMaxHp } from "@/lib/aggregate-character";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterDoc } from "@/types/character";
 
@@ -30,6 +30,10 @@ function reload(doc: CharacterDoc) {
   if (!parsed.ok) throw new Error(parsed.error);
   return parsed.character;
 }
+
+/** The max HP the sheet SHOWS after a reload (stored base + live one-shot grants). */
+const shownMax = (doc: CharacterDoc) =>
+  effectiveMaxHp(reload(doc), MOCK_CHARACTER.session);
 
 describe("max HP round-trip — a per-level HP grant survives a reload", () => {
   it("the by-the-book max of a Tough Monk 3 is 30", () => {
@@ -74,5 +78,34 @@ describe("max HP round-trip — a DERIVED subclass HP grant survives a reload", 
 
   it("a saved and reloaded Draconic Sorcerer 3 keeps 23 max HP, not the bare 20", () => {
     expect(reload(draconicSorcerer()).hp.max).toBe(23);
+  });
+});
+
+// A Dwarf Monk 3 with CON 14: 24 average + Dwarven Toughness (a SPECIES trait, +1
+// per level) = 27. The trait comes from the species, not from features[].
+const dwarfMonk = (): CharacterDoc => ({
+  ...MOCK_CHARACTER,
+  character: {
+    ...MOCK_CHARACTER.character,
+    race: "dwarf",
+    classes: [{ classId: "monk", level: 3 }],
+    abilityScores: { ...MOCK_CHARACTER.character.abilityScores, CON: 14 },
+    features: [],
+    humanOriginFeat: "",
+    bgFeat: "",
+    hp: { max: 27 },
+  },
+});
+
+describe("max HP round-trip — the sheet shows the by-the-book max, counted once", () => {
+  it("a reloaded Tough Monk 3 shows 30", () => {
+    expect(shownMax(toughMonk(30))).toBe(30);
+  });
+  it("a reloaded Draconic Sorcerer 3 shows 26 (23 + the one-shot +3)", () => {
+    expect(shownMax(draconicSorcerer())).toBe(26);
+  });
+  it("a reloaded Dwarf Monk 3 shows 27", () => {
+    expect(reload(dwarfMonk()).hp.max).toBe(27);
+    expect(shownMax(dwarfMonk())).toBe(27);
   });
 });
