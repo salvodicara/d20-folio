@@ -834,7 +834,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     // up to CR 1/4, «Scelte da completare» owes 4 forms, and the level-up to 4 asks
     // for 6. Visit `/characters/scn-druid-forms-owed`.
     name: "Rowan, the Unsettled",
-    raceId: "human",
+    raceId: "halfling",
     classId: "druid",
     level: 3,
     background: "sage",
@@ -850,7 +850,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     // A Druid 4 with its six known forms: Wild Shape offers only those, and the Long
     // Rest may swap one. Visit `/characters/scn-druid-known-forms`.
     name: "Wren, the Six-Shaped",
-    raceId: "human",
+    raceId: "halfling",
     classId: "druid",
     level: 4,
     background: "sage",
