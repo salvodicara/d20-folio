@@ -1,6 +1,11 @@
 /**
- * A fight without a campaign, on the Play screen (the classic turn band's solo mode,
- * on the rules lane's `turn-model`). BG3's turn-based toggle sits where End Turn goes:
+ * The turn's own controls on the Play screen, on the rules lane's `turn-model`. A fight
+ * without a campaign gets them all (the classic turn band's solo mode). In a campaign
+ * fight, on my turn, the turn's prompts are the same as the classic sheet's: End Turn
+ * asks about a maintained state first and then passes the turn through the classic End
+ * Turn (`passTurn`), «Rialzati» when Prone, the Wish note. The fight itself is the DM's
+ * (no start or end here), and an extra turn steps through the DM's turn order, so the
+ * extra-turn offer and the Time Stop count stay solo, as on the classic sheet. BG3's turn-based toggle sits where End Turn goes:
  * «Inizia il combattimento» while exploring; then the round, the lit «Fine Turno»
  * (BG3's End Turn at the end of the action area), «Rialzati» when Prone, and
  * «Fine Combattimento» tucked behind a confirm (D&D Beyond's End Combat behind NEXT).
@@ -39,7 +44,18 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { Button, Dialog, Field } from "@/ui";
 
-export function useSoloTurn(locale: Locale) {
+/** The sheet is in a campaign: its fight's End Turn is the classic one that passes the
+ *  turn, and `passing` says it is still waiting for the fight to reach the sheet (the
+ *  button shows it works). A campaign never runs the solo fight, even before its own
+ *  fight reaches the turn model. */
+export interface PassTurn {
+  passTurn: () => void;
+  passing?: boolean;
+  /** The sheet has a campaign or a shared fight: never the solo fight's controls. */
+  inCampaign: boolean;
+}
+
+export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
   const { t } = useTranslation();
   // re-read the model when the stores it reads change
   useCombatStore((s) => s.round);
@@ -55,14 +71,18 @@ export function useSoloTurn(locale: Locale) {
   const [confirmEnd, setConfirmEnd] = useState(false);
   const [turns, setTurns] = useState("");
   const extend = useExtendMaintained(locale);
-  const solo = view.mode === "solo";
+  const solo = view.mode === "solo" && !campaign?.inCampaign;
+  // A campaign fight, my turn: the turn's prompts, never the fight's start or end.
+  const myTurn = view.mode === "encounter" && view.phase === "my-turn" && view.canEndTurn;
 
   // End Turn asks first; the turn ends once nothing is left to answer. A state kept
   // without its extend action stays lit (the player owns the call): End Turn's own
   // re-ask is dropped.
   const askOrEnd = (left: MaintainedPrompt[]) => {
     setPrompts(left);
-    if (left.length === 0) endTurn(t);
+    if (left.length > 0) return;
+    if (myTurn && campaign) campaign.passTurn();
+    else endTurn(t);
   };
   const answer = (m: MaintainedPrompt) =>
     askOrEnd(prompts.filter((x) => x.activeKey !== m.activeKey));
@@ -90,47 +110,64 @@ export function useSoloTurn(locale: Locale) {
   };
   const active = solo && (fighting || view.round > 1);
 
-  const controls = solo && alive && view.canStartCombat && (
-    <>
-      {active && view.standUp && (
-        <Button
-          kind="ghost"
-          disabled={!view.standUp.possible}
-          onClick={() => standUp(t, locale)}
-        >
-          {t("combat.standAction", { cost: localeDistance(view.standUp.costFt, locale) })}
-        </Button>
-      )}
-      {active ? (
-        <>
-          <Button
-            kind="primary"
-            icon="u-next"
-            data-end-turn=""
-            onClick={() => askOrEnd(maintenanceDue())}
-          >
-            {t("play.endTurn")}
-          </Button>
-          <Button kind="quiet" onClick={() => setConfirmEnd(true)}>
-            {t("fight.end")}
-          </Button>
-        </>
-      ) : (
-        <Button
-          kind="ghost"
-          onClick={() => {
-            startCombat();
-            setFighting(true);
-            setAmmo(0);
-          }}
-        >
-          {t("play.solo.start")}
-        </Button>
-      )}
-    </>
+  const standUpButton = view.standUp && (
+    <Button
+      kind="ghost"
+      disabled={!view.standUp.possible}
+      onClick={() => standUp(t, locale)}
+    >
+      {t("combat.standAction", { cost: localeDistance(view.standUp.costFt, locale) })}
+    </Button>
+  );
+  const endTurnButton = (
+    <Button
+      kind="primary"
+      icon="u-next"
+      data-end-turn=""
+      busy={myTurn && campaign?.passing}
+      onClick={() => askOrEnd(maintenanceDue())}
+    >
+      {t("play.endTurn")}
+    </Button>
   );
 
-  const notes = solo && (
+  const controls = myTurn ? (
+    <>
+      {alive && standUpButton}
+      {endTurnButton}
+    </>
+  ) : (
+    solo &&
+    alive &&
+    view.canStartCombat && (
+      <>
+        {active && standUpButton}
+        {active ? (
+          <>
+            {endTurnButton}
+            <Button kind="quiet" onClick={() => setConfirmEnd(true)}>
+              {t("fight.end")}
+            </Button>
+          </>
+        ) : (
+          <Button
+            kind="ghost"
+            onClick={() => {
+              startCombat();
+              setFighting(true);
+              setAmmo(0);
+            }}
+          >
+            {t("play.solo.start")}
+          </Button>
+        )}
+      </>
+    )
+  );
+
+  // In a campaign fight only my turn's own notes show (a maintained state's question,
+  // the Wish follow-up): the extra-turn offer and the Time Stop count are solo-only.
+  const notes = (solo || myTurn) && (
     <>
       {prompts.map((m) => {
         const bonus = m.maintainedBy.includes("bonus-extend");

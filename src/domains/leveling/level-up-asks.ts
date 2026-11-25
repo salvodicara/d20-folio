@@ -416,7 +416,11 @@ export function levelUpAsks(
           allowedLists: plan.widenedSpellLists,
           cantripsOnly: false,
           maxLevel: plan.maxSpellLevel,
-          exclude: new Set([...plan.existingSpellIds, ...a.newCantrips]),
+          exclude: new Set([
+            ...plan.existingSpellIds,
+            ...plan.alwaysPreparedGained,
+            ...a.newCantrips,
+          ]),
         },
         locale
       ).map((s) => ({ id: s.id, label: s.name })),
@@ -471,7 +475,7 @@ export function levelUpAsks(
     }
   }
   // SRD 5.2.1: "replace one of your cantrips with another [class] cantrip".
-  const knownCantrips = plan.canSwapSpell
+  const knownCantrips = plan.canSwapCantrip
     ? plan.knownNonCantripRefs.filter((s) => SPELL_LEVEL.get(s.srdId) === 0)
     : [];
   if (knownCantrips.length > 0) {

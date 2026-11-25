@@ -811,7 +811,7 @@ function UserRow({
           />
         </button>
         <div className="section-detail-wrap" data-open={open || undefined}>
-          <div className="section-detail" id={detailId}>
+          <div className="section-detail" id={detailId} inert={!open}>
             <div className="flex flex-col gap-3">
               <div className="text-xs text-text-muted">
                 <span>{t("admin.joined", { date: formatDate(u.createdAt) })}</span>

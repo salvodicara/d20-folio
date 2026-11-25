@@ -482,7 +482,11 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     {
       level: newClassLevel,
       maxSlotLevel: highestSpellSlotLevel(updated.classes),
-      bundleChoices: new Map(Object.entries(doc.session.grantBundleChoices ?? {})),
+      // This level's own bundle picks count too (the land chosen with Circle of the
+      // Land at 3): its spells arrive at this level, not one level later.
+      bundleChoices: new Map(
+        Object.entries({ ...doc.session.grantBundleChoices, ...bundlePicks })
+      ),
     }
   );
   if (grantedAlwaysPrepared.length > 0) {
