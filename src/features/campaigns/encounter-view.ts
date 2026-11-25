@@ -145,6 +145,8 @@ export interface EncounterCombatantView {
   liveUnknown?: true;
   /** The DM-only ambush flag (always false in a non-DM view — those rows are filtered). */
   hidden: boolean;
+  /** Monster: the DM shows the players its exact Hit Points. */
+  revealed?: boolean;
   // ── PC identity (present on `kind === "pc"`) ──
   memberUid?: string;
   characterId?: string;
@@ -248,6 +250,7 @@ export function buildEncounterView(
         tempHp: c.hp.temp,
         down: isDown(c),
         hidden: c.hidden ?? false,
+        revealed: c.revealed ?? false,
         srdId: c.srdId,
         creatureType: c.creatureType,
         portraitUrl: c.portraitUrl ?? null,

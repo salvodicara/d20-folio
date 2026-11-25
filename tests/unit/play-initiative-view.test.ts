@@ -20,6 +20,7 @@ function row(
     bands: [],
     chips: [],
     art: null,
+    marks: [],
     ...over,
   };
 }

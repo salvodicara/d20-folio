@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { DmHitStep } from "@/domains/combat/dm-hit-plan";
+import type { FightMark } from "@/domains/combat/fight-rows-view";
 import {
   addMonstersMove,
   changeMonsterHp,
@@ -17,6 +18,9 @@ import {
   setPcConditionMove,
   passCombatTurn,
   reopenLastCombat,
+  setCombatantHiddenMove,
+  setMonsterRevealedMove,
+  setMonsterSideMove,
   rollForMissing,
   rollIntoCombat,
   stepCombatTurnBack,
@@ -157,6 +161,30 @@ export const dmMoves = {
               active,
             })
           : Promise.resolve(null),
+  /** «Per i giocatori» on every chosen monster, as one move with one undo. */
+  show:
+    (
+      campaignId: string,
+      uid: string,
+      monsterIds: readonly string[],
+      mark: FightMark,
+      on: boolean
+    ) =>
+    () =>
+      together(
+        monsterIds.map(
+          (id) => () =>
+            mark === "hidden"
+              ? setCombatantHiddenMove(campaignId, { uid, id, hidden: on })
+              : mark === "revealed"
+                ? setMonsterRevealedMove(campaignId, { uid, monsterId: id, revealed: on })
+                : setMonsterSideMove(campaignId, {
+                    uid,
+                    monsterId: id,
+                    side: on ? "ally" : "enemy",
+                  })
+        )
+      ),
   add: (campaignId: string, uid: string, monsters: readonly MonsterInput[]) => () =>
     together(
       monsters.map((monster) => () => addMonstersMove(campaignId, { uid, monster }))

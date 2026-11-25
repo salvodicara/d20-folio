@@ -133,4 +133,60 @@ describe("fightRows", () => {
       { kind: "class", id: "wizard" },
     ]);
   });
+
+  describe("who the players see (the DM's «Per i giocatori»)", () => {
+    it("a revealed monster or an ally shows its HP numbers; any other creature only its band", () => {
+      const seen = fightRows(
+        [
+          foe("r1", "Ogre", 16, [40, 59], { revealed: true }),
+          foe("a1", "Guard", 14, [9, 11], { side: "ally" }),
+          foe("e1", "Bandit", 12, [8, 11]),
+        ],
+        null,
+        {},
+        "en"
+      );
+      expect(seen.map((r) => r.hp)).toEqual([
+        { current: 40, max: 59, temp: 0 },
+        { current: 9, max: 11, temp: 0 },
+        null,
+      ]);
+    });
+
+    it("a group shows its numbers only when every creature in it is revealed", () => {
+      const group = fightRows(
+        [
+          foe("w1", "Wolf 1", 13, [11, 11], { revealed: true }),
+          foe("w2", "Wolf 2", 13, [5, 11]),
+        ],
+        null,
+        {},
+        "en"
+      );
+      expect(group).toHaveLength(1);
+      expect(group[0]?.hp).toBeNull();
+    });
+
+    it("marks a line hidden, revealed or ally, counted on a group", () => {
+      const marked = fightRows(
+        [
+          foe("w1", "Wolf 1", 13, [11, 11], { hidden: true }),
+          foe("w2", "Wolf 2", 13, [11, 11], { hidden: true, revealed: true }),
+          foe("a1", "Guard", 10, [11, 11], { side: "ally" }),
+          pc("pc-kaela", "Kaela", 8, [17, 38]),
+        ],
+        null,
+        {},
+        "en"
+      );
+      expect(marked.map((r) => r.marks)).toEqual([
+        [
+          { mark: "hidden", count: 2 },
+          { mark: "revealed", count: 1 },
+        ],
+        [{ mark: "ally", count: 1 }],
+        [],
+      ]);
+    });
+  });
 });
