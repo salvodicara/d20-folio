@@ -468,7 +468,7 @@ export function levelUpAsks(
           // A cantrip a feature's own pick took (Thaumaturge's) is known already.
           exclude: new Set([
             ...plan.existingSpellIds,
-            ...Object.values(a.choicePicks.spell).flat(),
+            ...Object.values(choicePicks.spell).flat(),
           ]),
         },
         locale

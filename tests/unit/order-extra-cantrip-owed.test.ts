@@ -5,7 +5,7 @@
  * «Scelte da completare» counts it and asks it, and answering it clears the debt. A
  * sheet built with it owes nothing.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { getSpellById } from "@/data/spells";
 import { buildNewCharacter } from "@/lib/creation/build";
@@ -17,7 +17,9 @@ import {
 import { applyOwedClassPicks, classPickPool } from "@/lib/owed-class-picks";
 import { owedChoiceCount, unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
 import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
+import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterData, SessionState } from "@/types/character";
+import { makeCharacterDoc } from "./_helpers";
 
 const ORDERS = [
   {
@@ -98,4 +100,26 @@ describe("the order's extra cantrip, owed on a saved sheet", () => {
       expect(owedChoiceCount(next, session)).toBe(0);
     });
   }
+});
+
+describe("the owed order cantrip saved through the store («Salva»)", () => {
+  afterEach(() => {
+    useCharacterStore.getState().setCharacter(null);
+  });
+
+  it("stores the cantrip and clears the debt", () => {
+    const { character, session } = build("cleric", "cleric-divine-order", "thaumaturge");
+    const old = withoutOrderCantrip(character);
+    const doc = makeCharacterDoc({}, session);
+    useCharacterStore.getState().setCharacter({ ...doc, character: old, session });
+    const id = classPickPool(old, "cleric", "cantrips")[0] ?? "";
+    useCharacterStore
+      .getState()
+      .resolveClassPicks([{ classId: "cleric", pick: "cantrips", ids: [id] }]);
+    const saved = useCharacterStore.getState().character;
+    expect(saved?.character.spells.some((s) => "srdId" in s && s.srdId === id)).toBe(
+      true
+    );
+    expect(owedChoiceCount(saved?.character ?? old, session)).toBe(0);
+  });
 });

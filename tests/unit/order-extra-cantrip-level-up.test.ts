@@ -135,6 +135,25 @@ describe("a first Cleric or Druid level taken through the level-up", () => {
         expect(orderRow?.options.map((o) => o.id)).not.toContain(id);
     });
 
+    it(`${classId}: switching to ${plain} frees the cantrip the order row took`, () => {
+      const doc = fighter();
+      const full = answerAll(doc, classId, bundle, extra);
+      const taken = orderCantripRows(doc, classId, bundle, full)[0]?.picked[0] ?? "";
+      expect(taken).not.toBe("");
+      const flipped = toggleAnswer(
+        full,
+        { key: `bundle:${bundle}`, title: "", count: 1, picked: [], options: [] },
+        plain
+      );
+      const asks = levelUpAsks(doc, classId, flipped, "en");
+      const newRow = asks.rows.find((r) => r.key === "newCantrips");
+      expect(newRow?.options.map((o) => o.id)).toContain(taken);
+      const next = commitLevelUp(doc, asks.picks);
+      expect(next.character.spells.some((s) => "srdId" in s && !!s.grantedBy)).toBe(
+        false
+      );
+    });
+
     it(`${classId}: a level in the class with the order chosen asks it no more`, () => {
       const doc = makeCharacterDoc(
         // The order feature's id is its bundle's key.
