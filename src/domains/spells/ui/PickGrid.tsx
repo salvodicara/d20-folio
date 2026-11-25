@@ -270,8 +270,9 @@ export function PickGrid({
                 })}
               </p>
             )}
-            {count !== undefined && count > 0 && (
+            {count !== undefined && count > 1 && (
               // BG3's learned row: the picks so far, then empty slots up to the count.
+              // A one-pick list (a subclass) shows its pick ticked in the list alone.
               <div className="f-slotrow f-slotrow-picked">
                 {/* The spellbook's icon for spells; other picks need none. */}
                 {spells && (

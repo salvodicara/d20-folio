@@ -86,6 +86,7 @@ import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { turnBarView, type TurnBarSlot } from "@/lib/views/turn-bar-view";
 import { actionArt, actionIcon, type ActionIconKey } from "@/domains/play/action-icon";
 import type { ActionGroup } from "@/lib/views/action-row-view";
+import { useCampaignsReadStore } from "@/features/campaigns/campaigns-read";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { giveHelp } from "@/features/character/center/outcome-offer";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
@@ -539,7 +540,7 @@ function InventoryPane({
           onClose={() => setOpened(null)}
         />
       )}
-      {adding && <PlayAddItem onClose={() => setAdding(false)} />}
+      {adding && <PlayAddItem locale={locale} onClose={() => setAdding(false)} />}
       {coinsOpen && (
         <PlayCoinPane
           coins={view.coins}
@@ -724,11 +725,16 @@ function TurnStrip({
   const { handleEndTurn } = useTurnEconomy();
   // End Turn waits for this character's fight to reach the sheet: the button is busy.
   const endTurnWaiting = usePartyRosterStore((s) => s.castWaiting === END_TURN_WAITING);
+  // The character's own document names a campaign (#1217): a campaign Play could not
+  // read still never runs the solo fight.
+  const attached = useCampaignsReadStore(
+    (s) => s.attachment?.characterId === doc.id && s.attachment.attached
+  );
   // A campaign fight's End Turn asks first, then passes the turn the classic way.
   const solo = useSoloTurn(locale, {
     passTurn: handleEndTurn,
     passing: endTurnWaiting,
-    inCampaign: Boolean(campaign || fight),
+    inCampaign: Boolean(campaign || fight || attached),
   });
   const { round, phase, currentActorName } = useTurnState();
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it

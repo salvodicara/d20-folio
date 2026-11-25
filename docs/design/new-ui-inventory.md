@@ -31,7 +31,8 @@ players opt in one by one with the per-user toggle (#1233).
 | Senses and other speeds                                                              | Partial: walking speed only                                                                   |
 | Items: quantity, equip, remove                                                       | Present: the item pane (`PlayItemPane`), opened from the item's name                          |
 | Items: add from the catalogue                                                        | Present: «Aggiungi un oggetto» (`PlayAddItem`), the Compendium's own list                     |
-| Items: custom (homebrew) item, sell                                                  | Missing                                                                                       |
+| Items: custom (homebrew) item                                                        | Present: «Oggetto personalizzato» in «Aggiungi un oggetto» (`PlayCustomItem`)                 |
+| Items: sell                                                                          | Missing                                                                                       |
 | Coins: add, take                                                                     | Present: the coin pane (`PlayCoinPane`), opened from the coin row                             |
 | Add spells, custom spells, wizard spellbook copy                                     | Missing (prepare and cantrip swap exist)                                                      |
 | Share, PDF, snapshots history                                                        | Partial: JSON export from the roster only                                                     |
