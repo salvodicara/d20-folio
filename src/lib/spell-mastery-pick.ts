@@ -62,13 +62,17 @@ export function spellbookSpellsAtLevel(
 
 /**
  * Eligible SRD spells the player can pick for a Spell Mastery slot — the spellbook
- * filtered to the slot's exact level (1 or 2).
+ * filtered to the slot's exact level (1 or 2) and, SRD 5.2.1, to spells «that have
+ * a casting time of an action» (never a Bonus Action, a Reaction or a ritual-length
+ * cast).
  */
 export function eligibleSpellMasteryPicks(
   characterSpells: ReadonlyArray<SrdSpellRef | CustomSpell>,
   spellLevel: 1 | 2
 ): ReadonlyArray<{ id: string }> {
-  return spellbookSpellsAtLevel(characterSpells, spellLevel);
+  return spellbookSpellsAtLevel(characterSpells, spellLevel).filter(
+    (s) => spellIndex.get(s.id)?.castingTime === "action"
+  );
 }
 
 /**
@@ -86,8 +90,9 @@ export function applySpellMasteryPicks(
   if (picks.level2) chosen.add(picks.level2);
   return existing.map((ref) => {
     if ("custom" in ref) return ref;
+    // «You always have those spells prepared» (SRD 5.2.1): no prepared place used.
     if (chosen.has(ref.srdId)) {
-      return { ...ref, wizardSpellMastery: true };
+      return { ...ref, wizardSpellMastery: true, alwaysPrepared: true };
     }
     // Clear the flag on previously-mastered spells that aren't in the new picks.
     if (ref.wizardSpellMastery) {

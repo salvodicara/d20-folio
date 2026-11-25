@@ -58,30 +58,17 @@ const SELECTORS: Record<string, Answer> = {
   resolveStartOfTurnRegen: { covered: "src/domains/play/ui/PlayTurnStart.tsx" },
   resolveRound1DamageDoubles: { covered: "src/domains/play/ui/PlayTurnStart.tsx" },
   toggleSurprise: { covered: "src/domains/play/ui/PlayCentre.tsx" },
-  maintenancePrompts: {
-    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
-    missing:
-      "asked only in a fight without a campaign (PlayCentre renders the solo controls only then); a campaign fight's End Turn is not checked here",
-  },
+  // Solo and campaign fights alike (a campaign fight on my turn); the extra-turn offer
+  // and the Time Stop count are solo-only on the classic sheet too (the DM's turn
+  // order steps an extra turn in a shared fight).
+  maintenancePrompts: { covered: "src/domains/play/ui/PlaySoloTurn.tsx" },
   pendingWish: {
     partial: "src/domains/play/ui/PlaySoloTurn.tsx",
-    missing: "the duplicate and Wish Stress buttons; the note shows only in a solo game",
+    missing: "the duplicate and Wish Stress buttons (the note shows)",
   },
-  timeStopTurns: {
-    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
-    missing:
-      "offered only in a fight without a campaign (PlayCentre renders the solo notes only then)",
-  },
-  extraTurnOffer: {
-    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
-    missing:
-      "offered only in a fight without a campaign (PlayCentre renders the solo notes only then)",
-  },
-  standUp: {
-    partial: "src/domains/play/ui/PlaySoloTurn.tsx",
-    missing:
-      "«Rialzati» shows only in a fight without a campaign (PlayCentre renders the solo controls only then)",
-  },
+  timeStopTurns: { covered: "src/domains/play/ui/PlaySoloTurn.tsx" },
+  extraTurnOffer: { covered: "src/domains/play/ui/PlaySoloTurn.tsx" },
+  standUp: { covered: "src/domains/play/ui/PlaySoloTurn.tsx" },
   soloEndTurn: { covered: "src/domains/play/ui/PlaySoloTurn.tsx" },
   concentrationDrop: { covered: "src/domains/play/ui/PlayConcentration.tsx" },
   critAtZero: { covered: "src/domains/play/ui/PlayDown.tsx" },

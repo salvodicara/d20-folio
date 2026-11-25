@@ -90,8 +90,12 @@ export const appUpdate: AppUpdateWatch =
 export async function reloadWhenSaved(
   pendingWrites: () => Promise<void>,
   reload: () => void,
-  capMs: number
+  capMs: number,
+  flushPending: () => void | Promise<void> = () => undefined
 ): Promise<void> {
+  // A build edit still in the sheet's debounce is not a Firestore write yet: send it
+  // first, so the wait below covers it (#1275).
+  await Promise.resolve(flushPending()).catch(() => undefined);
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cap = new Promise<void>((resolve) => {
     timer = setTimeout(resolve, capMs);
@@ -106,6 +110,11 @@ export function reloadApp(): void {
   void reloadWhenSaved(
     () => import("@/lib/pending-writes-io").then(({ pendingWrites }) => pendingWrites()),
     () => window.location.reload(),
-    3_000
+    3_000,
+    // Loaded on demand: the character store stays off the eager entry.
+    () =>
+      import("@/stores/characterStore").then(({ useCharacterStore }) =>
+        useCharacterStore.getState().parentPersistenceFlush?.()
+      )
   );
 }
