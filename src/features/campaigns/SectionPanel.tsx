@@ -148,7 +148,7 @@ export function SectionPanel({
             </span>
           </button>
           <div className="section-detail-wrap" data-open={open || undefined}>
-            <div className="section-detail" id={detailId}>
+            <div className="section-detail" id={detailId} inert={!open}>
               {detail}
             </div>
           </div>
