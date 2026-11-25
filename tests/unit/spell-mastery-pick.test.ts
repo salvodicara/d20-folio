@@ -38,7 +38,8 @@ describe("eligibleSpellMasteryPicks", () => {
       { srdId: "fire-bolt" }, // cantrip
     ];
     const l1 = eligibleSpellMasteryPicks(spells, 1);
-    expect(l1.map((s) => s.id).sort()).toEqual(["magic-missile", "shield"]);
+    // Shield is a Reaction: SRD 5.2.1 wants «a casting time of an action».
+    expect(l1.map((s) => s.id).sort()).toEqual(["magic-missile"]);
     const l2 = eligibleSpellMasteryPicks(spells, 2);
     expect(l2.map((s) => s.id)).toEqual(["scorching-ray"]);
   });
