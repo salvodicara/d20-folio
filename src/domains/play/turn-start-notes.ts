@@ -90,7 +90,7 @@ export function useTurnStartNotes(
   doc: Parameters<typeof turnStartNotes>[0] | null,
   round: number
 ): TurnStartNote[] {
-  const applied = useCombatStore((s) => s.turnStartApplied);
+  const applied = useCombatStore((s) => s.turnStartApplied.ids);
   if (!doc) return [];
   return turnStartNotes(doc, { round }).filter((n) => !applied.includes(n.id));
 }
@@ -102,7 +102,7 @@ export function useTurnStartNotes(
  * they don't stack).
  */
 export function applyTurnStartOffer(offer: TurnStartOffer, t: TFunction): boolean {
-  if (useCombatStore.getState().turnStartApplied.includes(offer.id)) return false;
+  if (useCombatStore.getState().turnStartApplied.ids.includes(offer.id)) return false;
   const store = useCharacterStore.getState();
   const heal = offer.kind === "heal";
   const prev = store.character?.session.hp.current ?? 0;

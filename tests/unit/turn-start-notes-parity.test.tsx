@@ -348,9 +348,66 @@ describe("one tap per turn", () => {
       expect(shown(container)).toEqual([]);
     }
   );
+
+  it.each(["classic", "play"] as const)(
+    "%s: in a shared fight the note comes back on my next turn",
+    { timeout: 60_000 },
+    (surface) => {
+      const doc = champion(40);
+      setUp(doc, mine3);
+      const { container } = mount(surface);
+      tap(container);
+      expect(shown(container)).toEqual([]);
+      act(() =>
+        useCombatStatusStore.setState({ status: campaignFight(doc.id, 3, false) })
+      );
+      act(() =>
+        useCombatStatusStore.setState({ status: campaignFight(doc.id, 4, true) })
+      );
+      expect(shown(container)).toEqual([{ id: RALLY, apply: "Heal 7" }]);
+    }
+  );
+
+  it("a new fight offers it again", { timeout: 60_000 }, () => {
+    setUp(champion(40), solo2);
+    const { container } = mount("classic");
+    tap(container);
+    act(() => useCombatStore.getState().endCombat());
+    expect(shown(container)).toEqual([{ id: RALLY, apply: "Heal 7" }]);
+  });
+
+  it(
+    "an older turn's undo toast leaves this turn's mark alone",
+    { timeout: 60_000 },
+    () => {
+      setUp(champion(40), solo2);
+      const { container } = mount("classic");
+      tap(container);
+      const older = useUndoStore.getState().past.at(-1)?.id;
+      act(() =>
+        useCharacterStore.getState().updateSession({ hp: { current: 40, temp: 0 } })
+      );
+      act(() => useCombatStore.getState().endTurn());
+      tap(container);
+      act(() => {
+        useUndoStore.getState().undo(older);
+      });
+      expect(shown(container)).toEqual([]);
+    }
+  );
 });
 
 describe("only on my turn", () => {
+  it.each(["classic", "play"] as const)(
+    "%s: round 1 of a solo fight already started offers the turn's start",
+    { timeout: 60_000 },
+    (surface) => {
+      setUp(champion(40), { kind: "solo", round: 1 });
+      const { container } = mount(surface);
+      expect(shown(container)).toEqual([{ id: RALLY, apply: "Heal 7" }]);
+    }
+  );
+
   it.each(["classic", "play"] as const)(
     "%s: no turn-start note while a monster acts in the campaign fight",
     { timeout: 60_000 },
