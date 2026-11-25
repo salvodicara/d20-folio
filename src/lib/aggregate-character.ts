@@ -592,12 +592,18 @@ export function computeCharacterMaxHp(character: CharacterDoc["character"]): num
  * (`effectiveMaxHp`) add on top.
  */
 export function deriveMaxHp(character: CharacterDoc["character"]): number {
+  const level = totalLevel(character);
+  // An unknown (homebrew) class has no composition: its given `hp.max` is the whole
+  // number, inputs included, so they are never added a second time.
+  if (computeCharacterMaxHpBreakdown(character).length === 0) {
+    return Math.max(level, character.hp.max);
+  }
   const input = (v: unknown) => (Number.isSafeInteger(v) ? (v as number) : 0);
   const adjusted =
     computeCharacterMaxHp(character) +
     input(character.hpRolled) +
     input(character.hpBonus);
-  return Math.max(totalLevel(character), adjusted);
+  return Math.max(level, adjusted);
 }
 
 /** The derived max HP without the hand adjustment: what a reset returns to. */

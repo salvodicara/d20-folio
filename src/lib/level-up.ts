@@ -29,6 +29,7 @@ import {
 import type { SrdClassFeatureData } from "@/data/types";
 import type { CharacterData } from "@/types/character";
 import type { SrdFeatureRef, LevelUpChecklistItem } from "@/types/character";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 
 // ─── The advancing-class context ──────────────────────────────────────────────
 // A level-up advances ONE class (id) to a NEW class level. Every resolver reads
@@ -220,6 +221,20 @@ export function levelUp(
     change.sourceClassLevel = ctx.classLevel;
   }
 
+  // #1315 — the max is DERIVED from the inputs once every step has run (new features,
+  // ability grants): the in-session number is the number a reload derives.
+  const derivedMax = deriveMaxHp(updated);
+  if (derivedMax !== updated.hp.max) {
+    const gain = derivedMax - character.hp.max;
+    for (const change of changes) {
+      if (change.type !== "hp") continue;
+      change.description = change.description
+        .replace(/^HP [+-]?\d+/, `HP ${gain >= 0 ? "+" : ""}${gain}`)
+        .replace(/→ \d+ max$/, `→ ${derivedMax} max`);
+    }
+    updated = { ...updated, hp: { max: derivedMax } };
+  }
+
   return { updatedCharacter: updated, changes };
 }
 
@@ -332,7 +347,9 @@ function applyHpIncrease(
 
   // #1315 — a roll is the player's INPUT: record its surplus over the fixed value,
   // so a reload derives the same max (`deriveMaxHp`). The fixed value records nothing.
-  const surplus = dieGain - avg;
+  // The surplus compares the FLOORED per-level gains (each level gives at least 1 HP),
+  // so a low roll with a very negative CON records 0, not a phantom loss.
+  const surplus = coreGain - Math.max(1, avg + conMod);
   if (dieRollOverride === undefined || surplus === 0) {
     return { ...updated, hp: { max: newMax } };
   }

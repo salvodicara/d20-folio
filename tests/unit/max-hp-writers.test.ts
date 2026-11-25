@@ -149,3 +149,29 @@ describe("creation — rolled hit dice become the max-HP input", () => {
     expect(creationFacts(fighter2(19)).maxHp).toBe(build(19).hp.max);
   });
 });
+
+describe("in session, the max HP is the number a reload derives", () => {
+  it("a Dwarf level-up counts Dwarven Toughness in session too: 38 both ways", () => {
+    const { updatedCharacter, changes } = levelUp(monk(), 4, { hpGain: 8 });
+    expect(updatedCharacter.hp.max).toBe(38);
+    expect(reload(updatedCharacter).hp.max).toBe(38);
+    expect(changes.find((c) => c.type === "hp")?.description).toMatch(
+      /^HP \+11 .*→ 38 max$/
+    );
+  });
+});
+
+describe("the rolled surplus respects the 1-HP-per-level floor", () => {
+  it("rolling 1 on a d6 with CON −4 gains 1, as the fixed value would: surplus 0", () => {
+    const wizard = monk({
+      race: asRaceId("human"),
+      classes: [{ classId: "wizard", level: 2 }],
+      hitDieType: 6,
+      abilityScores: { ...MOCK_CHARACTER.character.abilityScores, CON: 3 },
+      hp: { max: 3 },
+    });
+    const { updatedCharacter } = levelUp(wizard, 3, { hpGain: 1 });
+    expect(updatedCharacter.hpRolled).toBeUndefined();
+    expect([updatedCharacter.hp.max, reload(updatedCharacter).hp.max]).toEqual([4, 4]);
+  });
+});
