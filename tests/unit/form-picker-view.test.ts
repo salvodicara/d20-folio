@@ -50,6 +50,21 @@ describe("formPickerView", () => {
     expect(formPickerView(wizard, "polymorph", "en", "").tempHp).toBeNull();
   });
 
+  it("a Druid with known forms is offered only those (SRD 5.2.1 «Known Forms»)", () => {
+    const doc = druid();
+    const known = {
+      ...doc,
+      character: { ...doc.character, wildShapeForms: ["wolf", "giant-badger", "ape"] },
+    };
+    const view = formPickerView(known, "druid-wild-shape", "en", "");
+    expect(view.groups.flatMap((g) => g.rows.map((r) => r.id))).toEqual([
+      "giant-badger",
+      "wolf",
+      "ape",
+    ]);
+    expect(view.tempHp).toBe(7);
+  });
+
   it("is empty when nothing matches", () => {
     expect(formPickerView(druid(), "druid-wild-shape", "en", "dragon").groups).toEqual(
       []

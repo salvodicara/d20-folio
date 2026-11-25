@@ -4,11 +4,14 @@
  * level), grouped by Challenge Rating from the lowest, found by name, each with the
  * numbers that decide the pick. Wild Shape's Temporary HP are the same for every form
  * (the Druid level), so the picker says them once; a spell's are each form's own Hit
- * Points, shown on its row. Pure: the screen renders labels and distances.
+ * Points, shown on its row. A Druid with known forms (SRD 5.2.1 «Known Forms») is
+ * offered only those; with none chosen, every eligible beast. Pure: the screen renders
+ * labels and distances.
  */
 import type { BeastStatBlock } from "@/data/types";
 import { localizeSrd } from "@/i18n/resolver";
 import { formPool } from "@/lib/form-pool";
+import { WILD_SHAPE_ID, wildShapePickerPool } from "@/lib/wild-shape-forms";
 import type { Locale } from "@/lib/locale";
 import { assumeBeastForm } from "@/lib/play/forms";
 import { selfFormRule } from "@/lib/polymorph";
@@ -53,7 +56,9 @@ export function formPickerView(
   locale: Locale,
   query: string
 ): FormPickerView {
-  const pool = formPool(doc, sourceId);
+  // Wild Shape: the Druid's known forms, or every eligible beast when none is chosen.
+  const pool =
+    sourceId === WILD_SHAPE_ID ? wildShapePickerPool(doc) : formPool(doc, sourceId);
   const groups: FormPickerView["groups"] = [];
   for (const beast of pool) {
     const shown = row(beast, locale);
