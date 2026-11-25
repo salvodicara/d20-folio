@@ -7,6 +7,7 @@
  * and ends the current fight. A rest is the undo stack's fence: it is not undone.
  */
 import { clockFor } from "@/lib/play/clock";
+import { campaignsRead, campaignsReadSoon } from "@/features/campaigns/context-settled";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -35,6 +36,31 @@ export function useRestCommit() {
   const itemResourceCommands = useItemResourceCommands();
   const [committing, setCommitting] = useState(false);
   const committingRef = useRef(false);
+
+  /**
+   * The character to rest, once its campaigns are read. A rest in the moments after the
+   * sheet opens, before the shell has read the campaigns, would miss the campaign clock
+   * (the rest would not move it, and the time would pass for this sheet alone). So it
+   * waits, the rest buttons busy, and then rests the character as the campaign left it.
+   * Still unread after the one wait: no rest, and a toast says why.
+   */
+  async function campaignReady(reviewed: CharacterDoc): Promise<CharacterDoc | null> {
+    if (campaignsRead(reviewed.id)) return reviewed;
+    setCommitting(true);
+    try {
+      if (!(await campaignsReadSoon(reviewed.id))) {
+        useToastStore.getState().showToast({
+          message: t("campaignContext.unread"),
+          duration: 6000,
+        });
+        return null;
+      }
+    } finally {
+      setCommitting(false);
+    }
+    const live = useCharacterStore.getState().character;
+    return live?.id === reviewed.id ? live : null;
+  }
 
   /** Preflight and atomically commit one typed item-resource rest boundary.
    *  The reviewed character snapshot stays frozen across any physical-roll input. */
@@ -95,10 +121,13 @@ export function useRestCommit() {
   /** A Short Rest healing `healedHp` (the entered roll + CON per die, 0 without
    *  dice) and spending `hitDice` dice. Null when it did not happen. */
   async function shortRest(
-    reviewed: CharacterDoc,
+    asked: CharacterDoc,
     hitDice: number,
     healedHp: number
   ): Promise<Prepared | null> {
+    // Read already (the common case): rest at once, with no pause before the lock.
+    const reviewed = campaignsRead(asked.id) ? asked : await campaignReady(asked);
+    if (!reviewed) return null;
     const prepared = await commitBoundary("short-rest", reviewed);
     if (!prepared) return null;
     const { session } = reviewed;
@@ -117,7 +146,10 @@ export function useRestCommit() {
   }
 
   /** A Long Rest. Null when it did not happen. */
-  async function longRest(reviewed: CharacterDoc): Promise<Prepared | null> {
+  async function longRest(asked: CharacterDoc): Promise<Prepared | null> {
+    // Read already (the common case): rest at once, with no pause before the lock.
+    const reviewed = campaignsRead(asked.id) ? asked : await campaignReady(asked);
+    if (!reviewed) return null;
     const prepared = await commitBoundary("long-rest", reviewed);
     if (!prepared) return null;
     restThroughWorld("long");
