@@ -44,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { DyingBanner } from "./DyingBanner";
 import { ConcentrationSaveBanner } from "./ConcentrationSaveBanner";
 import { HitReactionBanner } from "./HitReactionBanner";
+import { SoloRepeatSaveBanner } from "./SoloRepeatSaveBanner";
 import { SpeciesChoicesBanner } from "./SpeciesChoicesBanner";
 import { BinderFob } from "./BinderFob";
 import { MobileSignet } from "./MobileSignet";
@@ -240,6 +241,10 @@ export function CockpitView() {
           sits first, since Shield's miss withdraws the save below. */}
         <HitReactionBanner />
         <ConcentrationSaveBanner />
+
+        {/* A repeat save the solo End Turn made due (Hold Person's Paralyzed): the
+          same strip the Play screen shows (#1333). */}
+        <SoloRepeatSaveBanner />
 
         {/* A species choice the character still owes (a sheet saved before the
           creation flow asked it): named, and asked on demand. */}
