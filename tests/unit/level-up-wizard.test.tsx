@@ -686,6 +686,58 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
     expect(srdIds).toContain("healing-word");
     expect(srdIds).toContain("vicious-mockery");
   });
+  // SRD 5.2.1: «Whenever you gain a Bard level, you can replace one of your cantrips».
+  it("offers a cantrip swap too, and commits it (Vicious Mockery out, a Bard cantrip in)", async () => {
+    renderWizard();
+    walkToSpellsComplete();
+    clickContinue(); // spells → swap
+    const heading = screen.getByText("Replace a Cantrip (Optional)");
+    const section = heading.closest("section");
+    if (!section) throw new Error("no cantrip swap section");
+    const mockery = within(section)
+      .getAllByRole("button")
+      .find(
+        (b) =>
+          b.classList.contains("wiz-row") && b.textContent.includes("Vicious Mockery")
+      );
+    if (!mockery) throw new Error("Vicious Mockery row not found");
+    fireEvent.click(mockery);
+    fireEvent.click(
+      within(section).getByRole("button", { name: /Replace Vicious Mockery/i })
+    );
+    const known = new Set(["vicious-mockery", "healing-word", "dissonant-whispers"]);
+    const replEntry = Array.from(
+      section.querySelectorAll<HTMLElement>(".wiz-entry[data-fid]")
+    ).find((e) => {
+      const fid = e.getAttribute("data-fid");
+      return fid != null && !known.has(fid);
+    });
+    const replId = replEntry?.getAttribute("data-fid");
+    const replRow = replEntry?.querySelector<HTMLButtonElement>(".wiz-row");
+    if (!replEntry || !replId || !replRow) throw new Error("no cantrip replacement");
+    fireEvent.click(replRow);
+    const learn = within(replEntry)
+      .getAllByRole("button")
+      .find((b) => /^Learn /.test(b.textContent));
+    if (!learn) throw new Error("Learn CTA not found");
+    fireEvent.click(learn);
+    clickContinue(); // swap → review
+    const confirm = screen
+      .getAllByRole("button")
+      .find((b) => /^Confirm: Level 4/.test(b.textContent));
+    if (!confirm) throw new Error("confirm CTA not found");
+    fireEvent.click(confirm);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const saved = useCharacterStore.getState().character;
+    if (!saved) throw new Error("no character in store after commit");
+    const srdIds = saved.character.spells
+      .filter((s): s is { srdId: string } => "srdId" in s)
+      .map((s) => s.srdId);
+    expect(srdIds).toContain(replId);
+    expect(srdIds).not.toContain("vicious-mockery");
+  });
 });
 
 // ─── A3 — the completion banner reports the ACHIEVED level ────────────────────

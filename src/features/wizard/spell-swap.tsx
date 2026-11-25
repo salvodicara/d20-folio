@@ -33,6 +33,7 @@ export function WizardSpellSwap({
   allowedLists,
   knownSpells,
   alsoKnown,
+  cantrips = false,
   value,
   onChange,
 }: {
@@ -51,6 +52,9 @@ export function WizardSpellSwap({
   /** Spells the character knows beyond `knownSpells`, never offered as the
    *  replacement (a feat's Spell Change offers only its pick to replace). */
   alsoKnown?: ReadonlySet<string>;
+  /** Swap a cantrip for another cantrip of the class list (SRD 5.2.1: «Whenever
+   *  you gain a Cleric level, you can replace one of your cantrips»). */
+  cantrips?: boolean;
   value: SpellSwapChoice;
   onChange: (choice: SpellSwapChoice) => void;
 }) {
@@ -78,7 +82,9 @@ export function WizardSpellSwap({
   const removable = knownSpells
     .flatMap((ref) => {
       const s = allSpells.find((sp) => sp.id === ref.srdId);
-      return s && s.level > 0 ? [spellPickVM(s, locale)] : [];
+      return s && (cantrips ? s.level === 0 : s.level > 0)
+        ? [spellPickVM(s, locale)]
+        : [];
     })
     .sort((a, b) => a.level - b.level || a.name.localeCompare(b.name, locale));
 
@@ -110,7 +116,9 @@ export function WizardSpellSwap({
         options={removable.map(toPickOption)}
         selected={value.removeId ? [value.removeId] : []}
         total={1}
-        label={t("levelUp.swap.removeLabel")}
+        label={t(
+          cantrips ? "levelUp.swap.cantripRemoveLabel" : "levelUp.swap.removeLabel"
+        )}
         onToggle={(id) =>
           onChange(
             value.removeId === id
@@ -130,8 +138,12 @@ export function WizardSpellSwap({
             total={1}
             label={
               <>
-                {t("levelUp.swap.replaceLabel")}
-                {removeLevel != null && (
+                {t(
+                  cantrips
+                    ? "levelUp.swap.cantripReplaceLabel"
+                    : "levelUp.swap.replaceLabel"
+                )}
+                {removeLevel != null && !cantrips && (
                   <span className="wiz-pick-filter">
                     {t("levelUp.swap.levelFilter", { level: removeLevel })}
                   </span>

@@ -160,6 +160,7 @@ import { WizardSpellList, type SpellListSlot } from "@/features/wizard/spell-lis
 import { WizardPickList, type WizardPickOption } from "@/features/wizard/pick-list";
 import { SocketSeal } from "@/features/wizard/seals";
 import { WizardSpellSwap } from "@/features/wizard/spell-swap";
+import { spellIndex } from "@/data/spells";
 import { featSpellChanges } from "@/lib/feat-spell-change";
 import { WizardAsiCartouches } from "@/features/wizard/point-buy";
 import { SpellLevelSeal } from "@/features/wizard/seals";
@@ -209,6 +210,7 @@ export function LevelUpWizard() {
   const [newSpells, setNewSpells] = useState<string[]>([]);
   const [newCantrips, setNewCantrips] = useState<string[]>([]);
   const [swapChoice, setSwapChoice] = useState<SpellSwapChoice>(emptySwapChoice());
+  const [cantripSwap, setCantripSwap] = useState<SpellSwapChoice>(emptySwapChoice());
   // A feat's Spell Change (Magic Initiate): one optional replacement per feat.
   const [featSwaps, setFeatSwaps] = useState<Readonly<Record<string, SpellSwapChoice>>>(
     {}
@@ -355,6 +357,7 @@ export function LevelUpWizard() {
     needsManeuvers,
     maneuversNeeded,
     canSwapSpell,
+    canSwapCantrip,
     spellsKnownDiff,
     spellbookPicks,
     cantripsKnownDiff,
@@ -398,6 +401,7 @@ export function LevelUpWizard() {
     setNewSpells([]);
     setNewCantrips([]);
     setSwapChoice(emptySwapChoice());
+    setCantripSwap(emptySwapChoice());
     setFeatSwaps({});
     setFightingStyleChoice(null);
     setExpertisePicks([]);
@@ -465,8 +469,14 @@ export function LevelUpWizard() {
   // B5/A2 — the spell SWAP is its OWN step (its own orb), present ONLY when the
   // class actually offers a swap at this level. It never piggybacks another step.
   const classSwap = canSwapSpell && knownNonCantripRefs.length > 0;
+  // SRD 5.2.1: «Whenever you gain a [Bard, Cleric, Druid, Sorcerer, Warlock] level,
+  // you can replace one of your cantrips» — optional, in the same swap step.
+  const knownCantripRefs = knownNonCantripRefs.filter(
+    (ref) => spellIndex.get(ref.srdId)?.level === 0
+  );
+  const cantripSwapOffered = canSwapCantrip && knownCantripRefs.length > 0;
   const featChanges = charData ? featSpellChanges(charData.spells) : [];
-  const hasSwapStep = classSwap || featChanges.length > 0;
+  const hasSwapStep = classSwap || cantripSwapOffered || featChanges.length > 0;
 
   const steps: Array<WizardStepDef & { id: StepId }> = [
     { id: "hp", label: t("levelUp.stepHp"), glyph: Heart },
@@ -532,6 +542,7 @@ export function LevelUpWizard() {
   const featSwapOf = (featId: string) => featSwaps[featId] ?? emptySwapChoice();
   const swapComplete =
     !isSwapIncomplete(swapChoice) &&
+    !isSwapIncomplete(cantripSwap) &&
     featChanges.every((change) => !isSwapIncomplete(featSwapOf(change.featId)));
   const subclassComplete = !needsSubclass || subclassChoice !== null;
 
@@ -692,6 +703,7 @@ export function LevelUpWizard() {
         spellMastery: needsSpellMastery ? spellMasteryPicks : null,
         signatureSpells: needsSignatureSpells ? signatureSpellsPicks : null,
         swap: swapChoice,
+        cantripSwap,
         featSpellChanges: featChanges.map((change) => featSwapOf(change.featId)),
         bundlePicks: needsBundles ? bundlePicks : {},
       });
@@ -1493,6 +1505,21 @@ export function LevelUpWizard() {
                 onChange={setSwapChoice}
               />
             )}
+            {cantripSwapOffered && (
+              <section className="flex flex-col gap-3">
+                <h3 className="on-art text-center font-display text-base text-text-primary">
+                  {t("levelUp.swap.cantripTitle")}
+                </h3>
+                <WizardSpellSwap
+                  cantrips
+                  classId={classId}
+                  knownSpells={knownCantripRefs}
+                  alsoKnown={new Set(existingSpellIds)}
+                  value={cantripSwap}
+                  onChange={setCantripSwap}
+                />
+              </section>
+            )}
             {/* A feat's Spell Change (Magic Initiate): optional, its own pick only,
                 replaced from the feat's list at the same level. Skip keeps it. */}
             {featChanges.map((change) => {
@@ -1707,6 +1734,17 @@ export function LevelUpWizard() {
                     value: t("levelUp.swap.summary", {
                       old: spellName(swapChoice.removeId, locale),
                       new: spellName(swapChoice.replaceId, locale),
+                    }),
+                  });
+                }
+                if (cantripSwap.removeId != null && cantripSwap.replaceId != null) {
+                  rows.push({
+                    key: "cantripSwap",
+                    step: "swap",
+                    label: t("levelUp.stepSwap"),
+                    value: t("levelUp.swap.cantripSummary", {
+                      old: spellName(cantripSwap.removeId, locale),
+                      new: spellName(cantripSwap.replaceId, locale),
                     }),
                   });
                 }

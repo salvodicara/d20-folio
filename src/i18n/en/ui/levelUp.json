@@ -65,7 +65,11 @@
       "levelFilter": "Level {{level}} only",
       "noKnownSpells": "No non-cantrip spells to replace.",
       "incompleteWarning": "Select a replacement spell or clear your selection to skip.",
-      "summary": "Will replace {{old}} with {{new}}"
+      "summary": "Will replace {{old}} with {{new}}",
+      "cantripTitle": "Replace a Cantrip (Optional)",
+      "cantripSummary": "Will replace the cantrip {{old}} with {{new}}",
+      "cantripRemoveLabel": "1. Choose a cantrip to replace",
+      "cantripReplaceLabel": "2. Choose your replacement cantrip"
     },
     "scaling": {
       "dieUpgrade": "{{feature}} die upgraded: {{from}} → {{to}}",
