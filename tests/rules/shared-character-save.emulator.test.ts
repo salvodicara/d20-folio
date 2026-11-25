@@ -29,6 +29,7 @@ vi.mock("@/lib/firebase", () => ({
 import {
   createCharacter,
   createDebouncedSave,
+  replaceCharacterState,
   setCharacterSharing,
 } from "@/lib/firestore";
 import { assertNonEmptyString } from "@/lib/non-empty-string";
@@ -125,5 +126,26 @@ describe("a shared character saves through the app's own writes", () => {
 
     expect((await stored(parentPath()))?.shared).toBe(false);
     expect(await stored(sheetPath())).toBeUndefined();
+  });
+
+  // A level-up, a snapshot restore and the level-up's undo replace the whole sheet in
+  // one batch. On a shared character that batch must carry the public sheet too, or the
+  // rules refuse it (the sheet must equal the parent after every write).
+  it("a level-up of a shared character lands, and the public sheet follows it", async () => {
+    await setCharacterSharing(OWNER, hero, true);
+    const levelled = {
+      ...hero.character,
+      name: assertNonEmptyString("Bren the Levelled"),
+    };
+
+    await expect(
+      replaceCharacterState(OWNER, hero.id, levelled, hero.session, 1, {
+        ...hero,
+        shared: true,
+      })
+    ).resolves.toBeUndefined();
+
+    expect((await stored(parentPath()))?.revision).toBe(2);
+    expect(JSON.stringify(await stored(sheetPath()))).toContain("Bren the Levelled");
   });
 });
