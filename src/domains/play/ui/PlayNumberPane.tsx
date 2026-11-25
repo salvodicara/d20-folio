@@ -20,7 +20,7 @@ import type { Locale } from "@/lib/locale";
 import { localeDistance, speedFromLocaleValue, speedToLocaleValue } from "@/lib/utils";
 import { usesMetric } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Dialog, Field } from "@/ui";
+import { Button, Dialog, Field } from "@/ui";
 
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 
@@ -71,7 +71,9 @@ export function PlayNumberPane({
       <div className="f-stack f-num-pane">
         <p className="f-num-total">
           <b>{shown}</b>
-          {view.stored !== null && <Chip>{t("play.number.handSet")}</Chip>}
+          {view.stored !== null && (
+            <span className="f-num-tag">{t("play.number.handSet")}</span>
+          )}
         </p>
         {view.parts && view.parts.length > 0 && (
           <ul className="f-ab-parts" aria-label={t("breakdown.rubric")}>

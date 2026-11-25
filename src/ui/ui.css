@@ -3866,6 +3866,12 @@
   font: 700 40px/1 var(--font-title);
   color: var(--strong);
 }
+/* «Impostato a mano»: a status, not a control (D&D Beyond's «Overridden») */
+.fui .f-num-tag {
+  color: var(--muted);
+  font: 600 var(--fs-sm) var(--font-label);
+  letter-spacing: 0.04em;
+}
 .fui .f-num-custom {
   padding-top: 16px;
   border-top: 1px solid var(--divider);
