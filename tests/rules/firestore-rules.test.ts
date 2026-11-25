@@ -1579,6 +1579,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
         build: { name: "Mara Quickfingers" },
         state: {},
         cache: {},
+        schema: 3, // fenced (#1320): every writer below runs on a numbered parent
         revision: 3,
       });
       await setDoc(doc(db, "users", "member", "characters", "char-private"), {
@@ -1586,6 +1587,7 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
         build: { name: "Secret" },
         state: {},
         cache: {},
+        schema: 3, // fenced (#1320): every writer below runs on a numbered parent
         revision: 3,
       });
     });
@@ -2312,6 +2314,7 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
         build: { name: "Mara" },
         state: {},
         cache: {},
+        schema: 3, // fenced (#1320): every writer below runs on a numbered parent
         revision: 3,
       });
       await setDoc(doc(db, ...COMBAT_PATH), combatState());
@@ -2612,6 +2615,7 @@ describe("firestore.rules — combat/spends: the cross-device hits ledger", () =
         build: { name: "Mara" },
         state: {},
         cache: {},
+        schema: 3, // fenced (#1320): every writer below runs on a numbered parent
         revision: 3,
       });
     });
@@ -3416,5 +3420,94 @@ describe("firestore.rules — campaign session logs (append-only)", () => {
     await assertFails(deleteDoc(doc(member, ...logPath)));
     const dm = testEnv.authenticatedContext("dm").firestore();
     await assertSucceeds(deleteDoc(doc(dm, ...logPath)));
+  });
+});
+
+describe("firestore.rules — the shape fence (#1320): a write never lowers a document's shape number", () => {
+  // After a migration raises a document's shape number, an old tab still writes the
+  // old number. The fence refuses that write instead of letting the old shape
+  // overwrite the migrated document. A document with no number yet is never fenced.
+  const PARENT = ["users", "member", "characters", "char-shape"] as const;
+  const PLAY = [...PARENT, "combat", "state"] as const;
+
+  async function seed(parent: Record<string, unknown>, play: Record<string, unknown>) {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, ...PARENT), {
+        status: "active",
+        build: { name: "Mara" },
+        state: {},
+        cache: {},
+        revision: 3,
+        ...parent,
+      });
+      await setDoc(doc(db, ...PLAY), {
+        hp: { current: 10, temp: 0 },
+        conditions: [],
+        playState: { version: 1, state: {} },
+        ...play,
+      });
+    });
+  }
+  const owner = () => testEnv.authenticatedContext("member").firestore();
+
+  it("a build write at a LOWER schema is refused; the same or higher passes", async () => {
+    await seed({ schema: 4 }, {});
+    const ref = doc(owner(), ...PARENT);
+    await assertFails(updateDoc(ref, { schema: 3, build: { name: "Old" }, revision: 4 }));
+    await assertSucceeds(
+      updateDoc(ref, { schema: 4, build: { name: "New" }, revision: 4 })
+    );
+    await assertSucceeds(
+      updateDoc(ref, { schema: 5, build: { name: "Newer" }, revision: 5 })
+    );
+  });
+
+  it("a write that drops the schema of a document that has one is refused", async () => {
+    await seed({ schema: 4 }, {});
+    await assertFails(
+      setDoc(doc(owner(), ...PARENT), {
+        status: "active",
+        build: { name: "Old" },
+        state: {},
+        cache: {},
+        revision: 4,
+      })
+    );
+  });
+
+  it("a metadata-only write (no schema sent) keeps the stored one and passes", async () => {
+    await seed({ schema: 4 }, {});
+    await assertSucceeds(updateDoc(doc(owner(), ...PARENT), { status: "retired" }));
+  });
+
+  it("today's writers pass: a schema-3 build write on a schema-3 or unnumbered parent", async () => {
+    await seed({ schema: 3 }, {});
+    await assertSucceeds(
+      updateDoc(doc(owner(), ...PARENT), { schema: 3, build: { name: "B" }, revision: 4 })
+    );
+    await seed({}, {});
+    await assertSucceeds(
+      updateDoc(doc(owner(), ...PARENT), { schema: 3, build: { name: "C" }, revision: 4 })
+    );
+  });
+
+  it("a play write at a LOWER playState.version is refused; the same passes", async () => {
+    await seed({}, { playState: { version: 2, state: {} } });
+    const ref = doc(owner(), ...PLAY);
+    await assertFails(updateDoc(ref, { playState: { version: 1, state: {} } }));
+    await assertSucceeds(updateDoc(ref, { playState: { version: 2, state: { x: 1 } } }));
+    await assertSucceeds(updateDoc(ref, { hp: { current: 5, temp: 0 } }));
+  });
+
+  it("today's play writers pass at version 1, and on a play document with no version", async () => {
+    await seed({}, {});
+    await assertSucceeds(
+      updateDoc(doc(owner(), ...PLAY), { playState: { version: 1, state: { y: 1 } } })
+    );
+    await seed({}, { playState: { state: {} } });
+    await assertSucceeds(
+      updateDoc(doc(owner(), ...PLAY), { playState: { version: 1, state: {} } })
+    );
   });
 });
