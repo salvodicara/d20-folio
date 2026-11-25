@@ -300,6 +300,7 @@ function localizeSummary(
       ? { damageTypeChoices: [...rider.damageTypeChoices] }
       : {}),
     oncePerTurn: rider.oncePerTurn,
+    ...(rider.needsActiveName ? { needsActive: true as const } : {}),
     sourceName: localizeText(rider.source, locale),
     sourceLoc: rider.source,
     ...(rider.resourceTrackerId ? { resourceTrackerId: rider.resourceTrackerId } : {}),

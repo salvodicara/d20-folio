@@ -254,7 +254,7 @@ describe("multi-pick option builders", () => {
   // `content-pack/tests/unit/level-up-view.pack.test.ts`.)
 
   it("weaponMasteryOptions labels the weapon + notes the mastery keyword", () => {
-    const vms = weaponMasteryOptions("en");
+    const vms = weaponMasteryOptions("en", "fighter");
     expect(vms.length).toBeGreaterThan(0);
     const longsword = vms.find((v) => v.id === "longsword");
     expect(longsword?.label).toBe(localizeSrd("equipment", "longsword", "name", "en"));

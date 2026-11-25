@@ -290,7 +290,7 @@ export function levelUpAsks(
       title: t("levelUp.chooseWeaponMastery", { n: newMasteries }),
       count: newMasteries,
       picked: a.weaponMasteries,
-      options: weaponMasteryOptions(locale)
+      options: weaponMasteryOptions(locale, classId)
         .filter((o) => !masteredAlready.includes(o.id))
         .map((o) => ({ id: o.id, label: o.label })),
     });
@@ -341,16 +341,45 @@ export function levelUpAsks(
       .filter(([, tier]) => tier === "proficient" || tier === "expertise")
       .map(([id]) => id)
   );
-  for (const slotRow of choiceSlotRows(
+  const expertSkills = new Set(
+    Object.entries(c.skills)
+      .filter(([, tier]) => tier === "expertise")
+      .map(([id]) => id)
+  );
+  const slotRows = choiceSlotRows(
     plan.choiceSlots,
     choicePicks,
-    { skills: ownedSkills, spells: plan.existingSpellIds },
+    {
+      skills: ownedSkills,
+      spells: plan.existingSpellIds,
+      expert: expertSkills,
+      languages: new Set(c.languageIds),
+    },
     locale
-  )) {
+  );
+  // Expertise needs a proficient skill (Wizard Scholar: one of six): with fewer
+  // eligible skills than the slot asks, it asks only what can be picked (none for
+  // a Wizard multiclass proficient in none of the six), so the level can be saved.
+  const expertiseShort = new Map(
+    slotRows
+      .filter((r) => r.kind === "expertise" && r.options.length < r.amount)
+      .map((r) => [r.slotId, r.options.length])
+  );
+  const answerableSlots = {
+    ...plan.choiceSlots,
+    expertise: plan.choiceSlots.expertise.map((s) => ({
+      ...s,
+      amount: expertiseShort.get(s.slotId) ?? s.amount,
+    })),
+  };
+  for (const slotRow of slotRows) {
     rows.push({
       key: `slot:${slotRow.kind}:${slotRow.slotId}`,
       title: slotRow.source ? `${slotRow.source}: ${slotRow.title}` : slotRow.title,
-      count: slotRow.amount,
+      count:
+        slotRow.kind === "expertise"
+          ? Math.min(slotRow.amount, slotRow.options.length)
+          : slotRow.amount,
       picked: slotRow.picked,
       options: slotRow.options,
       slotRow,
@@ -485,7 +514,7 @@ export function levelUpAsks(
     rows.every(
       (r) => r.count === 0 || r.key.startsWith("asi") || r.picked.length === r.count
     ) &&
-    isAllChoicesComplete(plan.choiceSlots, choicePicks);
+    isAllChoicesComplete(answerableSlots, choicePicks);
 
   const hpDie =
     a.rolled === null

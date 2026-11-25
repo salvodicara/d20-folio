@@ -37,11 +37,7 @@ import { slotRecoveryRuleForCast, type SlotRecoveryRule } from "@/lib/play/slot-
 import { standingAtCommit, standingEffectsForTargets } from "@/lib/play/standing-effects";
 import { standingOnClock } from "@/lib/play/campaign-effects";
 import { concentrationBudgetRounds } from "@/lib/spell-duration";
-import {
-  partyKnown,
-  partyKnownSoon,
-  usePartyRosterStore,
-} from "@/features/campaigns/party-roster";
+import { END_TURN_WAITING, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { recoverSlots } from "@/features/character/center/slot-recovery-commit";
 import { dispelSpell } from "@/features/character/center/dispel-commit";
 import { dispelOptions, type DispelOption } from "@/lib/play/dispel";
@@ -109,13 +105,12 @@ import {
   registerUndoableResult,
 } from "@/stores/undoStore";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
-import { fightKnown, fightKnownSoon } from "@/features/campaigns/context-settled";
+import { fightContext, fightSettledSoon } from "@/features/campaigns/context-settled";
 import { defaultSpared, zoneEffectForCast } from "@/lib/zones";
 import { useAuthStore } from "@/stores/authStore";
 import { TargetPickerModal } from "@/components/sheet/TargetPickerModal";
 import {
   noLegalTargetTypes,
-  recipientStateKey,
   targetStepFor,
   type TargetRoster,
   withSelfRecipient,
@@ -2775,6 +2770,26 @@ export function TurnEconomyProvider({
   // End Turn: the sequence is `runEndTurn` (lib/play/end-turn); this wires its
   // ports to the stores, the shared turn and this provider's toasts and prompt.
   function handleEndTurn() {
+    // End Turn in the moments before this character's fight reaches the sheet would end
+    // a solo turn the fight doesn't have (the round goes up, the solo turn's ends fire).
+    // It waits for the fight like any turn action; still pending, nothing ends.
+    const doc = useCharacterStore.getState().character;
+    if (doc && fightContext(doc.id) === "pending") {
+      usePartyRosterStore.setState({ castWaiting: END_TURN_WAITING });
+      void fightSettledSoon(doc.id).then((known) => {
+        usePartyRosterStore.setState({ castWaiting: null });
+        if (!known) {
+          showToast({ message: t("campaignContext.unread"), duration: 6000 });
+          return;
+        }
+        endTurnSettled();
+      });
+      return;
+    }
+    endTurnSettled();
+  }
+
+  function endTurnSettled() {
     endTurnWithStores({
       setMaintenancePrompts,
       announce: (sourceIds) => {
@@ -3163,16 +3178,15 @@ export function TurnEconomyProvider({
 
   function executeAction(action: ResolvedAction, intent?: ExecuteActionIntent): void {
     const doc = useCharacterStore.getState().character;
-    // Every turn action enters here. When the campaigns are read and one lists this
-    // character's fight (the pip says «Your turn») but the fight's live status has not
-    // reached the sheet, an action would count on the no-fight turn, and the fight's
-    // arrival would then reset the turn: the Action comes back (classic rehearsal,
-    // 2026-11-13). So it waits, its row busy; still unknown after the wait, nothing is
-    // spent and a toast says why. Before the campaigns are read nothing waits yet: that
-    // window belongs to the settled-context work.
-    if (doc && partyKnown(doc.id) && !fightKnown(doc.id)) {
+    // Every turn action enters here. While this character's fight context is pending
+    // (the shell hasn't read the campaigns yet, or the pip lists its fight whose live
+    // status hasn't arrived), an action would count on a no-fight turn and land where no
+    // fight is (a buff on the campaign clock); the fight's arrival would then reset the
+    // turn, and the Action comes back (classic rehearsal, 2026-11-13). So it waits, its
+    // row busy; still pending after the one wait, nothing is spent and a toast says why.
+    if (doc && fightContext(doc.id) === "pending") {
       usePartyRosterStore.setState({ castWaiting: action.id });
-      void fightKnownSoon(doc.id).then((known) => {
+      void fightSettledSoon(doc.id).then((known) => {
         usePartyRosterStore.setState({ castWaiting: null });
         if (!known) {
           showToast({ message: t("campaignContext.unread"), duration: 6000 });
@@ -3219,42 +3233,18 @@ export function TurnEconomyProvider({
     prepareResolution(executable, askTargetsThenCommit, execution);
   }
 
-  /**
-   * The «Su chi?» step, then the commit. Out of a fight, a state left on its recipient
-   * offers the party, so the cast waits (briefly) for the shell to have read it: a click
-   * right after opening the sheet would otherwise spend the slot on no one.
-   */
+  /** The «Su chi?» step, then the commit. Out of a fight, a state left on its recipient
+   *  offers the party (read before the action ran, `executeAction`'s wait). */
   function askTargetsThenCommit(prepared: ResolvedAction, commit: PreparedCommit): void {
-    const ask = (partyMissing = false) => {
-      const roster = targetRoster();
-      const step = targetStepFor(prepared, roster);
-      if (!step) {
-        sayNoLegalTarget(prepared, roster);
-        commit(() => undefined, { action: prepared });
-        // The slot is never spent in silence: the party never came, so no one got it.
-        if (partyMissing)
-          showToast({ message: t("play.partyNotLoaded"), duration: 6000 });
-        return;
-      }
-      setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
-    };
-    const doc = useCharacterStore.getState().character;
-    const waits =
-      doc &&
-      !useCombatStatusStore.getState().status &&
-      recipientStateKey(prepared) &&
-      combatEffectsV26On() &&
-      !partyKnown(doc.id);
-    if (!waits) {
-      ask();
+    // The party and the fight are already read: `executeAction` waited for them.
+    const roster = targetRoster();
+    const step = targetStepFor(prepared, roster);
+    if (!step) {
+      sayNoLegalTarget(prepared, roster);
+      commit(() => undefined, { action: prepared });
       return;
     }
-    // The pressed row shows it is working while the party is read.
-    usePartyRosterStore.setState({ castWaiting: prepared.id });
-    void partyKnownSoon(doc.id).then((known) => {
-      usePartyRosterStore.setState({ castWaiting: null });
-      ask(!known);
-    });
+    setTargetRequest({ characterId: character?.id, action: prepared, step, commit });
   }
 
   /** This player's combatant id: the live encounter's, else the uid-derived one. */
