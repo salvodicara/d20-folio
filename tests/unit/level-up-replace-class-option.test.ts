@@ -20,6 +20,7 @@ import {
   type LevelUpAnswers,
 } from "@/domains/leveling/level-up-asks";
 import { commitLevelUp } from "@/lib/level-up-commit";
+import { swapIn } from "@/lib/spell-swap";
 import type { CharacterDoc, ClassEntry } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 
@@ -147,6 +148,61 @@ describe("Warlock: replace one invocation", () => {
     expect(ids(row(blade, "warlock", "invocationReplace", a))).not.toContain(
       "thirsting-blade"
     );
+  });
+
+  it("an invocation taken this level keeps its prerequisite, in either order", () => {
+    const four = makeCharacterDoc({
+      classes: [
+        {
+          classId: "warlock",
+          level: 4,
+          invocationChoices: ["pact-of-the-blade", "agonizing-blast", "devils-sight"],
+        },
+      ],
+    });
+    // New pick first: the pact it needs leaves the remove row.
+    const taken = pick(four, "warlock", NO_ANSWERS, "invocations", "thirsting-blade");
+    expect(ids(row(four, "warlock", "invocationRemove", taken))).not.toContain(
+      "pact-of-the-blade"
+    );
+    // Swap first: the new-pick row no longer offers what needed the pact.
+    const swapped = pick(
+      four,
+      "warlock",
+      NO_ANSWERS,
+      "invocationRemove",
+      "pact-of-the-blade"
+    );
+    expect(ids(row(four, "warlock", "invocations", swapped))).toContain(
+      "mask-of-many-faces"
+    );
+    expect(ids(row(four, "warlock", "invocations", swapped))).not.toContain(
+      "thirsting-blade"
+    );
+  });
+
+  it("an invocation with its own choices is not offered for a swap", () => {
+    const tome = makeCharacterDoc({
+      classes: [
+        {
+          classId: "warlock",
+          level: 6,
+          invocationChoices: ["pact-of-the-tome", "lessons-of-the-first-ones"],
+        },
+      ],
+    });
+    expect(row(tome, "warlock", "invocationRemove")).toBeUndefined();
+  });
+});
+
+describe("swapIn", () => {
+  it("replaces the first match only, in place", () => {
+    expect(swapIn(["a", "b", "a"], { removeId: "a", replaceId: "c" })).toEqual([
+      "c",
+      "b",
+      "a",
+    ]);
+    expect(swapIn(["a"], { removeId: "a", replaceId: null })).toEqual(["a"]);
   });
 });
 

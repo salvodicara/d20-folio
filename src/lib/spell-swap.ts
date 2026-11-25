@@ -20,6 +20,17 @@ export function emptySwapChoice(): SpellSwapChoice {
   return { removeId: null, replaceId: null };
 }
 
+/** `list` with its first `swap.removeId` replaced by `swap.replaceId`, in place;
+ *  unchanged unless the swap is complete and the removed id is there. */
+export function swapIn(
+  list: readonly string[],
+  swap: SpellSwapChoice | undefined
+): string[] {
+  const at = swap?.removeId ? list.indexOf(swap.removeId) : -1;
+  if (at < 0 || !swap?.replaceId) return [...list];
+  return [...list.slice(0, at), swap.replaceId, ...list.slice(at + 1)];
+}
+
 /**
  * Returns true when the choice is in a half-filled invalid state:
  * one picker has a value but the other does not.

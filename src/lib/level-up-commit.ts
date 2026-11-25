@@ -56,7 +56,7 @@ import {
   isAsiChoiceComplete,
   type AsiChoice,
 } from "@/lib/level-up-choices";
-import { applySpellSwap, type SpellSwapChoice } from "@/lib/spell-swap";
+import { applySpellSwap, swapIn, type SpellSwapChoice } from "@/lib/spell-swap";
 import { applyFeatSpellChange } from "@/lib/feat-spell-change";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
@@ -207,14 +207,6 @@ export function applyClassPicks(
     updated = { ...updated, spells: [...updated.spells, ...cantripRefs] };
   }
   return updated;
-}
-
-/** `list` with `swap.removeId` replaced by `swap.replaceId`, in place; unchanged
- *  unless the swap is complete and the removed id is there. */
-function swapIn(list: readonly string[], swap: SpellSwapChoice | undefined): string[] {
-  const { removeId, replaceId } = swap ?? { removeId: null, replaceId: null };
-  if (!removeId || !replaceId || !list.includes(removeId)) return [...list];
-  return list.map((id) => (id === removeId ? replaceId : id));
 }
 
 /** The class options the player replaced this level (Fighting Style, Metamagic,

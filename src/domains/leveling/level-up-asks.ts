@@ -8,7 +8,8 @@
  * feat, and the ability a feat raises), each option bundle, Fighting Style,
  * Expertise, Weapon Mastery, Metamagic, Eldritch Invocations, maneuvers, the
  * choices its features and feat open, new cantrips and spells, a new class's
- * skill, and the optional spell swap.
+ * skill, and the optional swaps: a spell, a cantrip, a Fighting Style feat, a
+ * Metamagic option, an invocation.
  *
  * `supported` is false for the few picks this screen does not draw yet (Spell
  * Mastery, Signature Spells): the classic wizard takes those levels.
@@ -43,7 +44,7 @@ import {
 } from "@/lib/signature-spells-pick";
 import { offeredFeatVMs } from "@/lib/views/feat-pick-view";
 import { hasFightingStyleFeat, listFightingStyles } from "@/lib/fighting-style";
-import { invocationRequires } from "@/lib/invocation-pick";
+import { invocationHasChoices, invocationRequires } from "@/lib/invocation-pick";
 import {
   featName,
   fightingStyleOptions,
@@ -214,6 +215,10 @@ export function levelUpAsks(
   // A spell picked before the subclass that grants it always prepared (chosen later on
   // the same screen) is no longer a pick: it would add nothing.
   const newSpells = a.newSpells.filter((id) => !plan.alwaysPreparedGained.has(id));
+  const swap =
+    a.swap.replaceId && plan.alwaysPreparedGained.has(a.swap.replaceId)
+      ? { ...a.swap, replaceId: null }
+      : a.swap;
   const ability = (code: string) => ({ id: code, label: t(`abilities.${code}`) });
   const one = (v: string | null) => (v ? [v] : []);
 
@@ -314,34 +319,6 @@ export function levelUpAsks(
         .map((o) => ({ id: o.id, label: o.label })),
     });
   }
-  // SRD 5.2.1, Fighter: «Whenever you gain a Fighter level, you can replace the feat
-  // you chose with a different Fighting Style feat».
-  const ownedStyles =
-    classId === "fighter" && plan.advancingEntry
-      ? listFightingStyles(classId)
-          .filter((f) => hasFightingStyleFeat(c.features, f.id))
-          .map((f) => f.id)
-      : [];
-  if (ownedStyles.length > 0) {
-    rows.push({
-      key: "fightingStyleRemove",
-      title: t("levelUp.screen.fightingStyleForget"),
-      count: 0,
-      picked: one(a.fightingStyleSwap.removeId),
-      options: ownedStyles.map((id) => ({ id, label: featName(id, locale) })),
-    });
-    if (a.fightingStyleSwap.removeId) {
-      rows.push({
-        key: "fightingStyleReplace",
-        title: t("levelUp.screen.swapLearn"),
-        count: 1,
-        picked: one(a.fightingStyleSwap.replaceId),
-        options: fightingStyleOptions(c.features, "", locale, classId)
-          .filter((o) => !o.disabled && o.id !== a.fightingStyle)
-          .map((o) => ({ id: o.id, label: o.label })),
-      });
-    }
-  }
   const expertiseCount =
     plan.needsExpertise && plan.expertiseEligible.length >= EXPERTISE_PICKS_PER_GRANT
       ? EXPERTISE_PICKS_PER_GRANT
@@ -381,36 +358,6 @@ export function levelUpAsks(
         .map((o) => ({ id: o.id, label: o.label })),
     });
   }
-  // SRD 5.2.1, Sorcerer: «Whenever you gain a Sorcerer level, you can replace one of
-  // your Metamagic options with one you don't know».
-  const knownMetamagic = classId === "sorcerer" ? (plan.charMetamagicChoices ?? []) : [];
-  if (knownMetamagic.length > 0) {
-    rows.push({
-      key: "metamagicRemove",
-      title: t("levelUp.screen.metamagicForget"),
-      count: 0,
-      picked: one(a.metamagicSwap.removeId),
-      options: knownMetamagic.map((id) => ({
-        id,
-        label: localizeSrd("metamagic", id, "name", locale),
-      })),
-    });
-    if (a.metamagicSwap.removeId) {
-      rows.push({
-        key: "metamagicReplace",
-        title: t("levelUp.screen.swapLearn"),
-        count: 1,
-        picked: one(a.metamagicSwap.replaceId),
-        options: metamagicOptions(
-          new Set([...knownMetamagic, ...a.metamagic]),
-          "",
-          locale
-        )
-          .filter((o) => !o.disabled)
-          .map((o) => ({ id: o.id, label: o.label })),
-      });
-    }
-  }
   if (plan.needsInvocations) {
     rows.push({
       key: "invocations",
@@ -419,51 +366,16 @@ export function levelUpAsks(
       picked: a.invocations,
       options: invocationOptions(
         plan.newClassLevel,
-        plan.charInvocationChoices ?? [],
+        [
+          ...(plan.charInvocationChoices ?? []).filter(
+            (id) => id !== a.invocationSwap.removeId
+          ),
+          ...one(a.invocationSwap.replaceId),
+        ],
         "",
         locale
-      )
-        .filter((o) => o.id !== a.invocationSwap.replaceId)
-        .map((o) => ({ id: o.id, label: o.label })),
+      ).map((o) => ({ id: o.id, label: o.label })),
     });
-  }
-  // SRD 5.2.1, Warlock: «Whenever you gain a Warlock level, you can replace one of
-  // your invocations with another one for which you qualify. You can't replace an
-  // invocation if it's a prerequisite for another invocation that you have.»
-  const knownInvocations =
-    classId === "warlock" ? (plan.charInvocationChoices ?? []) : [];
-  const replaceableInvocations = knownInvocations.filter(
-    (id) => !knownInvocations.some((other) => invocationRequires(other, id))
-  );
-  if (replaceableInvocations.length > 0) {
-    rows.push({
-      key: "invocationRemove",
-      title: t("levelUp.screen.invocationForget"),
-      count: 0,
-      picked: one(a.invocationSwap.removeId),
-      options: replaceableInvocations.map((id) => ({
-        id,
-        label: localizeSrd("invocation", id, "name", locale),
-      })),
-    });
-    const removed = a.invocationSwap.removeId;
-    if (removed) {
-      const kept = knownInvocations.filter((id) => id !== removed);
-      rows.push({
-        key: "invocationReplace",
-        title: t("levelUp.screen.swapLearn"),
-        count: 1,
-        picked: one(a.invocationSwap.replaceId),
-        options: invocationOptions(
-          plan.newClassLevel,
-          [...kept, ...a.invocations],
-          "",
-          locale
-        )
-          .filter((o) => o.id !== removed)
-          .map((o) => ({ id: o.id, label: o.label })),
-      });
-    }
   }
   if (plan.needsManeuvers) {
     rows.push({
@@ -653,7 +565,7 @@ export function levelUpAsks(
         spell: true,
         title: t("levelUp.screen.swapLearn"),
         count: 1,
-        picked: one(a.swap.replaceId),
+        picked: one(swap.replaceId),
         options: learnableSpellVMs(
           {
             classId,
@@ -707,6 +619,108 @@ export function levelUpAsks(
     }
   }
 
+  // SRD 5.2.1, Fighter: «Whenever you gain a Fighter level, you can replace the feat
+  // you chose with a different Fighting Style feat».
+  const ownedStyles =
+    classId === "fighter" && plan.advancingEntry
+      ? listFightingStyles(classId)
+          .filter((f) => hasFightingStyleFeat(c.features, f.id))
+          .map((f) => f.id)
+      : [];
+  if (ownedStyles.length > 0) {
+    rows.push({
+      key: "fightingStyleRemove",
+      title: t("levelUp.screen.fightingStyleForget"),
+      count: 0,
+      picked: one(a.fightingStyleSwap.removeId),
+      options: ownedStyles.map((id) => ({ id, label: featName(id, locale) })),
+    });
+    if (a.fightingStyleSwap.removeId) {
+      rows.push({
+        key: "fightingStyleReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.fightingStyleSwap.replaceId),
+        options: fightingStyleOptions(c.features, "", locale, classId)
+          .filter((o) => !o.disabled && o.id !== a.fightingStyle)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
+  }
+  // SRD 5.2.1, Sorcerer: «Whenever you gain a Sorcerer level, you can replace one of
+  // your Metamagic options with one you don't know».
+  const knownMetamagic = classId === "sorcerer" ? (plan.charMetamagicChoices ?? []) : [];
+  if (knownMetamagic.length > 0) {
+    rows.push({
+      key: "metamagicRemove",
+      title: t("levelUp.screen.metamagicForget"),
+      count: 0,
+      picked: one(a.metamagicSwap.removeId),
+      options: knownMetamagic.map((id) => ({
+        id,
+        label: localizeSrd("metamagic", id, "name", locale),
+      })),
+    });
+    if (a.metamagicSwap.removeId) {
+      rows.push({
+        key: "metamagicReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.metamagicSwap.replaceId),
+        options: metamagicOptions(
+          new Set([...knownMetamagic, ...a.metamagic]),
+          "",
+          locale
+        )
+          .filter((o) => !o.disabled)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
+  }
+  // SRD 5.2.1, Warlock: «Whenever you gain a Warlock level, you can replace one of
+  // your invocations with another one for which you qualify. You can't replace an
+  // invocation if it's a prerequisite for another invocation that you have.»
+  const knownInvocations =
+    classId === "warlock" ? (plan.charInvocationChoices ?? []) : [];
+  // Nor one another invocation needs (known, or taken this level), nor one with its own
+  // choices (an origin feat, a Book of Shadows): those would stay behind.
+  const replaceableInvocations = knownInvocations.filter(
+    (id) =>
+      !invocationHasChoices(id) &&
+      ![...knownInvocations, ...a.invocations].some((other) =>
+        invocationRequires(other, id)
+      )
+  );
+  if (replaceableInvocations.length > 0) {
+    rows.push({
+      key: "invocationRemove",
+      title: t("levelUp.screen.invocationForget"),
+      count: 0,
+      picked: one(a.invocationSwap.removeId),
+      options: replaceableInvocations.map((id) => ({
+        id,
+        label: localizeSrd("invocation", id, "name", locale),
+      })),
+    });
+    const removed = a.invocationSwap.removeId;
+    if (removed) {
+      const kept = knownInvocations.filter((id) => id !== removed);
+      rows.push({
+        key: "invocationReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.invocationSwap.replaceId),
+        options: invocationOptions(
+          plan.newClassLevel,
+          [...kept, ...a.invocations],
+          "",
+          locale
+        )
+          .filter((o) => o.id !== removed)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
+  }
   // SRD 5.2.1, Magical Discoveries: «whenever you gain a Bard level, you can
   // replace one of the spells with another spell that meets these requirements».
   const discovery = plan.discoverySwap;
@@ -726,8 +740,8 @@ export function levelUpAsks(
     });
     if (a.discoverySwap.removeId) {
       const taken = new Set([...a.newCantrips, ...newSpells]);
-      for (const swap of [a.swap, a.cantripSwap]) {
-        if (swap.replaceId) taken.add(swap.replaceId);
+      for (const s of [swap, a.cantripSwap]) {
+        if (s.replaceId) taken.add(s.replaceId);
       }
       rows.push({
         key: "discoveryReplace",
@@ -774,7 +788,7 @@ export function levelUpAsks(
     multiclass: plan.mcGrants ? { grants: plan.mcGrants, skillPicks: a.mcSkills } : null,
     spellMastery: plan.needsSpellMastery ? a.spellMastery : null,
     signatureSpells: plan.needsSignatureSpells ? a.signatureSpells : null,
-    swap: a.swap,
+    swap,
     cantripSwap: a.cantripSwap,
     ...(discovery ? { discoverySwap: a.discoverySwap } : {}),
     ...(ownedStyles.length > 0 ? { fightingStyleSwap: a.fightingStyleSwap } : {}),

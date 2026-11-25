@@ -79,4 +79,23 @@ describe("new spells skip what the level makes always prepared", () => {
     expect(ids).toContain("fireball");
     for (const id of ["fear", "fly"]) expect(ids).not.toContain(id);
   });
+
+  it("a swap's replacement picked before the subclass that grants it is asked again", () => {
+    const doc = makeCharacterDoc({
+      classes: [{ classId: "sorcerer", level: 2 }],
+      spells: [{ srdId: "burning-hands", prepared: true }],
+    });
+    const asks = levelUpAsks(
+      doc,
+      "sorcerer",
+      {
+        ...NO_ANSWERS,
+        subclassId: "draconic-sorcery",
+        swap: { removeId: "burning-hands", replaceId: "chromatic-orb" },
+      },
+      "en"
+    );
+    expect(asks.picks.swap.replaceId).toBeNull();
+    expect(asks.rows.find((r) => r.key === "swapReplace")?.picked).toEqual([]);
+  });
 });
