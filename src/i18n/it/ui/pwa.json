@@ -3,6 +3,15 @@
     "installPrompt": "Installa d20 Folio per l'accesso offline",
     "install": "Installa",
     "updateReady": "È pronta una nuova versione.",
-    "reload": "Ricarica"
+    "reload": "Ricarica",
+    "shapeGate": {
+      "title": "Serve una nuova versione di d20 Folio",
+      "notReadyTitle": "La nuova versione non è ancora pronta",
+      "none": "La tua scheda è stata aggiornata a un formato nuovo. Ricarica per continuare a giocare.",
+      "saving": "Sto conservando le modifiche non salvate su questo dispositivo…",
+      "kept": "Le modifiche non salvate sono conservate su questo dispositivo. Dopo il ricaricamento potrai applicarle alla scheda.",
+      "failed": "Non è stato possibile conservare le modifiche non salvate su questo dispositivo. Non chiudere questa scheda: annota cosa avevi cambiato, poi ricarica.",
+      "notReady": "La scheda è già nel formato nuovo, ma l'aggiornamento dell'app non è ancora arrivato. Riprova tra un minuto."
+    }
   }
 }
