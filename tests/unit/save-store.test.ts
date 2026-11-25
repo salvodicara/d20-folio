@@ -10,6 +10,15 @@ vi.mock("@/lib/firestore", () => ({
 vi.mock("@/lib/online-status", () => ({
   subscribeToOnlineStatus: () => () => {},
 }));
+// The queue of writes made offline, drained on reconnect (#1277): held open per test.
+const drain = vi.hoisted(() => ({ calls: 0, release: () => {} }));
+vi.mock("@/lib/pending-writes-io", () => ({
+  pendingWrites: () =>
+    new Promise<void>((resolve) => {
+      drain.calls += 1;
+      drain.release = resolve;
+    }),
+}));
 
 import { useSaveStore } from "@/stores/saveStore";
 
@@ -78,11 +87,28 @@ describe("saveStore — online/offline transitions (rule: don't clobber pending)
     expect(useSaveStore.getState().online).toBe(false);
   });
 
-  it("coming back online while 'offline' → 'saved'", () => {
+  // #1277: «saved» only once the writes queued offline are on the server.
+  it("coming back online while 'offline' → 'saving' until the queue drains, then 'saved'", async () => {
     useSaveStore.setState({ status: "offline", online: false });
     useSaveStore.getState().setOnline(true);
-    expect(useSaveStore.getState().status).toBe("saved");
+    expect(useSaveStore.getState().status).toBe("saving");
     expect(useSaveStore.getState().online).toBe(true);
+    const before = drain.calls;
+    await vi.waitFor(() => expect(drain.calls).toBe(before + 1));
+    expect(useSaveStore.getState().status).toBe("saving");
+    drain.release();
+    await vi.waitFor(() => expect(useSaveStore.getState().status).toBe("saved"));
+  });
+
+  it("a drain that goes offline again stays honest: back to 'offline'", async () => {
+    useSaveStore.setState({ status: "offline", online: false });
+    const before = drain.calls;
+    useSaveStore.getState().setOnline(true);
+    await vi.waitFor(() => expect(drain.calls).toBe(before + 1));
+    useSaveStore.getState().setOnline(false);
+    drain.release();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(useSaveStore.getState().status).toBe("offline");
   });
 
   it("going offline while 'pending' does NOT clobber pending status", () => {

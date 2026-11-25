@@ -40,10 +40,23 @@ export const useSaveStore = create<SaveState>()((set, get) => ({
   setOnline: (online) => {
     set({ online });
     // If we go offline, update status; if we come back online and pending, stay pending
-    if (!online && get().status === "saved") {
+    // Saved, or still sending (a reconnect's drain included): offline is the honest word.
+    if (!online && (get().status === "saved" || get().status === "saving")) {
       set({ status: "offline" });
     } else if (online && get().status === "offline") {
-      set({ status: "saved" });
+      // #1277: back online, the writes queued offline still have to reach the server.
+      // «Saving» until they have; «saved» before that told a player who closed the app
+      // that everything synced when it had not.
+      set({ status: "saving" });
+      void import("@/lib/pending-writes-io")
+        .then(({ pendingWrites }) => pendingWrites())
+        .then(
+          () => {
+            const now = get();
+            if (now.online && now.status === "saving") now.markSaved();
+          },
+          () => undefined
+        );
     }
   },
   markSaved: () => set({ status: "saved", lastSavedAt: Date.now(), errorMessage: null }),
