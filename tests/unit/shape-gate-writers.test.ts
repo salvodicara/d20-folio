@@ -7,7 +7,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "@tests/unit/_helpers";
 
-const h = vi.hoisted(() => ({ commits: 0, sets: 0, updates: 0 }));
+const h = vi.hoisted(() => ({
+  commits: 0,
+  sets: 0,
+  updates: 0,
+  lastUpdate: null as Record<string, unknown> | null,
+}));
 
 vi.mock("firebase/firestore", () => ({
   collection: () => ({}),
@@ -21,8 +26,9 @@ vi.mock("firebase/firestore", () => ({
     h.sets += 1;
     return Promise.resolve();
   },
-  updateDoc: () => {
+  updateDoc: (_ref: unknown, data: Record<string, unknown>) => {
     h.updates += 1;
+    h.lastUpdate = data;
     return Promise.resolve();
   },
   writeBatch: () => ({
@@ -100,5 +106,15 @@ describe("writers once the shape gate is closed", () => {
     closeShapeGate({ rescue: "none" });
     await writeCombatState("u1", "c1", sessionToCombatState(doc.session));
     expect(h.sets + h.updates).toBe(0);
+  });
+});
+
+describe("every play write names its shape (#1320)", () => {
+  it("an owner play patch carries playState.version", async () => {
+    const before = sessionToCombatState(doc.session);
+    const after = { ...before, hp: { ...before.hp, current: before.hp.current - 3 } };
+    await writeCombatState("u1", "c1", after, before);
+    expect(h.updates).toBe(1);
+    expect(h.lastUpdate).toMatchObject({ "playState.version": 1 });
   });
 });

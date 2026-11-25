@@ -64,6 +64,7 @@ import {
   dropUnackedSave,
   keepRescueCopy,
   keepUnackedSave,
+  readRescueCopy,
   readUnackedSave,
 } from "@/lib/local-draft";
 import {
@@ -661,6 +662,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           ? ({ character: unacked.character, session: unacked.session } as CharacterDoc)
           : null);
       const dirty = refused !== null || storeDirty || unacked !== null;
+      // A copy already kept (an earlier pass, before a reload that still found a newer
+      // shape) is never overwritten: it is the player's edit, and its date is theirs.
+      if (readRescueCopy(user.uid, characterId, Date.now())) {
+        dropUnackedSave(user.uid, characterId);
+        closeShapeGate({ rescue: "kept" });
+        return;
+      }
       if (!dirty || !local) {
         closeShapeGate({ rescue: "none" });
         return;
@@ -676,6 +684,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             build: envelope.build,
             state: envelope.state,
           });
+          // Kept: the trace has done its job (a later gate must not bring it back).
+          if (kept) dropUnackedSave(user.uid, characterId);
           settleShapeGateRescue(kept ? "kept" : "failed");
         },
         () => settleShapeGateRescue("failed")

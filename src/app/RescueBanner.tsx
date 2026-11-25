@@ -80,7 +80,7 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={discard} disabled={busy}>
-            {t("common.discard")}
+            {t("pwa.rescue.discard")}
           </Button>
         </div>
       </section>

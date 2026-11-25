@@ -242,11 +242,13 @@ describe("campaign-io — reviewed combat effects", () => {
       expect.anything(),
       {
         hp: { current: 7, temp: 0 },
+        playState: { version: 1 },
         updatedAt: { __serverTimestamp: true },
       },
       { merge: true }
     );
-    expect(set.mock.calls[0]?.[1]).not.toHaveProperty("playState");
+    // #1320 — the merge names the play shape only; the owner's play state is untouched.
+    expect(set.mock.calls[0]?.[1]).toHaveProperty("playState", { version: 1 });
     expect(JSON.stringify(playState)).toBe(
       JSON.stringify({ version: 1, state: { exhaustion: 2 } })
     );
@@ -2144,7 +2146,11 @@ describe("a hit from someone else lands through the target's own rule (edge-case
     await hit(9);
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      { hp: { current: 0, temp: 0 }, updatedAt: { __serverTimestamp: true } },
+      {
+        hp: { current: 0, temp: 0 },
+        playState: { version: 1 },
+        updatedAt: { __serverTimestamp: true },
+      },
       { merge: true }
     );
   });

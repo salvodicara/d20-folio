@@ -128,3 +128,22 @@ describe("Apply and Discard", () => {
     expect(h.replaced).toHaveLength(0);
   });
 });
+
+describe("Apply and Discard retire the edit trace too", () => {
+  it("Discard drops the trace, so the next gate cannot bring the edit back", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "c1", { character: {}, session: {}, revision: 9 });
+    keepRescueCopy("u1", "c1", copyOf("x"));
+    discardRescueCopy("u1", "c1");
+    expect(readUnackedSave("u1", "c1")).toBeNull();
+  });
+
+  it("Apply drops the trace", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "c1", { character: {}, session: {}, revision: 9 });
+    const copy = copyOf("applied");
+    keepRescueCopy("u1", "c1", copy);
+    await applyRescueCopy("u1", server, copy);
+    expect(readUnackedSave("u1", "c1")).toBeNull();
+  });
+});

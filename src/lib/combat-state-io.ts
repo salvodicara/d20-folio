@@ -50,7 +50,7 @@
  * snapshots stay testable without touching Firebase.
  */
 import { writesFenced } from "@/lib/shape-gate";
-import { playShapeTooNew } from "@/lib/shape-numbers";
+import { PLAY_STATE_VERSION, playShapeTooNew } from "@/lib/shape-numbers";
 import {
   arrayRemove,
   arrayUnion,
@@ -383,7 +383,12 @@ export async function writeCombatState(
   }
   const ops = ownerCombatPatch(combatStateWriteData(base), mine);
   if (ops.length === 0) return;
-  await updateDoc(combatStateRef(uid, charId), fieldUpdate(ops));
+  // #1320 — every play write names its shape, so the rules can refuse an old shape
+  // after M3 (the "no number, no write" requirement ships with M3, not before).
+  await updateDoc(combatStateRef(uid, charId), {
+    ...fieldUpdate(ops),
+    "playState.version": PLAY_STATE_VERSION,
+  });
 }
 
 /**

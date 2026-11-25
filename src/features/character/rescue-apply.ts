@@ -16,7 +16,7 @@
  * device; the snapshot holds what the server had.
  */
 import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
-import { dropRescueCopy, type RescueCopy } from "@/lib/local-draft";
+import { dropRescueCopy, dropUnackedSave, type RescueCopy } from "@/lib/local-draft";
 import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
@@ -91,9 +91,12 @@ export async function applyRescueCopy(
     current
   );
   dropRescueCopy(uid, current.id);
+  dropUnackedSave(uid, current.id);
   return "applied";
 }
 
 export function discardRescueCopy(uid: string, characterId: string): void {
   dropRescueCopy(uid, characterId);
+  // The edit's trace too: a later gate must not bring a discarded edit back.
+  dropUnackedSave(uid, characterId);
 }

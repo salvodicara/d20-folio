@@ -1467,3 +1467,50 @@ describe("useCharacterSubscription — the save trace and the local echo (#1320)
     expect(readUnackedSave("u1", "char1")).toBeNull();
   });
 });
+
+describe("useCharacterSubscription — the trace is retired once kept (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("writing the copy drops the trace; a second pass keeps the first copy unchanged", async () => {
+    const { keepUnackedSave, readUnackedSave, keepRescueCopy, readRescueCopy } =
+      await import("@/lib/local-draft");
+    const first = {
+      savedAt: Date.now(),
+      schema: 3,
+      playVersion: 1,
+      build: { name: "first copy" },
+      state: {},
+    };
+    keepRescueCopy("u1", "char1", first);
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 9,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(readRescueCopy("u1", "char1", Date.now())).toEqual(first);
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+
+  it("a fresh copy also drops the trace it came from", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 9,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+});
