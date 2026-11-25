@@ -17,7 +17,16 @@ const { createCharacterMock, navigateMock } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
 }));
 vi.mock("@/lib/firebase", () => ({ db: {} }));
-vi.mock("@/lib/firestore", () => ({ createCharacter: createCharacterMock }));
+vi.mock("@/lib/firestore", () => ({
+  // Offline (#1283): the id comes back at once, the server never answers.
+  queueCreateCharacter: (...args: unknown[]) => {
+    const id = (createCharacterMock as (...a: unknown[]) => unknown)(...args);
+    return Promise.resolve(id).then((resolved) => ({
+      id: typeof resolved === "string" ? resolved : "new-id",
+      written: new Promise<void>(() => undefined),
+    }));
+  },
+}));
 vi.mock("react-router", async (orig) => ({
   ...(await orig<typeof import("react-router")>()),
   useNavigate: () => navigateMock,
@@ -145,6 +154,37 @@ describe("CreationScreen", () => {
     expect(payload.character.race).toBe("elf");
     // The Elf's lineage spells' ability, picked the class's way (a Wizard: INT).
     expect(payload.character.speciesSpellAbility).toBe("INT");
+    useAuthStore.setState({ user: null });
+  }, 15_000);
+});
+
+describe("CreationScreen — an order's own pick", () => {
+  it("Thaumaturge asks its extra Cleric cantrip under the order, and Next waits for it", async () => {
+    useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
+    render(
+      <MemoryRouter>
+        <CreationScreen />
+      </MemoryRouter>
+    );
+    const next = () => screen.getByRole("button", { name: "Next" });
+    fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: /^Acolyte/ }));
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: /^Dwarf/ }));
+    fireEvent.click(next());
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: "Thaumaturge" }));
+    // The order's cantrip is owed: Next waits, and its row offers Cleric cantrips.
+    expect(next().getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Spare the Dying" }));
+    expect(next().getAttribute("aria-disabled")).toBeNull();
+    fireEvent.click(next());
+    fireEvent.change(screen.getByLabelText("Character Name"), {
+      target: { value: "Selene" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Selene" }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/characters/new-id"));
     useAuthStore.setState({ user: null });
   }, 15_000);
 });

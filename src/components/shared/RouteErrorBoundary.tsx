@@ -17,6 +17,7 @@
 import { useRouteError, isRouteErrorResponse, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ErrorFallback } from "./ErrorBoundary";
+import { classicHref, useNewUi } from "@/app/new-ui-choice";
 
 /** Coerce React Router's `unknown` route error into a displayable `Error`. */
 function toError(routeError: unknown): Error {
@@ -36,12 +37,22 @@ export function RouteErrorBoundary({
   const routeError = useRouteError();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const newUi = useNewUi();
   return (
     <ErrorFallback
       error={toError(routeError)}
       variant={variant}
       resetLabel={t("errorBoundary.backHome")}
       onReset={() => void navigate("/characters")}
+      // #1233: the way back that needs no new screen, no write and no connection.
+      extraAction={
+        newUi
+          ? {
+              label: t("errorBoundary.backToClassic"),
+              run: () => window.location.assign(classicHref(window.location.href)),
+            }
+          : undefined
+      }
     />
   );
 }

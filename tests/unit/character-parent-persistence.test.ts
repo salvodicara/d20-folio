@@ -115,6 +115,8 @@ import { FREE_TIER_LIMITS } from "@/lib/limits";
 import {
   createCharacter,
   createDebouncedSave,
+  PARENT_SAVE_DELAY_MS,
+  preloadParentWrite,
   subscribeToCharacters,
   getFullCharacter,
   getPublicCharacter,
@@ -312,12 +314,13 @@ describe("character parent persistence (v1: the child owns the play session)", (
         "c1",
         queued.character,
         queued.session,
-        queued.revision
+        queued.revision,
+        queued
       );
       await pending.flush();
 
       expect(harness.commits).toHaveBeenCalledTimes(1);
-      expect(harness.operations).toHaveLength(2);
+      expect(harness.operations).toHaveLength(3);
       expect(harness.operations[0]).toMatchObject({
         kind: "update",
         path: "users/u1/characters/c1",
@@ -415,10 +418,10 @@ describe("character parent persistence (v1: the child owns the play session)", (
     const full = makeCharacterDoc();
     full.session = { ...full.session, notes: "restored", hp: { current: 3, temp: 0 } };
 
-    await restoreCharacterSnapshot("u1", "c1", full, 7);
+    await restoreCharacterSnapshot("u1", "c1", full, 7, full);
 
     expect(harness.commits).toHaveBeenCalledTimes(1);
-    expect(harness.operations).toHaveLength(2);
+    expect(harness.operations).toHaveLength(3);
     expect(harness.operations[0]).toMatchObject({
       kind: "update",
       path: "users/u1/characters/c1",
@@ -430,6 +433,11 @@ describe("character parent persistence (v1: the child owns the play session)", (
       path: "users/u1/characters/c1/combat/state",
     });
     expect(harness.operations[1]?.data).not.toHaveProperty("actionLifecycles");
+    // An unshared sheet: the batch keeps the public sheet absent, as the autosave does.
+    expect(harness.operations[2]).toMatchObject({
+      kind: "delete",
+      path: "users/u1/characters/c1/public/sheet",
+    });
   });
 
   it("hydrates authenticated reads but exposes only the sanitized public projection", async () => {
@@ -651,5 +659,22 @@ describe("character parent persistence (v1: the child owns the play session)", (
       );
     }
     expect(harness.getDoc).not.toHaveBeenCalled();
+  });
+});
+
+// #1275: a build edit must reach the SDK inside the event that hides the page. A flush
+// with the write modules loaded calls `commit()` synchronously; a write that must load
+// them first still leaves in queue order, so its generation is never overtaken.
+describe("the build save reaches the SDK at once (#1275)", () => {
+  it("a warm flush commits synchronously, inside the caller's turn", async () => {
+    await preloadParentWrite();
+    const pending = createDebouncedSave("u1", "c1");
+    pending.save({ ...makeCharacterDoc(), id: "c1", revision: 3 });
+    void pending.flush();
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits well under a second, so a quick lock rarely meets a pending edit", () => {
+    expect(PARENT_SAVE_DELAY_MS).toBeLessThanOrEqual(500);
   });
 });

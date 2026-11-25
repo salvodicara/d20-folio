@@ -404,12 +404,27 @@ export async function classLevel(page: Page, className: string): Promise<number>
  * The classic campaign hub: the DM types an initiative for each hero still missing one.
  * A hero's own-sheet roll can land meanwhile and redraw the cards, taking the field the
  * DM just opened; then the loop opens the next one instead of typing into nothing.
+ *
+ * `pending`: how many heroes the DM should roll for. When some heroes rolled on their
+ * own sheet just before, their rolls reach the DM's cards on their own time; waiting for
+ * exactly `pending` «Roll initiative» buttons keeps the DM from rolling for them too
+ * (a fixed 1.5 s wait sometimes did, #1222 follow-up).
  */
-export async function rollEachHero(dm: Page): Promise<void> {
+export async function rollEachHero(
+  dm: Page,
+  options?: { pending?: number }
+): Promise<void> {
   await expect(
     dm.getByRole("button", { name: /^Begin (turns|with)/ }).first()
   ).toBeVisible();
-  await dm.waitForTimeout(1_500);
+  if (options?.pending !== undefined) {
+    await expect(dm.getByRole("button", { name: "Roll initiative" })).toHaveCount(
+      options.pending,
+      { timeout: 30_000 }
+    );
+  } else {
+    await dm.waitForTimeout(1_500);
+  }
   for (let i = 0; i < 6; i++) {
     const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
     if (!(await roll.isVisible())) break;

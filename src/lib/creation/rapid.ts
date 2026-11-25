@@ -82,9 +82,9 @@ export function rapidDraft(
     facts = creationFacts(draft);
   }
 
-  // ── The class's ready-made picks, then its level-1 choices ─────────────────
-  draft = apply(draft, { type: "fillReadyMade" });
-  facts = creationFacts(draft);
+  // ── The class's level-1 bundles, then its ready-made picks ─────────────────
+  // The bundles come first: a chosen option can owe a pick of its own (Divine
+  // Order's Thaumaturge: one extra cantrip), which the ready-made fill then makes.
   const features = getFeaturesAtLevel(classId, 1);
   for (const [bundleKey, optionId] of firstOptions(
     features.flatMap((f) => f.grants ?? [])
@@ -96,6 +96,7 @@ export function rapidDraft(
       draft = apply(draft, { type: "setLineageChoice", bundleKey, optionId });
     }
   }
+  draft = apply(draft, { type: "fillReadyMade" });
   facts = creationFacts(draft);
   // The weapons it starts with come first among the masteries.
   const kit =

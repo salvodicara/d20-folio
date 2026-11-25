@@ -16,6 +16,7 @@ const {
   setThemeMock,
   setLanguageMock,
   signOutMock,
+  saveNewUiMock,
   uiState,
   localeState,
   authState,
@@ -25,11 +26,14 @@ const {
   setThemeMock: vi.fn(),
   setLanguageMock: vi.fn(),
   signOutMock: vi.fn(() => Promise.resolve()),
+  saveNewUiMock: vi.fn<(uid: string, on: boolean) => Promise<string>>(() =>
+    Promise.resolve("saved")
+  ),
   uiState: { theme: "dark" },
   localeState: { language: "en" },
   authState: {
     user: { uid: "u1", email: "tester@example.com" },
-    profile: null as { displayName?: string; photoURL?: string } | null,
+    profile: null as { displayName?: string; photoURL?: string; newUi?: boolean } | null,
   },
   isAdminState: { value: false },
 }));
@@ -49,6 +53,7 @@ vi.mock("@/stores/uiStore", () => ({
       setTheme: setThemeMock,
     }),
 }));
+vi.mock("@/features/account/new-ui-switch", () => ({ saveNewUi: saveNewUiMock }));
 vi.mock("@/hooks/useLocale", () => ({
   useLocale: () => ({ language: localeState.language, setLanguage: setLanguageMock }),
 }));
@@ -73,6 +78,7 @@ beforeEach(() => {
   setThemeMock.mockReset();
   setLanguageMock.mockReset();
   signOutMock.mockReset().mockResolvedValue(undefined);
+  saveNewUiMock.mockClear();
   uiState.theme = "dark";
   localeState.language = "en";
   authState.user = { uid: "u1", email: "tester@example.com" };
@@ -127,5 +133,22 @@ describe("SettingsPage", () => {
     renderPage();
     fireEvent.click(screen.getByRole("button", { name: /sign out/i }));
     expect(signOutMock).toHaveBeenCalled();
+  });
+
+  // #1233: the per-player opt-in, saved to the account (then the page reloads into it).
+  it("«Try the new interface» saves the choice; the classic one is the default", () => {
+    renderPage();
+    expect(screen.getByRole("button", { name: "Classic" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.click(screen.getByRole("button", { name: "New" }));
+    expect(saveNewUiMock).toHaveBeenCalledWith("u1", true);
+  });
+
+  it("choosing the interface already in use writes nothing", () => {
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Classic" }));
+    expect(saveNewUiMock).not.toHaveBeenCalled();
   });
 });

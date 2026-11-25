@@ -154,7 +154,10 @@
       "manage": "Gestisci incantesimi",
       "always": "sempre preparato",
       "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo.",
-      "via": "tramite"
+      "via": "tramite",
+      "alreadyYours": "Già tra i tuoi",
+      "addedToast": "Incantesimo aggiunto: {{name}}",
+      "upToLevel": "Fino al livello {{level}}: gli incantesimi che puoi lanciare."
     },
     "inv": {
       "pack": "Zaino",
@@ -318,6 +321,12 @@
       "featAbilityLabel": "Caratteristica aumentata da {{feat}}",
       "classBody": "La tua classe ti fa scegliere ancora: {{items}}.",
       "classItem": "{{what}} ({{className}})",
+      "discoveryLabel": "Scoperte Magiche",
+      "discoveryFrees_one": "{{spells}} è la tua Scoperta Magica. Confermando resta sempre preparato e recuperi {{freed}} dei tuoi posti normali per gli incantesimi preparati.",
+      "discoveryFrees_other": "{{spells}} sono le tue Scoperte Magiche. Confermando restano sempre preparati e recuperi {{freed}} dei tuoi posti normali per gli incantesimi preparati.",
+      "discoveryKeeps_one": "{{spells}} è la tua Scoperta Magica. Confermando resta sempre preparato.",
+      "discoveryKeeps_other": "{{spells}} sono le tue Scoperte Magiche. Confermando restano sempre preparati.",
+      "discoveryUndo": "Scoperte Magiche confermate",
       "owed": {
         "invocations_one": "{{count}} Supplica Occulta",
         "invocations_other": "{{count}} Suppliche Occulte",

@@ -154,7 +154,10 @@
       "manage": "Manage spells",
       "always": "always prepared",
       "overLimit": "That's more than your class allows: fine if your DM agrees.",
-      "via": "through"
+      "via": "through",
+      "alreadyYours": "Already yours",
+      "addedToast": "Spell added: {{name}}",
+      "upToLevel": "Up to level {{level}}: the spells you can cast."
     },
     "inv": {
       "pack": "Pack",
@@ -318,6 +321,12 @@
       "featAbilityLabel": "Ability increased by {{feat}}",
       "classBody": "Your class lets you choose more: {{items}}.",
       "classItem": "{{what}} ({{className}})",
+      "discoveryLabel": "Magical Discoveries",
+      "discoveryFrees_one": "{{spells}} is your Magical Discovery. Confirming keeps it always prepared and frees {{freed}} of your normal prepared places.",
+      "discoveryFrees_other": "{{spells}} are your Magical Discoveries. Confirming keeps them always prepared and frees {{freed}} of your normal prepared places.",
+      "discoveryKeeps_one": "{{spells}} is your Magical Discovery. Confirming keeps it always prepared.",
+      "discoveryKeeps_other": "{{spells}} are your Magical Discoveries. Confirming keeps them always prepared.",
+      "discoveryUndo": "Magical Discoveries confirmed",
       "owed": {
         "invocations_one": "{{count}} Eldritch Invocation",
         "invocations_other": "{{count}} Eldritch Invocations",

@@ -850,22 +850,29 @@ export function useCharacterSubscription(characterId: string | undefined): void 
   // Explicit combat mutators and the v1 session subscriber share one microtask-coalesced
   // complete writer. Inbound snapshots stay behind the hydration guards and never echo.
 
-  // Flush any pending debounced PARENT-doc save when the tab is closed / reloaded /
-  // navigated away from. Without this, an edit made within the debounce
-  // window (~2s) before a tab close is silently lost — the in-memory store
-  // state is correct but never persisted. `pagehide` fires more reliably
-  // than `beforeunload` on mobile Safari. (Combat-state writes are immediate, not
-  // debounced, so they need no flush.)
+  // Flush any pending debounced PARENT-doc save when the page is hidden, closed,
+  // reloaded or navigated away from. Without this, an edit made within the debounce
+  // window before the page goes away is silently lost — the in-memory store state is
+  // correct but never persisted. A phone lock or an app switch fires
+  // `visibilitychange → hidden`, often with no `pagehide` after it (the page is frozen,
+  // then discarded), so `hidden` flushes too (#1275); the flush commits synchronously
+  // once the codec is loaded. `pagehide` fires more reliably than `beforeunload` on
+  // mobile Safari. (Combat-state writes are immediate, not debounced.)
   useEffect(() => {
     function flush() {
       const pending = debouncedSaveRef.current;
       if (pending) void pending.flush();
     }
+    function flushWhenHidden() {
+      if (document.visibilityState === "hidden") flush();
+    }
     window.addEventListener("pagehide", flush);
     window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", flushWhenHidden);
     return () => {
       window.removeEventListener("pagehide", flush);
       window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", flushWhenHidden);
     };
   }, []);
 }

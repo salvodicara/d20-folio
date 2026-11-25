@@ -6,14 +6,33 @@
  * "Unexpected Application Error!" screen — the white screen the owner hit when a
  * malformed character doc crashed the roster (2026-06-08).
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 import { RouteErrorBoundary } from "@/components/shared/RouteErrorBoundary";
+import { useAuthStore } from "@/stores/authStore";
 
 function Boom(): never {
   throw new Error("kaboom-from-render");
 }
+
+function crash(): void {
+  const router = createMemoryRouter(
+    [
+      {
+        path: "/",
+        element: <Boom />,
+        errorElement: <RouteErrorBoundary variant="region" />,
+      },
+    ],
+    { initialEntries: ["/"] }
+  );
+  render(<RouterProvider router={router} />);
+}
+
+afterEach(() => {
+  useAuthStore.setState({ profile: null });
+});
 
 describe("RouteErrorBoundary (route errorElement)", () => {
   it("renders a recoverable fallback when a route throws on render", () => {
@@ -44,5 +63,21 @@ describe("RouteErrorBoundary (route errorElement)", () => {
     ).toBeInTheDocument();
     // The underlying error message is surfaced (in the collapsed details).
     expect(screen.getByText(/kaboom-from-render/)).toBeInTheDocument();
+  });
+
+  // #1233: on the new interface, a crash offers the way back that needs no new screen.
+  it("on the new interface, offers «Back to the classic interface»", () => {
+    useAuthStore.setState({ profile: { newUi: true } as never });
+    crash();
+    expect(
+      screen.getByRole("button", { name: /back to the classic interface/i })
+    ).toBeInTheDocument();
+  });
+
+  it("on the classic interface, there is no such button", () => {
+    crash();
+    expect(
+      screen.queryByRole("button", { name: /back to the classic interface/i })
+    ).toBeNull();
   });
 });

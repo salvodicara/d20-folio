@@ -3301,6 +3301,12 @@ export interface SrdClassTable {
    */
   canSwapSpell?: boolean;
   /**
+   * True for the classes that may replace one cantrip whenever they gain a level in
+   * the class (SRD 5.2.1: Bard, Cleric, Druid, Sorcerer, Warlock). Separate from
+   * `canSwapSpell`: a Cleric or Druid changes its levelled spells on a Long Rest.
+   */
+  canSwapCantrip?: boolean;
+  /**
    * What the class may change after a Long Rest (SRD 5.2.1 "Changing Your Prepared
    * Spells"): `"one"` spell (Paladin, Ranger) or `"any"` of them (Cleric, Druid;
    * Wizard from its spellbook). Absent: no Long Rest change.
