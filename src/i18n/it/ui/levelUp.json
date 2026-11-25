@@ -192,7 +192,9 @@
       "maneuver": "Manovra",
       "hoverHint": "Passa sopra un'opzione per leggere cosa fa.",
       "spellMastery": "Maestria negli Incantesimi: un incantesimo di livello {{level}} lanciato con un'azione",
-      "signatureSpells": "Incantesimi Personali: due incantesimi di livello 3"
+      "signatureSpells": "Incantesimi Personali: due incantesimi di livello 3",
+      "newClassTag": "nuova",
+      "newClassHelp": "Le classi che i tuoi punteggi permettono: almeno 13 nella caratteristica principale di ciascuna, e in quella della tua classe attuale."
     },
     "searchFightingStyles": "Cerca Stili di Combattimento"
   }
