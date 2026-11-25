@@ -162,6 +162,7 @@ import { SocketSeal } from "@/features/wizard/seals";
 import { WizardSpellSwap } from "@/features/wizard/spell-swap";
 import { spellIndex } from "@/data/spells";
 import { featSpellChanges } from "@/lib/feat-spell-change";
+import { DISCOVERIES_FEATURE_ID } from "@/lib/magical-discoveries";
 import { WizardAsiCartouches } from "@/features/wizard/point-buy";
 import { SpellLevelSeal } from "@/features/wizard/seals";
 import { togglePick } from "@/features/wizard/pick-utils";
@@ -215,6 +216,9 @@ export function LevelUpWizard() {
   const [featSwaps, setFeatSwaps] = useState<Readonly<Record<string, SpellSwapChoice>>>(
     {}
   );
+  // A Lore Bard's Magical Discoveries: one optional replacement of its picks.
+  const [discoveryChoice, setDiscoveryChoice] =
+    useState<SpellSwapChoice>(emptySwapChoice());
   const [fightingStyleChoice, setFightingStyleChoice] = useState<string | null>(null);
   const [expertisePicks, setExpertisePicks] = useState<string[]>([]);
   const [weaponMasteryPicks, setWeaponMasteryPicks] = useState<string[]>([]);
@@ -364,6 +368,7 @@ export function LevelUpWizard() {
     maxSpellLevel,
     existingSpellIds,
     knownNonCantripRefs,
+    discoverySwap,
     preview,
     choiceSlots,
     newRows,
@@ -403,6 +408,7 @@ export function LevelUpWizard() {
     setSwapChoice(emptySwapChoice());
     setCantripSwap(emptySwapChoice());
     setFeatSwaps({});
+    setDiscoveryChoice(emptySwapChoice());
     setFightingStyleChoice(null);
     setExpertisePicks([]);
     setWeaponMasteryPicks([]);
@@ -476,7 +482,14 @@ export function LevelUpWizard() {
   );
   const cantripSwapOffered = canSwapCantrip && knownCantripRefs.length > 0;
   const featChanges = charData ? featSpellChanges(charData.spells) : [];
-  const hasSwapStep = classSwap || cantripSwapOffered || featChanges.length > 0;
+  const hasSwapStep =
+    classSwap || cantripSwapOffered || featChanges.length > 0 || discoverySwap !== null;
+  const discoveryName = localizeSrd(
+    "class-feature",
+    DISCOVERIES_FEATURE_ID,
+    "name",
+    locale
+  );
 
   const steps: Array<WizardStepDef & { id: StepId }> = [
     { id: "hp", label: t("levelUp.stepHp"), glyph: Heart },
@@ -543,7 +556,8 @@ export function LevelUpWizard() {
   const swapComplete =
     !isSwapIncomplete(swapChoice) &&
     !isSwapIncomplete(cantripSwap) &&
-    featChanges.every((change) => !isSwapIncomplete(featSwapOf(change.featId)));
+    featChanges.every((change) => !isSwapIncomplete(featSwapOf(change.featId))) &&
+    !isSwapIncomplete(discoveryChoice);
   const subclassComplete = !needsSubclass || subclassChoice !== null;
 
   const stepComplete: Record<StepId, boolean> = {
@@ -705,6 +719,7 @@ export function LevelUpWizard() {
         swap: swapChoice,
         cantripSwap,
         featSpellChanges: featChanges.map((change) => featSwapOf(change.featId)),
+        ...(discoverySwap ? { discoverySwap: discoveryChoice } : {}),
         bundlePicks: needsBundles ? bundlePicks : {},
       });
       const updated = updatedDoc.character;
@@ -1550,6 +1565,36 @@ export function LevelUpWizard() {
                 </section>
               );
             })}
+            {/* Magical Discoveries (Lore Bard): optional, one of its picks replaced
+                by a Cleric, Druid or Wizard cantrip or spell of a level with slots. */}
+            {discoverySwap && (
+              <section
+                className="flex flex-col gap-3"
+                data-testid="discovery-swap"
+                aria-label={discoveryName}
+              >
+                <h3 className="on-art text-center font-display text-base text-text-primary">
+                  {t("levelUp.featSpellChange", {
+                    feat: discoveryName,
+                  })}
+                </h3>
+                <WizardSpellSwap
+                  classId={classId}
+                  knownSpells={discoverySwap.picks}
+                  alsoKnown={
+                    new Set([
+                      ...existingSpellIds,
+                      ...newSpells,
+                      ...newCantrips,
+                      ...(swapChoice.replaceId ? [swapChoice.replaceId] : []),
+                    ])
+                  }
+                  pool={discoverySwap.pool}
+                  value={discoveryChoice}
+                  onChange={setDiscoveryChoice}
+                />
+              </section>
+            )}
           </div>
         )}
 
@@ -1747,6 +1792,20 @@ export function LevelUpWizard() {
                     value: t("levelUp.swap.cantripSummary", {
                       old: spellName(cantripSwap.removeId, locale),
                       new: spellName(cantripSwap.replaceId, locale),
+                    }),
+                  });
+                }
+                if (
+                  discoveryChoice.removeId != null &&
+                  discoveryChoice.replaceId != null
+                ) {
+                  rows.push({
+                    key: "discovery-swap",
+                    step: "swap",
+                    label: discoveryName,
+                    value: t("levelUp.swap.summary", {
+                      old: spellName(discoveryChoice.removeId, locale),
+                      new: spellName(discoveryChoice.replaceId, locale),
                     }),
                   });
                 }

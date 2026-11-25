@@ -43,6 +43,7 @@ import { isInvocationPlaceholder, newInvocationsAtLevel } from "@/lib/invocation
 import { isManeuverPlaceholder, newManeuversAtLevel } from "@/lib/maneuver-pick";
 import { type AsiChoice } from "@/lib/level-up-choices";
 import { widenedSpellListsAtLevel } from "@/lib/feat-spell-choices";
+import { discoverySwapAt } from "@/lib/magical-discoveries";
 import {
   type CharacterDoc,
   type SrdFeatureRef,
@@ -340,6 +341,13 @@ export function levelUpPlan(
     return { choiceSlots: slots, newRows: rows };
   })();
 
+  // Lore Bard, Magical Discoveries: on each Bard level after 6, one of its picks
+  // may be replaced (optional). Null when the level offers no such swap.
+  const discoverySwap =
+    charData && classId === "bard"
+      ? discoverySwapAt(charData.spells, advancingSubclassId, newClassLevel, newRows)
+      : null;
+
   const sessionBundleChoices = character?.session.grantBundleChoices;
   const levelUpBundles = (() => {
     if (!charData) return [];
@@ -446,6 +454,7 @@ export function levelUpPlan(
     existingSpellIds,
     alwaysPreparedGained,
     knownNonCantripRefs,
+    discoverySwap,
     preview,
     choiceSlots,
     newRows,

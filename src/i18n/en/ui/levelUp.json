@@ -150,6 +150,7 @@
       "chooseSpells_other": "Choose {{count}} spells",
       "swapForget": "Swap a spell you know (optional)",
       "swapLearn": "In its place",
+      "discoveryForget": "{{feature}}: swap one of its spells (optional)",
       "changes": "What changes",
       "gained": "You gain",
       "hp": "Maximum Hit Points",
