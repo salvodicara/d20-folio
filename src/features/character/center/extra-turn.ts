@@ -6,6 +6,8 @@
  * `combatStore.extraTurn` — while the round timers (`advanceEffectTimers`) and the
  * engine's round boundary stay untouched, so round-based durations do not tick.
  *
+ * The repeat saves due at the end of a turn are raised too: an extra turn is a turn.
+ *
  * One line on the play log (a `turn-end` with `extraTurn`) and one undo entry that
  * restores the previous turn exactly, folding this turn's per-slot undos the way the
  * End Turn entry does.
@@ -19,6 +21,8 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { MAX_UNDO_DEPTH, registerUndoableResult, useUndoStore } from "@/stores/undoStore";
+
+import { raiseSoloRepeatSaves } from "./solo-repeat-save-store";
 
 export function takeSoloExtraTurn(
   offer: ExtraTurnOffer,
@@ -61,6 +65,8 @@ export function takeSoloExtraTurn(
   const compacted = useUndoStore.getState().past.filter((e) => e.turnScoped);
   useUndoStore.getState().purgeTurnScoped();
   useCombatStore.getState().extraTurn(offer.source);
+  // An extra turn is a turn: «at the end of each of its turns» asks again (#1333).
+  const restoreRepeatSaves = raiseSoloRepeatSaves();
   const logId = useCharacterStore.getState().logEvent({
     kind: "turn-end",
     round: c.round,
@@ -87,6 +93,7 @@ export function takeSoloExtraTurn(
       useCombatStore.setState(prevTurn);
       useCharacterStore.getState().removeLogEntry(logId);
       restorePerTurn?.();
+      restoreRepeatSaves();
       boundaryAtEnd.restore();
       useUndoStore.setState((s) => ({
         past: [...s.past, ...compacted].slice(-MAX_UNDO_DEPTH),

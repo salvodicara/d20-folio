@@ -87,6 +87,9 @@ export interface EndTurnPorts {
   compactTurnUndo: () => () => void;
   /** Solo: a readied spell not released by the next turn's start is lost. */
   expireReadiedSpell: (round: number) => (() => void) | null;
+  /** Solo: the repeat saves this turn edge makes due on the sheet (#1333), raised
+   *  in place of the last edge's; returns the restore of the strips it replaced. */
+  raiseRepeatSaves: () => () => void;
   logTurnEnd: (round: number) => string | null;
   removeLogEntry: (id: string | null) => void;
   /** Solo: the one End Turn undo entry; `replay` is its redo. */
@@ -97,7 +100,8 @@ export interface EndTurnPorts {
  * End Turn. In a shared fight it only ever acts on your own turn (a stale control is
  * a true no-op): it refills per-turn uses, counts timed states down, asks about
  * maintained states, announces what ended, and hands the turn on. Solo it also
- * advances the round, loses an unreleased readied spell, logs the new round, and
+ * advances the round, loses an unreleased readied spell, raises the repeat saves the
+ * edge makes due (a shared fight's own prompts ask them there), logs the new round, and
  * registers one undo that restores all of it (the turn's own entries come back
  * individually undoable) and whose redo runs End Turn again.
  */
@@ -128,6 +132,8 @@ export function runEndTurn(ports: EndTurnPorts): void {
     phase: "turn-start",
   });
   const restoreReadied = ports.expireReadiedSpell(round + 1);
+  // After the edge's expiries: a condition that just ended asks nothing.
+  const restoreRepeatSaves = ports.raiseRepeatSaves();
   const turnLogId = ports.logTurnEnd(round + 1);
   ports.announce(
     expiryNoticeSources(timers.expired, boundaryAtEnd.expired, boundaryAtStart.expired)
@@ -140,6 +146,7 @@ export function runEndTurn(ports: EndTurnPorts): void {
       restorePerTurn?.();
       timers.restore();
       restoreReadied?.();
+      restoreRepeatSaves();
       boundaryAtStart.restore();
       boundaryAtEnd.restore();
       ports.setMaintenancePrompts([]);

@@ -528,6 +528,8 @@ interface CharacterState {
       registerConcentrationUndo?: boolean;
       /** The combatant that caused it («Da chi?»). */
       sourceId?: string;
+      /** The spell or feature that imposed it («From what?», #1333). */
+      origin?: string;
     }
   ) => void;
   removeCondition: (condition: string) => void;
@@ -2609,12 +2611,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // (the manual-condition seam program); see `addCondition` in lib/play.
     const worldActionId = `condition-apply-${crypto.randomUUID()}`;
     const sourceId = opts?.sourceId;
+    const origin = opts?.origin;
     if (
       !get().dispatch({
         kind: "add-condition",
         condition,
         worldActionId,
         ...(sourceId ? { sourceId } : {}),
+        ...(origin ? { origin } : {}),
       })
     )
       return;
@@ -2743,11 +2747,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // The line goes first, while it is still there: removing it tells the campaign's
       // session log too (after the undo it would already be gone).
       get().removeLogEntry(lossLogId);
-      undoRemoval();
+      // The effects first: the session the undo then restores is projected with
+      // them (a condition held by a solo effect alone comes back, #1333).
       set({
         combatActiveEffects: effectiveCombatEffects(prevLocalEffects),
         combatLegacyActiveEffects: prevLocalEffects,
       });
+      undoRemoval();
       // Re-persist the restored trio so the subdoc converges with the undo.
       persistCombat(get);
       flushParentPersistence(get);

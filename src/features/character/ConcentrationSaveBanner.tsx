@@ -229,7 +229,11 @@ function ConcentrationSavePrompt({
   }
 
   return (
-    <div className="conc-banner conc-banner-prompt" role="status" aria-live="polite">
+    <div
+      className="conc-banner conc-banner-prompt conc-banner-grounded"
+      role="status"
+      aria-live="polite"
+    >
       <span className="conc-banner-mark" aria-hidden />
       <span className="conc-banner-text">
         {t("combat.concentrationSavePrompt", {

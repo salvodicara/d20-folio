@@ -1148,6 +1148,10 @@ export interface SessionState {
   conditions: string[];
   /** Who caused a condition chip, when known: condition id → combatant id (M3). */
   conditionSources?: Record<string, string>;
+  /** What caused a condition chip, when the player named it («From what?», #1333):
+   *  condition id → the catalogue id of the spell or feature that imposed it. Read
+   *  for its repeat-save rule; absent: unknown. */
+  conditionOrigins?: Record<string, string>;
   /** The table's answer to "can you see its source?", per condition instance
    *  (`effect:<id>` or `condition:<id>`), where the sheet can't derive it (M3). */
   seesSource?: Record<string, boolean>;
