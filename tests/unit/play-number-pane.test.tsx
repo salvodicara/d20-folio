@@ -51,6 +51,7 @@ describe("the pane's total is the tile's number", () => {
     expect(total({ kind: "initiative" })).toBe(head.numbers.initiative);
     expect(total({ kind: "speed" })).toBe(head.numbers.speedFt);
     expect(total({ kind: "proficiency" })).toBe(head.numbers.proficiency);
+    expect(total({ kind: "maxHp" })).toBe(head.hp.max);
     for (const a of head.abilities) {
       expect(total({ kind: "ability", ability: a.id })).toBe(a.score);
       expect(total({ kind: "save", ability: a.id })).toBe(a.saveTotal);
@@ -151,6 +152,7 @@ describe("each pane says the rule its number follows (D&D Beyond's pane opens wi
     [{ kind: "ability", ability: "DEX" }, "abilityScores"],
     [{ kind: "save", ability: "WIS" }, "savingThrow"],
     [{ kind: "skill", id: "stealth" }, "skillCheck"],
+    [{ kind: "maxHp" }, "hitPoints"],
   ];
   it.each(cases)("%o → the glossary's %s sentence", (key, term) => {
     open(key);

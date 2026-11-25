@@ -48,7 +48,7 @@ export function PlayNumberPane({
   const [draft, setDraft] = useState(view.stored === null ? "" : toInput(view.stored));
   const name = numberName(numberKey, t);
   const shown =
-    numberKey.kind === "ac" || numberKey.kind === "ability"
+    numberKey.kind === "ac" || numberKey.kind === "ability" || numberKey.kind === "maxHp"
       ? String(view.total)
       : speed
         ? localeDistance(view.total, locale)
@@ -159,6 +159,8 @@ function numberTerm(key: SheetNumberKey): GlossaryTermId {
       return "speed";
     case "proficiency":
       return "proficiencyBonus";
+    case "maxHp":
+      return "hitPoints";
     case "ability":
       return "abilityScores";
     case "save":
@@ -181,6 +183,8 @@ function numberName(
       return t("character.speed");
     case "proficiency":
       return t("play.proficiency");
+    case "maxHp":
+      return t("character.health.maxHp");
     case "ability":
       return t(`abilities.${key.ability}`);
     case "save":
