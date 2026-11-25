@@ -43,7 +43,7 @@ import {
   speciesStepComplete,
   type CreationDraft,
 } from "@/lib/creation/draft";
-import { createCharacter } from "@/lib/firestore";
+import { createCharacterOffline } from "@/features/creation/create-offline";
 import { BUILD_ERROR_KEYS } from "@/lib/views/creation-view";
 import { useAuthStore } from "@/stores/authStore";
 import { Button, Choice, Field, Panel, Room } from "@/ui";
@@ -152,9 +152,15 @@ export function CreationScreen() {
     setSaving(true);
     setCreateError(null);
     try {
-      const id = await createCharacter(user.uid, built.payload);
-      void navigate(`/characters/${id}`);
-      window.scrollTo({ top: 0 });
+      // Opens the new sheet at once, online or offline; the draft stays on this device
+      // until the server confirms it (#1283).
+      const open = (id: string): void => {
+        void navigate(`/characters/${id}`);
+        window.scrollTo({ top: 0 });
+      };
+      open(
+        await createCharacterOffline({ uid: user.uid, payload: built.payload, open, t })
+      );
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : t("character.failedCreate"));
       setSaving(false);

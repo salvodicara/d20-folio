@@ -12,6 +12,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useLocale } from "@/hooks/useLocale";
 import { signOut } from "@/lib/auth";
 import { LOCALES } from "@/lib/locale";
+import { useNewUiSwitch } from "@/features/account/useNewUiSwitch";
 import { useAuthStore } from "@/stores/authStore";
 import { Button, Chip, Panel } from "@/ui";
 import { initialOf } from "@/ui/initial";
@@ -26,6 +27,7 @@ export function SettingsScreen() {
   const profile = useAuthStore((s) => s.profile);
   const name = profile?.displayName || user?.email || t("settings.noIdentity");
   const email = profile?.displayName ? user?.email : null;
+  const newUi = useNewUiSwitch();
   // a working page: no room band above it, the panels come first
   return (
     <>
@@ -45,6 +47,18 @@ export function SettingsScreen() {
                 {code.toUpperCase()}
               </Chip>
             ))}
+          </div>
+        </Panel>
+        {/* #1233: the way back to the classic interface (and the player's saved choice). */}
+        <Panel color="abi" title={t("settings.newUi")}>
+          <p className="f-help">{t("settings.newUiHelp")}</p>
+          <div className="f-chips" role="group" aria-label={t("settings.newUi")}>
+            <Chip pressed={!newUi.optedIn} onClick={() => newUi.choose(false)}>
+              {t("settings.uiClassic")}
+            </Chip>
+            <Chip pressed={newUi.optedIn} onClick={() => newUi.choose(true)}>
+              {t("settings.uiNew")}
+            </Chip>
           </div>
         </Panel>
         <Panel color="grp" title={t("common.account")}>

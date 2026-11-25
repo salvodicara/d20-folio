@@ -8,9 +8,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { asRaceId } from "@/data/srd-names";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
+import { preparedLevelledCount } from "@/lib/wizard-spellbook";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
+import { DISCOVERIES, loreBardDoc } from "./_lore-bard";
 
 // Every Weapon Mastery the Fighter 5 has, so only the species' choices are owed.
 const MASTERED = {
@@ -191,4 +193,41 @@ describe("PlaySpeciesChoices: a long owed list can be searched", () => {
       useCharacterStore.getState().character?.character.classes[0]?.weaponMasteries
     ).toEqual(["longsword", "greataxe"]);
   }, 15_000);
+});
+
+describe("PlaySpeciesChoices: Magical Discoveries saved without their mark", () => {
+  it("lets the player change which spells they are, then marks those only", () => {
+    useCharacterStore.getState().setCharacter(
+      loreBardDoc([
+        { srdId: "healing-word", prepared: true },
+        { srdId: "fireball", prepared: true },
+        { srdId: "spirit-guardians", prepared: true },
+        { srdId: "shield", prepared: true },
+      ])
+    );
+    render(<Banner />);
+    expect(
+      screen.getByRole("group", { name: "Choices to finish" }).textContent
+    ).toContain(
+      "Fireball and Spirit Guardians are your Magical Discoveries. Confirming keeps them always prepared and frees 2 of your normal prepared places."
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    fireEvent.click(screen.getByRole("button", { name: "Spirit Guardians" }));
+    expect(
+      screen.getByText(
+        "Fireball is your Magical Discovery. Confirming keeps it always prepared and frees 1 of your normal prepared places."
+      )
+    ).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Shield" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    const after = useCharacterStore.getState().character?.character;
+    if (!after) throw new Error("no character");
+    expect(
+      after.spells.flatMap((s) =>
+        !("custom" in s) && s.grantedBy === DISCOVERIES ? [s.srdId] : []
+      )
+    ).toEqual(["fireball", "shield"]);
+    expect(preparedLevelledCount(after)).toBe(2);
+    expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+  });
 });

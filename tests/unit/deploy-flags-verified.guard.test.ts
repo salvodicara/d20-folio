@@ -10,7 +10,8 @@
  * does not set the same value.
  *
  * Blind spot: it reads the YAML text of each job's block; a flag set through an
- * expression (VITE_NEW_UI follows a deploy input, default off) is left out.
+ * expression is left out. VITE_NEW_UI is a literal "0" (#1233: players opt in from
+ * Settings), checked on its own below.
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -40,13 +41,22 @@ function literalFlags(block: string): Record<string, string> {
   return flags;
 }
 
+const allDeployFlags = literalFlags(jobBlock(read("deploy.yml"), "deploy"));
+// VITE_NEW_UI is left out of the comparison: the e2e runs build the new UI on purpose
+// (their own servers set it to "1"), and the deploy's "0" is checked below.
 const deployFlags = Object.fromEntries(
-  Object.entries(literalFlags(jobBlock(read("deploy.yml"), "deploy"))).filter(
-    ([name]) => !name.startsWith("VITE_FIREBASE_")
+  Object.entries(allDeployFlags).filter(
+    ([name]) => !name.startsWith("VITE_FIREBASE_") && name !== "VITE_NEW_UI"
   )
 );
 
 describe("the deploy's feature flags are the ones its gating e2e runs use", () => {
+  // #1233: the new UI is the player's choice, never a deploy-time switch for everyone.
+  it("deploy.yml never forces the new UI, and offers no input to do it", () => {
+    expect(allDeployFlags.VITE_NEW_UI).toBe("0");
+    expect(read("deploy.yml")).not.toMatch(/^\s+new_ui:/m);
+  });
+
   it("deploy.yml turns the v0.26 writers on", () => {
     expect(deployFlags).toMatchObject({
       VITE_PEER_SPENDS_LEDGER: "true",

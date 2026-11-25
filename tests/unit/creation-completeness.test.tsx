@@ -18,7 +18,11 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
 vi.mock("@/lib/firebase", () => ({}));
-vi.mock("@/lib/firestore", () => ({ createCharacter: vi.fn() }));
+vi.mock("@/lib/firestore", () => ({
+  queueCreateCharacter: vi.fn(() =>
+    Promise.resolve({ id: "new-id", written: new Promise<void>(() => undefined) })
+  ),
+}));
 
 import { CreationWizard } from "@/features/creation/CreationWizard";
 import { useAuthStore } from "@/stores/authStore";

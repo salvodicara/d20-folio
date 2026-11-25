@@ -89,12 +89,14 @@ service cloud.firestore {
     // - List: admin only
     match /users/{uid} {
       // A non-admin may update ONLY their own doc and ONLY the `lastActiveAt`
-      // telemetry field — defined INSIDE the match so the `{uid}` wildcard is in
-      // scope. Same diff().affectedKeys().hasOnly() construct proven in the
-      // campaign rules.
+      // telemetry field and their «Try the new interface» opt-in `newUi` (#1233), a
+      // boolean — defined INSIDE the match so the `{uid}` wildcard is in scope. Same
+      // diff().affectedKeys().hasOnly() construct proven in the campaign rules; never
+      // `role` (escalation) nor `status` (self-unblock).
       function isSelfTelemetryUpdate() {
         return request.auth.uid == uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["lastActiveAt"]);
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["lastActiveAt", "newUi"])
+          && request.resource.data.get("newUi", false) is bool;
       }
       allow read:   if isAuth() && (request.auth.uid == uid || isAdmin());
       allow create: if isAuth() && request.auth.uid == uid
