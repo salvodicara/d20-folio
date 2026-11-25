@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { asRaceId } from "@/data/srd-names";
-import { unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
+import { owedChoiceCount, unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
 
 const build = (race: string, extra: object = {}) => ({
   race: asRaceId(race),
@@ -64,5 +64,31 @@ describe("unresolvedBuildChoices", () => {
   it("a species with no picks, or one the catalogue doesn't know, owes nothing", () => {
     expect(unresolvedBuildChoices(build("dwarf"), {})).toEqual([]);
     expect(unresolvedBuildChoices(build("homebrew-folk"), {})).toEqual([]);
+  });
+});
+
+/**
+ * The «choices owed» signal the sheet's level-up note reads (E4 item 8): how many
+ * picks the build still owes. A class pick counts each pick it owes; a pick the
+ * sheet can't check (a Human's any-skill) counts nothing.
+ */
+describe("owedChoiceCount", () => {
+  it("counts each owed pick, and never a pick the sheet can't check", () => {
+    // Elf: Keen Senses skill + lineage + spellcasting ability.
+    expect(owedChoiceCount(build("elf"), {})).toBe(3);
+    // Human: the origin feat only (Skillful can't be checked).
+    expect(owedChoiceCount(build("human"), {})).toBe(1);
+    expect(owedChoiceCount(build("dwarf"), {})).toBe(0);
+  });
+
+  it("a Warlock 2 with no invocations owes 3 (SRD 5.2.1 Warlock Features)", () => {
+    const warlock = build("dwarf", {
+      classes: [{ classId: "warlock", level: 2 }],
+      spells: [
+        { srdId: "eldritch-blast", prepared: true },
+        { srdId: "chill-touch", prepared: true },
+      ],
+    });
+    expect(owedChoiceCount(warlock, {})).toBe(3);
   });
 });

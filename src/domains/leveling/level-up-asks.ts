@@ -51,6 +51,7 @@ import {
   weaponMasteryOptions,
 } from "@/lib/views/level-up-view";
 import { localizeText } from "@/lib/views/srd-i18n";
+import { DISCOVERIES_FEATURE_ID } from "@/lib/magical-discoveries";
 import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
 import { choiceSlotRows, toggleCount } from "@/domains/creation/creation-view";
 import type { CharacterData, CharacterDoc } from "@/types/character";
@@ -82,6 +83,7 @@ export interface LevelUpAnswers {
   spellMastery: SpellMasteryPicks;
   /** Wizard 20: two level-3 spells. */
   signatureSpells: SignatureSpellsPicks;
+  discoverySwap: SpellSwapChoice;
 }
 
 export const NO_ANSWERS: LevelUpAnswers = {
@@ -103,6 +105,7 @@ export const NO_ANSWERS: LevelUpAnswers = {
   cantripSwap: emptySwapChoice(),
   spellMastery: emptySpellMasteryPicks(),
   signatureSpells: emptySignatureSpellsPicks(),
+  discoverySwap: emptySwapChoice(),
 };
 
 /** Which answer a row writes. `slot` rows carry their slot in `slotRow`. */
@@ -130,7 +133,9 @@ export type AskKey =
   | "cantripReplace"
   | "spellMastery1"
   | "spellMastery2"
-  | "signatureSpells";
+  | "signatureSpells"
+  | "discoveryRemove"
+  | "discoveryReplace";
 
 export interface AskRow {
   key: AskKey;
@@ -560,6 +565,41 @@ export function levelUpAsks(
     }
   }
 
+  // SRD 5.2.1, Magical Discoveries: «whenever you gain a Bard level, you can
+  // replace one of the spells with another spell that meets these requirements».
+  const discovery = plan.discoverySwap;
+  if (discovery) {
+    rows.push({
+      key: "discoveryRemove",
+      spell: true,
+      title: t("levelUp.screen.discoveryForget", {
+        feature: localizeSrd("class-feature", DISCOVERIES_FEATURE_ID, "name", locale),
+      }),
+      count: 0,
+      picked: one(a.discoverySwap.removeId),
+      options: discovery.picks.map((s) => ({
+        id: s.srdId,
+        label: localizeSrd("spell", s.srdId, "name", locale),
+      })),
+    });
+    if (a.discoverySwap.removeId) {
+      const taken = new Set([...a.newCantrips, ...a.newSpells]);
+      for (const swap of [a.swap, a.cantripSwap]) {
+        if (swap.replaceId) taken.add(swap.replaceId);
+      }
+      rows.push({
+        key: "discoveryReplace",
+        spell: true,
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.discoverySwap.replaceId),
+        options: discovery.pool
+          .filter((id) => !taken.has(id))
+          .map((id) => ({ id, label: localizeSrd("spell", id, "name", locale) })),
+      });
+    }
+  }
+
   const asiDone =
     !plan.needsAsi ||
     isAsiChoiceComplete(a.asi, a.asi.mode === "feat" && featBoost !== null);
@@ -594,6 +634,7 @@ export function levelUpAsks(
     signatureSpells: plan.needsSignatureSpells ? a.signatureSpells : null,
     swap: a.swap,
     cantripSwap: a.cantripSwap,
+    ...(discovery ? { discoverySwap: a.discoverySwap } : {}),
     bundlePicks: plan.needsBundles ? a.bundlePicks : {},
   };
   return {
@@ -691,6 +732,16 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
       return {
         ...a,
         cantripSwap: { ...a.cantripSwap, replaceId: flip(a.cantripSwap.replaceId) },
+      };
+    case "discoveryRemove":
+      return {
+        ...a,
+        discoverySwap: { removeId: flip(a.discoverySwap.removeId), replaceId: null },
+      };
+    case "discoveryReplace":
+      return {
+        ...a,
+        discoverySwap: { ...a.discoverySwap, replaceId: flip(a.discoverySwap.replaceId) },
       };
     case "expertise":
     case "weaponMasteries":

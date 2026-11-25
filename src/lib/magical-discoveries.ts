@@ -13,12 +13,22 @@
  * nor on another of the character's own classes' lists, not always prepared
  * already, and not picked through another source (`grantedBy`).
  *
+ * «Whenever you gain a Bard level, you can replace one of the spells with another
+ * spell that meets these requirements» (`discoverySwapAt`): a cantrip or a spell of
+ * a level the Bard has slots for, from the lists the feature's own grant names. The
+ * replacement is saved with `applyFeatSpellChange`, which keeps the mark and the
+ * always-prepared flag.
+ *
  * Pure module: character in, answer out.
  */
 import { getClassFeatures } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
+import {
+  pendingSpellChoicesForFeat,
+  listAvailableForSlot,
+} from "@/lib/feat-spell-choices";
 import { preparedLevelledCount } from "@/lib/wizard-spellbook";
-import type { CharacterData, SrdSpellRef } from "@/types/character";
+import type { CharacterData, CustomSpell, SrdSpellRef } from "@/types/character";
 
 export const DISCOVERIES_FEATURE_ID = "bard-lore-additional-magical-secrets";
 const SUBCLASS = "college-of-lore";
@@ -127,4 +137,34 @@ export function discoveryPlacesFreed(
     preparedLevelledCount(character) -
     preparedLevelledCount(markDiscoveries(character, spellIds))
   );
+}
+
+export interface DiscoverySwap {
+  /** The feature's picks on the sheet, any of which may be replaced. */
+  picks: SrdSpellRef[];
+  /** What a pick may become: the grant's lists, a cantrip or a castable level,
+   *  never a spell already on the sheet. */
+  pool: string[];
+}
+
+/** The swap a Bard reaching `newBardLevel` may make, or null when none is offered. */
+export function discoverySwapAt(
+  spells: ReadonlyArray<SrdSpellRef | CustomSpell>,
+  subclassId: string,
+  newBardLevel: number,
+  slotRows: Record<string, ReadonlyArray<number>>
+): DiscoverySwap | null {
+  const feature = getClassFeatures("bard").find((f) => f.id === DISCOVERIES_FEATURE_ID);
+  if (!feature?.subclass || feature.subclass !== subclassId.toLowerCase()) return null;
+  // «Whenever you gain a Bard level» after the one that granted the picks.
+  if (newBardLevel <= feature.level) return null;
+  const picks = spells.filter(
+    (s): s is SrdSpellRef => !("custom" in s) && s.grantedBy === DISCOVERIES_FEATURE_ID
+  );
+  const slot = pendingSpellChoicesForFeat(feature, { spellSlotsByClass: slotRows }).find(
+    (s) => s.kind === "spell"
+  );
+  if (picks.length === 0 || !slot) return null;
+  const known = new Set(spells.flatMap((s) => ("custom" in s ? [] : [s.srdId])));
+  return { picks, pool: listAvailableForSlot(slot, known).map((s) => s.id) };
 }

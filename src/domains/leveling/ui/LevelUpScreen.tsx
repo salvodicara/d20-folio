@@ -14,11 +14,12 @@
  *     would save, the choices still owed, and «Conferma».
  *
  * Confirming saves a snapshot first, then the level; the toast's «Annulla» puts the
- * snapshot back. Levels this screen cannot draw yet open the classic wizard.
+ * snapshot back. Levels this screen cannot draw yet open the classic wizard. A new
+ * class (multiclassing) is picked here too, among those the scores allow.
  */
 import { createElement, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, Navigate } from "react-router";
+import { Navigate } from "react-router";
 
 import {
   FolioBookIcon,
@@ -62,7 +63,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Choice, Room, Stepper, type ArtKind } from "@/ui";
+import { Button, Chip, Choice, Dialog, Room, Stepper, type ArtKind } from "@/ui";
 
 import type { InfoKind } from "@/domains/spells/option-info";
 import { PickGrid } from "@/domains/spells/ui/PickGrid";
@@ -106,7 +107,17 @@ export function LevelUpScreen({
   const c = doc.character;
   const owned = getClasses(c);
   const [classId, setClassId] = useState(() => primaryClassId(c));
+  // The classes the scores allow starting now (13+ in each primary ability), and
+  // whether the level goes to one of them.
+  const newClasses = eligibleNewClasses(c);
+  const starting = !owned.some((e) => e.classId === classId);
+  const [adding, setAdding] = useState(false);
   const [answers, setAnswers] = useState<LevelUpAnswers>(NO_ANSWERS);
+  // A new class asks its own questions: the answers start over.
+  const pickClass = (id: string) => {
+    setClassId(id);
+    setAnswers(NO_ANSWERS);
+  };
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -255,14 +266,6 @@ export function LevelUpScreen({
                 {c.name}
                 {"\u00a0· "}
                 {classLine}
-                {owned.length === 1 && eligibleNewClasses(c).length > 0 && (
-                  <>
-                    {"\u00a0· "}
-                    <Link className="f-link" to={classic}>
-                      {t("levelUp.screen.otherClass")}
-                    </Link>
-                  </>
-                )}
               </p>
             </div>
             <Button kind="quiet" icon="u-close" onClick={onClose}>
@@ -270,7 +273,9 @@ export function LevelUpScreen({
             </Button>
           </header>
 
-          {owned.length > 1 && (
+          {/* Which class takes the level (D&D Beyond's level-up): the owned ones, and
+              «Un'altra classe» to start a new one the scores allow (multiclassing). */}
+          {(owned.length > 1 || newClasses.length > 0) && (
             <div className="f-ask">
               <span className="f-lbl">{t("levelUp.screen.whichClass")}</span>
               <div className="f-chips">
@@ -278,16 +283,51 @@ export function LevelUpScreen({
                   <Chip
                     key={e.classId}
                     pressed={e.classId === classId}
-                    onClick={() => {
-                      setClassId(e.classId);
-                      setAnswers(NO_ANSWERS);
-                    }}
+                    onClick={() => pickClass(e.classId)}
                   >
                     {`${className(e.classId, locale)} ${String(e.level)}`}
                   </Chip>
                 ))}
+                {starting ? (
+                  <Chip pressed onClick={() => setAdding(true)}>
+                    {`${className(classId, locale)} 1 · ${t("levelUp.screen.newClassTag")}`}
+                  </Chip>
+                ) : (
+                  newClasses.length > 0 && (
+                    <Chip onClick={() => setAdding(true)}>
+                      {t("levelUp.screen.otherClass")}
+                    </Chip>
+                  )
+                )}
               </div>
             </div>
+          )}
+          {adding && (
+            <Dialog
+              open
+              onClose={() => setAdding(false)}
+              color="res"
+              title={t("levelUp.screen.otherClass")}
+              closeLabel={t("common.close")}
+            >
+              <p className="f-help">{t("levelUp.screen.newClassHelp")}</p>
+              <div className="f-slots">
+                {newClasses.map((id) => (
+                  <Choice
+                    key={id}
+                    tile
+                    on={id === classId}
+                    onClick={() => {
+                      pickClass(id);
+                      setAdding(false);
+                    }}
+                  >
+                    <ClassCrest classId={id} size="sm" />
+                    <b>{className(id, locale)}</b>
+                  </Choice>
+                ))}
+              </div>
+            </Dialog>
           )}
 
           {review && <Gains numbers={review.numbers} gained={review.gained} />}

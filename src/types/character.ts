@@ -847,6 +847,15 @@ export interface CharacterData {
    * table that levels by milestone. Informs the Level-Up cue, never gates it.
    */
   experience?: number;
+  /**
+   * Max-HP INPUTS (#1315, stored as `build.hp`). `hpRolled` is the sum of (roll −
+   * fixed value) over the levels the player rolled; `hpBonus` is a hand adjustment.
+   * Both optional, absent = 0. `hp.max` stays DERIVED from them ({@link deriveMaxHp}).
+   * `hpExtra` keeps a newer client's unknown `build.hp` sub-keys for write-back.
+   */
+  hpRolled?: number;
+  hpBonus?: number;
+  hpExtra?: Record<string, unknown>;
   backgroundAsi: Record<string, number>;
   humanOriginFeat: string;
   bgFeat: string;

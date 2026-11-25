@@ -44,7 +44,6 @@ import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { totalLevel } from "@/lib/classes";
-import { xpProgress } from "@/lib/experience";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -171,8 +170,16 @@ export function PlaySheet({
     );
   }
   const view = playHeaderView(doc, locale);
+  // The rest row (the header on a laptop, «Risorse e abilità» on a phone). A table that
+  // levels by milestone gets «Sali di livello» first, always at hand (D&D Beyond's
+  // milestone header); an XP table gets the note under the header instead.
   const rests = (
     <>
+      {levelUp && view.levelUpCue === "milestone" && (
+        <Button icon="g-create" onClick={levelUp}>
+          {t("levelUp.screen.levelUp")}
+        </Button>
+      )}
       <Button
         icon="g-rest-short"
         aria-haspopup="dialog"
@@ -241,18 +248,16 @@ export function PlaySheet({
         onLevelUp={levelUp}
       />
       {/* an XP table that reached the next level: the note, its one action */}
-      {levelUp &&
-        doc.character.experience !== undefined &&
-        xpProgress(doc.character.experience, totalLevel(doc.character)).canLevelUp && (
-          <div className="f-note f-save-due" data-c="res" role="status">
-            <p>{t("character.levelUpReady")}</p>
-            <div className="f-acts">
-              <Button kind="primary" onClick={levelUp}>
-                {t("levelUp.screen.levelUp")}
-              </Button>
-            </div>
+      {levelUp && view.levelUpCue === "xp-ready" && (
+        <div className="f-note f-save-due" data-c="res" role="status">
+          <p>{t("character.levelUpReady")}</p>
+          <div className="f-acts">
+            <Button kind="primary" onClick={levelUp}>
+              {t("levelUp.screen.levelUp")}
+            </Button>
           </div>
-        )}
+        </div>
+      )}
       <PlaySpeciesChoices doc={doc} locale={locale} readonly={readonly} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}

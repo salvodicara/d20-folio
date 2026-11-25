@@ -20,7 +20,7 @@
  *
  *   node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts \
  *     --baseline-root /absolute/path/to/the/deployed/release/app \
- *     [--release v0.26.1 --write-fixture tests/unit/__fixtures__/forward-compat-v0.26.1.json]
+ *     [--release v0.26.1-hotfix-6fe669402 --write-fixture tests/unit/__fixtures__/forward-compat-v0.26.1-hotfix.json]
  * The fixture freezes the release's accepted shape; the gate test reads it in CI.
  */
 /// <reference types="node" />
@@ -37,6 +37,7 @@ import { promisify } from "node:util";
 
 import type { ActionEconomyCategory } from "@/data/types";
 import { CREATURE_SIZE_ORDER } from "@/data/types";
+import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { canonicalCombatField, parseCombatState } from "@/lib/combat-state-codec";
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
@@ -50,6 +51,7 @@ import { DAMAGE_TYPES } from "@/types/damage";
 
 import {
   readCases,
+  type CompatBuild,
   type CompatCase,
   type CompatInput,
   type CompatList,
@@ -164,7 +166,7 @@ function writerCases<State>(
 
 export function buildInput<State>(
   writer: TurnWriter<State>
-): CompatInput & { notStored: Record<string, string[]> } {
+): CompatInput & { builds: CompatBuild[]; notStored: Record<string, string[]> } {
   const base = writtenDoc(MOCK_CHARACTER);
   const notStored: Record<string, string[]> = {};
   const cases: CompatCase[] = [
@@ -220,7 +222,18 @@ export function buildInput<State>(
       values: [...FAMILIAR_CREATURE_TYPES],
     },
   ];
-  return { cases, lists, notStored };
+  // #1315: the max-HP inputs ride a top-level build key the live release must keep.
+  const builds: CompatBuild[] = [
+    {
+      value: "build.hp",
+      build: serializeCharacterEnvelope({
+        ...MOCK_CHARACTER,
+        character: { ...MOCK_CHARACTER.character, hpRolled: 4, hpBonus: 2 },
+      }).build,
+      watch: ["hp"],
+    },
+  ];
+  return { cases, lists, builds, notStored };
 }
 
 export interface ForwardCompatSurvey {
@@ -237,6 +250,8 @@ export interface ForwardCompatSurvey {
   /** Information only: values of a closed list's type that this tree's writer never
    *  stores, so the live client never meets them. */
   notStored: Record<string, string[]>;
+  /** Builds the live client read and wrote back: kept, or which watched key changed. */
+  builds: Record<string, string>;
   /** 0 when the live client reads everything this tree can write. */
   problems: number;
 }
@@ -270,7 +285,12 @@ export function summarize(
   for (const row of live.lists)
     playStateLists[row.list] =
       "absent" in row ? "absent in the live release" : row.missing;
+  const builds: ForwardCompatSurvey["builds"] = {};
+  for (const row of live.builds ?? [])
+    builds[row.value] =
+      row.result === "kept" ? "kept" : `${row.result}: ${row.where ?? "?"}`;
   const problems =
+    Object.values(builds).filter((v) => v !== "kept").length +
     Object.values(closedLists).reduce((n, e) => n + Object.keys(e.refused).length, 0) +
     (characters.written - characters.accepted) +
     Object.values(playStateLists).reduce(
@@ -281,6 +301,7 @@ export function summarize(
     closedLists,
     characters,
     playStateLists,
+    builds,
     notStored: input.notStored ?? {},
     problems,
   };

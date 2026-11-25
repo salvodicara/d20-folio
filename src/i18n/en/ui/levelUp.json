@@ -150,6 +150,7 @@
       "chooseSpells_other": "Choose {{count}} spells",
       "swapForget": "Swap a spell you know (optional)",
       "swapLearn": "In its place",
+      "discoveryForget": "{{feature}}: swap one of its spells (optional)",
       "changes": "What changes",
       "gained": "You gain",
       "hp": "Maximum Hit Points",
@@ -192,7 +193,9 @@
       "maneuver": "Maneuver",
       "hoverHint": "Point at an option to read what it does.",
       "spellMastery": "Spell Mastery: a level {{level}} spell cast with an action",
-      "signatureSpells": "Signature Spells: two level 3 spells"
+      "signatureSpells": "Signature Spells: two level 3 spells",
+      "newClassTag": "new",
+      "newClassHelp": "Classes your scores allow: 13 or more in each one's main ability, and in your current class's."
     },
     "searchFightingStyles": "Search Fighting Styles"
   }

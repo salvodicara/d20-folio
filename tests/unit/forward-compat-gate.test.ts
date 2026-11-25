@@ -3,7 +3,7 @@
  * tree's writers can store in a combat/play state must be one the client live today
  * reads, or a stale tab, a player's second device and the DM's member view refuse the
  * whole document after the deploy. The live client's accepted shape is frozen in
- * `__fixtures__/forward-compat-v0.26.1.json`, made with the release's own parser
+ * `__fixtures__/forward-compat-v0.26.1-hotfix.json`, made with the release's own parser
  * (`survey-forward-compat.ts --write-fixture`); the coordinator re-runs the real-release
  * check before the deploy. The next release regenerates the fixture from its own tag.
  */
@@ -20,7 +20,7 @@ import type { AcceptedShape } from "../../scripts/survey-forward-compat";
 import { ECONOMY_CATEGORIES, TRIGGER_EVENTS } from "../../scripts/survey-forward-compat";
 
 const live = JSON.parse(
-  readFileSync("tests/unit/__fixtures__/forward-compat-v0.26.1.json", "utf8")
+  readFileSync("tests/unit/__fixtures__/forward-compat-v0.26.1-hotfix.json", "utf8")
 ) as AcceptedShape;
 const accepted = (list: string) => live.lists[list] ?? [];
 

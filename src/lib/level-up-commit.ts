@@ -16,7 +16,7 @@
  */
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { amountAtCastLevel } from "@/lib/scalar";
-import { levelUp } from "@/lib/level-up";
+import { hpPerLevelGrantBonus, levelUp } from "@/lib/level-up";
 import { isUmbrellaTool } from "@/lib/tool-names";
 import { abilityModifier, computeAC } from "@/lib/compute";
 import { grantSkillProficiency } from "@/lib/skills";
@@ -91,6 +91,9 @@ export interface LevelUpPicks {
   /** A feat's Spell Change (Magic Initiate): its pick replaced, keeping what the
    *  feat gave it (free cast, ability, always prepared). Absent: none. */
   featSpellChanges?: ReadonlyArray<SpellSwapChoice>;
+  /** A Lore Bard's Magical Discoveries pick replaced: the new spell keeps the
+   *  always-prepared flag and the feature's mark. Absent: none. */
+  discoverySwap?: SpellSwapChoice;
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -320,7 +323,14 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
       .filter((f) => !existingIds.has(f.id))
       .map((f) => ({ srdId: f.id }));
     if (newRefs.length > 0) {
+      // A subclass feature's per-level HP (Draconic Resilience) counts for every
+      // level already gained: the HP step of this level ran before the subclass.
+      const perLevelBefore = hpPerLevelGrantBonus(updated).bonus;
       updated = { ...updated, features: [...updated.features, ...newRefs] };
+      const backfill = (hpPerLevelGrantBonus(updated).bonus - perLevelBefore) * newLevel;
+      if (backfill > 0) {
+        updated = { ...updated, hp: { max: updated.hp.max + backfill } };
+      }
     }
     const expanded = getExpandedSpellsThroughLevel(
       classId,
@@ -439,8 +449,8 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     };
   }
 
-  for (const change of picks.featSpellChanges ?? []) {
-    if (change.removeId != null && change.replaceId != null) {
+  for (const change of [...(picks.featSpellChanges ?? []), picks.discoverySwap]) {
+    if (change?.removeId != null && change.replaceId != null) {
       updated = {
         ...updated,
         spells: applyFeatSpellChange(updated.spells, change.removeId, change.replaceId),

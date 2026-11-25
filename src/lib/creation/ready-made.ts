@@ -13,6 +13,7 @@
  * Pure module — no React, no locale reads.
  */
 import { DEFAULT_QUICKBUILD_PRESET, QUICKBUILD_PRESETS } from "@/data/quickbuild";
+import { spells as allSpells } from "@/data/spells";
 import { ALL_SKILLS } from "@/lib/skills";
 import { ORIGIN_LANGUAGE_SLOT_ID } from "@/lib/creation-choices";
 import {
@@ -88,18 +89,37 @@ export function fillReadyMadePicks(
     };
   }
 
-  // ── Cantrips and level-1 spells: the class preset's own ───────────────────
-  if (next.level === 1 && facts.hasClassSpellPicks) {
+  // ── Cantrips and spells: the class preset's own, then the class list ──────
+  // Above level 1 (a group that starts at 3) the preset's level-1 spells are not
+  // enough: the rest come from the class list, highest castable level first.
+  if (facts.hasClassSpellPicks) {
+    const classList = allSpells
+      .filter((s) => s.classes.includes(next.classId))
+      .sort((a, b) => b.level - a.level || a.id.localeCompare(b.id));
     if (!facts.cantripsComplete) {
       next = {
         ...next,
-        cantrips: topUp(next.cantrips, preset.cantrips ?? [], facts.cantripsNeeded),
+        cantrips: topUp(
+          next.cantrips,
+          [
+            ...(preset.cantrips ?? []),
+            ...classList.filter((s) => s.level === 0).map((s) => s.id),
+          ],
+          facts.cantripsNeeded
+        ),
       };
     }
     if (!facts.spellsComplete) {
+      const castable = classList.filter(
+        (s) => s.level > 0 && s.level <= facts.maxSpellLevel
+      );
       next = {
         ...next,
-        spells: topUp(next.spells, preset.spells ?? [], facts.spellsNeeded),
+        spells: topUp(
+          next.spells,
+          [...(preset.spells ?? []), ...castable.map((s) => s.id)],
+          facts.spellsNeeded
+        ),
       };
     }
   }
