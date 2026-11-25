@@ -22,6 +22,7 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 
 import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
+import { PlayAddItem } from "./PlayAddItem";
 import { PlayCoinPane, PlayItemPane } from "./PlayItemPane";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
@@ -338,6 +339,7 @@ function InventoryPane({
   const [scroll, setScroll] = useState<PlayItem["scroll"] | null>(null);
   const [opened, setOpened] = useState<string | null>(null);
   const [coinsOpen, setCoinsOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
   const openItem = view.groups.flatMap((g) => g.items).find((i) => i.key === opened);
   const actions = new Map(
     playActionsView(doc, locale, turn)
@@ -372,14 +374,22 @@ function InventoryPane({
   );
   return (
     <>
-      {view.weight && (
-        <p className="f-spell-sum" data-over={view.weight.over || undefined}>
-          {t("play.inv.weight", {
-            carried: formatWeight(view.weight.carried, locale),
-            capacity: formatWeight(view.weight.capacity, locale),
-          })}
-        </p>
-      )}
+      {/* the weight, and D&D Beyond's «Manage Inventory» at the same height */}
+      <div className="f-inv-tools">
+        {view.weight && (
+          <p className="f-spell-sum" data-over={view.weight.over || undefined}>
+            {t("play.inv.weight", {
+              carried: formatWeight(view.weight.carried, locale),
+              capacity: formatWeight(view.weight.capacity, locale),
+            })}
+          </p>
+        )}
+        {!readonly && (
+          <Button kind="ghost" aria-haspopup="dialog" onClick={() => setAdding(true)}>
+            {t("play.inv.add")}
+          </Button>
+        )}
+      </div>
       {/* The coins open their pane (D&D Beyond's «Manage Coin»), even when empty. */}
       <button
         type="button"
@@ -515,6 +525,7 @@ function InventoryPane({
           onClose={() => setOpened(null)}
         />
       )}
+      {adding && <PlayAddItem onClose={() => setAdding(false)} />}
       {coinsOpen && (
         <PlayCoinPane
           coins={view.coins}

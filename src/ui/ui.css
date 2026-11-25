@@ -3778,15 +3778,41 @@
   color: var(--strong);
   font-weight: var(--fw-name);
 }
-.fui button.f-row-open:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+@media (hover: hover) {
+  .fui button.f-row-open:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .fui button.f-coins-open:hover {
+    background-color: var(--hover);
+  }
 }
 .fui button.f-coins-open {
   border-radius: var(--r-sm);
 }
-.fui button.f-coins-open:hover {
-  background-color: var(--hover);
+/* «Aggiungi un oggetto»: the button beside the weight, then the pane's list (it scrolls
+   inside the pane) of slot, name and Add */
+.fui .f-inv-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+.fui .f-inv-tools > .f-spell-sum {
+  margin: 0;
+}
+.fui .f-inv-tools > button {
+  margin-left: auto;
+}
+.fui .f-add-list {
+  max-height: min(56vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.fui .f-act.f-add-row {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
 }
 /* the coin pane: one coin a row, what it is worth beside it */
 .fui .f-coin-list {
@@ -6767,4 +6793,9 @@
   .fui .f-crumb {
     display: none;
   }
+}
+
+/* «Gestisci incantesimi»: the tab bar, then the tab's content with room to breathe */
+.fui .f-tabs + .f-stack {
+  margin-top: 16px;
 }

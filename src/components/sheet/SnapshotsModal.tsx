@@ -109,7 +109,8 @@ export function SnapshotsModal({
         char.id,
         { character: snap.character, session: snap.session },
         // Compare-and-set base: the generation of the document this modal is showing.
-        char.revision
+        char.revision,
+        char
       );
       // Undo-stack FENCE (§5.4): restoring a snapshot rewrites the whole sheet, so a
       // pre-restore reverse-applier would clobber the restored state. Drop the stack.

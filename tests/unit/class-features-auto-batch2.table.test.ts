@@ -21,6 +21,12 @@ import enFeatures from "@/i18n/en/srd/class-features.json";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { damageQueuesConcentrationSave } from "@/lib/character-d20-tests";
 import { evaluateGrants } from "@/lib/grants";
+import { featureNameLoc } from "@/lib/srd-feature-lookup";
+import { combatDamageParts } from "@/lib/combat-resolution";
+import { buildRiders } from "@/lib/views/rider-view";
+import { riderQualifiers } from "@/components/shared/rider-label";
+import i18n from "@/i18n";
+import { localizeActions } from "@/lib/views/combat-action-view";
 import {
   resolveActions,
   resolveActiveBoundaryEffects,
@@ -51,6 +57,12 @@ describe("the catalogue text each case encodes", () => {
   it.each([
     ["barbarian-brutal-strike", "the target takes an extra 1d10 damage"],
     ["barbarian-greater-brutal-strike", "Your Brutal Strike damage increases to 2d10"],
+    ["barbarian-brutal-strike", "that roll mustn't have Disadvantage"],
+    ["barbarian-brutal-strike", "only one Hamstring Blow at a time, the most recent"],
+    [
+      "barbarian-improved-brutal-strike",
+      "an attack roll can gain only one Sundering Blow bonus",
+    ],
     [
       "ranger-relentless-hunter",
       "Taking damage can't break your Concentration on Hunter's Mark",
@@ -74,8 +86,17 @@ describe("the catalogue text each case encodes", () => {
 });
 
 describe("Brutal Strike — an extra die on one Strength attack per turn", () => {
-  const riders = (level: number) => {
-    const doc = withFeatures("barbarian", level, ["barbarian-brutal-strike"]);
+  // SRD 5.2.1: «If you use Reckless Attack, you can forgo any Advantage on one
+  // Strength-based attack roll of your choice on your turn» — the die needs Reckless
+  // Attack used this turn.
+  const riders = (level: number, reckless = true) => {
+    const doc = withFeatures(
+      "barbarian",
+      level,
+      ["barbarian-reckless-attack", "barbarian-brutal-strike"],
+      {},
+      { activeFeatures: reckless ? ["barbarian-reckless-attack"] : [] }
+    );
     const scores = { STR: 18, DEX: 12, CON: 14, INT: 8, WIS: 10, CHA: 10 };
     const aggregate = aggregateCharacterGrants(doc.character, doc.session);
     return {
@@ -114,6 +135,68 @@ describe("Brutal Strike — an extra die on one Strength attack per turn", () =>
     ]);
     // A ranged weapon attack is Dexterity-based: no Brutal Strike.
     expect(ranged).toEqual([]);
+  });
+
+  it("without Reckless Attack this turn the die says what it needs, and is never offered", () => {
+    const { melee, unarmed } = riders(9, false);
+    for (const rider of [...melee, ...unarmed]) {
+      expect(rider.needsActiveName).toEqual(featureNameLoc("barbarian-reckless-attack"));
+    }
+    expect(melee).toHaveLength(1);
+    // With Reckless Attack up, nothing is missing.
+    expect(riders(9, true).melee[0]?.needsActiveName).toBeUndefined();
+  });
+
+  it("the greataxe hit offers the 1d10 only with Reckless Attack up", () => {
+    const offered = (reckless: boolean) => {
+      const doc = withFeatures(
+        "barbarian",
+        9,
+        ["barbarian-reckless-attack", "barbarian-brutal-strike"],
+        { weapons: [{ srdId: "greataxe", equipped: true }] } as never,
+        { activeFeatures: reckless ? ["barbarian-reckless-attack"] : [] }
+      );
+      const axe = localizeActions(doc, "en").find((a) => a.weaponId === "greataxe");
+      if (!axe) throw new Error("no greataxe action");
+      return combatDamageParts(axe)
+        .filter((part) => part.optional)
+        .map((part) => part.formula);
+    };
+    expect(offered(true)).toContain("1d10");
+    expect(offered(false)).not.toContain("1d10");
+  });
+
+  it("Reckless Attack ends at the start of your next turn, so the die needs it again each turn", () => {
+    const doc = withFeatures("barbarian", 9, [
+      "barbarian-reckless-attack",
+      "barbarian-brutal-strike",
+    ]);
+    const reckless = resolveActions(doc).find(
+      (a) => a.activatesKey === "barbarian-reckless-attack"
+    );
+    expect(reckless?.activeTurnBoundary).toEqual({ turns: 1, phase: "turn-start" });
+  });
+
+  it("the rider chip says what it needs: «needs Reckless Attack» / «richiede Attacco Irruento»", async () => {
+    const doc = withFeatures(
+      "barbarian",
+      9,
+      ["barbarian-reckless-attack", "barbarian-brutal-strike"],
+      { weapons: [{ srdId: "greataxe", equipped: true }] } as never,
+      { activeFeatures: [] }
+    );
+    const axe = resolveActions(doc).find((a) => a.weaponId === "greataxe");
+    if (!axe) throw new Error("no greataxe action");
+    for (const [locale, expected] of [
+      ["en", "needs Reckless Attack"],
+      ["it", "richiede Attacco Irruento"],
+    ] as const) {
+      await i18n.changeLanguage(locale);
+      const [rider] = buildRiders(axe.summary, locale);
+      if (!rider) throw new Error("no rider");
+      expect(riderQualifiers(rider, i18n.t.bind(i18n), false)).toContain(expected);
+    }
+    await i18n.changeLanguage("en");
   });
 });
 

@@ -530,6 +530,9 @@ export function combatDamageParts(action: ResolvedAction): CombatDamagePartSpec[
     // An on-a-20 rider is no hit-time option: the damage tray adds it to a
     // Critical row (`damageTrayPlan().attack.onRoll20`).
     if (extra.onRoll20) continue;
+    // A rider whose toggle is off (Brutal Strike without Reckless Attack) is never
+    // offered on the hit; its chip says what it needs.
+    if (extra.needsActive) continue;
     const riderTypes = extra.damageTypeChoices?.length
       ? [...extra.damageTypeChoices]
       : [extra.damageType as DamageType];
