@@ -79,6 +79,7 @@ export const SORCERER_TABLE: SrdClassTable = {
   ],
   spellcasting: { ability: "CHA", preparedCaster: true },
   canSwapSpell: true,
+  canSwapCantrip: true,
   subclassLevel: 3,
   // Spellfire Sorcery grants always-prepared subclass spells at these levels.
   subclassSpellLevels: [3, 5, 7, 9],
