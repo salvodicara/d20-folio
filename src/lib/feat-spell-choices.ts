@@ -41,6 +41,8 @@ export interface SpellChoiceSlot {
   classSpellLists?: ReadonlyArray<ClassId>;
   /** Max spell level. Cantrips force 0; non-cantrips use the grant's maxLevel. */
   maxLevel: number;
+  /** Min spell level of a "spell" pick (Mystic Arcanum: its own level). */
+  minLevel?: number;
   /** A "spell" slot that also accepts cantrips (Magical Discoveries). */
   includeCantrips?: boolean;
   /**
@@ -257,6 +259,7 @@ export function pendingSpellChoicesForFeat(
           classSpellList: g.classSpellList,
           classSpellLists: g.classSpellLists,
           maxLevel: recur.maxLevel,
+          ...(g.minLevel ? { minLevel: g.minLevel } : {}),
           ...(g.includeCantrips ? { includeCantrips: true } : {}),
           count: recur.count,
           slotId: `slot-${idx++}`,
@@ -476,7 +479,9 @@ export function listAvailableForSlot(
     if (slot.kind === "cantrip" && s.level !== 0) return false;
     if (
       slot.kind === "spell" &&
-      ((s.level === 0 && !slot.includeCantrips) || s.level > slot.maxLevel)
+      ((s.level === 0 && !slot.includeCantrips) ||
+        s.level > slot.maxLevel ||
+        (slot.minLevel !== undefined && s.level < slot.minLevel))
     ) {
       return false;
     }

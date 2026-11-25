@@ -154,7 +154,10 @@
       "manage": "Gestisci incantesimi",
       "always": "sempre preparato",
       "overLimit": "Sono più di quanti ne permetta la tua classe: va bene se il master è d'accordo.",
-      "via": "tramite"
+      "via": "tramite",
+      "alreadyYours": "Già tra i tuoi",
+      "addedToast": "Incantesimo aggiunto: {{name}}",
+      "upToLevel": "Fino al livello {{level}}: gli incantesimi che puoi lanciare."
     },
     "inv": {
       "pack": "Zaino",

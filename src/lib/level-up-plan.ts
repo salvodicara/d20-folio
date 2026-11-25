@@ -28,6 +28,10 @@ import {
   hasEligibleSignatureSpells,
 } from "@/lib/signature-spells-pick";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
+import {
+  getAlwaysPreparedFromGrants,
+  getExpandedSpellsAtLevel,
+} from "@/lib/expanded-spells";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import {
   isExpertisePlaceholder,
@@ -190,6 +194,7 @@ export function levelUpPlan(
   })();
   const maneuversNeeded = newManeuversAtLevel(newClassLevel);
   const canSwapSpell = classTable?.canSwapSpell === true;
+  const canSwapCantrip = classTable?.canSwapCantrip === true;
   // For a NEW class's first level there is no previous row: the baseline is 0,
   // so a first level in a caster class asks for its full L1 spell loadout.
   const prevSpellsKnown = isNewClass ? 0 : prevLevelData?.spellsKnown;
@@ -224,6 +229,23 @@ export function levelUpPlan(
           .filter((s): s is SrdSpellRef => !("custom" in s))
           .map((s) => s.srdId)
       );
+
+  // The spells this level makes always prepared (the subclass's spells of this level,
+  // the features gained: Find Steed, Divine Smite): never offered as new picks, since
+  // a pick spent on one adds nothing and leaves the prepared list one short.
+  const alwaysPreparedGained = (() => {
+    const subclass = subclassChoice ?? advancingSubclassId;
+    const effectiveSubclass = subclass.toLowerCase();
+    const gained = getFeaturesAtLevel(classId, newClassLevel)
+      .filter((f) => !f.subclass || f.subclass.toLowerCase() === effectiveSubclass)
+      .map((f) => ({ srdId: f.id }));
+    return new Set([
+      ...getExpandedSpellsAtLevel(classId, subclass, newClassLevel),
+      ...getAlwaysPreparedFromGrants(resolveGrantSourcesForFeatures(gained), {
+        level: newClassLevel,
+      }).map((entry) => (typeof entry === "string" ? entry : entry.spellId)),
+    ]);
+  })();
 
   const knownNonCantripRefs = (() => {
     if (!charData) return [];
@@ -414,6 +436,7 @@ export function levelUpPlan(
     needsManeuvers,
     maneuversNeeded,
     canSwapSpell,
+    canSwapCantrip,
     prevSpellsKnown,
     prevCantripsKnown,
     spellsKnownDiff,
@@ -421,6 +444,7 @@ export function levelUpPlan(
     cantripsKnownDiff,
     maxSpellLevel,
     existingSpellIds,
+    alwaysPreparedGained,
     knownNonCantripRefs,
     preview,
     choiceSlots,
