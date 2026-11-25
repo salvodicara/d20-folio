@@ -125,7 +125,9 @@ describe("Reload waits for the pending writes", () => {
       },
       () => order.push("reload"),
       3_000,
-      () => order.push("flush")
+      () => {
+        order.push("flush");
+      }
     );
     expect(order).toEqual(["flush", "wait", "reload"]);
   });
