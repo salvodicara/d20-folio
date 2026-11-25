@@ -36,8 +36,11 @@ import type { LevelUpPicks } from "@/lib/level-up-commit";
 import { levelUpPlan, HIT_DIE_AVG, type LevelUpPlan } from "@/lib/level-up-plan";
 import type { Locale } from "@/lib/locale";
 import { emptySwapChoice, type SpellSwapChoice } from "@/lib/spell-swap";
-import { emptySpellMasteryPicks } from "@/lib/spell-mastery-pick";
-import { emptySignatureSpellsPicks } from "@/lib/signature-spells-pick";
+import { emptySpellMasteryPicks, type SpellMasteryPicks } from "@/lib/spell-mastery-pick";
+import {
+  emptySignatureSpellsPicks,
+  type SignatureSpellsPicks,
+} from "@/lib/signature-spells-pick";
 import { offeredFeatVMs } from "@/lib/views/feat-pick-view";
 import {
   fightingStyleOptions,
@@ -75,6 +78,10 @@ export interface LevelUpAnswers {
   mcSkills: readonly string[];
   swap: SpellSwapChoice;
   cantripSwap: SpellSwapChoice;
+  /** Wizard 18: one level-1 and one level-2 spell. */
+  spellMastery: SpellMasteryPicks;
+  /** Wizard 20: two level-3 spells. */
+  signatureSpells: SignatureSpellsPicks;
 }
 
 export const NO_ANSWERS: LevelUpAnswers = {
@@ -94,6 +101,8 @@ export const NO_ANSWERS: LevelUpAnswers = {
   mcSkills: [],
   swap: emptySwapChoice(),
   cantripSwap: emptySwapChoice(),
+  spellMastery: emptySpellMasteryPicks(),
+  signatureSpells: emptySignatureSpellsPicks(),
 };
 
 /** Which answer a row writes. `slot` rows carry their slot in `slotRow`. */
@@ -118,7 +127,10 @@ export type AskKey =
   | "swapRemove"
   | "swapReplace"
   | "cantripRemove"
-  | "cantripReplace";
+  | "cantripReplace"
+  | "spellMastery1"
+  | "spellMastery2"
+  | "signatureSpells";
 
 export interface AskRow {
   key: AskKey;
@@ -387,6 +399,44 @@ export function levelUpAsks(
     });
   }
 
+  // Wizard 18 Spell Mastery and Wizard 20 Signature Spells: drawn here, never handed
+  // to the classic wizard. A row asks only what can be picked, so a spellbook with no
+  // candidate never blocks the level.
+  const spellOption = (id: string) => ({
+    id,
+    label: localizeSrd("spell", id, "name", locale),
+  });
+  if (plan.needsSpellMastery) {
+    const picked = (id: string | undefined) => (id ? [id] : []);
+    rows.push({
+      key: "spellMastery1",
+      spell: true,
+      title: t("levelUp.screen.spellMastery", { level: 1 }),
+      count: Math.min(1, plan.spellMasteryEligibleL1.length),
+      picked: picked(a.spellMastery.level1),
+      options: plan.spellMasteryEligibleL1.map((s) => spellOption(s.id)),
+    });
+    rows.push({
+      key: "spellMastery2",
+      spell: true,
+      title: t("levelUp.screen.spellMastery", { level: 2 }),
+      count: Math.min(1, plan.spellMasteryEligibleL2.length),
+      picked: picked(a.spellMastery.level2),
+      options: plan.spellMasteryEligibleL2.map((s) => spellOption(s.id)),
+    });
+  }
+  if (plan.needsSignatureSpells) {
+    rows.push({
+      key: "signatureSpells",
+      spell: true,
+      title: t("levelUp.screen.signatureSpells"),
+      count: Math.min(2, plan.signatureSpellsEligible.length),
+      picked: [a.signatureSpells.first, a.signatureSpells.second].filter(
+        (id): id is string => id !== undefined
+      ),
+      options: plan.signatureSpellsEligible.map((s) => spellOption(s.id)),
+    });
+  }
   if (plan.cantripsKnownDiff > 0) {
     rows.push({
       key: "newCantrips",
@@ -540,8 +590,8 @@ export function levelUpAsks(
     choiceSlots: plan.choiceSlots,
     choicePicks,
     multiclass: plan.mcGrants ? { grants: plan.mcGrants, skillPicks: a.mcSkills } : null,
-    spellMastery: plan.needsSpellMastery ? emptySpellMasteryPicks() : null,
-    signatureSpells: plan.needsSignatureSpells ? emptySignatureSpellsPicks() : null,
+    spellMastery: plan.needsSpellMastery ? a.spellMastery : null,
+    signatureSpells: plan.needsSignatureSpells ? a.signatureSpells : null,
     swap: a.swap,
     cantripSwap: a.cantripSwap,
     bundlePicks: plan.needsBundles ? a.bundlePicks : {},
@@ -551,7 +601,7 @@ export function levelUpAsks(
     hpDie,
     rows,
     complete,
-    supported: !plan.needsSpellMastery && !plan.needsSignatureSpells,
+    supported: true,
     picks,
   };
 }
@@ -581,6 +631,26 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
     };
   }
   switch (key) {
+    case "spellMastery1":
+      return {
+        ...a,
+        spellMastery: {
+          ...a.spellMastery,
+          level1: flip(a.spellMastery.level1 ?? null) ?? undefined,
+        },
+      };
+    case "spellMastery2":
+      return {
+        ...a,
+        spellMastery: {
+          ...a.spellMastery,
+          level2: flip(a.spellMastery.level2 ?? null) ?? undefined,
+        },
+      };
+    case "signatureSpells": {
+      const [first, second] = many(row.picked);
+      return { ...a, signatureSpells: { first, second } };
+    }
     case "subclass":
       // A new subclass changes what its features ask: their picks start over.
       return { ...a, subclassId: flip(a.subclassId), choicePicks: EMPTY_CHOICE_PICKS };

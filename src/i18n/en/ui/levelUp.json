@@ -190,7 +190,9 @@
       "readAll": "Read the full text",
       "invocation": "Eldritch Invocation",
       "maneuver": "Maneuver",
-      "hoverHint": "Point at an option to read what it does."
+      "hoverHint": "Point at an option to read what it does.",
+      "spellMastery": "Spell Mastery: a level {{level}} spell cast with an action",
+      "signatureSpells": "Signature Spells: two level 3 spells"
     },
     "searchFightingStyles": "Search Fighting Styles"
   }
