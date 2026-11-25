@@ -67,6 +67,11 @@ describe("the class's level-1 choices at creation", () => {
           ]);
         }
       }
+      // A bundle's chosen option may owe a pick of its own (Magician: an extra Druid
+      // cantrip): the step is complete only once it is made too.
+      if (!creationFacts(apply(draft, ...steps.flat())).classChoicesComplete) {
+        steps.push([{ type: "fillReadyMade" }]);
+      }
       for (const actions of steps) {
         expect(creationFacts(draft).classChoicesComplete).toBe(false);
         draft = apply(draft, ...actions);
