@@ -12,6 +12,7 @@ import {
   classPickPool,
   owedClassPicks,
   type BuildForClassPicks,
+  type BundleChoices,
   type ClassPickKind,
 } from "@/lib/owed-class-picks";
 import {
@@ -78,9 +79,13 @@ function fromLevelUp(vm: LevelUpOptionVM, gloss?: string): OwedPickOptionVM {
 }
 
 /** Every owed class pick as a row of the level-up picker's options. */
-export function owedClassPickRows(build: Build, locale: Locale): OwedClassPickRow[] {
+export function owedClassPickRows(
+  build: Build,
+  locale: Locale,
+  bundleChoices?: BundleChoices
+): OwedClassPickRow[] {
   const t = i18n.getFixedT(locale);
-  return owedClassPicks(build).map(({ classId, pick, owed }) => {
+  return owedClassPicks(build, bundleChoices).map(({ classId, pick, owed }) => {
     const entry = build.classes.find((e) => e.classId === classId);
     const level = entry?.level ?? 1;
     const base = {
