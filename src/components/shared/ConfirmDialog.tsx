@@ -23,8 +23,10 @@ export function ConfirmDialog() {
   const open = useConfirmStore((s) => s.open);
   const options = useConfirmStore((s) => s.options);
   const respond = useConfirmStore((s) => s.respond);
+  // The new UI draws its own (NewConfirm) while its shell is mounted.
+  const newHost = useConfirmStore((s) => s.newHost);
 
-  if (!open || !options) return null;
+  if (!open || !options || newHost) return null;
 
   return (
     <ModalShell

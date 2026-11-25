@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { AppShell } from "@/ui/AppShell";
 import { initialOf } from "@/ui/initial";
 import { NewToasts } from "./NewToasts";
+import { NewConfirm } from "./NewConfirm";
 import { CombatPip } from "@/domains/combat/ui/CombatPip";
 import { ScrollRestorer } from "./ScrollRestorer";
 import { useAfterLoad } from "./use-after-load";
@@ -115,6 +116,7 @@ export function NewAppShell() {
         <Outlet />
       </Suspense>
       <NewToasts />
+      <NewConfirm />
       {searching && (
         <Suspense fallback={null}>
           <SearchPalette open onClose={() => setSearching(false)} />

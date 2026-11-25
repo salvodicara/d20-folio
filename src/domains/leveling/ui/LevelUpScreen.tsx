@@ -44,6 +44,7 @@ import {
   type ReviewNumber,
 } from "@/domains/leveling/level-up-review-view";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
+import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
 import { getClasses, primaryClassId } from "@/lib/classes";
 import { abilityModifier } from "@/lib/compute";
 import {
@@ -120,6 +121,11 @@ export function LevelUpScreen({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Leaving with choices made asks first; the confirmed level never does.
+  const { finishing } = useLeaveConfirm(
+    answers !== NO_ANSWERS || classId !== primaryClassId(c),
+    { title: t("levelUp.leaveTitle"), message: t("levelUp.leaveMessage") }
+  );
   const asks = levelUpAsks(doc, classId, answers, locale);
   const { plan } = asks;
   const steps = levelUpSteps(asks);
@@ -170,6 +176,7 @@ export function LevelUpScreen({
         to: plan.newLevel,
         classId,
       });
+      finishing();
       onClose();
       useToastStore.getState().showToast({
         message: t("levelUp.screen.done", { name: c.name, level: plan.newLevel }),

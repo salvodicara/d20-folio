@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { createMemoryRouter, RouterProvider } from "react-router";
 
 import { suggestedScores } from "@/domains/creation/creation-view";
 import { CreationScreen } from "@/domains/creation/ui/CreationScreen";
@@ -32,13 +32,21 @@ vi.mock("react-router", async (orig) => ({
   useNavigate: () => navigateMock,
 }));
 
+/** The screen in a data router, as the app mounts it (its leave guard needs one). */
+function renderScreen(entry = "/characters/new") {
+  const router = createMemoryRouter(
+    [
+      { path: "/characters/new", element: <CreationScreen /> },
+      { path: "*", element: null },
+    ],
+    { initialEntries: [entry] }
+  );
+  return render(<RouterProvider router={router} />);
+}
+
 describe("CreationScreen", () => {
   it("a background is the player's pick: «—» and a waiting Next until then", () => {
-    render(
-      <MemoryRouter>
-        <CreationScreen />
-      </MemoryRouter>
-    );
+    renderScreen();
     const summary = () =>
       screen.getByText("Background", { selector: "dt" }).parentElement as HTMLElement;
     expect(within(summary()).getByText("—")).toBeTruthy();
@@ -53,11 +61,7 @@ describe("CreationScreen", () => {
   });
 
   it("a species, then its lineage, before Next; abilities open on the suggested scores", () => {
-    render(
-      <MemoryRouter>
-        <CreationScreen />
-      </MemoryRouter>
-    );
+    renderScreen();
     const next = () => screen.getByRole("button", { name: "Next" });
     fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
     fireEvent.click(next());
@@ -91,11 +95,7 @@ describe("CreationScreen", () => {
 
   it("walks all six steps to a ready-made Riepilogo, and «Create» saves it", async () => {
     useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
-    render(
-      <MemoryRouter>
-        <CreationScreen />
-      </MemoryRouter>
-    );
+    renderScreen();
     const next = () => screen.getByRole("button", { name: "Next" });
     fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
     fireEvent.click(next());
@@ -128,11 +128,7 @@ describe("CreationScreen", () => {
   it("«Quick build»: a class, a species and a name make a complete character", async () => {
     useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
     createCharacterMock.mockClear();
-    render(
-      <MemoryRouter initialEntries={["/characters/new?rapid=1"]}>
-        <CreationScreen />
-      </MemoryRouter>
-    );
+    renderScreen("/characters/new?rapid=1");
     fireEvent.click(screen.getByRole("button", { name: "Wizard" }));
     fireEvent.click(screen.getByRole("button", { name: /^Elf/ }));
     fireEvent.change(screen.getByLabelText("Character Name"), {
@@ -161,11 +157,7 @@ describe("CreationScreen", () => {
 describe("CreationScreen — an order's own pick", () => {
   it("Thaumaturge asks its extra Cleric cantrip under the order, and Next waits for it", async () => {
     useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
-    render(
-      <MemoryRouter>
-        <CreationScreen />
-      </MemoryRouter>
-    );
+    renderScreen();
     const next = () => screen.getByRole("button", { name: "Next" });
     fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
     fireEvent.click(next());

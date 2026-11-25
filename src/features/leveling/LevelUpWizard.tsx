@@ -23,9 +23,10 @@ import { commitLevelUp } from "@/lib/level-up-commit";
 import { recordLevelUp } from "@/domains/leveling/level-up-line";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useNavigate, useParams, useBlocker } from "react-router";
+import { useNavigate, useParams } from "react-router";
+import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
 import {
   BookOpen,
   Camera,
@@ -44,7 +45,6 @@ import { NumberStepper } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FolioLoader } from "@/components/shared/FolioLoader";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
-import { useConfirmStore } from "@/stores/confirmStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
@@ -251,56 +251,10 @@ export function LevelUpWizard() {
     manualHpGain !== "" ||
     advanceClassId != null ||
     subclassChoice != null;
-  const finishingRef = useRef(false);
-  const blocker = useBlocker(
-    useCallback(
-      ({
-        currentLocation,
-        nextLocation,
-      }: {
-        currentLocation: { pathname: string };
-        nextLocation: { pathname: string };
-      }) =>
-        dirty &&
-        !finishingRef.current &&
-        currentLocation.pathname !== nextLocation.pathname,
-      [dirty]
-    )
-  );
-  // ONE confirm per blocked navigation (a re-render while blocked must never
-  // stack a second dialog or orphan the first resolver — the re-arm footgun).
-  const confirmingRef = useRef(false);
-  useEffect(() => {
-    if (blocker.state !== "blocked" || confirmingRef.current) return;
-    confirmingRef.current = true;
-    let active = true;
-    void useConfirmStore
-      .getState()
-      .confirm({
-        title: t("levelUp.leaveTitle"),
-        message: t("levelUp.leaveMessage"),
-        confirmLabel: t("common.discard"),
-        cancelLabel: t("common.continue"),
-      })
-      .then((ok) => {
-        confirmingRef.current = false;
-        if (!active) return;
-        if (ok) blocker.proceed();
-        else blocker.reset();
-      });
-    return () => {
-      active = false;
-    };
-  }, [blocker, t]);
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (finishingRef.current) return;
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
+  const { finishing } = useLeaveConfirm(dirty, {
+    title: t("levelUp.leaveTitle"),
+    message: t("levelUp.leaveMessage"),
+  });
 
   // A page turn starts at the TOP of the new page — never mid-scroll where the
   // previous step's list happened to leave the viewport (owner 2026-06-11).
@@ -736,7 +690,7 @@ export function LevelUpWizard() {
       // celebration shows / its CTA navigates. The ceremony NEVER auto-
       // dismisses (owner 2026-06-11: the user reads it at their own pace) —
       // the explicit "To the sheet" CTA is the one way out.
-      finishingRef.current = true;
+      finishing();
       setCharacter(updatedDoc);
       // Undo-stack FENCE (§5.4): a completed level-up rewrites the whole sheet
       // (features, slots, HP, ASI), so a pre-level-up reverse-applier could restore
@@ -758,7 +712,7 @@ export function LevelUpWizard() {
       console.error("Level-up save failed", e);
       showToast({ message: t("levelUp.saveFailed", { error: msg }), duration: 6000 });
       setDoneInfo(null);
-      finishingRef.current = false;
+      finishing(false);
       setSaving(false);
     }
   }
