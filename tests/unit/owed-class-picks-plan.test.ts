@@ -9,6 +9,7 @@
 import { describe, expect, it } from "vitest";
 
 import { spells } from "@/data/spells";
+import { listFightingStyles } from "@/lib/fighting-style";
 import { emptyAsiChoice } from "@/lib/level-up-choices";
 import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
 import { levelUpPlan } from "@/lib/level-up-plan";
@@ -71,7 +72,10 @@ function asked(doc: CharacterDoc, classId: string): LevelUpPicks {
     classId,
     asi: emptyAsiChoice(),
     subclassId: null,
-    fightingStyle: null,
+    // A style feat of the class's list (Paladin 2: «a Fighting Style feat of your choice»).
+    fightingStyle: plan.needsFightingStyle
+      ? (listFightingStyles(classId)[0]?.id ?? null)
+      : null,
     expertise: [],
     weaponMasteries: plan.needsWeaponMastery
       ? [

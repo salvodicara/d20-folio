@@ -2024,11 +2024,23 @@
   display: grid;
   justify-items: center;
 }
-.fui .f-ability > dd > b {
+/* the modifier and score are one button: a tap opens the ability's pane (D&D Beyond) */
+.fui button.f-ab-open {
+  display: grid;
+  justify-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fui .f-ability > dd > .f-ab-open > b {
   font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
-.fui .f-ability > dd > span {
+.fui .f-ability > dd > .f-ab-open > span {
   font-size: var(--fs-sm);
   color: var(--muted);
 }
@@ -2086,6 +2098,16 @@
   display: grid;
   justify-items: center;
   gap: 4px;
+}
+/* a badge that opens its number's pane: the frame stays the look, no button chrome */
+.fui button.f-badge {
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
 }
 .fui .f-badge-frame {
   position: relative;
@@ -2285,6 +2307,25 @@
 .fui .f-skill b {
   color: var(--strong);
   font-variant-numeric: tabular-nums;
+}
+/* a skill row is a button: a tap opens the skill's pane */
+.fui button.f-skill {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--divider);
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .fui button.f-skill:hover,
+  .fui button.f-ab-open:hover,
+  .fui button.f-badge:hover {
+    background-color: var(--hover);
+  }
 }
 .fui .f-skill[data-prof] .f-skill-t {
   color: var(--strong);
@@ -2685,11 +2726,11 @@
   color: var(--text);
 }
 /* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
-.fui .f-sheet .f-ability > dd > b {
+.fui .f-sheet .f-ability > dd > .f-ab-open > b {
   font: 700 26px/1.15 var(--font-title);
   color: var(--text);
 }
-.fui .f-sheet .f-ability > dd > span {
+.fui .f-sheet .f-ability > dd > .f-ab-open > span {
   letter-spacing: 0.08em;
   color: var(--muted);
 }
@@ -3018,7 +3059,7 @@
   .fui .f-sheet .f-char-id h1 {
     font-size: var(--fs-title-phone);
   }
-  .fui .f-sheet .f-ability > dd > b {
+  .fui .f-sheet .f-ability > dd > .f-ab-open > b {
     font-size: var(--fs-lg);
   }
 }
@@ -3257,10 +3298,10 @@
     font-weight: 700;
     color: var(--phone-label);
   }
-  .fui .f-sheet .f-ability > dd > b {
+  .fui .f-sheet .f-ability > dd > .f-ab-open > b {
     color: var(--white);
   }
-  .fui .f-sheet .f-ability > dd > span {
+  .fui .f-sheet .f-ability > dd > .f-ab-open > span {
     display: none;
   }
 }
@@ -3813,6 +3854,35 @@
 }
 .fui .f-act.f-add-row {
   grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
+}
+/* a number's pane: the number large, «Impostato a mano» beside it, then its parts */
+.fui .f-num-total {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+}
+.fui .f-num-total > b {
+  font: 700 40px/1 var(--font-title);
+  color: var(--strong);
+}
+/* «Impostato a mano»: a status, not a control (D&D Beyond's «Overridden») */
+.fui .f-num-tag {
+  color: var(--muted);
+  font: 600 var(--fs-sm) var(--font-label);
+  letter-spacing: 0.04em;
+}
+.fui .f-num-custom {
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+}
+.fui .f-num-custom > h3 {
+  margin: 0;
+}
+.fui .f-num-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 /* the coin pane: one coin a row, what it is worth beside it */
 .fui .f-coin-list {
@@ -6302,10 +6372,10 @@
     margin-top: 4px;
   }
   /* the value sits on its score without their glyph boxes touching */
-  .fui .f-sheet .f-ability > dd > b {
+  .fui .f-sheet .f-ability > dd > .f-ab-open > b {
     line-height: 1;
   }
-  .fui .f-sheet .f-ability > dd {
+  .fui .f-sheet .f-ability > dd > .f-ab-open {
     gap: 4px;
   }
   .fui .f-sheet .f-badge {

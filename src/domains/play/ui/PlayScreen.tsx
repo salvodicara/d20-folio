@@ -14,6 +14,8 @@ import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
 import { PlayAbilitySave } from "./PlayAbilitySave";
+import { PlayNumberPane } from "./PlayNumberPane";
+import type { SheetNumberKey } from "@/domains/play/play-number-view";
 import { PlayInspiration } from "./PlayInspiration";
 import { PlayConcentration } from "./PlayConcentration";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
@@ -340,6 +342,8 @@ function PlayHeader({
   // «Danni e cure», and which of its actions leads (the button that opened it).
   const [hpOpen, setHpOpen] = useState<false | "damage" | "heal">(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // The number whose pane is open (D&D Beyond: tap a number, see where it comes from).
+  const [numberOpen, setNumberOpen] = useState<SheetNumberKey | null>(null);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
   const tiny = useMediaQuery("(max-width: 400px)");
@@ -412,24 +416,42 @@ function PlayHeader({
           <div key={a.id} className="f-ability" data-save={a.save || undefined}>
             <dt className="f-lbl">{t(`abilities.${a.id}_short`)}</dt>
             <dd>
-              <b>{signed(a.mod)}</b>
-              <span>{a.score}</span>
+              <button
+                type="button"
+                className="f-ab-open"
+                aria-haspopup="dialog"
+                aria-label={`${t(`abilities.${a.id}`)} ${String(a.score)} (${signed(a.mod)})`}
+                onClick={() => setNumberOpen({ kind: "ability", ability: a.id })}
+              >
+                <b>{signed(a.mod)}</b>
+                <span>{a.score}</span>
+              </button>
             </dd>
-            <PlayAbilitySave ability={a} />
+            <PlayAbilitySave
+              ability={a}
+              onOpen={() => setNumberOpen({ kind: "save", ability: a.id })}
+            />
           </div>
         ))}
       </dl>
       <div className="f-char-stats">
-        <StatBadge shape="shield" value={String(view.numbers.ac)} label={t("stats.ac")} />
+        <StatBadge
+          shape="shield"
+          value={String(view.numbers.ac)}
+          label={t("stats.ac")}
+          onOpen={() => setNumberOpen({ kind: "ac" })}
+        />
         <StatBadge
           shape="hex"
           value={signed(view.numbers.initiative)}
           label={t("character.vitals.initAria")}
+          onOpen={() => setNumberOpen({ kind: "initiative" })}
         />
         <StatBadge
           shape="hex"
           value={localeDistance(view.numbers.speedFt, locale)}
           label={t("character.speed")}
+          onOpen={() => setNumberOpen({ kind: "speed" })}
         />
         {/* The phone's band keeps D&D Beyond's three: CA, Initiative, Speed. */}
         {!narrow && (
@@ -437,6 +459,7 @@ function PlayHeader({
             shape="hex"
             value={signed(view.numbers.proficiency)}
             label={t("play.proficiency")}
+            onOpen={() => setNumberOpen({ kind: "proficiency" })}
           />
         )}
       </div>
@@ -504,6 +527,16 @@ function PlayHeader({
           locale={locale}
           intent={hpOpen}
           onClose={() => setHpOpen(false)}
+        />
+      )}
+      {numberOpen && (
+        <PlayNumberPane
+          key={JSON.stringify(numberOpen)}
+          numberKey={numberOpen}
+          doc={doc}
+          locale={locale}
+          readonly={readonly}
+          onClose={() => setNumberOpen(null)}
         />
       )}
       {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
