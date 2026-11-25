@@ -37,6 +37,7 @@ const COMPONENTS: Record<string, Answer> = {
   DefenseRow: { na: "a display row of the sheet's defenses" },
   DyingBanner: { covered: "src/domains/play/ui/PlayDown.tsx" },
   FamiliarFormPicker: { covered: "src/domains/play/ui/PlayFamiliarPicker.tsx" },
+  HitReactionBanner: { covered: "src/domains/play/ui/PlayHitReaction.tsx" },
   HpEditPopover: { covered: "src/domains/play/ui/PlayHp.tsx" },
   ItemResourceRailRow: { covered: "src/domains/play/ui/PlayLeft.tsx" },
   LogEntryRow: { covered: "src/domains/play/ui/PlayRight.tsx" },
