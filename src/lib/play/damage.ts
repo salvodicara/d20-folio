@@ -54,6 +54,12 @@ export type DamageOptions = Pick<PcDamageTransitionInput, "crit" | "hit"> & {
   onZeroHp?: ZeroHpConsequence;
 };
 
+/** A hit counted at half, rounded down (Uncanny Dodge): what is taken, what comes back. */
+export function halvedHit(amount: number): { taken: number; back: number } {
+  const taken = Math.floor(amount / 2);
+  return { taken, back: amount - taken };
+}
+
 /** One entered hit on the character, or null when it changes nothing. */
 export function takeDamage(
   doc: CharacterDoc,
@@ -77,7 +83,7 @@ export function takeDamage(
   // Another device can't record a state or a pool being spent, so it uses neither.
   const scale =
     opts?.notAnAttack || opts?.fromPeer ? undefined : aggregate.incomingDamageScales[0];
-  const scaled = scale ? Math.floor(amount / 2) : amount;
+  const scaled = scale ? halvedHit(amount).taken : amount;
   const absorbed = absorbIntoPools(
     doc,
     opts?.fromPeer ? [] : aggregate.damageAbsorbPools,

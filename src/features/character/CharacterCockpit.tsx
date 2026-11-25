@@ -43,6 +43,7 @@ import { FolioLoader } from "@/components/shared/FolioLoader";
 import { cn } from "@/lib/utils";
 import { DyingBanner } from "./DyingBanner";
 import { ConcentrationSaveBanner } from "./ConcentrationSaveBanner";
+import { HitReactionBanner } from "./HitReactionBanner";
 import { SpeciesChoicesBanner } from "./SpeciesChoicesBanner";
 import { BinderFob } from "./BinderFob";
 import { MobileSignet } from "./MobileSignet";
@@ -235,6 +236,9 @@ export function CockpitView() {
         {/* Every living hit while concentrating produces one durable FIFO prompt.
           It stays above the tab grid so the required physical-roll entry remains
           reachable on every cockpit surface and survives route/hydration churn. */}
+        {/* A hit from an attack offers the reactions the rules allow now (#1330); it
+          sits first, since Shield's miss withdraws the save below. */}
+        <HitReactionBanner />
         <ConcentrationSaveBanner />
 
         {/* A species choice the character still owes (a sheet saved before the
