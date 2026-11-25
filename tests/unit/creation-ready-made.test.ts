@@ -9,6 +9,7 @@ import { describe, expect, it } from "vitest";
 
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { classTables } from "@/data/classes";
+import { spells as allSpells } from "@/data/spells";
 import {
   creationDraftReducer,
   creationFacts,
@@ -41,6 +42,29 @@ describe("fillReadyMade", () => {
         const missing = missingCreationRequirements(after).map((r) => r.key);
         // The +2/+1 is the Caratteristiche step's, already placed by the screen.
         expect(missing.filter((key) => key !== "bgAsi")).toEqual([]);
+      });
+    }
+  }
+
+  // A group that starts above level 1 (E4): the ready-made build is complete there
+  // too, with spells the class can cast at that level.
+  for (const table of classTables.filter((t) => t.spellcasting)) {
+    for (const level of [3, 5]) {
+      it(`${table.id} at level ${level}: spells filled from the class list`, () => {
+        const before = apply(
+          chosen(table.id, "acolyte"),
+          { type: "setLevel", level },
+          { type: "setSubclass", subclassId: table.subclasses[0]?.id ?? "" }
+        );
+        const after = apply(before, { type: "fillReadyMade" });
+        const missing = missingCreationRequirements(after).map((r) => r.key);
+        expect(missing.filter((key) => key !== "bgAsi")).toEqual([]);
+        const facts = creationFacts(after);
+        for (const id of [...after.cantrips, ...after.spells]) {
+          const spell = allSpells.find((s) => s.id === id);
+          expect(spell?.classes, id).toContain(table.id);
+          expect(spell?.level ?? Infinity, id).toBeLessThanOrEqual(facts.maxSpellLevel);
+        }
       });
     }
   }

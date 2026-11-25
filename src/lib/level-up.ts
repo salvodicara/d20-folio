@@ -14,8 +14,13 @@
 import { abilityModifier, proficiencyBonus, hitDieAverage } from "@/lib/compute";
 import { getClassTable, getFeaturesAtLevel, classFeatureIndex } from "@/data/classes";
 import { srdEn } from "@/i18n/srd-en";
-import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
+import {
+  resolveGrantSourcesForFeatures,
+  resolveGrantSourcesForRace,
+} from "@/lib/resolve-grant-sources";
+import { raceFeatureIndex } from "@/data/races";
 import { applyFeatAsi } from "@/lib/feat-asi";
+import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import { getClasses, primaryClassEntry, totalLevel } from "@/lib/classes";
 import {
   computeMulticlassSpellSlots,
@@ -242,20 +247,32 @@ export function levelUp(
  * grant on every feature ref so no engine path needs to know about Tough or
  * Dwarven Toughness by name. The origin/bg feat slug is still checked
  * separately — those aren't in `features[]` yet at the very first level-up
- * after the feat is taken. (Species traits like Dwarven Toughness live in
- * `features[]` and resolve here directly — this path has no separate race
- * source, so it never double-counts.)
+ * after the feat is taken. Species traits (Dwarven Toughness) resolve from
+ * `race`: a stored character keeps them there, not in `features[]`. A trait of
+ * the character's own species that IS in `features[]` (the creation draft's
+ * granted list) is read from `race` only, so it never counts twice.
  *
  * THE single source for the per-level HP bonus: `applyHpIncrease` (level-up)
  * and the Bio-tab level reconcile (`reconcile-build`) both read it, so a level
  * up and a level down move max HP by the same per-level amount.
  */
 export function hpPerLevelGrantBonus(
-  character: Pick<CharacterData, "features" | "humanOriginFeat" | "bgFeat">
+  character: Pick<CharacterData, "features" | "humanOriginFeat" | "bgFeat"> &
+    Partial<Pick<CharacterData, "race">>
 ): { bonus: number; parts: Array<{ name: string; amount: number }> } {
   let bonus = 0;
   const parts: Array<{ name: string; amount: number }> = [];
-  for (const src of resolveGrantSourcesForFeatures(character.features)) {
+  // A trait of the character's own species comes from `race` (counted once).
+  const features = character.features.filter(
+    (f) =>
+      "custom" in f ||
+      !character.race ||
+      raceFeatureIndex.get(f.srdId)?.raceId !== character.race
+  );
+  for (const src of [
+    ...resolveGrantSourcesForRace(character.race),
+    ...resolveGrantSourcesForFeatures(features),
+  ]) {
     for (const g of src.grants ?? []) {
       if (g.type === "hp-per-level") {
         bonus += g.amount;
@@ -425,8 +442,15 @@ function applyNewFeatures(
   // unless the ADVANCING class has that subclass (SRD features carry the stable
   // subclass slug in `f.subclass`).
   const subclassSlug = subclassId;
+  // A Fighting Style slot is a feat the player picks (SRD 5.2.1); a concrete
+  // `<placeholder>-<style>` row at the same level (the old auto-assigned Paladin
+  // Defense) would be a second, unpicked style.
+  const stylePrefixes = newFeatures
+    .filter((f) => isFightingStylePlaceholder(f.id))
+    .map((f) => `${f.id}-`);
   const featuresToAdd = newFeatures.filter((f) => {
     if (existingIds.has(f.id)) return false;
+    if (stylePrefixes.some((prefix) => f.id.startsWith(prefix))) return false;
     // Skip subclass-specific features unless character has that subclass
     if (f.subclass && f.subclass !== subclassSlug) return false;
     return true;
