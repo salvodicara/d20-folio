@@ -29,6 +29,7 @@ import { useMemo } from "react";
 import { useCombatStore } from "@/stores/combatStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
+import { diagnosticsLog } from "@/lib/diagnostics";
 import {
   useGlobalCombat,
   useCombatStatusStore,
@@ -137,7 +138,18 @@ export function advanceSharedTurn(
       // (still-your-turn) read instead of holding the pip advanced forever. Self-heals the
       // one case the live snapshot can't (a failed transaction emits no reconciling snapshot).
       useCombatStatusStore.getState().clearPendingTurn();
-      console.error("Turn-advance write failed", e);
+      // One named event the owner digest counts (#1203): the action and the error code
+      // only, never a name or a value.
+      diagnosticsLog("warn", "fight.write-failed", {
+        action: "end-turn",
+        code:
+          typeof e === "object" &&
+          e !== null &&
+          typeof (e as { code?: unknown }).code === "string"
+            ? (e as { code: string }).code
+            : "unknown",
+        offline: !navigator.onLine,
+      });
       // #1277: say it, instead of a console line only — the turn is still the player's.
       useToastStore.getState().showToast({
         intent: { kind: "turn-not-ended", offline: !navigator.onLine },

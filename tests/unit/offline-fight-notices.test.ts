@@ -18,6 +18,7 @@ import { advanceSharedTurn } from "@/features/character/center/turn-state";
 import { reportClockNotMoved } from "@/features/character/clock-notice";
 import { localizeToastIntent } from "@/lib/views/toast-intent";
 import { useToastStore } from "@/stores/toastStore";
+import { breadcrumbSnapshot, resetDiagnostics } from "@/lib/diagnostics";
 
 let online = true;
 beforeEach(() => {
@@ -25,6 +26,7 @@ beforeEach(() => {
   vi.spyOn(navigator, "onLine", "get").mockImplementation(() => online);
   useToastStore.setState({ toasts: [] });
   h.advance.mockReset();
+  resetDiagnostics();
 });
 
 const lastIntent = () => useToastStore.getState().toasts.at(-1)?.intent;
@@ -37,6 +39,16 @@ describe("End Turn that cannot reach the shared fight", () => {
     advanceSharedTurn("camp-1", "pc-u1", "pc-u1");
     await settle();
     expect(lastIntent()).toEqual({ kind: "turn-not-ended", offline: true });
+  });
+
+  it("is counted under one named diagnostics event: the action and the error code only", async () => {
+    h.advance.mockRejectedValue(
+      Object.assign(new Error("Player Bren"), { code: "aborted" })
+    );
+    advanceSharedTurn("camp-1", "pc-u1", "pc-u1");
+    await settle();
+    const event = breadcrumbSnapshot().find((b) => b.event === "fight.write-failed");
+    expect(event?.data).toEqual({ action: "end-turn", code: "aborted", offline: false });
   });
 
   it("online, a refused End Turn says so too", async () => {
