@@ -9,6 +9,8 @@
  */
 import { effectiveConditions } from "@/lib/aggregate-character";
 import { abilityModifier } from "@/lib/ability";
+import { totalLevel } from "@/lib/classes";
+import { xpProgress } from "@/lib/experience";
 import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import { currentForm, formNameKind, formSourceKind } from "@/lib/polymorph";
@@ -55,6 +57,10 @@ export interface PlayHeaderView {
   conditions: number;
   /** The form the character is in, or null. */
   form: { source: string; beast: string } | null;
+  /** How the sheet offers «Sali di livello» (D&D Beyond): a milestone table (no XP)
+   *  always shows it; an XP table only once the XP reaches the next level; null at
+   *  level 20 or before the XP is there. */
+  levelUpCue: "milestone" | "xp-ready" | null;
 }
 
 export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderView {
@@ -114,7 +120,16 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
     effects: playEffectsView(doc, locale, () => "").count,
     conditions: effectiveConditions(doc).length,
     form: formNames(doc, locale),
+    levelUpCue: levelUpCue(doc),
   };
+}
+
+function levelUpCue(doc: CharacterDoc): PlayHeaderView["levelUpCue"] {
+  const level = totalLevel(doc.character);
+  if (level >= 20) return null;
+  const xp = doc.character.experience;
+  if (xp === undefined) return "milestone";
+  return xpProgress(xp, level).canLevelUp ? "xp-ready" : null;
 }
 
 function formNames(doc: CharacterDoc, locale: Locale): PlayHeaderView["form"] {
