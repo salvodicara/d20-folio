@@ -23,6 +23,8 @@ export const BARBARIAN_TABLE: SrdClassTable = {
     asProficiencyToken("simple-weapons"),
     asProficiencyToken("martial-weapons"),
   ],
+  // SRD 5.2.1 Weapon Mastery: «two kinds of Simple or Martial Melee weapons».
+  weaponMasteryMeleeOnly: true,
   skillChoices: {
     count: 2,
     from: [
