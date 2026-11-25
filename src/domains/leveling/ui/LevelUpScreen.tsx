@@ -51,10 +51,10 @@ import { getClasses, primaryClassId, totalLevel } from "@/lib/classes";
 import { clearLevelUpDraft, loadLevelUpDraft, saveLevelUpDraft } from "@/lib/local-draft";
 import { abilityModifier } from "@/lib/compute";
 import {
-  replaceCharacterState,
-  restoreCharacterSnapshot,
-  saveCharacterSnapshot,
-} from "@/lib/firestore";
+  applyLevelUp,
+  revertRefusedLevelUp,
+  undoLevelUp,
+} from "@/features/leveling/level-up-save";
 import { recordLevelUp } from "@/domains/leveling/level-up-line";
 import { commitLevelUp } from "@/lib/level-up-commit";
 import { HIT_DIE_AVG } from "@/lib/level-up-plan";
@@ -62,9 +62,7 @@ import type { Locale } from "@/lib/locale";
 import { eligibleNewClasses } from "@/lib/multiclass";
 import { className } from "@/lib/views/level-up-view";
 import { useAuthStore } from "@/stores/authStore";
-import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
-import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Chip, Choice, Dialog, Room, Stepper, type ArtKind } from "@/ui";
 
@@ -106,7 +104,6 @@ export function LevelUpScreen({
 }) {
   const { t } = useTranslation();
   const uid = useAuthStore((s) => s.user?.uid);
-  const setCharacter = useCharacterStore((s) => s.setCharacter);
   const c = doc.character;
   const owned = getClasses(c);
   // The answers survive a reload, for the level they were given at (`lib/local-draft`).
@@ -166,65 +163,46 @@ export function LevelUpScreen({
     setSaving(true);
     setError(null);
     const before = doc;
+    const failed = (e: unknown): string =>
+      t("levelUp.saveFailed", {
+        error: e instanceof Error ? e.message : t("common.unknownError"),
+      });
+    let written: Promise<void>;
     try {
-      await saveCharacterSnapshot(uid, doc.id, {
-        character: c,
-        session: doc.session,
-        reason: "level-up",
-      });
-      setCharacter(after);
-      // A level rewrites the whole sheet: an older undo could restore a sheet that no longer holds.
-      useUndoStore.getState().clear();
-      await replaceCharacterState(
-        uid,
-        doc.id,
-        after.character,
-        after.session,
-        doc.revision,
-        doc
-      );
-      // The level-up's line in the log, and through it the campaign's session.
-      const takeLineBack = recordLevelUp({
-        from: plan.newLevel - 1,
-        to: plan.newLevel,
-        classId,
-      });
-      finishing();
-      clearLevelUpDraft(uid, doc.id);
-      onClose();
-      useToastStore.getState().showToast({
-        message: t("levelUp.screen.done", { name: c.name, level: plan.newLevel }),
-        duration: 8000,
-        onUndo: () => {
-          takeLineBack();
-          setCharacter(before);
-          void restoreCharacterSnapshot(
-            uid,
-            doc.id,
-            { character: before.character, session: before.session },
-            doc.revision + 1,
-            before
-          ).catch((e: unknown) => {
-            // The sheet stays levelled when the old one cannot be put back.
-            setCharacter(after);
-            useToastStore.getState().showToast({
-              message: t("levelUp.saveFailed", {
-                error: e instanceof Error ? e.message : t("common.unknownError"),
-              }),
-              duration: 6000,
-            });
-          });
-        },
-      });
+      // Applies the level at once and queues its writes: offline it never waits (#1276).
+      ({ written } = await applyLevelUp({ uid, before, after }));
     } catch (e) {
-      setCharacter(before);
-      setError(
-        t("levelUp.saveFailed", {
-          error: e instanceof Error ? e.message : t("common.unknownError"),
-        })
-      );
+      setError(failed(e));
       setSaving(false);
+      return;
     }
+    // The level-up's line in the log, and through it the campaign's session.
+    const takeLineBack = recordLevelUp({
+      from: plan.newLevel - 1,
+      to: plan.newLevel,
+      classId,
+    });
+    finishing();
+    clearLevelUpDraft(uid, doc.id);
+    onClose();
+    // The server refused it (a conflict, a rule): the old sheet comes back and says why.
+    written.catch((e: unknown) => {
+      takeLineBack();
+      revertRefusedLevelUp(before, after);
+      useToastStore.getState().showToast({ message: failed(e), duration: 8000 });
+    });
+    useToastStore.getState().showToast({
+      message: t("levelUp.screen.done", { name: c.name, level: plan.newLevel }),
+      duration: 8000,
+      onUndo: () => {
+        takeLineBack();
+        undoLevelUp(before).catch((e: unknown) => {
+          // The sheet stays levelled when the old one cannot be put back.
+          revertRefusedLevelUp(after, before);
+          useToastStore.getState().showToast({ message: failed(e), duration: 6000 });
+        });
+      },
+    });
   }
 
   const toggle = (row: AskRow, id: string) => setAnswers(toggleAnswer(answers, row, id));

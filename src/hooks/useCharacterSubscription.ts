@@ -296,6 +296,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           devReconciler.reset();
           useCharacterStore.getState().setCombatPersistence(null);
           useCharacterStore.getState().setParentPersistenceFlush(null);
+          useCharacterStore.getState().setWholeSheetWriter(null);
           setCharacter(null);
           setError(message);
           setLoading(false);
@@ -374,6 +375,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         unsubscribeCombat();
         useCharacterStore.getState().setCombatPersistence(null);
         useCharacterStore.getState().setParentPersistenceFlush(null);
+        useCharacterStore.getState().setWholeSheetWriter(null);
         useCharacterStore.getState().setDamageTransferSink(null);
         setCharacter(null);
         setDiagnosticsContext({ characterId: undefined });
@@ -452,6 +454,18 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     useCharacterStore
       .getState()
       .setParentPersistenceFlush(() => void debouncedSaveRef.current?.flush());
+    // A level-up (and its undo) goes through the same ordered queue, so it takes the
+    // generation after every write already sent, never the sheet's acknowledged one
+    // (#1276). A refusal re-bases the cursor on the server, as a refused autosave does;
+    // the listener then republishes the server's copy.
+    useCharacterStore.getState().setWholeSheetWriter((sheet, source) => {
+      const saver = debouncedSaveRef.current;
+      if (!saver) return Promise.reject(new Error("The sheet is not open"));
+      return saver.sendWholeSheet(sheet, source).catch((err: unknown) => {
+        resetRevisionCursor();
+        throw err;
+      });
+    });
     // Warding Bond: a hit's share lands on the caster's sheet (loaded on demand, so the
     // campaign writer stays off first paint).
     useCharacterStore.getState().setDamageTransferSink((transfers) => {
@@ -521,6 +535,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       attachedCampaignsRef.current = null;
       useCharacterStore.getState().setCombatPersistence(null);
       useCharacterStore.getState().setParentPersistenceFlush(null);
+      useCharacterStore.getState().setWholeSheetWriter(null);
       setCharacter(null);
       setError(message);
       setLoading(false);
@@ -849,6 +864,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       // to a stale subdoc; the trio mutators fall back to optimistic-only.
       useCharacterStore.getState().setCombatPersistence(null);
       useCharacterStore.getState().setParentPersistenceFlush(null);
+      useCharacterStore.getState().setWholeSheetWriter(null);
       attachedCampaignsRef.current = null;
       reconciler.reset();
       reconcilerRef.current = null;

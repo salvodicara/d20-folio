@@ -8,7 +8,7 @@ import { characterShapeTooNew } from "@/lib/shape-numbers";
 import {
   collection,
   doc,
-  addDoc,
+  setDoc,
   getDoc,
   getDocs,
   getCountFromServer,
@@ -671,6 +671,18 @@ export interface DebouncedSaveHandle {
   save: (data: CharacterDoc, callbacks?: DebouncedSaveCallbacks) => void;
   flush: () => Promise<void>;
   cancel: () => void;
+  /**
+   * A whole-sheet write (a level-up, its undo) through this saver's ORDERED queue
+   * (#1276): the pending autosave it supersedes is dropped, and the write takes the
+   * next generation AT SEND, after every write already queued, never a number one of
+   * them holds. It is handed to the SDK without waiting for the server (offline, the
+   * returned promise settles only when the server answers); it rejects when the
+   * server refuses it.
+   */
+  sendWholeSheet: (
+    sheet: { character: CharacterData; session: SessionState },
+    source: WholeSheetSource
+  ) => Promise<void>;
 }
 
 const pendingParentSaveCancellers = new Map<string, () => void>();
@@ -794,20 +806,21 @@ export function createDebouncedSave(
     return settle(data, sent, callbacks);
   }
 
-  function runWrite(
-    queued: CharacterDoc,
-    callbacks?: DebouncedSaveCallbacks
+  /** Run `go` with the codec modules, in queue order: at once when they are loaded and
+   *  nothing waits, else behind every write already waiting for them. */
+  function ordered(
+    go: (modules: ParentWriteModules) => Promise<void>,
+    onLoadError: (reason: Error) => Promise<void>
   ): Promise<void> {
     const modules = loadedParentWriteModules();
-    if (modules && !waiting) return send(modules, queued, callbacks);
+    if (modules && !waiting) return go(modules);
     let result: Promise<void> = Promise.resolve();
     const started = (waiting ?? Promise.resolve()).then(preloadParentWrite).then(
       (loaded) => {
-        result = send(loaded, queued, callbacks);
+        result = go(loaded);
       },
       (err: unknown) => {
-        const reason = err instanceof Error ? err : new Error(String(err));
-        result = settle(queued, Promise.reject(reason), callbacks);
+        result = onLoadError(err instanceof Error ? err : new Error(String(err)));
       }
     );
     waiting = started;
@@ -815,6 +828,59 @@ export function createDebouncedSave(
       if (waiting === started) waiting = null;
     });
     return started.then(() => result);
+  }
+
+  function runWrite(
+    queued: CharacterDoc,
+    callbacks?: DebouncedSaveCallbacks
+  ): Promise<void> {
+    return ordered(
+      (modules) => send(modules, queued, callbacks),
+      (reason) => settle(queued, Promise.reject(reason), callbacks)
+    );
+  }
+
+  function sendWholeSheet(
+    sheet: { character: CharacterData; session: SessionState },
+    source: WholeSheetSource
+  ): Promise<void> {
+    if (DEV_BYPASS_AUTH) return Promise.resolve();
+    // The ceremony carries the whole latest sheet: the autosave it supersedes is dropped.
+    const superseded = takePending();
+    if (timer) clearTimeout(timer);
+    timer = null;
+    clearPendingRegistration();
+    if (superseded) superseded.callbacks?.onCancelled?.(superseded.data);
+    return ordered(
+      (modules) => {
+        if (!allocateRevision) {
+          return Promise.reject(
+            new TypeError("A whole-sheet write needs the revision cursor")
+          );
+        }
+        const revision = allocateRevision();
+        saveStatusCallbacks.onSaving();
+        let sent: Promise<void>;
+        try {
+          sent = commitWholeSheet(modules, uid, charId, sheet, revision, source);
+        } catch (err) {
+          sent = Promise.reject(err instanceof Error ? err : new Error(String(err)));
+        }
+        return sent.then(
+          () => saveStatusCallbacks.onSaved(),
+          (err: unknown) => {
+            const msg = err instanceof Error ? err.message : "Save failed";
+            diagnosticsLog("error", "character.whole-sheet-rejected", {
+              message: msg,
+              shared: source.shared,
+            });
+            saveStatusCallbacks.onError(msg);
+            throw err;
+          }
+        );
+      },
+      (reason) => Promise.reject(reason)
+    );
   }
 
   return {
@@ -845,6 +911,7 @@ export function createDebouncedSave(
       return inflight;
     },
     cancel,
+    sendWholeSheet,
   };
 }
 
@@ -881,24 +948,48 @@ export async function saveCharacterSnapshot(
     reason: string;
   }
 ): Promise<string> {
-  if (DEV_BYPASS_AUTH) return "mock-snapshot-id";
+  const queued = queueCharacterSnapshot(uid, charId, await preloadParentWrite(), data);
+  await queued.written;
+  return queued.id;
+}
+
+/**
+ * Hand a snapshot to the SDK in this synchronous turn and return at once (#1276: a
+ * level-up never waits for the server). `written` settles when the server answers
+ * (offline: much later, or after a restart). The free-tier prune runs on its own: it
+ * reads the cache offline, and a prune that cannot run now runs at the next snapshot.
+ */
+export function queueCharacterSnapshot(
+  uid: string,
+  charId: string,
+  modules: ParentWriteModules,
+  data: {
+    character: CharacterData;
+    session: SessionState;
+    reason: string;
+  }
+): { id: string; written: Promise<void> } {
+  if (DEV_BYPASS_AUTH) return { id: "mock-snapshot-id", written: Promise.resolve() };
   const snapshotsCol = collection(db, "users", uid, "characters", charId, "snapshots");
-  const { serializeCharacterEnvelope } = await import("@/lib/character-codec");
-  const envelope = serializeCharacterEnvelope({
+  const envelope = modules.codec.serializeCharacterEnvelope({
     character: data.character,
     session: data.session,
   } as CharacterDoc);
+  const ref = doc(snapshotsCol);
   // stripUndefined symmetry with createCharacter / updateCharacter — the codec
   // envelope is plain JSON, but `reason` + nested fields stay strip-safe.
-  const docRef = await addDoc(snapshotsCol, {
+  const written = setDoc(ref, {
     ...(stripUndefined({ ...envelope, reason: data.reason }) as Record<string, unknown>),
     createdAt: serverTimestamp(),
   });
   // Free-tier cap (#29): snapshots auto-generate on every level-up, so this list
-  // grows unattended — keep it bounded by pruning oldest-first. Read at most
-  // cap+1 oldest (cheap) and delete the overflow; converges to the cap over saves.
-  await pruneOldestSnapshots(snapshotsCol);
-  return docRef.id;
+  // grows unattended — keep it bounded by pruning oldest-first, off the critical path.
+  void pruneOldestSnapshots(snapshotsCol).catch((err: unknown) => {
+    diagnosticsLog("warn", "character.snapshot-prune-failed", {
+      message: err instanceof Error ? err.message : String(err),
+    });
+  });
+  return { id: ref.id, written };
 }
 
 /**
@@ -1006,9 +1097,31 @@ export async function restoreCharacterSnapshot(
   if (!Number.isInteger(baseRevision) || baseRevision < 0) {
     throw new TypeError("Invalid character document: invalid-revision");
   }
-  const parent = await toStoredPayload({
-    character: snapshot.character,
-    session: snapshot.session,
+  const modules = await preloadParentWrite();
+  // A whole-state ceremony already carries the latest complete parent + session.
+  // Drop its same-tab debounced predecessor immediately before the atomic v1
+  // replacement, so an older legacy payload cannot be enqueued after the cutover.
+  const supersededPendingSave = cancelPendingParentSave(uid, charId);
+  await commitWholeSheet(modules, uid, charId, snapshot, baseRevision + 1, source);
+  if (supersededPendingSave) saveStatusCallbacks.onSaved();
+}
+
+/**
+ * The whole-sheet batch (level-up, restore, undo), built and committed in one synchronous
+ * turn from modules already loaded: the parent at `revision`, the play child reset to the
+ * sheet's session, and a shared sheet's public copy.
+ */
+function commitWholeSheet(
+  modules: ParentWriteModules,
+  uid: string,
+  charId: string,
+  sheet: { character: CharacterData; session: SessionState },
+  revision: number,
+  source: WholeSheetSource
+): Promise<void> {
+  const parent = storedPayloadWith(modules, {
+    character: sheet.character,
+    session: sheet.session,
   });
   const batch = writeBatch(db);
   const updatedAt = serverTimestamp();
@@ -1016,38 +1129,32 @@ export async function restoreCharacterSnapshot(
     ...(stripUndefined(parent) as Record<string, unknown>),
     // A whole-state ceremony is a build write: it advances the generation past the
     // document the caller observed, so a concurrent stale write is denied.
-    revision: baseRevision + 1,
+    revision,
     updatedAt,
   });
-
   // A snapshot contains SessionState only; combat-only ledgers/history are
   // deliberately reset so facts from the abandoned future cannot survive restore.
   batch.set(
     combatStateRef(uid, charId),
-    combatStateWriteData(sessionToCombatState(snapshot.session))
+    combatStateWriteData(sessionToCombatState(sheet.session))
   );
   // A shared character's public sheet must equal the parent after every write, or the
   // rules refuse the whole batch: a level-up, a restore or its undo rewrites it too, as
   // the autosave does (#1276; before, every whole-sheet write of a shared sheet failed).
   queuePublicProjectionWith(
-    await preloadParentWrite(),
+    modules,
     batch,
     uid,
     {
       ...source,
       id: charId,
-      revision: baseRevision + 1,
-      character: snapshot.character,
-      session: snapshot.session,
+      revision,
+      character: sheet.character,
+      session: sheet.session,
     } as CharacterDoc,
     updatedAt
   );
-  // A whole-state ceremony already carries the latest complete parent + session.
-  // Drop its same-tab debounced predecessor immediately before the atomic v1
-  // replacement, so an older legacy payload cannot be enqueued after the cutover.
-  const supersededPendingSave = cancelPendingParentSave(uid, charId);
-  await batch.commit();
-  if (supersededPendingSave) saveStatusCallbacks.onSaved();
+  return batch.commit();
 }
 
 /** Whole character replacement boundary for level-up and similar ceremonies. */
