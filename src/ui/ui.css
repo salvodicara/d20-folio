@@ -3865,7 +3865,6 @@
 .fui .f-num-total > b {
   font: 700 40px/1 var(--font-title);
   color: var(--strong);
-  font-variant-numeric: lining-nums tabular-nums;
 }
 .fui .f-num-custom {
   padding-top: 16px;
