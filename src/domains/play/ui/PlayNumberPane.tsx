@@ -78,7 +78,7 @@ export function PlayNumberPane({
             {view.parts.map((line, i) => (
               <li key={i}>
                 <span>{renderBreakdownLineLabel(line, t)}</span>
-                <b>{line.value}</b>
+                <b>{speed ? speedLine(line.value, locale) : line.value}</b>
               </li>
             ))}
           </ul>
@@ -120,6 +120,13 @@ export function PlayNumberPane({
   );
 }
 
+/** A speed part («+30», feet) in the player's units, as the total is («+9 m»). */
+function speedLine(value: string, locale: Locale): string {
+  const feet = Number(value.replace("−", "-"));
+  if (!Number.isFinite(feet)) return value;
+  return `${feet < 0 ? "−" : "+"}${localeDistance(Math.abs(feet), locale)}`;
+}
+
 /** The typed value as stored (feet for speed), or null when it is not a number. */
 function parseDraft(draft: string, speed: boolean, locale: Locale): number | null {
   const text = draft.trim().replace("−", "-");
@@ -136,7 +143,7 @@ function numberName(
 ): string {
   switch (key.kind) {
     case "ac":
-      return t("stats.ac");
+      return t("character.armorClass");
     case "initiative":
       return t("character.vitals.initAria");
     case "speed":

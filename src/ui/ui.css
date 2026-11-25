@@ -3863,9 +3863,9 @@
   margin: 0;
 }
 .fui .f-num-total > b {
-  font: 600 var(--fs-xl) var(--font-title);
+  font: 700 40px/1 var(--font-title);
   color: var(--strong);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 .fui .f-num-custom {
   padding-top: 16px;

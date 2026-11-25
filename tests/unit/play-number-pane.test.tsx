@@ -123,6 +123,18 @@ describe("the pane", () => {
     }
   });
 
+  it("speed's parts are in the player's units, as its total", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      open({ kind: "speed" }, "it");
+      const parts = screen.getByRole("list", { name: "Scomposizione" }).textContent;
+      expect(parts).toMatch(/\+9\s?m/);
+      expect(parts).not.toContain("+30");
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+
   it("a read-only sheet shows the number and its parts, with no controls", () => {
     open({ kind: "skill", id: "stealth" }, "en", true);
     expect(screen.queryByLabelText("Fixed value")).toBeNull();
