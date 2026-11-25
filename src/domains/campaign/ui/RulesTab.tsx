@@ -182,7 +182,7 @@ function RuleRow({
         (editable && !open && row.raw ? (
           <div className="f-chips">
             <Chip pressed>{t(`${K}.raw`)}</Chip>
-            <Chip onClick={() => setOpen(true)}>{t(`${K}.customize`)}</Chip>
+            <Chip onClick={() => setOpen(true)}>{t("common.customize")}</Chip>
           </div>
         ) : (
           <div className="f-rule-fields">

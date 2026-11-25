@@ -17,7 +17,16 @@ const { createCharacterMock, navigateMock } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
 }));
 vi.mock("@/lib/firebase", () => ({ db: {} }));
-vi.mock("@/lib/firestore", () => ({ createCharacter: createCharacterMock }));
+vi.mock("@/lib/firestore", () => ({
+  // Offline (#1283): the id comes back at once, the server never answers.
+  queueCreateCharacter: (...args: unknown[]) => {
+    const id = (createCharacterMock as (...a: unknown[]) => unknown)(...args);
+    return Promise.resolve(id).then((resolved) => ({
+      id: typeof resolved === "string" ? resolved : "new-id",
+      written: new Promise<void>(() => undefined),
+    }));
+  },
+}));
 vi.mock("react-router", async (orig) => ({
   ...(await orig<typeof import("react-router")>()),
   useNavigate: () => navigateMock,

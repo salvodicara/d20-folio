@@ -17,10 +17,15 @@
  * And the class picks its level table gives that the build lacks (`class-pick`,
  * from `owedClassPicks`): invocations, cantrips, Metamagic, maneuvers, Weapon
  * Mastery, counted per class at that class's own level.
+ *
+ * And a Lore Bard's Magical Discoveries held without their always-prepared mark
+ * (`discovery-mark`, from `unmarkedDiscoveries`): the spells that can be them,
+ * and how many still lack the mark. Only the player's confirm writes it.
  */
 import { FEATS_BY_ID } from "@/data/feats";
 import { getRace } from "@/data/races";
 import { featsOwingAbility } from "@/lib/feat-ability";
+import { unmarkedDiscoveries } from "@/lib/magical-discoveries";
 import { owedClassPicks, type ClassPickKind } from "@/lib/owed-class-picks";
 import type { CharacterData, SessionState } from "@/types/character";
 
@@ -36,7 +41,9 @@ export type UnresolvedBuildChoice =
   /** Which ability a feat's increase raised, when something reads it. */
   | { kind: "feat-ability"; featId: string }
   /** `owed` more picks of a kind the class's level table gives. */
-  | { kind: "class-pick"; classId: string; pick: ClassPickKind; owed: number };
+  | { kind: "class-pick"; classId: string; pick: ClassPickKind; owed: number }
+  /** Magical Discoveries held as plain prepared spells: `missing` of `candidates`. */
+  | { kind: "discovery-mark"; candidates: string[]; missing: number };
 
 export type BuildForChoices = Pick<
   CharacterData,
@@ -57,6 +64,11 @@ export function unresolvedBuildChoices(
     out.push({ kind: "feat-ability", featId });
   }
   for (const owed of owedClassPicks(character)) out.push({ kind: "class-pick", ...owed });
+  const discoveries = unmarkedDiscoveries({
+    classes: character.classes ?? [],
+    spells: character.spells ?? [],
+  });
+  if (discoveries) out.push({ kind: "discovery-mark", ...discoveries });
   return out;
 }
 

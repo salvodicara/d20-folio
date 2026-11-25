@@ -40,8 +40,9 @@ export interface GlobalCombat {
   isMyTurn: boolean;
   /** This player's engine initiative BONUS (override-first) — the roll-to-total widget
    *  adds the typed d20 to it. Sourced from the live view row (the UID's PC), not the
-   *  open sheet. */
-  initiativeBonus: number;
+   *  open sheet. `null` while that row's live data has not loaded: missing is unknown,
+   *  never 0 (the roll waits instead of stating «+0»). */
+  initiativeBonus: number | null;
   /** This player's raw d20 ROLL off the campaign's `encounterInit` table (`null` =
    *  un-rolled) — the value the roll-to-total widget displays/edits. */
   initiativeRoll: number | null;

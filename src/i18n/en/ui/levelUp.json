@@ -65,7 +65,11 @@
       "levelFilter": "Level {{level}} only",
       "noKnownSpells": "No non-cantrip spells to replace.",
       "incompleteWarning": "Select a replacement spell or clear your selection to skip.",
-      "summary": "Will replace {{old}} with {{new}}"
+      "summary": "Will replace {{old}} with {{new}}",
+      "cantripTitle": "Replace a Cantrip (Optional)",
+      "cantripSummary": "Will replace the cantrip {{old}} with {{new}}",
+      "cantripRemoveLabel": "1. Choose a cantrip to replace",
+      "cantripReplaceLabel": "2. Choose your replacement cantrip"
     },
     "scaling": {
       "dieUpgrade": "{{feature}} die upgraded: {{from}} → {{to}}",
@@ -186,7 +190,9 @@
       "readAll": "Read the full text",
       "invocation": "Eldritch Invocation",
       "maneuver": "Maneuver",
-      "hoverHint": "Point at an option to read what it does."
+      "hoverHint": "Point at an option to read what it does.",
+      "spellMastery": "Spell Mastery: a level {{level}} spell cast with an action",
+      "signatureSpells": "Signature Spells: two level 3 spells"
     },
     "searchFightingStyles": "Search Fighting Styles"
   }
