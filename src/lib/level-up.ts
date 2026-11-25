@@ -248,9 +248,9 @@ export function levelUp(
  * Dwarven Toughness by name. The origin/bg feat slug is still checked
  * separately — those aren't in `features[]` yet at the very first level-up
  * after the feat is taken. Species traits (Dwarven Toughness) resolve from
- * `race`: a stored character keeps them there, not in `features[]`. A species
- * trait that IS in `features[]` (the creation draft's granted list) is read from
- * `race` only, so it never counts twice.
+ * `race`: a stored character keeps them there, not in `features[]`. A trait of
+ * the character's own species that IS in `features[]` (the creation draft's
+ * granted list) is read from `race` only, so it never counts twice.
  *
  * THE single source for the per-level HP bonus: `applyHpIncrease` (level-up)
  * and the Bio-tab level reconcile (`reconcile-build`) both read it, so a level
@@ -262,9 +262,13 @@ export function hpPerLevelGrantBonus(
 ): { bonus: number; parts: Array<{ name: string; amount: number }> } {
   let bonus = 0;
   const parts: Array<{ name: string; amount: number }> = [];
-  const features = character.race
-    ? character.features.filter((f) => "custom" in f || !raceFeatureIndex.has(f.srdId))
-    : character.features;
+  // A trait of the character's own species comes from `race` (counted once).
+  const features = character.features.filter(
+    (f) =>
+      "custom" in f ||
+      !character.race ||
+      raceFeatureIndex.get(f.srdId)?.raceId !== character.race
+  );
   for (const src of [
     ...resolveGrantSourcesForRace(character.race),
     ...resolveGrantSourcesForFeatures(features),
