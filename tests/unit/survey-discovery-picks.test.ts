@@ -49,6 +49,9 @@ describe("surveyDiscoveryPicks", () => {
       format: "d20-folio-discovery-picks-survey-v1",
       loreBards: 2,
       byMarks: { "2/0": 1, "0/2": 1 },
+      withFeature: 2,
+      // Guidance (Cleric/Druid) and Fireball (Wizard) are not Bard spells.
+      outsideBardList: { "2/0/0": 2 },
       unreadable: {},
     });
   });

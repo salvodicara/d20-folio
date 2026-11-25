@@ -30,6 +30,7 @@ const PARENT = /^users\/([^/]+)\/characters\/([^/]+)$/;
 const FEATURE = "bard-lore-additional-magical-secrets";
 
 interface ParsedCharacter {
+  features?: ReadonlyArray<{ srdId?: string }>;
   classes?: ReadonlyArray<{ classId: string; subclassId?: string; level: number }>;
   spells?: ReadonlyArray<{
     srdId?: string;
@@ -62,6 +63,20 @@ const engine = {
   ),
 } as EngineModules;
 
+/** Spell id → its class lists, from the app's own catalogue (SRD + pack). */
+const spellClasses: ReadonlyMap<string, readonly string[]> = await (async () => {
+  const module: unknown = await import(
+    new URL("../src/data/spells.ts", import.meta.url).href
+  );
+  const all = isRecord(module) && Array.isArray(module.spells) ? module.spells : [];
+  return new Map(
+    (all as Array<{ id: string; classes?: string[] }>).map((sp) => [
+      sp.id,
+      sp.classes ?? [],
+    ])
+  );
+})();
+
 export interface DiscoveryPicksSurvey {
   format: "d20-folio-discovery-picks-survey-v1";
   /** Lore Bards of Bard level 6 or more (they have Magical Discoveries). */
@@ -70,6 +85,12 @@ export interface DiscoveryPicksSurvey {
    *  many always-prepared spells carry no mark (a pick saved before the mark existed,
    *  or another unmarked source). Keyed "marked/unmarked" → number of Bards. */
   byMarks: Record<string, number>;
+  /** Lore Bards whose features list the Magical Discoveries feature. */
+  withFeature: number;
+  /** Per Lore Bard: spells on the Cleric/Druid/Wizard lists but NOT on the Bard
+   *  list (only Magical Discoveries can give those to a pure Bard), by their flags:
+   *  "always" (alwaysPrepared), "prepared", "known". Keyed "always/prepared/known". */
+  outsideBardList: Record<string, number>;
   unreadable: Record<string, number>;
 }
 
@@ -81,6 +102,8 @@ export function surveyDiscoveryPicks(
     format: "d20-folio-discovery-picks-survey-v1",
     loreBards: 0,
     byMarks: {},
+    withFeature: 0,
+    outsideBardList: {},
     unreadable: {},
   };
   for (const parent of sources.filter((s) => PARENT.test(s.path))) {
@@ -102,6 +125,26 @@ export function surveyDiscoveryPicks(
     const unmarked = always.filter((s) => !s.grantedBy).length;
     const key = `${marked}/${unmarked}`;
     survey.byMarks[key] = (survey.byMarks[key] ?? 0) + 1;
+    if ((character.features ?? []).some((f) => f.srdId === FEATURE))
+      survey.withFeature += 1;
+    const outside = (character.spells ?? []).filter((sp) => {
+      const lists = sp.srdId ? spellClasses.get(sp.srdId) : undefined;
+      return (
+        !!lists &&
+        !lists.includes("bard") &&
+        lists.some((c) => c === "cleric" || c === "druid" || c === "wizard")
+      );
+    });
+    const flags = [
+      outside.filter((sp) => sp.alwaysPrepared).length,
+      outside.filter(
+        (sp) => !sp.alwaysPrepared && (sp as { prepared?: boolean }).prepared
+      ).length,
+      outside.filter(
+        (sp) => !sp.alwaysPrepared && !(sp as { prepared?: boolean }).prepared
+      ).length,
+    ].join("/");
+    survey.outsideBardList[flags] = (survey.outsideBardList[flags] ?? 0) + 1;
   }
   return survey;
 }
