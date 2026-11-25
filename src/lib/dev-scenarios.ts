@@ -664,6 +664,53 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "S13 effective Speed: Boots of Speed ×2 (G12) − heavy-armor Strength penalty (G11) reaches the Speed vital; unproficient-armor Disadvantage (G13) shows in the combat adv/dis list.",
   },
+  "bard-9-no-expertise": {
+    // A Bard 9 as the classic creation leaves one (it asks no Expertise): the table
+    // gives four Expertise skills (two at 2, two at 9), so «Scelte da completare» owes
+    // four. Visit `/characters/scn-bard-9-no-expertise`.
+    name: "Pell, the Unpracticed",
+    raceId: "dwarf",
+    classId: "bard",
+    level: 9,
+    background: "entertainer",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 17 },
+    // Three Bard skills and the Entertainer's two, none at Expertise yet.
+    skills: {
+      acrobatics: "proficient",
+      performance: "proficient",
+      persuasion: "proficient",
+      deception: "proficient",
+      insight: "proficient",
+    },
+    spells: [
+      { srdId: "vicious-mockery" },
+      { srdId: "minor-illusion" },
+      { srdId: "mage-hand" },
+    ],
+    owesClassPicks: true,
+    exercises:
+      "Owed Expertise: the banner asks 4 Expertise skills (Bard) and offers the proficient skills; answering raises them.",
+  },
+  "bard-8": {
+    // A Bard 8 holding its two Expertise skills: the level-up to 9 asks two more.
+    // Visit `/characters/scn-bard-8` and level up.
+    name: "Pell, the Practiced",
+    raceId: "dwarf",
+    classId: "bard",
+    level: 8,
+    background: "entertainer",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 17 },
+    // The Bard 2 Expertise held on two of its five skills.
+    skills: {
+      acrobatics: "proficient",
+      performance: "expertise",
+      persuasion: "expertise",
+      deception: "proficient",
+      insight: "proficient",
+    },
+    exercises:
+      "Level-up Expertise: 8 → 9 asks «Choose 2 skills for Expertise»; afterwards the sheet owes none.",
+  },
   "wizard-book-short": {
     // A Wizard 5 built before the spellbook (2026-11-12): its list holds the nine
     // spells the old level-ups asked for, five short of the book's fourteen, so
