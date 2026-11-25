@@ -14,6 +14,8 @@ import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-
 import { PlayCentre } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
 import { PlayAbilitySave } from "./PlayAbilitySave";
+import { PlayNumberPane } from "./PlayNumberPane";
+import type { SheetNumberKey } from "@/domains/play/play-number-view";
 import { PlayInspiration } from "./PlayInspiration";
 import { PlayConcentration } from "./PlayConcentration";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
@@ -42,7 +44,6 @@ import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { totalLevel } from "@/lib/classes";
-import { xpProgress } from "@/lib/experience";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -169,8 +170,16 @@ export function PlaySheet({
     );
   }
   const view = playHeaderView(doc, locale);
+  // The rest row (the header on a laptop, «Risorse e abilità» on a phone). A table that
+  // levels by milestone gets «Sali di livello» first, always at hand (D&D Beyond's
+  // milestone header); an XP table gets the note under the header instead.
   const rests = (
     <>
+      {levelUp && view.levelUpCue === "milestone" && (
+        <Button icon="g-create" onClick={levelUp}>
+          {t("levelUp.screen.levelUp")}
+        </Button>
+      )}
       <Button
         icon="g-rest-short"
         aria-haspopup="dialog"
@@ -239,18 +248,16 @@ export function PlaySheet({
         onLevelUp={levelUp}
       />
       {/* an XP table that reached the next level: the note, its one action */}
-      {levelUp &&
-        doc.character.experience !== undefined &&
-        xpProgress(doc.character.experience, totalLevel(doc.character)).canLevelUp && (
-          <div className="f-note f-save-due" data-c="res" role="status">
-            <p>{t("character.levelUpReady")}</p>
-            <div className="f-acts">
-              <Button kind="primary" onClick={levelUp}>
-                {t("levelUp.screen.levelUp")}
-              </Button>
-            </div>
+      {levelUp && view.levelUpCue === "xp-ready" && (
+        <div className="f-note f-save-due" data-c="res" role="status">
+          <p>{t("character.levelUpReady")}</p>
+          <div className="f-acts">
+            <Button kind="primary" onClick={levelUp}>
+              {t("levelUp.screen.levelUp")}
+            </Button>
           </div>
-        )}
+        </div>
+      )}
       <PlaySpeciesChoices doc={doc} locale={locale} readonly={readonly} />
       {/* The engine's turn context, the same one the cockpit mounts, so a turn is
           committed one way only; its questions are drawn here (PlayPrompts). */}
@@ -340,6 +347,8 @@ function PlayHeader({
   // «Danni e cure», and which of its actions leads (the button that opened it).
   const [hpOpen, setHpOpen] = useState<false | "damage" | "heal">(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  // The number whose pane is open (D&D Beyond: tap a number, see where it comes from).
+  const [numberOpen, setNumberOpen] = useState<SheetNumberKey | null>(null);
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
   const tiny = useMediaQuery("(max-width: 400px)");
@@ -412,24 +421,42 @@ function PlayHeader({
           <div key={a.id} className="f-ability" data-save={a.save || undefined}>
             <dt className="f-lbl">{t(`abilities.${a.id}_short`)}</dt>
             <dd>
-              <b>{signed(a.mod)}</b>
-              <span>{a.score}</span>
+              <button
+                type="button"
+                className="f-ab-open"
+                aria-haspopup="dialog"
+                aria-label={`${t(`abilities.${a.id}`)} ${String(a.score)} (${signed(a.mod)})`}
+                onClick={() => setNumberOpen({ kind: "ability", ability: a.id })}
+              >
+                <b>{signed(a.mod)}</b>
+                <span>{a.score}</span>
+              </button>
             </dd>
-            <PlayAbilitySave ability={a} />
+            <PlayAbilitySave
+              ability={a}
+              onOpen={() => setNumberOpen({ kind: "save", ability: a.id })}
+            />
           </div>
         ))}
       </dl>
       <div className="f-char-stats">
-        <StatBadge shape="shield" value={String(view.numbers.ac)} label={t("stats.ac")} />
+        <StatBadge
+          shape="shield"
+          value={String(view.numbers.ac)}
+          label={t("stats.ac")}
+          onOpen={() => setNumberOpen({ kind: "ac" })}
+        />
         <StatBadge
           shape="hex"
           value={signed(view.numbers.initiative)}
           label={t("character.vitals.initAria")}
+          onOpen={() => setNumberOpen({ kind: "initiative" })}
         />
         <StatBadge
           shape="hex"
           value={localeDistance(view.numbers.speedFt, locale)}
           label={t("character.speed")}
+          onOpen={() => setNumberOpen({ kind: "speed" })}
         />
         {/* The phone's band keeps D&D Beyond's three: CA, Initiative, Speed. */}
         {!narrow && (
@@ -437,6 +464,7 @@ function PlayHeader({
             shape="hex"
             value={signed(view.numbers.proficiency)}
             label={t("play.proficiency")}
+            onOpen={() => setNumberOpen({ kind: "proficiency" })}
           />
         )}
       </div>
@@ -504,6 +532,16 @@ function PlayHeader({
           locale={locale}
           intent={hpOpen}
           onClose={() => setHpOpen(false)}
+        />
+      )}
+      {numberOpen && (
+        <PlayNumberPane
+          key={JSON.stringify(numberOpen)}
+          numberKey={numberOpen}
+          doc={doc}
+          locale={locale}
+          readonly={readonly}
+          onClose={() => setNumberOpen(null)}
         />
       )}
       {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}

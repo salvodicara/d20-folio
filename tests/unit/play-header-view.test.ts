@@ -7,6 +7,7 @@
  */
 import { describe, expect, it } from "vitest";
 
+import { playNumberView } from "@/domains/play/play-number-view";
 import { playHeaderView } from "@/domains/play/play-header-view";
 import { concentrationValue } from "@/lib/concentration";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
@@ -155,7 +156,7 @@ describe("playHeaderView: the saving throws on the ability tiles", () => {
     });
   });
 
-  it("a paladin's aura lifts a non-proficient save: the total shows, the aura is its own part", () => {
+  it("a paladin's aura lifts a non-proficient save: the total shows, and its pane lists the aura", () => {
     const aura = makeCharacterDoc(
       {
         classId: "cleric",
@@ -167,7 +168,32 @@ describe("playHeaderView: the saving throws on the ability tiles", () => {
     );
     const str = save(aura, "STR");
     expect(str).toMatchObject({ save: false, saveTotal: 6, showSave: true });
-    expect(str?.saveParts.map((p) => p.value)).toEqual(["+3", "+3"]);
-    expect(str?.saveParts[1]).toMatchObject({ kind: "loc", label: "Aura di Bren" });
+    const pane = playNumberView(aura, "it", { kind: "save", ability: "STR" });
+    expect(pane.total).toBe(str?.saveTotal);
+    expect(pane.parts?.map((p) => p.value)).toEqual(["+3", "+3"]);
+    expect(pane.parts?.[1]).toMatchObject({ kind: "loc", label: "Aura di Bren" });
+  });
+});
+
+describe("the level-up cue (D&D Beyond: milestone shows «Level Up», XP shows it when earned)", () => {
+  const doc = (experience: number | undefined, level = 4) => {
+    const d = makeCharacterDoc({ classId: "fighter", level });
+    if (experience === undefined) delete d.character.experience;
+    else d.character.experience = experience;
+    return d;
+  };
+
+  it("a milestone table (no XP) always offers it", () => {
+    expect(playHeaderView(doc(undefined), "it").levelUpCue).toBe("milestone");
+  });
+
+  it("an XP table offers it once the XP reaches the next level, never before", () => {
+    // SRD: level 5 at 6,500 XP.
+    expect(playHeaderView(doc(6500), "it").levelUpCue).toBe("xp-ready");
+    expect(playHeaderView(doc(6499), "it").levelUpCue).toBeNull();
+  });
+
+  it("level 20 has nothing to offer", () => {
+    expect(playHeaderView(doc(undefined, 20), "it").levelUpCue).toBeNull();
   });
 });

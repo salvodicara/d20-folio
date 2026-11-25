@@ -4,6 +4,7 @@
     "pending": "Unsaved",
     "saving": "Saving...",
     "error": "Save error",
-    "offline": "Offline"
+    "offline": "Offline",
+    "editNotSaved": "Your last change was not saved: this sheet changed on another device."
   }
 }

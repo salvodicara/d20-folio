@@ -1150,7 +1150,50 @@ export const KNOWN_BUILD_KEYS: readonly string[] = [
   "customs",
   "lore",
   "experience",
+  "hp",
 ];
+
+/** The max-HP input sub-keys this version reads and writes (#1315). */
+const HP_INPUT_KEYS = ["rolled", "bonus"] as const;
+const isHpInput = (v: unknown): v is number => Number.isSafeInteger(v) && v !== 0;
+
+/**
+ * `build.hp` from the max-HP inputs: a newer client's unknown sub-keys first, then
+ * the valid non-zero inputs. Omitted when empty (the fixed method, no adjustment).
+ */
+function hpInputsToBuild(
+  min: Record<string, unknown>
+): Record<string, unknown> | undefined {
+  const out: Record<string, unknown> = isRecord(min.hpExtra)
+    ? Object.fromEntries(
+        Object.entries(min.hpExtra).filter(
+          ([key]) => !(HP_INPUT_KEYS as readonly string[]).includes(key)
+        )
+      )
+    : {};
+  if (isHpInput(min.hpRolled)) out.rolled = min.hpRolled;
+  if (isHpInput(min.hpBonus)) out.bonus = min.hpBonus;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * The max-HP inputs from `build.hp`. An invalid input reads as absent and is not
+ * written back (kept verbatim, it would overwrite every later write); unknown
+ * sub-keys are kept in `hpExtra`. A non-record `build.hp` reads as no inputs.
+ */
+function hpInputsFromBuild(hp: unknown): Record<string, unknown> {
+  if (!isRecord(hp)) return {};
+  const out: Record<string, unknown> = {};
+  if (isHpInput(hp.rolled)) out.hpRolled = hp.rolled;
+  if (isHpInput(hp.bonus)) out.hpBonus = hp.bonus;
+  const extra = Object.fromEntries(
+    Object.entries(hp).filter(
+      ([key]) => !(HP_INPUT_KEYS as readonly string[]).includes(key)
+    )
+  );
+  if (Object.keys(extra).length > 0) out.hpExtra = extra;
+  return out;
+}
 
 /** Reshape a minimal flat character record into the id-based `build`. */
 function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
@@ -1235,6 +1278,8 @@ function minToBuild(min: Record<string, unknown>): Record<string, unknown> {
 
   // Optional XP total — absent for a table that levels by milestone.
   if (isExperiencePoints(min.experience)) build.experience = min.experience;
+  const hp = hpInputsToBuild(min);
+  if (hp) build.hp = hp;
 
   // Unknown `build` keys the reader preserved: written back LAST, so a canonical
   // document (which has none) keeps its exact byte layout.
@@ -1343,6 +1388,7 @@ function buildToMin(build: Record<string, unknown>): MinimalCharacter {
   min.lore = loreFromBuild(build.lore);
 
   if (isExperiencePoints(build.experience)) min.experience = build.experience;
+  Object.assign(min, hpInputsFromBuild(build.hp));
 
   // Everything this app version does not know about `build`, preserved verbatim.
   let unknownBuild = leftover(build, KNOWN_BUILD_KEYS);
