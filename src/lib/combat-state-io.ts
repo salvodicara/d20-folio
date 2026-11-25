@@ -49,6 +49,7 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
+import { writesFenced } from "@/lib/shape-gate";
 import {
   arrayRemove,
   arrayUnion,
@@ -357,6 +358,8 @@ export async function writeCombatState(
   state: CombatState,
   base?: CombatState | null
 ): Promise<void> {
+  // #1320 — a newer shape is on the server: the old play shape never goes out.
+  if (writesFenced()) return;
   if (devBypassEnabled()) {
     writeDevDocument(
       DEV_COMBAT_COLLECTION,

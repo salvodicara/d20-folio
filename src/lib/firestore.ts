@@ -3,6 +3,7 @@
  * Collection path: /users/{uid}/characters/{charId}
  */
 
+import { writesFenced } from "@/lib/shape-gate";
 import {
   collection,
   doc,
@@ -755,6 +756,9 @@ export function createDebouncedSave(
     queued: CharacterDoc,
     callbacks?: DebouncedSaveCallbacks
   ): Promise<void> {
+    // #1320 — a newer shape is on the server: nothing leaves, and no generation is
+    // burned. The payload stays pending, so it is the rescue copy's unsaved edit.
+    if (writesFenced()) return Promise.resolve();
     // Allocate the generation HERE — the write is actually going out now.
     const data = allocateRevision ? { ...queued, revision: allocateRevision() } : queued;
     callbacks?.onSend?.(data);
@@ -975,6 +979,8 @@ export async function restoreCharacterSnapshot(
   source: WholeSheetSource
 ): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
+  if (writesFenced())
+    throw new Error("shape-fenced: a newer version of the sheet is stored");
   if (!Number.isInteger(baseRevision) || baseRevision < 0) {
     throw new TypeError("Invalid character document: invalid-revision");
   }
