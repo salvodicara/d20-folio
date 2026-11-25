@@ -425,7 +425,7 @@ function EntryPanel({
         <InlineMarkdown
           text={tidy(view.description)}
           className="f-cmp-prose"
-          highlight={highlightRulesText(ctx.locale)}
+          highlight={highlightRulesText(ctx.locale, { tappable: true })}
         />
       )}
       {/* the codex's own blocks (a monster's stat block, a spell's tags), not rebuilt

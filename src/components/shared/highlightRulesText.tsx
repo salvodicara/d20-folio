@@ -54,6 +54,8 @@ import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import { getAllConditionIds } from "@/data/conditions";
 import { localizeSrd } from "@/i18n/resolver";
 import { rulesProseVocab } from "@/i18n/rules-prose";
+import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
+import { RuleWord } from "@/components/shared/RuleWord";
 
 const escapeRegExp = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -63,8 +65,23 @@ const DICE = "\\d+d\\d+(?:\\s?[+−-]\\s?\\d+)?";
 
 type Highlighter = (plain: string) => ReactNode;
 
+/** How the highlighter renders. `tappable` (the new UI): a rule word with a glossary
+ *  entry (a condition, Advantage, Disadvantage, Bonus Action, Reaction) becomes a
+ *  {@link RuleWord} that opens its explanation; the classic sheet keeps plain ink. */
+export interface HighlightOptions {
+  tappable?: boolean;
+}
+
+/** The glossary term of a token group, where the glossary explains it. */
+const GROUP_TERM: Partial<Record<string, GlossaryTermId>> = {
+  adv: "advantage",
+  dis: "disadvantage",
+  bonus: "bonusAction",
+  reaction: "reaction",
+};
+
 /** Build the per-locale grammar: one ordered named-group alternation. */
-function build(locale: Locale): Highlighter {
+function build(locale: Locale, tappable: boolean): Highlighter {
   const vocab = rulesProseVocab(locale);
 
   // Damage phrase — an optional dice amount + the locale's phrase template with
@@ -212,6 +229,17 @@ function build(locale: Locale): Highlighter {
     return <Fragment key={`dmg-${at}`}>{parts}</Fragment>;
   };
 
+  const capFirstWord = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1);
+  /** The inked token, wrapped as a tappable rule word when the glossary explains it. */
+  const tap = (node: ReactNode, term: string | undefined, title: string, k: number) =>
+    tappable && term ? (
+      <RuleWord key={k} term={term as GlossaryTermId} title={title}>
+        {node}
+      </RuleWord>
+    ) : (
+      node
+    );
+
   return (plain: string): ReactNode => {
     // A FRESH regex per call (parseInline's lesson): a shared global `lastIndex`
     // would corrupt re-entrant or repeat calls.
@@ -228,14 +256,20 @@ function build(locale: Locale): Highlighter {
         out.push(renderDamage(tok, m.index));
       } else if (g.cond !== undefined) {
         const id = conditionByText.get(tok.toLowerCase());
+        const k = key++;
         out.push(
-          <strong
-            key={key++}
-            className="rt-cond"
-            style={id ? { color: `var(--cond-${id}-ink)` } : undefined}
-          >
-            {tok}
-          </strong>
+          tap(
+            <strong
+              key={k}
+              className="rt-cond"
+              style={id ? { color: `var(--cond-${id}-ink)` } : undefined}
+            >
+              {tok}
+            </strong>,
+            id,
+            id ? localizeSrd("condition", id, "name", locale) : tok,
+            k
+          )
         );
       } else {
         const cls =
@@ -250,10 +284,17 @@ function build(locale: Locale): Highlighter {
                   : g.dis !== undefined
                     ? "rt-dis"
                     : "rt-value";
+        const group = Object.keys(GROUP_TERM).find((name) => g[name] !== undefined);
+        const k = key++;
         out.push(
-          <strong key={key++} className={cls}>
-            {tok}
-          </strong>
+          tap(
+            <strong key={k} className={cls}>
+              {tok}
+            </strong>,
+            group ? GROUP_TERM[group] : undefined,
+            capFirstWord(tok),
+            k
+          )
         );
       }
       last = m.index + tok.length;
@@ -264,7 +305,7 @@ function build(locale: Locale): Highlighter {
   };
 }
 
-const cache = new Map<Locale, Highlighter>();
+const cache = new Map<string, Highlighter>();
 
 /**
  * The per-locale rules-prose highlighter — a pure mapping from a plain string
@@ -272,11 +313,16 @@ const cache = new Map<Locale, Highlighter>();
  * catalogues (post-bootstrap, so the active locale is always loaded) and
  * cached; the returned closure is safely shareable.
  */
-export function highlightRulesText(locale: Locale): Highlighter {
-  let fn = cache.get(locale);
+export function highlightRulesText(
+  locale: Locale,
+  options: HighlightOptions = {}
+): Highlighter {
+  const tappable = options.tappable ?? false;
+  const id = `${locale}:${String(tappable)}`;
+  let fn = cache.get(id);
   if (!fn) {
-    fn = build(locale);
-    cache.set(locale, fn);
+    fn = build(locale, tappable);
+    cache.set(id, fn);
   }
   return fn;
 }
