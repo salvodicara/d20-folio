@@ -83,7 +83,9 @@
     },
     "sections": {
       "resources": "Risorse e abilità",
-      "fight": "Scontro e resoconto"
+      "fight": "Scontro e resoconto",
+      "features": "Privilegi e tratti",
+      "proficiencies": "Competenze e addestramento"
     },
     "endTurn": "Fine turno",
     "turnMine": "Tocca a te",
@@ -490,6 +492,11 @@
       "useComputed": "Usa il calcolo",
       "setToast": "{{name}}: valore impostato a mano",
       "resetToast": "{{name}}: di nuovo calcolato"
+    },
+    "features": {
+      "species": "Tratti della specie",
+      "none": "Ancora nessun privilegio.",
+      "uses": "{{left}} usi rimasti su {{max}}"
     }
   }
 }
