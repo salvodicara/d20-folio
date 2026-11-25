@@ -26,7 +26,7 @@ const SELECTED_PROJECTS = process.argv.flatMap((arg, i) => {
   return eq ? [eq] : [];
 });
 const SW_PROJECTS = ["portrait-sw", "portrait-sw-mobile"];
-const NEW_UI_PROJECTS = ["new-ui"];
+const NEW_UI_PROJECTS = ["new-ui", "new-ui-phone"];
 
 // Two lanes run only on request: the polish screenshot harness (POLISH_SHOT_DIR) and
 // the pixel-baseline suite (VISUAL, or --update-snapshots; `tests/e2e/visual-gate.ts`).
@@ -101,6 +101,7 @@ export default defineConfig({
         /ui-pips\.spec\.ts/,
         /ui-table-columns\.spec\.ts/,
         /ui-no-old-frame\.spec\.ts/,
+        /ui-phone-play\.spec\.ts/,
         ...OFF_LANES,
       ],
     },
@@ -130,6 +131,12 @@ export default defineConfig({
       testMatch:
         /(?:ui-play-fidelity|ui-reroll-weight|ui-avatars|fight-smoke|ui-long-text|ui-pips|ui-table-columns|ui-no-old-frame)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${NEW_UI_PORT}` },
+    },
+    {
+      // The rebuilt screens on a phone (#1231): the player path at phone width.
+      name: "new-ui-phone",
+      testMatch: /ui-phone-play\.spec\.ts/,
+      use: { ...devices["Pixel 7"], baseURL: `http://localhost:${NEW_UI_PORT}` },
     },
     {
       name: "portrait-sw",

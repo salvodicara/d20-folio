@@ -28,6 +28,10 @@ import {
   hasEligibleSignatureSpells,
 } from "@/lib/signature-spells-pick";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
+import {
+  getAlwaysPreparedFromGrants,
+  getExpandedSpellsAtLevel,
+} from "@/lib/expanded-spells";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import {
   isExpertisePlaceholder,
@@ -81,9 +85,9 @@ export function levelUpPlan(
   const hitDie = classTable?.hitDie ?? charData?.hitDieType ?? 8;
   const avgHpGain = charData ? getAverageHpGain(hitDie, charData.abilityScores.CON) : 0;
   const needsAsi = levelData?.asi === true;
-  // D7 — the L19 boon step is the EPIC BOON gate: every class grants its
-  // `<class>-epic-boon` feature at level 19. 2024 RAW restricts level 19 to an Epic
-  // Boon feat (no general feat, no +2/+1 ASI fork), unlike the 4/8/12/16 ASI levels.
+  // The level-19 boon step is the EPIC BOON gate: every class grants its
+  // `<class>-epic-boon` feature at level 19: «an Epic Boon feat … or another feat of
+  // your choice for which you qualify» (SRD 5.2.1); a boon is the recommended pick.
   // Detected from the level's own featureIds so it's class-agnostic + multiclass-safe
   // (only the class actually reaching its L19 grants the boon).
   const isEpicBoonGate =
@@ -190,6 +194,7 @@ export function levelUpPlan(
   })();
   const maneuversNeeded = newManeuversAtLevel(newClassLevel);
   const canSwapSpell = classTable?.canSwapSpell === true;
+  const canSwapCantrip = classTable?.canSwapCantrip === true;
   // For a NEW class's first level there is no previous row: the baseline is 0,
   // so a first level in a caster class asks for its full L1 spell loadout.
   const prevSpellsKnown = isNewClass ? 0 : prevLevelData?.spellsKnown;
@@ -224,6 +229,23 @@ export function levelUpPlan(
           .filter((s): s is SrdSpellRef => !("custom" in s))
           .map((s) => s.srdId)
       );
+
+  // The spells this level makes always prepared (the subclass's spells of this level,
+  // the features gained: Find Steed, Divine Smite): never offered as new picks, since
+  // a pick spent on one adds nothing and leaves the prepared list one short.
+  const alwaysPreparedGained = (() => {
+    const subclass = subclassChoice ?? advancingSubclassId;
+    const effectiveSubclass = subclass.toLowerCase();
+    const gained = getFeaturesAtLevel(classId, newClassLevel)
+      .filter((f) => !f.subclass || f.subclass.toLowerCase() === effectiveSubclass)
+      .map((f) => ({ srdId: f.id }));
+    return new Set([
+      ...getExpandedSpellsAtLevel(classId, subclass, newClassLevel),
+      ...getAlwaysPreparedFromGrants(resolveGrantSourcesForFeatures(gained), {
+        level: newClassLevel,
+      }).map((entry) => (typeof entry === "string" ? entry : entry.spellId)),
+    ]);
+  })();
 
   const knownNonCantripRefs = (() => {
     if (!charData) return [];
@@ -414,6 +436,7 @@ export function levelUpPlan(
     needsManeuvers,
     maneuversNeeded,
     canSwapSpell,
+    canSwapCantrip,
     prevSpellsKnown,
     prevCantripsKnown,
     spellsKnownDiff,
@@ -421,6 +444,7 @@ export function levelUpPlan(
     cantripsKnownDiff,
     maxSpellLevel,
     existingSpellIds,
+    alwaysPreparedGained,
     knownNonCantripRefs,
     preview,
     choiceSlots,

@@ -3254,6 +3254,9 @@ export interface SrdClassTable {
   /** Weapon proficiencies — stable {@link ProficiencyToken} ids (`simple-weapons`,
    *  `longswords`); the display resolves via `localizeSrd("proficiency", id, …)`. */
   weaponProficiencies: ProficiencyToken[];
+  /** Weapon Mastery picks only Melee weapons (Barbarian: «Simple or Martial Melee
+   *  weapons»). Every class picks only weapons it is proficient with. */
+  weaponMasteryMeleeOnly?: true;
   /** Skill choices at character creation */
   skillChoices: {
     count: number;
@@ -3297,6 +3300,12 @@ export interface SrdClassTable {
    * gain a level in the class (SRD 5.2.1: Bard, Sorcerer, Warlock).
    */
   canSwapSpell?: boolean;
+  /**
+   * True for the classes that may replace one cantrip whenever they gain a level in
+   * the class (SRD 5.2.1: Bard, Cleric, Druid, Sorcerer, Warlock). Separate from
+   * `canSwapSpell`: a Cleric or Druid changes its levelled spells on a Long Rest.
+   */
+  canSwapCantrip?: boolean;
   /**
    * What the class may change after a Long Rest (SRD 5.2.1 "Changing Your Prepared
    * Spells"): `"one"` spell (Paladin, Ranger) or `"any"` of them (Cleric, Druid;

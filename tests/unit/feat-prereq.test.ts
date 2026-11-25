@@ -67,8 +67,8 @@ describe("featCategoryOffered — category gates derive from the category", () =
       why: "has the feature",
     },
     { category: "heritage", ctx: ctx(), offered: true, why: "setting content" },
-    // D7 — at the L19 Epic Boon gate, ONLY epic-boon is offered (no general feat,
-    // no fighting-style, no origin) — 2024 RAW grants specifically an Epic Boon.
+    // Level 19 (SRD 5.2.1): «You gain an Epic Boon feat … or another feat of your
+    // choice for which you qualify»: the boon, and every other feat category too.
     {
       category: "epic-boon",
       ctx: ctx({ level: 19, isEpicBoonGate: true }),
@@ -78,23 +78,22 @@ describe("featCategoryOffered — category gates derive from the category", () =
     {
       category: "general",
       ctx: ctx({ level: 19, isEpicBoonGate: true }),
-      offered: false,
-      why: "general feats are NOT offered at the epic-boon gate",
+      offered: true,
+      why: "«or another feat of your choice»: general feats too",
     },
     {
       category: "fighting-style",
       ctx: ctx({ level: 19, isEpicBoonGate: true, hasFightingStyleFeature: true }),
-      offered: false,
-      why: "even with the feature, fighting-style is NOT offered at the epic-boon gate",
+      offered: true,
+      why: "with the feature, fighting-style feats too",
     },
     {
       category: "origin",
       ctx: ctx({ level: 19, isEpicBoonGate: true }),
-      offered: false,
-      why: "origin feats are NOT offered at the epic-boon gate",
+      offered: true,
+      why: "origin feats too",
     },
-    // L16 (a normal ASI level) STILL offers general + (origin/fighting-style) — the
-    // restriction is ONLY at the epic-boon gate.
+    // L16 (a normal ASI level) offers general + (origin/fighting-style) as well.
     {
       category: "general",
       ctx: ctx({ level: 16 }),
@@ -167,10 +166,11 @@ describe("featGateCtx — character-side fact derivation", () => {
   });
 });
 
-// ── D7 — the L19 Epic Boon gate restricts the offered pool to epic-boon only ──────
-// 2024 RAW: every class gains an EPIC BOON feat at level 19 (not a general feat, not
-// the +2/+1 ASI fork). The engine flag `isEpicBoonGate` (set by featGateCtx) drives
-// both featCategoryOffered (epic-boon only) and the wizard's suppressed ASI fork.
+// ── Level 19: an Epic Boon or another feat (SRD 5.2.1) ─────────────────────────────
+// «You gain an Epic Boon feat … or another feat of your choice for which you
+// qualify». Ability Score Improvement is itself a General feat («Prerequisite:
+// Level 4+ … Repeatable»), so the +2/+1 fork stays too. `isEpicBoonGate` only marks
+// the level whose recommended pick is a boon (the classic wizard opens on "feat").
 
 describe("D7 — featGateCtx propagates the epic-boon-gate flag", () => {
   it("defaults to false (a normal ASI level)", () => {
@@ -191,10 +191,10 @@ describe("D7 — featGateCtx propagates the epic-boon-gate flag", () => {
 describe("D7 — offeredFeatVMs at the epic-boon gate vs a normal ASI level", () => {
   const c = makeCharacterDoc({ classes: [{ classId: "fighter", level: 18 }] }).character;
 
-  it("L19 epic-boon gate: the offered pool is EPIC-BOON ONLY (no general/fighting-style)", () => {
+  it("L19: the offered pool holds the Epic Boons and the general feats", () => {
     const vms = offeredFeatVMs(featGateCtx(c, 19, true), new Set(), "en");
-    expect(vms.length).toBeGreaterThan(0);
-    expect(vms.every((v) => v.category === "epic-boon")).toBe(true);
+    expect(vms.some((v) => v.category === "epic-boon")).toBe(true);
+    expect(vms.some((v) => v.category === "general")).toBe(true);
   });
 
   it("L16 (normal ASI): general feats ARE still offered (no epic-boon restriction)", () => {

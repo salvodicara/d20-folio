@@ -11,6 +11,7 @@ import { collectGrantBundles } from "@/lib/feature-choices";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { getFeaturesAtLevel } from "@/data/classes";
 import { buildNewCharacter } from "@/lib/creation/build";
+import { owedClassPicks } from "@/lib/owed-class-picks";
 import {
   creationDraftReducer,
   creationFacts,
@@ -18,7 +19,7 @@ import {
   type CreationDraft,
   type CreationDraftAction,
 } from "@/lib/creation/draft";
-import type { ClassChoicePicks } from "@/lib/creation/class-choices";
+import { classChoiceNeeds, type ClassChoicePicks } from "@/lib/creation/class-choices";
 
 const apply = (draft: CreationDraft, ...actions: CreationDraftAction[]) =>
   actions.reduce(creationDraftReducer, draft);
@@ -101,6 +102,45 @@ describe("the class's level-1 choices at creation", () => {
     expect(rogue.classOptions.expertise).toEqual(
       expect.arrayContaining(["athletics", "intimidation"])
     );
+  });
+
+  it("Expertise follows the class table: Bard 2 + 9, Rogue 1 + 6, two skills each time", () => {
+    // SRD 5.2.1 Bard Features: Expertise at levels 2 and 9; Rogue Features: 1 and 6.
+    const expertise = (classId: string, level: number) =>
+      classChoiceNeeds(classId, level, "").expertise;
+    expect(expertise("bard", 1)).toBe(0);
+    expect(expertise("bard", 2)).toBe(2);
+    expect(expertise("bard", 8)).toBe(2);
+    expect(expertise("bard", 9)).toBe(4);
+    expect(expertise("rogue", 1)).toBe(2);
+    expect(expertise("rogue", 5)).toBe(2);
+    expect(expertise("rogue", 6)).toBe(4);
+  });
+
+  it("the classic creation form (no class picks) builds a Bard 9 the sheet then asks 4 Expertise", () => {
+    // The classic wizard dispatches no `setClassPick` and no `fillReadyMade`: a Bard
+    // made at 9 has no skill at Expertise, and «Choices to finish» asks the table's 4.
+    const classic = apply(
+      initialCreationDraft(),
+      { type: "setName", name: "Lia" },
+      { type: "selectClass", classId: "bard" },
+      { type: "setLevel", level: 9 },
+      { type: "setSubclass", subclassId: "college-of-lore" },
+      { type: "selectBackground", backgroundId: "soldier" },
+      { type: "selectRace", raceId: "dwarf" },
+      { type: "toggleClassSkill", skillId: "performance" },
+      { type: "toggleClassSkill", skillId: "persuasion" },
+      { type: "toggleClassSkill", skillId: "insight" }
+    );
+    const built = buildNewCharacter(classic, { displayName: "Player" });
+    if (!built.ok) throw new Error(`build failed: ${JSON.stringify(built.error)}`);
+    const character = built.payload.character;
+    expect(Object.values(character.skills).filter((v) => v === "expertise")).toEqual([]);
+    expect(owedClassPicks(character)).toContainEqual({
+      classId: "bard",
+      pick: "expertise",
+      owed: 4,
+    });
   });
 
   it("a class change drops the class's picks and bundles, never the species'", () => {

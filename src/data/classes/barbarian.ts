@@ -23,6 +23,8 @@ export const BARBARIAN_TABLE: SrdClassTable = {
     asProficiencyToken("simple-weapons"),
     asProficiencyToken("martial-weapons"),
   ],
+  // SRD 5.2.1 Weapon Mastery: «two kinds of Simple or Martial Melee weapons».
+  weaponMasteryMeleeOnly: true,
   skillChoices: {
     count: 2,
     from: [
@@ -378,11 +380,13 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-brutal-strike",
     class: "barbarian",
     level: 9,
-    // "If the chosen attack hits, the target takes an extra 1d10 damage" — of the
-    // attack's own type, once on your turn, on a Strength-based attack (melee weapon or Unarmed Strike; the rider skips a
-    // ranged weapon). Greater Brutal Strike (L17) raises it to 2d10 through
-    // `diceByLevel`. Forgoing Reckless Attack's Advantage and the Forceful /
-    // Hamstring effects stay the player's call (prose).
+    // "If you use Reckless Attack, you can forgo any Advantage on one Strength-based
+    // attack roll … If the chosen attack hits, the target takes an extra 1d10
+    // damage" — of the attack's own type, once on your turn, on a melee weapon or
+    // Unarmed Strike (the rider skips a ranged weapon). It exists only while Reckless
+    // Attack is up this turn (`requiresActiveKey`); off, the chip says so. Greater
+    // Brutal Strike (L17) raises it to 2d10 through `diceByLevel`. Forgoing the
+    // Advantage and the Forceful / Hamstring effects stay the player's call (prose).
     grants: [
       {
         type: "damage-rider",
@@ -390,6 +394,7 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         damageType: "same-as-weapon",
         appliesTo: "melee-weapon",
         oncePerTurn: true,
+        requiresActiveKey: "barbarian-reckless-attack",
       },
     ],
     source: "SRD",
@@ -507,13 +512,12 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     level: 3,
     // Dynamic damage rider: the d6 count scales with the Rage Damage bonus,
     // resolved at the character's level by `resolveRiderDice`. `dice` is the
-    // L1 fallback. `damageType` shows the modal Strength-weapon type
-    // (slashing — greataxe/greatsword); RAW the type matches the weapon used.
-    // RAW (barbarian:path-of-the-berserker, L3 Frenzy): the extra damage applies
-    // only "if you use Reckless Attack WHILE YOUR RAGE IS ACTIVE" — so the rider
-    // is wrapped in the `barbarian-rage` `while-active` block (an inactive
-    // while-active drops its inner grants), mirroring Zealot Divine Fury. The
-    // "used Reckless Attack" condition stays narrative (no reckless-hit event).
+    // L1 fallback. "The damage has the same type as the weapon or Unarmed Strike
+    // used" (`same-as-weapon`). RAW (SRD 5.2.1, L3 Frenzy): the extra damage applies
+    // only "if you use Reckless Attack while your Rage is active", so the rider sits
+    // in the `barbarian-rage` `while-active` block (an inactive while-active drops
+    // its inner grants) and needs Reckless Attack up (`requiresActiveKey`); off,
+    // its chip says so, as Brutal Strike's does.
     grants: [
       {
         type: "while-active",
@@ -522,9 +526,10 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
           {
             type: "damage-rider",
             dice: levelDice("barbarian", "2d6", { 1: "2d6", 9: "3d6", 16: "4d6" }),
-            damageType: "slashing",
+            damageType: "same-as-weapon",
             appliesTo: "melee-weapon",
             oncePerTurn: true,
+            requiresActiveKey: "barbarian-reckless-attack",
           },
         ],
       },

@@ -18,9 +18,16 @@ interface Props {
   slots: ReadonlyArray<LanguageChoiceSlot>;
   picks: LanguageChoicePicks;
   onChange: (picks: LanguageChoicePicks) => void;
+  /** Languages the character already knows: never offered again. */
+  knownLanguageIds?: ReadonlySet<string>;
 }
 
-export function LanguageChoicePicker({ slots, picks, onChange }: Props) {
+export function LanguageChoicePicker({
+  slots,
+  picks,
+  onChange,
+  knownLanguageIds,
+}: Props) {
   return (
     <div className="space-y-4">
       {slots.map((slot) => (
@@ -28,6 +35,7 @@ export function LanguageChoicePicker({ slots, picks, onChange }: Props) {
           key={slot.slotId}
           slot={slot}
           picked={picks[slot.slotId] ?? []}
+          knownLanguageIds={knownLanguageIds}
           onChange={(ids) => onChange({ ...picks, [slot.slotId]: ids })}
         />
       ))}
@@ -38,10 +46,12 @@ export function LanguageChoicePicker({ slots, picks, onChange }: Props) {
 function LanguageSlotPicker({
   slot,
   picked,
+  knownLanguageIds,
   onChange,
 }: {
   slot: LanguageChoiceSlot;
   picked: ReadonlyArray<string>;
+  knownLanguageIds?: ReadonlySet<string>;
   onChange: (ids: string[]) => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -49,11 +59,13 @@ function LanguageSlotPicker({
 
   // IDS only from the engine; the LABEL is resolved by id here (presenter layer),
   // so a tongue reads its canonical localized name and a new language is JUST JSON.
-  const options = listAvailableForLanguageSlot(slot).map((id) => ({
-    id,
-    name: localizeSrd("language", id, "name", locale),
-    searchText: `${localizeSrd("language", id, "name", locale)} ${localizeSrd("language", id, "name", "en")}`,
-  }));
+  const options = listAvailableForLanguageSlot(slot)
+    .filter((id) => picked.includes(id) || !knownLanguageIds?.has(id))
+    .map((id) => ({
+      id,
+      name: localizeSrd("language", id, "name", locale),
+      searchText: `${localizeSrd("language", id, "name", locale)} ${localizeSrd("language", id, "name", "en")}`,
+    }));
 
   function toggle(id: string) {
     if (picked.includes(id)) {

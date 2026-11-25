@@ -29,7 +29,7 @@
     "description": "Make a melee attack against a creature that damaged you within 5 ft."
   },
   "barbarian-brutal-strike": {
-    "description": "If you use Reckless Attack, you can forgo Advantage on one Strength-based attack roll on your turn. If the chosen attack hits, the target takes an extra 1d10 damage and you can cause one effect: Forceful Blow (push 15 ft, then move half speed toward target) or Hamstring Blow (reduce speed by 15 ft until start of your next turn).",
+    "description": "If you use Reckless Attack, you can forgo any Advantage on one Strength-based attack roll of your choice on your turn; that roll mustn't have Disadvantage. If the chosen attack hits, the target takes an extra 1d10 damage of the weapon's or Unarmed Strike's type, and you can cause one effect: Forceful Blow (push it 15 ft straight away, then you can move up to half your Speed toward it without provoking Opportunity Attacks) or Hamstring Blow (its Speed drops by 15 ft until the start of your next turn; a creature is affected by only one Hamstring Blow at a time, the most recent).",
     "name": "Brutal Strike"
   },
   "barbarian-danger-sense": {
@@ -63,7 +63,7 @@
     "name": "Improved Brutal Strike"
   },
   "barbarian-improved-brutal-strike": {
-    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (next attack roll by another creature against the target gains +5 bonus).",
+    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (before the start of your next turn, the next attack roll made by another creature against the target gains a +5 bonus; an attack roll can gain only one Sundering Blow bonus).",
     "name": "Improved Brutal Strike"
   },
   "barbarian-indomitable-might": {
@@ -1302,6 +1302,10 @@
   "warlock-epic-boon": {
     "description": "You gain an Epic Boon feat or another feat of your choice for which you qualify.",
     "name": "Epic Boon"
+  },
+  "warlock-fiend-patron-fiend-spells": {
+    "name": "Fiend Spells",
+    "description": "When you reach a Warlock level specified in the Fiend Spells table, you thereafter always have the listed spells prepared. Warlock level 3: Burning Hands, Command, Scorching Ray, Suggestion. Level 5: Fireball, Stinking Cloud. Level 7: Fire Shield, Wall of Fire. Level 9: Geas, Insect Plague."
   },
   "warlock-fiend-patron-dark-ones-blessing": {
     "description": "When you reduce an enemy to 0 HP, you gain Temporary Hit Points equal to your Charisma modifier + your Warlock level (minimum 1). You also gain this benefit if someone else reduces an enemy within 10 feet of you to 0 HP.",
