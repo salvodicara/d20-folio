@@ -494,7 +494,6 @@
       "resetToast": "{{name}}: computed again"
     },
     "features": {
-      "tab": "Features",
       "species": "Species traits",
       "none": "No features yet.",
       "uses": "{{left}} of {{max}} uses left"

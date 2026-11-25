@@ -494,7 +494,6 @@
       "resetToast": "{{name}}: di nuovo calcolato"
     },
     "features": {
-      "tab": "Privilegi",
       "species": "Tratti della specie",
       "none": "Ancora nessun privilegio.",
       "uses": "{{left}} usi rimasti su {{max}}"

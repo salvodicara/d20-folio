@@ -226,7 +226,7 @@ export function PlayCentre({
       : []),
     { id: "inventory" as const, label: t("character.tabs.inventory") },
     // D&D Beyond's next tab: Features & Traits
-    { id: "features" as const, label: t("play.features.tab") },
+    { id: "features" as const, label: t("character.tabs.features") },
   ];
   const shown = items.some((i) => i.id === tab) ? tab : "actions";
   return (
