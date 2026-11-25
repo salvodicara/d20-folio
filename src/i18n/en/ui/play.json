@@ -177,7 +177,11 @@
       "weightEach": "{{weight}} each",
       "oneLess": "One fewer",
       "oneMore": "One more",
-      "removeItem": "Remove from inventory"
+      "removeItem": "Remove from inventory",
+      "searchItems": "Search items",
+      "noMatch": "Nothing matches.",
+      "addedToast": "Added: {{name}}",
+      "add": "Add an item"
     },
     "tray": {
       "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",
