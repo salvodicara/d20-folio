@@ -12,6 +12,7 @@ import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock
 import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
 import { applyOwedClassPicks, type ClassPickAnswer } from "@/lib/owed-class-picks";
+import { markDiscoveries } from "@/lib/magical-discoveries";
 import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import type { ChoicePicks } from "@/lib/feature-choices";
 import type { AbilityCode } from "@/types/ability";
@@ -723,6 +724,12 @@ interface CharacterState {
    * them, each cut to what is owed. Writes nothing for a pick that isn't owed.
    */
   resolveClassPicks: (answers: readonly ClassPickAnswer[]) => void;
+  /**
+   * The player's confirm of a Lore Bard's Magical Discoveries: `spellIds` (from the
+   * candidates the sheet flagged) get the always-prepared mark, freeing the Bard's
+   * normal prepared places. One undoable change; null when nothing was written.
+   */
+  confirmDiscoveries: (spellIds: readonly string[]) => (() => boolean) | null;
   /** The INT/WIS/CHA its species spells use (Elf, Gnome, Tiefling). */
   setSpeciesSpellAbility: (ability: AbilityCode) => void;
   /** Record which ability `featId`'s increase raised (the +1 is already in the
@@ -3482,6 +3489,15 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const next = applyOwedClassPicks(charData, answers);
     if (next === charData) return;
     set({ character: { ...character, character: next } });
+  },
+
+  confirmDiscoveries: (spellIds) => {
+    if (get().readonly) return null;
+    const { character } = get();
+    if (!character) return null;
+    const next = markDiscoveries(character.character, spellIds);
+    if (next === character.character) return null;
+    return get().editCharacter({ ...character, character: next });
   },
 
   setSpeciesSpellAbility: (ability) => {

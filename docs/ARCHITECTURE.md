@@ -17,15 +17,17 @@ Functions); it never rolls dice — players roll, the sheet computes, pays, logs
 - **Today's sheet** (the default build): `src/features/**`, `src/components/**`, `src/hooks/**`,
   framed by `src/app/AppShell.tsx`. The character page is `CharacterCockpit`
   (`src/features/character/CharacterCockpit.tsx`), the campaign page `CampaignHubPage`.
-- **The new UI** (preview, `VITE_NEW_UI=1`): `src/domains/<domain>/` (`play`, `roster`,
+- **The new UI** (each player's opt-in, #1233): `src/domains/<domain>/` (`play`, `roster`,
   `campaign`, `combat`, `chronicle`, `notes`, `treasury`) plus the design-system primitives in
   `src/ui/`, framed by `src/app/NewAppShell.tsx`. Each domain holds pure view-model files
   (`*-view.ts`) and a `ui/` folder of React screens.
-- `src/app/router.tsx` swaps three routes when the flag is on: `/characters` → `RosterScreen`,
-  `/characters/:characterId` → `PlayScreen`, `/campaigns/:campaignId` → `CampaignScreen`. The
-  `/ui` stories page exists in dev and the preview only. Every other route is today's UI in both
-  builds.
-- Production ships whichever the owner picks at deploy time (`deploy.yml` input `new_ui`).
+- `src/app/router.tsx` builds one route tree per interface (`buildRouter(newUi, newCampaign)`).
+  The choice for a page load is `src/app/new-ui-choice.ts`: `?ui=classic` (always the way back),
+  else the `VITE_NEW_UI=1` build (preview and rehearsal only) or `?ui=new` in dev, else the
+  player's `users/{uid}.newUi`, read with the profile. With the toggle, the campaign list, hub,
+  member sheet and `/join` stay classic until they reach parity. The `/ui` stories page exists in
+  dev and the preview only.
+- Every build ships both interfaces; production builds with `VITE_NEW_UI=0` (no deploy input).
 - The new UI reuses today's IO and hooks: `src/domains` imports `@/features` and `@/hooks`
   freely. Nothing outside `src/domains` imports it except the router.
 
@@ -269,7 +271,7 @@ Secrets come from Secret Manager (`defineSecret`). Rewrites: `firebase.json`.
   1. waits for green CI and Verify on the exact SHA;
   2. deploys only the pack commit Verify composed (an explicit `pack_sha` must match it);
   3. builds with explicit flags (`VITE_PEER_SPENDS_LEDGER=true`, `VITE_COMBAT_EFFECTS_V26=true`,
-     `VITE_NEW_UI` from the input, `VITE_CONTENT_PACK=runtime` when `runtime_pack` is set) and
+     `VITE_NEW_UI=0`, `VITE_CONTENT_PACK=runtime` when `runtime_pack` is set) and
      runs the bundle budget (and `check-public-bundle` for the runtime pack);
   4. runs the read-only migration checks (`scripts/migrate-*.ts --check`), requires live billing
      and takes a Firestore export to `gs://d20-folio-backups/`;

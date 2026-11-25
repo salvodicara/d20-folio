@@ -136,11 +136,16 @@ export function surveySpeciesPicks(
     }
     const character = parsed.character as unknown as { race: string };
     const session = play?.ok ? play.session : {};
-    // A feat's answer and a class pick are not species picks: their own surveys
-    // (survey-missing-feat-abilities, survey-owed-class-picks) count them.
+    // A feat's answer, a class pick and a Lore Bard's unmarked Magical Discoveries
+    // are not species picks: their own surveys count them.
     const choices = engine
       .unresolvedBuildChoices(character, session)
-      .filter((c) => c.kind !== "feat-ability" && c.kind !== "class-pick");
+      .filter(
+        (c) =>
+          c.kind !== "feat-ability" &&
+          c.kind !== "class-pick" &&
+          c.kind !== "discovery-mark"
+      );
     const species = character.race || "(none)";
     const row = (survey.bySpecies[species] ??= { characters: 0, missing: {} });
     survey.characters += 1;
