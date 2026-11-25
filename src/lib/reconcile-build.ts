@@ -28,6 +28,7 @@
  *
  * Pure + Firebase-free (composes the inference seam + the feature builders).
  */
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { hitDiceTotal } from "@/lib/play/hit-dice";
 import type {
   CharacterData,
@@ -46,7 +47,6 @@ import {
   inferHitDie,
   inferSpellcasting,
   inferSpeed,
-  inferHpMax,
   inferFeatures,
 } from "@/lib/character-infer";
 import {
@@ -75,7 +75,6 @@ import {
   type AlwaysPreparedEntry,
 } from "@/lib/expanded-spells";
 import { widenedSpellListsAtLevel } from "@/lib/feat-spell-choices";
-import { hpPerLevelGrantBonus } from "@/lib/level-up";
 
 /** Every class/subclass FEATURE id across the SRD — used to drop the OLD class's
  *  features from `features[]` so the new class's set replaces them cleanly. */
@@ -655,20 +654,6 @@ export function reconcileBuildChoices(
     c.spells = spells;
   }
 
-  // ── Max HP — adjust by the INFERRED delta of the level change (symmetric: a Bio
-  //    level edit up adds the same average the level-down subtracts, so a mistyped
-  //    level round-trips losslessly). The player's deviation from the inferred
-  //    average (rolled HP, manual edits) is preserved verbatim. Class swaps leave
-  //    HP user-owned (unchanged — existing behavior).
-  if (!classSetChanged && levelChanged) {
-    const conScore = c.abilityScores.CON;
-    const inferredDelta =
-      inferHpMax(c.classes, conScore) - inferHpMax(prevClasses, conScore);
-    const perLevel = hpPerLevelGrantBonus(c).bonus;
-    const levelsDelta = totalLevel(c) - totalLevel(prev);
-    c.hp = { max: Math.max(1, c.hp.max + inferredDelta + perLevel * levelsDelta) };
-  }
-
   // ── A level DECREASE invalidates the level-up checklist (it described levels
   //    the character no longer has).
   if (totalLevel(c) < totalLevel(prev) && c.levelUpChecklist != null) {
@@ -684,7 +669,11 @@ export function reconcileBuildChoices(
 
   // ── Origin feats projection (background / species-feat changes) — the existing
   //    single-source helper keeps `features[]` in sync with the build choices.
-  return syncOriginFeats(c);
+  // ── Max HP — DERIVED (#1315) from the reconciled build (classes, species, feats,
+  //    CON, items) and the max-HP inputs, exactly as a reload derives it: any Bio edit
+  //    (a level, a class, a species, an origin feat) moves it; inputs stay verbatim.
+  const synced = syncOriginFeats(c);
+  return { ...synced, hp: { max: deriveMaxHp(synced) } };
 }
 
 // ─── Session reconciliation ───────────────────────────────────────────────────

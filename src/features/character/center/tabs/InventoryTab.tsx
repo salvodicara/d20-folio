@@ -25,7 +25,10 @@ import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
 import { computeAC } from "@/lib/compute";
-import { effectiveEquipmentForItemResources } from "@/lib/aggregate-character";
+import {
+  effectiveEquipmentForItemResources,
+  withEquipment,
+} from "@/lib/aggregate-character";
 import { formatWeight } from "@/lib/utils";
 import { matchesSearch } from "@/lib/search";
 import { getEquipment } from "@/data/equipment";
@@ -361,9 +364,10 @@ export function InventoryTab() {
       getEquipment,
       char.character.features
     );
+    // An attuned item can carry a per-level HP grant: re-derive the max (#1315).
     store.setCharacter({
       ...char,
-      character: { ...char.character, equipment: equipCopy, ac: newAC },
+      character: { ...withEquipment(char.character, equipCopy), ac: newAC },
     });
   }, []);
 

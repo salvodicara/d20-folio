@@ -592,12 +592,74 @@ export function computeCharacterMaxHp(character: CharacterDoc["character"]): num
  * (`effectiveMaxHp`) add on top.
  */
 export function deriveMaxHp(character: CharacterDoc["character"]): number {
+  const level = totalLevel(character);
+  // An unknown (homebrew) class has no composition: its given `hp.max` is the whole
+  // number, inputs included, so they are never added a second time.
+  if (computeCharacterMaxHpBreakdown(character).length === 0) {
+    return Math.max(level, character.hp.max);
+  }
   const input = (v: unknown) => (Number.isSafeInteger(v) ? (v as number) : 0);
   const adjusted =
     computeCharacterMaxHp(character) +
     input(character.hpRolled) +
     input(character.hpBonus);
-  return Math.max(totalLevel(character), adjusted);
+  return Math.max(level, adjusted);
+}
+
+/** The derived max HP without the hand adjustment: what a reset returns to. */
+export function maxHpWithoutBonus(character: CharacterDoc["character"]): number {
+  return deriveMaxHp({ ...character, hpBonus: undefined });
+}
+
+/**
+ * The header's hand edit of max HP (#1315): stored as the INPUT `hpBonus` = entered −
+ * derived max without it, so a level-up or a CON change still moves the max. Entering
+ * the derived value clears the bonus.
+ */
+export function withMaxHpEdit<C extends CharacterDoc["character"]>(
+  character: C,
+  max: number
+): C {
+  const bonus = max - maxHpWithoutBonus(character);
+  return {
+    ...character,
+    hpBonus: bonus === 0 ? undefined : bonus,
+    hp: { ...character.hp, max },
+  };
+}
+
+/**
+ * A CON score edit outside the level-up (RA-22, 2024 RAW): the max HP follows the CON
+ * modifier retroactively across every level, both ways. Derived (#1315), so the
+ * player's max-HP inputs (rolled surplus, hand bonus) carry over unchanged.
+ */
+export function withConScore<C extends CharacterDoc["character"]>(
+  character: C,
+  con: number
+): C {
+  const next = { ...character, abilityScores: { ...character.abilityScores, CON: con } };
+  return { ...next, hp: { ...character.hp, max: deriveMaxHp(next) } };
+}
+
+/**
+ * New equipment (an attunement toggled, an item added or removed): an attuned item
+ * can carry a per-level HP grant, so the max is re-derived with it (#1315).
+ */
+export function withEquipment<C extends CharacterDoc["character"]>(
+  character: C,
+  equipment: C["equipment"]
+): C {
+  const next = { ...character, equipment };
+  return { ...next, hp: { ...character.hp, max: deriveMaxHp(next) } };
+}
+
+/** Reset the hand edit: clear `hpBonus`, keep the rolls, re-derive the max. */
+export function withoutMaxHpBonus<C extends CharacterDoc["character"]>(character: C): C {
+  return {
+    ...character,
+    hpBonus: undefined,
+    hp: { ...character.hp, max: maxHpWithoutBonus(character) },
+  };
 }
 
 /**
@@ -705,9 +767,9 @@ export function computedInitiativeBreakdown(
  * The EFFECTIVE max HP every play surface clamps/heals/displays against:
  * `stored hp.max + aggregate.hpFlat`.
  *
- * Why a derivation, not a stored value (rule 6 — one source): the stored `hp.max`
- * IS the by-the-book base — die + CON + `hp-per-level` grants — and is exactly what
- * the level-up/creation/Bio-reconcile seams bake and what the player edits inline.
+ * Why a derivation, not a stored value (rule 6 — one source): `hp.max` IS the
+ * derived base ({@link deriveMaxHp}: die + CON + `hp-per-level` grants + the player's
+ * max-HP inputs, #1315), which every writer re-derives and a reload derives too.
  * The `hp-flat` boons (Draconic Resilience +3, Boon of Fortitude +40, an attuned
  * hp-flat item) AND a standing Aid (`hp-flat:5` inside the spell's `while-active`
  * grant — lit only while its toggle is on) are the LIVE transient deltas that are
@@ -767,8 +829,15 @@ export function effectiveMaxHpBreakdown(
     .filter((p) => p.amount !== 0)
     .map((p) => locPart(srdText(p.ref.kind, p.ref.key, "name"), p.amount));
   const reduction = hpMaxReductionOf(session);
+  // #1315 — the player's max-HP inputs are named rows, so a rolled or hand-adjusted
+  // max still has an honest composition.
+  const input = (v: unknown) => (Number.isSafeInteger(v) && v !== 0 ? (v as number) : 0);
+  const rolled = input(character.hpRolled);
+  const bonus = input(character.hpBonus);
   return [
     ...base,
+    ...(rolled !== 0 ? [termPart("breakdown.hpRolled", rolled)] : []),
+    ...(bonus !== 0 ? [termPart("breakdown.hpBonus", bonus)] : []),
     ...flatParts,
     ...(reduction > 0 ? [termPart("breakdown.hpMaxReduction", -reduction)] : []),
   ];

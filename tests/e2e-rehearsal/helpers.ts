@@ -179,6 +179,33 @@ export async function ownerCharacterIds(): Promise<string[]> {
   return (body.documents ?? []).map((doc) => doc.name.split("/").at(-1) ?? "");
 }
 
+/** The stored max-HP inputs of one of the owner's characters (`build.hp`, #1315),
+ *  read straight from the emulator; `null` when the build has none. */
+export async function storedHpInputs(
+  id: string
+): Promise<{ rolled?: number; bonus?: number } | null> {
+  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+    headers: OWNER,
+  });
+  type IntField = { integerValue?: string };
+  const body = (await response.json()) as {
+    fields?: {
+      build?: {
+        mapValue?: {
+          fields?: {
+            hp?: { mapValue?: { fields?: { rolled?: IntField; bonus?: IntField } } };
+          };
+        };
+      };
+    };
+  };
+  const hp = body.fields?.build?.mapValue?.fields?.hp?.mapValue?.fields;
+  if (!hp) return null;
+  const int = (f?: IntField) =>
+    f?.integerValue === undefined ? undefined : Number(f.integerValue);
+  return { rolled: int(hp.rolled), bonus: int(hp.bonus) };
+}
+
 /** Fail fast on the app's error screen instead of waiting out a timeout. */
 export function watchErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -236,12 +263,21 @@ export async function openCharacter(page: Page, name: string): Promise<string> {
 export async function levelUp(
   page: Page,
   id: string,
-  opts: { level: number; className: string; prefer?: string[] }
+  opts: { level: number; className: string; prefer?: string[]; rollMax?: boolean }
 ): Promise<void> {
   await page.goto(`/characters/${id}/level-up`);
   const confirm = page.getByRole("button", { name: `Confirm level ${opts.level}` });
   // A loaded Mac took over a minute to open this screen once (2026-11-07).
   await expect(confirm).toBeVisible({ timeout: 120_000 });
+  if (opts.rollMax) {
+    // Roll the hit die instead of the average, and set the roll to the die's maximum.
+    await page
+      .getByRole("button", { name: /your roll/ })
+      .first()
+      .click();
+    const higher = page.getByRole("button", { name: "Higher" }).first();
+    while (await higher.isEnabled()) await higher.click();
+  }
   for (const name of opts.prefer ?? []) {
     const option = page.getByRole("button", { name, exact: true }).first();
     if (

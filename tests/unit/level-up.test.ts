@@ -147,25 +147,25 @@ describe("level-up engine", () => {
       // d6 average = 4, CON 6 → -2 modifier → gain max(1, 4-2) = 2
       const char = mockCharData({
         classes: [{ classId: "wizard", level: 2 }],
-        hp: { max: 4 },
+        hp: { max: 6 }, // by the book: max(1, 6-2) + max(1, 4-2) = 4 + 2
         hitDieType: 6,
         abilityScores: { STR: 8, DEX: 14, CON: 6, INT: 18, WIS: 12, CHA: 10 },
       });
       const { updatedCharacter } = levelUp(char);
-      expect(updatedCharacter.hp.max).toBe(6); // 4 + max(1, 4-2) = 4+2 = 6
+      expect(updatedCharacter.hp.max).toBe(8); // 6 + max(1, 4-2) = 6+2 = 8
     });
 
     it("guarantees at least 1 HP even with very low CON", () => {
       // d4 average = 3, CON 3 → -4 modifier → gain max(1, 3-4) = 1
       const char = mockCharData({
         classes: [{ classId: "artificer", level: 2 }],
-        hp: { max: 2 },
+        hp: { max: 5 }, // by the book: max(1, 8-4) + max(1, 5-4) = 4 + 1
         hitDieType: 8,
         abilityScores: { STR: 8, DEX: 14, CON: 3, INT: 18, WIS: 12, CHA: 10 },
       });
       const { updatedCharacter } = levelUp(char);
       // d8 avg=5, CON -4, max(1, 5-4)=1
-      expect(updatedCharacter.hp.max).toBe(3); // 2 + 1
+      expect(updatedCharacter.hp.max).toBe(6); // 5 + 1
     });
   });
 
@@ -445,12 +445,12 @@ describe("levelUp — scaling features", () => {
     // Rolled 1 on a d6 wizard with CON 3 (mod -4) → max(1, 1 + -4) = 1.
     const char = mockCharData({
       classes: [{ classId: "wizard", level: 2 }],
-      hp: { max: 4 },
+      hp: { max: 3 }, // by the book: max(1, 6-4) + max(1, 4-4) = 2 + 1
       hitDieType: 6,
       abilityScores: { STR: 8, DEX: 14, CON: 3, INT: 18, WIS: 12, CHA: 10 },
     });
     const { updatedCharacter } = levelUp(char, 3, { hpGain: 1 });
-    expect(updatedCharacter.hp.max).toBe(5); // 4 + 1 (min)
+    expect(updatedCharacter.hp.max).toBe(4); // 3 + 1 (min)
   });
 });
 
@@ -777,9 +777,11 @@ describe("levelUp — preparedMax update", () => {
 
 describe("levelUp — Dwarven Toughness", () => {
   it("adds +1 HP per level for characters with dwarf-dwarven-toughness", () => {
+    // By the book, Fighter 3 with CON 14 is 28, + Dwarven Toughness 3 = 31.
     const dwarf = mockCharData({
+      race: asRaceId("dwarf"),
       classes: [{ classId: "fighter", level: 3 }],
-      hp: { max: 30 },
+      hp: { max: 31 },
       hitDieType: 10,
       abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
       features: [
@@ -789,7 +791,7 @@ describe("levelUp — Dwarven Toughness", () => {
     });
     const { updatedCharacter, changes } = levelUp(dwarf, 4);
     // Average d10 = 6, CON mod = +2, Dwarven Toughness = +1 → total = 9
-    expect(updatedCharacter.hp.max).toBe(39);
+    expect(updatedCharacter.hp.max).toBe(40);
     const hpChange = changes.find((c) => c.type === "hp");
     expect(hpChange?.description).toContain("Dwarven Toughness");
   });
@@ -797,14 +799,14 @@ describe("levelUp — Dwarven Toughness", () => {
   it("does NOT add bonus for characters without dwarf-dwarven-toughness", () => {
     const human = mockCharData({
       classes: [{ classId: "fighter", level: 3 }],
-      hp: { max: 30 },
+      hp: { max: 28 },
       hitDieType: 10,
       abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
       features: [{ srdId: "fighter-fighting-style" }],
     });
     const { updatedCharacter } = levelUp(human, 4);
     // Average d10 = 6, CON mod = +2 → total = 8
-    expect(updatedCharacter.hp.max).toBe(38);
+    expect(updatedCharacter.hp.max).toBe(36);
   });
 });
 
@@ -814,28 +816,28 @@ describe("levelUp — Tough feat (H8)", () => {
   it("adds +2 HP per level for characters with Tough as humanOriginFeat", () => {
     const human = mockCharData({
       classes: [{ classId: "fighter", level: 3 }],
-      hp: { max: 30 },
+      hp: { max: 34 }, // by the book: 28 + Tough 6
       hitDieType: 10,
       abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
       humanOriginFeat: "tough",
       features: [{ srdId: "fighter-fighting-style" }],
     });
     const { updatedCharacter, changes } = levelUp(human, 4);
-    // Average d10 = 6, CON +2, Tough +2 → 10 per level → 30 + 10 = 40
-    expect(updatedCharacter.hp.max).toBe(40);
+    // Average d10 = 6, CON +2, Tough +2 → 10 per level → 34 + 10 = 44
+    expect(updatedCharacter.hp.max).toBe(44);
     expect(changes.find((c) => c.type === "hp")?.description).toContain("Tough +2");
   });
 
   it("adds +2 when Tough is the background feat", () => {
     const human = mockCharData({
       classes: [{ classId: "fighter", level: 3 }],
-      hp: { max: 30 },
+      hp: { max: 34 }, // by the book: 28 + Tough 6
       hitDieType: 10,
       abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
       bgFeat: "tough",
     });
     const { updatedCharacter } = levelUp(human, 4);
-    expect(updatedCharacter.hp.max).toBe(40);
+    expect(updatedCharacter.hp.max).toBe(44);
   });
 
   // (The feature-taken path resolves the feat through FEATS_BY_ID, so it needs
@@ -844,16 +846,17 @@ describe("levelUp — Tough feat (H8)", () => {
 
   it("Tough stacks with Dwarven Toughness (+3 per level)", () => {
     const dwarf = mockCharData({
+      race: asRaceId("dwarf"),
       classes: [{ classId: "fighter", level: 3 }],
-      hp: { max: 30 },
+      hp: { max: 37 }, // by the book: 28 + Dwarven Toughness 3 + Tough 6
       hitDieType: 10,
       abilityScores: { STR: 16, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 8 },
       humanOriginFeat: "tough",
       features: [{ srdId: "dwarf-dwarven-toughness" }],
     });
     const { updatedCharacter } = levelUp(dwarf, 4);
-    // 30 + (6 avg + 2 CON + 1 Dwarven + 2 Tough) = 41
-    expect(updatedCharacter.hp.max).toBe(41);
+    // 37 + (6 avg + 2 CON + 1 Dwarven + 2 Tough) = 48
+    expect(updatedCharacter.hp.max).toBe(48);
   });
 });
 

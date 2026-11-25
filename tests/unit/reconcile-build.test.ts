@@ -630,8 +630,14 @@ describe("reconcileBuildChoices — LEVEL change adjusts max HP by the inferred 
 
   it("preserves a manual HP deviation (rolled HP) across the level change", () => {
     const cleric = scenario("life-cleric");
-    const rolled: CharacterData = { ...cleric, hp: { max: cleric.hp.max + 5 } };
+    // #1315 — the deviation is the stored INPUT (the rolled surplus), kept verbatim.
+    const rolled: CharacterData = {
+      ...cleric,
+      hpRolled: 5,
+      hp: { max: cleric.hp.max + 5 },
+    };
     const down = withLevel(rolled, 2);
+    expect(down.hpRolled).toBe(5);
     expect(down.hp.max).toBe(inferHpMax(down.classes, down.abilityScores.CON) + 5);
   });
 

@@ -34,8 +34,11 @@ import { totalLevel } from "@/lib/classes";
 import { useUIStore } from "@/stores/uiStore";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
-  computeCharacterMaxHp,
+  deriveMaxHp,
   effectiveMaxHpBreakdown,
+  maxHpWithoutBonus,
+  withMaxHpEdit,
+  withoutMaxHpBonus,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { useLocale } from "@/hooks/useLocale";
@@ -47,13 +50,23 @@ import { BreakdownTip } from "@/components/shared/BreakdownTip";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Icon } from "@/components/ui/icon";
 
-/** Write the max HP, preserving the rest of the hp block (definition value). */
+/** Write a hand-set max HP as its stored input, a bonus over the derived max (#1315). */
 function setHpMax(max: number): void {
   const doc = useCharacterStore.getState().character;
   if (!doc) return;
   useCharacterStore.getState().setCharacter({
     ...doc,
-    character: { ...doc.character, hp: { ...doc.character.hp, max } },
+    character: withMaxHpEdit(doc.character, max),
+  });
+}
+
+/** Reset the hand edit: clear the bonus, keep the rolls (#1315). */
+function resetHpMax(): void {
+  const doc = useCharacterStore.getState().character;
+  if (!doc) return;
+  useCharacterStore.getState().setCharacter({
+    ...doc,
+    character: withoutMaxHpBonus(doc.character),
   });
 }
 
@@ -127,16 +140,17 @@ export function HeaderHpControl() {
 
   // #95 / D1 — the Max-HP breakdown tip, OVERRIDE-GATED exactly like AC's. `max`
   // above is now the EFFECTIVE max (stored base + hp-flat boons, incl. a standing
-  // Aid `while-active` grant). A tip can only honestly decompose it when the STORED
-  // `hp.max` STILL equals the by-the-book base composition (per-class hit-die averages
-  // + CON + Tough / Dwarven Toughness + per-level grants); a hand-pinned or rolled
-  // base has no composition to explain — suppress the tip then (override-first; mirrors
-  // `acOverride`). When it matches, the tip shows the base rows PLUS the hp-flat
+  // Aid `while-active` grant). A tip can honestly decompose it when the STORED
+  // `hp.max` equals the derived base (per-class hit dice + CON + per-level grants + the
+  // rolled surplus and hand bonus rows, #1315); an unexplained mismatch (a stale value)
+  // suppresses the tip (override-first; mirrors `acOverride`). When it matches, the tip shows the base rows PLUS the hp-flat
   // boon/item/Aid rows that lift the effective total, so `breakdownTotal === max` by
   // construction (rule 6). The SAME `BreakdownTip` register every value rides (golden
   // rule 3), localized here.
   const storedMax = charData?.hp.max ?? max;
-  const computedBase = charData ? computeCharacterMaxHp(charData) : storedMax;
+  // #1315 — the derived max includes the player's inputs (rolled surplus, bonus), and
+  // the tip names them as rows, so a rolled or adjusted max is still explained.
+  const computedBase = charData ? deriveMaxHp(charData) : storedMax;
   const maxBreakdown =
     charData && sheetMode !== "edit" && storedMax === computedBase
       ? localizeBreakdown(
@@ -308,11 +322,11 @@ export function HeaderHpControl() {
             // hand-pinned base / husk class) still shows the EFFECTIVE total; `agg.hpFlat`
             // stays a read-time overlay either way.
             value={sheetMode === "edit" ? storedMax : max}
-            computedValue={computedBase}
+            computedValue={charData ? maxHpWithoutBonus(charData) : computedBase}
             min={1}
             max={999}
             onChange={setHpMax}
-            onReset={() => setHpMax(computedBase)}
+            onReset={resetHpMax}
             ariaLabel={t("character.health.maxHp")}
             valueClassName="text-base text-text-secondary"
           />

@@ -6,6 +6,8 @@
     "untilLongRest": "until the next Long Rest",
     "override": "Manual adjustment",
     "hpMaxReduction": "Hit Point maximum reduction",
+    "hpRolled": "Rolled hit dice",
+    "hpBonus": "Adjustment",
     "ac": {
       "formBase": "Form base",
       "floor": "AC floor",

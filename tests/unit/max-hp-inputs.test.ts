@@ -12,6 +12,7 @@ import {
 } from "@/lib/character-codec";
 import { minimizeCharacter, rehydrateCharacter } from "@/lib/character-minimal";
 import { asRaceId } from "@/data/srd-names";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterData, CharacterDoc } from "@/types/character";
 
@@ -112,5 +113,16 @@ describe("max HP inputs — malformed or newer stored values", () => {
     const c = parse(env.build, env.state);
     const edited = { ...monk(), character: { ...c, hpBonus: 5 } };
     expect(envelope(edited).build.hp).toEqual({ bonus: 5, cap: 40 });
+  });
+});
+
+describe("max HP inputs — an unknown (homebrew) class", () => {
+  it("keeps its given max in session and never adds the inputs twice", () => {
+    const homebrew = {
+      ...monk({ hpBonus: 5 }).character,
+      classes: [{ classId: "homebrew-class", level: 3 }],
+      hp: { max: 40 },
+    };
+    expect(deriveMaxHp(homebrew)).toBe(40);
   });
 });

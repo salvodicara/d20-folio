@@ -107,7 +107,7 @@
     "hpAverage": "Average",
     "hpRolled": "Rolled",
     "hpAverageHint": "Level 1: d{{hitDie}} max ({{hitDie}}). Levels 2+: d{{hitDie}} avg ({{avg}}) + CON mod per level.",
-    "hpRolledHint": "Enter your total HP after rolling d{{hitDie}} per level (level 1 always gets max die).",
+    "hpRolledHint": "Add up your hit dice: level 1 counts the maximum ({{hitDie}}), then one d{{hitDie}} roll per level. CON and HP bonuses are added for you.",
     "hpRolledRange": "Valid range: {{min}}–{{max}}",
     "abilityScoreInput": "{{ability}} score",
     "bgAsiModeLabel": "Ability boost mode",

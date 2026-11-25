@@ -56,7 +56,6 @@ import { asLocale } from "@/lib/locale";
 import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
 
 import { localizeSrd } from "@/i18n/resolver";
-import { abilityModifier } from "@/lib/compute";
 
 import { getClassTable } from "@/data/classes";
 import { classEntryLevel, getClasses, primaryClassId, totalLevel } from "@/lib/classes";
@@ -167,7 +166,8 @@ import { WizardAsiCartouches } from "@/features/wizard/point-buy";
 import { SpellLevelSeal } from "@/features/wizard/seals";
 import { togglePick } from "@/features/wizard/pick-utils";
 import type { AbilityCode } from "@/data/types";
-import type { LevelUpChange } from "@/lib/level-up";
+import { levelUp, type LevelUpChange } from "@/lib/level-up";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -588,10 +588,9 @@ export function LevelUpWizard() {
     return slots;
   })();
 
-  const conMod = charData ? abilityModifier(charData.abilityScores.CON) : 0;
-  const projectedConMod = (() => {
-    if (!charData || !needsAsi || !isAsiChoiceComplete(asiChoice)) return conMod;
-    const currentCon = charData.abilityScores.CON;
+  const projectedCon = (() => {
+    const currentCon = charData?.abilityScores.CON ?? 10;
+    if (!charData || !needsAsi || !isAsiChoiceComplete(asiChoice)) return currentCon;
     let projectedCon = currentCon;
     if (asiChoice.mode === "plus2" && asiChoice.plusTwo === "CON") {
       projectedCon = Math.min(20, currentCon + 2);
@@ -605,10 +604,26 @@ export function LevelUpWizard() {
       const asi = feat ? featAsi(feat) : null;
       if (asi) projectedCon = Math.min(asi.cap, currentCon + asi.amount);
     }
-    return abilityModifier(projectedCon);
+    return projectedCon;
   })();
-  const conModDelta = Math.max(0, projectedConMod - conMod);
-  const resolvedHpGain = Math.max(1, rawDieGain + conMod) + newLevel * conModDelta;
+  // #1315 — the preview is the max the commit will DERIVE (the advancing class's die,
+  // the species and feat per-level grants, the projected CON), never a hand sum.
+  const previewMaxHp = (() => {
+    if (!charData) return 0;
+    try {
+      const up = levelUp(charData, newLevel, {
+        hpGain: rawDieGain,
+        advanceClassId: classId,
+      }).updatedCharacter;
+      return deriveMaxHp({
+        ...up,
+        abilityScores: { ...up.abilityScores, CON: projectedCon },
+      });
+    } catch {
+      return charData.hp.max;
+    }
+  })();
+  const resolvedHpGain = charData ? previewMaxHp - charData.hp.max : 0;
 
   // ── early exits ────────────────────────────────────────────────────────────
   if (isLoading || !character || !charData) {
@@ -922,7 +937,7 @@ export function LevelUpWizard() {
             onUseAverage={setUseAverage}
             onManualHpGain={setManualHpGain}
             hpFrom={charData.hp.max}
-            hpTo={charData.hp.max + resolvedHpGain}
+            hpTo={previewMaxHp}
             fork={
               forkAvailable ? (
                 <ClassForkGallery
@@ -1588,7 +1603,7 @@ export function LevelUpWizard() {
                     label: t("levelUp.stepHp"),
                     value: t("levelUp.hpWillGain", {
                       current: charData.hp.max,
-                      next: charData.hp.max + resolvedHpGain,
+                      next: previewMaxHp,
                     }),
                     tnum: true,
                   },
