@@ -10,7 +10,7 @@ import { act, render } from "@testing-library/react";
 import type { TFunction } from "i18next";
 import { useEffect } from "react";
 import { MemoryRouter } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({}));
 
@@ -19,14 +19,18 @@ import {
   useTurnEconomy,
   type TurnEconomyApi,
 } from "@/features/character/center/useTurnEconomy";
-import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
+import {
+  useCombatStatusStore,
+  type GlobalCombat,
+} from "@/features/campaigns/global-combat-context";
+import { syncCombatTurnContext } from "@/features/character/center/combat-hydration";
 import { useHitReactionOfferStore } from "@/features/character/hit-reaction-offer-store";
 import { commitDamage } from "@/features/character/molecules/hp-commits";
 import { concentrationValue } from "@/lib/concentration";
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
-import { useCharacterStore } from "@/stores/characterStore";
+import { setPlayLogSink, useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { useToastStore } from "@/stores/toastStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -243,6 +247,72 @@ describe("Shield on the offer", () => {
   });
 });
 
+/** The sheet's damage lines, by amount. */
+const damageLines = () =>
+  session().logEntries.flatMap((e) =>
+    e.event.kind === "hp-damage" ? [e.event.amount] : []
+  );
+
+/** The campaign session log as the sink hears it: the damage lines still standing. */
+function campaignLog(): () => number[] {
+  const lines = new Map<string, number>();
+  setPlayLogSink({
+    added: (_c, entry) => {
+      if (entry.event.kind === "hp-damage") lines.set(entry.id, entry.event.amount);
+    },
+    removed: (_c, id) => void lines.delete(id),
+    corrected: () => undefined,
+  });
+  return () => [...lines.values()];
+}
+
+describe("the log tells the hit as it was settled", () => {
+  afterEach(() => setPlayLogSink(null));
+
+  it("a plain hit's undo takes its line out of the campaign log too", async () => {
+    mount();
+    const campaign = campaignLog();
+    await hit(13);
+    expect(campaign()).toEqual([13]);
+    await undo();
+    expect(campaign()).toEqual([]);
+  });
+
+  it("undoing the choice puts the hit's own line back in the campaign log", async () => {
+    mount();
+    startFight();
+    const campaign = campaignLog();
+    await hit(13);
+    await run(() => settleWith().react(DODGE));
+    await undo();
+    expect(damageLines()).toEqual([13]);
+    expect(campaign()).toEqual([13]);
+  });
+
+  it("Uncanny Dodge leaves one damage line, of 6, on the sheet and in the campaign log", async () => {
+    mount();
+    startFight();
+    const campaign = campaignLog();
+    await hit(13);
+    await run(() => settleWith().react(DODGE));
+    expect(damageLines()).toEqual([6]);
+    expect(campaign()).toEqual([6]);
+  });
+
+  it("Shield keeps one line of 12; «It misses» leaves none", async () => {
+    mount();
+    startFight();
+    const campaign = campaignLog();
+    await hit(12);
+    await run(() => settleWith().react(SHIELD));
+    expect(damageLines()).toEqual([12]);
+    expect(campaign()).toEqual([12]);
+    await run(() => settleWith().attackMisses());
+    expect(damageLines()).toEqual([]);
+    expect(campaign()).toEqual([]);
+  });
+});
+
 describe("when the offer opens and closes", () => {
   it("a new hit replaces the offer", async () => {
     mount();
@@ -281,6 +351,23 @@ describe("when the offer opens and closes", () => {
     await hit(13);
     expect(offer()).not.toBeNull();
     await run(() => useCombatStore.getState().endTurn());
+    expect(offer()).toBeNull();
+  });
+
+  it("in a DM-run fight, this character's next turn closes it", async () => {
+    mount();
+    const turn = (round: number, isMyTurn: boolean) =>
+      ({
+        campaignId: "campaign-1",
+        round,
+        isMyTurn,
+        encounter: { epoch: 9 },
+      }) as unknown as GlobalCombat;
+    syncCombatTurnContext(turn(2, true));
+    syncCombatTurnContext(turn(2, false));
+    await hit(13);
+    expect(offer()).not.toBeNull();
+    syncCombatTurnContext(turn(3, true));
     expect(offer()).toBeNull();
   });
 
