@@ -169,6 +169,20 @@ export async function createCharacter(
   uid: string,
   data: Partial<CharacterDoc>
 ): Promise<string> {
+  const queued = await queueCreateCharacter(uid, data);
+  await queued.written;
+  return queued.id;
+}
+
+/**
+ * Hand a new character to the SDK and return its id at once (#1283: creation never
+ * waits for the server, so it works offline). The id is made locally; `written` settles
+ * when the server answers (offline: much later, or after a restart).
+ */
+export async function queueCreateCharacter(
+  uid: string,
+  data: Partial<CharacterDoc>
+): Promise<{ id: string; written: Promise<void> }> {
   const { id: _id, ...rest } = data;
   void _id;
   if (!rest.character || !rest.session) {
@@ -181,15 +195,8 @@ export async function createCharacter(
     // compare-and-set against a known base.
     revision: 0,
   });
-  // Bug fix (2026-05-28): Firestore's `addDoc()` rejects any tree containing
-  // an `undefined` value with "Unsupported field value: undefined". The
-  // character builder produces several optional fields (e.g. armorNote, every
-  // `…Override`) that may legitimately be undefined when
-  // the player skips them in the wizard. `updateCharacter` was already
-  // running `stripUndefined`; `createCharacter` was the only write path
-  // that didn't, so the very first save of a fresh character could fail
-  // with the cryptic "Unsupported field value" error. Now both paths are
-  // symmetric.
+  // stripUndefined: Firestore rejects any tree holding `undefined` (2026-05-28), and the
+  // builder leaves optional fields undefined when the player skips them.
   const docRef = doc(charsCol(uid));
   const batch = writeBatch(db);
   batch.set(docRef, {
@@ -201,8 +208,7 @@ export async function createCharacter(
     combatStateRef(uid, docRef.id),
     combatStateWriteData(sessionToCombatState(rest.session))
   );
-  await batch.commit();
-  return docRef.id;
+  return { id: docRef.id, written: batch.commit() };
 }
 
 /**
