@@ -191,6 +191,7 @@ export function levelUpAsks(
     subclassId: a.subclassId,
     asiChoice: a.asi,
     fightingStyle: a.fightingStyle,
+    bundlePicks: a.bundlePicks,
   });
   const rows: AskRow[] = [];
   const ability = (code: string) => ({ id: code, label: t(`abilities.${code}`) });
@@ -377,7 +378,8 @@ export function levelUpAsks(
     choicePicks,
     {
       skills: ownedSkills,
-      spells: plan.existingSpellIds,
+      // The spells this level's own rows pick are known too: never offered twice.
+      spells: new Set([...plan.existingSpellIds, ...a.newCantrips, ...a.newSpells]),
       expert: expertSkills,
       languages: new Set(c.languageIds),
     },
@@ -459,7 +461,16 @@ export function levelUpAsks(
       count: plan.cantripsKnownDiff,
       picked: a.newCantrips,
       options: learnableSpellVMs(
-        { classId, cantripsOnly: true, maxLevel: 0, exclude: plan.existingSpellIds },
+        {
+          classId,
+          cantripsOnly: true,
+          maxLevel: 0,
+          // A cantrip a feature's own pick took (Thaumaturge's) is known already.
+          exclude: new Set([
+            ...plan.existingSpellIds,
+            ...Object.values(a.choicePicks.spell).flat(),
+          ]),
+        },
         locale
       ).map((s) => ({ id: s.id, label: s.name })),
     });
