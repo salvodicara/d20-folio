@@ -60,7 +60,12 @@ import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
 import { closeShapeGate, settleShapeGateRescue, writesFenced } from "@/lib/shape-gate";
 import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
-import { keepRescueCopy } from "@/lib/local-draft";
+import {
+  dropUnackedSave,
+  keepRescueCopy,
+  keepUnackedSave,
+  readUnackedSave,
+} from "@/lib/local-draft";
 import {
   readDevDocument,
   subscribeDevDocument,
@@ -210,6 +215,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
   // the rules refused (held until the next snapshot says whether a newer shape caused it).
   const lastPendingRef = useRef({ parent: false, child: false });
   const refusedPayloadRef = useRef<CharacterDoc | null>(null);
+  // The last parent that arrived still carrying our queued writes: on a reopened tab
+  // the refusal can come before the sheet is published, and this is the edited sheet.
+  const pendingParentRef = useRef<CharacterDoc | null>(null);
 
   /**
    * True while setCharacter() is being called from an incoming Firestore
@@ -639,13 +647,20 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       const reconciliation = reconciler.current();
       const refused = refusedPayloadRef.current;
       const shown = useCharacterStore.getState().character;
-      const local = refused ?? (shown && shown.id === characterId ? shown : null);
-      const dirty =
-        refused !== null ||
+      const storeDirty =
         reconciliation.parentPending ||
         reconciliation.childPending ||
         lastPendingRef.current.parent ||
         lastPendingRef.current.child;
+      const unacked = readUnackedSave(user.uid, characterId);
+      const local =
+        refused ??
+        (storeDirty && shown && shown.id === characterId ? shown : null) ??
+        pendingParentRef.current ??
+        (unacked
+          ? ({ character: unacked.character, session: unacked.session } as CharacterDoc)
+          : null);
+      const dirty = refused !== null || storeDirty || unacked !== null;
       if (!dirty || !local) {
         closeShapeGate({ rescue: "none" });
         return;
@@ -673,6 +688,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       (doc, meta) => {
         if (quarantined) return;
         lastPendingRef.current.parent = meta.hasPendingWrites;
+        pendingParentRef.current = meta.hasPendingWrites ? doc : null;
+        // A SERVER-confirmed sheet at or past the traced save's generation has taken it
+        // (the tab's own optimistic echo carries the new generation too, and proves
+        // nothing).
+        const trace = readUnackedSave(user.uid, characterId);
+        if (!meta.hasPendingWrites && doc && trace && doc.revision >= trace.revision)
+          dropUnackedSave(user.uid, characterId);
         // A server snapshot in a shape this client knows: a held refusal was an ordinary
         // conflict (#1203), not a newer shape.
         if (!meta.hasPendingWrites) refusedPayloadRef.current = null;
@@ -848,8 +870,25 @@ export function useCharacterSubscription(characterId: string | undefined): void 
           };
           reconcilerRef.current?.markParentPending(payload);
           debouncedSaveRef.current.save(payload, {
-            onSend: (sent) => reconcilerRef.current?.markParentPending(sent),
-            onResolved: (sent) => reconcilerRef.current?.acknowledgeParentWrite(sent),
+            onSend: (sent) => {
+              reconcilerRef.current?.markParentPending(sent);
+              // #1320 — the trace of a save the server has not taken yet: if this tab
+              // closes and a newer shape refuses it, it is the rescue copy.
+              const owner = useAuthStore.getState().user?.uid;
+              if (owner)
+                keepUnackedSave(owner, sent.id, {
+                  character: sent.character,
+                  session: sent.session,
+                  revision: sent.revision,
+                });
+            },
+            onResolved: (sent) => {
+              reconcilerRef.current?.acknowledgeParentWrite(sent);
+              const owner = useAuthStore.getState().user?.uid;
+              const trace = owner ? readUnackedSave(owner, sent.id) : null;
+              if (owner && trace && trace.revision <= sent.revision)
+                dropUnackedSave(owner, sent.id);
+            },
             onRejected: (sent, error) => {
               // A REJECTED write did not land — whatever the reason — so the generation
               // it claimed was never stored. Re-base the cursor on the server's own

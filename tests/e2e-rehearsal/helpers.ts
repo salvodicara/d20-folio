@@ -206,6 +206,40 @@ export async function storedHpInputs(
   return { rolled: int(hp.rolled), bonus: int(hp.bonus) };
 }
 
+/** Set one top-level integer field on an owner's character parent, as a migration
+ *  script does (the emulator's owner token bypasses the rules). #1320 rehearsal. */
+export async function setOwnerCharacterInt(
+  id: string,
+  field: string,
+  value: number
+): Promise<void> {
+  const response = await fetch(
+    `${FIRESTORE}/users/dev-owner/characters/${id}?updateMask.fieldPaths=${field}`,
+    {
+      method: "PATCH",
+      headers: { ...OWNER, "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: { [field]: { integerValue: String(value) } } }),
+    }
+  );
+  if (!response.ok) throw new Error(`set ${field}: HTTP ${String(response.status)}`);
+}
+
+/** A string field of an owner's character build (`build.<field>`), or null. */
+export async function ownerBuildString(
+  id: string,
+  field: string
+): Promise<string | null> {
+  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+    headers: OWNER,
+  });
+  const body = (await response.json()) as {
+    fields?: {
+      build?: { mapValue?: { fields?: Record<string, { stringValue?: string }> } };
+    };
+  };
+  return body.fields?.build?.mapValue?.fields?.[field]?.stringValue ?? null;
+}
+
 /** Fail fast on the app's error screen instead of waiting out a timeout. */
 export function watchErrors(page: Page): string[] {
   const errors: string[] = [];

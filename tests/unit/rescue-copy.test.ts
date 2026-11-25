@@ -99,3 +99,30 @@ describe("the rescue copy fits the device's storage", () => {
     expect(Math.max(...sizes)).toBeLessThan(250_000);
   });
 });
+
+describe("the unacknowledged build save (#1320)", () => {
+  it("is kept per account and character until the server acknowledges it", async () => {
+    const { keepUnackedSave, readUnackedSave, dropUnackedSave } =
+      await import("@/lib/local-draft");
+    keepUnackedSave("u1", "c1", {
+      character: { quote: "x" },
+      session: { hp: 1 },
+      revision: 5,
+    });
+    expect(readUnackedSave("u1", "c1")).toEqual({
+      character: { quote: "x" },
+      session: { hp: 1 },
+      revision: 5,
+    });
+    expect(readUnackedSave("u1", "c2")).toBeNull();
+    dropUnackedSave("u1", "c1");
+    expect(readUnackedSave("u1", "c1")).toBeNull();
+  });
+
+  it("sign-out clears it", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "c1", { character: {}, session: {}, revision: 1 });
+    clearAccountDrafts("u1");
+    expect(readUnackedSave("u1", "c1")).toBeNull();
+  });
+});

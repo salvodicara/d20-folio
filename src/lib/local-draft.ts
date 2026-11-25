@@ -167,11 +167,50 @@ export function dropRescueCopy(uid: string, characterId: string): void {
   remove(rescueKey(uid, characterId));
 }
 
+/**
+ * The last build save that left this tab and has not been acknowledged yet (#1320).
+ * Firestore keeps its own offline queue, but a tab that opens again ONLINE sends that
+ * queue before any listener can see it: if the server refuses it (a newer shape), the
+ * edit is gone without a trace. This copy is the trace. Written when a build save
+ * leaves, removed when the server acknowledges it or a stored sheet at or past its
+ * generation shows it landed; the shape gate rescues it.
+ */
+export interface UnackedSave {
+  character: unknown;
+  session: unknown;
+  /** The generation it was sent at: a stored sheet at or past it has taken it. */
+  revision: number;
+}
+const unackedPrefix = (uid: string) => `folio.unacked.${uid}.`;
+const unackedKey = (uid: string, characterId: string) =>
+  `${unackedPrefix(uid)}${characterId}`;
+
+export function keepUnackedSave(
+  uid: string,
+  characterId: string,
+  save: UnackedSave
+): void {
+  write(unackedKey(uid, characterId), save);
+}
+
+export function readUnackedSave(uid: string, characterId: string): UnackedSave | null {
+  const stored = read(unackedKey(uid, characterId));
+  if (typeof stored !== "object" || stored === null) return null;
+  const s = stored as Record<string, unknown>;
+  return "character" in s && "session" in s && typeof s.revision === "number"
+    ? { character: s.character, session: s.session, revision: s.revision }
+    : null;
+}
+
+export function dropUnackedSave(uid: string, characterId: string): void {
+  remove(unackedKey(uid, characterId));
+}
+
 /** Sign-out: every draft of this account, and no other's. */
 export function clearAccountDrafts(uid: string): void {
   clearCreationDraft(uid);
   try {
-    const prefixes = [levelUpPrefix(uid), rescuePrefix(uid)];
+    const prefixes = [levelUpPrefix(uid), rescuePrefix(uid), unackedPrefix(uid)];
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);

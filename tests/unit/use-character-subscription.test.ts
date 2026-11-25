@@ -1368,3 +1368,102 @@ describe("useCharacterSubscription — the shape gate (#1320)", () => {
     );
   });
 });
+
+describe("useCharacterSubscription — the shape gate before the sheet has loaded (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a reopened tab refused before its play document arrived still keeps the pending parent", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const offline = { ...doc(), character: { ...doc().character, quote: "early edit" } };
+    // Only the parent's cached snapshot (with the queued write) has arrived: the
+    // sheet is not published yet, so the store holds nothing.
+    act(() => snapshotCb({ hasPendingWrites: true })(offline));
+    expect(useCharacterStore.getState().character).toBeNull();
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "early edit"
+    );
+  });
+});
+
+describe("useCharacterSubscription — a save the tab never saw acknowledged (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a tab reopened online, its queued save already refused, still rescues the edit", async () => {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    const edited = {
+      ...doc(),
+      character: { ...doc().character, quote: "closed tab edit" },
+    };
+    keepUnackedSave("u1", "char1", {
+      character: edited.character,
+      session: edited.session,
+      revision: 5,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // revision 4: the save at 5 never landed
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "closed tab edit"
+    );
+  });
+
+  it("a stored sheet at the save's revision proves it landed: nothing to rescue", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", { character: {}, session: {}, revision: 4 });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // revision 4
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "none" });
+  });
+
+  it("a build save leaving is recorded, and its acknowledgement clears it", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "in flight" },
+      })
+    );
+    const [queued, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    const sent = { ...(queued as CharacterDoc), revision: 5 };
+    act(() => callbacks?.onSend?.(sent));
+    expect(readUnackedSave("u1", "char1")?.revision).toBe(5);
+    act(() => callbacks?.onResolved?.(sent));
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+});
+
+describe("useCharacterSubscription — the save trace and the local echo (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("the tab's own optimistic echo at the new revision is NOT proof the save landed", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    keepUnackedSave("u1", "char1", { character: {}, session: {}, revision: 5 });
+    const echo = { ...doc(), revision: 5 };
+    act(() => snapshotCb({ hasPendingWrites: true })(echo));
+    expect(readUnackedSave("u1", "char1")?.revision).toBe(5);
+    act(() => snapshotCb({ hasPendingWrites: false })(echo));
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+});
