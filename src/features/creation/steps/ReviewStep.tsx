@@ -229,38 +229,43 @@ export function HpModeSelector({
   const { t } = useTranslation();
   // #1315 — the entered number is the CON-free dice total; level 1 is the die maximum.
   const range = rolledDiceRange(hitDie, level);
+  // Level 1 always takes the die maximum (RAW): there is nothing to roll yet.
+  const canRoll = level > 1;
+  const shown = canRoll ? mode : "average";
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="wiz-fork" role="group" aria-label={t("create.hpLabel")}>
-          <WizardForkTab
-            active={mode === "average"}
-            onClick={() => onModeChange("average")}
-          >
-            {t("create.hpAverage")}
-          </WizardForkTab>
-          <WizardForkTab
-            active={mode === "rolled"}
-            onClick={() => onModeChange("rolled")}
-          >
-            {t("create.hpRolled")}
-          </WizardForkTab>
-        </div>
-        {mode === "average" && (
+        {canRoll && (
+          <div className="wiz-fork" role="group" aria-label={t("create.hpLabel")}>
+            <WizardForkTab
+              active={shown === "average"}
+              onClick={() => onModeChange("average")}
+            >
+              {t("create.hpAverage")}
+            </WizardForkTab>
+            <WizardForkTab
+              active={shown === "rolled"}
+              onClick={() => onModeChange("rolled")}
+            >
+              {t("create.hpRolled")}
+            </WizardForkTab>
+          </div>
+        )}
+        {shown === "average" && (
           <span className="ml-auto self-center font-mono text-sm font-bold text-accent tnum">
             {averageHp + hpBonus} {t("stats.hp")}
           </span>
         )}
       </div>
 
-      {mode === "average" && (
+      {shown === "average" && (
         <p className="on-art text-xs text-text-muted">
           {t("create.hpAverageHint", { hitDie, avg: Math.floor(hitDie / 2) + 1, level })}
         </p>
       )}
 
-      {mode === "rolled" && (
+      {shown === "rolled" && (
         <div className="space-y-1">
           <p className="on-art text-xs text-text-muted">
             {t("create.hpRolledHint", { hitDie })}

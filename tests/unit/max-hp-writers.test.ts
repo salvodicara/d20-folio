@@ -149,6 +149,18 @@ describe("creation — rolled hit dice become the max-HP input", () => {
     expect(reload(rolled).hp.max).toBe(fixed + 3);
   });
 
+  it("at level 1 there is nothing to roll: a rolled entry stores nothing", () => {
+    const draft = [
+      { type: "setName", name: "Ada" },
+      { type: "setHpMethod", method: "rolled" },
+      { type: "setRolledHp", rolledHp: 4 },
+    ].reduce(
+      (d, a) => creationDraftReducer(d, a as CreationDraftAction),
+      initialCreationDraft()
+    );
+    expect(creationFacts(draft).hpRolled).toBeUndefined();
+  });
+
   it("the fixed dice total stores nothing", () => {
     expect(build(16).hpRolled).toBeUndefined();
   });
