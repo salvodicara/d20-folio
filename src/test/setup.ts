@@ -22,6 +22,22 @@ await ensureLocale("it");
 // behind FocusScope's, so the leaked timer is always flushed — never suppressed.
 afterEach(async () => {
   cleanup();
+  // The creation and level-up drafts survive a reload (`lib/local-draft`): between
+  // tests they must not, or one test's draft becomes the next one's starting point.
+  try {
+    const drafts: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (
+        key?.startsWith("folio.creationDraft.") ||
+        key?.startsWith("folio.levelUpDraft.")
+      )
+        drafts.push(key);
+    }
+    for (const key of drafts) window.localStorage.removeItem(key);
+  } catch {
+    // No storage in this environment.
+  }
   // Turn economy is now intentionally process-global so it survives a route unmount.
   // Reset its persisted mirror between render tests: a partial Zustand fixture reset
   // must not make the next test look like a remount of the same live character turn.
