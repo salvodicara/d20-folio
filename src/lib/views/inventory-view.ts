@@ -54,6 +54,7 @@ import { GEAR_BY_ID } from "@/data/gear";
 import { ARMOR_BY_ID, ARMOR_DON_DOFF, type ArmorTime } from "@/data/armor";
 import { MAGIC_ITEMS_BY_ID } from "@/data/magic-items";
 import { requiresAttunement } from "@/lib/attunement";
+import { customItemCost, customItemWeight } from "@/lib/custom-item";
 import {
   isArmorProficient,
   resolveItemBoundWeaponBonus,
@@ -196,7 +197,7 @@ export interface ItemRowVM {
 
   // ── numbers / state ──
   quantity: number;
-  /** PER-UNIT weight in lb (bundle items divide by bundleSize; custom → 0). */
+  /** PER-UNIT weight in lb (bundle items divide by bundleSize; custom → its own). */
   weight: number;
   /** The SRD list price (per bundle for bundle items), or null (custom /
    *  magic items — 2024 prices magic items by rarity, not a list cost). */
@@ -508,7 +509,10 @@ function buildItemVM(
   const tracked = isConsumable || (ref.tracked ?? false);
 
   // Per-unit weight: bundle items (ammunition) list weight per bundle, so divide.
-  const weight = (srdItem?.weight ?? magicItem?.weight ?? 0) / (srdItem?.bundleSize ?? 1);
+  // A homebrew item keeps its own weight in its mechanics (`customItemWeight`).
+  const weight = isCustom
+    ? customItemWeight(ref)
+    : (srdItem?.weight ?? magicItem?.weight ?? 0) / (srdItem?.bundleSize ?? 1);
 
   const armorAc: ArmorAcVM | null = srdItem?.ac
     ? {
@@ -554,7 +558,7 @@ function buildItemVM(
     description,
     quantity: ref.quantity ?? 1,
     weight,
-    cost: srdItem?.cost ?? null,
+    cost: isCustom ? customItemCost(ref) : (srdItem?.cost ?? null),
     saleCp: srdItem ? salePriceCp(srdItem) : 0,
     notes: ref.notes ?? "",
     equipped: ref.equipped ?? false,
@@ -679,7 +683,7 @@ export function buildInventoryViewModel(
     show: requiring.length > 0 || cap > ATTUNEMENT_DEFAULT,
   };
 
-  // Encumbrance — carried weight vs capacity (STR × 15 lb, 2024). Custom items 0.
+  // Encumbrance — carried weight vs capacity (STR × 15 lb, 2024).
   // Capacity reads the EFFECTIVE STR (a set-score / additive item raises it), the
   // same single source the weapon rows use (rule 6) — never the raw stored STR.
   const carried =

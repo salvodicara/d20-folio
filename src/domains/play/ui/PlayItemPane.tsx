@@ -3,7 +3,8 @@
  * sheet opens an item's pane from the row, with the item's details and Quantity, and
  * the coins' «Manage Coin» pane from the coin total).
  *
- * - The item pane: what it is (its line, the weight), how many (a stepper that never
+ * - The item pane: what it is (its line, the weight, the cost, a homebrew item's
+ *   notes), how many (a stepper that never
  *   goes below 1), on or off for armor and wearable items, attunement, and «Rimuovi»
  *   with its undo. A read-only sheet (a shared link, the DM's view) shows the details
  *   alone.
@@ -55,6 +56,13 @@ export function PlayItemPane({
     item.weight > 0
       ? t("play.inv.weightEach", { weight: formatWeight(item.weight, locale) })
       : null,
+    item.cost
+      ? t("play.inv.costEach", {
+          cost: t(`equipment.coinAmount.${item.cost.unit}`, {
+            amount: item.cost.amount,
+          }),
+        })
+      : null,
     item.stealthDisadvantage ? t("play.inv.stealth") : null,
   ].filter(Boolean);
   return (
@@ -80,6 +88,7 @@ export function PlayItemPane({
     >
       <div className="f-stack">
         {facts.length > 0 && <p className="f-help">{facts.join(" · ")}</p>}
+        {item.notes && <p className="f-item-notes">{item.notes}</p>}
         <div className="f-field">
           <span className="f-lbl">{t("common.quantity")}</span>
           {readonly ? (

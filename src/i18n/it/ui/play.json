@@ -186,7 +186,16 @@
       "searchItems": "Cerca un oggetto",
       "noMatch": "Nessun oggetto corrisponde.",
       "addedToast": "Aggiunto: {{name}}",
-      "add": "Aggiungi un oggetto"
+      "add": "Aggiungi un oggetto",
+      "catalogue": "Catalogo",
+      "custom": "Oggetto personalizzato",
+      "customWeight": "Peso l'uno ({{unit}})",
+      "customCost": "Costo l'uno (mo)",
+      "optional": "Facoltativo",
+      "customNameRequired": "Dagli un nome.",
+      "customNumber": "Scrivi un numero, come 2 o 0,5.",
+      "customAdd": "Aggiungi all'inventario",
+      "costEach": "{{cost}} l'uno"
     },
     "tray": {
       "ifAtOrBelow": "Se ha {{max}} punti ferita o meno: {{then}}.",

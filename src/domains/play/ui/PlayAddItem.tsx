@@ -4,8 +4,10 @@
  * and the write are the Compendium's own (`itemsSpec` in add mode, as the classic
  * Add Item picker): mundane equipment and magic items in one list, one tap adds one
  * (stacking onto a twin; body armor goes on worn), with the 5 s undo. How many and
- * whether it is worn are then the item pane's.
+ * whether it is worn are then the item pane's. The «Oggetto personalizzato» tab makes
+ * a homebrew item instead (`PlayCustomItem`).
  */
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { compendiumArt } from "@/domains/compendium/compendium-art";
@@ -13,13 +15,23 @@ import { itemsSpec } from "@/features/compendium/picker";
 import { useCompendiumPicker } from "@/features/compendium/picker/useCompendiumPicker";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
-import { Art, Button, Dialog, Field } from "@/ui";
+import type { Locale } from "@/lib/locale";
+import { Art, Button, Dialog, Field, Tabs } from "@/ui";
+
+import { PlayCustomItem } from "./PlayCustomItem";
 
 /** A long list stays light: the first rows, and the search narrows the rest. */
 const SHOWN = 60;
 
-export function PlayAddItem({ onClose }: { onClose: () => void }) {
+export function PlayAddItem({
+  locale,
+  onClose,
+}: {
+  locale: Locale;
+  onClose: () => void;
+}) {
   const { t } = useTranslation();
+  const [tab, setTab] = useState<"catalogue" | "custom">("catalogue");
   const picker = useCompendiumPicker(itemsSpec, { mode: "add" });
   // the localized name first (the spec's search candidates)
   const nameOf = (entry: (typeof picker.filtered)[number]) =>
@@ -57,43 +69,56 @@ export function PlayAddItem({ onClose }: { onClose: () => void }) {
       title={t("play.inv.add")}
       closeLabel={t("common.close")}
     >
-      <div className="f-stack">
-        <Field
-          label={t("play.inv.searchItems")}
-          type="search"
-          autoComplete="off"
-          value={picker.query}
-          onChange={(e) => picker.setQuery(e.target.value)}
-        />
-        <div className="f-add-list">
-          {picker.filtered.slice(0, SHOWN).map((entry) => {
-            const name = nameOf(entry);
-            const verdict = itemsSpec.verdict?.(entry, picker.ctx);
-            const art = compendiumArt(itemsSpec.id, entry);
-            return (
-              <div key={itemsSpec.getId(entry)} className="f-act f-add-row">
-                <span className="f-act-slot" data-painted="" aria-hidden="true">
-                  {art && !("spell" in art) ? (
-                    <Art kind={art.kind} id={art.id} fallback={null} />
-                  ) : null}
-                </span>
-                <span className="f-row-main">
-                  <span className="f-row-t">{name}</span>
-                  {verdict && <span className="f-row-s">{verdict.label}</span>}
-                </span>
-                <Button
-                  kind="ghost"
-                  aria-label={`${t("common.add")}: ${name}`}
-                  onClick={() => add(entry)}
-                >
-                  {t("common.add")}
-                </Button>
-              </div>
-            );
-          })}
-          {picker.count === 0 && <p className="f-quiet">{t("play.inv.noMatch")}</p>}
+      <Tabs
+        label={t("play.inv.add")}
+        items={[
+          { id: "catalogue", label: t("play.inv.catalogue") },
+          { id: "custom", label: t("play.inv.custom") },
+        ]}
+        value={tab}
+        onChange={setTab}
+      />
+      {tab === "custom" ? (
+        <PlayCustomItem locale={locale} onAdded={onClose} />
+      ) : (
+        <div className="f-stack">
+          <Field
+            label={t("play.inv.searchItems")}
+            type="search"
+            autoComplete="off"
+            value={picker.query}
+            onChange={(e) => picker.setQuery(e.target.value)}
+          />
+          <div className="f-add-list">
+            {picker.filtered.slice(0, SHOWN).map((entry) => {
+              const name = nameOf(entry);
+              const verdict = itemsSpec.verdict?.(entry, picker.ctx);
+              const art = compendiumArt(itemsSpec.id, entry);
+              return (
+                <div key={itemsSpec.getId(entry)} className="f-act f-add-row">
+                  <span className="f-act-slot" data-painted="" aria-hidden="true">
+                    {art && !("spell" in art) ? (
+                      <Art kind={art.kind} id={art.id} fallback={null} />
+                    ) : null}
+                  </span>
+                  <span className="f-row-main">
+                    <span className="f-row-t">{name}</span>
+                    {verdict && <span className="f-row-s">{verdict.label}</span>}
+                  </span>
+                  <Button
+                    kind="ghost"
+                    aria-label={`${t("common.add")}: ${name}`}
+                    onClick={() => add(entry)}
+                  >
+                    {t("common.add")}
+                  </Button>
+                </div>
+              );
+            })}
+            {picker.count === 0 && <p className="f-quiet">{t("play.inv.noMatch")}</p>}
+          </div>
         </div>
-      </div>
+      )}
     </Dialog>
   );
 }

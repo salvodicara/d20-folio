@@ -539,7 +539,7 @@ function InventoryPane({
           onClose={() => setOpened(null)}
         />
       )}
-      {adding && <PlayAddItem onClose={() => setAdding(false)} />}
+      {adding && <PlayAddItem locale={locale} onClose={() => setAdding(false)} />}
       {coinsOpen && (
         <PlayCoinPane
           coins={view.coins}
