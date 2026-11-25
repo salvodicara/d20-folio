@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   closeShapeGate,
   resetShapeGateForTests,
+  settleShapeGateRescue,
   shapeGateState,
   subscribeShapeGate,
   writesFenced,
@@ -33,5 +34,15 @@ describe("the shape gate", () => {
   it("a failed rescue is reported, never hidden", () => {
     closeShapeGate({ rescue: "failed" });
     expect(shapeGateState()).toEqual({ closed: true, rescue: "failed" });
+  });
+
+  it("a rescue still being written settles once, to kept or failed", () => {
+    const listener = vi.fn();
+    subscribeShapeGate(listener);
+    closeShapeGate({ rescue: "saving" });
+    settleShapeGateRescue("kept");
+    settleShapeGateRescue("failed");
+    expect(shapeGateState()).toEqual({ closed: true, rescue: "kept" });
+    expect(listener).toHaveBeenCalledTimes(2);
   });
 });

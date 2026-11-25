@@ -58,6 +58,9 @@ import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER, MOCK_COMBAT_ROUND } from "@/lib/mock";
 import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
+import { closeShapeGate, settleShapeGateRescue, writesFenced } from "@/lib/shape-gate";
+import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
+import { keepRescueCopy } from "@/lib/local-draft";
 import {
   readDevDocument,
   subscribeDevDocument,
@@ -202,6 +205,11 @@ export function useCharacterSubscription(characterId: string | undefined): void 
    *  rejection). Owned by the subscription effect; a no-op while none is active. */
   const resetRevisionCursorRef = useRef<() => void>(() => {});
   const republishRef = useRef<() => void>(() => {});
+  // #1320 — the unsaved-edit evidence the shape gate rescues: whether the last parent /
+  // play snapshot still carried writes the server had not taken, and a build payload
+  // the rules refused (held until the next snapshot says whether a newer shape caused it).
+  const lastPendingRef = useRef({ parent: false, child: false });
+  const refusedPayloadRef = useRef<CharacterDoc | null>(null);
 
   /**
    * True while setCharacter() is being called from an incoming Firestore
@@ -624,11 +632,50 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       return roots.length > 0 ? { kind: "vitals", roots } : { kind: "none" };
     };
 
+    // #1320 — a document on the server is in a newer shape than this client knows: stop
+    // every write and keep this tab's unsaved edits as a rescue copy on the device.
+    const tooNew = (): void => {
+      if (writesFenced()) return;
+      const reconciliation = reconciler.current();
+      const refused = refusedPayloadRef.current;
+      const shown = useCharacterStore.getState().character;
+      const local = refused ?? (shown && shown.id === characterId ? shown : null);
+      const dirty =
+        refused !== null ||
+        reconciliation.parentPending ||
+        reconciliation.childPending ||
+        lastPendingRef.current.parent ||
+        lastPendingRef.current.child;
+      if (!dirty || !local) {
+        closeShapeGate({ rescue: "none" });
+        return;
+      }
+      closeShapeGate({ rescue: "saving" });
+      void import("@/lib/character-codec").then(
+        ({ serializeCharacterEnvelope }) => {
+          const envelope = serializeCharacterEnvelope(local);
+          const kept = keepRescueCopy(user.uid, characterId, {
+            savedAt: Date.now(),
+            schema: CHARACTER_SCHEMA,
+            playVersion: PLAY_STATE_VERSION,
+            build: envelope.build,
+            state: envelope.state,
+          });
+          settleShapeGateRescue(kept ? "kept" : "failed");
+        },
+        () => settleShapeGateRescue("failed")
+      );
+    };
+
     const unsubscribe = subscribeToCharacter(
       user.uid,
       characterId,
       (doc, meta) => {
         if (quarantined) return;
+        lastPendingRef.current.parent = meta.hasPendingWrites;
+        // A server snapshot in a shape this client knows: a held refusal was an ordinary
+        // conflict (#1203), not a newer shape.
+        if (!meta.hasPendingWrites) refusedPayloadRef.current = null;
         reconciler.receiveParent(doc, meta);
         publishResolvedPair();
       },
@@ -638,7 +685,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // of silently leaving the sheet stuck on "loading".
         console.error("Character subscription error", err);
         quarantine(err.message);
-      }
+      },
+      tooNew
     );
 
     // Live listener on the `combat/state` subdoc — hydrate the trio into the
@@ -648,6 +696,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       characterId,
       (combat, meta) => {
         if (quarantined) return;
+        lastPendingRef.current.child = meta.hasPendingWrites;
         if (combat === null) {
           quarantine("Invalid character document: missing-combat-state");
           return;
@@ -675,7 +724,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         if (quarantined) return;
         console.error("Combat-state subscription error", err);
         quarantine(err.message);
-      }
+      },
+      tooNew
     );
 
     const unsubscribeSpends = subscribePeerSpends(
@@ -814,6 +864,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
               // store already carries the REAL error message from `runWrite`, so the
               // sheet stays in `SaveStatus="error"` meanwhile.
               if (!isCompareAndSetConflict(error)) return;
+              // #1320 — hold the refused edit until the next snapshot says whether a
+              // newer shape caused the refusal (then it is the rescue copy).
+              refusedPayloadRef.current = sent;
               // The rules refused this generation (a revision conflict, a permission
               // change): drop the local payload and republish what the server holds.
               reconcilerRef.current?.rejectParentWrite(sent);

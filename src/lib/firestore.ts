@@ -4,6 +4,7 @@
  */
 
 import { writesFenced } from "@/lib/shape-gate";
+import { characterShapeTooNew } from "@/lib/shape-numbers";
 import {
   collection,
   doc,
@@ -531,7 +532,10 @@ export function subscribeToCharacter(
   uid: string,
   charId: string,
   callback: (doc: CharacterDoc | null, meta: { hasPendingWrites: boolean }) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  /** #1320 — the stored parent has a newer `schema` than this client knows: it is
+   *  never parsed (an old parser must not read a newer shape). */
+  onTooNew?: (meta: { hasPendingWrites: boolean }) => void
 ): () => void {
   let token = 0;
   let cancelled = false;
@@ -547,6 +551,10 @@ export function subscribeToCharacter(
       const meta = { hasPendingWrites: snap.metadata.hasPendingWrites };
       if (!snap.exists()) {
         callback(null, meta);
+        return;
+      }
+      if (characterShapeTooNew(snap.data())) {
+        onTooNew?.(meta);
         return;
       }
       void parseStoredCharacter(snap.id, snap.data())

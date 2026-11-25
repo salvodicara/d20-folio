@@ -11,7 +11,7 @@
  */
 
 /** What happened to this tab's unsaved edits when the gate closed. */
-export type RescueOutcome = "kept" | "failed" | "none";
+export type RescueOutcome = "saving" | "kept" | "failed" | "none";
 export type ShapeGateState = { closed: false } | { closed: true; rescue: RescueOutcome };
 
 let state: ShapeGateState = { closed: false };
@@ -28,6 +28,13 @@ export function shapeGateState(): ShapeGateState {
 export function closeShapeGate(outcome: { rescue: RescueOutcome }): void {
   if (state.closed) return;
   state = { closed: true, rescue: outcome.rescue };
+  for (const listener of listeners) listener();
+}
+
+/** The rescue copy finished writing (only a gate still "saving" moves). */
+export function settleShapeGateRescue(outcome: "kept" | "failed"): void {
+  if (!state.closed || state.rescue !== "saving") return;
+  state = { closed: true, rescue: outcome };
   for (const listener of listeners) listener();
 }
 

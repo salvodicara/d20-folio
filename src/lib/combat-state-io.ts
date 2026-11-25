@@ -50,6 +50,7 @@
  * snapshots stay testable without touching Firebase.
  */
 import { writesFenced } from "@/lib/shape-gate";
+import { playShapeTooNew } from "@/lib/shape-numbers";
 import {
   arrayRemove,
   arrayUnion,
@@ -162,7 +163,9 @@ export function subscribeCombatState(
   uid: string,
   charId: string,
   cb: (state: CombatState | null, meta: { hasPendingWrites: boolean }) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  /** #1320 — the stored play document has a newer `playState.version`: never parsed. */
+  onTooNew?: (meta: { hasPendingWrites: boolean }) => void
 ): () => void {
   if (devBypassEnabled()) {
     return subscribeDevDocument<Record<string, unknown>>(
@@ -198,6 +201,10 @@ export function subscribeCombatState(
       // reads it so a snapshot-leg undo never clobbers another writer's edit.
       if (!snap.exists()) {
         cb(null, { hasPendingWrites: snap.metadata.hasPendingWrites });
+        return;
+      }
+      if (playShapeTooNew(snap.data())) {
+        onTooNew?.({ hasPendingWrites: snap.metadata.hasPendingWrites });
         return;
       }
       const parsed = parseCombatState(snap.data());

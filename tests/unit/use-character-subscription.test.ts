@@ -336,7 +336,8 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
       "u1",
       "char1",
       expect.any(Function),
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(Function) // #1320: the too-new signal
     );
   });
 
@@ -507,7 +508,8 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
       "u1",
       "char1",
       expect.any(Function),
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(Function) // #1320: the too-new signal
     );
   });
 
@@ -1257,5 +1259,112 @@ describe("useCharacterSubscription — the build save leaves when the page is hi
     setVisibility("hidden");
     expect(debouncedFlush).toHaveBeenCalledTimes(1);
     setVisibility("visible");
+  });
+});
+
+// ─── #1320 — a newer shape on the server closes the gate and rescues local edits ───
+import {
+  resetShapeGateForTests as resetGate1320,
+  shapeGateState as gate1320,
+  writesFenced as fenced1320,
+} from "@/lib/shape-gate";
+import { readRescueCopy as readRescue1320 } from "@/lib/local-draft";
+
+function tooNewCb(
+  which: "parent" | "combat"
+): (meta: { hasPendingWrites: boolean }) => void {
+  const calls =
+    which === "parent" ? subscribeMock.mock.calls : combatSubscribeMock.mock.calls;
+  const cb = (calls.at(-1) as unknown[] | undefined)?.[4] as
+    | ((meta: { hasPendingWrites: boolean }) => void)
+    | undefined;
+  if (!cb) throw new Error(`${which} too-new callback not captured`);
+  return cb;
+}
+
+async function settleRescue(): Promise<void> {
+  await act(async () => {
+    for (
+      let i = 0;
+      i < 20 &&
+      gate1320().closed &&
+      (gate1320() as { rescue: string }).rescue === "saving";
+      i++
+    )
+      await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+}
+
+describe("useCharacterSubscription — the shape gate (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("no local edit: the gate closes, writes stop, nothing is kept", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(fenced1320()).toBe(true);
+    expect(gate1320()).toEqual({ closed: true, rescue: "none" });
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a pending build edit is kept as the rescue copy", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "kept edit" },
+      })
+    );
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    const copy = readRescue1320("u1", "char1", Date.now());
+    expect(JSON.stringify(copy?.build)).toContain("kept edit");
+  });
+
+  it("a tab reopened with writes still queued (the last snapshot was pending) keeps them", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const offline = {
+      ...doc(),
+      character: { ...doc().character, quote: "offline edit" },
+    };
+    act(() => {
+      snapshotCb({ hasPendingWrites: true })(offline);
+      combatCb({ hasPendingWrites: true })(sessionToCombatState(offline.session));
+    });
+    act(() => tooNewCb("combat")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "offline edit"
+    );
+  });
+
+  it("a refusal before the newer snapshot: the refused payload is still kept", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "refused edit" },
+      })
+    );
+    const [sent, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    act(() =>
+      callbacks?.onRejected?.(sent as CharacterDoc, { code: "permission-denied" })
+    );
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "refused edit"
+    );
   });
 });
