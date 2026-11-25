@@ -77,6 +77,24 @@ export function wildShapeFormsOwed(doc: CharacterDoc): number {
 }
 
 /**
+ * What a Druid reaching `level` may learn: the eligible beasts at that level it
+ * doesn't know, and how many (the count minus the known forms still eligible).
+ */
+export function wildShapeFormsAt(
+  doc: CharacterDoc,
+  level: number
+): { owed: number; options: ReadonlyArray<BeastStatBlock> } {
+  const known = new Set(storedWildShapeForms(doc));
+  const eligible = eligibleWildShapeForms(doc, level);
+  const held = eligible.filter((b) => known.has(b.id)).length;
+  const options = eligible.filter((b) => !known.has(b.id));
+  return {
+    owed: Math.max(0, Math.min(knownFormsAt(level) - held, options.length)),
+    options,
+  };
+}
+
+/**
  * The character with `ids` learned: each eligible form not yet known, after the known
  * ones, never past the count at `level` (the Druid level by default).
  */
