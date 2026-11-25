@@ -93,15 +93,182 @@ export function clearLevelUpDraft(uid: string, characterId: string): void {
   remove(levelUpKey(uid, characterId));
 }
 
+// ─── The rescue copy (#1320) ─────────────────────────────────────────────────
+
+/**
+ * A sheet's unsaved local document, kept on this device when the server holds a newer
+ * shape (a migration ran while this tab had edits the server will refuse). Stored in
+ * the shape this client wrote (`schema`, `playVersion`): after the reload the new
+ * client upgrades it through each shape step, then offers «Apply / Discard».
+ */
+export interface RescueCopy {
+  /** Which part was unsaved: the build only (a refused or traced build save — its play
+   *  state is not newer than the server's), or the whole sheet (unsaved play edits too).
+   *  Absent reads as "all" (the copy holds a whole sheet). */
+  part?: "build" | "all";
+  savedAt: number;
+  schema: number;
+  playVersion: number;
+  build: Record<string, unknown>;
+  state: Record<string, unknown>;
+}
+
+/** A rescue copy is offered for 30 days, then dropped. */
+export const RESCUE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const rescuePrefix = (uid: string) => `folio.rescue.${uid}.`;
+const rescueKey = (uid: string, characterId: string) =>
+  `${rescuePrefix(uid)}${characterId}`;
+
+function isRescueCopy(value: unknown): value is RescueCopy {
+  if (typeof value !== "object" || value === null) return false;
+  const c = value as Record<string, unknown>;
+  return (
+    typeof c.savedAt === "number" &&
+    typeof c.schema === "number" &&
+    typeof c.playVersion === "number" &&
+    typeof c.build === "object" &&
+    c.build !== null &&
+    typeof c.state === "object" &&
+    c.state !== null
+  );
+}
+
+/** Keep the copy. Returns whether it was REALLY written: a caller may only tell the
+ *  player "your changes are kept on this device" on `true`. */
+export function keepRescueCopy(
+  uid: string,
+  characterId: string,
+  copy: RescueCopy
+): boolean {
+  try {
+    localStorage.setItem(
+      rescueKey(uid, characterId),
+      JSON.stringify({ v: VERSION, draft: copy })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The character's rescue copy, or null (none, malformed, or older than 30 days, which
+ *  is then removed). */
+export function readRescueCopy(
+  uid: string,
+  characterId: string,
+  now: number
+): RescueCopy | null {
+  const stored = read(rescueKey(uid, characterId));
+  if (!isRescueCopy(stored)) return null;
+  if (now - stored.savedAt > RESCUE_TTL_MS) {
+    remove(rescueKey(uid, characterId));
+    return null;
+  }
+  return stored;
+}
+
+export function dropRescueCopy(uid: string, characterId: string): void {
+  remove(rescueKey(uid, characterId));
+}
+
+/**
+ * The last build save that left this tab and has not been acknowledged yet (#1320).
+ * Firestore keeps its own offline queue, but a tab that opens again ONLINE sends that
+ * queue before any listener can see it: if the server refuses it (a newer shape), the
+ * edit is gone without a trace. This copy is the trace. Written when a build save
+ * leaves, removed when the server acknowledges it or a stored sheet at or past its
+ * generation shows it landed; the shape gate rescues it.
+ */
+export interface UnackedSave {
+  character: unknown;
+  session: unknown;
+  /** The generation it was sent at: a stored sheet at or past it has taken it. */
+  revision: number;
+  /** When it was sent (compared with the play trace's time). */
+  at?: number;
+}
+const unackedPrefix = (uid: string) => `folio.unacked.${uid}.`;
+const unackedKey = (uid: string, characterId: string) =>
+  `${unackedPrefix(uid)}${characterId}`;
+
+export function keepUnackedSave(
+  uid: string,
+  characterId: string,
+  save: UnackedSave
+): void {
+  write(unackedKey(uid, characterId), save);
+}
+
+export function readUnackedSave(uid: string, characterId: string): UnackedSave | null {
+  const stored = read(unackedKey(uid, characterId));
+  if (typeof stored !== "object" || stored === null) return null;
+  const s = stored as Record<string, unknown>;
+  return "character" in s && "session" in s && typeof s.revision === "number"
+    ? {
+        character: s.character,
+        session: s.session,
+        revision: s.revision,
+        ...(typeof s.at === "number" ? { at: s.at } : {}),
+      }
+    : null;
+}
+
+export function dropUnackedSave(uid: string, characterId: string): void {
+  remove(unackedKey(uid, characterId));
+}
+
+/**
+ * The last PLAY write that left this tab and has not been acknowledged yet (#1320):
+ * the whole sheet at that moment (play edits are whole-sheet facts). Same reason as
+ * {@link UnackedSave}: a reopened tab sends the queued play patch before any listener
+ * sees it, and after a play-shape migration the fence refuses it. Removed when the
+ * write is acknowledged, or when a server play state equal to it shows it landed.
+ */
+export interface UnackedPlay {
+  character: unknown;
+  session: unknown;
+  /** When it was sent (the later of the two traces is the newer sheet). */
+  at: number;
+}
+const unackedPlayPrefix = (uid: string) => `folio.unackedPlay.${uid}.`;
+const unackedPlayKey = (uid: string, characterId: string) =>
+  `${unackedPlayPrefix(uid)}${characterId}`;
+
+export function keepUnackedPlay(
+  uid: string,
+  characterId: string,
+  play: UnackedPlay
+): void {
+  write(unackedPlayKey(uid, characterId), play);
+}
+
+export function readUnackedPlay(uid: string, characterId: string): UnackedPlay | null {
+  const stored = read(unackedPlayKey(uid, characterId));
+  if (typeof stored !== "object" || stored === null) return null;
+  const s = stored as Record<string, unknown>;
+  return "character" in s && "session" in s && typeof s.at === "number"
+    ? { character: s.character, session: s.session, at: s.at }
+    : null;
+}
+
+export function dropUnackedPlay(uid: string, characterId: string): void {
+  remove(unackedPlayKey(uid, characterId));
+}
+
 /** Sign-out: every draft of this account, and no other's. */
 export function clearAccountDrafts(uid: string): void {
   clearCreationDraft(uid);
   try {
-    const prefix = levelUpPrefix(uid);
+    const prefixes = [
+      levelUpPrefix(uid),
+      rescuePrefix(uid),
+      unackedPrefix(uid),
+      unackedPlayPrefix(uid),
+    ];
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith(prefix)) keys.push(key);
+      if (key && prefixes.some((prefix) => key.startsWith(prefix))) keys.push(key);
     }
     for (const key of keys) localStorage.removeItem(key);
   } catch {

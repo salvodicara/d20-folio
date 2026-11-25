@@ -18,6 +18,7 @@
     "button": "History",
     "saving": "Saving…",
     "saveNow": "Save snapshot",
-    "saveError": "Could not save snapshot."
+    "saveError": "Could not save snapshot.",
+    "reasonRescue": "Before applying kept changes"
   }
 }

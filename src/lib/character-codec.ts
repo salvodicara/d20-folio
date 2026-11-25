@@ -50,6 +50,7 @@
  * use it.
  */
 
+import { CHARACTER_SCHEMA } from "@/lib/shape-numbers";
 import type {
   CharacterDoc,
   CharacterData,
@@ -897,7 +898,7 @@ export function validateCharacterData(data: unknown): string | null {
 // ════════════════════════════════════════════════════════════════════════════
 
 /** Integer schema version; the reader migrates anything `<=` its own version. */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = CHARACTER_SCHEMA;
 
 /** The 11 lore fields, in their canonical order. */
 const LORE_KEYS: ReadonlyArray<keyof CharacterLore> = [
