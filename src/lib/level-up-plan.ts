@@ -190,6 +190,7 @@ export function levelUpPlan(
   })();
   const maneuversNeeded = newManeuversAtLevel(newClassLevel);
   const canSwapSpell = classTable?.canSwapSpell === true;
+  const canSwapCantrip = classTable?.canSwapCantrip === true;
   // For a NEW class's first level there is no previous row: the baseline is 0,
   // so a first level in a caster class asks for its full L1 spell loadout.
   const prevSpellsKnown = isNewClass ? 0 : prevLevelData?.spellsKnown;
@@ -414,6 +415,7 @@ export function levelUpPlan(
     needsManeuvers,
     maneuversNeeded,
     canSwapSpell,
+    canSwapCantrip,
     prevSpellsKnown,
     prevCantripsKnown,
     spellsKnownDiff,
