@@ -11,7 +11,8 @@
       "saving": "Keeping your unsaved changes on this device…",
       "kept": "Your unsaved changes are kept on this device. After the reload you can apply them to your sheet.",
       "failed": "Your unsaved changes could not be kept on this device. Don't close this tab: write down what you changed, then reload.",
-      "notReady": "Your sheet is already in the new format, but the app update hasn't arrived yet. Try again in a minute."
+      "notReady": "Your sheet is already in the new format, but the app update hasn't arrived yet. Try again in a minute.",
+      "notReadyKept": "Your sheet is already in the new format, but the app update hasn't arrived yet. Your unsaved changes are still kept on this device. Try again in a minute."
     },
     "rescue": {
       "label": "Unsaved changes",

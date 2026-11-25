@@ -10,7 +10,8 @@
  * yet» instead of looping. Pattern source: the «a new version is available — reload»
  * dialogs of Google Docs and Figma, in our worked-bronze modal.
  */
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,15 +60,31 @@ export function ShapeGateScreen({
   const state = useSyncExternalStore(subscribeShapeGate, shapeGateState, shapeGateState);
   // Read once, when the page starts: our own reload marks itself just before it.
   const [afterOurReload] = useState(() => reloadedRecently(Date.now()));
+  // Nothing behind the screen takes input: every write is fenced, so an edit typed
+  // there would silently go nowhere. The screen itself renders outside the app root.
+  useEffect(() => {
+    if (!state.closed) return;
+    const root = document.getElementById("root");
+    root?.setAttribute("inert", "");
+    return () => root?.removeAttribute("inert");
+  }, [state.closed]);
   if (!state.closed) return null;
-  const notReady = state.rescue === "none" && afterOurReload;
+  // Our own reload found the sheet still newer than the app: the update has not
+  // arrived. A copy kept by the first pass is still on the device; say so.
+  const notReady = afterOurReload && (state.rescue === "none" || state.rescue === "kept");
   const title = t(notReady ? "pwa.shapeGate.notReadyTitle" : "pwa.shapeGate.title");
-  const body = t(notReady ? "pwa.shapeGate.notReady" : `pwa.shapeGate.${state.rescue}`);
+  const body = t(
+    notReady
+      ? state.rescue === "kept"
+        ? "pwa.shapeGate.notReadyKept"
+        : "pwa.shapeGate.notReady"
+      : `pwa.shapeGate.${state.rescue}`
+  );
   const onReload = (): void => {
     markReload(Date.now());
     void reload();
   };
-  return (
+  return createPortal(
     <div className="wb scrim" data-html2canvas-ignore="true">
       <div
         role="alertdialog"
@@ -93,6 +110,7 @@ export function ShapeGateScreen({
           </Button>
         </ModalFoot>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -10,16 +10,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   snapshots: [] as unknown[],
   replaced: [] as unknown[],
+  offline: false,
 }));
 vi.mock("@/lib/firebase", () => ({}));
 vi.mock("@/lib/firestore", () => ({
   saveCharacterSnapshot: (_uid: string, _id: string, data: unknown) => {
     h.snapshots.push(data);
-    return Promise.resolve("snap-1");
+    // Offline, a write settles only when the server answers: never, here.
+    return h.offline ? new Promise(() => {}) : Promise.resolve("snap-1");
   },
   replaceCharacterState: (...args: unknown[]) => {
     h.replaced.push(args);
-    return Promise.resolve();
+    return h.offline ? new Promise(() => {}) : Promise.resolve();
   },
 }));
 
@@ -58,6 +60,7 @@ beforeEach(() => {
   localStorage.clear();
   h.snapshots.length = 0;
   h.replaced.length = 0;
+  h.offline = false;
 });
 
 describe("the upgrade seam", () => {
@@ -160,5 +163,20 @@ describe("a build-only copy never touches the play state", () => {
     const shown = useCharacterStore.getState().character;
     expect(shown?.character.quote).toBe("build only edit");
     expect(shown?.session).toEqual(server.session);
+  });
+});
+
+describe("Apply offline", () => {
+  it("queues the snapshot then the sheet and returns at once (the writes wait in order)", async () => {
+    h.offline = true;
+    const copy = copyOf("offline apply");
+    keepRescueCopy("u1", "c1", copy);
+    const outcome = await Promise.race([
+      applyRescueCopy("u1", server, copy),
+      new Promise((resolve) => setTimeout(() => resolve("hung"), 3_000)),
+    ]);
+    expect(outcome).toBe("applied");
+    expect(h.snapshots).toHaveLength(1);
+    expect(h.replaced).toHaveLength(1);
   });
 });

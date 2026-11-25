@@ -91,3 +91,34 @@ describe("the shape gate screen", () => {
     expect(sessionStorage.getItem("folio.shapeReloadAt")).not.toBeNull();
   });
 });
+
+describe("the second pass with a kept copy", () => {
+  beforeEach(() => {
+    resetShapeGateForTests();
+    sessionStorage.clear();
+  });
+
+  it("says «not ready yet» and that the changes are still kept", () => {
+    sessionStorage.setItem("folio.shapeReloadAt", String(Date.now()));
+    render(<ShapeGateScreen reload={reload} />);
+    act(() => closeShapeGate({ rescue: "kept" }));
+    const dialog = screen.getByRole("alertdialog", { name: /isn.t ready yet/i });
+    expect(dialog).toHaveTextContent(/still kept on this device/i);
+  });
+});
+
+describe("nothing behind the screen takes input", () => {
+  beforeEach(() => resetShapeGateForTests());
+
+  it("the app root goes inert while the gate is closed; the dialog is outside it", () => {
+    const root = document.createElement("div");
+    root.id = "root";
+    document.body.appendChild(root);
+    render(<ShapeGateScreen reload={reload} />, { container: root });
+    expect(root.hasAttribute("inert")).toBe(false);
+    act(() => closeShapeGate({ rescue: "none" }));
+    expect(root.hasAttribute("inert")).toBe(true);
+    expect(root.contains(screen.getByRole("alertdialog"))).toBe(false);
+    root.remove();
+  });
+});

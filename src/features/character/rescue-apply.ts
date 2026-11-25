@@ -62,6 +62,9 @@ export function upgradeRescueCopy(
 
 export type ApplyOutcome = "applied" | "unreadable";
 
+/** How long Apply waits for the snapshot's acknowledgement before going on. */
+const SNAPSHOT_WAIT_MS = 2_000;
+
 export async function applyRescueCopy(
   uid: string,
   current: CharacterDoc,
@@ -72,11 +75,19 @@ export async function applyRescueCopy(
   const { parseCharacterEnvelope } = await import("@/lib/character-codec");
   const parsed = parseCharacterEnvelope(envelope.build, envelope.state);
   if (!parsed.ok) return "unreadable";
-  await saveCharacterSnapshot(uid, current.id, {
+  // Snapshot first, so Apply can be undone. Offline, a write settles only when the
+  // server answers, so wait for its acknowledgement at most a moment: by then it is in
+  // Firestore's ordered queue, ahead of the sheet's own write.
+  const snapshot = saveCharacterSnapshot(uid, current.id, {
     character: current.character,
     session: current.session,
     reason: "rescue",
   });
+  snapshot.catch(() => undefined);
+  await Promise.race([
+    snapshot,
+    new Promise((resolve) => setTimeout(resolve, SNAPSHOT_WAIT_MS)),
+  ]);
   if (copy.part === "build") {
     // Only the build was unsaved: the server's play state is the newer one. The kept
     // build goes out through the ordinary parent save (the sheet hook sends it).
@@ -95,14 +106,16 @@ export async function applyRescueCopy(
   };
   useCharacterStore.getState().setCharacter(after);
   useUndoStore.getState().clear();
-  await replaceCharacterState(
+  // Queued, not awaited: offline it lands when the device is back (the save badge
+  // says so), and the snapshot above is ahead of it in the queue.
+  replaceCharacterState(
     uid,
     current.id,
     after.character,
     after.session,
     current.revision,
     current
-  );
+  ).catch(() => undefined);
   dropRescueCopy(uid, current.id);
   dropUnackedSave(uid, current.id);
   return "applied";
