@@ -93,15 +93,89 @@ export function clearLevelUpDraft(uid: string, characterId: string): void {
   remove(levelUpKey(uid, characterId));
 }
 
+// ─── The rescue copy (#1320) ─────────────────────────────────────────────────
+
+/**
+ * A sheet's unsaved local document, kept on this device when the server holds a newer
+ * shape (a migration ran while this tab had edits the server will refuse). Stored in
+ * the shape this client wrote (`schema`, `playVersion`): after the reload the new
+ * client upgrades it through each shape step, then offers «Apply / Discard».
+ */
+export interface RescueCopy {
+  savedAt: number;
+  schema: number;
+  playVersion: number;
+  build: Record<string, unknown>;
+  state: Record<string, unknown>;
+}
+
+/** A rescue copy is offered for 30 days, then dropped. */
+export const RESCUE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const rescuePrefix = (uid: string) => `folio.rescue.${uid}.`;
+const rescueKey = (uid: string, characterId: string) =>
+  `${rescuePrefix(uid)}${characterId}`;
+
+function isRescueCopy(value: unknown): value is RescueCopy {
+  if (typeof value !== "object" || value === null) return false;
+  const c = value as Record<string, unknown>;
+  return (
+    typeof c.savedAt === "number" &&
+    typeof c.schema === "number" &&
+    typeof c.playVersion === "number" &&
+    typeof c.build === "object" &&
+    c.build !== null &&
+    typeof c.state === "object" &&
+    c.state !== null
+  );
+}
+
+/** Keep the copy. Returns whether it was REALLY written: a caller may only tell the
+ *  player "your changes are kept on this device" on `true`. */
+export function keepRescueCopy(
+  uid: string,
+  characterId: string,
+  copy: RescueCopy
+): boolean {
+  try {
+    localStorage.setItem(
+      rescueKey(uid, characterId),
+      JSON.stringify({ v: VERSION, draft: copy })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The character's rescue copy, or null (none, malformed, or older than 30 days, which
+ *  is then removed). */
+export function readRescueCopy(
+  uid: string,
+  characterId: string,
+  now: number
+): RescueCopy | null {
+  const stored = read(rescueKey(uid, characterId));
+  if (!isRescueCopy(stored)) return null;
+  if (now - stored.savedAt > RESCUE_TTL_MS) {
+    remove(rescueKey(uid, characterId));
+    return null;
+  }
+  return stored;
+}
+
+export function dropRescueCopy(uid: string, characterId: string): void {
+  remove(rescueKey(uid, characterId));
+}
+
 /** Sign-out: every draft of this account, and no other's. */
 export function clearAccountDrafts(uid: string): void {
   clearCreationDraft(uid);
   try {
-    const prefix = levelUpPrefix(uid);
+    const prefixes = [levelUpPrefix(uid), rescuePrefix(uid)];
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key?.startsWith(prefix)) keys.push(key);
+      if (key && prefixes.some((prefix) => key.startsWith(prefix))) keys.push(key);
     }
     for (const key of keys) localStorage.removeItem(key);
   } catch {
