@@ -31,6 +31,7 @@ import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { HelpedCheck } from "@/domains/combat/ui/HelpedCheck";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
+import { PlaySnapshots } from "@/domains/play/ui/PlaySnapshots";
 import { PlayTime } from "@/domains/play/ui/PlayTime";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { useAttachedCampaign } from "@/domains/play/use-attached-campaign";
@@ -38,6 +39,7 @@ import { ItemResourceCommandProvider } from "@/features/character/center/ItemRes
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useSheetCombat } from "@/features/character/center/turn-state";
 import { useFormActions } from "@/features/character/center/tabs/spells/use-form-actions";
+import { useSheetExport } from "@/features/character/center/use-sheet-export";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
@@ -61,6 +63,7 @@ import {
   type IconName,
   Menu,
   PhoneBar,
+  type PageMenuAction,
   usePageMenuActions,
   useShellMenu,
   StatBadge,
@@ -146,11 +149,43 @@ export function PlaySheet({
     doc && doc.id === characterId && !readonly && totalLevel(doc.character) < 20
       ? () => void navigate(`/characters/${doc.id}/level-up`)
       : null;
-  usePageMenuActions(
-    levelUp
-      ? [{ label: t("levelUp.screen.levelUp"), icon: "g-create", onSelect: levelUp }]
-      : []
-  );
+  // the owner's sheet tools, after «Sali di livello» (D&D Beyond's sheet menu: backups,
+  // export): its saved copies, and the sheet as a PDF or a file
+  const uid = useAuthStore((st) => st.user?.uid);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
+  const sheetExport = useSheetExport();
+  const owner = !!doc && doc.id === characterId && !readonly && !!uid;
+  const sheetActions: PageMenuAction[] = [
+    ...(levelUp
+      ? [
+          {
+            label: t("levelUp.screen.levelUp"),
+            icon: "g-create" as const,
+            onSelect: levelUp,
+          },
+        ]
+      : []),
+    ...(owner
+      ? [
+          {
+            label: t("snapshots.title"),
+            icon: "u-time" as const,
+            onSelect: () => setSnapshotsOpen(true),
+          },
+          {
+            label: t("roster.exportPdf"),
+            icon: "u-export" as const,
+            onSelect: () => void sheetExport.exportPdf(),
+          },
+          {
+            label: t("roster.exportJson"),
+            icon: "u-download" as const,
+            onSelect: () => void sheetExport.exportJson(),
+          },
+        ]
+      : []),
+  ];
+  usePageMenuActions(sheetActions);
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -247,7 +282,7 @@ export function PlaySheet({
         locale={locale}
         campaign={campaign}
         rests={rests}
-        onLevelUp={levelUp}
+        actions={sheetActions}
       />
       {/* an XP table that reached the next level: the note, its one action */}
       {levelUp && view.levelUpCue === "xp-ready" && (
@@ -278,6 +313,15 @@ export function PlaySheet({
           <PlayPrompts locale={locale} />
           {passing && (
             <PlayTime doc={doc} locale={locale} onClose={() => setPassing(false)} />
+          )}
+          {uid && !readonly && snapshotsOpen && (
+            <PlaySnapshots
+              uid={uid}
+              doc={doc}
+              locale={locale}
+              open
+              onClose={() => setSnapshotsOpen(false)}
+            />
           )}
           {resting && (
             <PlayRest
@@ -332,14 +376,15 @@ function PlayHeader({
   locale,
   campaign,
   rests,
-  onLevelUp,
+  actions,
 }: {
   doc: CharacterDoc;
   view: PlayHeaderView;
   locale: Locale;
   campaign: CampaignDoc | null;
   rests: ReactNode;
-  onLevelUp: (() => void) | null;
+  /** the character's other actions (the same list the phone's shell menu shows) */
+  actions: PageMenuAction[];
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
@@ -548,8 +593,9 @@ function PlayHeader({
           onClose={() => setNumberOpen(null)}
         />
       )}
-      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
-      {onLevelUp && (
+      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di
+          livello», the saved copies, the sheet as a PDF or a file */}
+      {actions.length > 0 && (
         <>
           <button
             type="button"
@@ -562,17 +608,20 @@ function PlayHeader({
             <Icon name="u-more" />
           </button>
           <Menu open={moreOpen} onClose={() => setMoreOpen(false)} title={view.name}>
-            <button
-              type="button"
-              className="f-menu-it"
-              onClick={() => {
-                setMoreOpen(false);
-                onLevelUp();
-              }}
-            >
-              <Icon name="g-create" />
-              {t("levelUp.screen.levelUp")}
-            </button>
+            {actions.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                className="f-menu-it"
+                onClick={() => {
+                  setMoreOpen(false);
+                  a.onSelect();
+                }}
+              >
+                <Icon name={a.icon} />
+                {a.label}
+              </button>
+            ))}
           </Menu>
         </>
       )}
