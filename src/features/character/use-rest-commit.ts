@@ -6,6 +6,7 @@
  * (rest-world-boundary.ts), applies a Short Rest's heal and its spent Hit Point Dice,
  * and ends the current fight. A rest is the undo stack's fence: it is not undone.
  */
+import { reportClockNotMoved } from "@/features/character/clock-notice";
 import { clockFor } from "@/lib/play/clock";
 import { campaignsRead, campaignsReadSoon } from "@/features/campaigns/context-settled";
 import { useRef, useState } from "react";
@@ -13,7 +14,6 @@ import { useTranslation } from "react-i18next";
 
 import { canCharacterRest } from "@/lib/character-status";
 import { effectiveMaxHp } from "@/lib/aggregate-character";
-import { diagnosticsLog } from "@/lib/diagnostics";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
@@ -111,11 +111,7 @@ export function useRestCommit() {
     updateSession({ clockSeen: clock.minute + minutes });
     void import("@/features/campaigns/clock-io")
       .then(({ stepCampaignClock }) => stepCampaignClock(clock.campaignId, minutes, uid))
-      .catch((error: unknown) =>
-        diagnosticsLog("warn", "play.campaign-clock-write-failed", {
-          message: String(error),
-        })
-      );
+      .catch(reportClockNotMoved);
   }
 
   /** A Short Rest healing `healedHp` (the entered roll + CON per die, 0 without

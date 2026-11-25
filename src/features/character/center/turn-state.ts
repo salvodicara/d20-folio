@@ -28,6 +28,7 @@
 import { useMemo } from "react";
 import { useCombatStore } from "@/stores/combatStore";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useToastStore } from "@/stores/toastStore";
 import {
   useGlobalCombat,
   useCombatStatusStore,
@@ -137,6 +138,11 @@ export function advanceSharedTurn(
       // one case the live snapshot can't (a failed transaction emits no reconciling snapshot).
       useCombatStatusStore.getState().clearPendingTurn();
       console.error("Turn-advance write failed", e);
+      // #1277: say it, instead of a console line only — the turn is still the player's.
+      useToastStore.getState().showToast({
+        intent: { kind: "turn-not-ended", offline: !navigator.onLine },
+        duration: 8000,
+      });
     });
 }
 

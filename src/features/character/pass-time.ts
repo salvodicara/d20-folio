@@ -8,7 +8,7 @@
  * written on the campaign, the sheet marks the minute it has caught up to, and the
  * undo takes the step back as well.
  */
-import { diagnosticsLog } from "@/lib/diagnostics";
+import { reportClockNotMoved } from "@/features/character/clock-notice";
 import { docAtClock, MAX_CLOCK_STEP } from "@/lib/play/campaign-clock";
 import { clockFor } from "@/lib/play/clock";
 import { timePassEndsConcentration } from "@/lib/play/time";
@@ -87,7 +87,7 @@ async function moveCampaignClock(
 }
 
 function clockWriteFailed(error: unknown): void {
-  diagnosticsLog("warn", "play.campaign-clock-write-failed", { message: String(error) });
+  reportClockNotMoved(error);
 }
 
 /**

@@ -671,6 +671,10 @@
     "rerollFailureToast": "{{name}}: Concentrazione interrotta (totale {{total}})",
     "attackResult": "Esito",
     "rerollOffers": "Ritira il tiro salvezza fallito",
-    "targetStillLoading": "Quel personaggio si sta ancora caricando: riprova tra un attimo."
+    "targetStillLoading": "Quel personaggio si sta ancora caricando: riprova tra un attimo.",
+    "turnNotEndedOffline": "Sei offline: per finire il turno serve la rete. Il turno è ancora tuo; riprova quando torni online.",
+    "turnNotEnded": "Non sono riuscito a finire il turno: è ancora tuo. Riprova.",
+    "clockNotMovedOffline": "Sei offline: il riposo è salvato sulla scheda, ma l'orologio della campagna non è avanzato.",
+    "clockNotMoved": "Il riposo è salvato sulla scheda, ma l'orologio della campagna non è avanzato."
   }
 }

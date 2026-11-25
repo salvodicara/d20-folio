@@ -23,7 +23,7 @@ export type { ToastIntent };
 
 /** The i18n key each intent kind localizes through. */
 const TOAST_INTENT_KEY: Record<
-  Exclude<ToastIntent["kind"], "defense-removed">,
+  Exclude<ToastIntent["kind"], "defense-removed" | "turn-not-ended" | "clock-not-moved">,
   string
 > = {
   "edit-not-saved": "save.editNotSaved",
@@ -88,6 +88,11 @@ export function localizeToastIntent(
         : t(`srd.damage_${intent.defenseId}`);
     return t(DEFENSE_REMOVED_KEY[intent.defenseKind], { name });
   }
+  // #1277: the shared fight and the campaign clock need the network; say which.
+  if (intent.kind === "turn-not-ended")
+    return t(intent.offline ? "combat.turnNotEndedOffline" : "combat.turnNotEnded");
+  if (intent.kind === "clock-not-moved")
+    return t(intent.offline ? "combat.clockNotMovedOffline" : "combat.clockNotMoved");
   const key = TOAST_INTENT_KEY[intent.kind];
   switch (intent.kind) {
     case "concentration-dropped":
