@@ -209,11 +209,20 @@ service cloud.firestore {
         && request.resource.data.revision == 0
         && parentStateEmptyAfter()
         && publicSheetMatchesAfter();
+      // The shape fence (#1320): after a migration raises `schema`, an old tab still
+      // writes the old number; refuse it rather than let the old shape overwrite the
+      // migrated build. A parent with no number yet is never fenced.
+      function schemaNeverLowers() {
+        return !('schema' in resource.data)
+          || (('schema' in request.resource.data)
+              && request.resource.data.schema >= resource.data.schema);
+      }
       allow update: if isNotBlocked()
         && ((request.auth.uid == uid && revisionAdvancesWithBuild())
             || isCampaignDmDetach())
         && parentStateEmptyAfter()
-        && publicSheetMatchesAfter();
+        && publicSheetMatchesAfter()
+        && schemaNeverLowers();
       allow delete: if isNotBlocked()
         && request.auth.uid == uid
         && !existsAfter(/databases/$(database)/documents/users/$(uid)/characters/$(charId)/public/sheet);
@@ -419,11 +428,21 @@ service cloud.firestore {
         || (hasAttachedCampaign() && isAttachedPeer())
       );
       allow create: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
+      // The shape fence (#1320) for the play document: `playState.version` never goes
+      // down. A document with no version yet is never fenced.
+      function playVersionNeverLowers() {
+        return !('playState' in resource.data)
+          || !('version' in resource.data.playState)
+          || (('playState' in request.resource.data)
+              && ('version' in request.resource.data.playState)
+              && request.resource.data.playState.version
+                >= resource.data.playState.version);
+      }
       allow update: if isNotBlocked() && (
         request.auth.uid == uid
         || isAdmin()
         || (isAttachedPeer() && peerEffectUpdate())
-      );
+      ) && playVersionNeverLowers();
       allow delete: if isNotBlocked() && (request.auth.uid == uid || isAdmin());
     }
 
