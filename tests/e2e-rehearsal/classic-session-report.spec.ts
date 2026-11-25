@@ -41,6 +41,7 @@ import {
   UPCAST_SPELL,
   type ReportSection,
 } from "./session-report";
+import { newestJournalEvening } from "./session-report-2";
 import { visibleWithin } from "../e2e/visible-within";
 
 const errors: string[][] = [];
@@ -76,15 +77,17 @@ async function currentHp(page: Page): Promise<number> {
   return Number(name.match(/^(\d+) of/)?.[1] ?? Number.NaN);
 }
 
-/** The evening's report in the hub's Journal: the newest sitting of the day is the
- *  last «Automatic report» of the day's row. Opens it and reads its sections. */
+/** The evening's report in the hub's Journal: the newest sitting is the last «Automatic
+ *  report» of the newest evening's row (not of the page: #1222). Opens it and reads its
+ *  sections. */
 async function journalReport(dm: Page): Promise<ReportSection[]> {
   await dm.goto(`/campaigns/${SANDBOX_CAMPAIGN}`);
   await dm.getByRole("tab", { name: "Journal" }).click();
-  const toggle = dm.getByRole("button", { name: /^Automatic report/ }).last();
+  const evening = newestJournalEvening(dm);
+  const toggle = evening.getByRole("button", { name: /^Automatic report/ }).last();
   await expect(toggle).toBeVisible({ timeout: 30_000 });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  const body = dm.locator(".sess-report-body").last();
+  const body = evening.locator(".sess-report-body").last();
   await expect(body).toBeVisible();
   const raw = await body.evaluate((root) => {
     const out: Array<{ heading: string; lines: string[] }> = [];

@@ -66,7 +66,11 @@ import { useTurnEconomy } from "./useTurnEconomy";
 import { endSoloWorldEncounter } from "./solo-world-turn";
 import { useTurnState, useSheetCombat } from "./turn-state";
 import { rollTargetOf, type RollTarget } from "@/features/campaigns/context-settled";
-import { partyKnownSoon } from "@/features/campaigns/party-roster";
+import {
+  END_TURN_WAITING,
+  partyKnownSoon,
+  usePartyRosterStore,
+} from "@/features/campaigns/party-roster";
 import { useAuthStore } from "@/stores/authStore";
 import { MovementSlider } from "./MovementSlider";
 import {
@@ -142,6 +146,8 @@ export function ThisTurnTracker({
   // `phase: "solo"`. One round shown, never a private counter that can drift (the cured
   // "round 6, 7, 8…" bug). The seam's static graph is Firebase-free (turn-state.ts).
   const { round, phase, currentActorName } = useTurnState();
+  // End Turn waits for this character's fight to reach the sheet: the button is busy.
+  const endTurnWaiting = usePartyRosterStore((s) => s.castWaiting === END_TURN_WAITING);
   const inEncounter = phase !== "solo";
   // C3 — once the DM begins turns (the encounter order is frozen — phase `my-turn`/`waiting`)
   // a PC's initiative LOCKS: the sheet's roll widget goes read-only, matching the encounter
@@ -907,7 +913,8 @@ export function ThisTurnTracker({
         <button
           className="endturn"
           onClick={handleEndTurn}
-          disabled={endTurnInert}
+          disabled={endTurnInert || endTurnWaiting}
+          aria-busy={endTurnWaiting || undefined}
           aria-label={
             endTurnInert && currentActorName
               ? t("combat.waitingForActor", { actor: currentActorName })

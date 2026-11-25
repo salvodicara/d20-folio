@@ -95,7 +95,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import { END_TURN_WAITING, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
@@ -710,6 +710,8 @@ function TurnStrip({
   const solo = useSoloTurn(locale);
   const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
+  // End Turn waits for this character's fight to reach the sheet: the button is busy.
+  const endTurnWaiting = usePartyRosterStore((s) => s.castWaiting === END_TURN_WAITING);
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
   const rollOffer = readonly
     ? null
@@ -771,7 +773,13 @@ function TurnStrip({
           ))}
         </ul>
         {fight && (phase === "my-turn" || phase === "solo") && (
-          <Button kind="primary" icon="u-next" data-end-turn="" onClick={handleEndTurn}>
+          <Button
+            kind="primary"
+            icon="u-next"
+            data-end-turn=""
+            busy={endTurnWaiting}
+            onClick={handleEndTurn}
+          >
             {t("play.endTurn")}
           </Button>
         )}

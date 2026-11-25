@@ -61,9 +61,12 @@ import { prefetchLikelyRoutes } from "./route-prefetch";
 // DEV-ONLY (remove before release): the act-as-member sandbox dock. Behind
 // `import.meta.env.DEV` (statically false in prod) so the import is dead-code-eliminated.
 import { DevActAsDock } from "./shell/DevActAsDock";
+import { useCampaignReader } from "@/features/campaigns/campaign-reader";
 
 export function AppShell() {
   const { t } = useTranslation();
+  // This shell always renders the lazy campaign reader (`GlobalCombatMount`).
+  useCampaignReader(true);
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteEverOpened, setPaletteEverOpened] = useState(false);
   if (paletteOpen && !paletteEverOpened) setPaletteEverOpened(true);

@@ -14,6 +14,7 @@
 
 import { SRD_WEAPONS } from "@/data/weapons";
 import { getClassTable } from "@/data/classes";
+import { isWeaponProficient } from "@/lib/compute";
 import type { SrdEquipmentData } from "@/data/types";
 import type { CharacterData } from "@/types/character";
 
@@ -97,10 +98,23 @@ export function weaponMasteryCount(
 /**
  * All SRD weapons that carry a Mastery property (Topple, Push, Cleave,
  * Vex, Slow, Sap, Graze, Nick — the 2024 mastery properties), sorted by
- * SRD id. These are the only valid picks for Weapon Mastery.
+ * SRD id. With a class, only the ones that class may pick (SRD 5.2.1): weapons it is
+ * proficient with (a Rogue: Simple, and Martial with Finesse or Light), and Melee
+ * ones only for a class that says so (Barbarian).
  */
-export function listMasterableWeapons(): SrdEquipmentData[] {
-  return SRD_WEAPONS.filter((w) => typeof w.mastery === "string").sort((a, b) =>
-    a.id.localeCompare(b.id)
-  );
+export function listMasterableWeapons(classId?: string): SrdEquipmentData[] {
+  const table = classId ? getClassTable(classId) : undefined;
+  return SRD_WEAPONS.filter(
+    (w) =>
+      typeof w.mastery === "string" &&
+      (!table ||
+        (isWeaponProficient(
+          w.weaponCategory,
+          w.id,
+          w.weaponType,
+          w.properties ?? [],
+          table.weaponProficiencies
+        ) &&
+          (!table.weaponMasteryMeleeOnly || w.weaponType === "melee")))
+  ).sort((a, b) => a.id.localeCompare(b.id));
 }

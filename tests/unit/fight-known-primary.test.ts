@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({}));
 
-import { fightKnown, rollTargetOf } from "@/features/campaigns/context-settled";
+import { fightContext, rollTargetOf } from "@/features/campaigns/context-settled";
 import {
   useCombatStatusStore,
   type GlobalCombat,
@@ -31,18 +31,23 @@ const statusFor = (characterId: string, campaignId: string) =>
   ({ characterId, campaignId, initiativeRoll: 12 }) as unknown as GlobalCombat;
 
 afterEach(() => {
-  usePartyRosterStore.setState({ party: null, resolvedFor: null, castWaiting: null });
+  usePartyRosterStore.setState({
+    party: null,
+    resolvedFor: null,
+    castWaiting: null,
+    readerMounted: false,
+  });
   useCombatStatusStore.setState({ status: null, pip: null });
 });
 
-describe("fightKnown with two fights on one account", () => {
-  it("a character in the non-primary fight is known: no live status will come for it", () => {
+describe("fightContext with two fights on one account", () => {
+  it("a character in the non-primary fight is settled: no live status will come for it", () => {
     usePartyRosterStore.getState().setParty(null, "B");
     useCombatStatusStore.setState({
       pip: { primaryId: "camp-A", entries: [entry("camp-A", "A"), entry("camp-B", "B")] },
       status: statusFor("A", "camp-A"),
     });
-    expect(fightKnown("B")).toBe(true);
+    expect(fightContext("B")).toBe("settled");
   });
 
   it("a character in the primary fight still waits for its status (#1191)", () => {
@@ -51,7 +56,7 @@ describe("fightKnown with two fights on one account", () => {
       pip: { primaryId: "camp-A", entries: [entry("camp-A", "A"), entry("camp-B", "B")] },
       status: null,
     });
-    expect(fightKnown("A")).toBe(false);
+    expect(fightContext("A")).toBe("pending");
   });
 
   it("an initiative roll still goes to the campaign whose fight lists the character", () => {

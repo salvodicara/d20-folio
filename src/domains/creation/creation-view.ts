@@ -24,6 +24,7 @@ import type { IconName } from "@/ui/icon-names";
 import { ALL_SKILLS, skillNameToId } from "@/lib/skills";
 import { SRD_TOOLS_2024 } from "@/lib/tools";
 import { listAvailableForLanguageSlot } from "@/lib/feat-language-choices";
+import { expertiseSlotOptions } from "@/lib/feat-expertise-choices";
 import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import type { ChoicePicks, FeatureChoiceSlots } from "@/lib/feature-choices";
 import { byLevelThenName, spellPickVM } from "@/lib/views/spell-pick-view";
@@ -221,13 +222,22 @@ export interface ChoiceSlotRow {
 
 /**
  * Every slot in `slots` as a row of options: the slot's own pool (an empty skill
- * pool is any skill), minus what the build already owns (`ownedSkills`,
- * `ownedSpells`) unless it is this slot's own pick.
+ * pool is any skill), minus what the build already owns unless it is this slot's
+ * own pick. An Expertise slot offers proficient skills within its own list (Wizard
+ * Scholar's six) that lack Expertise (`owned.expert`); a language slot offers
+ * languages not already known (`owned.languages`).
  */
 export function choiceSlotRows(
   slots: FeatureChoiceSlots,
   picks: ChoicePicks,
-  owned: { skills: ReadonlySet<string>; spells: ReadonlySet<string> },
+  owned: {
+    skills: ReadonlySet<string>;
+    spells: ReadonlySet<string>;
+    /** Skills that already have Expertise. */
+    expert?: ReadonlySet<string>;
+    /** Languages already known. */
+    languages?: ReadonlySet<string>;
+  },
   locale: Locale
 ): ChoiceSlotRow[] {
   const t = i18n.getFixedT(locale);
@@ -277,7 +287,9 @@ export function choiceSlotRows(
       title: t("featChoices.pickExpertise", { count: slot.amount }),
       amount: slot.amount,
       picked,
-      options: [...owned.skills].map(skill),
+      options: expertiseSlotOptions(slot, owned.skills)
+        .filter(free(picked, owned.expert ?? new Set()))
+        .map(skill),
     });
   }
   for (const slot of slots.tool) {
@@ -302,10 +314,12 @@ export function choiceSlotRows(
       title: t("featChoices.pickLanguages", { count: slot.amount }),
       amount: slot.amount,
       picked: picks.language[slot.slotId] ?? [],
-      options: listAvailableForLanguageSlot(slot).map((id) => ({
-        id,
-        label: localizeSrd("language", id, "name", locale),
-      })),
+      options: listAvailableForLanguageSlot(slot)
+        .filter(free(picks.language[slot.slotId] ?? [], owned.languages ?? new Set()))
+        .map((id) => ({
+          id,
+          label: localizeSrd("language", id, "name", locale),
+        })),
     });
   }
   for (const slot of slots.spell) {
