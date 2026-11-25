@@ -3,7 +3,7 @@
  * Collection path: /users/{uid}/characters/{charId}
  */
 
-import { writesFenced } from "@/lib/shape-gate";
+import { closeShapeGate, writesFenced } from "@/lib/shape-gate";
 import { characterShapeTooNew } from "@/lib/shape-numbers";
 import {
   collection,
@@ -554,7 +554,10 @@ export function subscribeToCharacter(
         return;
       }
       if (characterShapeTooNew(snap.data())) {
-        onTooNew?.(meta);
+        // A reader with no handler of its own (a DM's view of a member) must not go
+        // silent: this client stops writing and asks for a reload.
+        if (onTooNew) onTooNew(meta);
+        else closeShapeGate({ rescue: "none" });
         return;
       }
       void parseStoredCharacter(snap.id, snap.data())

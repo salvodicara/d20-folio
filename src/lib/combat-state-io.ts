@@ -49,7 +49,7 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
-import { writesFenced } from "@/lib/shape-gate";
+import { closeShapeGate, writesFenced } from "@/lib/shape-gate";
 import { PLAY_STATE_VERSION, playShapeTooNew } from "@/lib/shape-numbers";
 import {
   arrayRemove,
@@ -204,7 +204,9 @@ export function subscribeCombatState(
         return;
       }
       if (playShapeTooNew(snap.data())) {
-        onTooNew?.({ hasPendingWrites: snap.metadata.hasPendingWrites });
+        // A reader with no handler of its own must not go silent (see firestore.ts).
+        if (onTooNew) onTooNew({ hasPendingWrites: snap.metadata.hasPendingWrites });
+        else closeShapeGate({ rescue: "none" });
         return;
       }
       const parsed = parseCombatState(snap.data());
