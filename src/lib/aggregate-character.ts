@@ -62,6 +62,7 @@ import {
   type RawBreakdownPart,
 } from "@/lib/value-breakdown";
 import { srdText } from "@/lib/loc-text";
+import { perLevelGrantClass } from "@/lib/srd-feature-lookup";
 import { ruleParts, type RuleOrigin } from "@/lib/rules";
 import { getEquipment } from "@/data/equipment";
 import type { AbilityCode } from "@/data/types";
@@ -534,7 +535,7 @@ export function effectiveAC(
  * `features[]` ref) is folded in identically to {@link hpPerLevelGrantBonus}, so a
  * fresh L1+ Tough character's by-the-book max already includes it.
  *
- * NOTE: `hp-flat` grants (Draconic Resilience +3, Boon of Fortitude +40, a standing
+ * NOTE: `hp-flat` grants (Boon of Fortitude +40, a standing
  * Aid buff) are DELIBERATELY excluded here — they are NOT baked into the stored
  * `hp.max` (level-up only bakes core die+CON + `hp-per-level`), so they are the LIVE
  * transient deltas {@link effectiveMaxHp} folds on top of the stored base instead
@@ -554,7 +555,13 @@ function hpPerLevelGrantParts(
     for (const g of src.grants ?? []) {
       const label = srdText(src.ref.kind, src.ref.key, "name");
       if (g.type === "hp-per-level" && g.amount !== 0) {
-        parts.push(locPart(label, g.amount * level));
+        // A class feature counts its class's levels, anything else every level (#1316).
+        const classId = perLevelGrantClass(src.id);
+        const levels =
+          classId === null
+            ? level
+            : (getClasses(character).find((e) => e.classId === classId)?.level ?? 0);
+        parts.push(locPart(label, g.amount * levels));
       }
     }
   }
@@ -692,7 +699,7 @@ export function computeCharacterMaxHpBreakdown(
   const conTotal = contributions.reduce((sum, c) => sum + c.con, 0);
   if (conTotal !== 0) parts.push(abilityPart("CON", conTotal));
   // The named PER-LEVEL HP-grant rows (Tough / Dwarven Toughness / Draconic / items).
-  // `hp-flat` grants (Draconic Resilience +3, Boon of Fortitude +40) are NOT here —
+  // `hp-flat` grants (Boon of Fortitude +40, a standing Aid) are NOT here —
   // they are the live deltas {@link effectiveMaxHp} adds on top (rule 6).
   parts.push(...hpPerLevelGrantParts(character, level));
   return parts;
@@ -770,7 +777,7 @@ export function computedInitiativeBreakdown(
  * Why a derivation, not a stored value (rule 6 — one source): `hp.max` IS the
  * derived base ({@link deriveMaxHp}: die + CON + `hp-per-level` grants + the player's
  * max-HP inputs, #1315), which every writer re-derives and a reload derives too.
- * The `hp-flat` boons (Draconic Resilience +3, Boon of Fortitude +40, an attuned
+ * The `hp-flat` boons (Boon of Fortitude +40, an attuned
  * hp-flat item) AND a standing Aid (`hp-flat:5` inside the spell's `while-active`
  * grant — lit only while its toggle is on) are the LIVE transient deltas that are
  * NEVER baked into stored max, so folding `agg.hpFlat` on read is the single correct
@@ -804,7 +811,7 @@ export { bloodiedFromHp } from "@/lib/hp-band";
 /**
  * The per-source {@link RawBreakdownPart}s of a character's EFFECTIVE max HP for the
  * breakdown tip: the by-the-book base rows ({@link computeCharacterMaxHpBreakdown})
- * PLUS each LIVE `hp-flat` boon/item/spell row — Draconic Resilience +3, Boon of
+ * PLUS each LIVE `hp-flat` boon/item/spell row — Boon of
  * Fortitude +40, an attuned hp-flat item, and a standing Aid (its `hp-flat:5` inside
  * the spell's `while-active` grant, present iff the toggle is lit). These rows are
  * MAPPED from `agg.hpFlatParts` (the attribution stamped at the SAME seam `hpFlat`

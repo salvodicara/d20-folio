@@ -319,14 +319,10 @@ export const SORCERER_FEATURES: SrdClassFeatureData[] = [
         bonuses: ["DEX", "CHA"],
         condition: "no-armor",
       },
-      // Per-level HP grant (+1 HP per Sorcerer level).
+      // "+3, then +1 whenever you gain another Sorcerer level" is +1 per Sorcerer
+      // level: the feature arrives at Sorcerer 3. A class feature's per-level
+      // grant counts its class's levels (#1316), so no separate one-shot +3.
       { type: "hp-per-level", amount: 1 },
-      // 2024 RAW (draconic-sorcery, Draconic Resilience): "Your Hit Point
-      // maximum increases by 3, and it increases by 1 whenever you gain another
-      // Sorcerer level." The +3 acquisition bonus is a one-shot flat HP grant
-      // (the hp-flat grant kind exists precisely for this — it was previously a
-      // manual note).
-      { type: "hp-flat", amount: 3 },
     ],
     source: "SRD",
   },
