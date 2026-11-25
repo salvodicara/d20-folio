@@ -78,6 +78,8 @@ export function Dialog({
       ref={ref}
       className="f-dlg"
       data-c={color}
+      // a screen reader names the pane by its title
+      aria-label={typeof title === "string" ? title : undefined}
       onClose={onClose}
       onCancel={onClose}
     >

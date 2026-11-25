@@ -30,7 +30,12 @@ const createCharacter = vi.fn<(uid: string, doc: unknown) => Promise<string>>(()
   Promise.resolve("new-id")
 );
 vi.mock("@/lib/firestore", () => ({
-  createCharacter: (uid: string, doc: unknown) => createCharacter(uid, doc),
+  // Offline (#1283): the id comes back at once, the server never answers.
+  queueCreateCharacter: (uid: string, doc: unknown) =>
+    Promise.resolve(createCharacter(uid, doc)).then((id) => ({
+      id: typeof id === "string" ? id : "new-id",
+      written: new Promise<void>(() => undefined),
+    })),
 }));
 // The UI's entropy source, replaced by a fixed cycle so a Randomize tap is
 // reproducible here; the roll itself is exercised across many seeds by

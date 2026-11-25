@@ -670,6 +670,7 @@
     "rerollSuccessToast": "{{name}}: Concentrazione mantenuta (totale {{total}})",
     "rerollFailureToast": "{{name}}: Concentrazione interrotta (totale {{total}})",
     "attackResult": "Esito",
-    "rerollOffers": "Ritira il tiro salvezza fallito"
+    "rerollOffers": "Ritira il tiro salvezza fallito",
+    "targetStillLoading": "Quel personaggio si sta ancora caricando: riprova tra un attimo."
   }
 }

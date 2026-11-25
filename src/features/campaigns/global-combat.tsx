@@ -579,10 +579,12 @@ export function GlobalCombatMount(): null {
       return;
     }
     const scope = `${primaryId}:${live.encounter.epoch}`;
+    // `liveUnknown` rides along: a placeholder HP is never a fall (#1306).
     const rows: IncapacitationRow[] = live.view.rows.map((row) => ({
       id: row.id,
       currentHp: row.currentHp,
       conditions: row.conditions,
+      ...(row.liveUnknown ? { liveUnknown: true as const } : {}),
     }));
     const before =
       observedRows.current?.scope === scope ? observedRows.current.rows : null;
@@ -606,6 +608,7 @@ export function GlobalCombatMount(): null {
         currentHp: row.currentHp,
         tempHp: row.tempHp,
         conditions: row.conditions,
+        ...(row.liveUnknown ? { liveUnknown: true as const } : {}),
       })),
       currentCombatantId: live.encounter.currentCombatantId,
       // Who dealt each hit, so "only damage from you or your allies" can tell.

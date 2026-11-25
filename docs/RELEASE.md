@@ -76,6 +76,10 @@ initiative.
   on Node 24, requires all six healthy, then deploys Hosting plus Firestore/Storage rules and requires
   SAFE-01 armed. `just deploy` only verifies that the clean checkout equals `origin/main` and dispatches
   this workflow; it never calls Firebase locally.
+- **The new interface is not a deploy choice** (#1233): every build ships both interfaces, the
+  classic one by default, and each player switches from Settings («Prova la nuova interfaccia»),
+  stored as `users/{uid}.newUi`. `VITE_NEW_UI=1` forces the new one for everyone and is used only
+  by the preview server and the rehearsal; `deploy.yml` builds with `"0"`.
 
 If the SHA's Verify run was superseded (cancelled by a newer merge) or the content pack moved
 after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml --ref main`.
