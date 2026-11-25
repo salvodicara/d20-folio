@@ -54,6 +54,9 @@ export interface CreationChoiceInput {
   level: number;
   /** The chosen subclass id, or "" when none is due yet. */
   subclassId: string;
+  /** The chosen option of each build bundle (Divine Order → "thaumaturge"): an
+   *  option's own choices (its extra cantrip) are owed too. */
+  bundleChoices?: Readonly<Record<string, string>>;
   backgroundId: string;
   /** The Human Versatile origin feat ("" when not Human / not yet picked). */
   humanFeat: string;
@@ -104,7 +107,9 @@ export function creationChoiceSlots(input: CreationChoiceInput): FeatureChoiceSl
     ...resolveGrantSourcesForFeatures(refs),
     ...species,
   ];
-  return collectChoiceSlots(sources, {
-    spellSlotsByClass: { [input.classId]: slotRow },
-  });
+  return collectChoiceSlots(
+    sources,
+    { spellSlotsByClass: { [input.classId]: slotRow } },
+    input.bundleChoices
+  );
 }

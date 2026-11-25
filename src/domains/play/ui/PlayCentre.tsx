@@ -707,11 +707,16 @@ function TurnStrip({
   const markCountered = useMarkCountered(locale);
   const counterable = readonly ? [] : counterableCasts(doc.session.logEntries);
   const fight = useSheetCombat();
-  const solo = useSoloTurn(locale);
-  const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
   // End Turn waits for this character's fight to reach the sheet: the button is busy.
   const endTurnWaiting = usePartyRosterStore((s) => s.castWaiting === END_TURN_WAITING);
+  // A campaign fight's End Turn asks first, then passes the turn the classic way.
+  const solo = useSoloTurn(locale, {
+    passTurn: handleEndTurn,
+    passing: endTurnWaiting,
+    inCampaign: Boolean(campaign || fight),
+  });
+  const { round, phase, currentActorName } = useTurnState();
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
   const rollOffer = readonly
     ? null
@@ -772,18 +777,8 @@ function TurnStrip({
             </li>
           ))}
         </ul>
-        {fight && (phase === "my-turn" || phase === "solo") && (
-          <Button
-            kind="primary"
-            icon="u-next"
-            data-end-turn=""
-            busy={endTurnWaiting}
-            onClick={handleEndTurn}
-          >
-            {t("play.endTurn")}
-          </Button>
-        )}
-        {!fight && !campaign && solo.controls}
+        {/* solo: the whole fight; a campaign fight: my turn's End Turn and «Rialzati» */}
+        {solo.controls}
         {/* whose turn it is has rolled already: «Fine turno» is the strip's one action */}
         {rollOffer && campaign && !(fight && phase === "my-turn") && (
           <Button
@@ -820,7 +815,7 @@ function TurnStrip({
       {((solo.active && !campaign) || (fight && phase === "my-turn")) && (
         <PlayTurnStart doc={doc} round={fight ? round : solo.round} locale={locale} />
       )}
-      {!fight && !campaign && solo.notes}
+      {solo.notes}
       <ReadiedNote locale={locale} />
       {!fight && <AfterHitNote locale={locale} />}
       {/* A slot cast this turn may be marked countered: its slot comes back (M12). */}

@@ -121,6 +121,7 @@ export const WARLOCK_TABLE: SrdClassTable = {
   // hid the prep toggle + over-cap warning from every Warlock player.
   spellcasting: { ability: "CHA", preparedCaster: true },
   canSwapSpell: true,
+  canSwapCantrip: true,
   subclassLevel: 3,
   subclassSpellLevels: [3, 5, 7, 9],
   subclasses: [

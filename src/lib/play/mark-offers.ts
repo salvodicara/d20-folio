@@ -25,7 +25,7 @@ export interface MarkOffer {
   targetId: string;
 }
 
-type Row = Pick<IncapacitationRow, "id" | "currentHp">;
+type Row = Pick<IncapacitationRow, "id" | "currentHp" | "liveUnknown">;
 
 /**
  * The move-the-mark offers raised between two looks at the fight: a creature that
@@ -41,8 +41,13 @@ export function markDropOffers(
   myId: string
 ): MarkOffer[] {
   if (!before) return [];
-  const hadHp = new Set(before.filter((r) => r.currentHp > 0).map((r) => r.id));
-  const dropped = after.filter((r) => r.currentHp === 0 && hadHp.has(r.id));
+  // Missing = unknown, never 0 (#1306): an unloaded row neither had HP nor dropped.
+  const hadHp = new Set(
+    before.filter((r) => !r.liveUnknown && r.currentHp > 0).map((r) => r.id)
+  );
+  const dropped = after.filter(
+    (r) => !r.liveUnknown && r.currentHp === 0 && hadHp.has(r.id)
+  );
   if (dropped.length === 0) return [];
   const marks = foldCombatEffectOps(effectOps).filter(
     (e) => e.payload.kind === "target-mark" && e.actor.combatantId === myId
