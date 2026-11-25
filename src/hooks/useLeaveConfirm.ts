@@ -51,6 +51,8 @@ export function useLeaveConfirm(
         message,
         confirmLabel: t("common.discard"),
         cancelLabel: t("common.continue"),
+        // leaving throws the choices away: the danger action, never the bright one
+        tone: "danger",
       })
       .then((ok) => {
         confirmingRef.current = false;

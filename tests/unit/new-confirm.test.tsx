@@ -33,6 +33,7 @@ const ask = () => {
         message: "Lost.",
         confirmLabel: "Discard",
         cancelLabel: "Continue",
+        tone: "danger",
       })
       .then((v) => (answer = v));
   });
@@ -50,7 +51,9 @@ describe("NewConfirm", () => {
     const answer = ask();
     expect(screen.getAllByText("Lost.")).toHaveLength(1);
     expect(screen.getByRole("dialog").classList.contains("f-dlg")).toBe(true);
-    fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+    const discard = screen.getByRole("button", { name: "Discard" });
+    expect(discard.getAttribute("data-kind")).toBe("danger");
+    fireEvent.click(discard);
     await act(async () => Promise.resolve());
     expect(answer()).toBe(true);
   });

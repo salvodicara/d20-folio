@@ -69,7 +69,10 @@ describe("useLeaveConfirm", () => {
   it("a touched screen asks; «Continue» stays", async () => {
     const router = mount(true);
     await click("away");
-    expect(useConfirmStore.getState().options?.title).toBe("Leave?");
+    expect(useConfirmStore.getState().options).toMatchObject({
+      title: "Leave?",
+      tone: "danger",
+    });
     await answer(false);
     expect(router.state.location.pathname).toBe("/here");
   });
