@@ -12,8 +12,10 @@
  * Apply mirrors the level-up ceremony: snapshot the current sheet first (so Apply can
  * be undone from the history), show the result, drop the undo stack, and write once
  * through the whole-sheet writer (revision + the shared sheet's public projection).
- * It replaces BOTH the build and the play state with what the player had on this
- * device; the snapshot holds what the server had.
+ * A whole-sheet copy (unsaved play edits too) replaces BOTH the build and the play
+ * state with what the player had on this device; a build-only copy sets just the build
+ * and keeps the server's play state (newer than the copy's). The snapshot holds what
+ * the server had either way.
  */
 import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
 import { dropRescueCopy, dropUnackedSave, type RescueCopy } from "@/lib/local-draft";
@@ -75,6 +77,17 @@ export async function applyRescueCopy(
     session: current.session,
     reason: "rescue",
   });
+  if (copy.part === "build") {
+    // Only the build was unsaved: the server's play state is the newer one. The kept
+    // build goes out through the ordinary parent save (the sheet hook sends it).
+    useCharacterStore
+      .getState()
+      .setCharacter({ ...current, character: parsed.character });
+    useUndoStore.getState().clear();
+    dropRescueCopy(uid, current.id);
+    dropUnackedSave(uid, current.id);
+    return "applied";
+  }
   const after: CharacterDoc = {
     ...current,
     character: parsed.character,

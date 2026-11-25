@@ -678,6 +678,11 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         ({ serializeCharacterEnvelope }) => {
           const envelope = serializeCharacterEnvelope(local);
           const kept = keepRescueCopy(user.uid, characterId, {
+            // Unsaved play edits only exist when the play document had writes pending.
+            part:
+              reconciliation.childPending || lastPendingRef.current.child
+                ? "all"
+                : "build",
             savedAt: Date.now(),
             schema: CHARACTER_SCHEMA,
             playVersion: PLAY_STATE_VERSION,

@@ -102,6 +102,10 @@ export function clearLevelUpDraft(uid: string, characterId: string): void {
  * client upgrades it through each shape step, then offers «Apply / Discard».
  */
 export interface RescueCopy {
+  /** Which part was unsaved: the build only (a refused or traced build save — its play
+   *  state is not newer than the server's), or the whole sheet (unsaved play edits too).
+   *  Absent reads as "all" (the copy holds a whole sheet). */
+  part?: "build" | "all";
   savedAt: number;
   schema: number;
   playVersion: number;

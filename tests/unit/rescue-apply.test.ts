@@ -147,3 +147,18 @@ describe("Apply and Discard retire the edit trace too", () => {
     expect(readUnackedSave("u1", "c1")).toBeNull();
   });
 });
+
+describe("a build-only copy never touches the play state", () => {
+  it("Apply sets the kept build, keeps the server's play state, and writes no whole sheet", async () => {
+    const { useCharacterStore } = await import("@/stores/characterStore");
+    useCharacterStore.setState({ character: server, readonly: false });
+    const copy = { ...copyOf("build only edit"), part: "build" as const };
+    keepRescueCopy("u1", "c1", copy);
+    expect(await applyRescueCopy("u1", server, copy)).toBe("applied");
+    expect(h.snapshots).toHaveLength(1);
+    expect(h.replaced).toHaveLength(0);
+    const shown = useCharacterStore.getState().character;
+    expect(shown?.character.quote).toBe("build only edit");
+    expect(shown?.session).toEqual(server.session);
+  });
+});

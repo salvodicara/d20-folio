@@ -1514,3 +1514,37 @@ describe("useCharacterSubscription — the trace is retired once kept (#1320)", 
     expect(readUnackedSave("u1", "char1")).toBeNull();
   });
 });
+
+describe("useCharacterSubscription — the copy records what was unsaved (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a build edit alone is a build-only copy", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "build part" },
+      })
+    );
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(readRescue1320("u1", "char1", Date.now())?.part).toBe("build");
+  });
+
+  it("queued play writes make it a whole-sheet copy", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const offline = doc();
+    act(() => {
+      snapshotCb({ hasPendingWrites: true })(offline);
+      combatCb({ hasPendingWrites: true })(sessionToCombatState(offline.session));
+    });
+    act(() => tooNewCb("combat")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(readRescue1320("u1", "char1", Date.now())?.part).toBe("all");
+  });
+});
