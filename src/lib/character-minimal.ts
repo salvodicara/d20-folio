@@ -47,6 +47,7 @@ import { effectiveAlwaysPreparedEntries } from "@/lib/expanded-spells";
 import { getClasses, primaryClassEntry } from "@/lib/classes";
 import { computeMulticlassSpellSlots } from "@/lib/multiclass-slots";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
+import { computeCharacterMaxHp } from "@/lib/aggregate-character";
 
 /**
  * A minimized character: a subset of `CharacterData` with derivable + default-valued
@@ -125,13 +126,19 @@ const DERIVABLE: DerivableField[] = [
   { key: "proficiencyBonusOverride", derive: () => null },
   { key: "humanOriginFeat", derive: () => "" },
   { key: "backgroundAsi", derive: () => ({}) },
-  // `hp.max` is the standard average for the class breakdown — drops + re-infers
-  // when it matches; a rolled value or HP-feat total (Tough) DEVIATES and is kept.
-  {
-    key: "hp",
-    derive: (classes, c) => ({ max: inferHpMax(classes, c.abilityScores.CON) }),
-  },
+  // `hp.max` is the by-the-book max (average hit dice + CON + per-level HP grants
+  // such as Tough or Dwarven Toughness) — drops + re-infers when it matches; a
+  // rolled or hand-set value DEVIATES and is kept. The stored `build` never carries
+  // `hp`, so this derive IS the reloaded max: it must include the grants. It reads
+  // `features[]`, so `rehydrateCharacter` runs it after the features merge.
+  { key: "hp", derive: (classes, c) => ({ max: byTheBookMaxHp(classes, c) }) },
 ];
+
+/** The by-the-book max HP, or the bare class average when the engine can't compose it. */
+function byTheBookMaxHp(classes: ClassEntry[], c: CharacterData): number {
+  const average = inferHpMax(classes, c.abilityScores.CON);
+  return computeCharacterMaxHp({ ...c, classes, hp: { max: average } });
+}
 
 /** The primary (highest-level, ties → first) entry of a non-empty classes array. */
 function primaryEntry(classes: ClassEntry[]): ClassEntry {
@@ -483,6 +490,7 @@ export function rehydrateCharacter(min: MinimalCharacter): CharacterData {
   const characterView = c as unknown as CharacterData;
 
   for (const f of DERIVABLE) {
+    if (f.key === "hp") continue; // reads the merged features[] — refilled below
     if (c[f.key] === undefined) c[f.key] = f.derive(classes, characterView);
   }
   // `speed` re-derive ALSO covers the EMPTY-STRING case (the SRD-free read seam
@@ -592,6 +600,8 @@ export function rehydrateCharacter(min: MinimalCharacter): CharacterData {
   // minimizer omits an empty `skills` map; default it back so a minimized doc and
   // its full source rehydrate to the identical choices-only shape.
   if (c.skills === undefined) c.skills = {};
+  // The by-the-book max HP reads the per-level HP grants off the MERGED features[].
+  if (c.hp === undefined) c.hp = { max: byTheBookMaxHp(classes, characterView) };
   // Override-safety: neutralize any non-finite override so a garbage value can never
   // poison a derived stat (homebrew finite values pass through untouched).
   sanitizeOverrides(c);
