@@ -34,11 +34,6 @@ on:
         type: boolean
         required: false
         default: false
-      new_ui:
-        description: "Ship the new UI (VITE_NEW_UI) instead of today's sheet. The owner's decision at deploy time."
-        type: boolean
-        required: false
-        default: false
 
 permissions:
   contents: read
@@ -156,10 +151,12 @@ jobs:
       # - the v0.26.0 combat-effect writers (a feature's state on its target, a zone, a
       #   condition's save DC, #708/#710) need the effect rules this same deploy releases
       #   BEFORE Hosting, so they are on as well;
-      # - the new UI is the owner's call at deploy time (the `new_ui` input).
+      # - the new UI is off as a build flag: every build ships both interfaces and each
+      #   player opts in from Settings (#1233). VITE_NEW_UI=1 forces it for everyone, so
+      #   production never sets it.
       VITE_PEER_SPENDS_LEDGER: "true"
       VITE_COMBAT_EFFECTS_V26: "true"
-      VITE_NEW_UI: ${{ inputs.new_ui && '1' || '0' }}
+      VITE_NEW_UI: "0"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 

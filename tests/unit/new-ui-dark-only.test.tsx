@@ -4,10 +4,11 @@
  * light token leaks into its screens. The classic build keeps the player's choice.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useUIStore } from "@/stores/uiStore";
+import { setNewUiFrame, useUIStore } from "@/stores/uiStore";
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  setNewUiFrame(false);
 });
 
 function themeAfter(newUi: boolean, theme: "light" | "system") {
@@ -24,5 +25,16 @@ describe("new UI theme", () => {
 
   it("the classic UI still follows the choice", () => {
     expect(themeAfter(false, "light")).toBe("light");
+  });
+
+  // #1233: the new interface is a per-player choice, so the frame says it at run time.
+  it("a player who turns the new interface on gets dark at once, and their theme back when off", () => {
+    expect(themeAfter(false, "light")).toBe("light");
+    setNewUiFrame(true);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    useUIStore.getState().setTheme("light");
+    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
+    setNewUiFrame(false);
+    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
   });
 });

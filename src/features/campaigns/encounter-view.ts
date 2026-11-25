@@ -209,7 +209,8 @@ export function buildEncounterView(
         name: live?.name ?? "",
         ac: live?.ac ?? 0,
         initiative: live?.initiative ?? null,
-        initiativeBonus: live?.initiativeBonus ?? 0,
+        // Unknown until the PC's live data loads: never a made-up 0 (rehearsal 10-sheet-initiative, 2026-11-25).
+        initiativeBonus: live?.initiativeBonus,
         initiativeRoll: live?.initiativeRoll ?? null,
         conditions: [...new Set([...(live?.conditions ?? []), ...projectedConditions])],
         bardicInspirationDie: live?.bardicInspirationDie,

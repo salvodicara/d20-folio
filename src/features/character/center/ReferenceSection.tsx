@@ -53,7 +53,7 @@ export function ReferenceSection({
         }}
       />
       <div className="section-detail-wrap" data-open={open || undefined}>
-        <div className="section-detail" id={bodyId}>
+        <div className="section-detail" id={bodyId} inert={!open}>
           {children}
         </div>
       </div>

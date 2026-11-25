@@ -179,8 +179,24 @@ export function collectGrantBundles(
 
 export function collectChoiceSlots(
   sources: ReadonlyArray<GrantSource>,
-  ctx?: SpellChoiceCtx
+  ctx?: SpellChoiceCtx,
+  /** The chosen option of each `choice-grant-bundle` (bundleKey → option id): the
+   *  chosen option's own choices are owed too (Thaumaturge's extra cantrip). */
+  bundleChoices?: Readonly<Record<string, string>>
 ): FeatureChoiceSlots {
+  if (bundleChoices) {
+    sources = sources.flatMap((src) => [
+      src,
+      ...(src.grants ?? []).flatMap((g) => {
+        if (g.type !== "choice-grant-bundle") return [];
+        const optionId = bundleChoices[g.bundleKey];
+        const option = g.options.find((o) => o.id === optionId);
+        return option
+          ? [{ ...src, id: `${src.id}:${option.id}`, grants: option.grants }]
+          : [];
+      }),
+    ]);
+  }
   const out: FeatureChoiceSlots = {
     skill: [],
     tool: [],
