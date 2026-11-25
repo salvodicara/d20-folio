@@ -106,7 +106,7 @@ export function ShapeGateScreen({
         <ModalFoot>
           <Button onClick={onReload} disabled={state.rescue === "saving"} autoFocus>
             <Icon as={RefreshCw} size="sm" decorative />
-            {t(notReady ? "errorBoundary.retry" : "pwa.reload")}
+            {t(notReady ? "errorBoundary.retry" : "common.reload")}
           </Button>
         </ModalFoot>
       </div>
