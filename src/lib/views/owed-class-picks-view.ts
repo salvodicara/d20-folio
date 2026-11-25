@@ -9,6 +9,7 @@ import i18n from "i18next";
 
 import type { Locale } from "@/lib/locale";
 import {
+  classPickPool,
   owedClassPicks,
   type BuildForClassPicks,
   type ClassPickKind,
@@ -128,9 +129,21 @@ export function owedClassPickRows(build: Build, locale: Locale): OwedClassPickRo
         ...base,
         title: t("levelUp.chooseWeaponMastery", { n: owed }),
         searchPlaceholder: t("levelUp.searchWeapons"),
-        options: weaponMasteryOptions(locale)
+        options: weaponMasteryOptions(locale, classId)
           .filter((vm) => !mastered.has(vm.id))
           .map((vm) => fromLevelUp(vm)),
+      };
+    }
+    if (pick === "expertise") {
+      // The proficient skills not yet at Expertise, as the level-up offers them.
+      return {
+        ...base,
+        title: t("levelUp.chooseExpertise", { n: owed }),
+        searchPlaceholder: t("levelUp.searchSkills"),
+        options: classPickPool(build, classId, "expertise").map((id) => {
+          const name = t(`skills.${id}`);
+          return { id, name, searchText: `${name} ${id}` };
+        }),
       };
     }
     if (pick === "fightingStyles") {

@@ -30,6 +30,8 @@ interface Props {
   existingSpellIds: ReadonlySet<string>;
   /** Skills the character is proficient in — the pool for Expertise picks. */
   proficientSkillIds: ReadonlySet<string>;
+  /** Languages the character already knows — never offered in a language pick. */
+  knownLanguageIds?: ReadonlySet<string>;
 }
 
 export function FeatureChoicesSection({
@@ -39,6 +41,7 @@ export function FeatureChoicesSection({
   existingSkillIds,
   existingSpellIds,
   proficientSkillIds,
+  knownLanguageIds,
 }: Props) {
   return (
     // ONE inter-section rhythm (sp-4) between sibling choice sections — the same
@@ -81,6 +84,7 @@ export function FeatureChoicesSection({
           slots={slots.language}
           picks={picks.language}
           onChange={(language) => onChange({ ...picks, language })}
+          knownLanguageIds={knownLanguageIds}
         />
       )}
       {slots.expertise.length > 0 && (

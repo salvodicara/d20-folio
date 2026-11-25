@@ -331,9 +331,9 @@ describe("LevelUpWizard — the boon feat's asks expand INSIDE its entry, attrib
   });
 });
 
-// ─── D7 — the L19 Epic Boon gate: feat-only, no ASI fork ──────────────────────────
+// ─── Level 19: an Epic Boon or another feat (SRD 5.2.1) ───────────────────────────
 
-describe("LevelUpWizard — L19 Epic Boon gate (D7)", () => {
+describe("LevelUpWizard — level 19: an Epic Boon or another feat", () => {
   beforeEach(() => {
     setChar({
       classes: [{ classId: "fighter", subclassId: "champion", level: 18 }],
@@ -343,22 +343,18 @@ describe("LevelUpWizard — L19 Epic Boon gate (D7)", () => {
     });
   });
 
-  it("the boon step shows NO +2/+1 ASI fork and offers ONLY Epic Boon feats", () => {
+  it("the boon step opens on the feats, Epic Boons and general feats alike, and keeps the +2/+1 fork", () => {
     renderWizard();
     clickContinue(); // hp → boon
-    // The +2/+1 ASI fork tabs are SUPPRESSED at the epic-boon gate (2024 RAW grants
-    // specifically an Epic Boon feat — no bare ASI, no general feat).
-    expect(screen.queryByRole("button", { name: /^\+2$/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Choose a Feat" })).toBeNull();
-    // The feat rows that DO render are all Epic Boon feats (category-restricted pool).
-    const rowNames = screen
-      .getAllByRole("button")
-      .filter((b) => b.classList.contains("wiz-row"))
-      .map((b) => b.querySelector(".wiz-row-name")?.textContent ?? "");
-    expect(rowNames.length).toBeGreaterThan(0);
-    // Boon of Combat Prowess / Irresistible Offense / etc. — every offered row is an
-    // Epic Boon (their names all start with "Boon of ").
-    expect(rowNames.every((n) => /^Boon of /.test(n))).toBe(true);
+    // Ability Score Improvement is a General feat too, so the fork stays.
+    expect(screen.getByRole("button", { name: "Choose a Feat" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "+2 to One" })).toBeTruthy();
+    // It opens on the feats (the SRD recommends a boon): the list's category filter
+    // offers the Epic Boons and the General feats together.
+    const facets = document.querySelector<HTMLElement>(".wiz-facets");
+    if (!facets) throw new Error("no category filter");
+    expect(within(facets).getByRole("button", { name: /^Epic Boon/ })).toBeTruthy();
+    expect(within(facets).getByRole("button", { name: /^General/ })).toBeTruthy();
   });
 });
 
