@@ -15,6 +15,12 @@
     "themeHelp": "Scegli un tema fisso o segui il sistema.",
     "languageHelp": "Tutto il testo delle regole segue la traduzione dell'SRD.",
     "noIdentity": "Accesso effettuato",
-    "openAdmin": "Apri strumenti di amministrazione"
+    "openAdmin": "Apri strumenti di amministrazione",
+    "newUi": "Prova la nuova interfaccia",
+    "newUiHelp": "Un Folio ridisegnato, ancora in lavorazione: per ora le pagine delle campagne restano classiche. I tuoi personaggi restano gli stessi e puoi tornare indietro da qui quando vuoi.",
+    "uiClassic": "Classica",
+    "uiNew": "Nuova",
+    "newUiOffline": "Serve la connessione per cambiare interfaccia.",
+    "newUiFailed": "Non sono riuscito a salvare la scelta. Riprova."
   }
 }

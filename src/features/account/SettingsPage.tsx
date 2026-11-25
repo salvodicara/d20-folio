@@ -25,7 +25,7 @@
 import type { ComponentType, ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ShieldCheck, LogOut, Palette, Languages } from "lucide-react";
+import { ShieldCheck, LogOut, Palette, Languages, LayoutTemplate } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Portrait } from "@/components/shared/Portrait";
 import { Section } from "@/components/shared/Section";
@@ -40,8 +40,7 @@ import { LOCALES, type Locale } from "@/lib/locale";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { signOut } from "@/lib/auth";
-
-const NEW_UI = import.meta.env.VITE_NEW_UI === "1";
+import { useNewUiSwitch } from "./useNewUiSwitch";
 
 /**
  * One labelled setting row, on the shared `.set-row` recipe (folio.css): an
@@ -86,6 +85,7 @@ export function SettingsPage() {
   const isAdmin = useIsAdmin();
   const user = useAuthStore((s) => s.user);
   const profile = useAuthStore((s) => s.profile);
+  const newUi = useNewUiSwitch();
 
   const displayName = profile?.displayName ?? null;
   const email = user?.email ?? null;
@@ -106,7 +106,7 @@ export function SettingsPage() {
               page (the two .set-rows divide inside the one card). */}
           <InfoCard>
             {/* the new UI ships dark-only for its first release: no theme to pick */}
-            {!NEW_UI && (
+            {!newUi.active && (
               <SettingRow
                 icon={Palette}
                 name={t("settings.theme")}
@@ -138,6 +138,24 @@ export function SettingsPage() {
                     value: code,
                     label: code.toUpperCase(),
                   }))}
+                />
+              }
+            />
+            {/* #1233: the per-player opt-in (GitHub's feature preview, Gmail's «Try the
+                new Gmail»): a choice that reloads the page into it, and back. */}
+            <SettingRow
+              icon={LayoutTemplate}
+              name={t("settings.newUi")}
+              help={t("settings.newUiHelp")}
+              control={
+                <Segmented<"classic" | "new">
+                  aria-label={t("settings.newUi")}
+                  value={newUi.optedIn ? "new" : "classic"}
+                  onChange={(value) => newUi.choose(value === "new")}
+                  options={[
+                    { value: "classic", label: t("settings.uiClassic") },
+                    { value: "new", label: t("settings.uiNew") },
+                  ]}
                 />
               }
             />
