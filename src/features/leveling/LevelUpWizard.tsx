@@ -419,8 +419,8 @@ export function LevelUpWizard() {
     ? (HIT_DIE_AVG[hitDie] ?? 5)
     : Math.min(hitDie, Math.max(1, parseInt(manualHpGain) || 0));
 
-  // D7 — at the Epic Boon gate the ONLY legal boon is an Epic Boon feat, so force the
-  // mode to "feat" (the fork is hidden) once when the gate becomes active. Ref-guarded
+  // At the Epic Boon gate the step opens on the feats, since a boon is the recommended
+  // pick (SRD 5.2.1); the fork stays, so +2/+1 remains one tap away. Ref-guarded
   // (mirrors the mastery-seed pattern) so it seeds once per advancing class and never
   // fights the user at a normal ASI level. Switching the advancing class re-evaluates.
   const seededEpicBoonClass = useRef<string | null>(null);
@@ -801,12 +801,11 @@ export function LevelUpWizard() {
     return source ? `${source}: ${body}` : body;
   };
 
-  // The boon fork rides the chrome (reserved on every step so nothing shifts).
-  // D7 — at the L19 Epic Boon gate there is NO fork: 2024 RAW grants specifically an
-  // Epic Boon feat (no +2/+1 ASI, no general feat), so the mode is locked to "feat"
-  // (see the force-feat effect) and the fork tabs are suppressed entirely.
+  // The boon fork rides the chrome (reserved on every step so nothing shifts). It
+  // shows at level 19 too: «an Epic Boon feat … or another feat» (SRD 5.2.1), and
+  // Ability Score Improvement is a General feat.
   const boonFork =
-    step === "boon" && !isEpicBoonGate ? (
+    step === "boon" ? (
       <div className="wiz-fork" role="group" aria-label={t("levelUp.asi.modeLabel")}>
         {(
           [

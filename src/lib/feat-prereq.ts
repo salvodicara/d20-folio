@@ -55,12 +55,10 @@ export interface FeatGateCtx {
   /** The feats (and features) the character holds, by id; absent reads as none. */
   featIds?: ReadonlyArray<string>;
   /**
-   * D7 — this gate is the L19 EPIC-BOON grant (the class grants its Epic Boon at
-   * level 19). 2024 RAW restricts level 19 to an Epic Boon feat — NOT a general
-   * feat and NOT the +2/+1 ASI fork — so when set, {@link featCategoryOffered}
-   * offers ONLY the `epic-boon` category and the level-up wizard suppresses the
-   * ASI fork. Absent/false at every other ASI level (4/8/12/16), which keep the
-   * full general-feat + ASI fork.
+   * This gate is the level-19 Epic Boon grant. SRD 5.2.1: «an Epic Boon feat … or
+   * another feat of your choice for which you qualify» (Ability Score Improvement
+   * is a General feat too), so it restricts nothing; the classic wizard only opens
+   * its boon step on the feats, since a boon is the recommended pick.
    */
   isEpicBoonGate?: boolean;
 }
@@ -69,8 +67,8 @@ export interface FeatGateCtx {
 export function featGateCtx(
   character: CharacterData,
   newLevel: number,
-  // D7 — set when the gate is the L19 epic-boon grant (the caller knows the level's
-  // featureIds include the class's `*-epic-boon` feature). Restricts the pool below.
+  // Set when the gate is the level-19 Epic Boon grant (the level's featureIds include
+  // the class's `*-epic-boon` feature); it marks the gate, the pool stays whole.
   isEpicBoonGate = false
 ): FeatGateCtx {
   const armorTraining = new Set<ProficiencyToken>();
@@ -153,10 +151,8 @@ export function effectiveArmorProficiencies(
  * separately as a DISABLED state so the player can read what they're missing.
  */
 export function featCategoryOffered(category: FeatCategory, ctx: FeatGateCtx): boolean {
-  // D7 — at the L19 Epic Boon gate, 2024 RAW grants specifically an Epic Boon feat:
-  // no general feat, no fighting-style feat, no origin feat (and the wizard suppresses
-  // the +2/+1 ASI fork). So ONLY the epic-boon category is offered here.
-  if (ctx.isEpicBoonGate) return category === "epic-boon";
+  // Level 19 (SRD 5.2.1): «an Epic Boon feat … or another feat of your choice for
+  // which you qualify», so the gate restricts nothing: each category's own rule below.
   switch (category) {
     case "general":
       return ctx.level >= 4;

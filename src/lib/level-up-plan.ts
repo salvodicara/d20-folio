@@ -81,9 +81,9 @@ export function levelUpPlan(
   const hitDie = classTable?.hitDie ?? charData?.hitDieType ?? 8;
   const avgHpGain = charData ? getAverageHpGain(hitDie, charData.abilityScores.CON) : 0;
   const needsAsi = levelData?.asi === true;
-  // D7 — the L19 boon step is the EPIC BOON gate: every class grants its
-  // `<class>-epic-boon` feature at level 19. 2024 RAW restricts level 19 to an Epic
-  // Boon feat (no general feat, no +2/+1 ASI fork), unlike the 4/8/12/16 ASI levels.
+  // The level-19 boon step is the EPIC BOON gate: every class grants its
+  // `<class>-epic-boon` feature at level 19: «an Epic Boon feat … or another feat of
+  // your choice for which you qualify» (SRD 5.2.1); a boon is the recommended pick.
   // Detected from the level's own featureIds so it's class-agnostic + multiclass-safe
   // (only the class actually reaching its L19 grants the boon).
   const isEpicBoonGate =
