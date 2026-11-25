@@ -6,7 +6,8 @@
 #   bash scripts/setup-deployed-baseline.sh /absolute/fresh/directory <app-sha> <pack-sha>
 #
 # The two SHAs: the commit of the last successful deploy run, and the pack its log
-# checked out ("HEAD is now at <pack-sha>" in the deploy job). v0.26.1 was
+# checked out ("HEAD is now at <pack-sha>" in the deploy job). Live since 2026-11-25: the
+# v0.26.1 hotfix 6fe669402 + 6af8a30. v0.26.1 was
 # 8a3b177b9 + 76e77c1; v0.25.0 was 9bb9a60c + f1ff69a7. The directory goes inside the
 # project folder (never a synced one): the install is large.
 set -euo pipefail

@@ -1,5 +1,5 @@
 {
-  "release": "v0.26.1",
+  "release": "v0.26.1-hotfix-6fe669402",
   "generatedBy": "node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts --baseline-root <release app> --release <name> --write-fixture <this file>",
   "lists": {
     "turnEconomy.action.economyCategory": [
