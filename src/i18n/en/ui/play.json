@@ -187,7 +187,16 @@
       "searchItems": "Search items",
       "noMatch": "Nothing matches.",
       "addedToast": "Added: {{name}}",
-      "add": "Add an item"
+      "add": "Add an item",
+      "catalogue": "Catalogue",
+      "custom": "Custom item",
+      "customWeight": "Weight each ({{unit}})",
+      "customCost": "Cost each (gp)",
+      "optional": "Optional",
+      "customNameRequired": "Give it a name.",
+      "customNumber": "Write a number, such as 2 or 0.5.",
+      "customAdd": "Add to inventory",
+      "costEach": "{{cost}} each"
     },
     "tray": {
       "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",

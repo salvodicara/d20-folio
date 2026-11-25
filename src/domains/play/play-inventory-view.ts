@@ -19,6 +19,7 @@ import type { Locale } from "@/lib/locale";
 import { localizeActions } from "@/lib/views/combat-action-view";
 import {
   buildInventoryViewModel,
+  type CostVM,
   type ItemRowVM,
   type WeaponRowVM,
 } from "@/lib/views/inventory-view";
@@ -44,6 +45,11 @@ export interface PlayItem {
   quantity: number;
   /** Pounds, for one. */
   weight: number;
+  /** What one costs, in its own coin (the catalogue's list price, or a homebrew
+   *  item's own); null when it has none. */
+  cost: CostVM | null;
+  /** A homebrew item's own notes (a catalogue item's text stays in the Compendium). */
+  notes?: string;
   line: ItemLine;
   stealthDisadvantage: boolean;
   needsAttunement: boolean;
@@ -144,6 +150,7 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     name: w.name,
     quantity: w.quantity,
     weight: w.weight,
+    cost: w.cost,
     line: {
       kind: "damage",
       dice: signedDice(w.damageDie, w.damageMod),
@@ -181,6 +188,8 @@ export function playInventoryView(doc: CharacterDoc, locale: Locale): PlayInvent
     name: i.name,
     quantity: i.quantity,
     weight: i.weight,
+    cost: i.cost,
+    ...(i.isCustom && i.description ? { notes: i.description } : {}),
     line: i.armorAc
       ? i.armorAc.category === "shield"
         ? { kind: "ac-bonus", bonus: i.armorAc.base }

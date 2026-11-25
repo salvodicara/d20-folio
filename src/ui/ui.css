@@ -4088,6 +4088,19 @@
 .fui .f-act.f-add-row {
   grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
 }
+/* a homebrew item's own notes, as written (line breaks kept) */
+.fui .f-item-notes {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+/* two short fields side by side (a custom item's weight and cost) */
+.fui .f-form-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: start;
+}
 /* a number's pane: the number large, «Impostato a mano» beside it, then its parts */
 .fui .f-num-total {
   display: flex;
