@@ -239,3 +239,35 @@ describe("starting a new class (multiclass) on the new level-up", () => {
     expect(totalLevel(after.character)).toBe(5);
   });
 });
+
+describe("the subclass row previews what the pick brings (BG3's subclass detail)", () => {
+  const cleric2 = () =>
+    makeCharacterDoc({
+      classId: "cleric",
+      level: 2,
+      abilityScores: { STR: 10, DEX: 12, CON: 14, INT: 10, WIS: 16, CHA: 10 },
+    });
+
+  it("nothing is previewed before a subclass is picked", () => {
+    const row = levelUpAsks(cleric2(), "cleric", NO_ANSWERS, "en").rows.find(
+      (r) => r.key === "subclass"
+    );
+    expect(row?.reveal).toBeUndefined();
+  });
+
+  it("the picked subclass shows its features at this level and its always-prepared spells", () => {
+    const doc = cleric2();
+    const row = levelUpAsks(doc, "cleric", NO_ANSWERS, "en").rows.find(
+      (r) => r.key === "subclass"
+    );
+    if (!row) throw new Error("no subclass row");
+    const life = row.options.find((o) => o.id === "life-domain");
+    if (!life) throw new Error("no Life Domain");
+    const a = toggleAnswer(NO_ANSWERS, row, life.id);
+    const reveal = levelUpAsks(doc, "cleric", a, "en").rows.find(
+      (r) => r.key === "subclass"
+    )?.reveal;
+    expect(reveal?.features.map((f) => f.id)).toContain("cleric-life-disciple-of-life");
+    expect(reveal?.spells).toEqual(["Aid", "Bless", "Cure Wounds", "Lesser Restoration"]);
+  });
+});
