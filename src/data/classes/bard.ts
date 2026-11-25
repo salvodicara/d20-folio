@@ -121,6 +121,7 @@ export const BARD_TABLE: SrdClassTable = {
   ],
   spellcasting: { ability: "CHA", preparedCaster: true },
   canSwapSpell: true,
+  canSwapCantrip: true,
   subclassLevel: 3,
   subclasses: [
     {

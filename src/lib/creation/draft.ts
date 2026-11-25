@@ -478,7 +478,10 @@ function withoutSpeciesPicks(picks: ChoicePicks): ChoicePicks {
 }
 
 /** The slots of every kind whose namespaced id starts with `prefix`. */
-function slotsWithPrefix(slots: FeatureChoiceSlots, prefix: string): FeatureChoiceSlots {
+export function slotsWithPrefix(
+  slots: FeatureChoiceSlots,
+  prefix: string
+): FeatureChoiceSlots {
   const keep = <T extends { slotId: string }>(list: T[]) =>
     list.filter((s) => s.slotId.startsWith(prefix));
   return {
@@ -540,6 +543,7 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     classId: draft.classId,
     level: draft.level,
     subclassId: draft.subclassId,
+    bundleChoices: draft.lineageChoices,
     backgroundId: draft.backgroundId,
     humanFeat: draft.humanFeat,
     bgFeat: backgroundFeat,
@@ -633,12 +637,18 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     needsSpeciesSpellAbility: speciesNeedsSpellAbility(draft.raceId),
     classNeeds,
     classOptions,
-    classChoicesComplete: classChoicesComplete(
-      classNeeds,
-      draft.classPicks,
-      draft.lineageChoices,
-      classOptions
-    ),
+    // A class bundle's chosen option may owe a pick of its own (Thaumaturge's extra
+    // cantrip): the class step waits for it too.
+    classChoicesComplete:
+      classChoicesComplete(
+        classNeeds,
+        draft.classPicks,
+        draft.lineageChoices,
+        classOptions
+      ) &&
+      classNeeds.bundleKeys.every((key) =>
+        isAllChoicesComplete(slotsWithPrefix(choiceSlots, `${key}:`), choicePicks)
+      ),
     humanFeatChoicesComplete: isAllChoicesComplete(humanFeatSlots, choicePicks),
     otherChoicesComplete: isAllChoicesComplete(otherChoiceSlots, choicePicks),
     otherSpellChoicesComplete: isSpellChoicesComplete(
