@@ -105,7 +105,7 @@ describe("the forward-compat check", () => {
     expect(
       readBuilds(
         parseCharacterEnvelope,
-        serializeCharacterEnvelope as Parameters<typeof readBuilds>[1],
+        serializeCharacterEnvelope as unknown as Parameters<typeof readBuilds>[1],
         input.builds
       )
     ).toEqual([{ value: "build.hp", result: "kept" }]);

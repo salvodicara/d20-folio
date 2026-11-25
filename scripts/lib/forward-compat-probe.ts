@@ -123,7 +123,7 @@ async function run(input: string, output: string): Promise<void> {
     }
   }
   const { parseCharacterEnvelope, serializeCharacterEnvelope } =
-    (await import("@/lib/character-codec")) as {
+    (await import("@/lib/character-codec")) as unknown as {
       parseCharacterEnvelope: ParseBuild;
       serializeCharacterEnvelope: SerializeBuild;
     };
