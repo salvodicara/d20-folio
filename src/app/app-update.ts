@@ -8,6 +8,8 @@
  * for a new worker, at most once a minute, so the bar appears without a navigation.
  */
 
+import { useCharacterStore } from "@/stores/characterStore";
+
 /** How often coming back to the app may ask for a new worker. */
 const CHECK_EVERY_MS = 60_000;
 
@@ -90,8 +92,12 @@ export const appUpdate: AppUpdateWatch =
 export async function reloadWhenSaved(
   pendingWrites: () => Promise<void>,
   reload: () => void,
-  capMs: number
+  capMs: number,
+  flushPending: () => void = () => undefined
 ): Promise<void> {
+  // A build edit still in the sheet's debounce is not a Firestore write yet: send it
+  // first, so the wait below covers it (#1275).
+  flushPending();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cap = new Promise<void>((resolve) => {
     timer = setTimeout(resolve, capMs);
@@ -106,6 +112,7 @@ export function reloadApp(): void {
   void reloadWhenSaved(
     () => import("@/lib/pending-writes-io").then(({ pendingWrites }) => pendingWrites()),
     () => window.location.reload(),
-    3_000
+    3_000,
+    () => useCharacterStore.getState().parentPersistenceFlush?.()
   );
 }

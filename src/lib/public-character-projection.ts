@@ -1,4 +1,5 @@
 import type { CharacterCache } from "@/lib/character-cache";
+import { preloadParentWrite, type ParentWriteModules } from "@/lib/parent-write-modules";
 import { normalizePortraitCrop } from "@/lib/portrait-crop";
 import type { CharacterDoc, ClassEntry, PortraitCrop } from "@/types/character";
 
@@ -290,10 +291,23 @@ export async function buildPublicCharacterProjection(
   sourceUpdatedAt: unknown
 ): Promise<PublicCharacterProjection> {
   if (!isStatus(source.status)) throw new TypeError("Invalid character status");
-  const [{ serializeCharacterEnvelope }, { buildCharacterCache }] = await Promise.all([
-    import("@/lib/character-codec"),
-    import("@/lib/character-cache-build"),
-  ]);
+  return buildPublicCharacterProjectionWith(
+    await preloadParentWrite(),
+    source,
+    sourceUpdatedAt
+  );
+}
+
+/** The same projection, built synchronously from modules already loaded (#1275: the
+ *  parent save builds its whole batch with no `await` before `commit()`). */
+export function buildPublicCharacterProjectionWith(
+  modules: ParentWriteModules,
+  source: CharacterDoc,
+  sourceUpdatedAt: unknown
+): PublicCharacterProjection {
+  if (!isStatus(source.status)) throw new TypeError("Invalid character status");
+  const { serializeCharacterEnvelope } = modules.codec;
+  const { buildCharacterCache } = modules.cacheBuild;
   const envelope = serializeCharacterEnvelope(source);
   // This is the same live derivation `toStoredPayload` stamps on the private parent.
   // Rules/functions cross-check byte-for-byte equality; the public parser only shape-

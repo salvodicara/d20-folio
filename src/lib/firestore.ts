@@ -56,7 +56,13 @@ import {
   readDocMeta,
 } from "@/lib/character-read";
 import {
+  loadedParentWriteModules,
+  preloadParentWrite,
+  type ParentWriteModules,
+} from "@/lib/parent-write-modules";
+import {
   buildPublicCharacterProjection,
+  buildPublicCharacterProjectionWith,
   buildPublicCharacterProjectionFromStoredParent,
   parsePublicCharacterProjection,
   type PublicProjectionMetadataPatch,
@@ -74,24 +80,29 @@ function publicCharacterProjectionRef(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId, "public", "sheet");
 }
 
-async function queuePublicProjection(
-  batch: {
-    set: (
-      ref: ReturnType<typeof publicCharacterProjectionRef>,
-      data: Record<string, unknown>
-    ) => unknown;
-    delete: (ref: ReturnType<typeof publicCharacterProjectionRef>) => unknown;
-  },
+type ProjectionBatch = {
+  set: (
+    ref: ReturnType<typeof publicCharacterProjectionRef>,
+    data: Record<string, unknown>
+  ) => unknown;
+  delete: (ref: ReturnType<typeof publicCharacterProjectionRef>) => unknown;
+};
+
+/** Queue the public projection's write (or its removal) in the batch, from modules
+ *  already loaded: no `await` (#1275). */
+function queuePublicProjectionWith(
+  modules: ParentWriteModules,
+  batch: ProjectionBatch,
   uid: string,
   source: CharacterDoc,
   sourceUpdatedAt: unknown
-): Promise<void> {
+): void {
   const ref = publicCharacterProjectionRef(uid, source.id);
   if (!source.shared) {
     batch.delete(ref);
     return;
   }
-  const projection = await buildPublicCharacterProjection(source, sourceUpdatedAt);
+  const projection = buildPublicCharacterProjectionWith(modules, source, sourceUpdatedAt);
   batch.set(ref, stripUndefined(projection) as Record<string, unknown>);
 }
 
@@ -116,21 +127,35 @@ async function queuePublicProjection(
 async function toStoredPayload(
   payload: Partial<CharacterDoc>
 ): Promise<Record<string, unknown>> {
-  const ch = payload.character;
-  const session = payload.session;
+  return storedPayloadWith(
+    isFullCharacterPayload(payload) ? await preloadParentWrite() : null,
+    payload
+  );
+}
+
+/** Whether the payload carries a complete character and its session (the codec path). */
+function isFullCharacterPayload(payload: Partial<CharacterDoc>): boolean {
   // Runtime guards (a partial / malformed write may carry an incomplete character):
   // read the character via a plain record so the structural checks aren't
-  // "no-overlap" against the strict type. The `ch && session` presence guard
-  // narrows both for the codec call below.
-  const chRec = ch as Record<string, unknown> | undefined;
-  const isFullCharacter =
+  // "no-overlap" against the strict type.
+  const chRec = payload.character as Record<string, unknown> | undefined;
+  return (
     !!chRec &&
+    !!payload.session &&
     typeof chRec.name === "string" &&
     Array.isArray(chRec.classes) &&
     chRec.classes.length > 0 &&
-    chRec.abilityScores != null;
-  if (!ch || !session || !isFullCharacter) {
-    if (session) {
+    chRec.abilityScores != null
+  );
+}
+
+/** `toStoredPayload` with no `await`: the modules are passed in (#1275). */
+function storedPayloadWith(
+  modules: ParentWriteModules | null,
+  payload: Partial<CharacterDoc>
+): Record<string, unknown> {
+  if (!isFullCharacterPayload(payload)) {
+    if (payload.session) {
       throw new TypeError("Session persistence requires a complete character payload");
     }
     // A metadata-only write (status / portrait / sharing) passes through. A build
@@ -143,10 +168,19 @@ async function toStoredPayload(
     }
     return out;
   }
-  const [{ serializeCharacterEnvelope }, { buildCharacterCache }] = await Promise.all([
-    import("@/lib/character-codec"),
-    import("@/lib/character-cache-build"),
-  ]);
+  if (!modules) throw new TypeError("The character codec is not loaded");
+  return storedFullPayloadWith(modules, payload);
+}
+
+/** The full-character branch of `toStoredPayload`, from modules already loaded (#1275). */
+function storedFullPayloadWith(
+  modules: ParentWriteModules,
+  payload: Partial<CharacterDoc>
+): Record<string, unknown> {
+  const ch = payload.character as CharacterDoc["character"];
+  const session = payload.session as CharacterDoc["session"];
+  const { serializeCharacterEnvelope } = modules.codec;
+  const { buildCharacterCache } = modules.cacheBuild;
   // `serializeCharacterEnvelope` reads ONLY `character` + `session`; the metadata
   // fields are irrelevant to the envelope, so a minimal doc is enough.
   const envelope = serializeCharacterEnvelope({ character: ch, session } as CharacterDoc);
@@ -311,15 +345,18 @@ export async function setCharacterSharing(
 
 /** Complete parent autosave: the build/cache envelope plus the empty `state`. The play
  * session itself never rides this write — it is the `combat/state` child's alone. */
-async function updateCharacterParent(
+function commitCharacterParent(
+  modules: ParentWriteModules,
   uid: string,
   charId: string,
   data: CharacterDoc
 ): Promise<void> {
+  // Everything up to `commit()` is synchronous (#1275): a flush made while the page is
+  // being hidden hands the batch to the SDK inside that same event.
   if (data.id !== charId) {
     throw new TypeError("A complete canonical character snapshot is required");
   }
-  const write = await toStoredPayload({
+  const write = storedPayloadWith(modules, {
     character: data.character,
     session: data.session,
   });
@@ -335,8 +372,8 @@ async function updateCharacterParent(
     revision: data.revision,
     updatedAt,
   });
-  await queuePublicProjection(batch, uid, data, updatedAt);
-  await batch.commit();
+  queuePublicProjectionWith(modules, batch, uid, data, updatedAt);
+  return batch.commit();
 }
 
 /**
@@ -620,6 +657,13 @@ function cancelPendingParentSave(uid: string, charId: string): boolean {
   return true;
 }
 
+/** How long a build edit waits for the next one before it leaves (#1275: short, so a
+ *  phone locked right after an edit rarely finds it pending; the hidden flush covers
+ *  the rest). */
+export const PARENT_SAVE_DELAY_MS = 500;
+
+export { preloadParentWrite, resetParentWriteForTests } from "@/lib/parent-write-modules";
+
 /**
  * @param allocateRevision - hands out the compare-and-set generation AT SEND TIME. A
  * debounced payload that is superseded before it leaves must consume NO generation:
@@ -631,9 +675,11 @@ function cancelPendingParentSave(uid: string, charId: string): boolean {
 export function createDebouncedSave(
   uid: string,
   charId: string,
-  delayMs: number = 2000,
+  delayMs: number = PARENT_SAVE_DELAY_MS,
   allocateRevision?: () => number
 ): DebouncedSaveHandle {
+  // The sheet is open: load the codec now, so the next save commits with no wait.
+  void preloadParentWrite();
   const key = pendingParentSaveKey(uid, charId);
   let timer: ReturnType<typeof setTimeout> | null = null;
   let pendingWrite: { data: CharacterDoc; callbacks?: DebouncedSaveCallbacks } | null =
@@ -663,15 +709,16 @@ export function createDebouncedSave(
     if (dropped) dropped.callbacks?.onCancelled?.(dropped.data);
   }
 
-  function runWrite(
-    queued: CharacterDoc,
+  // A write still waiting for the codec modules (the cold path). Every later write
+  // queues behind it, so generations leave in allocation order (#1275).
+  let waiting: Promise<void> | null = null;
+
+  function settle(
+    data: CharacterDoc,
+    sent: Promise<void>,
     callbacks?: DebouncedSaveCallbacks
-  ): Promise<void> {
-    // Allocate the generation HERE — the write is actually going out now.
-    const data = allocateRevision ? { ...queued, revision: allocateRevision() } : queued;
-    callbacks?.onSend?.(data);
-    saveStatusCallbacks.onSaving();
-    return updateCharacterParent(uid, charId, data).then(
+  ) {
+    return sent.then(
       () => {
         saveStatusCallbacks.onSaved();
         callbacks?.onResolved?.(data);
@@ -693,6 +740,49 @@ export function createDebouncedSave(
         callbacks?.onRejected?.(data, err);
       }
     );
+  }
+
+  /** Allocate, build and commit in one synchronous turn: the batch reaches the SDK
+   *  before this returns. */
+  function send(
+    modules: ParentWriteModules,
+    queued: CharacterDoc,
+    callbacks?: DebouncedSaveCallbacks
+  ): Promise<void> {
+    // Allocate the generation HERE — the write is actually going out now.
+    const data = allocateRevision ? { ...queued, revision: allocateRevision() } : queued;
+    callbacks?.onSend?.(data);
+    saveStatusCallbacks.onSaving();
+    let sent: Promise<void>;
+    try {
+      sent = commitCharacterParent(modules, uid, charId, data);
+    } catch (err) {
+      sent = Promise.reject(err instanceof Error ? err : new Error(String(err)));
+    }
+    return settle(data, sent, callbacks);
+  }
+
+  function runWrite(
+    queued: CharacterDoc,
+    callbacks?: DebouncedSaveCallbacks
+  ): Promise<void> {
+    const modules = loadedParentWriteModules();
+    if (modules && !waiting) return send(modules, queued, callbacks);
+    let result: Promise<void> = Promise.resolve();
+    const started = (waiting ?? Promise.resolve()).then(preloadParentWrite).then(
+      (loaded) => {
+        result = send(loaded, queued, callbacks);
+      },
+      (err: unknown) => {
+        const reason = err instanceof Error ? err : new Error(String(err));
+        result = settle(queued, Promise.reject(reason), callbacks);
+      }
+    );
+    waiting = started;
+    void started.then(() => {
+      if (waiting === started) waiting = null;
+    });
+    return started.then(() => result);
   }
 
   return {

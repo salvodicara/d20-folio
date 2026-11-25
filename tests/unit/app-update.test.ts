@@ -114,6 +114,22 @@ describe("Reload waits for the pending writes", () => {
     vi.useRealTimers();
   });
 
+  // #1275: a build edit waiting in the sheet's debounce is not a Firestore write yet, so
+  // the wait would not see it. It leaves first, then the wait covers it.
+  it("sends the sheet's pending build edit before it waits", async () => {
+    const order: string[] = [];
+    await reloadWhenSaved(
+      () => {
+        order.push("wait");
+        return Promise.resolve();
+      },
+      () => order.push("reload"),
+      3_000,
+      () => order.push("flush")
+    );
+    expect(order).toEqual(["flush", "wait", "reload"]);
+  });
+
   it("a failed wait still reloads", async () => {
     const reload = vi.fn();
     await reloadWhenSaved(() => Promise.reject(new Error("no db")), reload, 3_000);
