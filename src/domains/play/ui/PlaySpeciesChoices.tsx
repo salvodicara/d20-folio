@@ -14,6 +14,7 @@
 import type { InfoKind } from "@/domains/spells/option-info";
 import type { ClassPickKind } from "@/lib/owed-class-picks";
 import type { ArtKind } from "@/ui";
+import { unpickedSpeciesAbility } from "@/lib/resolve-spell-ability";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -75,7 +76,13 @@ export function PlaySpeciesChoices({
       <p>
         <b>{t("play.speciesChoices.title")}</b>
         {" · "}
-        {speciesChoicesLine(items, t, locale, doc.character)}
+        {speciesChoicesLine(
+          items,
+          t,
+          locale,
+          doc.character,
+          t(`abilities.${unpickedSpeciesAbility(doc.character)}`)
+        )}
       </p>
       <Button kind="primary" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {t("play.speciesChoices.open")}

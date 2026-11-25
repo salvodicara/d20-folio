@@ -131,6 +131,50 @@ describe("resolveSpellAbility", () => {
     expect(SPECIES_SPELL_ABILITY_DEFAULT).toBe("CHA");
   });
 
+  // While the species pick is unmade, the sheet must not show a wrong DC: an elf or
+  // gnome Wizard casts with Intelligence, so its lineage spells read INT until it
+  // picks; only a character with no INT/WIS/CHA casting falls back to Charisma.
+  it("species-deferred ref, pick unset → the character's own casting ability when it is INT, WIS or CHA", () => {
+    const ref: SrdSpellRef = { srdId: "thaumaturgy", speciesSpellAbility: true };
+    const caster = (ability: "INT" | "WIS" | "CHA") =>
+      baseChar({
+        speciesSpellAbility: undefined,
+        spellcasting: {
+          ability,
+          preparedCaster: true,
+          preparedMax: 4,
+          saveDCOverride: null,
+          attackBonusOverride: null,
+        },
+      });
+    expect(resolveSpellAbility(ref, caster("INT"))).toBe("INT");
+    expect(resolveSpellAbility(ref, caster("WIS"))).toBe("WIS");
+    expect(resolveSpellAbility(ref, caster("CHA"))).toBe("CHA");
+    // no casting class: the species default
+    expect(resolveSpellAbility(ref, baseChar({ speciesSpellAbility: undefined }))).toBe(
+      SPECIES_SPELL_ABILITY_DEFAULT
+    );
+  });
+
+  // A spell cast with «the ability increased by this feat», feat unanswered: a caster
+  // already reads its own casting ability (never a wrong DC); a character with no
+  // casting class read nothing (no DC at all). Now it reads the same honest default as
+  // an unpicked species ability: Charisma when no INT/WIS/CHA casting exists.
+  it("feat-deferred ref, feat unanswered → own casting ability; no caster → Charisma, never nothing", () => {
+    const ref: SrdSpellRef = { srdId: "misty-step", featSpellAbility: "a-feat" };
+    const wizard = baseChar({
+      spellcasting: {
+        ability: "INT",
+        preparedCaster: true,
+        preparedMax: 4,
+        saveDCOverride: null,
+        attackBonusOverride: null,
+      },
+    });
+    expect(resolveSpellAbility(ref, wizard)).toBe("INT");
+    expect(resolveSpellAbility(ref, baseChar())).toBe("CHA");
+  });
+
   it("species-deferred ref → the chosen ability when the species pick is set", () => {
     const ref: SrdSpellRef = { srdId: "thaumaturgy", speciesSpellAbility: true };
     expect(resolveSpellAbility(ref, baseChar({ speciesSpellAbility: "INT" }))).toBe(
