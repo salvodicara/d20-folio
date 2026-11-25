@@ -225,6 +225,34 @@ const PUBLIC_FEATS: SrdFeatData[] = [
     ],
     source: "SRD",
   },
+  // SRD 5.2.1, Paladin and Ranger «Level 2: Fighting Style»: «Instead of choosing one
+  // of those feats, you can choose the option below». Two cantrips of the named list,
+  // the casting ability pinned; `classScope` offers each only to its class.
+  {
+    id: "blessed-warrior",
+    category: "fighting-style",
+    classScope: "paladin",
+    repeatable: false,
+    grants: [
+      {
+        type: "choice-cantrip",
+        classSpellList: "cleric",
+        amount: 2,
+        spellAbility: "CHA",
+      },
+    ],
+    source: "SRD",
+  },
+  {
+    id: "druidic-warrior",
+    category: "fighting-style",
+    classScope: "ranger",
+    repeatable: false,
+    grants: [
+      { type: "choice-cantrip", classSpellList: "druid", amount: 2, spellAbility: "WIS" },
+    ],
+    source: "SRD",
+  },
   // ============================================================
   // Epic Boon Feats
   // ============================================================

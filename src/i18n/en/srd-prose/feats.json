@@ -8,6 +8,9 @@
   "archery": {
     "gist": "+2 to attack rolls with Ranged weapons"
   },
+  "blessed-warrior": {
+    "gist": "Learn two Cleric cantrips, cast with Charisma as Paladin spells"
+  },
   "boon-of-combat-prowess": {
     "gist": "+1 to one ability score (max 30); once per round, turn a miss into a hit"
   },
@@ -31,6 +34,9 @@
   },
   "defense": {
     "gist": "+1 to Armor Class while you wear armor"
+  },
+  "druidic-warrior": {
+    "gist": "Learn two Druid cantrips, cast with Wisdom as Ranger spells"
   },
   "grappler": {
     "gist": "+1 Str or Dex; hit and grapple with one Unarmed Strike; Advantage vs creatures you grapple"

@@ -16,6 +16,11 @@
     "name": "Tiro",
     "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
   },
+  "blessed-warrior": {
+    "description": "Impari due trucchetti del Chierico a tua scelta. Si consigliano Guida e Fiamma Sacra. Per te i trucchetti scelti contano come incantesimi da Paladino, e Carisma è la tua caratteristica da incantatore per essi. Ogni volta che ottieni un livello da Paladino, puoi sostituire uno di questi trucchetti con un altro trucchetto del Chierico.",
+    "gist": "Impari due trucchetti del Chierico, lanciati con il Carisma come incantesimi da Paladino",
+    "name": "Guerriero Benedetto"
+  },
   "boon-of-combat-prowess": {
     "description": "Ottieni i seguenti benefici:\n\n**Aumento di Caratteristica.** Aumenti un punteggio di caratteristica a tua scelta di 1, fino a un massimo di 30.\n\n**Mira Impareggiabile.** Quando manchi con un tiro per colpire, puoi colpire invece. Una volta usato questo beneficio, non puoi usarlo di nuovo fino all'inizio del tuo prossimo turno.",
     "gist": "+1 a una caratteristica (max 30); una volta per round un attacco mancato diventa un colpo",
@@ -63,6 +68,11 @@
     "gist": "+1 alla Classe Armatura mentre indossi un'armatura",
     "name": "Difesa",
     "prerequisite": "Livello 1+, Gruppo Guerriero o Sacerdote"
+  },
+  "druidic-warrior": {
+    "description": "Impari due trucchetti del Druido a tua scelta. Si consigliano Guida e Luce Splendente. Per te i trucchetti scelti contano come incantesimi da Ranger, e Saggezza è la tua caratteristica da incantatore per essi. Ogni volta che ottieni un livello da Ranger, puoi sostituire uno di questi trucchetti con un altro trucchetto del Druido.",
+    "gist": "Impari due trucchetti del Druido, lanciati con la Saggezza come incantesimi da Ranger",
+    "name": "Guerriero Druidico"
   },
   "grappler": {
     "description": "Ottieni i seguenti benefici:\n\n**Aumento dei Punteggi di Caratteristica.** Il punteggio di Forza o Destrezza aumenta di 1, fino a un massimo di 20.\n\n**Colpisci e afferra.** Quando il personaggio colpisce una creatura con un colpo senz'armi come parte di un'azione di Attacco nel proprio turno, può usare sia l'opzione Danni che Presa. Questo beneficio è utilizzabile una sola volta per turno.\n\n**Attacco con vantaggio.** Dispone di vantaggio ai tiri per colpire contro le creature che ha afferrato.\n\n**Lottatore rapido.** Il personaggio non deve spendere alcun movimento extra se sposta una creatura che ha afferrato che sia della sua stessa categoria di taglia o inferiore.",
