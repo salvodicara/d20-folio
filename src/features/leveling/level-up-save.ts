@@ -9,6 +9,9 @@
  * generation at send, so an edit still unacknowledged before it is never refused on
  * reconnect). The caller gets `written`, which settles when the server answers.
  *
+ * A refusal in this session puts back the play fields the level-up changed (the play
+ * writer sends them outside the batch); the parent and the rest are the server's.
+ *
  * Known limit: a refusal that arrives in a LATER session (the app closed, the queue
  * replayed at the next start) has no one to report it; the server copy wins.
  */
@@ -17,6 +20,7 @@ import { queueCharacterSnapshot } from "@/lib/firestore";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
+import { sessionToCombatState } from "@/lib/combat-state";
 import type { CharacterDoc } from "@/types/character";
 
 export interface QueuedLevelUp {
@@ -63,16 +67,27 @@ export async function applyLevelUp(input: {
       );
     });
   });
+  // Refused (a conflict, a rule): the batch never landed, but the play writer already
+  // sent the level-up's play change (its HP, dice, slots). Put back exactly those fields
+  // (a patch from the level-up's play state to the old one), so the sheet is never left
+  // half levelled. The parent stays the server's; the listener shows it.
+  written.catch(() => {
+    void import("@/lib/combat-state-io")
+      .then(({ writeCombatState }) =>
+        writeCombatState(
+          uid,
+          before.id,
+          sessionToCombatState(before.session),
+          sessionToCombatState(after.session)
+        )
+      )
+      .catch((err: unknown) =>
+        diagnosticsLog("warn", "character.level-up-play-revert-failed", {
+          message: err instanceof Error ? err.message : String(err),
+        })
+      );
+  });
   return { written };
-}
-
-/** Put `before` back after a refused level-up, only while the sheet still shows exactly
- *  `after` (an edit made since is left alone; the listener then shows the server copy). */
-export function revertRefusedLevelUp(before: CharacterDoc, after: CharacterDoc): boolean {
-  const store = useCharacterStore.getState();
-  if (store.character?.character !== after.character) return false;
-  store.setCharacter(before);
-  return true;
 }
 
 /** The level-up's undo: `before` on screen, and its whole-sheet write in queue order. */

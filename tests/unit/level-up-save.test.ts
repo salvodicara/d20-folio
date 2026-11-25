@@ -14,6 +14,8 @@ const h = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {}, auth: {} }));
+const io = vi.hoisted(() => ({ writeCombatState: vi.fn(() => Promise.resolve()) }));
+vi.mock("@/lib/combat-state-io", () => io);
 vi.mock("@/lib/firestore", () => ({
   queueCharacterSnapshot: (
     _uid: string,
@@ -27,7 +29,9 @@ vi.mock("@/lib/firestore", () => ({
   },
 }));
 
-import { applyLevelUp, revertRefusedLevelUp } from "@/features/leveling/level-up-save";
+import { applyLevelUp } from "@/features/leveling/level-up-save";
+import { sessionToCombatState } from "@/lib/combat-state";
+import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 
 const never = (): Promise<void> => new Promise<void>(() => undefined);
@@ -36,6 +40,8 @@ let before: CharacterDoc;
 let after: CharacterDoc;
 
 beforeEach(() => {
+  io.writeCombatState.mockClear();
+  useAuthStore.setState({ user: { uid: "u1" } as never });
   h.events.length = 0;
   h.snapshotOf = null;
   before = { ...makeCharacterDoc(), id: "c1" };
@@ -93,17 +99,36 @@ describe("applyLevelUp", () => {
   });
 });
 
-describe("revertRefusedLevelUp", () => {
-  it("puts the old sheet back while the sheet still shows the level-up", () => {
-    useCharacterStore.getState().setCharacter(after);
-    expect(revertRefusedLevelUp(before, after)).toBe(true);
-    expect(useCharacterStore.getState().character?.character).toBe(before.character);
+// Found in a real two-device run (#1285): the level-up's play change (its HP) reaches
+// `combat/state` through the play writer, outside the refused batch. A refused level-up
+// must put back exactly the play fields it changed, or the sheet is left mixed (a level-1
+// parent with level-2 HP). The parent is the server's, shown by the listener; it is never
+// rewritten from here (that could overwrite another device's newer edit).
+describe("a refused level-up", () => {
+  it("writes back only the play fields the level-up changed", async () => {
+    useCharacterStore
+      .getState()
+      .setWholeSheetWriter(() => Promise.reject(new Error("denied")));
+    const levelled = {
+      ...after,
+      session: { ...after.session, hp: { ...before.session.hp, current: 99 } },
+    };
+    const queued = await applyLevelUp({ uid: "u1", before, after: levelled });
+    await expect(queued.written).rejects.toThrow("denied");
+    await vi.waitFor(() => expect(io.writeCombatState).toHaveBeenCalledTimes(1));
+    expect(io.writeCombatState).toHaveBeenCalledWith(
+      "u1",
+      before.id,
+      sessionToCombatState(before.session),
+      sessionToCombatState(levelled.session)
+    );
   });
 
-  it("leaves a sheet edited since alone", () => {
-    const edited = { ...after, character: { ...after.character, quote: "since" } };
-    useCharacterStore.getState().setCharacter(edited);
-    expect(revertRefusedLevelUp(before, after)).toBe(false);
-    expect(useCharacterStore.getState().character?.character).toBe(edited.character);
+  it("an accepted level-up writes nothing back", async () => {
+    useCharacterStore.getState().setWholeSheetWriter(() => Promise.resolve());
+    const queued = await applyLevelUp({ uid: "u1", before, after });
+    await queued.written;
+    await Promise.resolve();
+    expect(io.writeCombatState).not.toHaveBeenCalled();
   });
 });

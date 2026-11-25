@@ -50,11 +50,7 @@ import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
 import { getClasses, primaryClassId, totalLevel } from "@/lib/classes";
 import { clearLevelUpDraft, loadLevelUpDraft, saveLevelUpDraft } from "@/lib/local-draft";
 import { abilityModifier } from "@/lib/compute";
-import {
-  applyLevelUp,
-  revertRefusedLevelUp,
-  undoLevelUp,
-} from "@/features/leveling/level-up-save";
+import { applyLevelUp, undoLevelUp } from "@/features/leveling/level-up-save";
 import { recordLevelUp } from "@/domains/leveling/level-up-line";
 import { commitLevelUp } from "@/lib/level-up-commit";
 import { HIT_DIE_AVG } from "@/lib/level-up-plan";
@@ -188,7 +184,6 @@ export function LevelUpScreen({
     // The server refused it (a conflict, a rule): the old sheet comes back and says why.
     written.catch((e: unknown) => {
       takeLineBack();
-      revertRefusedLevelUp(before, after);
       useToastStore.getState().showToast({ message: failed(e), duration: 8000 });
     });
     useToastStore.getState().showToast({
@@ -198,7 +193,6 @@ export function LevelUpScreen({
         takeLineBack();
         undoLevelUp(before).catch((e: unknown) => {
           // The sheet stays levelled when the old one cannot be put back.
-          revertRefusedLevelUp(after, before);
           useToastStore.getState().showToast({ message: failed(e), duration: 6000 });
         });
       },

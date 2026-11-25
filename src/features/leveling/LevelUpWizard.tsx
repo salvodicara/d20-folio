@@ -52,7 +52,7 @@ import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
-import { applyLevelUp, revertRefusedLevelUp } from "@/features/leveling/level-up-save";
+import { applyLevelUp } from "@/features/leveling/level-up-save";
 
 import { localizeSrd } from "@/i18n/resolver";
 
@@ -708,7 +708,6 @@ export function LevelUpWizard() {
       // The server refused it (a conflict, a rule): the old sheet comes back and says why.
       written.catch((e: unknown) => {
         takeLineBack();
-        revertRefusedLevelUp(before, updatedDoc);
         const msg = e instanceof Error ? e.message : t("common.unknownError");
         showToast({ message: t("levelUp.saveFailed", { error: msg }), duration: 8000 });
       });
