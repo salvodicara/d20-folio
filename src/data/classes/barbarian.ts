@@ -565,12 +565,22 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     // every chosen enemy in a 30-ft Emanation on a failed WIS save (DC = 8 + STR
     // mod + PB), usable 1/Long Rest or by expending a use of Rage — mirrors the
     // Zealot's Zealous Presence modelling (tracker 1/long-rest + bonus action).
+    // The Frightened target repeats the save at the end of each of its turns.
     level: 14,
     mechanics: {
       tracker: { total: "1", recovery: "long-rest" },
       actions: [
         {
           type: "bonus",
+          saveAbility: "WIS",
+          saveDcAbility: "STR",
+          targeting: { affinity: "enemy" },
+          conditionApplication: {
+            options: ["frightened"],
+            on: "failed-save",
+            lifetime: { kind: "timed", minutes: 1, maxRounds: 10 },
+            ends: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
+          },
         },
       ],
     },

@@ -298,6 +298,9 @@ export const ROGUE_FEATURES: SrdClassFeatureData[] = [
         cost: 1,
         save: "CON",
         condition: "poisoned",
+        // Poisoned for 1 minute; it repeats the save at the end of each of its turns.
+        lifetime: { kind: "timed", minutes: 1, maxRounds: 10 },
+        ends: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
       },
       {
         type: "cunning-strike-option",
