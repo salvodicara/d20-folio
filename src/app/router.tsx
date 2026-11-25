@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router";
-import { lazy, Suspense, useLayoutEffect, useMemo } from "react";
+import { lazy, Suspense, useLayoutEffect } from "react";
 import { setNewUiFrame } from "@/stores/uiStore";
 import { useNewUi } from "./new-ui-choice";
 import { AppShell } from "./AppShell";
@@ -433,11 +433,34 @@ export function buildRouter(NEW_UI: boolean, NEW_CAMPAIGN: boolean) {
   );
 }
 
+/** One router per interface choice, kept for the page's life. Built during render, a
+ *  router would be new on every retry of a mount that suspends with no boundary above
+ *  it (the /ui stories page): its lazy screens never resolved and the page stayed blank. */
+const routers = new Map<string, ReturnType<typeof buildRouter>>();
+// eslint-disable-next-line react-refresh/only-export-components
+export function routerFor(newUi: boolean, newCampaign: boolean) {
+  const key = `${newUi}-${newCampaign}`;
+  let router = routers.get(key);
+  if (!router) {
+    router = buildRouter(newUi, newCampaign);
+    routers.set(key, router);
+  }
+  return router;
+}
+
 export function AppRouter() {
   const newUi = useNewUi();
   // The campaign screens are not at parity yet: new only on the VITE_NEW_UI build.
   const newCampaign = newUi && import.meta.env.VITE_NEW_UI === "1";
-  const router = useMemo(() => buildRouter(newUi, newCampaign), [newUi, newCampaign]);
+  const router = routerFor(newUi, newCampaign);
+  // A router kept from an earlier choice (a sign-out, then a sign-in) may still hold the
+  // address it last showed: bring it to the address the browser shows now.
+  useLayoutEffect(() => {
+    const here = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    const { pathname, search, hash } = router.state.location;
+    if (`${pathname}${search}${hash}` !== here)
+      void router.navigate(here, { replace: true });
+  }, [router]);
   useLayoutEffect(() => setNewUiFrame(newUi), [newUi]);
   return (
     <>

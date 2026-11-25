@@ -10,7 +10,7 @@ import { isValidElement } from "react";
 
 vi.mock("@/lib/firebase", () => ({ db: {}, auth: {}, storage: {} }));
 
-import { buildRouter } from "@/app/router";
+import { buildRouter, routerFor } from "@/app/router";
 import { AppShell } from "@/app/AppShell";
 
 function inClassicFrame(routes: RouteObject[], path: string): boolean {
@@ -43,5 +43,17 @@ describe("routes per interface", () => {
     for (const path of [...CAMPAIGN, ...REBUILT]) {
       expect(inClassicFrame(routes, path), path).toBe(false);
     }
+  });
+});
+
+// A route that suspends with no boundary above it (the /ui stories page) makes React
+// drop the first mount and render again from scratch: a router (and its lazy screens)
+// built during render would be new every time, so the page never resolved. One router
+// per choice, kept for the page's life.
+describe("routerFor", () => {
+  it("hands back the same router for the same choice", () => {
+    expect(routerFor(true, false)).toBe(routerFor(true, false));
+    expect(routerFor(false, false)).toBe(routerFor(false, false));
+    expect(routerFor(true, false)).not.toBe(routerFor(false, false));
   });
 });
