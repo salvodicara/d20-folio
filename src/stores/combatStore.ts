@@ -236,6 +236,9 @@ interface CombatState {
   reflexesTaken: boolean;
   /** The Time Stop turns the player entered, for the round the spell was cast in. */
   timeStopTurns: TimeStopTurns | null;
+  /** The turn-start notes applied THIS turn (Heroic Rally's heal, Heroism's Temporary
+   *  Hit Points), by note id: one tap per turn. Turn-scoped, not persisted. */
+  turnStartApplied: readonly string[];
 
   // Actions
   setRound: (round: number) => void;
@@ -377,6 +380,9 @@ interface CombatState {
   extraTurn: (source: ExtraTurnSource) => void;
   /** Record the Time Stop count the player rolled (1d4 + 1) for the current round. */
   setTimeStopTurns: (total: number) => void;
+  /** Mark a turn-start note applied this turn; returns its undo. Null when read-only
+   *  or already applied. */
+  markTurnStartApplied: (noteId: string) => (() => void) | null;
 }
 
 const emptySelected = (): CombatState["selected"] => ({
@@ -444,6 +450,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
   difficultTerrain: false,
   reflexesTaken: false,
   timeStopTurns: null,
+  turnStartApplied: [],
 
   setRound: (round) => set({ round }),
   setFightStarted: (started) => set({ fightStarted: started }),
@@ -812,6 +819,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       masteriesThisTurn: [],
       movementLocked: false,
       difficultTerrain: false,
+      turnStartApplied: [],
     }),
 
   endCombat: () =>
@@ -837,6 +845,7 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
       masteriesThisTurn: [],
       movementLocked: false,
       difficultTerrain: false,
+      turnStartApplied: [],
       reflexesTaken: false,
       timeStopTurns: null,
       initiative: "",
@@ -881,6 +890,15 @@ export const useCombatStore = create<CombatState>()((set, get) => ({
     if (sheetReadonly()) return;
     set((state) => ({ timeStopTurns: { round: state.round, total, taken: 0 } }));
   },
+
+  markTurnStartApplied: (noteId) => {
+    if (sheetReadonly() || get().turnStartApplied.includes(noteId)) return null;
+    set((s) => ({ turnStartApplied: [...s.turnStartApplied, noteId] }));
+    return () =>
+      set((s) => ({
+        turnStartApplied: s.turnStartApplied.filter((id) => id !== noteId),
+      }));
+  },
 }));
 
 /**
@@ -910,6 +928,7 @@ function freshTurn(): Pick<
   | "masteriesThisTurn"
   | "movementLocked"
   | "difficultTerrain"
+  | "turnStartApplied"
 > {
   return {
     selected: emptySelected(),
@@ -936,5 +955,6 @@ function freshTurn(): Pick<
     masteriesThisTurn: [],
     movementLocked: false,
     difficultTerrain: false,
+    turnStartApplied: [],
   };
 }
