@@ -3871,6 +3871,34 @@
   font: 700 40px/1 var(--font-title);
   color: var(--strong);
 }
+/* «Danni e cure»: the max HP row opens its number pane (DDB's HP manager) */
+.fui button.f-hp-max {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fui button.f-hp-max > b {
+  margin-left: auto;
+  font: 700 20px/1 var(--font-title);
+  color: var(--strong);
+}
+/* a chevron says the row opens its pane */
+.fui button.f-hp-max::after {
+  content: "›";
+  margin-left: 12px;
+  color: var(--muted);
+  font-size: 22px;
+  line-height: 1;
+}
 /* the rule behind the number, one plain sentence (DDB's pane opens with it) */
 .fui .f-num-rule {
   margin: 0;

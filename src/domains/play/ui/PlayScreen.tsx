@@ -536,6 +536,10 @@ function PlayHeader({
           locale={locale}
           intent={hpOpen}
           onClose={() => setHpOpen(false)}
+          onOpenMax={() => {
+            setHpOpen(false);
+            setNumberOpen({ kind: "maxHp" });
+          }}
         />
       )}
       {numberOpen && (
