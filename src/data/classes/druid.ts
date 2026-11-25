@@ -74,6 +74,9 @@ export const DRUID_TABLE: SrdClassTable = {
   spellcasting: { ability: "WIS", preparedCaster: true },
   longRestSpellChange: "any",
   subclassLevel: 3,
+  // «Whenever you gain a Druid level, you can replace one of your cantrips»
+  // (SRD 5.2.1); levelled spells change on a Long Rest instead.
+  canSwapCantrip: true,
   subclassSpellLevels: [3, 5, 7, 9],
   subclasses: [
     {

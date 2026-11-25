@@ -76,6 +76,8 @@ export interface FightLook {
     currentHp: number;
     tempHp: number;
     conditions: ReadonlyArray<string>;
+    /** Live data not loaded: the HP is a placeholder, never an event (#1306). */
+    liveUnknown?: true;
   }>;
   currentCombatantId: string | null;
   /** The fight's hits so far, in order (the chronicle's damage beats): who took each
@@ -94,7 +96,11 @@ export function fightConditionEvents(
   for (const row of after.rows) {
     const was = prior.get(row.id);
     if (!was) continue;
-    if (row.currentHp + row.tempHp < was.currentHp + was.tempHp) {
+    if (
+      !row.liveUnknown &&
+      !was.liveUnknown &&
+      row.currentHp + row.tempHp < was.currentHp + was.tempHp
+    ) {
       const by = attackersOf(row.id, before, after);
       events.push({ kind: "damaged", targetId: row.id, ...(by ? { by } : {}) });
     }

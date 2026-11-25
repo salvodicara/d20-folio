@@ -12,30 +12,30 @@ players opt in one by one with the per-user toggle (#1233).
 
 ## Character sheet (Play screen)
 
-| Capability                                                    | New UI                                                                                            |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| Every classic Play prompt (turn, fight, 0 HP)                 | Present, except the partial rows below (parity guard)                                             |
-| Heroic Inspiration, Bardic die                                | Present: `PlayInspiration`                                                                        |
-| Rest re-pick of grant bundles                                 | Present: `PlayRestSummary`                                                                        |
-| Re-pick maneuvers/metamagic/invocations                       | Missing (classic `ChoiceRePicker`)                                                                |
-| Wish follow-up                                                | Partial: the note only (`PlaySoloTurn`), no duplicate or Wish Stress buttons, solo game only      |
-| Rage upkeep, Stand up, extra turn, Time Stop                  | Partial: only in a fight without a campaign (`PlaySoloTurn`); a campaign fight does not show them |
-| Defenses                                                      | Partial: show, temporary add/remove, re-pick (`PlayDefenses`); no permanent edits                 |
-| Undo                                                          | Partial: «Annulla» on each action's toast; no redo, no ⌘Z                                         |
-| Edit mode (scores, AC/HP max/init overrides)                  | Missing                                                                                           |
-| Features & Traits tab                                         | Missing                                                                                           |
-| Bio (portrait edit, story, alignment, languages)              | Missing (portrait shown read-only)                                                                |
-| XP                                                            | Missing (read only for the "level up ready" note)                                                 |
-| Resource notes and conversions                                | Missing (one slot→tracker refill exists)                                                          |
-| Proficiencies (armor, weapons, tools, languages), skill edits | Missing (skill proficiency dot only)                                                              |
-| Senses and other speeds                                       | Partial: walking speed only                                                                       |
-| Items: quantity, equip, remove                                | Present: the item pane (`PlayItemPane`), opened from the item's name                              |
-| Items: add from the catalogue                                 | Present: «Aggiungi un oggetto» (`PlayAddItem`), the Compendium's own list                         |
-| Items: custom (homebrew) item, sell                           | Missing                                                                                           |
-| Coins: add, take                                              | Present: the coin pane (`PlayCoinPane`), opened from the coin row                                 |
-| Add spells, custom spells, wizard spellbook copy              | Missing (prepare and cantrip swap exist)                                                          |
-| Share, PDF, snapshots history                                 | Partial: JSON export from the roster only                                                         |
-| Playbook editing, situational rules reference                 | Missing (playbook is read-only)                                                                   |
+| Capability                                                    | New UI                                                                                        |
+| ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Every classic Play prompt (turn, fight, 0 HP)                 | Present, except the partial rows below (parity guard)                                         |
+| Heroic Inspiration, Bardic die                                | Present: `PlayInspiration`                                                                    |
+| Rest re-pick of grant bundles                                 | Present: `PlayRestSummary`                                                                    |
+| Re-pick maneuvers/metamagic/invocations                       | Missing (classic `ChoiceRePicker`)                                                            |
+| Wish follow-up                                                | Partial: the note only (`PlaySoloTurn`), no duplicate or Wish Stress buttons                  |
+| Rage upkeep, Stand up, extra turn, Time Stop                  | Present: `PlaySoloTurn`, solo and campaign; extra turn and Time Stop solo-only, as on classic |
+| Defenses                                                      | Partial: show, temporary add/remove, re-pick (`PlayDefenses`); no permanent edits             |
+| Undo                                                          | Partial: «Annulla» on each action's toast; no redo, no ⌘Z                                     |
+| Edit mode (scores, AC/HP max/init overrides)                  | Missing                                                                                       |
+| Features & Traits tab                                         | Missing                                                                                       |
+| Bio (portrait edit, story, alignment, languages)              | Missing (portrait shown read-only)                                                            |
+| XP                                                            | Missing (read only for the "level up ready" note)                                             |
+| Resource notes and conversions                                | Missing (one slot→tracker refill exists)                                                      |
+| Proficiencies (armor, weapons, tools, languages), skill edits | Missing (skill proficiency dot only)                                                          |
+| Senses and other speeds                                       | Partial: walking speed only                                                                   |
+| Items: quantity, equip, remove                                | Present: the item pane (`PlayItemPane`), opened from the item's name                          |
+| Items: add from the catalogue                                 | Present: «Aggiungi un oggetto» (`PlayAddItem`), the Compendium's own list                     |
+| Items: custom (homebrew) item, sell                           | Missing                                                                                       |
+| Coins: add, take                                              | Present: the coin pane (`PlayCoinPane`), opened from the coin row                             |
+| Add spells, custom spells, wizard spellbook copy              | Missing (prepare and cantrip swap exist)                                                      |
+| Share, PDF, snapshots history                                 | Partial: JSON export from the roster only                                                     |
+| Playbook editing, situational rules reference                 | Missing (playbook is read-only)                                                               |
 
 ## Characters, creation, level-up
 

@@ -39,17 +39,20 @@ export function dmTargets(
   ids: readonly string[]
 ): DmTarget[] {
   const chosen = new Set(ids);
-  return rows
-    .filter((r) => chosen.has(r.id))
-    .map((r) => ({
-      id: r.id,
-      kind: r.kind,
-      name: r.name,
-      hp: { current: r.currentHp, max: r.maxHp, temp: r.tempHp },
-      conditions: r.conditions,
-      ...(r.memberUid ? { memberUid: r.memberUid } : {}),
-      ...(r.characterId ? { characterId: r.characterId } : {}),
-    }));
+  return (
+    rows
+      // A PC row still loading holds placeholder HP 0/0 (#1306): not a target yet.
+      .filter((r) => chosen.has(r.id) && !r.liveUnknown)
+      .map((r) => ({
+        id: r.id,
+        kind: r.kind,
+        name: r.name,
+        hp: { current: r.currentHp, max: r.maxHp, temp: r.tempHp },
+        conditions: r.conditions,
+        ...(r.memberUid ? { memberUid: r.memberUid } : {}),
+        ...(r.characterId ? { characterId: r.characterId } : {}),
+      }))
+  );
 }
 
 export function planDmHit(targets: readonly DmTarget[], entry: DmEntry): DmHitStep[] {

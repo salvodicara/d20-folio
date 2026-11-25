@@ -148,3 +148,34 @@ describe("CreationScreen", () => {
     useAuthStore.setState({ user: null });
   }, 15_000);
 });
+
+describe("CreationScreen — an order's own pick", () => {
+  it("Thaumaturge asks its extra Cleric cantrip under the order, and Next waits for it", async () => {
+    useAuthStore.setState({ user: { uid: "u1", displayName: "Tester" } as never });
+    render(
+      <MemoryRouter>
+        <CreationScreen />
+      </MemoryRouter>
+    );
+    const next = () => screen.getByRole("button", { name: "Next" });
+    fireEvent.click(screen.getByRole("button", { name: "Cleric" }));
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: /^Acolyte/ }));
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: /^Dwarf/ }));
+    fireEvent.click(next());
+    fireEvent.click(next());
+    fireEvent.click(screen.getByRole("button", { name: "Thaumaturge" }));
+    // The order's cantrip is owed: Next waits, and its row offers Cleric cantrips.
+    expect(next().getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Spare the Dying" }));
+    expect(next().getAttribute("aria-disabled")).toBeNull();
+    fireEvent.click(next());
+    fireEvent.change(screen.getByLabelText("Character Name"), {
+      target: { value: "Selene" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Create Selene" }));
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/characters/new-id"));
+    useAuthStore.setState({ user: null });
+  }, 15_000);
+});
