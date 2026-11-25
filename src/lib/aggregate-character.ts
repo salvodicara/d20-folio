@@ -578,6 +578,24 @@ function hpPerLevelGrantParts(
 }
 
 /**
+ * The CON score max HP uses (#1318): the EFFECTIVE one (2024 RAW, "if your
+ * Constitution modifier changes, your Hit Point maximum changes as well"), from the
+ * build alone — the hand-set ability pin and attuned items that raise or set CON.
+ * No session and no assumed form: a temporary state is never baked into the max.
+ */
+function hpConScore(character: CharacterDoc["character"]): number {
+  const agg = aggregateCharacterGrants(character, {
+    activeFeatures: [],
+    grantBundleChoices: {},
+  });
+  return aggregateAbilityScores(
+    character.abilityScores,
+    { ...agg, form: null },
+    character.abilityScoreOverrides
+  ).CON;
+}
+
+/**
  * The COMPUTED, by-the-book max HP for a character (NO stored override applied) —
  * the by-the-rules average HP the level-up / creation / Bio-reconcile seams all
  * produce: {@link inferHpContributions} (per-class average hit dice + CON, RAW
@@ -685,7 +703,7 @@ export function computeCharacterMaxHpBreakdown(
   character: CharacterDoc["character"]
 ): RawBreakdownPart[] {
   const classes = getClasses(character);
-  const contributions = inferHpContributions(classes, character.abilityScores.CON);
+  const contributions = inferHpContributions(classes, hpConScore(character));
   if (contributions.length === 0) return [];
   const level = totalLevel(character);
   const parts: RawBreakdownPart[] = [];
