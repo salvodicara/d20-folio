@@ -586,6 +586,8 @@ export interface ActionSummary {
     resourceTrackerId?: string;
     round1?: true;
     requiresRiderTrackerId?: string;
+    /** Its toggle is off (Brutal Strike without Reckless Attack): never offered. */
+    needsActive?: true;
     targetCreatureTypes?: ReadonlyArray<CreatureType>;
     excludeCreatureTypes?: ReadonlyArray<CreatureType>;
     /** Only when the attack's d20 shows a 20: never a hit-time optional part. */
@@ -1359,9 +1361,12 @@ export interface RawActionSummary extends Omit<
     vsMarkedTarget?: MarkedTargetScope;
     /** Source feature/feat/invocation NAME ref — provenance (e.g. "Frenzy"). */
     source: LocText;
+    /** The toggle the rider needs and that is off now (Brutal Strike without Reckless
+     *  Attack): the chip says «needs <toggle>» and the hit never offers the die. */
+    needsActiveName?: LocText;
     /**
      * `true` when the rider rides a `while-active` toggle that is currently up
-     * (Rage's Brutal Strike, Divine Favor). The presenter appends a "· active"
+     * (Divine Favor). The presenter appends a "· active"
      * suffix so the chip reads as conditional — mirrors the weapon-damage
      * breakdown note. Absent → an unconditional rider.
      */
@@ -4232,6 +4237,9 @@ export function resolveAttackDamageRiders(
         // no `sourceId` (defensive — every SRD rider carries one) falls back to a
         // generic "extra damage" label resolved at the edge.
         source: featureNameLoc(r.sourceId),
+        ...(r.requiresActiveKey && !r.requiredActiveOn
+          ? { needsActiveName: featureNameLoc(r.requiresActiveKey) }
+          : {}),
         // A rider gated on a `while-active` toggle that is up marks the chip as a
         // conditional, currently-active source ("· active") — same flag the
         // weapon-damage breakdown reads from `whileActiveKey`.
@@ -6625,6 +6633,9 @@ export function grantedActionRows(
         : {}),
       ...(activity.cost.maxUsesPerTurn !== undefined
         ? { maxUsesPerTurn: activity.cost.maxUsesPerTurn }
+        : {}),
+      ...(granted.requiresActionThisTurn
+        ? { requiresActionThisTurn: granted.requiresActionThisTurn }
         : {}),
       pinned: pinned.has(activity.id),
       defaultPinned: false,

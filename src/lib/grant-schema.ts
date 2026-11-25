@@ -1678,6 +1678,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
         requiresRiderTrackerId: stringSchema,
+        /** Gate: the rider is offered only while this `while-active` toggle is up
+         *  (Brutal Strike needs Reckless Attack this turn); off, its chip says so. */
+        requiresActiveKey: stringSchema,
         /** Each use spends one unit of this tracker (Psionic Energy Dice). */
         resourceCost: objectSchema({
           trackerId: stringSchema,
@@ -1735,6 +1738,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
         requiresRiderTrackerId: stringSchema,
+        /** Gate: the rider is offered only while this `while-active` toggle is up
+         *  (Brutal Strike needs Reckless Attack this turn); off, its chip says so. */
+        requiresActiveKey: stringSchema,
         /** Each use spends one unit of this tracker (Psionic Energy Dice). */
         resourceCost: objectSchema({
           trackerId: stringSchema,
@@ -2501,6 +2507,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
       /** A hard cap on uses per turn (Horde Breaker: "Once on each of your turns"). */
       maxUsesPerTurn: numberSchema,
       name: LOCALE_TEXT_SCHEMA,
+      /** Another action that must already be used this turn (Tactical Shift rides a
+       *  Second Wind; Instinctive Pounce the Bonus Action that enters Rage). */
+      requiresActionThisTurn: stringSchema,
       saveAbility: unionSchema([
         literalSchema("STR"),
         literalSchema("DEX"),

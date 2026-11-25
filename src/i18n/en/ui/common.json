@@ -1,5 +1,6 @@
 {
   "common": {
+    "damageType": "Damage type",
     "save": "Save",
     "saveChanges": "Save changes",
     "cancel": "Cancel",
@@ -86,6 +87,7 @@
     "editNamed": "Edit {{name}}",
     "share": "Share",
     "skip": "Skip",
-    "resistance": "Resistance"
+    "resistance": "Resistance",
+    "coins": "Coins"
   }
 }

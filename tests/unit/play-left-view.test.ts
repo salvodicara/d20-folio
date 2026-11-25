@@ -96,3 +96,40 @@ describe("resourceSpend", () => {
     expect(resourceSpend({ ...slot, left: 0 })).toBeNull();
   });
 });
+
+describe("a pool a spell slot can refill (Font of Inspiration)", () => {
+  // Bard 5: «you can expend a spell slot to regain one expended use of Bardic
+  // Inspiration» — the classic rail's «Spend a slot →» button, on the new Play too.
+  const bard = (used: number) =>
+    makeCharacterDoc(
+      {
+        classId: "bard",
+        level: 5,
+        abilityScores: { STR: 8, DEX: 14, CON: 12, INT: 10, WIS: 10, CHA: 16 },
+        spellSlots: [
+          { level: 1, total: 4 },
+          { level: 2, total: 3 },
+          { level: 3, total: 2 },
+        ],
+        features: [
+          { srdId: "bard-bardic-inspiration" },
+          { srdId: "bard-font-of-inspiration" },
+        ],
+      },
+      { trackers: { "bard-bardic-inspiration": { used } } }
+    );
+  const inspiration = (used: number) =>
+    playLeftView(bard(used), "en").resources.find(
+      (r) => r.id === "bard-bardic-inspiration"
+    );
+
+  it("offers the refill while a use is spent and a slot is left", () => {
+    expect(inspiration(1)?.slotRecover).toBe(true);
+  });
+  it("not while every use is still there", () => {
+    expect(inspiration(0)?.slotRecover).toBeFalsy();
+  });
+  it("never on a pool no feature lets a slot refill", () => {
+    expect(playLeftView(cleric, "en").resources.some((r) => r.slotRecover)).toBe(false);
+  });
+});

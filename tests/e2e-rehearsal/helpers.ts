@@ -94,6 +94,35 @@ export async function startNewSitting(): Promise<void> {
   }
 }
 
+/** The spell a hero concentrates on, as stored on the emulator ("" when none). */
+export async function storedConcentration(
+  uid: string,
+  characterId: string
+): Promise<string> {
+  const response = await fetch(
+    `${FIRESTORE}/users/${uid}/characters/${characterId}/combat/state?mask.fieldPaths=playState.state.concentration`,
+    { headers: OWNER }
+  );
+  if (!response.ok) throw new Error(`combat state: HTTP ${String(response.status)}`);
+  const body = (await response.json()) as {
+    fields?: {
+      playState?: {
+        mapValue?: {
+          fields?: {
+            state?: {
+              mapValue?: { fields?: { concentration?: { stringValue?: string } } };
+            };
+          };
+        };
+      };
+    };
+  };
+  return (
+    body.fields?.playState?.mapValue?.fields?.state?.mapValue?.fields?.concentration
+      ?.stringValue ?? ""
+  );
+}
+
 /** Remove the sandbox campaign's fight on the emulator, as an end leaves it: no
  *  `encounter`, an empty `encounterInit`. A no-op with no fight running. */
 async function clearSandboxFight(): Promise<void> {

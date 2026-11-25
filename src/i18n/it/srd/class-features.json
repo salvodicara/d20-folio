@@ -33,7 +33,7 @@
     "description": "Effettua un attacco in mischia contro una creatura che ti ha danneggiato entro 1,5 metri."
   },
   "barbarian-brutal-strike": {
-    "description": "Se usi Attacco Irruento, puoi rinunciare al Vantaggio su un tiro per colpire basato sulla Forza nel tuo turno. Se l'attacco scelto colpisce, il bersaglio subisce 1d10 danni extra e puoi causare un effetto: Colpo Possente (spingi di 4,5 m, poi muoviti fino a metà velocità verso il bersaglio) o Colpo al Tendine (riduci la velocità di 4,5 m fino all'inizio del tuo turno successivo).",
+    "description": "Se usi Attacco Irruento, puoi rinunciare a ogni Vantaggio su un tiro per colpire basato sulla Forza a tua scelta nel tuo turno; quel tiro non deve avere Svantaggio. Se l'attacco scelto colpisce, il bersaglio subisce 1d10 danni extra del tipo dell'arma o del Colpo Senz'Armi e puoi causare un effetto: Colpo Possente (lo spingi di 4,5 m in linea retta, poi puoi muoverti fino a metà della tua Velocità verso di lui senza provocare Attacchi di Opportunità) o Colpo al Tendine (la sua Velocità cala di 4,5 m fino all'inizio del tuo turno successivo; una creatura subisce un solo Colpo al Tendine alla volta, il più recente).",
     "name": "Colpo Brutale",
     "gist": "Rinunci al Vantaggio di Attacco Irruento: +1d10 danni e un effetto (spinta o rallento)"
   },
@@ -74,7 +74,7 @@
     "gist": "Colpo Brutale infligge 2d10 e applica due effetti diversi"
   },
   "barbarian-improved-brutal-strike": {
-    "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5).",
+    "description": "Hai nuove opzioni di Colpo Brutale: Colpo Barcollante (il bersaglio ha Svantaggio al prossimo tiro salvezza e non può effettuare Attacchi di Opportunità fino all'inizio del tuo turno successivo) o Colpo Distruttivo (prima dell'inizio del tuo turno successivo, il prossimo tiro per colpire di un'altra creatura contro il bersaglio ottiene un bonus di +5; un tiro per colpire può ottenere un solo bonus di Colpo Distruttivo).",
     "name": "Colpo Brutale Migliorato",
     "gist": "Nuove opzioni di Colpo Brutale: Svantaggio al prossimo TS, o +5 al prossimo attacco altrui"
   },
@@ -908,13 +908,13 @@
     "summary": "Concentrazione piena + dado Arti Marziali + livello PF"
   },
   "paladin-abjure-foes": {
-    "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità per presentare il tuo simbolo sacro. Ogni nemico entro 18 m deve effettuare un TS di Saggezza o essere Spaventato per 1 minuto (TS pone fine).",
+    "description": "Come azione Magica, puoi spendere un uso di Incanalare Divinità e presentare il tuo simbolo sacro o la tua arma. Scegli un numero di creature pari al tuo modificatore di Carisma (minimo una) che puoi vedere entro 18 m. Ognuna effettua un TS di Saggezza contro la CD dei tuoi incantesimi o è Spaventata per 1 minuto o finché non subisce danni. Mentre è Spaventata così, nei suoi turni può fare solo una di queste cose: muoversi, effettuare un'azione o un'Azione Bonus.",
     "name": "Abiurare Nemici",
-    "gist": "Azione Magica, 1 Incanalare Divinità: nemici entro 18 m, TS Saggezza o Spaventati 1 minuto"
+    "gist": "Incanalare Divinità: mod. CAR creature a 18 m, TS Sag o Spaventate 1 min (fine ai danni)"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
-    "description": "Incanalare Divinità: i nemici entro 18 m effettuano un TS su SAG o sono Spaventati.",
-    "summary": "Nemici entro 18 m: TS Sag o Spaventati"
+    "description": "Incanalare Divinità: fino al tuo modificatore di CAR in creature (min. 1) entro 18 m effettuano un TS su SAG o sono Spaventate per 1 minuto, finché non subiscono danni.",
+    "summary": "Creature pari al mod. CAR entro 18 m: TS Sag o Spaventate"
   },
   "paladin-aura-expansion": {
     "description": "La tua Aura di Protezione e Aura di Coraggio si estendono ora a 9 metri.",

@@ -195,3 +195,22 @@ describe("levelUpAsks", () => {
     expect(keys.filter((k) => /swap|cantripRemove/.test(k))).toEqual([]);
   });
 });
+
+describe("level 19: an Epic Boon or another feat (SRD 5.2.1)", () => {
+  it("asks the +2/+1/feat choice, and the feats hold the Epic Boons and the general feats", () => {
+    const doc = makeCharacterDoc({ classId: "fighter", level: 18 });
+    const first = levelUpAsks(doc, "fighter", NO_ANSWERS, "en");
+    const mode = first.rows.find((r) => r.key === "asiMode");
+    expect(mode?.options.map((o) => o.id)).toEqual(["plus2", "plus1_1", "feat"]);
+    if (!mode) return;
+    const asks = levelUpAsks(
+      doc,
+      "fighter",
+      toggleAnswer(NO_ANSWERS, mode, "feat"),
+      "en"
+    );
+    const feats = asks.rows.find((r) => r.key === "feat")?.options.map((o) => o.id) ?? [];
+    expect(feats.some((id) => id.startsWith("boon-of-"))).toBe(true);
+    expect(feats).toContain("grappler");
+  });
+});

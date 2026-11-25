@@ -1,6 +1,5 @@
 {
   "play": {
-    "partyNotLoaded": "Party not loaded yet: cast with no target",
     "hpTitle": "Hit points",
     "temp": "+{{count}} temporary",
     "proficiency": "Proficiency",
@@ -174,7 +173,15 @@
       "refusedOnly": "Attunement only for: {{who}}.",
       "spellcasters": "spellcasters",
       "attunedTo": "those attuned to {{item}}",
-      "refusedLimitHint": "End one to free a slot."
+      "refusedLimitHint": "End one to free a slot.",
+      "weightEach": "{{weight}} each",
+      "oneLess": "One fewer",
+      "oneMore": "One more",
+      "removeItem": "Remove from inventory",
+      "searchItems": "Search items",
+      "noMatch": "Nothing matches.",
+      "addedToast": "Added: {{name}}",
+      "add": "Add an item"
     },
     "tray": {
       "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",
@@ -325,7 +332,9 @@
         "fightingStyles_one": "{{count}} Fighting Style",
         "fightingStyles_other": "{{count}} Fighting Styles",
         "spellbook_one": "{{count}} spellbook spell",
-        "spellbook_other": "{{count}} spellbook spells"
+        "spellbook_other": "{{count}} spellbook spells",
+        "expertise_one": "{{count}} Expertise skill",
+        "expertise_other": "{{count}} Expertise skills"
       },
       "spellbookTitle_one": "Add {{count}} spell to your spellbook: it stays unprepared",
       "spellbookTitle_other": "Add {{count}} spells to your spellbook: they stay unprepared"
@@ -449,6 +458,20 @@
       "left_other": "{{count}} rounds of air left",
       "out": "Out of air: you gain 1 Exhaustion level at the end of each turn.",
       "again": "Breathe again"
+    },
+    "coins": {
+      "open": "Manage coins",
+      "total": "Worth {{gp}} gp in all",
+      "adjust": "Add or take",
+      "take": "Take",
+      "addedToast": "Added: {{coins}}",
+      "takenToast": "Took: {{coins}}",
+      "rate": {
+        "pp": "1 pp = 10 gp",
+        "ep": "2 ep = 1 gp",
+        "sp": "10 sp = 1 gp",
+        "cp": "100 cp = 1 gp"
+      }
     }
   }
 }

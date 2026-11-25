@@ -23,6 +23,8 @@ export const BARBARIAN_TABLE: SrdClassTable = {
     asProficiencyToken("simple-weapons"),
     asProficiencyToken("martial-weapons"),
   ],
+  // SRD 5.2.1 Weapon Mastery: «two kinds of Simple or Martial Melee weapons».
+  weaponMasteryMeleeOnly: true,
   skillChoices: {
     count: 2,
     from: [
@@ -367,6 +369,8 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         id: "instinctive-pounce",
         type: "granted-action",
         slot: "free",
+        requiresActionThisTurn: "barbarian-rage-bonus",
+        maxUsesPerTurn: 1,
         effects: [{ kind: "self-move", fraction: 0.5 }],
       },
     ],
@@ -376,11 +380,13 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
     id: "barbarian-brutal-strike",
     class: "barbarian",
     level: 9,
-    // "If the chosen attack hits, the target takes an extra 1d10 damage" — of the
-    // attack's own type, once on your turn, on a Strength-based attack (melee weapon or Unarmed Strike; the rider skips a
-    // ranged weapon). Greater Brutal Strike (L17) raises it to 2d10 through
-    // `diceByLevel`. Forgoing Reckless Attack's Advantage and the Forceful /
-    // Hamstring effects stay the player's call (prose).
+    // "If you use Reckless Attack, you can forgo any Advantage on one Strength-based
+    // attack roll … If the chosen attack hits, the target takes an extra 1d10
+    // damage" — of the attack's own type, once on your turn, on a melee weapon or
+    // Unarmed Strike (the rider skips a ranged weapon). It exists only while Reckless
+    // Attack is up this turn (`requiresActiveKey`); off, the chip says so. Greater
+    // Brutal Strike (L17) raises it to 2d10 through `diceByLevel`. Forgoing the
+    // Advantage and the Forceful / Hamstring effects stay the player's call (prose).
     grants: [
       {
         type: "damage-rider",
@@ -388,6 +394,7 @@ export const BARBARIAN_FEATURES: SrdClassFeatureData[] = [
         damageType: "same-as-weapon",
         appliesTo: "melee-weapon",
         oncePerTurn: true,
+        requiresActiveKey: "barbarian-reckless-attack",
       },
     ],
     source: "SRD",

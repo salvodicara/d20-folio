@@ -29,7 +29,7 @@
     "description": "Make a melee attack against a creature that damaged you within 5 ft."
   },
   "barbarian-brutal-strike": {
-    "description": "If you use Reckless Attack, you can forgo Advantage on one Strength-based attack roll on your turn. If the chosen attack hits, the target takes an extra 1d10 damage and you can cause one effect: Forceful Blow (push 15 ft, then move half speed toward target) or Hamstring Blow (reduce speed by 15 ft until start of your next turn).",
+    "description": "If you use Reckless Attack, you can forgo any Advantage on one Strength-based attack roll of your choice on your turn; that roll mustn't have Disadvantage. If the chosen attack hits, the target takes an extra 1d10 damage of the weapon's or Unarmed Strike's type, and you can cause one effect: Forceful Blow (push it 15 ft straight away, then you can move up to half your Speed toward it without provoking Opportunity Attacks) or Hamstring Blow (its Speed drops by 15 ft until the start of your next turn; a creature is affected by only one Hamstring Blow at a time, the most recent).",
     "name": "Brutal Strike"
   },
   "barbarian-danger-sense": {
@@ -63,7 +63,7 @@
     "name": "Improved Brutal Strike"
   },
   "barbarian-improved-brutal-strike": {
-    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (next attack roll by another creature against the target gains +5 bonus).",
+    "description": "You have new Brutal Strike options: Staggering Blow (target has Disadvantage on its next save and can't make Opportunity Attacks until start of your next turn) or Sundering Blow (before the start of your next turn, the next attack roll made by another creature against the target gains a +5 bonus; an attack roll can gain only one Sundering Blow bonus).",
     "name": "Improved Brutal Strike"
   },
   "barbarian-indomitable-might": {
@@ -794,12 +794,12 @@
     "summary": "Full Focus + Martial Arts die + Monk level HP"
   },
   "paladin-abjure-foes": {
-    "description": "As a Magic action, you can expend one use of Channel Divinity to present your holy symbol. Each enemy within 60 feet must make a Wisdom save or be Frightened for 1 minute (save ends).",
+    "description": "As a Magic action, you can expend one use of Channel Divinity and present your holy symbol or weapon. Target a number of creatures equal to your Charisma modifier (minimum one) that you can see within 60 feet. Each target makes a Wisdom saving throw against your spell save DC or is Frightened for 1 minute or until it takes any damage. While Frightened this way, on its turns it can do only one of these: move, take an action, or take a Bonus Action.",
     "name": "Abjure Foes"
   },
   "paladin-abjure-foes.mechanics.actions.0": {
-    "description": "Channel Divinity: enemies within 60 ft make a WIS save or are Frightened.",
-    "summary": "Enemies within 60 ft: WIS save or Frightened"
+    "description": "Channel Divinity: up to your CHA modifier in creatures (min. 1) within 60 ft make a WIS save or are Frightened for 1 minute, ending if they take damage.",
+    "summary": "CHA mod creatures within 60 ft: WIS save or Frightened"
   },
   "paladin-aura-expansion": {
     "description": "Your Aura of Protection and Aura of Courage now extend to 30 feet.",

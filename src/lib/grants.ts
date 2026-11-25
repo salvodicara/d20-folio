@@ -974,6 +974,8 @@ export interface GrantedAction {
   reactionTrigger?: ReactionTrigger;
   /** A hard cap on uses per turn. */
   maxUsesPerTurn?: number;
+  /** Another action that must already be used this turn. */
+  requiresActionThisTurn?: string;
   /** What using it does, as structured effects. */
   effects?: ReadonlyArray<CatalogueEffect>;
 }
@@ -1895,6 +1897,10 @@ export interface AggregatedGrants {
     round1?: true;
     /** Gate: the rider is offered only while this tracker has an unspent use. */
     requiresRiderTrackerId?: string;
+    /** Gate: the rider is offered only while this toggle is up (Brutal Strike needs
+     *  Reckless Attack); `requiredActiveOn` says whether it is now. */
+    requiresActiveKey?: string;
+    requiredActiveOn?: boolean;
     /** Marks a per-hit "vs a specific marked/cursed creature" rider (Hunter's
      *  Mark / Hex) — the consumer surfaces it as a DISPLAY-ONLY chip labeled "vs
      *  marked / cursed target" (never auto-summed); the token drives the localized
@@ -1933,8 +1939,7 @@ export interface AggregatedGrants {
      */
     sourceId?: string;
     /**
-     * Carries the wrapping `while-active` toggle (when any — Barbarian Rage's
-     * Brutal Strike, Divine Favor) so the rider chip can mark itself as a
+     * Carries the wrapping `while-active` toggle (when any — Divine Favor) so the rider chip can mark itself as a
      * conditional, currently-active source ("· active"), exactly as
      * `weaponDamageBonuses.whileActiveKey` does. Absent = an unconditional rider.
      */
@@ -3173,6 +3178,12 @@ export function evaluateGrants(
             ? { requiresRiderTrackerId: g.requiresRiderTrackerId }
             : {}),
           ...(g.vsMarkedTarget ? { vsMarkedTarget: g.vsMarkedTarget } : {}),
+          ...(g.requiresActiveKey
+            ? {
+                requiresActiveKey: g.requiresActiveKey,
+                requiredActiveOn: activeKeys.has(g.requiresActiveKey),
+              }
+            : {}),
           damageType,
           ...(damageTypeChoices ? { damageTypeChoices } : {}),
           appliesTo: g.appliesTo,
@@ -3935,6 +3946,9 @@ export function evaluateGrants(
           ...(g.saveDcAbility ? { saveDcAbility: g.saveDcAbility } : {}),
           ...(g.reactionTrigger ? { reactionTrigger: g.reactionTrigger } : {}),
           ...(g.maxUsesPerTurn !== undefined ? { maxUsesPerTurn: g.maxUsesPerTurn } : {}),
+          ...(g.requiresActionThisTurn
+            ? { requiresActionThisTurn: g.requiresActionThisTurn }
+            : {}),
           ...(g.effects ? { effects: g.effects } : {}),
         });
         break;

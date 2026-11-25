@@ -224,10 +224,27 @@ function RiderToken({
   const residual = rider.why ? riderQualifiers(rider, t, true).join(" · ") : "";
 
   const chip = (
-    <span className="uc-verdict rider-chip" data-o={outcome} translate="no">
+    <span
+      className="uc-verdict rider-chip"
+      data-o={outcome}
+      data-off={rider.needsActive ? "" : undefined}
+      translate="no"
+    >
       {text}
     </span>
   );
+  // Off until its toggle is up (Brutal Strike without Reckless Attack): the dimmed
+  // chip and the reason in plain words, so the player sees why the die is missing.
+  if (rider.needsActive) {
+    return (
+      <span className="rider-token rider-token-off" title={detail}>
+        {chip}
+        <span className="cc-reason">
+          {t("combat.riderNeedsActive", { name: rider.needsActive })}
+        </span>
+      </span>
+    );
+  }
 
   // A depleted/non-combat consumable token still SHOWS (the player sees the
   // rider exists) but isn't tappable — it falls through to the popover-only

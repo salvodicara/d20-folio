@@ -690,3 +690,55 @@ it("Undo takes a heal on another PC back: their HP is written back and the line 
     Promise.resolve({ before: {}, after: {} })
   );
 });
+
+describe("Chromatic Orb on a goblin resistant to Fire: the player picks the type", () => {
+  beforeEach(() => {
+    setCharacter("wizard", 3, ["chromatic-orb"], [{ level: 1, total: 2 }]);
+    encounter([
+      { id: ME, kind: "pc", side: "ally", name: "Mirovel" },
+      monster("monster-1", "Goblin", {
+        defenses: { ...NO_DEFENSES, resistances: new Set(["fire"]) },
+      }),
+    ] as Rows);
+  });
+
+  it("one total; the picked type meets the goblin's defense and is the one applied", async () => {
+    renderPlay();
+    cast("Chromatic Orb");
+    const level = screen.queryByRole("button", { name: /level 1/i });
+    if (level) fireEvent.click(level);
+    const picker = await screen.findByRole("dialog", { name: /on whom/i });
+    fireEvent.click(within(picker).getByRole("button", { name: /goblin/i }));
+    const dialog = await tray();
+    // one number, not one per listed type
+    expect(within(dialog).getAllByRole("textbox")).toHaveLength(1);
+    const types = within(dialog).getByRole("group", { name: "Damage type" });
+    expect(within(types).getByRole("button", { name: "Acid" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.change(within(dialog).getByRole("textbox"), { target: { value: "10" } });
+    expect(within(dialog).getByTestId("damage-tray-preview")).toHaveTextContent("−10");
+    fireEvent.click(within(types).getByRole("button", { name: "Fire" }));
+    // the tray is rebuilt against the new type: read it again
+    const fire = await tray();
+    const typesNow = within(fire).getByRole("group", { name: "Damage type" });
+    expect(within(typesNow).getByRole("button", { name: "Fire" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    );
+    fireEvent.change(within(fire).getByRole("textbox"), { target: { value: "10" } });
+    expect(within(fire).getByTestId("damage-tray-preview")).toHaveTextContent("−5");
+    fireEvent.click(within(fire).getByRole("button", { name: /^apply$/i }));
+    expect(
+      live()
+        .session.logEntries.map((e) => e.event)
+        .find((e) => e.kind === "effect-given")
+    ).toMatchObject({
+      effect: "damage",
+      // Fire against the goblin's resistance: half of 10
+      amount: 5,
+      target: "monster-1",
+    });
+  });
+});
