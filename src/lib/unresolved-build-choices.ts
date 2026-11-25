@@ -60,6 +60,22 @@ export function unresolvedBuildChoices(
   return out;
 }
 
+/**
+ * How many picks the build still owes: the «choices owed» signal (the sheet's
+ * level-up note reads it, so a group without XP sees what is left to choose). A
+ * class pick counts each pick it owes; a pick the sheet can't check counts nothing.
+ */
+export function owedChoiceCount(
+  character: BuildForChoices,
+  session: Pick<SessionState, "grantBundleChoices">
+): number {
+  return unresolvedBuildChoices(character, session).reduce((sum, choice) => {
+    if (choice.kind === "class-pick") return sum + choice.owed;
+    if (choice.kind === "skill" && !choice.verifiable) return sum;
+    return sum + 1;
+  }, 0);
+}
+
 function speciesChoicesOwed(
   character: BuildForChoices,
   session: Pick<SessionState, "grantBundleChoices">
