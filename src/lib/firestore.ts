@@ -864,11 +864,19 @@ export async function listCharacterSnapshots(
  * Restore a character to a previous snapshot.
  * Overwrites the character's `character` and `session` fields with snapshot data.
  */
+/** What a whole-sheet write needs besides the build: the metadata the public sheet of a
+ *  shared character is built from. */
+export type WholeSheetSource = Pick<
+  CharacterDoc,
+  "shared" | "status" | "portraitUrl" | "portraitCrop"
+>;
+
 export async function restoreCharacterSnapshot(
   uid: string,
   charId: string,
   snapshot: { character: CharacterData; session: SessionState },
-  baseRevision: number
+  baseRevision: number,
+  source: WholeSheetSource
 ): Promise<void> {
   if (DEV_BYPASS_AUTH) return;
   if (!Number.isInteger(baseRevision) || baseRevision < 0) {
@@ -879,18 +887,35 @@ export async function restoreCharacterSnapshot(
     session: snapshot.session,
   });
   const batch = writeBatch(db);
+  const updatedAt = serverTimestamp();
   batch.update(charDoc(uid, charId), {
     ...(stripUndefined(parent) as Record<string, unknown>),
     // A whole-state ceremony is a build write: it advances the generation past the
     // document the caller observed, so a concurrent stale write is denied.
     revision: baseRevision + 1,
-    updatedAt: serverTimestamp(),
+    updatedAt,
   });
+
   // A snapshot contains SessionState only; combat-only ledgers/history are
   // deliberately reset so facts from the abandoned future cannot survive restore.
   batch.set(
     combatStateRef(uid, charId),
     combatStateWriteData(sessionToCombatState(snapshot.session))
+  );
+  // A shared character's public sheet must equal the parent after every write, or the
+  // rules refuse the whole batch: a level-up, a restore or its undo rewrites it too, as
+  // the autosave does (#1276; before, every whole-sheet write of a shared sheet failed).
+  await queuePublicProjection(
+    batch,
+    uid,
+    {
+      ...source,
+      id: charId,
+      revision: baseRevision + 1,
+      character: snapshot.character,
+      session: snapshot.session,
+    } as CharacterDoc,
+    updatedAt
   );
   // A whole-state ceremony already carries the latest complete parent + session.
   // Drop its same-tab debounced predecessor immediately before the atomic v1
@@ -906,9 +931,16 @@ export async function replaceCharacterState(
   charId: string,
   character: CharacterData,
   session: SessionState,
-  baseRevision: number
+  baseRevision: number,
+  source: WholeSheetSource
 ): Promise<void> {
-  await restoreCharacterSnapshot(uid, charId, { character, session }, baseRevision);
+  await restoreCharacterSnapshot(
+    uid,
+    charId,
+    { character, session },
+    baseRevision,
+    source
+  );
 }
 
 /**
