@@ -44,6 +44,8 @@ import {
   type ReviewNumber,
 } from "@/domains/leveling/level-up-review-view";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
+import { InlineMarkdown } from "@/components/shared/InlineMarkdown";
+import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
 import { getClasses, primaryClassId, totalLevel } from "@/lib/classes";
 import { clearLevelUpDraft, loadLevelUpDraft, saveLevelUpDraft } from "@/lib/local-draft";
@@ -579,8 +581,51 @@ function Question({
         locale={locale}
         onToggle={onToggle}
       />
+      {row.reveal && <SubclassReveal reveal={row.reveal} locale={locale} />}
       {row.count === 0 && <p className="f-help">{t("levelUp.screen.optionalHint")}</p>}
     </section>
+  );
+}
+
+/**
+ * The picked subclass, before it is confirmed: its features at this level (a tap
+ * opens each one's text) and its always-prepared spells. Pattern source: BG3's
+ * subclass screen and D&D Beyond's subclass detail, which show what a pick brings
+ * next to the pick.
+ */
+function SubclassReveal({
+  reveal,
+  locale,
+}: {
+  reveal: NonNullable<AskRow["reveal"]>;
+  locale: Locale;
+}) {
+  const { t } = useTranslation();
+  if (reveal.features.length === 0 && reveal.spells.length === 0) return null;
+  return (
+    <div className="f-lvl-reveal">
+      {reveal.features.length > 0 && (
+        <>
+          <h3 className="f-lbl">{t("levelUp.screen.subclassBrings")}</h3>
+          {reveal.features.map((f) => (
+            <details key={f.id}>
+              <summary>{f.name}</summary>
+              <InlineMarkdown
+                text={f.description}
+                className="f-lvl-reveal-text"
+                highlight={highlightRulesText(locale, { tappable: true })}
+              />
+            </details>
+          ))}
+        </>
+      )}
+      {reveal.spells.length > 0 && (
+        <>
+          <h3 className="f-lbl">{t("levelUp.subclassSpellsHead")}</h3>
+          <p className="f-lvl-reveal-spells">{reveal.spells.join(" · ")}</p>
+        </>
+      )}
+    </div>
   );
 }
 

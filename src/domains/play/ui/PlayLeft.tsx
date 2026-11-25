@@ -20,6 +20,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import { Button, Panel } from "@/ui";
 
+import { PlayProficiencies } from "./PlayFeatures";
 import { PlayNumberPane } from "./PlayNumberPane";
 
 const MAX_PIPS = 8;
@@ -165,6 +166,8 @@ export function PlayLeft({
             : t("play.allSkills", { count: view.allSkills.length })}
         </Button>
       </Panel>
+      {/* D&D Beyond's box under the skills; on a phone its own «Sezioni» tile */}
+      <PlayProficiencies doc={doc} locale={locale} />
       {skillOpen && (
         <PlayNumberPane
           key={skillOpen}

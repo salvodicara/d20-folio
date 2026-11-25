@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
-import { PlayCentre } from "@/domains/play/ui/PlayCentre";
+import { PlayCentre, type CentreTab } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
 import { PlayAbilitySave } from "./PlayAbilitySave";
 import { PlayNumberPane } from "./PlayNumberPane";
@@ -31,6 +31,7 @@ import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { HelpedCheck } from "@/domains/combat/ui/HelpedCheck";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
+import { PlaySnapshots } from "@/domains/play/ui/PlaySnapshots";
 import { PlayTime } from "@/domains/play/ui/PlayTime";
 import { PlayRight } from "@/domains/play/ui/PlayRight";
 import { useAttachedCampaign } from "@/domains/play/use-attached-campaign";
@@ -38,6 +39,7 @@ import { ItemResourceCommandProvider } from "@/features/character/center/ItemRes
 import { TurnEconomyProvider } from "@/features/character/center/TurnEconomyProvider";
 import { useSheetCombat } from "@/features/character/center/turn-state";
 import { useFormActions } from "@/features/character/center/tabs/spells/use-form-actions";
+import { useSheetExport } from "@/features/character/center/use-sheet-export";
 import { useCollectPickups } from "@/features/character/useCollectPickups";
 import { useSessionLogPlayerRecorder } from "@/features/character/useSessionLogPlayerRecorder";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
@@ -45,7 +47,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
-import { totalLevel } from "@/lib/classes";
+import { primaryClassId, totalLevel } from "@/lib/classes";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -58,9 +60,11 @@ import {
   Chip,
   HpRing,
   Icon,
+  ICON_NAMES,
   type IconName,
   Menu,
   PhoneBar,
+  type PageMenuAction,
   usePageMenuActions,
   useShellMenu,
   StatBadge,
@@ -76,17 +80,30 @@ const LevelUpScreen = lazy(() =>
   }))
 );
 
-type Section = "actions" | "resources" | "fight";
+type Section = "actions" | "resources" | "features" | "proficiencies" | "fight";
 const SECTION_KEY: Record<Section, string> = {
   actions: "combat.actions",
   resources: "play.sections.resources",
+  features: "play.sections.features",
+  proficiencies: "play.sections.proficiencies",
   fight: "play.sections.fight",
 };
 const SECTION_ICON: Record<Section, IconName> = {
   actions: "g-mace",
   resources: "g-gem",
+  // the character's own class crest when there is one (sectionIcon)
+  features: "g-create",
+  proficiencies: "g-combat",
   fight: "g-journal",
 };
+
+/** A section's tile icon; «Privilegi e tratti» wears the character's class crest. */
+function sectionIcon(id: Section, classId: string): IconName {
+  const crest = `g-class-${classId}`;
+  return id === "features" && (ICON_NAMES as readonly string[]).includes(crest)
+    ? (crest as IconName)
+    : SECTION_ICON[id];
+}
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
@@ -136,6 +153,8 @@ export function PlaySheet({
   // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
   const [section, setSection] = useState<Section>("actions");
   const [sectionsOpen, setSectionsOpen] = useState(false);
+  // The centre's tab: its own on a laptop; the phone's «Privilegi e tratti» opens it.
+  const [centreTab, setCentreTab] = useState<CentreTab>("actions");
   const [resting, setResting] = useState<RestKind | null>(null);
   const [passing, setPassing] = useState(false);
   const readonly = useSheetReadonly();
@@ -146,11 +165,43 @@ export function PlaySheet({
     doc && doc.id === characterId && !readonly && totalLevel(doc.character) < 20
       ? () => void navigate(`/characters/${doc.id}/level-up`)
       : null;
-  usePageMenuActions(
-    levelUp
-      ? [{ label: t("levelUp.screen.levelUp"), icon: "g-create", onSelect: levelUp }]
-      : []
-  );
+  // the owner's sheet tools, after «Sali di livello» (D&D Beyond's sheet menu: backups,
+  // export): its saved copies, and the sheet as a PDF or a file
+  const uid = useAuthStore((st) => st.user?.uid);
+  const [snapshotsOpen, setSnapshotsOpen] = useState(false);
+  const sheetExport = useSheetExport();
+  const owner = !!doc && doc.id === characterId && !readonly && !!uid;
+  const sheetActions: PageMenuAction[] = [
+    ...(levelUp
+      ? [
+          {
+            label: t("levelUp.screen.levelUp"),
+            icon: "g-create" as const,
+            onSelect: levelUp,
+          },
+        ]
+      : []),
+    ...(owner
+      ? [
+          {
+            label: t("snapshots.title"),
+            icon: "u-time" as const,
+            onSelect: () => setSnapshotsOpen(true),
+          },
+          {
+            label: t("roster.exportPdf"),
+            icon: "u-export" as const,
+            onSelect: () => void sheetExport.exportPdf(),
+          },
+          {
+            label: t("roster.exportJson"),
+            icon: "u-download" as const,
+            onSelect: () => void sheetExport.exportJson(),
+          },
+        ]
+      : []),
+  ];
+  usePageMenuActions(sheetActions);
 
   if (!doc || doc.id !== characterId) {
     return (
@@ -208,12 +259,29 @@ export function PlaySheet({
       )}
     </>
   );
+  // D&D Beyond's phone sections, in its order: actions, resources and skills, features
+  // and traits, proficiencies and training, then the fight and the session report
+  // (always there: a solo hero's report, too).
   const sections: Section[] = [
     "actions",
     "resources",
-    // the fight and the session report: always there (a solo hero's report, too)
+    "features",
+    "proficiencies",
     "fight",
   ];
+  const openSection = (id: Section) => {
+    setSection(id);
+    // the features tile opens the centre on its tab; «Azioni» brings the actions back
+    if (id === "features") setCentreTab("features");
+    else if (id === "actions" && centreTab === "features") setCentreTab("actions");
+  };
+  // Both tiles show the centre: the one marked current follows its open tab.
+  const current: Section =
+    section === "actions" || section === "features"
+      ? centreTab === "features"
+        ? "features"
+        : "actions"
+      : section;
   return (
     <main id="main" className="f-page f-sheet">
       <PhoneBar>
@@ -247,7 +315,7 @@ export function PlaySheet({
         locale={locale}
         campaign={campaign}
         rests={rests}
-        onLevelUp={levelUp}
+        actions={sheetActions}
       />
       {/* an XP table that reached the next level: the note, its one action */}
       {levelUp && view.levelUpCue === "xp-ready" && (
@@ -272,12 +340,23 @@ export function PlaySheet({
               locale={locale}
               campaign={campaign}
               onShortRest={readonly ? undefined : () => setResting("short")}
+              tab={centreTab}
+              onTab={setCentreTab}
             />
             <PlayRight campaign={campaign} locale={locale} onToast={setToast} />
           </div>
           <PlayPrompts locale={locale} />
           {passing && (
             <PlayTime doc={doc} locale={locale} onClose={() => setPassing(false)} />
+          )}
+          {uid && !readonly && snapshotsOpen && (
+            <PlaySnapshots
+              uid={uid}
+              doc={doc}
+              locale={locale}
+              open
+              onClose={() => setSnapshotsOpen(false)}
+            />
           )}
           {resting && (
             <PlayRest
@@ -309,14 +388,14 @@ export function PlaySheet({
             key={id}
             type="button"
             className="f-menu-it"
-            aria-current={section === id || undefined}
+            aria-current={current === id || undefined}
             onClick={() => {
-              setSection(id);
+              openSection(id);
               setSectionsOpen(false);
               window.scrollTo({ top: 0 });
             }}
           >
-            <Icon name={SECTION_ICON[id]} />
+            <Icon name={sectionIcon(id, primaryClassId(doc.character))} />
             {t(SECTION_KEY[id])}
           </button>
         ))}
@@ -332,14 +411,15 @@ function PlayHeader({
   locale,
   campaign,
   rests,
-  onLevelUp,
+  actions,
 }: {
   doc: CharacterDoc;
   view: PlayHeaderView;
   locale: Locale;
   campaign: CampaignDoc | null;
   rests: ReactNode;
-  onLevelUp: (() => void) | null;
+  /** the character's other actions (the same list the phone's shell menu shows) */
+  actions: PageMenuAction[];
 }) {
   const { t } = useTranslation();
   const readonly = useSheetReadonly();
@@ -536,6 +616,10 @@ function PlayHeader({
           locale={locale}
           intent={hpOpen}
           onClose={() => setHpOpen(false)}
+          onOpenMax={() => {
+            setHpOpen(false);
+            setNumberOpen({ kind: "maxHp" });
+          }}
         />
       )}
       {numberOpen && (
@@ -548,8 +632,9 @@ function PlayHeader({
           onClose={() => setNumberOpen(null)}
         />
       )}
-      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
-      {onLevelUp && (
+      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di
+          livello», the saved copies, the sheet as a PDF or a file */}
+      {actions.length > 0 && (
         <>
           <button
             type="button"
@@ -562,17 +647,20 @@ function PlayHeader({
             <Icon name="u-more" />
           </button>
           <Menu open={moreOpen} onClose={() => setMoreOpen(false)} title={view.name}>
-            <button
-              type="button"
-              className="f-menu-it"
-              onClick={() => {
-                setMoreOpen(false);
-                onLevelUp();
-              }}
-            >
-              <Icon name="g-create" />
-              {t("levelUp.screen.levelUp")}
-            </button>
+            {actions.map((a) => (
+              <button
+                key={a.label}
+                type="button"
+                className="f-menu-it"
+                onClick={() => {
+                  setMoreOpen(false);
+                  a.onSelect();
+                }}
+              >
+                <Icon name={a.icon} />
+                {a.label}
+              </button>
+            ))}
           </Menu>
         </>
       )}
