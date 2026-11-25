@@ -32,8 +32,8 @@ const dwarfMonk = (max: number): CharacterDoc => ({
 // A Draconic Sorcerer 3 with CON 14 averages 20 HP (d6: 6 + 4 + 4, +2 CON per
 // level). Draconic Resilience is a DERIVED subclass feature (+1 HP per level): the
 // minimizer drops its ref and the rehydrate merges it back, so the max must be
-// derived after that merge: 23. (The shown max is not asserted here: the grant data
-// also carries a one-shot +3, which double counts by RAW; the rules lane owns it.)
+// derived after that merge: 23. The sheet shows the same 23: the feature's "+3, then
+// +1 per Sorcerer level" is the per-level grant alone, with no extra one-shot +3.
 const draconicSorcerer = (): CharacterDoc => ({
   ...MOCK_CHARACTER,
   character: {
@@ -85,5 +85,9 @@ describe("max HP round-trip — a DERIVED subclass HP grant survives a reload", 
 
   it("a saved and reloaded Draconic Sorcerer 3 keeps 23 max HP, not the bare 20", () => {
     expect(reload(draconicSorcerer()).hp.max).toBe(23);
+  });
+
+  it("the sheet shows 23 after the reload, Draconic Resilience counted once", () => {
+    expect(effectiveMaxHp(reload(draconicSorcerer()), MOCK_CHARACTER.session)).toBe(23);
   });
 });

@@ -36,6 +36,17 @@ export function getSrdFeatureSource(srdId: string): SrdFeatureSource | undefined
 }
 
 /**
+ * The class whose levels a per-level grant counts (#1316). A class or subclass
+ * feature counts its own class's levels: Draconic Resilience is "+1 whenever you
+ * gain another Sorcerer level", so a Fighter 5 / Sorcerer 3 gets +3, not +8. Every
+ * other source (a species trait, a feat such as Tough, an item) counts the total
+ * level, and gets `null`.
+ */
+export function perLevelGrantClass(sourceId: string): string | null {
+  return classFeatureIndex.get(sourceId)?.class ?? null;
+}
+
+/**
  * The stable i18n-catalogue reference `{ kind, key }` for an SRD feature source
  * (R6+R3 SLICE 7c) — the base path the engine extends with `.grants.<i>` /
  * `.mechanics.actions.<i>` to localize a feature's grant/action strings, and the
