@@ -33,11 +33,10 @@ export interface DeletionDeps {
 }
 
 export class DeletionError extends Error {
-  constructor(
-    readonly code: "not-found" | "failed-precondition" | "internal",
-    message: string
-  ) {
+  readonly code: "not-found" | "failed-precondition" | "internal";
+  constructor(code: DeletionError["code"], message: string) {
     super(message);
+    this.code = code;
   }
 }
 
