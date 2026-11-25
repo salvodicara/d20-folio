@@ -29,15 +29,12 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useUIStore } from "@/stores/uiStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { classFeatureIndex } from "@/data/classes";
-import { FEATS_BY_ID } from "@/data/feats";
-import { raceFeatureIndex, raceTraitCatKey } from "@/data/races";
-import { deriveOriginFeats, buildGrantedFeatures } from "@/lib/character-build";
 import { primaryClassId, primaryClassEntry, classEntryLevel } from "@/lib/classes";
 import { matchesSearch } from "@/lib/search";
 // (PageHeader removed — the tab bar labels this domain; toolbar is inline below)
-import type { SrdFeatureRef, CustomFeature } from "@/types/character";
-import { resolveFeatureRiders, type ResolvedTracker } from "@/lib/smart-tracker";
+import type { CustomFeature } from "@/types/character";
+import { characterFeatureList, type FeatureGroup } from "@/lib/views/feature-list";
+import { resolveFeatureRiders } from "@/lib/smart-tracker";
 import {
   localizeTrackers,
   localizeTrackerRecovery,
@@ -52,13 +49,8 @@ import {
   type CompanionCardView,
 } from "@/lib/views/companion-row-view";
 import { CompanionStatBlockCard } from "@/components/shared/CompanionStatBlockCard";
-import {
-  localizeClassName,
-  localizeSubclassName,
-  localizeText,
-  localizeWeaponMastery,
-} from "@/lib/views/srd-i18n";
-import { localizeSrd, localizeCustom, hasSrd } from "@/i18n/resolver";
+import { localizeText, localizeWeaponMastery } from "@/lib/views/srd-i18n";
+import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { srdOptionParts } from "@/components/shared/srd-option";
 import type { ActionType, Recovery } from "@/data/types";
 import { Tracker, type TrackerColor } from "@/components/shared/Tracker";
@@ -116,7 +108,6 @@ import {
   type PickerCtx,
 } from "@/features/compendium/picker";
 import { incompleteFreeCastChoiceFeatIds } from "@/lib/feature-choice-repair";
-import type { Locale } from "@/lib/locale";
 
 /**
  * Build the "More" detail renderers for a spec-driven re-pick group — reusing the
@@ -150,9 +141,6 @@ function specDetailRenderers<T extends { id: string }>(
     },
   };
 }
-
-/** Source grouping — drives the section heading + sort order. */
-type FeatureGroup = "class" | "subclass" | "race" | "feat" | "custom";
 
 /** The folio `UniversalCard` left-border slot for a feature's action type. */
 function actionSlot(type: ActionType | "neutral"): UniversalCardSlot {
@@ -450,181 +438,23 @@ export function FeaturesTab() {
 
   const features = useMemo(() => {
     if (!character) return [];
-    const { character: charData } = character;
-
-    // "Declare the least, infer the rest": the Background's Origin feat (and the
-    // species `humanOriginFeat`) are DERIVED from the declared `background` /
-    // `humanOriginFeat`, not read from the stored snapshot. We union them onto
-    // the stored `features[]` so the feat surfaces for ANY character — including
-    // the mock and legacy docs that never injected `{ srdId }` at creation.
-    //
-    // DEDUP: an imported / older doc that still carries the origin feat in
-    // `features[]` keeps its stored entry (real `idx`, so it stays
-    // editable/deletable) and the derived twin is dropped — the feat lists
-    // exactly once. The stored array is the source of `idx`; derived-only refs
-    // carry `idx: -1` (out of band) and the edit/delete handlers already guard
-    // against a missing entry, so they stay read-only and can't corrupt the
-    // stored array.
-    const storedSrdIds = new Set(
-      charData.features.flatMap((f) => ("srdId" in f ? [f.srdId] : []))
-    );
-    // OWN-34 — DERIVE every SRD feature source for display: class + subclass +
-    // species traits (via `buildGrantedFeatures` — the SAME tested derivation the
-    // creation wizard uses, so this is no re-roll) PLUS the background/species origin
-    // feats. Union onto the stored `features[]`, deduped by srdId. This is
-    // DISPLAY-ONLY + ADDITIVE (idx:-1, read-only): `features[]` and the engine
-    // consumers (level-up scaling / combat / spells) are UNTOUCHED — exactly like the
-    // origin-feat derivation already was — so the tab answers "what can my character
-    // do?" exhaustively for ANY character (the mock, legacy + imported docs, or a
-    // desynced array) without depending on `features[]` being complete. (The full
-    // option-1 refactor — `features[]` for custom only, engine reads the derivation
-    // (a planned `derive-character-features.ts`) — is the separate, higher-blast-radius
-    // Phase 2.)
-    const derivedRefs: SrdFeatureRef[] = [];
-    const derivedSeen = new Set<string>();
-    // The FULL set of ids any build choice COMPUTES (class/subclass/species
-    // features + the background/species origin feats) — before the stored dedup.
-    // A stored ref whose id is in here is a computed feature: read-only (you
-    // change it by changing the choice in Bio), never deletable. Custom + any
-    // manually-added non-computed SRD feature stay deletable.
-    const computedIds = new Set<string>();
-    for (const ref of [
-      // R4 — computed class/subclass features for EVERY class the character has.
-      ...charData.classes.flatMap((entry) =>
-        buildGrantedFeatures({
-          classId: entry.classId,
-          level: entry.level,
-          subclassId: entry.subclassId ?? "",
-          raceId: charData.race.toLowerCase(),
-        })
-      ),
-      ...deriveOriginFeats({
-        background: charData.background,
-        bgFeat: charData.bgFeat,
-        humanOriginFeat: charData.humanOriginFeat,
-      }),
-    ]) {
-      computedIds.add(ref.srdId);
-      if (!storedSrdIds.has(ref.srdId) && !derivedSeen.has(ref.srdId)) {
-        derivedSeen.add(ref.srdId);
-        derivedRefs.push(ref);
-      }
-    }
-
-    const entries: Array<{
-      ref: SrdFeatureRef | CustomFeature;
-      idx: number;
-    }> = [
-      ...charData.features.map((ref, idx) => ({ ref, idx })),
-      ...derivedRefs.map((ref) => ({ ref, idx: -1 })),
-    ];
-
-    const resolved = entries.map(({ ref, idx }) => {
-      if ("custom" in ref) {
-        // Derive action type from the first custom action (if any)
-        const actionType: ActionType | "neutral" = ref.actions?.[0]?.type ?? "neutral";
-        return {
-          id: `custom-${ref.instanceId}`,
-          idx,
-          name: localizeCustom(ref.title, locale),
-          nameEn: localizeCustom(ref.title, "en"),
-          notes: "",
-          description: ref.contentBlocks.map((b) => b.text ?? "").join("\n"),
-          source: ref.source,
-          tracker: null as ResolvedTracker | null,
-          riders: [] as ReturnType<typeof resolveFeatureRiders>,
-          companion: null,
-          isCustom: true,
-          // Homebrew is always editable + deletable.
-          isComputed: false,
-          // The raw homebrew entry, carried so edit mode can re-open it in the
-          // editor (U6) without re-indexing the stored array in the render.
-          customRef: ref,
-          actionType,
-          group: "custom" as FeatureGroup,
-          _sortKey: { group: 4, level: 0 } as const,
-        };
-      }
-      const classFeature = classFeatureIndex.get(ref.srdId);
-      const feat = classFeature ? undefined : FEATS_BY_ID.get(ref.srdId);
-      const raceTrait =
-        classFeature || feat ? undefined : raceFeatureIndex.get(ref.srdId);
-      const srd = classFeature ?? feat ?? raceTrait;
-      // Localize a feature's SRD string (name/description) from the i18n catalogue
-      // keyed by its STABLE id — class-feature/feat key by `srdId`, a race trait by
-      // its id-derived `raceTraitCatKey`. Returns the raw `srdId` when there is no
-      // SRD feature (custom rows resolve elsewhere) or the field is legitimately
-      // absent, so the throwing resolver never fires.
-      const featKind = classFeature ? "class-feature" : feat ? "feat" : "race";
-      const featKey = raceTrait ? raceTraitCatKey(raceTrait) : ref.srdId;
-      const featText = (field: string, loc: Locale): string =>
-        srd && hasSrd(featKind, featKey, field, loc)
-          ? localizeSrd(featKind, featKey, field, loc)
-          : ref.srdId;
-      // Derive action type from SRD mechanics (first action type defined)
-      const primaryActionType: ActionType | "neutral" =
-        srd?.mechanics?.actions?.[0]?.type ?? "neutral";
-      // Build source label: feat category, race trait, "Subclass Lv", or "Class Lv".
-      const source = feat
-        ? t(`feats.category_${feat.category}`)
-        : raceTrait
+    // The one display list (stored ∪ computed, deduped, localized, sorted), shared
+    // with the Play screen's «Privilegi e tratti» (`characterFeatureList`).
+    return characterFeatureList(character.character, locale).map((f) => ({
+      ...f,
+      // Source label: feat category, species trait, or the class/subclass level.
+      source: f.featCategory
+        ? t(`feats.category_${f.featCategory}`)
+        : f.group === "race"
           ? t("features.racialTrait")
-          : classFeature?.subclass
-            ? `${localizeSubclassName(classFeature.subclass, locale)} ${classFeature.level}`
-            : `${localizeClassName(classFeature?.class ?? "?", locale)} ${classFeature?.level ?? "?"}`;
-      // A class-feature entry splits into Class vs Subclass by its `subclass` tag
-      // (OWN-34 — every source gets its own section).
-      const group: FeatureGroup = classFeature
-        ? classFeature.subclass
-          ? "subclass"
-          : "class"
-        : raceTrait
-          ? "race"
-          : "feat";
-      // Sort key: class (0), subclass (1), race (2), feat (3) — class/subclass by level.
-      const _sortKey = classFeature
-        ? { group: classFeature.subclass ? 1 : 0, level: classFeature.level }
-        : raceTrait
-          ? { group: 2, level: 0 }
-          : { group: 3, level: 0 };
-      // H10 — pull the rider chip(s) even for trackerless features (e.g. Monk
-      // Unarmored Movement, Monk Martial Arts die). resolveFeatureRiders
-      // returns the primary rider plus any `extra` siblings (Artificer Replicate
-      // Magic Item: Plans Known + Magic Items), or [] for features with no rider.
-      const riders = resolveFeatureRiders(ref.srdId, character);
-      return {
-        id: ref.srdId,
-        idx,
-        name: featText("name", locale),
-        nameEn: featText("name", "en"),
-        notes: ref.notes ?? "",
-        description: hasSrd(featKind, featKey, "description", locale)
-          ? localizeSrd(featKind, featKey, "description", locale)
-          : "",
-        source,
-        tracker: trackerMap.get(ref.srdId) ?? null,
-        riders,
-        // Summoned companion (Steel Defender / Eldritch Cannon / Primal Companion):
-        // the ONE shared presenter resolves + localizes it (the SAME view the rail
-        // renders — golden rule 6), keyed by the granting feature id.
-        companion: companionViewMap.get(ref.srdId) ?? null,
-        isCustom: false,
-        // Computed = derived from a build choice (idx:-1) OR a stored ref whose
-        // id any choice computes. Computed features are read-only/non-deletable.
-        isComputed: idx === -1 || computedIds.has(ref.srdId),
-        customRef: null as CustomFeature | null,
-        actionType: primaryActionType,
-        group,
-        _sortKey,
-      };
-    });
-    // Sort: class features by level, then race traits, then feats, then custom
-    resolved.sort((a, b) => {
-      if (a._sortKey.group !== b._sortKey.group)
-        return a._sortKey.group - b._sortKey.group;
-      return a._sortKey.level - b._sortKey.level;
-    });
-    return resolved;
+          : (f.sourceLabel ?? ""),
+      tracker: f.isCustom ? null : (trackerMap.get(f.id) ?? null),
+      // H10 — the rider chip(s) even for trackerless features (Monk Unarmored
+      // Movement, Martial Arts die); [] for homebrew and features with no rider.
+      riders: f.isCustom ? [] : resolveFeatureRiders(f.id, character),
+      // Summoned companion: the ONE shared presenter's view, keyed by feature id.
+      companion: f.isCustom ? null : (companionViewMap.get(f.id) ?? null),
+    }));
   }, [character, trackerMap, companionViewMap, locale, t]);
 
   const filteredFeatures = useMemo(() => {
