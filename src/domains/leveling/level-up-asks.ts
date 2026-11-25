@@ -416,7 +416,11 @@ export function levelUpAsks(
           allowedLists: plan.widenedSpellLists,
           cantripsOnly: false,
           maxLevel: plan.maxSpellLevel,
-          exclude: new Set([...plan.existingSpellIds, ...a.newCantrips]),
+          exclude: new Set([
+            ...plan.existingSpellIds,
+            ...plan.alwaysPreparedGained,
+            ...a.newCantrips,
+          ]),
         },
         locale
       ).map((s) => ({ id: s.id, label: s.name })),
