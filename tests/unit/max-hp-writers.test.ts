@@ -1,0 +1,66 @@
+/**
+ * #1315 PR B — every max-HP writer records its INPUT (`hpRolled`, `hpBonus`), so a
+ * reload derives the player's number.
+ * SRD content only, so the pack-free build runs the same cases.
+ */
+import { describe, it, expect } from "vitest";
+import {
+  serializeCharacterEnvelope,
+  parseCharacterEnvelope,
+} from "@/lib/character-codec";
+import { levelUp } from "@/lib/level-up";
+import { asRaceId } from "@/data/srd-names";
+import { MOCK_CHARACTER } from "@/lib/mock";
+import type { CharacterData } from "@/types/character";
+
+// Dwarf Monk 3, CON 14: 24 average + Dwarven Toughness 3 = 27 by the book. A Monk
+// level is d8: fixed value 5, + 2 CON, + 1 Dwarven Toughness.
+const monk = (inputs: Partial<CharacterData> = {}): CharacterData => ({
+  ...MOCK_CHARACTER.character,
+  race: asRaceId("dwarf"),
+  classes: [{ classId: "monk", level: 3 }],
+  hitDieType: 8,
+  abilityScores: { ...MOCK_CHARACTER.character.abilityScores, CON: 14 },
+  features: [],
+  humanOriginFeat: "",
+  bgFeat: "",
+  hp: { max: 27 },
+  ...inputs,
+});
+
+function reload(character: CharacterData): CharacterData {
+  const env = structuredClone(
+    serializeCharacterEnvelope({ ...MOCK_CHARACTER, character })
+  );
+  const parsed = parseCharacterEnvelope(env.build, env.state);
+  if (!parsed.ok) throw new Error(parsed.error);
+  return parsed.character;
+}
+
+describe("level-up — a rolled hit die survives a reload", () => {
+  it("a roll of 8 on the d8 (fixed 5) records a surplus of 3: 38 after a reload", () => {
+    const { updatedCharacter } = levelUp(monk(), 4, { hpGain: 8 });
+    expect(updatedCharacter.hpRolled).toBe(3);
+    expect(reload(updatedCharacter).hp.max).toBe(38);
+  });
+
+  it("a roll of 2 records a surplus of −3: 32 after a reload", () => {
+    const { updatedCharacter } = levelUp(monk(), 4, { hpGain: 2 });
+    expect(updatedCharacter.hpRolled).toBe(-3);
+    expect(reload(updatedCharacter).hp.max).toBe(32);
+  });
+
+  it("the fixed value records nothing: 35 after a reload", () => {
+    const { updatedCharacter } = levelUp(monk(), 4);
+    expect(updatedCharacter.hpRolled).toBeUndefined();
+    expect(reload(updatedCharacter).hp.max).toBe(35);
+  });
+
+  it("a second roll adds to the earlier surplus", () => {
+    const first = levelUp(monk(), 4, { hpGain: 8 }).updatedCharacter;
+    const second = levelUp(first, 5, { hpGain: 7 }).updatedCharacter;
+    // 27 + (5 + 3 surplus + 2 CON + 1) + (5 + 2 surplus + 2 CON + 1) = 48.
+    expect(second.hpRolled).toBe(5);
+    expect(reload(second).hp.max).toBe(48);
+  });
+});

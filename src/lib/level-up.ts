@@ -330,7 +330,15 @@ function applyHpIncrease(
     description: `HP +${hpGain} (${dieLabel}${conPart}${perLevelNoteParts.join("")}) → ${newMax} max`,
   });
 
-  return { ...updated, hp: { max: newMax } };
+  // #1315 — a roll is the player's INPUT: record its surplus over the fixed value,
+  // so a reload derives the same max (`deriveMaxHp`). The fixed value records nothing.
+  const surplus = dieGain - avg;
+  if (dieRollOverride === undefined || surplus === 0) {
+    return { ...updated, hp: { max: newMax } };
+  }
+  const earlier = previous.hpRolled;
+  const hpRolled = (Number.isSafeInteger(earlier) ? (earlier as number) : 0) + surplus;
+  return { ...updated, hp: { max: newMax }, hpRolled };
 }
 
 // ─── Spell Slot Progression ──────────────────────────────────────────────────
