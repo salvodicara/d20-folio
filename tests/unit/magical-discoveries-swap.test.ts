@@ -37,6 +37,14 @@ function bard(level: number, subclassId?: string) {
       // One pick a cantrip, one levelled: both can be replaced.
       discovery("guidance"),
       discovery("fireball"),
+      // Always prepared too, but from another source: never offered here.
+      {
+        srdId: "bless",
+        prepared: true,
+        alwaysPrepared: true,
+        grantedBy: "magic-initiate-cleric",
+      },
+      { srdId: "detect-magic", prepared: true, alwaysPrepared: true },
     ],
   });
 }
@@ -62,7 +70,7 @@ describe("Magical Discoveries swap on the new level-up screen", () => {
     // A cantrip from the lists is allowed.
     expect(ids.has("sacred-flame")).toBe(true);
     // A Bard-only spell is not on Cleric, Druid or Wizard lists.
-    expect(ids.has("dissonant-whispers")).toBe(false);
+    expect(ids.has("compulsion")).toBe(false);
     // Never a spell already on the sheet.
     expect(ids.has("healing-word")).toBe(false);
     expect(ids.has("guidance")).toBe(false);
@@ -100,9 +108,11 @@ describe("Magical Discoveries swap on the new level-up screen", () => {
     expect(rowOf(at6.rows, "discoveryRemove")).toBeUndefined();
   });
 
-  it("a Bard of another college is not offered it", () => {
-    const asks = levelUpAsks(bard(9), "bard", NO_ANSWERS, "en");
-    expect(rowOf(asks.rows, "discoveryRemove")).toBeUndefined();
+  it("a Bard of another college, or with none, is not offered it", () => {
+    for (const subclassId of ["test-college", undefined]) {
+      const asks = levelUpAsks(bard(9, subclassId), "bard", NO_ANSWERS, "en");
+      expect(rowOf(asks.rows, "discoveryRemove")).toBeUndefined();
+    }
   });
 });
 
