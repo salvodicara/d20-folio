@@ -594,7 +594,7 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
     expect(screen.getByText(swapHead)).toBeInTheDocument();
   });
 
-  it("offers known spells in the removing voice; the replacement gates to the same level", () => {
+  it("offers known spells in the removing voice; the replacement may be any level with slots", () => {
     renderWizard();
     walkToSpellsComplete();
     clickContinue(); // spells → swap
@@ -612,9 +612,13 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
     const entry = document.querySelector('[data-fid="dissonant-whispers"]');
     expect(entry).toHaveAttribute("data-removing");
     expect(entry).not.toHaveAttribute("data-picked");
-    // The replacement phase appears, gated to the removed spell's level.
+    // The replacement phase appears. SRD 5.2.1 Bard: «replace one spell on your list
+    // with another Bard spell for which you have spell slots», so a Bard 4 (slots up to
+    // level 2) may take a level-2 spell for a level-1 one.
     expect(screen.getByText(/2\. Choose your replacement/i)).toBeInTheDocument();
-    expect(screen.getByText(/Level 1 only/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Level 1 only/i)).toBeNull();
+    expect(document.querySelector('[data-fid="hold-person"]')).not.toBeNull();
+    expect(document.querySelector('[data-fid="fear"]')).toBeNull(); // level 3: no slot
   });
 
   // Regression (golden rule 13): the commit step applies the swap via the shared
@@ -685,6 +689,58 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
     expect(srdIds).not.toContain("dissonant-whispers");
     expect(srdIds).toContain("healing-word");
     expect(srdIds).toContain("vicious-mockery");
+  });
+  // SRD 5.2.1: «Whenever you gain a Bard level, you can replace one of your cantrips».
+  it("offers a cantrip swap too, and commits it (Vicious Mockery out, a Bard cantrip in)", async () => {
+    renderWizard();
+    walkToSpellsComplete();
+    clickContinue(); // spells → swap
+    const heading = screen.getByText("Replace a Cantrip (Optional)");
+    const section = heading.closest("section");
+    if (!section) throw new Error("no cantrip swap section");
+    const mockery = within(section)
+      .getAllByRole("button")
+      .find(
+        (b) =>
+          b.classList.contains("wiz-row") && b.textContent.includes("Vicious Mockery")
+      );
+    if (!mockery) throw new Error("Vicious Mockery row not found");
+    fireEvent.click(mockery);
+    fireEvent.click(
+      within(section).getByRole("button", { name: /Replace Vicious Mockery/i })
+    );
+    const known = new Set(["vicious-mockery", "healing-word", "dissonant-whispers"]);
+    const replEntry = Array.from(
+      section.querySelectorAll<HTMLElement>(".wiz-entry[data-fid]")
+    ).find((e) => {
+      const fid = e.getAttribute("data-fid");
+      return fid != null && !known.has(fid);
+    });
+    const replId = replEntry?.getAttribute("data-fid");
+    const replRow = replEntry?.querySelector<HTMLButtonElement>(".wiz-row");
+    if (!replEntry || !replId || !replRow) throw new Error("no cantrip replacement");
+    fireEvent.click(replRow);
+    const learn = within(replEntry)
+      .getAllByRole("button")
+      .find((b) => /^Learn /.test(b.textContent));
+    if (!learn) throw new Error("Learn CTA not found");
+    fireEvent.click(learn);
+    clickContinue(); // swap → review
+    const confirm = screen
+      .getAllByRole("button")
+      .find((b) => /^Confirm: Level 4/.test(b.textContent));
+    if (!confirm) throw new Error("confirm CTA not found");
+    fireEvent.click(confirm);
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const saved = useCharacterStore.getState().character;
+    if (!saved) throw new Error("no character in store after commit");
+    const srdIds = saved.character.spells
+      .filter((s): s is { srdId: string } => "srdId" in s)
+      .map((s) => s.srdId);
+    expect(srdIds).toContain(replId);
+    expect(srdIds).not.toContain("vicious-mockery");
   });
 });
 

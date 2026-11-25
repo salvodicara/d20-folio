@@ -51,12 +51,21 @@ interface UIState {
   clearPlayRef: () => void;
 }
 
+/** Whether this page shows the new interface (#1233: a per-player choice, set by the router). */
+let newUiFrame = false;
+
+/** The router says which interface this page shows; the theme follows at once. */
+export function setNewUiFrame(on: boolean): void {
+  newUiFrame = on;
+  applyTheme(useUIStore.getState().theme);
+}
+
 function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   // The new UI ships dark-only for its first release (owner, 2026-11-11).
   const effectiveTheme =
-    import.meta.env.VITE_NEW_UI === "1"
+    newUiFrame || import.meta.env.VITE_NEW_UI === "1"
       ? "dark"
       : theme === "system"
         ? systemDark

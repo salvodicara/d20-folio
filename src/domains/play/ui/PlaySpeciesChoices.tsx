@@ -6,7 +6,9 @@
  * chips creation uses. Nothing is written until «Salva»; each choice made then
  * leaves the list. The class picks the level table gives and the build lacks
  * (invocations, cantrips, Metamagic, maneuvers, Weapon Mastery) are asked here
- * too, as the creation class step's chips. Hidden on a read-only sheet and when
+ * too, as the creation class step's chips, and so are a Lore Bard's Magical
+ * Discoveries held without their always-prepared mark (preselected: one «Salva»
+ * marks them, with an undo). Hidden on a read-only sheet and when
  * nothing is owed.
  */
 import type { InfoKind } from "@/domains/spells/option-info";
@@ -26,10 +28,12 @@ import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
 import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
 import {
+  discoverySentence,
   pendingSpeciesItems,
   speciesChoicesLine,
 } from "@/lib/views/species-choices-view";
 import { useCharacterStore } from "@/stores/characterStore";
+import { registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode } from "@/types/ability";
 import { Button, Chip, Dialog } from "@/ui";
@@ -71,7 +75,7 @@ export function PlaySpeciesChoices({
       <p>
         <b>{t("play.speciesChoices.title")}</b>
         {" · "}
-        {speciesChoicesLine(items, t, locale)}
+        {speciesChoicesLine(items, t, locale, doc.character)}
       </p>
       <Button kind="primary" aria-haspopup="dialog" onClick={() => setOpen(true)}>
         {t("play.speciesChoices.open")}
@@ -123,7 +127,16 @@ function SpeciesChoicesDialog({
   // The class picks owed, answered by row key.
   const classRows = owedClassPickRows(doc.character, locale);
   const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
+  // A Lore Bard's Magical Discoveries without their mark: the likely ones preselected,
+  // so confirming them is the one tap on «Salva».
+  const discovery = pendingSpeciesItems(doc.character, doc.session, locale).find(
+    (item) => item.kind === "discovery-mark"
+  );
+  const [discoveryPicks, setDiscoveryPicks] = useState<string[]>(
+    discovery?.preselected ?? []
+  );
   const chosen =
+    discoveryPicks.length > 0 ||
     Object.values(classPicks).some((ids) => ids.length > 0) ||
     Object.keys(bundlePicks).length > 0 ||
     ability !== null ||
@@ -146,6 +159,14 @@ function SpeciesChoicesDialog({
         ids: classPicks[row.key] ?? [],
       }))
     );
+    // Last, so its one undo restores only this mark.
+    if (discoveryPicks.length > 0) {
+      registerUndoableToast(
+        { message: t("play.speciesChoices.discoveryUndo") },
+        () => useCharacterStore.getState().confirmDiscoveries(discoveryPicks),
+        { turnScoped: false }
+      );
+    }
     onClose();
   };
   return (
@@ -264,6 +285,29 @@ function SpeciesChoicesDialog({
             />
           </div>
         ))}
+        {discovery && (
+          <div className="f-ask">
+            <span className="f-lbl">{t("play.speciesChoices.discoveryLabel")}</span>
+            <div className="f-chips">
+              {discovery.candidates.map((spell) => (
+                <Chip
+                  key={spell.id}
+                  pressed={discoveryPicks.includes(spell.id)}
+                  onClick={() =>
+                    setDiscoveryPicks(
+                      togglePick(discoveryPicks, spell.id, discovery.missing)
+                    )
+                  }
+                >
+                  {spell.label}
+                </Chip>
+              ))}
+            </div>
+            <p className="f-help">
+              {discoverySentence(doc.character, discoveryPicks, t, locale)}
+            </p>
+          </div>
+        )}
       </div>
     </Dialog>
   );

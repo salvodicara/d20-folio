@@ -8,8 +8,11 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { asRaceId } from "@/data/srd-names";
 import { SpeciesChoicesBanner } from "@/features/character/SpeciesChoicesBanner";
+import { preparedLevelledCount } from "@/lib/wizard-spellbook";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useUndoStore } from "@/stores/undoStore";
 import { makeCharacterDoc } from "./_helpers";
+import { DISCOVERIES, loreBardDoc } from "./_lore-bard";
 
 // Every Weapon Mastery the Fighter 5 has, so only the species' choices are owed.
 const MASTERED = {
@@ -154,6 +157,44 @@ describe("SpeciesChoicesBanner", () => {
         useCharacterStore.getState().character?.character.classes[0]?.invocationChoices
       ).toEqual(["agonizing-blast", "devils-sight", "eldritch-mind"]);
       expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+    },
+    SUITE_TIMEOUT
+  );
+});
+
+describe("SpeciesChoicesBanner: Magical Discoveries saved without their mark", () => {
+  it(
+    "names them, and one confirm keeps them always prepared and frees their places",
+    () => {
+      useCharacterStore.getState().setCharacter(loreBardDoc());
+      render(<SpeciesChoicesBanner />);
+      expect(
+        screen.getByRole("group", { name: "Choices to finish" }).textContent
+      ).toContain(
+        "Fireball and Spirit Guardians are your Magical Discoveries. Confirming keeps them always prepared and frees 2 of your normal prepared places."
+      );
+      fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+      // both preselected: the confirm is one tap
+      for (const name of ["Fireball", "Spirit Guardians"]) {
+        expect(screen.getByRole("button", { name }).getAttribute("aria-pressed")).toBe(
+          "true"
+        );
+      }
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      const after = useCharacterStore.getState().character?.character;
+      if (!after) throw new Error("no character");
+      expect(preparedLevelledCount(after)).toBe(1);
+      expect(
+        after.spells.flatMap((s) =>
+          !("custom" in s) && s.grantedBy === DISCOVERIES ? [s.srdId] : []
+        )
+      ).toEqual(["fireball", "spirit-guardians"]);
+      expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+      // one undo puts the sheet back as it was
+      expect(useUndoStore.getState().undo()).toBe(true);
+      const back = useCharacterStore.getState().character?.character;
+      if (!back) throw new Error("no character");
+      expect(preparedLevelledCount(back)).toBe(3);
     },
     SUITE_TIMEOUT
   );
