@@ -26,6 +26,7 @@ const TOAST_INTENT_KEY: Record<
   Exclude<ToastIntent["kind"], "defense-removed">,
   string
 > = {
+  "edit-not-saved": "save.editNotSaved",
   "concentration-dropped": "combat.concentrationDroppedToast",
   "concentration-save": "combat.concentrationSaveToast",
   "concentration-replaced": "combat.concentrationReplacedToast",
@@ -109,5 +110,7 @@ export function localizeToastIntent(
       return t(key, { spell: resolveSpellName(intent.spell) });
     case "condition-removed":
       return t(key, { condition: resolveConditionName(intent.conditionId) });
+    case "edit-not-saved":
+      return t(key);
   }
 }

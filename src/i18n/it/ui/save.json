@@ -4,6 +4,7 @@
     "pending": "Non salvato",
     "saving": "Salvataggio...",
     "error": "Errore salvataggio",
-    "offline": "Offline"
+    "offline": "Offline",
+    "editNotSaved": "La tua ultima modifica non è stata salvata: la scheda è cambiata su un altro dispositivo."
   }
 }
