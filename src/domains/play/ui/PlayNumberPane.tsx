@@ -4,6 +4,8 @@
  * opens its pane: the number, where it comes from, and «Customize» with an override.
  *
  * - The number large, «Impostato a mano» when it is hand-set.
+ * - The rule the number follows, in one plain sentence from the glossary (DDB's pane
+ *   opens with it); rule words inside it open their own explanation.
  * - Where it comes from, a line each (the same lines the classic sheet's tips show;
  *   a hand-set number keeps them and adds «Correzione manuale»).
  * - «Personalizza»: a fixed value replaces the computed one, «Usa il calcolo» puts
@@ -15,6 +17,8 @@ import { useTranslation } from "react-i18next";
 
 import { playNumberView, type SheetNumberKey } from "@/domains/play/play-number-view";
 import { renderBreakdownLineLabel } from "@/components/shared/breakdown-line";
+import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
+import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { setNumberOverride } from "@/features/character/number-overrides";
 import type { Locale } from "@/lib/locale";
 import { localeDistance, speedFromLocaleValue, speedToLocaleValue } from "@/lib/utils";
@@ -73,6 +77,11 @@ export function PlayNumberPane({
           <b>{shown}</b>
           {view.stored !== null && (
             <span className="f-num-tag">{t("play.number.handSet")}</span>
+          )}
+        </p>
+        <p className="f-num-rule">
+          {highlightRulesText(locale, { tappable: true })(
+            t(`glossary.term.${numberTerm(numberKey)}`)
           )}
         </p>
         {view.parts && view.parts.length > 0 && (
@@ -137,6 +146,26 @@ function parseDraft(draft: string, speed: boolean, locale: Locale): number | nul
     ? parseInt(speedFromLocaleValue(text, locale), 10)
     : Math.round(Number(text.replace(",", ".")));
   return Number.isFinite(value) ? value : null;
+}
+
+/** The glossary term that explains the rule behind a number. */
+function numberTerm(key: SheetNumberKey): GlossaryTermId {
+  switch (key.kind) {
+    case "ac":
+      return "armorClass";
+    case "initiative":
+      return "initiative";
+    case "speed":
+      return "speed";
+    case "proficiency":
+      return "proficiencyBonus";
+    case "ability":
+      return "abilityScores";
+    case "save":
+      return "savingThrow";
+    case "skill":
+      return "skillCheck";
+  }
 }
 
 function numberName(

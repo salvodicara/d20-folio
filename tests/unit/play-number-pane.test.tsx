@@ -141,3 +141,33 @@ describe("the pane", () => {
     expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
   });
 });
+
+describe("each pane says the rule its number follows (D&D Beyond's pane opens with the rule)", () => {
+  const cases: [Parameters<typeof playNumberView>[2], string][] = [
+    [{ kind: "ac" }, "armorClass"],
+    [{ kind: "initiative" }, "initiative"],
+    [{ kind: "speed" }, "speed"],
+    [{ kind: "proficiency" }, "proficiencyBonus"],
+    [{ kind: "ability", ability: "DEX" }, "abilityScores"],
+    [{ kind: "save", ability: "WIS" }, "savingThrow"],
+    [{ kind: "skill", id: "stealth" }, "skillCheck"],
+  ];
+  it.each(cases)("%o → the glossary's %s sentence", (key, term) => {
+    open(key);
+    const rule = i18n.t(`glossary.term.${term}`);
+    expect(rule).not.toContain("glossary.");
+    expect(screen.getByRole("dialog").textContent).toContain(rule);
+  });
+
+  it("in Italian too, and on a read-only sheet", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      open({ kind: "ac" }, "it", true);
+      expect(screen.getByRole("dialog").textContent).toContain(
+        i18n.t("glossary.term.armorClass")
+      );
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+});
