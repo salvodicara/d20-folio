@@ -15,7 +15,7 @@ export function HitReactionBanner() {
   if (!view) return null;
   return (
     <div
-      className="conc-banner conc-banner-prompt"
+      className="conc-banner conc-banner-prompt conc-banner-grounded"
       role="group"
       aria-label={t("combat.hitReaction.label")}
     >

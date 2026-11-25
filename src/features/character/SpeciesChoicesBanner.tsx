@@ -52,7 +52,7 @@ export function SpeciesChoicesBanner() {
   if (items.length === 0) return null;
   return (
     <div
-      className="conc-banner conc-banner-prompt species-due"
+      className="conc-banner conc-banner-prompt conc-banner-grounded species-due"
       role="group"
       aria-label={t("play.speciesChoices.title")}
     >
