@@ -30,6 +30,7 @@ import {
   creationDraftReducer,
   creationFacts,
   initialCreationDraft,
+  type CreationDraft,
   type CreationDraftAction,
 } from "@/lib/creation/draft";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -312,7 +313,7 @@ describe("a Bio edit with no level change still re-derives max HP", () => {
 
 describe("creation — the created max is the derived one", () => {
   const created = (actions: unknown[]) => {
-    const draft = [{ type: "setName", name: "Ada" }, ...actions].reduce(
+    const draft = [{ type: "setName", name: "Ada" }, ...actions].reduce<CreationDraft>(
       (d, a) => creationDraftReducer(d, a as CreationDraftAction),
       initialCreationDraft()
     );
