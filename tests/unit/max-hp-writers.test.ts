@@ -14,11 +14,15 @@ import { makeCharacterDoc } from "./_helpers";
 import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import {
   deriveMaxHp,
+  effectiveMaxHp,
+  effectiveMaxHpBreakdown,
   maxHpWithoutBonus,
+  withConScore,
   withMaxHpEdit,
   withoutMaxHpBonus,
 } from "@/lib/aggregate-character";
 import { asRaceId } from "@/data/srd-names";
+import { breakdownTotal } from "@/lib/value-breakdown";
 import { buildNewCharacter } from "@/lib/creation/build";
 import {
   creationDraftReducer,
@@ -235,5 +239,44 @@ describe("commitLevelUp — the max HP after every pick is the derived one", () 
     expect(next.character.hp.max).toBe(40);
     expect(reload(next.character).hp.max).toBe(40);
     expect(next.session.hp.current - before.session.hp.current).toBe(40 - 28);
+  });
+});
+
+describe("a CON edit on the sheet re-derives max HP (RA-22)", () => {
+  // Dwarf Monk 3 at CON 14 is 27; CON 16 (+1 modifier) adds 1 per level → 30.
+  it("a rise adds the modifier change across every level", () => {
+    expect(withConScore(monk(), 16).hp.max).toBe(30);
+  });
+  it("a fall subtracts it: CON 12 → 24", () => {
+    expect(withConScore(monk(), 12).hp.max).toBe(24);
+  });
+  it("an even→odd bump with no modifier change leaves it: CON 15 → 27", () => {
+    expect(withConScore(monk(), 15).hp.max).toBe(27);
+  });
+  it("the max-HP inputs carry over: rolled 4 + bonus 2 at CON 16 → 36, after a reload too", () => {
+    const edited = withConScore(monk({ hpRolled: 4, hpBonus: 2, hp: { max: 33 } }), 16);
+    expect([edited.hpRolled, edited.hpBonus, edited.hp.max]).toEqual([4, 2, 36]);
+    expect(reload(edited).hp.max).toBe(36);
+  });
+});
+
+describe("the max-HP tip explains the inputs (#1315)", () => {
+  const session = MOCK_CHARACTER.session;
+  it("a rolled surplus and a hand bonus are their own rows, summing to the shown max", () => {
+    const c = monk({ hpRolled: 4, hpBonus: 2, hp: { max: 33 } });
+    const parts = effectiveMaxHpBreakdown(c, session);
+    expect(parts).toContainEqual(expect.objectContaining({ value: 4 }));
+    expect(
+      parts.filter((p) => JSON.stringify(p).includes("breakdown.hpRolled"))
+    ).toHaveLength(1);
+    expect(
+      parts.filter((p) => JSON.stringify(p).includes("breakdown.hpBonus"))
+    ).toHaveLength(1);
+    expect(breakdownTotal(parts)).toBe(effectiveMaxHp(c, session));
+  });
+
+  it("no input, no extra row", () => {
+    const parts = effectiveMaxHpBreakdown(monk(), session);
+    expect(JSON.stringify(parts)).not.toMatch(/breakdown\.hp(Rolled|Bonus)/);
   });
 });

@@ -34,7 +34,7 @@ import { totalLevel } from "@/lib/classes";
 import { useUIStore } from "@/stores/uiStore";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
-  computeCharacterMaxHp,
+  deriveMaxHp,
   effectiveMaxHpBreakdown,
   maxHpWithoutBonus,
   withMaxHpEdit,
@@ -149,7 +149,9 @@ export function HeaderHpControl() {
   // construction (rule 6). The SAME `BreakdownTip` register every value rides (golden
   // rule 3), localized here.
   const storedMax = charData?.hp.max ?? max;
-  const computedBase = charData ? computeCharacterMaxHp(charData) : storedMax;
+  // #1315 — the derived max includes the player's inputs (rolled surplus, bonus), and
+  // the tip names them as rows, so a rolled or adjusted max is still explained.
+  const computedBase = charData ? deriveMaxHp(charData) : storedMax;
   const maxBreakdown =
     charData && sheetMode !== "edit" && storedMax === computedBase
       ? localizeBreakdown(

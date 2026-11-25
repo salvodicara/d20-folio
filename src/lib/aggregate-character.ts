@@ -628,6 +628,19 @@ export function withMaxHpEdit<C extends CharacterDoc["character"]>(
   };
 }
 
+/**
+ * A CON score edit outside the level-up (RA-22, 2024 RAW): the max HP follows the CON
+ * modifier retroactively across every level, both ways. Derived (#1315), so the
+ * player's max-HP inputs (rolled surplus, hand bonus) carry over unchanged.
+ */
+export function withConScore<C extends CharacterDoc["character"]>(
+  character: C,
+  con: number
+): C {
+  const next = { ...character, abilityScores: { ...character.abilityScores, CON: con } };
+  return { ...next, hp: { ...character.hp, max: deriveMaxHp(next) } };
+}
+
 /** Reset the hand edit: clear `hpBonus`, keep the rolls, re-derive the max. */
 export function withoutMaxHpBonus<C extends CharacterDoc["character"]>(character: C): C {
   return {
@@ -804,8 +817,15 @@ export function effectiveMaxHpBreakdown(
     .filter((p) => p.amount !== 0)
     .map((p) => locPart(srdText(p.ref.kind, p.ref.key, "name"), p.amount));
   const reduction = hpMaxReductionOf(session);
+  // #1315 — the player's max-HP inputs are named rows, so a rolled or hand-adjusted
+  // max still has an honest composition.
+  const input = (v: unknown) => (Number.isSafeInteger(v) && v !== 0 ? (v as number) : 0);
+  const rolled = input(character.hpRolled);
+  const bonus = input(character.hpBonus);
   return [
     ...base,
+    ...(rolled !== 0 ? [termPart("breakdown.hpRolled", rolled)] : []),
+    ...(bonus !== 0 ? [termPart("breakdown.hpBonus", bonus)] : []),
     ...flatParts,
     ...(reduction > 0 ? [termPart("breakdown.hpMaxReduction", -reduction)] : []),
   ];

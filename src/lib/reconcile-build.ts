@@ -28,6 +28,7 @@
  *
  * Pure + Firebase-free (composes the inference seam + the feature builders).
  */
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { hitDiceTotal } from "@/lib/play/hit-dice";
 import type {
   CharacterData,
@@ -46,7 +47,6 @@ import {
   inferHitDie,
   inferSpellcasting,
   inferSpeed,
-  inferHpMax,
   inferFeatures,
 } from "@/lib/character-infer";
 import {
@@ -75,7 +75,6 @@ import {
   type AlwaysPreparedEntry,
 } from "@/lib/expanded-spells";
 import { widenedSpellListsAtLevel } from "@/lib/feat-spell-choices";
-import { hpPerLevelGrantBonus } from "@/lib/level-up";
 
 /** Every class/subclass FEATURE id across the SRD — used to drop the OLD class's
  *  features from `features[]` so the new class's set replaces them cleanly. */
@@ -655,19 +654,10 @@ export function reconcileBuildChoices(
     c.spells = spells;
   }
 
-  // ── Max HP — adjust by the INFERRED delta of the level change (symmetric: a Bio
-  //    level edit up adds the same average the level-down subtracts, so a mistyped
-  //    level round-trips losslessly). The player's deviation from the inferred
-  //    average (rolled HP, manual edits) is preserved verbatim. Class swaps leave
-  //    HP user-owned (unchanged — existing behavior).
-  if (!classSetChanged && levelChanged) {
-    const conScore = c.abilityScores.CON;
-    const inferredDelta =
-      inferHpMax(c.classes, conScore) - inferHpMax(prevClasses, conScore);
-    const perLevel = hpPerLevelGrantBonus(c).bonus;
-    const levelsDelta = totalLevel(c) - totalLevel(prev);
-    c.hp = { max: Math.max(1, c.hp.max + inferredDelta + perLevel * levelsDelta) };
-  }
+  // ── Max HP — DERIVED (#1315) from the reconciled classes, CON, grants and the
+  //    max-HP inputs (rolled surplus, hand bonus), exactly as a reload derives it. A
+  //    level edit up then down round-trips; the player's inputs are kept verbatim.
+  if (levelChanged || classSetChanged) c.hp = { max: deriveMaxHp(c) };
 
   // ── A level DECREASE invalidates the level-up checklist (it described levels
   //    the character no longer has).

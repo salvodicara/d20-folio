@@ -252,7 +252,9 @@ describe("LeftHud", () => {
       fireEvent.keyDown(input, { key: "Enter" });
       const c = useCharacterStore.getState().character?.character;
       expect(c?.abilityScores.CON).toBe(16);
-      expect(c?.hp.max).toBe(71); // was 62; FAILS before the fix (CON edit left hp.max stale)
+      // #1315 — derived: Bard 9 by the book at CON 16 is 75. MOCK's stored 62 is not a
+      // max-HP input (a reload drops it too), so the edit re-derives from the book.
+      expect(c?.hp.max).toBe(75);
     });
 
     it("editing CON down retro-adjusts stored max HP (RA-22, decrease direction)", () => {
@@ -265,7 +267,7 @@ describe("LeftHud", () => {
       fireEvent.keyDown(input, { key: "Enter" });
       const c = useCharacterStore.getState().character?.character;
       expect(c?.abilityScores.CON).toBe(12);
-      expect(c?.hp.max).toBe(53); // 62 − 9
+      expect(c?.hp.max).toBe(57); // Bard 9 by the book at CON 12
     });
   });
 });

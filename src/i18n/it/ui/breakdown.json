@@ -6,6 +6,8 @@
     "untilLongRest": "fino al prossimo Riposo Lungo",
     "override": "Correzione manuale",
     "hpMaxReduction": "Riduzione dei PF massimi",
+    "hpRolled": "Dadi vita tirati",
+    "hpBonus": "Aggiustamento",
     "ac": {
       "formBase": "Base della forma",
       "floor": "Soglia minima CA",
