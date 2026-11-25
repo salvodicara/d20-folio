@@ -168,8 +168,16 @@ export function PlaySheet({
     );
   }
   const view = playHeaderView(doc, locale);
+  // The rest row (the header on a laptop, «Risorse e abilità» on a phone). A table that
+  // levels by milestone gets «Sali di livello» first, always at hand (D&D Beyond's
+  // milestone header); an XP table gets the note under the header instead.
   const rests = (
     <>
+      {levelUp && view.levelUpCue === "milestone" && (
+        <Button icon="g-create" onClick={levelUp}>
+          {t("levelUp.screen.levelUp")}
+        </Button>
+      )}
       <Button
         icon="g-rest-short"
         aria-haspopup="dialog"
@@ -362,13 +370,6 @@ function PlayHeader({
         {/* D&D Beyond's header buttons: the rests, the campaign. */}
         {(!readonly || campaign) && (
           <div className="f-char-acts">
-            {/* a table that levels by milestone: «Sali di livello» always at hand
-                (D&D Beyond's milestone header); an XP table gets the note instead */}
-            {onLevelUp && view.levelUpCue === "milestone" && (
-              <Button icon="g-create" onClick={onLevelUp}>
-                {t("levelUp.screen.levelUp")}
-              </Button>
-            )}
             {!readonly && rests}
             {campaign && (
               <Link
