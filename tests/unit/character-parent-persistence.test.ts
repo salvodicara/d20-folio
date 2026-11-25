@@ -115,6 +115,8 @@ import { FREE_TIER_LIMITS } from "@/lib/limits";
 import {
   createCharacter,
   createDebouncedSave,
+  PARENT_SAVE_DELAY_MS,
+  preloadParentWrite,
   subscribeToCharacters,
   getFullCharacter,
   getPublicCharacter,
@@ -657,5 +659,22 @@ describe("character parent persistence (v1: the child owns the play session)", (
       );
     }
     expect(harness.getDoc).not.toHaveBeenCalled();
+  });
+});
+
+// #1275: a build edit must reach the SDK inside the event that hides the page. A flush
+// with the write modules loaded calls `commit()` synchronously; a write that must load
+// them first still leaves in queue order, so its generation is never overtaken.
+describe("the build save reaches the SDK at once (#1275)", () => {
+  it("a warm flush commits synchronously, inside the caller's turn", async () => {
+    await preloadParentWrite();
+    const pending = createDebouncedSave("u1", "c1");
+    pending.save({ ...makeCharacterDoc(), id: "c1", revision: 3 });
+    void pending.flush();
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits well under a second, so a quick lock rarely meets a pending edit", () => {
+    expect(PARENT_SAVE_DELAY_MS).toBeLessThanOrEqual(500);
   });
 });
