@@ -18,6 +18,7 @@ import {
   resolveGrantSourcesForFeatures,
   resolveGrantSourcesForRace,
 } from "@/lib/resolve-grant-sources";
+import { perLevelGrantClass } from "@/lib/srd-feature-lookup";
 import { raceFeatureIndex } from "@/data/races";
 import { applyFeatAsi } from "@/lib/feat-asi";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
@@ -176,7 +177,7 @@ export function levelUp(
   const newFeatures = getFeaturesAtLevel(ctx.classId, ctx.classLevel);
 
   // 1. HP increase (uses the advancing class's hit die).
-  updated = applyHpIncrease(updated, character, changes, options?.hpGain);
+  updated = applyHpIncrease(updated, character, changes, ctx.classId, options?.hpGain);
 
   // 2. Spell slot progression — the 2024 MULTICLASS caster table over all classes
   //    (reduces to the single class's table for a single-class character).
@@ -267,13 +268,14 @@ export function levelUp(
  * the character's own species that IS in `features[]` (the creation draft's
  * granted list) is read from `race` only, so it never counts twice.
  *
- * THE single source for the per-level HP bonus: `applyHpIncrease` (level-up)
- * and the Bio-tab level reconcile (`reconcile-build`) both read it, so a level
- * up and a level down move max HP by the same per-level amount.
+ * A class feature's grant counts only that class's levels (#1316): pass
+ * `forClass`, the class gaining the level, and a grant of another class's feature
+ * is left out (a Fighter level gains no Draconic Resilience).
  */
 export function hpPerLevelGrantBonus(
   character: Pick<CharacterData, "features" | "humanOriginFeat" | "bgFeat"> &
-    Partial<Pick<CharacterData, "race">>
+    Partial<Pick<CharacterData, "race">>,
+  forClass?: string
 ): { bonus: number; parts: Array<{ name: string; amount: number }> } {
   let bonus = 0;
   const parts: Array<{ name: string; amount: number }> = [];
@@ -290,6 +292,8 @@ export function hpPerLevelGrantBonus(
   ]) {
     for (const g of src.grants ?? []) {
       if (g.type === "hp-per-level") {
+        const classId = perLevelGrantClass(src.id);
+        if (forClass && classId !== null && classId !== forClass) continue;
         bonus += g.amount;
         // English-only debug annotation: the source's canonical EN name (a FACT,
         // from the catalogue via `srdEn` — survives the data strip).
@@ -316,6 +320,7 @@ function applyHpIncrease(
   updated: CharacterData,
   previous: CharacterData,
   changes: LevelUpChange[],
+  classId: string,
   dieRollOverride?: number
 ): CharacterData {
   const conMod = abilityModifier(updated.abilityScores.CON);
@@ -327,7 +332,7 @@ function applyHpIncrease(
   // ("If your modifier reduces the total to 0 or less, you gain 1 HP.").
   const coreGain = Math.max(1, dieGain + conMod);
 
-  const perLevel = hpPerLevelGrantBonus(updated);
+  const perLevel = hpPerLevelGrantBonus(updated, classId);
   const perLevelGrantBonus = perLevel.bonus;
   const perLevelNoteParts = perLevel.parts.map((p) => ` + ${p.name} +${p.amount}`);
   const hpGain = coreGain + perLevelGrantBonus;

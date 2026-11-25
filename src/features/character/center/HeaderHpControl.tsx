@@ -316,7 +316,7 @@ export function HeaderHpControl() {
             editable={sheetMode === "edit"}
             // B08 — EDIT targets the STORED BASE (`hp.max`), never the EFFECTIVE `max`
             // (base + `agg.hpFlat`): binding `value={max}` baked a live hp-flat grant
-            // (Draconic +3, a standing Aid, an hp-flat item) permanently into the base on
+            // (Boon of Fortitude, a standing Aid, an hp-flat item) permanently into the base on
             // any edit, double-counting on the next recompute (GR6 one-source, GR8
             // override-first). The play-mode fallback (breakdown tip suppressed for a
             // hand-pinned base / husk class) still shows the EFFECTIVE total; `agg.hpFlat`
