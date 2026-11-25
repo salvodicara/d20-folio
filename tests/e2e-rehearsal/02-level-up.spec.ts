@@ -3,7 +3,7 @@
  * the Bard takes the College of Lore (Cutting Words, used in the fight later), the
  * Barbarian and the Wizard take the first offer of every pick.
  */
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   classLevel,
   expectNoCrash,
@@ -11,6 +11,19 @@ import {
   openCharacter,
   watchErrors,
 } from "./helpers";
+
+/** The max HP on the sheet's HP control: the new UI's «…: 24 / 31» or the classic
+ *  «24 of 31 hit points: …». 0 while it is not on screen. */
+async function shownMaxHp(page: Page): Promise<number> {
+  const control = page
+    .locator(".f-char-hp-open")
+    .or(page.getByRole("button", { name: /hit points: open damage/ }))
+    .first();
+  if (!(await control.isVisible().catch(() => false))) return 0;
+  const label = (await control.getAttribute("aria-label")) ?? "";
+  const match = /\/ (\d+)$/.exec(label) ?? /\d+ of (\d+) hit points/.exec(label);
+  return Number(match?.[1] ?? 0);
+}
 
 for (const hero of [
   { name: "Rehearsal Bard", className: "Bard", prefer: ["College of Lore"] },
@@ -32,6 +45,12 @@ for (const hero of [
       });
     }
     await expect(page.getByText(new RegExp(`${hero.className} 5`)).first()).toBeVisible();
+    // #1315 — the max HP the sheet shows after the level-ups is the one a reload
+    // derives from the stored build (real emulator, real save).
+    const shown = await shownMaxHp(page);
+    expect(shown).toBeGreaterThan(0);
+    await page.reload();
+    await expect.poll(() => shownMaxHp(page), { timeout: 60_000 }).toBe(shown);
     expect(errors).toEqual([]);
   });
 }
