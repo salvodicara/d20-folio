@@ -75,6 +75,16 @@ describe("a level in another class gains no Sorcerer HP", () => {
     expect(asSorcerer.hp.max).toBe(computeCharacterMaxHp(asSorcerer));
   });
 
+  it("the level-up summary names Draconic Resilience only on a Sorcerer level", () => {
+    const c = start();
+    const hpLine = (advanceClassId: string) =>
+      levelUp(c, 9, { advanceClassId }).changes.find((ch) => ch.type === "hp")
+        ?.description ?? "";
+    expect(hpLine("fighter")).toMatch(/^HP \+8 /);
+    expect(hpLine("fighter")).not.toContain("Draconic Resilience");
+    expect(hpLine("sorcerer")).toMatch(/^HP \+7 .*Draconic Resilience \+1/);
+  });
+
   it("a Fighter level typed on the Bio page gains no Draconic +1", () => {
     const c = start();
     const next = reconcileBuildChoices(c, { ...c, classes: [fighter(6), sorcerer(3)] });
