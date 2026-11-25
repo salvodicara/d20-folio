@@ -147,6 +147,8 @@ export function sanitizeSession(session: Partial<SessionState>): SessionState {
     initiative: session.initiative ?? "",
     conditions: session.conditions ?? [],
     concentrationConditions: session.concentrationConditions,
+    // What caused each condition chip, when the player named it (#1333).
+    ...(session.conditionOrigins ? { conditionOrigins: session.conditionOrigins } : {}),
     deathSucc: session.deathSucc ?? 0,
     deathFail: session.deathFail ?? 0,
     inspiration: session.inspiration ?? false,

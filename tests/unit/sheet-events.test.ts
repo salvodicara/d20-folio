@@ -334,6 +334,10 @@ const CASES: {
     { kind: "set-sees-source", key: "condition:frightened", sees: false },
     () => at(conditions.setSeesSource(doc, "condition:frightened", false)),
   ],
+  "set-condition-origin": [
+    { kind: "set-condition-origin", condition: "frightened", origin: "weird" },
+    () => at(conditions.setConditionOrigin(doc, "frightened", "weird")),
+  ],
   "set-form-gear-worn": [
     { kind: "set-form-gear-worn", key: "ring-of-protection", worn: true },
     () => forms.setFormGearWorn(doc, "ring-of-protection", true),

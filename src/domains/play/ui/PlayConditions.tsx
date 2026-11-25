@@ -103,6 +103,8 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
     if (!out) return;
     withUndo(out.session, t(how === "roll" ? "play.fire.rolled" : "play.fire.putOut"));
   };
+  const setOrigin = (condition: string, origin: string | null) =>
+    store().dispatch({ kind: "set-condition-origin", condition, origin });
   const add = (id: string, sourceId?: string) => {
     if (id === "exhaustion") setExhaustion(1);
     else store().addCondition(id, sourceId ? { sourceId } : undefined);
@@ -203,6 +205,32 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
                       >
                         {t("play.conditions.cantSeeSource")}
                       </Chip>
+                    </div>
+                  )}
+                  {/* «Da cosa?» (#1333): an optional note on the active condition; the
+                      named spell lets a solo End Turn ask its repeat save. */}
+                  {row.origin && !readonly && (
+                    <div className="f-ask">
+                      <span className="f-lbl">
+                        {t("play.conditions.fromWhat", { name: row.name })}
+                      </span>
+                      <div className="f-chips">
+                        {row.origin.options.map((o) => (
+                          <Chip
+                            key={o.id}
+                            pressed={row.origin?.chosen === o.id}
+                            onClick={() => setOrigin(row.id, o.id)}
+                          >
+                            {o.name}
+                          </Chip>
+                        ))}
+                        <Chip
+                          pressed={row.origin.chosen === null}
+                          onClick={() => setOrigin(row.id, null)}
+                        >
+                          {t("report.types.other")}
+                        </Chip>
+                      </div>
                     </div>
                   )}
                 </div>

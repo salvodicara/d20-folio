@@ -25,7 +25,9 @@ export function addCondition(
   condition: string,
   worldActionId?: string,
   /** The combatant that caused it, when known (M3: Frightened's source). */
-  sourceId?: string
+  sourceId?: string,
+  /** The spell or feature that imposed it, when the player named it (#1333). */
+  origin?: string
 ): SessionState | null {
   if (doc.session.conditions.includes(condition)) return null;
   const engine = commitWorldCondition(
@@ -38,12 +40,18 @@ export function addCondition(
   const chipped = base.conditions.includes(condition)
     ? base
     : { ...base, conditions: [...base.conditions, condition] };
-  const next = sourceId
+  const sourced = sourceId
     ? {
         ...chipped,
         conditionSources: { ...chipped.conditionSources, [condition]: sourceId },
       }
     : chipped;
+  const next = origin
+    ? {
+        ...sourced,
+        conditionOrigins: { ...sourced.conditionOrigins, [condition]: origin },
+      }
+    : sourced;
   // Incapacitated ends a form whose rule ends on it (Wild Shape).
   return endFormIfDue(doc, next);
 }
@@ -88,15 +96,19 @@ export function removeCondition(
   };
 }
 
-/** A removed chip forgets its source and the table's answer about it. */
+/** A removed chip forgets its source, its origin and the table's answer about it. */
 function forgetChipSource(
   session: SessionState,
   condition: string
-): Pick<SessionState, "conditionSources" | "seesSource"> {
+): Pick<SessionState, "conditionSources" | "conditionOrigins" | "seesSource"> {
   const key = `condition:${condition}`;
-  const out: Pick<SessionState, "conditionSources" | "seesSource"> = {};
+  const out: Pick<SessionState, "conditionSources" | "conditionOrigins" | "seesSource"> =
+    {};
   if (session.conditionSources && condition in session.conditionSources) {
     out.conditionSources = withoutKey(session.conditionSources, condition);
+  }
+  if (session.conditionOrigins && condition in session.conditionOrigins) {
+    out.conditionOrigins = withoutKey(session.conditionOrigins, condition);
   }
   if (session.seesSource && key in session.seesSource) {
     out.seesSource = withoutKey(session.seesSource, key);
@@ -106,6 +118,23 @@ function forgetChipSource(
 
 function withoutKey<V>(record: Record<string, V>, key: string): Record<string, V> {
   return Object.fromEntries(Object.entries(record).filter(([k]) => k !== key));
+}
+
+/** The player names what imposed an active condition chip («Da cosa?», #1333), or
+ *  forgets it (`null`). Null when nothing changes or the chip is not on. */
+export function setConditionOrigin(
+  doc: CharacterDoc,
+  condition: string,
+  origin: string | null
+): SessionState | null {
+  if (!doc.session.conditions.includes(condition)) return null;
+  const current = doc.session.conditionOrigins ?? {};
+  if ((current[condition] ?? null) === origin) return null;
+  const next =
+    origin === null
+      ? withoutKey(current, condition)
+      : { ...current, [condition]: origin };
+  return { ...doc.session, conditionOrigins: next };
 }
 
 /** The table answers whether the character sees a condition instance's source;

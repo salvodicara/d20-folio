@@ -528,6 +528,8 @@ interface CharacterState {
       registerConcentrationUndo?: boolean;
       /** The combatant that caused it («Da chi?»). */
       sourceId?: string;
+      /** The spell or feature that imposed it («From what?», #1333). */
+      origin?: string;
     }
   ) => void;
   removeCondition: (condition: string) => void;
@@ -2609,12 +2611,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // (the manual-condition seam program); see `addCondition` in lib/play.
     const worldActionId = `condition-apply-${crypto.randomUUID()}`;
     const sourceId = opts?.sourceId;
+    const origin = opts?.origin;
     if (
       !get().dispatch({
         kind: "add-condition",
         condition,
         worldActionId,
         ...(sourceId ? { sourceId } : {}),
+        ...(origin ? { origin } : {}),
       })
     )
       return;

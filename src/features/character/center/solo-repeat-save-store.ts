@@ -4,9 +4,10 @@
  * gone when answered. A save is due at one edge only, so the next edge replaces it;
  * a shared fight never raises them (its own RepeatSavePrompts ask there).
  *
- * Which conditions carry a known source is read here, in one place: today the sheet's
- * own solo condition effects (`combatActiveEffects`), the occurrences «Saved» can end
- * exactly (`removeConditionSilent` drops them with their chip).
+ * Which conditions carry a known source is read here, in one place: the sheet's own
+ * solo condition effects (`combatActiveEffects`) and the chips whose origin the player
+ * named («From what?»). «Saved» ends both exactly: `removeConditionSilent` drops the
+ * chip with its origin and the effects with it.
  */
 import { create } from "zustand";
 
@@ -14,10 +15,14 @@ import { useRepeatSaveStore } from "@/features/campaigns/repeat-save-store";
 import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { failedRepeatSaveEffects } from "@/lib/play/repeat-saves";
 import {
+  sheetOriginConditions,
   sheetSourcedConditions,
   soloRepeatSavesDue,
+  type SheetSourcedCondition,
   type SoloRepeatSave,
 } from "@/lib/play/solo-repeat-saves";
+import type { CharacterDoc } from "@/types/character";
+import type { ActiveCombatEffect } from "@/types/combat-effect";
 import { vitalExhaustion } from "@/lib/character-vitals";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast, type UndoLabel } from "@/stores/undoStore";
@@ -36,6 +41,20 @@ export const useSoloRepeatSaveStore = create<SoloRepeatSaveStore>((set) => ({
   set: (saves) => set({ saves }),
 }));
 
+/** The conditions the sheet holds from a known source: its solo condition effects,
+ *  then the chips whose origin the player named (one an effect already holds is
+ *  asked once, from the effect). */
+function sheetConditions(
+  doc: CharacterDoc,
+  effects: ReadonlyArray<ActiveCombatEffect>
+): SheetSourcedCondition[] {
+  const held = sheetSourcedConditions(effects);
+  const named = sheetOriginConditions(doc.session).filter(
+    (c) => !held.some((h) => h.conditionId === c.conditionId)
+  );
+  return [...held, ...named];
+}
+
 /** The strips the open sheet owes at this solo turn edge, in place of the last
  *  edge's; returns the restore of the strips it replaced (End Turn's undo). */
 export function raiseSoloRepeatSaves(): () => void {
@@ -45,7 +64,7 @@ export function raiseSoloRepeatSaves(): () => void {
   const doc = cs.character;
   const saves: PendingSoloRepeatSave[] =
     doc && !cs.readonly
-      ? soloRepeatSavesDue(sheetSourcedConditions(cs.combatActiveEffects), {
+      ? soloRepeatSavesDue(sheetConditions(doc, cs.combatActiveEffects), {
           campaignConditions: useRepeatSaveStore
             .getState()
             .saves.filter((s) => s.characterId === doc.id)

@@ -52,7 +52,7 @@ import { adjustCurrency, type CurrencyDelta } from "./material-cost";
 import { setFadingPenalty, startFadingPenalty } from "./fading-penalties";
 import { takeDamage, type DamageOptions } from "./damage";
 import { dropBeastForm, setFormGearWorn } from "./forms";
-import { setSeesSource } from "./conditions";
+import { setConditionOrigin, setSeesSource } from "./conditions";
 import { reviveCharacter } from "./revive";
 import { setReadiedSpell } from "./ready";
 import { togglePinnedAction } from "./pins";
@@ -132,6 +132,8 @@ export type SheetEvent =
       worldActionId?: string;
       /** The combatant that caused it, when the player named one («Da chi?»). */
       sourceId?: string;
+      /** The spell or feature that imposed it, when the player named it (#1333). */
+      origin?: string;
     }
   | { kind: "remove-condition"; condition: string; worldActionId?: string }
   | { kind: "add-session-defense"; defense: SessionDefenseKind; id: string }
@@ -201,6 +203,8 @@ export type SheetEvent =
   /** The table answers whether the character sees a condition's source (null: no
    *  answer, the condition applies in full). */
   | { kind: "set-sees-source"; key: string; sees: boolean | null }
+  /** What imposed an active condition («Da cosa?», #1333); `null` forgets it. */
+  | { kind: "set-condition-origin"; condition: string; origin: string | null }
   /** A piece of ammunition spent by an attack (counted for its recovery). */
   | { kind: "ammo-spent"; itemId: string }
   /** Search the battlefield: half the spent ammunition comes back (SRD). */
@@ -367,7 +371,13 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       });
     case "add-condition":
       return withSession(
-        addCondition(doc, event.condition, event.worldActionId, event.sourceId)
+        addCondition(
+          doc,
+          event.condition,
+          event.worldActionId,
+          event.sourceId,
+          event.origin
+        )
       );
     case "remove-condition":
       return withSession(
@@ -481,6 +491,8 @@ function reduceSheetEvent(doc: CharacterDoc, event: SheetEvent): CharacterDoc | 
       return recoverAmmunition(doc);
     case "set-sees-source":
       return withSession(setSeesSource(doc, event.key, event.sees));
+    case "set-condition-origin":
+      return withSession(setConditionOrigin(doc, event.condition, event.origin));
     case "set-zone-spent":
       return withSession(
         (doc.session.zoneSpent?.[event.effectId] ?? 0) === event.spent

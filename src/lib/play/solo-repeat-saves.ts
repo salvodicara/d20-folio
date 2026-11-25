@@ -11,10 +11,11 @@
  * save owed only out of the caster's sight (Fear) are left out: neither is one plain
  * roll that a single «Saved» can answer.
  *
- * Pure: the sourced conditions in, the strips out. Which conditions carry a source is
- * the caller's question (today: the sheet's own condition effects).
+ * Pure: the sourced conditions in, the strips out. A condition carries a source when
+ * a solo effect holds it or when the player named its origin in the Conditions
+ * picker («From what?»: `repeatSaveOriginsFor` lists the choices).
  */
-import type { AbilityCode, RepeatSaveMoment } from "@/data/types";
+import type { AbilityCode, ConditionId, RepeatSaveMoment } from "@/data/types";
 import type { CatalogueEffect } from "@/lib/catalogue-effects";
 import {
   conditionsEndingOn,
@@ -22,6 +23,8 @@ import {
   type DueRepeatSave,
   type SourcedCondition,
 } from "@/lib/condition-ends";
+import { classFeatureIndex } from "@/data/classes";
+import { getSpellById, spells } from "@/data/spells";
 import { conditionEndsOf } from "@/lib/play/fight-condition-ends";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
@@ -75,6 +78,67 @@ export function sheetSourcedConditions(
         ]
       : []
   );
+}
+
+/** A catalogue entry that can impose a condition: a spell or a class feature. */
+export interface RepeatSaveOrigin {
+  kind: "spell" | "feature";
+  id: string;
+}
+
+/** Whether this source's rule for the condition is a repeat save the strip asks:
+ *  one plain roll at the target's turn end or start. */
+function asksStripSave(source: RepeatSaveOrigin, conditionId: string): boolean {
+  return conditionEndsOf(source, conditionId).some(
+    (end) =>
+      end.on === "repeat-save" &&
+      (end.at === "target-turn-end" || end.at === "target-turn-start") &&
+      !end.track &&
+      !end.when
+  );
+}
+
+/**
+ * The spells and features that impose `conditionId` with a repeat save the strip
+ * asks («From what?» offers them; #1333). Empty when none does: the picker then
+ * asks nothing more. The catalogue includes the private pack's entries.
+ */
+export function repeatSaveOriginsFor(conditionId: string): RepeatSaveOrigin[] {
+  const fromSpells = spells.flatMap((spell): RepeatSaveOrigin[] =>
+    spell.conditionApplication?.options.includes(conditionId as ConditionId) &&
+    asksStripSave({ kind: "spell", id: spell.id }, conditionId)
+      ? [{ kind: "spell", id: spell.id }]
+      : []
+  );
+  const fromFeatures = [...classFeatureIndex.values()].flatMap(
+    (feature): RepeatSaveOrigin[] =>
+      feature.mechanics?.actions?.some((a) =>
+        a.conditionApplication?.options.includes(conditionId as ConditionId)
+      ) && asksStripSave({ kind: "feature", id: feature.id }, conditionId)
+        ? [{ kind: "feature", id: feature.id }]
+        : []
+  );
+  return [...fromSpells, ...fromFeatures];
+}
+
+/** The catalogue entry a stored origin id names, or null when it names none. */
+export function originSource(id: string): RepeatSaveOrigin | null {
+  if (getSpellById(id)) return { kind: "spell", id };
+  if (classFeatureIndex.has(id)) return { kind: "feature", id };
+  return null;
+}
+
+/** The condition chips whose origin the player named, as sourced conditions. No DC:
+ *  the player named the source, not its caster's numbers. */
+export function sheetOriginConditions(session: {
+  conditions: ReadonlyArray<string>;
+  conditionOrigins?: Readonly<Record<string, string>>;
+}): SheetSourcedCondition[] {
+  return session.conditions.flatMap((conditionId) => {
+    const id = session.conditionOrigins?.[conditionId];
+    const source = id ? originSource(id) : null;
+    return source ? [{ key: `condition:${conditionId}`, conditionId, source }] : [];
+  });
 }
 
 /**

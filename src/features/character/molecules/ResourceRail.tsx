@@ -39,6 +39,7 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
+import { repeatSaveOriginsFor } from "@/lib/play/solo-repeat-saves";
 import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
 // The rail's core vital reads (concentration, exhaustion, slot pips) go
@@ -71,6 +72,7 @@ import {
   incomingAttackAdvantageVMs,
   localizeTrackers,
   localizeTrackerUnit,
+  grantSourceLabel,
   potionTimerVMs,
   resolveAuraDice,
   rollFloorVMs,
@@ -1612,6 +1614,28 @@ function ConditionStrip({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
+  // «Da cosa?» (#1333): what imposed each active condition, for the solo strip.
+  const chosen = useCharacterStore((s) => s.character?.session.conditionOrigins);
+  const origins = conditions.flatMap((id) => {
+    const options = repeatSaveOriginsFor(id).map((o) => ({
+      id: o.id,
+      label: grantSourceLabel(o.id, locale),
+    }));
+    return options.length > 0
+      ? [
+          {
+            conditionId: id,
+            label: conditionLabel(id, locale),
+            options,
+            chosen: chosen?.[id] ?? null,
+          },
+        ]
+      : [];
+  });
+  const setOrigin = (condition: string, origin: string | null) =>
+    useCharacterStore
+      .getState()
+      .dispatch({ kind: "set-condition-origin", condition, origin });
   // A fading D20 Test penalty (Raise Dead) is lit from the same picker and shows
   // as a chip counting down each Long Rest.
   const statuses = Object.entries(FADING_PENALTIES).map(([id, def]) => {
@@ -1650,6 +1674,8 @@ function ConditionStrip({
       onToggle={onToggle}
       statuses={statuses}
       onToggleStatus={toggleStatus}
+      origins={origins}
+      onOrigin={setOrigin}
     />
   );
 }

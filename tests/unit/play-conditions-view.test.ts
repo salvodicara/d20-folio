@@ -16,9 +16,24 @@ const doc = (session: Record<string, unknown>) =>
 describe("conditionsPanelView", () => {
   it("lists each condition with its name and first effect line", () => {
     const v = conditionsPanelView(doc({ conditions: ["poisoned"] }), "it");
-    expect(v.rows).toEqual([
+    // Its «Da cosa?» options (#1333) depend on the catalogue (the private pack adds
+    // one): pinned in condition-origin-picker.test.tsx.
+    expect(v.rows).toMatchObject([
       { id: "poisoned", name: "Avvelenato", effect: "Svantaggio sui tiri per colpire." },
     ]);
+  });
+
+  it("offers «Da cosa?» only for a condition some spell repeats a save for", () => {
+    const v = conditionsPanelView(
+      doc({
+        conditions: ["paralyzed", "grappled"],
+        conditionOrigins: { paralyzed: "hold-person" },
+      }),
+      "en"
+    );
+    expect(v.rows[0]?.origin?.chosen).toBe("hold-person");
+    expect(v.rows[0]?.origin?.options.map((o) => o.name)).toContain("Hold Person");
+    expect(v.rows[1]).not.toHaveProperty("origin");
   });
 
   it("asks «can't see the source» on Frightened, pressed when the table said no", () => {
