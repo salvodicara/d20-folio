@@ -39,6 +39,23 @@ describe("max HP — the first class takes the hit-die maximum", () => {
     expect(inferHpMax(classes, CON_10)).toBe(24);
   });
 
+  it("an unknown highest-level class keeps the stored max (the guard is unchanged)", () => {
+    const classes: ClassEntry[] = [
+      { classId: "fighter", level: 1 },
+      { classId: "homebrew-class", level: 3 },
+    ];
+    expect(inferHpContributions(classes, CON_10)).toEqual([]);
+  });
+
+  it("an unknown first class takes the d8 maximum: Homebrew 1 / Fighter 3 = 8 + 3 × 6 = 26", () => {
+    const classes: ClassEntry[] = [
+      { classId: "homebrew-class", level: 1 },
+      { classId: "fighter", level: 3 },
+    ];
+    expect(inferHpMax(classes, CON_10)).toBe(26);
+  });
+
+  // Pins: a tie and a single class read the same under both rules.
   it("a tie keeps the first entry: Fighter 2 / Wizard 2 = 10 + 6 + 4 + 4 = 24", () => {
     const classes: ClassEntry[] = [
       { classId: "fighter", level: 2 },
