@@ -12,6 +12,12 @@
       "kept": "Le modifiche non salvate sono conservate su questo dispositivo. Dopo il ricaricamento potrai applicarle alla scheda.",
       "failed": "Non è stato possibile conservare le modifiche non salvate su questo dispositivo. Non chiudere questa scheda: annota cosa avevi cambiato, poi ricarica.",
       "notReady": "La scheda è già nel formato nuovo, ma l'aggiornamento dell'app non è ancora arrivato. Riprova tra un minuto."
+    },
+    "rescue": {
+      "label": "Modifiche non salvate",
+      "kept": "Le modifiche non salvate del {{date}} sono conservate su questo dispositivo.",
+      "cannotApply": "Le modifiche non salvate del {{date}} sono conservate su questo dispositivo, ma non si possono applicare a questa versione della scheda.",
+      "failed": "Non è stato possibile applicare le modifiche conservate. Restano su questo dispositivo."
     }
   }
 }
