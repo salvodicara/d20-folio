@@ -675,6 +675,20 @@
     "turnNotEndedOffline": "You're offline: ending your turn needs the network. It's still your turn; try again when you're back online.",
     "turnNotEnded": "Couldn't end your turn: it's still yours. Try again.",
     "clockNotMovedOffline": "You're offline: the rest is saved on your sheet, but the campaign clock didn't move.",
-    "clockNotMoved": "The rest is saved on your sheet, but the campaign clock didn't move."
+    "clockNotMoved": "The rest is saved on your sheet, but the campaign clock didn't move.",
+    "hitReaction": {
+      "prompt": "You took {{amount}}. React?",
+      "label": "Reactions to the hit",
+      "halveHint": "half damage",
+      "raiseAcHint": "raise your AC",
+      "none": "No reaction",
+      "shieldAsk": "Does the attack miss now (AC {{ac}})?",
+      "misses": "It misses",
+      "stillHits": "It still hits",
+      "halvedToast": "{{name}}: you take {{taken}} instead of {{amount}}",
+      "shieldToast": "{{name}}: AC {{ac}} until your next turn",
+      "missToast": "{{name}}: the attack misses, {{amount}} HP back",
+      "staleToast": "The sheet changed after the hit: use the reaction from the list"
+    }
   }
 }

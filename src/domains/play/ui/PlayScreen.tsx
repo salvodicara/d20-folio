@@ -21,6 +21,7 @@ import { PlayConcentration } from "./PlayConcentration";
 import { PlayConditions } from "@/domains/play/ui/PlayConditions";
 import { PlayDown } from "@/domains/play/ui/PlayDown";
 import { PlayConcentrationSave } from "@/domains/play/ui/PlayConcentrationSave";
+import { PlayHitReaction } from "@/domains/play/ui/PlayHitReaction";
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { PlayHp } from "@/domains/play/ui/PlayHp";
@@ -505,6 +506,7 @@ function PlayHeader({
           {/* What waits on this character (a save due, Help's Advantage): one
               container with its own row on a phone, never a stray grid cell. */}
           <div className="f-char-notes">
+            <PlayHitReaction />
             <PlayConcentrationSave doc={doc} />
             {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
             {fight && (
