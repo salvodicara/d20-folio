@@ -15,6 +15,13 @@ import {
   withoutMaxHpBonus,
 } from "@/lib/aggregate-character";
 import { asRaceId } from "@/data/srd-names";
+import { buildNewCharacter } from "@/lib/creation/build";
+import {
+  creationDraftReducer,
+  creationFacts,
+  initialCreationDraft,
+  type CreationDraftAction,
+} from "@/lib/creation/draft";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterData } from "@/types/character";
 
@@ -105,5 +112,40 @@ describe("the header's hand edit of max HP — stored as a bonus over the derive
 
   it("maxHpWithoutBonus is the value the reset returns to", () => {
     expect(maxHpWithoutBonus(monk({ hpRolled: 4, hpBonus: 3 }))).toBe(31);
+  });
+});
+
+describe("creation — rolled hit dice become the max-HP input", () => {
+  // The level-1 Fighter quickbuild raised to level 2: d10, fixed dice 10 + 6 = 16.
+  const fighter2 = (rolledHp: number | null) =>
+    [
+      { type: "setName", name: "Ada" },
+      { type: "setLevel", level: 2 },
+      { type: "setHpMethod", method: "rolled" },
+      { type: "setRolledHp", rolledHp },
+    ].reduce(
+      (d, a) => creationDraftReducer(d, a as CreationDraftAction),
+      initialCreationDraft()
+    );
+  const build = (rolledHp: number | null) => {
+    const result = buildNewCharacter(fighter2(rolledHp), { displayName: null });
+    if (!result.ok) throw new Error(result.error);
+    return result.payload.character;
+  };
+
+  it("rolled dice of 19 store a surplus of 3 and add CON: the fixed max + 3", () => {
+    const fixed = build(null).hp.max; // the fixed method (no roll entered)
+    const rolled = build(19);
+    expect(rolled.hpRolled).toBe(3);
+    expect(rolled.hp.max).toBe(fixed + 3);
+    expect(reload(rolled).hp.max).toBe(fixed + 3);
+  });
+
+  it("the fixed dice total stores nothing", () => {
+    expect(build(16).hpRolled).toBeUndefined();
+  });
+
+  it("the facts show the same max the build stores", () => {
+    expect(creationFacts(fighter2(19)).maxHp).toBe(build(19).hp.max);
   });
 });

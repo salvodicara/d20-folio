@@ -441,8 +441,13 @@ export interface CreationFacts {
   averageHp: number;
   /** Per-level HP grants (Tough, Dwarven Toughness, …) × level. */
   hpBonus: number;
-  /** The starting max HP (average or rolled, plus the per-level grants). */
+  /** The starting max HP (the fixed method, plus the per-level grants and any rolled surplus). */
   maxHp: number;
+  /**
+   * #1315 — the rolled surplus over the fixed dice (the stored max-HP input), when the
+   * player rolled and it differs from the fixed values. Absent for the fixed method.
+   */
+  hpRolled?: number;
   armorClass: number;
   proficiencyBonus: number;
   spellSaveDc: number | null;
@@ -510,6 +515,25 @@ export function speciesStepComplete(draft: CreationDraft, facts: CreationFacts):
 }
 
 /** Derive every fact of a draft (pure; cheap enough to run per render). */
+/** The fixed hit-dice total: the die maximum at level 1, the fixed value after. */
+export function fixedDice(hitDie: number, level: number): number {
+  return hitDie + (level - 1) * (Math.floor(hitDie / 2) + 1);
+}
+
+/** The legal rolled dice total: level 1 is always the die maximum. */
+export function rolledDiceRange(
+  hitDie: number,
+  level: number
+): { min: number; max: number } {
+  return { min: hitDie + (level - 1), max: hitDie * level };
+}
+
+/** Clamp an entered dice total into its legal range. */
+export function clampRolledDice(value: number, hitDie: number, level: number): number {
+  const { min, max } = rolledDiceRange(hitDie, level);
+  return Math.max(min, Math.min(max, value));
+}
+
 export function creationFacts(draft: CreationDraft): CreationFacts {
   const classTable = classTableOf(draft.classId);
   const raceData = SRD_RACES.find((r) => r.id === draft.raceId);
@@ -585,6 +609,13 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
         bgFeat: backgroundFeat,
       }).bonus * draft.level
     : 0;
+  // #1315 — rolled HP is the CON-free dice total (level 1 counts the die maximum).
+  // Its surplus over the fixed dice is the stored input; CON and grants are derived.
+  const hpRolled =
+    classTable && draft.hpMethod === "rolled" && draft.rolledHp != null
+      ? clampRolledDice(draft.rolledHp, hitDie, draft.level) -
+        fixedDice(hitDie, draft.level)
+      : 0;
   const pb = proficiencyBonus(draft.level);
 
   const classEquipLabel = effectiveOptionLabel(
@@ -677,10 +708,8 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
     hitDie,
     averageHp,
     hpBonus,
-    maxHp:
-      (draft.hpMethod === "rolled" && draft.rolledHp != null
-        ? draft.rolledHp
-        : averageHp) + hpBonus,
+    maxHp: Math.max(draft.level, averageHp + hpBonus + hpRolled),
+    ...(hpRolled !== 0 ? { hpRolled } : {}),
     armorClass: 10 + abilityModifier(effectiveScores.DEX),
     proficiencyBonus: pb,
     spellSaveDc: classTable?.spellcasting

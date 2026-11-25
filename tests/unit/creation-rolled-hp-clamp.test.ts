@@ -1,44 +1,34 @@
 /**
- * Rolled-HP onBlur clamp (B9 regression).
- *
- * HpModeSelector's `onBlur` enforces `[level, hitDie * level]` — the user cannot
- * commit a value outside the valid rolled-HP range. Before B9 only the lower bound
- * was enforced (`Math.max(1, …)` in `onChange`); an over-max value slipped through.
- *
- * This pins the clamping formula directly (pure-function style — no React mount
- * needed; the formula is the thing under test, not the JSX wiring).
+ * Rolled-HP clamp at creation (B9 regression, #1315). The entered number is the
+ * CON-free hit-dice total; level 1 always counts the die maximum, so the legal range
+ * is [die + (level − 1), die × level]. HpModeSelector's onBlur commits
+ * `clampRolledDice`, the same function the build reads.
  */
 import { describe, expect, it } from "vitest";
+import { clampRolledDice, fixedDice, rolledDiceRange } from "@/lib/creation/draft";
 
-/** The exact clamp formula used in HpModeSelector's onBlur handler. */
-function clampRolledHp(val: string, level: number, hitDie: number): number {
-  return Math.max(level, Math.min(hitDie * level, parseInt(val) || level));
-}
-
-describe("HpModeSelector rolled-HP onBlur clamp", () => {
-  it("clamps an over-max typed value down to hitDie * level", () => {
-    // d8 Rogue at level 3 → max rolled HP is 24 (8 * 3)
-    expect(clampRolledHp("999", 3, 8)).toBe(24);
+describe("creation rolled-HP clamp (d8, level 3)", () => {
+  it("the range is 10..24: level 1 is the die maximum (8), then 1..8 per level", () => {
+    expect(rolledDiceRange(8, 3)).toEqual({ min: 10, max: 24 });
   });
 
-  it("clamps an under-min typed value up to level (the minimum)", () => {
-    // level 3 → minimum rolled HP is 3 (1 per die)
-    expect(clampRolledHp("1", 3, 8)).toBe(3);
+  it("clamps an over-max value down to die × level", () => {
+    expect(clampRolledDice(999, 8, 3)).toBe(24);
+  });
+
+  it("clamps an under-min value up: level 1 can never roll below the maximum", () => {
+    expect(clampRolledDice(3, 8, 3)).toBe(10);
   });
 
   it("passes a value within range through unchanged", () => {
-    expect(clampRolledHp("15", 3, 8)).toBe(15);
+    expect(clampRolledDice(15, 8, 3)).toBe(15);
   });
 
-  it("treats a non-numeric input as the minimum (level)", () => {
-    expect(clampRolledHp("abc", 3, 8)).toBe(3);
+  it("the fixed dice total is 8 + 5 + 5 = 18", () => {
+    expect(fixedDice(8, 3)).toBe(18);
   });
 
-  it("accepts the exact max value without clamping", () => {
-    expect(clampRolledHp("24", 3, 8)).toBe(24);
-  });
-
-  it("accepts the exact min value without clamping", () => {
-    expect(clampRolledHp("3", 3, 8)).toBe(3);
+  it("level 1 has a single legal value, the die maximum", () => {
+    expect(rolledDiceRange(10, 1)).toEqual({ min: 10, max: 10 });
   });
 });

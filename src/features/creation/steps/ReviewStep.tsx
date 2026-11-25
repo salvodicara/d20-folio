@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { WizardForkTab } from "@/features/wizard/chrome";
 import { classRoleSeal } from "./class-roles";
+import { clampRolledDice, fixedDice, rolledDiceRange } from "@/lib/creation/draft";
 import type { GuidedStep } from "./steps";
 
 /** One recap row: the step's label, the choices made there, a one-tap jump. */
@@ -226,6 +227,8 @@ export function HpModeSelector({
   level: number;
 }) {
   const { t } = useTranslation();
+  // #1315 — the entered number is the CON-free dice total; level 1 is the die maximum.
+  const range = rolledDiceRange(hitDie, level);
 
   return (
     <div className="space-y-2">
@@ -264,8 +267,8 @@ export function HpModeSelector({
           </p>
           <Input
             type="number"
-            min={level}
-            max={hitDie * level}
+            min={range.min}
+            max={range.max}
             value={rolledHp ?? ""}
             onChange={(e) => {
               const val = e.target.value;
@@ -275,15 +278,15 @@ export function HpModeSelector({
               const val = e.target.value;
               if (val === "") return;
               onRolledHpChange(
-                Math.max(level, Math.min(hitDie * level, parseInt(val) || level))
+                clampRolledDice(parseInt(val) || range.min, hitDie, level)
               );
             }}
-            placeholder={String(averageHp)}
+            placeholder={String(fixedDice(hitDie, level))}
             aria-label={t("create.hpRolled")}
             className="num tnum"
           />
           <p className="on-art text-[length:var(--text-micro)] text-text-muted">
-            {t("create.hpRolledRange", { min: level, max: hitDie * level })}
+            {t("create.hpRolledRange", range)}
           </p>
         </div>
       )}
