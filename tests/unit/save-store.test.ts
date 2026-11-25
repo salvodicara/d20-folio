@@ -11,12 +11,19 @@ vi.mock("@/lib/online-status", () => ({
   subscribeToOnlineStatus: () => () => {},
 }));
 // The queue of writes made offline, drained on reconnect (#1277): held open per test.
-const drain = vi.hoisted(() => ({ calls: 0, release: () => {} }));
+const drain = vi.hoisted(
+  (): { calls: number; release: () => void; fail: (e: Error) => void } => ({
+    calls: 0,
+    release: () => undefined,
+    fail: () => undefined,
+  })
+);
 vi.mock("@/lib/pending-writes-io", () => ({
   pendingWrites: () =>
-    new Promise<void>((resolve) => {
+    new Promise<void>((resolve, reject) => {
       drain.calls += 1;
       drain.release = resolve;
+      drain.fail = reject;
     }),
 }));
 
@@ -98,6 +105,15 @@ describe("saveStore — online/offline transitions (rule: don't clobber pending)
     expect(useSaveStore.getState().status).toBe("saving");
     drain.release();
     await vi.waitFor(() => expect(useSaveStore.getState().status).toBe("saved"));
+  });
+
+  it("a drain that cannot finish (sign-out, a failed wait) never leaves «saving» for good", async () => {
+    useSaveStore.setState({ status: "offline", online: false });
+    const before = drain.calls;
+    useSaveStore.getState().setOnline(true);
+    await vi.waitFor(() => expect(drain.calls).toBe(before + 1));
+    drain.fail(new Error("terminated"));
+    await vi.waitFor(() => expect(useSaveStore.getState().status).toBe("pending"));
   });
 
   it("a drain that goes offline again stays honest: back to 'offline'", async () => {

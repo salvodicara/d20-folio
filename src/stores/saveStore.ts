@@ -55,7 +55,11 @@ export const useSaveStore = create<SaveState>()((set, get) => ({
             const now = get();
             if (now.online && now.status === "saving") now.markSaved();
           },
-          () => undefined
+          // The wait could not finish (a sign-out, a terminated store): the queue's fate
+          // is unknown, so never «saving» for good, and never «saved».
+          () => {
+            if (get().status === "saving") get().markPending();
+          }
         );
     }
   },
