@@ -238,9 +238,9 @@ const SPELL_SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
 
 /** A row's painted icon: a spell through its school's art, anything else its own art. */
 function rowArt(row: PlayActionRow) {
-  const school = row.spellId ? SPELL_SCHOOL.get(row.spellId) : undefined;
-  if (school && row.spellId)
-    return <SpellArt id={row.spellId} school={school} size="fill" />;
+  const school = row.spellId ? SPELL_SCHOOL.get(row.spellId) : row.school;
+  // A homebrew spell has no painting: its school's glyph and colour.
+  if (school) return <SpellArt id={row.spellId ?? row.id} school={school} size="fill" />;
   const painted = actionArt(row);
   return painted ? (
     <Art
