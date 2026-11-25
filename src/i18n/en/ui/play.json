@@ -481,6 +481,14 @@
         "sp": "10 sp = 1 gp",
         "cp": "100 cp = 1 gp"
       }
+    },
+    "number": {
+      "handSet": "Set by hand",
+      "override": "Fixed value",
+      "overrideHelp": "Replaces the computed value. «Use the computed value» brings it back.",
+      "useComputed": "Use the computed value",
+      "setToast": "{{name}}: set by hand",
+      "resetToast": "{{name}}: computed again"
     }
   }
 }

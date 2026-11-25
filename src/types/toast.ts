@@ -43,4 +43,9 @@ export type ToastIntent =
    * damage kinds, a `ConditionId` for `conditionImmunity` — the view resolves
    * the localized name.
    */
-  | { kind: "defense-removed"; defenseKind: SessionDefenseKind; defenseId: string };
+  | { kind: "defense-removed"; defenseKind: SessionDefenseKind; defenseId: string }
+  /**
+   * #1203 — the rules refused a save as a conflict (another tab or device saved
+   * first): the edit is dropped and the sheet shows the server's copy.
+   */
+  | { kind: "edit-not-saved" };

@@ -16,8 +16,6 @@ import type { Locale } from "@/lib/locale";
 import { currentForm, formNameKind, formSourceKind } from "@/lib/polymorph";
 import { playEffectsView } from "@/domains/play/play-effects-view";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
-import { localizeBreakdown } from "@/lib/views/combat-action-view";
-import type { BreakdownLine } from "@/lib/value-breakdown";
 import { deriveSavesAndChecks } from "@/lib/views/saves-checks-view";
 import {
   localizeBackgroundName,
@@ -46,9 +44,6 @@ export interface PlayHeaderView {
     /** The tile shows the total: always when proficient, and whenever something
      *  moves it off the modifier (an ally's aura, a cloak), as the classic tile does. */
     showSave: boolean;
-    /** Where the total comes from, a line each (modifier, proficiency, «Aura di Bren
-     *  +3»); empty under a hand-set override. */
-    saveParts: BreakdownLine[];
   }[];
   numbers: { ac: number; initiative: number; speedFt: number; proficiency: number };
   hp: { current: number; max: number; temp: number };
@@ -100,9 +95,6 @@ export function playHeaderView(doc: CharacterDoc, locale: Locale): PlayHeaderVie
         save,
         saveTotal,
         showSave: save || saveTotal !== mod,
-        saveParts: row?.breakdownParts
-          ? localizeBreakdown(row.breakdownParts, locale)
-          : [],
       };
     }),
     numbers: {

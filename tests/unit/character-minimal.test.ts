@@ -311,7 +311,7 @@ describe("character-minimal — explicit Fighting Style choices survive", () => 
   });
 });
 
-describe("character-minimal — hp.max is the average (drops) but a rolled value is kept", () => {
+describe("character-minimal — hp.max is the by-the-book max (drops) but a rolled value is kept", () => {
   const monk = (max: number): CharacterData => ({
     ...mock,
     classes: [{ classId: "monk", level: 3 }],
@@ -325,7 +325,7 @@ describe("character-minimal — hp.max is the average (drops) but a rolled value
     expect(rehydrateCharacter(min).hp.max).toBe(24);
   });
 
-  it("KEEPS a deviating (rolled / HP-feat) hp.max verbatim", () => {
+  it("KEEPS a deviating (rolled / hand-set) hp.max verbatim", () => {
     const min = minimizeCharacter(monk(31));
     expect(min.hp).toEqual({ max: 31 });
     expect(rehydrateCharacter(min).hp.max).toBe(31);
