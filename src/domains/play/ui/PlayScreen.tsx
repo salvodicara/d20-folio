@@ -237,6 +237,7 @@ export function PlaySheet({
       )}
       <Button
         icon="g-rest-short"
+        data-rest=""
         aria-haspopup="dialog"
         disabled={inFight}
         title={inFight ? t("play.rest.inFight") : undefined}
@@ -246,6 +247,7 @@ export function PlaySheet({
       </Button>
       <Button
         icon="g-rest-long"
+        data-rest=""
         aria-haspopup="dialog"
         disabled={inFight}
         title={inFight ? t("play.rest.inFight") : undefined}

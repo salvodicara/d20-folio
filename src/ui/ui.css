@@ -3232,8 +3232,8 @@
     transform: translateY(-8px);
   }
   /* the page's own controls, not the strip's (a page-wide scroll-padding would
-     scroll the page when a tap focuses the strip itself) */
-  .fui .f-sheet:has(> .f-strip[data-on]) > :not(.f-strip) * {
+     scroll the page when a tap focuses the strip itself), never inside a pane */
+  .fui .f-sheet:has(> .f-strip[data-on]) > :not(.f-strip) :not(dialog, dialog *) {
     scroll-margin-top: calc(var(--strip-h) + 8px);
   }
   .fui .f-strip-hp,
@@ -3444,8 +3444,9 @@
     min-height: 44px;
     padding: 0 8px;
   }
-  .fui .f-sheet .f-char-acts > .f-btn:last-of-type:nth-of-type(odd) {
-    grid-column: 1 / -1;
+  /* Short and Long rest pair on the first row, whatever else the row holds */
+  .fui .f-sheet .f-char-acts > [data-rest] {
+    order: -1;
   }
   .fui .f-sheet .f-char-acts > .f-char-camp {
     display: none;

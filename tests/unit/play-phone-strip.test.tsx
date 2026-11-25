@@ -31,6 +31,7 @@ class FakeObserver {
   disconnect() {}
 }
 
+const realMatchMedia = window.matchMedia;
 function asPhone(phone: boolean) {
   window.matchMedia = (query: string) => ({
     matches: phone && query.includes("max-width"),
@@ -87,6 +88,7 @@ describe("the phone's Hit Points strip", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    window.matchMedia = realMatchMedia;
   });
 
   it("stays out of the way while the band is on screen", () => {
@@ -157,6 +159,7 @@ describe("the phone's rests", () => {
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();
+    window.matchMedia = realMatchMedia;
   });
 
   it("sit in the band once, not again behind «Sezioni»", () => {
