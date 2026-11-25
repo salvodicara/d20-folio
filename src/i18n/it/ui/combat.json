@@ -292,7 +292,7 @@
     "concentrationBreakTitle": "Interrompere la concentrazione?",
     "concentrationBreakConfirm": "Lancia comunque",
     "stoppedConcentratingToast": "Concentrazione su {{spell}} interrotta",
-    "conditionRemovedToast": "{{condition}} rimossa",
+    "conditionRemovedToast": "Condizione rimossa: {{condition}}",
     "resistanceRemovedToast": "Resistenza rimossa: {{name}}",
     "immunityRemovedToast": "Immunità rimossa: {{name}}",
     "vulnerabilityRemovedToast": "Vulnerabilità rimossa: {{name}}",

@@ -292,7 +292,7 @@
     "concentrationBreakTitle": "Break concentration?",
     "concentrationBreakConfirm": "Cast anyway",
     "stoppedConcentratingToast": "Stopped concentrating on {{spell}}",
-    "conditionRemovedToast": "Removed {{condition}}",
+    "conditionRemovedToast": "Condition removed: {{condition}}",
     "resistanceRemovedToast": "Removed {{name}} resistance",
     "immunityRemovedToast": "Removed {{name}} immunity",
     "vulnerabilityRemovedToast": "Removed {{name}} vulnerability",
