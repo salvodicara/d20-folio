@@ -9,7 +9,11 @@ import {
   parseCharacterEnvelope,
 } from "@/lib/character-codec";
 import { levelUp } from "@/lib/level-up";
+import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
+import { makeCharacterDoc } from "./_helpers";
+import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import {
+  deriveMaxHp,
   maxHpWithoutBonus,
   withMaxHpEdit,
   withoutMaxHpBonus,
@@ -173,5 +177,63 @@ describe("the rolled surplus respects the 1-HP-per-level floor", () => {
     const { updatedCharacter } = levelUp(wizard, 3, { hpGain: 1 });
     expect(updatedCharacter.hpRolled).toBeUndefined();
     expect([updatedCharacter.hp.max, reload(updatedCharacter).hp.max]).toEqual([4, 4]);
+  });
+});
+
+const none = (classId: string): LevelUpPicks => ({
+  classId,
+  asi: null,
+  subclassId: null,
+  fightingStyle: null,
+  expertise: [],
+  weaponMasteries: null,
+  metamagic: [],
+  maneuvers: [],
+  invocations: [],
+  newCantrips: [],
+  newSpells: [],
+  choiceSlots: {
+    skill: [],
+    tool: [],
+    skillOrTool: [],
+    language: [],
+    spell: [],
+    expertise: [],
+    feat: [],
+  },
+  choicePicks: EMPTY_CHOICE_PICKS,
+  multiclass: null,
+  spellMastery: null,
+  signatureSpells: null,
+  swap: { removeId: null, replaceId: null },
+  bundlePicks: {},
+});
+
+describe("commitLevelUp — the max HP after every pick is the derived one", () => {
+  // A loaded Fighter 3 has the derived max; an ASI at Fighter 4 raises CON 14 → 16.
+  const fighter = () => {
+    const stub = makeCharacterDoc({ classId: "fighter", level: 3 });
+    const character = {
+      ...stub.character,
+      abilityScores: { ...stub.character.abilityScores, CON: 14 },
+    };
+    return { ...stub, character: { ...character, hp: { max: deriveMaxHp(character) } } };
+  };
+  const plus2Con = {
+    mode: "plus2" as const,
+    plusTwo: "CON" as const,
+    plusOneA: null,
+    plusOneB: null,
+    featId: null,
+    featAbility: null,
+  };
+
+  it("CON +1 modifier is retroactive over all 4 levels, in session and after a reload", () => {
+    const before = fighter();
+    const next = commitLevelUp(before, { ...none("fighter"), asi: plus2Con });
+    // 28 (Fighter 3, CON +2) + 8 (level 4: 6 + 2) + 4 (CON +3 now, over 4 levels) = 40.
+    expect(next.character.hp.max).toBe(40);
+    expect(reload(next.character).hp.max).toBe(40);
+    expect(next.session.hp.current - before.session.hp.current).toBe(40 - 28);
   });
 });

@@ -159,13 +159,13 @@ describe("level-up engine", () => {
       // d4 average = 3, CON 3 → -4 modifier → gain max(1, 3-4) = 1
       const char = mockCharData({
         classes: [{ classId: "artificer", level: 2 }],
-        hp: { max: 2 },
+        hp: { max: 5 }, // by the book: max(1, 8-4) + max(1, 5-4) = 4 + 1
         hitDieType: 8,
         abilityScores: { STR: 8, DEX: 14, CON: 3, INT: 18, WIS: 12, CHA: 10 },
       });
       const { updatedCharacter } = levelUp(char);
       // d8 avg=5, CON -4, max(1, 5-4)=1
-      expect(updatedCharacter.hp.max).toBe(3); // 2 + 1
+      expect(updatedCharacter.hp.max).toBe(6); // 5 + 1
     });
   });
 
