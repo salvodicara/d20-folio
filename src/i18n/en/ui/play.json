@@ -83,7 +83,9 @@
     },
     "sections": {
       "resources": "Resources and skills",
-      "fight": "Fight and report"
+      "fight": "Fight and report",
+      "features": "Features and traits",
+      "proficiencies": "Proficiencies and training"
     },
     "endTurn": "End turn",
     "turnMine": "Your turn",
@@ -490,6 +492,13 @@
       "useComputed": "Use the computed value",
       "setToast": "{{name}}: set by hand",
       "resetToast": "{{name}}: computed again"
+    },
+    "features": {
+      "tab": "Features",
+      "species": "Species traits",
+      "none": "No features yet.",
+      "noneShort": "None",
+      "uses": "{{left}} of {{max}} uses left"
     }
   }
 }

@@ -2501,6 +2501,81 @@
 .fui .f-playbook-h[aria-expanded="true"] .f-ic:last-child {
   transform: rotate(180deg);
 }
+/* «Privilegi e tratti» (D&D Beyond's Features & Traits): a row is the name over its
+   source, the uses left on the right; a tap opens the rules text under it */
+.fui .f-feat {
+  border-bottom: 1px solid var(--divider);
+}
+.fui .f-feat:last-child {
+  border-bottom: 0;
+}
+.fui .f-feat,
+.fui .f-feat-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
+}
+.fui .f-feat:has(> .f-feat-h) {
+  display: block;
+  padding: 0;
+}
+.fui .f-feat-h {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .fui .f-feat-h:hover {
+    background-color: var(--hover);
+  }
+}
+.fui .f-feat-h > .f-ic:last-child {
+  flex: none;
+  color: var(--muted);
+}
+.fui .f-feat-h[aria-expanded="true"] > .f-ic:last-child {
+  transform: rotate(180deg);
+}
+.fui .f-feat-t {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.fui .f-feat-t > b {
+  color: var(--strong);
+  font-weight: 600;
+}
+.fui .f-feat-m {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.fui .f-feat-uses {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  --pip: var(--c-tes);
+}
+.fui .f-feat-d {
+  padding: 0 0 16px;
+}
+/* Proficiencies & Training: each list under its label */
+.fui .f-prof-l {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.fui .f-prof-l dd {
+  margin: 2px 0 0;
+  color: var(--text);
+}
 @media (max-width: 640px) {
   .fui .f-act {
     grid-template-columns: minmax(0, 1fr) 96px;
@@ -3171,8 +3246,16 @@
     cursor: pointer;
   }
   .fui .f-play[data-section="actions"] > :not(:nth-child(2)),
+  .fui .f-play[data-section="features"] > :not(:nth-child(2)),
   .fui .f-play[data-section="resources"] > :not(:nth-child(1)),
+  .fui .f-play[data-section="proficiencies"] > :not(:nth-child(1)),
   .fui .f-play[data-section="fight"] > :not(:nth-child(3)) {
+    display: none;
+  }
+  /* Proficiencies & Training is its own section here (D&D Beyond's phone), not a
+     box under the skills */
+  .fui .f-play[data-section="resources"] > :nth-child(1) > .f-prof,
+  .fui .f-play[data-section="proficiencies"] > :nth-child(1) > :not(.f-prof) {
     display: none;
   }
   .fui .f-menu-it[aria-current] {

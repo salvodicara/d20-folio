@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
-import { PlayCentre } from "@/domains/play/ui/PlayCentre";
+import { PlayCentre, type CentreTab } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
 import { PlayAbilitySave } from "./PlayAbilitySave";
 import { PlayNumberPane } from "./PlayNumberPane";
@@ -45,7 +45,7 @@ import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { useLocale } from "@/hooks/useLocale";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
-import { totalLevel } from "@/lib/classes";
+import { primaryClassId, totalLevel } from "@/lib/classes";
 import { asLocale, type Locale } from "@/lib/locale";
 import { localeDistance } from "@/lib/utils";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -58,6 +58,7 @@ import {
   Chip,
   HpRing,
   Icon,
+  ICON_NAMES,
   type IconName,
   Menu,
   PhoneBar,
@@ -76,17 +77,30 @@ const LevelUpScreen = lazy(() =>
   }))
 );
 
-type Section = "actions" | "resources" | "fight";
+type Section = "actions" | "resources" | "features" | "proficiencies" | "fight";
 const SECTION_KEY: Record<Section, string> = {
   actions: "combat.actions",
   resources: "play.sections.resources",
+  features: "play.sections.features",
+  proficiencies: "play.sections.proficiencies",
   fight: "play.sections.fight",
 };
 const SECTION_ICON: Record<Section, IconName> = {
   actions: "g-mace",
   resources: "g-gem",
+  // the character's own class crest when there is one (sectionIcon)
+  features: "g-create",
+  proficiencies: "g-combat",
   fight: "g-journal",
 };
+
+/** A section's tile icon; «Privilegi e tratti» wears the character's class crest. */
+function sectionIcon(id: Section, classId: string): IconName {
+  const crest = `g-class-${classId}`;
+  return id === "features" && (ICON_NAMES as readonly string[]).includes(crest)
+    ? (crest as IconName)
+    : SECTION_ICON[id];
+}
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 
@@ -136,6 +150,8 @@ export function PlaySheet({
   // The phone shows one section at a time (D&D Beyond's model), picked from «Sezioni».
   const [section, setSection] = useState<Section>("actions");
   const [sectionsOpen, setSectionsOpen] = useState(false);
+  // The centre's tab: its own on a laptop; the phone's «Privilegi e tratti» opens it.
+  const [centreTab, setCentreTab] = useState<CentreTab>("actions");
   const [resting, setResting] = useState<RestKind | null>(null);
   const [passing, setPassing] = useState(false);
   const readonly = useSheetReadonly();
@@ -208,12 +224,22 @@ export function PlaySheet({
       )}
     </>
   );
+  // D&D Beyond's phone sections, in its order: actions, resources and skills, features
+  // and traits, proficiencies and training, then the fight and the session report
+  // (always there: a solo hero's report, too).
   const sections: Section[] = [
     "actions",
     "resources",
-    // the fight and the session report: always there (a solo hero's report, too)
+    "features",
+    "proficiencies",
     "fight",
   ];
+  const openSection = (id: Section) => {
+    setSection(id);
+    // the features tile opens the centre on its tab; «Azioni» brings the actions back
+    if (id === "features") setCentreTab("features");
+    else if (id === "actions" && centreTab === "features") setCentreTab("actions");
+  };
   return (
     <main id="main" className="f-page f-sheet">
       <PhoneBar>
@@ -272,6 +298,8 @@ export function PlaySheet({
               locale={locale}
               campaign={campaign}
               onShortRest={readonly ? undefined : () => setResting("short")}
+              tab={centreTab}
+              onTab={setCentreTab}
             />
             <PlayRight campaign={campaign} locale={locale} onToast={setToast} />
           </div>
@@ -311,12 +339,12 @@ export function PlaySheet({
             className="f-menu-it"
             aria-current={section === id || undefined}
             onClick={() => {
-              setSection(id);
+              openSection(id);
               setSectionsOpen(false);
               window.scrollTo({ top: 0 });
             }}
           >
-            <Icon name={SECTION_ICON[id]} />
+            <Icon name={sectionIcon(id, primaryClassId(doc.character))} />
             {t(SECTION_KEY[id])}
           </button>
         ))}
