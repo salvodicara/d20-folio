@@ -16,17 +16,24 @@ const SPEED_KEY: Record<SpeedMode, string> = {
   burrow: "character.speed_burrow",
 };
 
-export function formFacts(
-  r: { cr: string; ac: number; hp: number; speeds: { mode: SpeedMode; ft: number }[] },
-  t: TFunction,
-  locale: Locale
-): string {
+type FormNumbers = {
+  cr: string;
+  ac: number;
+  hp: number;
+  speeds: { mode: SpeedMode; ft: number }[];
+};
+
+/** The facts after the Challenge Rating: AC, Hit Points, each speed. */
+export function formBodyFacts(r: FormNumbers, t: TFunction, locale: Locale): string[] {
   return [
-    t("polymorph.crShort", { cr: r.cr }),
     `${t("character.armorClassShort")} ${String(r.ac)}`,
     `${t("units.hp")} ${String(r.hp)}`,
     ...r.speeds.map((s) => `${t(SPEED_KEY[s.mode])} ${localeDistance(s.ft, locale)}`),
-  ]
+  ];
+}
+
+export function formFacts(r: FormNumbers, t: TFunction, locale: Locale): string {
+  return [t("polymorph.crShort", { cr: r.cr }), ...formBodyFacts(r, t, locale)]
     .map((fact) => fact.replace(/ /g, "\u00a0"))
     .join("\u00a0· ");
 }

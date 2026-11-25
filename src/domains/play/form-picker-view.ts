@@ -37,7 +37,8 @@ export interface FormPickerView {
   tempHp: number | null;
 }
 
-function row(beast: BeastStatBlock, locale: Locale): FormPickRow {
+/** One beast as a picker row: its name in `locale`, AC, Hit Points and speeds. */
+export function formPickRow(beast: BeastStatBlock, locale: Locale): FormPickRow {
   return {
     id: beast.id,
     name: localizeSrd("beasts", beast.id, "name", locale),
@@ -61,7 +62,7 @@ export function formPickerView(
     sourceId === WILD_SHAPE_ID ? wildShapePickerPool(doc) : formPool(doc, sourceId);
   const groups: FormPickerView["groups"] = [];
   for (const beast of pool) {
-    const shown = row(beast, locale);
+    const shown = formPickRow(beast, locale);
     const en = localizeSrd("beasts", beast.id, "name", "en");
     if (!matchesSearch(query, shown.name, en)) continue;
     const cr = formatCr(beast.cr);
