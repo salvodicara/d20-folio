@@ -160,7 +160,14 @@
       "via": "tramite",
       "alreadyYours": "Già tra i tuoi",
       "addedToast": "Incantesimo aggiunto: {{name}}",
-      "upToLevel": "Fino al livello {{level}}: gli incantesimi che puoi lanciare."
+      "upToLevel": "Fino al livello {{level}}: gli incantesimi che puoi lanciare.",
+      "customOpen": "Incantesimo personalizzato",
+      "customBack": "Torna all'elenco",
+      "customAdd": "Aggiungi l'incantesimo",
+      "customNameRequired": "Dagli un nome.",
+      "component_v": "Verbale",
+      "component_s": "Somatica",
+      "component_m": "Materiale"
     },
     "inv": {
       "pack": "Zaino",

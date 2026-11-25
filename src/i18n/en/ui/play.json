@@ -160,7 +160,14 @@
       "via": "through",
       "alreadyYours": "Already yours",
       "addedToast": "Spell added: {{name}}",
-      "upToLevel": "Up to level {{level}}: the spells you can cast."
+      "upToLevel": "Up to level {{level}}: the spells you can cast.",
+      "customOpen": "Custom spell",
+      "customBack": "Back to the list",
+      "customAdd": "Add the spell",
+      "customNameRequired": "Give it a name.",
+      "component_v": "Verbal",
+      "component_s": "Somatic",
+      "component_m": "Material"
     },
     "inv": {
       "pack": "Pack",

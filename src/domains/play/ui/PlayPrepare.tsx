@@ -119,7 +119,7 @@ export function PlayPrepare({
           onChange={setTab}
         />
       )}
-      {tab === "add" ? <PlayAddSpell /> : preparedList()}
+      {tab === "add" ? <PlayAddSpell locale={locale} /> : preparedList()}
     </Dialog>
   );
 

@@ -5,24 +5,30 @@
  * classic Add Spell picker): the character's own class list first, a spell already on
  * the sheet marked «Già tra i tuoi», only the levels it can cast, one tap adds it
  * with the 5 s undo. Preparing it
- * is then the other tab's.
+ * is then the other tab's. «Incantesimo personalizzato» opens the homebrew spell form
+ * in its place (`PlayCustomSpell`).
  */
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { spellSpec } from "@/features/compendium/picker";
 import { useCompendiumPicker } from "@/features/compendium/picker/useCompendiumPicker";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
+import type { Locale } from "@/lib/locale";
 import { Button, Field } from "@/ui";
 
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 
+import { PlayCustomSpell } from "./PlayCustomSpell";
+
 /** A long list stays light: the first rows, and the search narrows the rest. */
 const SHOWN = 60;
 
-export function PlayAddSpell() {
+export function PlayAddSpell({ locale }: { locale: Locale }) {
   const { t } = useTranslation();
   const picker = useCompendiumPicker(spellSpec, { mode: "add" });
+  const [custom, setCustom] = useState(false);
   type Spell = (typeof picker.filtered)[number];
   // D&D Beyond's «Manage Spells» lists up to the highest level you can cast: the
   // highest level with a slot (pact slots included); cantrips always.
@@ -53,6 +59,7 @@ export function PlayAddSpell() {
       },
       { turnScoped: false }
     );
+  if (custom) return <PlayCustomSpell locale={locale} onDone={() => setCustom(false)} />;
   return (
     <div className="f-stack">
       <Field
@@ -98,6 +105,10 @@ export function PlayAddSpell() {
         })}
         {castable.length === 0 && <p className="f-quiet">{t("spells.pick.none")}</p>}
       </div>
+      {/* D&D Beyond: a homebrew spell beside the catalogue's */}
+      <Button kind="ghost" onClick={() => setCustom(true)}>
+        {t("play.spells.customOpen")}
+      </Button>
     </div>
   );
 }

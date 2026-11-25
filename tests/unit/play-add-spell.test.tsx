@@ -4,11 +4,12 @@
  * character's own class (add mode); one tap adds the spell, a spell already on the
  * sheet says so, and undo takes the add back.
  */
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/firebase", () => ({}));
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { PlayAddSpell } from "@/domains/play/ui/PlayAddSpell";
+import i18n from "@/i18n";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
@@ -35,7 +36,7 @@ const search = (q: string) =>
 
 describe("adding a spell from «Manage spells»", () => {
   it("adds a spell from the class list, and undo takes it back", () => {
-    render(<PlayAddSpell />);
+    render(<PlayAddSpell locale="en" />);
     search("shield");
     fireEvent.click(screen.getByRole("button", { name: "Add: Shield" }));
     expect(ids()).toEqual(["magic-missile", "shield"]);
@@ -44,18 +45,112 @@ describe("adding a spell from «Manage spells»", () => {
   });
 
   it("a spell already on the sheet cannot be added twice", () => {
-    render(<PlayAddSpell />);
+    render(<PlayAddSpell locale="en" />);
     search("magic missile");
     expect(screen.queryByRole("button", { name: "Add: Magic Missile" })).toBeNull();
     expect(screen.getByText("Already yours")).toBeTruthy();
   });
 
   it("offers only the levels the character can cast, and says so", () => {
-    render(<PlayAddSpell />);
+    render(<PlayAddSpell locale="en" />);
     search("fireball");
     expect(screen.queryByRole("button", { name: "Add: Fireball" })).toBeNull();
     expect(screen.getByText("Up to level 2: the spells you can cast.")).toBeTruthy();
     search("misty step");
     expect(screen.getByRole("button", { name: "Add: Misty Step" })).toBeTruthy();
+  });
+});
+
+describe("«Custom spell» (D&D Beyond's homebrew spell fields, Foundry's spell sheet)", () => {
+  const customs = () => live().character.spells.filter((s) => "custom" in s);
+  const open = (locale: "en" | "it" = "en") => {
+    render(<PlayAddSpell locale={locale} />);
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: locale === "it" ? "Incantesimo personalizzato" : "Custom spell",
+      })
+    );
+  };
+  const press = (group: string, name: string) =>
+    fireEvent.click(
+      within(screen.getByRole("group", { name: group })).getByRole("button", { name })
+    );
+
+  afterEach(() => void i18n.changeLanguage("en"));
+
+  it("adds the homebrew spell with every field, back to the list, and undo takes it back", () => {
+    open();
+    fireEvent.change(screen.getByRole("textbox", { name: "Name" }), {
+      target: { value: "Ember Ward" },
+    });
+    press("Level", "Level 2");
+    press("School", "Abjuration");
+    press("Casting Time", "Bonus Action");
+    fireEvent.change(screen.getByRole("textbox", { name: "Range" }), {
+      target: { value: "Self" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Duration" }), {
+      target: { value: "1 minute" },
+    });
+    press("Components", "Material");
+    fireEvent.change(screen.getByRole("textbox", { name: "Material" }), {
+      target: { value: "a pinch of ash" },
+    });
+    press("Properties", "Concentration");
+    press("Properties", "Ritual");
+    fireEvent.change(screen.getByRole("textbox", { name: "Description" }), {
+      target: { value: "A ward of embers." },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Add the spell" }));
+    expect(customs()).toEqual([
+      expect.objectContaining({
+        name: "Ember Ward",
+        level: 2,
+        school: "abjuration",
+        castingTime: "bonus",
+        range: "Self",
+        duration: "1 minute",
+        components: { v: true, s: true, m: true, material: "a pinch of ash" },
+        concentration: true,
+        mechanics: { ritual: true },
+        description: "A ward of embers.",
+        prepared: true,
+      }),
+    ]);
+    // back on the list
+    expect(screen.getByRole("searchbox", { name: "Search spells" })).toBeTruthy();
+    expect(useUndoStore.getState().undo()).toBe(true);
+    expect(customs()).toEqual([]);
+  });
+
+  it("asks for a name and adds nothing without one", () => {
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Add the spell" }));
+    expect(screen.getByText("Give it a name.")).toBeTruthy();
+    expect(customs()).toEqual([]);
+  });
+
+  it("a cantrip offers no Ritual", () => {
+    open();
+    press("Level", "Cantrip");
+    expect(
+      within(screen.getByRole("group", { name: "Properties" })).queryByRole("button", {
+        name: "Ritual",
+      })
+    ).toBeNull();
+  });
+
+  it("speaks Italian", async () => {
+    await i18n.changeLanguage("it");
+    open("it");
+    expect(screen.getByRole("textbox", { name: "Nome" })).toBeTruthy();
+    expect(screen.getByRole("group", { name: "Scuola" })).toBeTruthy();
+    expect(screen.getByRole("textbox", { name: "Gittata" })).toHaveProperty(
+      "value",
+      "18 metri"
+    );
+    expect(screen.getByRole("button", { name: "Aggiungi l'incantesimo" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Torna all'elenco" }));
+    expect(screen.getByRole("searchbox")).toBeTruthy();
   });
 });
