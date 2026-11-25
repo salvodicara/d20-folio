@@ -47,7 +47,7 @@ import { effectiveAlwaysPreparedEntries } from "@/lib/expanded-spells";
 import { getClasses, primaryClassEntry } from "@/lib/classes";
 import { computeMulticlassSpellSlots } from "@/lib/multiclass-slots";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
-import { computeCharacterMaxHp } from "@/lib/aggregate-character";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 
 /**
  * A minimized character: a subset of `CharacterData` with derivable + default-valued
@@ -134,10 +134,13 @@ const DERIVABLE: DerivableField[] = [
   { key: "hp", derive: (classes, c) => ({ max: byTheBookMaxHp(classes, c) }) },
 ];
 
-/** The by-the-book max HP, or the bare class average when the engine can't compose it. */
+/**
+ * The derived max HP: by the book plus the player's max-HP inputs (#1315). The bare
+ * class average stands in for the base when the engine can't compose it.
+ */
 function byTheBookMaxHp(classes: ClassEntry[], c: CharacterData): number {
   const average = inferHpMax(classes, c.abilityScores.CON);
-  return computeCharacterMaxHp({ ...c, classes, hp: { max: average } });
+  return deriveMaxHp({ ...c, classes, hp: { max: average } });
 }
 
 /** The primary (highest-level, ties → first) entry of a non-empty classes array. */

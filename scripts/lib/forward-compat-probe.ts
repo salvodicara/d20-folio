@@ -9,6 +9,9 @@
  *     types, conditions, sizes, familiar types), with the values this tree can store:
  *     the release's own list says which it lacks (a lacking value is dropped on read,
  *     so the strict round-trip refuses the document).
+ *   - character builds: each written by this tree's codec, read and written back by the
+ *     release's character codec; the watched keys must come back identical (an old
+ *     tab keeps a newer build key, #1315).
  * Only entry points both releases share. No network, no writes beyond its output file.
  *
  *   node --import <release>/scripts/alias-loader.mjs <this>/scripts/lib/forward-compat-probe.ts <in.json> <out.json>
@@ -27,9 +30,16 @@ export interface CompatList {
   exportName: string;
   values: readonly string[];
 }
+/** A build this tree writes; `watch` names the build keys an old reader must keep. */
+export interface CompatBuild {
+  value: string;
+  build: Record<string, unknown>;
+  watch: string[];
+}
 export interface CompatInput {
   cases: CompatCase[];
   lists: CompatList[];
+  builds?: CompatBuild[];
 }
 export interface CompatOutput {
   cases: Array<{
@@ -39,6 +49,11 @@ export interface CompatOutput {
     where?: string;
   }>;
   lists: Array<{ list: string; missing: string[] } | { list: string; absent: true }>;
+  builds?: Array<{
+    value: string;
+    result: "kept" | "changed" | "refused";
+    where?: string;
+  }>;
 }
 
 type Parse = (doc: unknown) => { ok: boolean; reason?: string; where?: string };
@@ -60,6 +75,36 @@ export function readCases(
   });
 }
 
+type ParseBuild = (
+  build: Record<string, unknown>,
+  state: Record<string, unknown>
+) => { ok: true; character: unknown; session: unknown } | { ok: false; error: string };
+type SerializeBuild = (doc: { character: unknown; session: unknown }) => {
+  build: Record<string, unknown>;
+};
+
+/** Read each build and write it back with one codec: are the watched keys kept? */
+export function readBuilds(
+  parse: ParseBuild,
+  serialize: SerializeBuild,
+  builds: readonly CompatBuild[]
+): NonNullable<CompatOutput["builds"]> {
+  return builds.map(({ value, build, watch }) => {
+    const parsed = parse(structuredClone(build), {});
+    if (!parsed.ok) return { value, result: "refused" as const, where: parsed.error };
+    const back = serialize({
+      character: parsed.character,
+      session: parsed.session,
+    }).build;
+    const changed = watch.filter(
+      (key) => JSON.stringify(back[key]) !== JSON.stringify(build[key])
+    );
+    return changed.length === 0
+      ? { value, result: "kept" as const }
+      : { value, result: "changed" as const, where: changed.join(",") };
+  });
+}
+
 async function run(input: string, output: string): Promise<void> {
   const data = JSON.parse(readFileSync(input, "utf8")) as CompatInput;
   const { parseCombatState } = (await import("@/lib/combat-state-codec")) as {
@@ -77,7 +122,20 @@ async function run(input: string, output: string): Promise<void> {
       lists.push({ list, absent: true });
     }
   }
-  const result: CompatOutput = { cases: readCases(parseCombatState, data.cases), lists };
+  const { parseCharacterEnvelope, serializeCharacterEnvelope } =
+    (await import("@/lib/character-codec")) as {
+      parseCharacterEnvelope: ParseBuild;
+      serializeCharacterEnvelope: SerializeBuild;
+    };
+  const result: CompatOutput = {
+    cases: readCases(parseCombatState, data.cases),
+    lists,
+    builds: readBuilds(
+      parseCharacterEnvelope,
+      serializeCharacterEnvelope,
+      data.builds ?? []
+    ),
+  };
   writeFileSync(output, JSON.stringify(result));
 }
 

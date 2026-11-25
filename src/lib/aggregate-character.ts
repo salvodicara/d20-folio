@@ -585,6 +585,22 @@ export function computeCharacterMaxHp(character: CharacterDoc["character"]): num
 }
 
 /**
+ * THE stored-base max HP (#1315): the by-the-book max ({@link computeCharacterMaxHp})
+ * plus the player's max-HP inputs (`hpRolled`, the rolled surplus over the fixed
+ * values, and `hpBonus`, a hand adjustment), floored at the total level (every level
+ * gives at least 1 HP). The reload derives `hp.max` with it; live one-shot grants
+ * (`effectiveMaxHp`) add on top.
+ */
+export function deriveMaxHp(character: CharacterDoc["character"]): number {
+  const input = (v: unknown) => (Number.isSafeInteger(v) ? (v as number) : 0);
+  const adjusted =
+    computeCharacterMaxHp(character) +
+    input(character.hpRolled) +
+    input(character.hpBonus);
+  return Math.max(totalLevel(character), adjusted);
+}
+
+/**
  * The per-source {@link RawBreakdownPart}s of a character's COMPUTED max HP for the
  * HP-max breakdown tip: one "Hit Dice" row per class (CON-free dice), one
  * "Constitution" row (CON × level, RAW floored), then one NAMED row per HP-grant.

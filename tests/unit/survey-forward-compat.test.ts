@@ -10,7 +10,11 @@ import { describe, expect, it } from "vitest";
 import { snapshotTurnEconomy } from "@/features/character/center/combat-hydration";
 import { parseCombatState } from "@/lib/combat-state-codec";
 import { useCombatStore } from "@/stores/combatStore";
-import { readCases } from "../../scripts/lib/forward-compat-probe";
+import {
+  parseCharacterEnvelope,
+  serializeCharacterEnvelope,
+} from "@/lib/character-codec";
+import { readBuilds, readCases } from "../../scripts/lib/forward-compat-probe";
 import { buildInput, summarize } from "../../scripts/survey-forward-compat";
 
 describe("the forward-compat check", () => {
@@ -90,6 +94,45 @@ describe("the forward-compat check", () => {
       )
     );
     expect(text).not.toMatch(/scn-|team-/);
+  });
+
+  it("writes a build carrying the max-HP inputs, watched on build.hp (#1315)", () => {
+    expect(input.builds.map((b) => [b.value, b.watch])).toEqual([["build.hp", ["hp"]]]);
+    expect(input.builds[0]?.build.hp).toEqual({ rolled: 4, bonus: 2 });
+  });
+
+  it("this tree's own codec keeps build.hp through a read and a write", () => {
+    expect(
+      readBuilds(
+        parseCharacterEnvelope,
+        serializeCharacterEnvelope as Parameters<typeof readBuilds>[1],
+        input.builds
+      )
+    ).toEqual([{ value: "build.hp", result: "kept" }]);
+  });
+
+  it("a reader that drops build.hp on write is a problem, named by key", () => {
+    const dropping = readBuilds(
+      parseCharacterEnvelope,
+      (doc) => {
+        const build = serializeCharacterEnvelope(
+          doc as Parameters<typeof serializeCharacterEnvelope>[0]
+        ).build;
+        return {
+          build: Object.fromEntries(Object.entries(build).filter(([k]) => k !== "hp")),
+        };
+      },
+      input.builds
+    );
+    expect(dropping).toEqual([{ value: "build.hp", result: "changed", where: "hp" }]);
+    const allRead = readCases(() => ({ ok: true }), input.cases);
+    const survey = summarize(
+      input,
+      { cases: allRead, lists: [], builds: dropping },
+      allRead
+    );
+    expect(survey.builds).toEqual({ "build.hp": "changed: hp" });
+    expect(survey.problems).toBe(1);
   });
 
   it("never reaches Firebase", () => {
