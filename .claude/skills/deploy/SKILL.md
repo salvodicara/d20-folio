@@ -24,6 +24,8 @@ Verify already proved green; it never re-verifies or builds anything new.
    armed. If Verify was superseded or the pack moved, `gh workflow run verify.yml --ref main` first.
    Runtime pack: pass `-f runtime_pack=true` (`gh workflow run deploy.yml --ref main -f runtime_pack=true`)
    only after every account in `scripts/pack/pack-access.ts list` holds the claim.
+   The new interface has no deploy switch: every build ships both interfaces, and each player
+   opts in from Settings («Prova la nuova interfaccia»).
 4. **Watch it land.** `gh run watch` on the run. Done when every job is green; on a red job, report
    the failing step and its log to the owner, never retry blindly.
 5. **Tell the owner** in two lines: what is live, and that open tabs need a reload.

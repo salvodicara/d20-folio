@@ -65,7 +65,11 @@
       "levelFilter": "Solo livello {{level}}",
       "noKnownSpells": "Nessun incantesimo non-trucchetto da sostituire.",
       "incompleteWarning": "Seleziona un incantesimo sostitutivo oppure deseleziona per saltare.",
-      "summary": "Sostituirà {{old}} con {{new}}"
+      "summary": "Sostituirà {{old}} con {{new}}",
+      "cantripTitle": "Sostituire un Trucchetto (Opzionale)",
+      "cantripSummary": "Sostituirà il trucchetto {{old}} con {{new}}",
+      "cantripRemoveLabel": "1. Scegli un trucchetto da sostituire",
+      "cantripReplaceLabel": "2. Scegli il tuo trucchetto sostitutivo"
     },
     "scaling": {
       "dieUpgrade": "Dado potenziato per {{feature}}: {{from}} → {{to}}",

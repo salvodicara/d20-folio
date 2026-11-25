@@ -879,12 +879,16 @@ export interface IncapacitationRow {
   id: string;
   currentHp: number;
   conditions: ReadonlyArray<string>;
+  /** The row's live data has not loaded: its HP is a placeholder, not a fact (#1306). */
+  liveUnknown?: true;
 }
 
 /** Whether a row can't act: at 0 HP, or with a condition of the Incapacitated family
  *  (Incapacitated, Paralyzed, Petrified, Stunned, Unconscious). */
 export function rowIsIncapacitated(row: IncapacitationRow): boolean {
-  return row.currentHp <= 0 || row.conditions.some(conditionBreaksConcentration);
+  // Missing = unknown, never 0: a placeholder HP is no reason to be Incapacitated.
+  const atZero = !row.liveUnknown && row.currentHp <= 0;
+  return atZero || row.conditions.some(conditionBreaksConcentration);
 }
 
 /**

@@ -659,6 +659,14 @@ function givePeer(
   parts?: ReadonlyArray<DamageInstance>
 ): Promise<() => void> {
   const row = target.row;
+  // Missing = unknown, never 0 (#1306): a row still loading holds a placeholder max HP
+  // of 0, and the shared write caps a heal at the max it is given. Write nothing yet.
+  if (row?.liveUnknown) {
+    useToastStore
+      .getState()
+      .showToast({ message: t("combat.targetStillLoading"), duration: 6000 });
+    return Promise.resolve(() => undefined);
+  }
   const memberUid = row?.memberUid;
   const characterId = row?.characterId;
   const log = () =>

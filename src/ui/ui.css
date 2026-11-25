@@ -6799,3 +6799,23 @@
 .fui .f-tabs + .f-stack {
   margin-top: 16px;
 }
+
+/* a rule word in rules prose (a condition, Advantage, Bonus Action): its ink stays,
+   a dotted underline says it opens its explanation (Foundry's &Reference) */
+.fui button.f-rule-word {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  text-decoration: underline dotted;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.fui .f-rule-word-body {
+  margin: 0;
+  max-width: 60ch;
+}
