@@ -210,6 +210,8 @@
     "flatDamageReductionInHeavyArmor": "in heavy armor",
     "deadLabel": "Dead",
     "stableLabel": "0 HP · Stable",
-    "initiativeFightUnread": "Can't read the campaign's fight yet. Try again in a moment."
+    "initiativeFightUnread": "Can't read the campaign's fight yet. Try again in a moment.",
+    "notSaved": "Your new character was not saved. Your choices are kept on this device.",
+    "createAgain": "Create it again"
   }
 }

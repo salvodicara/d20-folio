@@ -47,7 +47,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
-import { createCharacter } from "@/lib/firestore";
+import { createCharacterOffline } from "@/features/creation/create-offline";
 import { SRD_BACKGROUNDS } from "@/data/backgrounds";
 import { FEATS_BY_ID } from "@/data/feats";
 import { ALIGNMENT_IDS } from "@/lib/lore-utils";
@@ -299,11 +299,16 @@ export function CreationWizard() {
     setSaving(true);
     setError(null);
     try {
-      const docId = await createCharacter(user.uid, built.payload);
-      // Land on the cockpit. Flag the leave-guard so this save doesn't prompt.
-      finishingRef.current = true;
-      void navigate(`/characters/${docId}`);
-      window.scrollTo({ top: 0, left: 0 });
+      // Land on the cockpit at once, online or offline; the draft stays on this device
+      // until the server confirms it (#1283). Flag the leave-guard so this doesn't prompt.
+      const open = (id: string): void => {
+        finishingRef.current = true;
+        void navigate(`/characters/${id}`);
+        window.scrollTo({ top: 0, left: 0 });
+      };
+      open(
+        await createCharacterOffline({ uid: user.uid, payload: built.payload, open, t })
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : t("character.failedCreate"));
       setSaving(false);
