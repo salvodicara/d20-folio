@@ -17,7 +17,7 @@
  * snapshot back. Levels this screen cannot draw yet open the classic wizard. A new
  * class (multiclassing) is picked here too, among those the scores allow.
  */
-import { createElement, useState, type ReactNode } from "react";
+import { createElement, useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate } from "react-router";
 
@@ -45,7 +45,8 @@ import {
 } from "@/domains/leveling/level-up-review-view";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
-import { getClasses, primaryClassId } from "@/lib/classes";
+import { getClasses, primaryClassId, totalLevel } from "@/lib/classes";
+import { clearLevelUpDraft, loadLevelUpDraft, saveLevelUpDraft } from "@/lib/local-draft";
 import { abilityModifier } from "@/lib/compute";
 import {
   replaceCharacterState,
@@ -106,13 +107,23 @@ export function LevelUpScreen({
   const setCharacter = useCharacterStore((s) => s.setCharacter);
   const c = doc.character;
   const owned = getClasses(c);
-  const [classId, setClassId] = useState(() => primaryClassId(c));
+  // The answers survive a reload, for the level they were given at (`lib/local-draft`).
+  const fromLevel = totalLevel(c);
+  const [saved] = useState(() =>
+    uid ? loadLevelUpDraft<LevelUpAnswers>(uid, doc.id, fromLevel) : null
+  );
+  const [classId, setClassId] = useState(() => saved?.classId ?? primaryClassId(c));
   // The classes the scores allow starting now (13+ in each primary ability), and
   // whether the level goes to one of them.
   const newClasses = eligibleNewClasses(c);
   const starting = !owned.some((e) => e.classId === classId);
   const [adding, setAdding] = useState(false);
-  const [answers, setAnswers] = useState<LevelUpAnswers>(NO_ANSWERS);
+  const [answers, setAnswers] = useState<LevelUpAnswers>(() =>
+    saved ? { ...NO_ANSWERS, ...saved.answers } : NO_ANSWERS
+  );
+  useEffect(() => {
+    if (uid) saveLevelUpDraft(uid, doc.id, { fromLevel, classId, answers });
+  }, [uid, doc.id, fromLevel, classId, answers]);
   // A new class asks its own questions: the answers start over.
   const pickClass = (id: string) => {
     setClassId(id);
@@ -177,6 +188,7 @@ export function LevelUpScreen({
         classId,
       });
       finishing();
+      clearLevelUpDraft(uid, doc.id);
       onClose();
       useToastStore.getState().showToast({
         message: t("levelUp.screen.done", { name: c.name, level: plan.newLevel }),

@@ -671,6 +671,10 @@
     "rerollFailureToast": "{{name}}: Concentration broken (total {{total}})",
     "attackResult": "Result",
     "rerollOffers": "Reroll the failed save",
-    "targetStillLoading": "That character is still loading: try again in a moment."
+    "targetStillLoading": "That character is still loading: try again in a moment.",
+    "turnNotEndedOffline": "You're offline: ending your turn needs the network. It's still your turn; try again when you're back online.",
+    "turnNotEnded": "Couldn't end your turn: it's still yours. Try again.",
+    "clockNotMovedOffline": "You're offline: the rest is saved on your sheet, but the campaign clock didn't move.",
+    "clockNotMoved": "The rest is saved on your sheet, but the campaign clock didn't move."
   }
 }

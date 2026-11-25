@@ -45,6 +45,7 @@ import {
   type CreationDraft,
 } from "@/lib/creation/draft";
 import { createCharacterOffline } from "@/features/creation/create-offline";
+import { clearCreationDraft } from "@/lib/local-draft";
 import { BUILD_ERROR_KEYS } from "@/lib/views/creation-view";
 import { useAuthStore } from "@/stores/authStore";
 import { Button, Choice, Field, Panel, Room } from "@/ui";
@@ -165,9 +166,15 @@ export function CreationScreen() {
         void navigate(`/characters/${id}`);
         window.scrollTo({ top: 0 });
       };
-      open(
-        await createCharacterOffline({ uid: user.uid, payload: built.payload, open, t })
-      );
+      const id = await createCharacterOffline({
+        uid: user.uid,
+        payload: built.payload,
+        open,
+        t,
+      });
+      // The kept copy above guards the build; the in-progress form can go.
+      clearCreationDraft(user.uid);
+      open(id);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : t("character.failedCreate"));
       setSaving(false);
