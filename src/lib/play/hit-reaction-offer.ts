@@ -17,8 +17,6 @@
 import { isCharacterAlive } from "@/lib/character-status";
 import { sheetConditionEffects } from "@/lib/condition-sources";
 import { resolveActions, type RawResolvedAction } from "@/lib/smart-tracker";
-import { isActionDepleted } from "@/lib/views/action-row-view";
-import { localizeAction } from "@/lib/views/combat-action-view";
 import { reactionTriggersOf } from "./reaction-triggers";
 import type { CharacterDoc } from "@/types/character";
 
@@ -49,12 +47,15 @@ export interface EnteredHit {
 /**
  * The reactions this hit offers, read on the sheet as it was JUST BEFORE the hit (a
  * hit that drops the character to 0 still offers Shield: it is cast as the attack
- * hits). Empty when nothing is legal.
+ * hits). Empty when nothing is legal. `payable` says whether an action can be paid
+ * for now (a use left, a slot to cast it with); the caller passes the sheet's own
+ * depletion check, which lives in the presenter layer.
  */
 export function hitReactionChoices(
   before: CharacterDoc,
   hit: EnteredHit,
-  turn: { reactionUsed: boolean }
+  turn: { reactionUsed: boolean },
+  payable: (action: RawResolvedAction) => boolean
 ): HitReactionChoice[] {
   if (!hit.attack || hit.amount <= 0 || turn.reactionUsed) return [];
   const { session } = before;
@@ -66,12 +67,7 @@ export function hitReactionChoices(
     if (!known || action.type !== "reaction") return [];
     if (!reactionTriggersOf(action).includes(known.trigger)) return [];
     if (action.activatesKey && lit.has(action.activatesKey)) return [];
-    if (!payable(before, action)) return [];
+    if (!payable(action)) return [];
     return [{ actionId: action.id, kind: known.kind }];
   });
-}
-
-/** Whether the reaction can be paid for now: a use left, a slot to cast it with. */
-function payable(doc: CharacterDoc, action: RawResolvedAction): boolean {
-  return !isActionDepleted(doc, localizeAction(action, "en"));
 }

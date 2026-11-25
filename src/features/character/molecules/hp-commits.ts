@@ -34,6 +34,9 @@ import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { hitReactionChoices } from "@/lib/play/hit-reaction-offer";
+import type { RawResolvedAction } from "@/lib/smart-tracker";
+import { isActionDepleted } from "@/lib/views/action-row-view";
+import { localizeAction } from "@/lib/views/combat-action-view";
 import {
   closeHitReactionOffer,
   setHitReactionOffer,
@@ -116,7 +119,8 @@ export function commitDamage(
     ? hitReactionChoices(
         before,
         { amount: entered.amount, attack: opts?.landProne === undefined },
-        { reactionUsed }
+        { reactionUsed },
+        (action) => reactionPayable(before, action)
       )
     : [];
   const offerId = crypto.randomUUID();
@@ -332,4 +336,9 @@ export function commitZeroHpSaver(
     () => useCharacterStore.getState().applyZeroHpSaver(saver.sourceId, result),
     { turnScoped: false }
   );
+}
+
+/** Whether a reaction can be paid for now: a use left, a slot to cast it with. */
+export function reactionPayable(doc: CharacterDoc, action: RawResolvedAction): boolean {
+  return !isActionDepleted(doc, localizeAction(action, "en"));
 }

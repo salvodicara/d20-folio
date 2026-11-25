@@ -8,6 +8,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
+import { reactionPayable } from "@/features/character/molecules/hp-commits";
 import { halvedHit, hitReactionChoices } from "@/lib/play/hit-reaction-offer";
 import type { CharacterDoc, SessionState } from "@/types/character";
 
@@ -34,11 +35,12 @@ function doc(spec: ScenarioSpec, session: Partial<SessionState> = {}): Character
 const ATTACK = { amount: 13, attack: true };
 const FREE = { reactionUsed: false };
 const ids = (d: CharacterDoc, hit = ATTACK, turn = FREE) =>
-  hitReactionChoices(d, hit, turn).map((c) => c.actionId);
+  hitReactionChoices(d, hit, turn, (a) => reactionPayable(d, a)).map((c) => c.actionId);
 
 describe("which reactions a hit offers", () => {
   it("a Rogue 5 / Wizard 1 with Shield prepared is offered both", () => {
-    expect(hitReactionChoices(doc(ROGUE_WIZARD), ATTACK, FREE)).toEqual([
+    const d = doc(ROGUE_WIZARD);
+    expect(hitReactionChoices(d, ATTACK, FREE, (x) => reactionPayable(d, x))).toEqual([
       { actionId: "rogue-uncanny-dodge-reaction", kind: "halve-hit" },
       { actionId: "spell-shield", kind: "raise-ac" },
     ]);
