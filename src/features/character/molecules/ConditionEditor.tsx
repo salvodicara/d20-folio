@@ -176,11 +176,12 @@ export function ConditionEditor({
                   <button
                     key={option.id ?? "other"}
                     type="button"
+                    className="status-badge sb-toggle"
+                    data-kind={o.chosen === option.id ? "active" : undefined}
                     aria-pressed={o.chosen === option.id}
-                    className={cn("co-pick-item", o.chosen === option.id && "active")}
                     onClick={() => onOrigin(o.conditionId, option.id)}
                   >
-                    {option.label}
+                    <span className="sb-label">{option.label}</span>
                   </button>
                 )
               )}

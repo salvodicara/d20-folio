@@ -39,7 +39,7 @@ import { effectiveSessionConditions } from "@/lib/effective-conditions";
 import { effectsForTarget } from "@/lib/combat-effects";
 import { useGlobalCombat } from "@/features/campaigns/global-combat-context";
 import { ConditionEditor } from "./ConditionEditor";
-import { repeatSaveOriginsFor } from "@/lib/play/solo-repeat-saves";
+import { conditionsPanelView } from "@/domains/play/play-conditions-view";
 import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { slotUsageKey } from "@/lib/cast-options";
 // The rail's core vital reads (concentration, exhaustion, slot pips) go
@@ -72,7 +72,6 @@ import {
   incomingAttackAdvantageVMs,
   localizeTrackers,
   localizeTrackerUnit,
-  grantSourceLabel,
   potionTimerVMs,
   resolveAuraDice,
   rollFloorVMs,
@@ -1614,24 +1613,23 @@ function ConditionStrip({
   const { t } = useTranslation();
   const { language: locale } = useLocale();
   const fadingPenalties = useCharacterStore((s) => s.character?.session.fadingPenalties);
-  // «Da cosa?» (#1333): what imposed each active condition, for the solo strip.
-  const chosen = useCharacterStore((s) => s.character?.session.conditionOrigins);
-  const origins = conditions.flatMap((id) => {
-    const options = repeatSaveOriginsFor(id).map((o) => ({
-      id: o.id,
-      label: grantSourceLabel(o.id, locale),
-    }));
-    return options.length > 0
-      ? [
-          {
-            conditionId: id,
-            label: conditionLabel(id, locale),
-            options,
-            chosen: chosen?.[id] ?? null,
-          },
-        ]
-      : [];
-  });
+  // «Da cosa?» (#1333): what imposed each condition chip the player put on, for the
+  // solo strip; the same rows as Play's panel (`conditionsPanelView`).
+  const doc = useCharacterStore((s) => s.character);
+  const origins = doc
+    ? conditionsPanelView(doc, locale).rows.flatMap((row) =>
+        row.origin
+          ? [
+              {
+                conditionId: row.id,
+                label: row.name,
+                options: row.origin.options.map((o) => ({ id: o.id, label: o.name })),
+                chosen: row.origin.chosen,
+              },
+            ]
+          : []
+      )
+    : [];
   const setOrigin = (condition: string, origin: string | null) =>
     useCharacterStore
       .getState()

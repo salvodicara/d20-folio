@@ -34,6 +34,8 @@ describe("conditionsPanelView", () => {
     expect(v.rows[0]?.origin?.chosen).toBe("hold-person");
     expect(v.rows[0]?.origin?.options.map((o) => o.name)).toContain("Hold Person");
     expect(v.rows[1]).not.toHaveProperty("origin");
+    // Paralyzed implies Incapacitated, which is no chip of its own: no row for it.
+    expect(v.rows.map((r) => r.id)).toEqual(["paralyzed", "grappled"]);
   });
 
   it("asks «can't see the source» on Frightened, pressed when the table said no", () => {
