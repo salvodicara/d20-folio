@@ -41,7 +41,16 @@ test("an offline edit survives a migration: kept, reload, apply", async ({ brows
       character: { ...doc.character, quote: "kept offline edit" },
     });
   });
-  await page.waitForTimeout(2_000);
+  // The save has left the tab once its trace is written (it waits offline).
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() =>
+          Object.keys(localStorage).some((key) => key.startsWith("folio.unacked."))
+        ),
+      { timeout: 15_000 }
+    )
+    .toBe(true);
   await page.close();
 
   // A migration raises the stored shape while the player is away.
