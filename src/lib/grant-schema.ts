@@ -1681,6 +1681,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
         requiresRiderTrackerId: stringSchema,
+        /** Gate: the rider is offered only while this `while-active` toggle is up
+         *  (Brutal Strike needs Reckless Attack this turn); off, its chip says so. */
+        requiresActiveKey: stringSchema,
         /** Each use spends one unit of this tracker (Psionic Energy Dice). */
         resourceCost: objectSchema({
           trackerId: stringSchema,
@@ -1738,6 +1741,9 @@ const GRANT_SCHEMA_DEFINITION = discriminatedUnionSchema("type", {
         oncePerTurn: booleanSchema,
         /** Gate: the rider is offered only while this tracker has an unspent use. */
         requiresRiderTrackerId: stringSchema,
+        /** Gate: the rider is offered only while this `while-active` toggle is up
+         *  (Brutal Strike needs Reckless Attack this turn); off, its chip says so. */
+        requiresActiveKey: stringSchema,
         /** Each use spends one unit of this tracker (Psionic Energy Dice). */
         resourceCost: objectSchema({
           trackerId: stringSchema,

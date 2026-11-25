@@ -186,7 +186,17 @@ export const RANGER_FEATURES: SrdClassFeatureData[] = [
         ],
       },
     },
-    grants: [{ type: "always-prepared-spell", spellId: "hunters-mark" }],
+    // «You can cast it twice without expending a spell slot»: the free cast pays this
+    // feature's own tracker (its bare id), so its count follows the column above.
+    grants: [
+      { type: "always-prepared-spell", spellId: "hunters-mark" },
+      {
+        type: "free-cast-spell",
+        spellId: "hunters-mark",
+        chargesPerRest: 2,
+        rest: "long",
+      },
+    ],
     source: "SRD",
   },
   {

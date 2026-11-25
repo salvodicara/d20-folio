@@ -22,6 +22,7 @@ import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { FIND_FAMILIAR_SPELL_ID } from "@/lib/familiar-ids";
 
 import { OtherReactionRow, ReadiedNote } from "@/domains/play/ui/PlayReactionExtras";
+import { PlayAddItem } from "./PlayAddItem";
 import { PlayCoinPane, PlayItemPane } from "./PlayItemPane";
 import { useSoloTurn } from "./PlaySoloTurn";
 import { initiativeRollModel, toggleSurprise } from "@/domains/play/roll-dialog-state";
@@ -94,7 +95,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import { useCombatStore } from "@/stores/combatStore";
 import type { CharacterDoc } from "@/types/character";
 import { Art, Button, Chip, Filters, Icon, Tabs } from "@/ui";
-import { usePartyRosterStore } from "@/features/campaigns/party-roster";
+import { END_TURN_WAITING, usePartyRosterStore } from "@/features/campaigns/party-roster";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import { spells as allSpells } from "@/data/spells";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
@@ -338,6 +339,7 @@ function InventoryPane({
   const [scroll, setScroll] = useState<PlayItem["scroll"] | null>(null);
   const [opened, setOpened] = useState<string | null>(null);
   const [coinsOpen, setCoinsOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
   const openItem = view.groups.flatMap((g) => g.items).find((i) => i.key === opened);
   const actions = new Map(
     playActionsView(doc, locale, turn)
@@ -372,14 +374,22 @@ function InventoryPane({
   );
   return (
     <>
-      {view.weight && (
-        <p className="f-spell-sum" data-over={view.weight.over || undefined}>
-          {t("play.inv.weight", {
-            carried: formatWeight(view.weight.carried, locale),
-            capacity: formatWeight(view.weight.capacity, locale),
-          })}
-        </p>
-      )}
+      {/* the weight, and D&D Beyond's «Manage Inventory» at the same height */}
+      <div className="f-inv-tools">
+        {view.weight && (
+          <p className="f-spell-sum" data-over={view.weight.over || undefined}>
+            {t("play.inv.weight", {
+              carried: formatWeight(view.weight.carried, locale),
+              capacity: formatWeight(view.weight.capacity, locale),
+            })}
+          </p>
+        )}
+        {!readonly && (
+          <Button kind="ghost" aria-haspopup="dialog" onClick={() => setAdding(true)}>
+            {t("play.inv.add")}
+          </Button>
+        )}
+      </div>
       {/* The coins open their pane (D&D Beyond's «Manage Coin»), even when empty. */}
       <button
         type="button"
@@ -515,6 +525,7 @@ function InventoryPane({
           onClose={() => setOpened(null)}
         />
       )}
+      {adding && <PlayAddItem onClose={() => setAdding(false)} />}
       {coinsOpen && (
         <PlayCoinPane
           coins={view.coins}
@@ -699,6 +710,8 @@ function TurnStrip({
   const solo = useSoloTurn(locale);
   const { round, phase, currentActorName } = useTurnState();
   const { handleEndTurn } = useTurnEconomy();
+  // End Turn waits for this character's fight to reach the sheet: the button is busy.
+  const endTurnWaiting = usePartyRosterStore((s) => s.castWaiting === END_TURN_WAITING);
   // «Tira l'iniziativa»: the first roll starts the campaign's fight, a late one joins it
   const rollOffer = readonly
     ? null
@@ -760,7 +773,13 @@ function TurnStrip({
           ))}
         </ul>
         {fight && (phase === "my-turn" || phase === "solo") && (
-          <Button kind="primary" icon="u-next" data-end-turn="" onClick={handleEndTurn}>
+          <Button
+            kind="primary"
+            icon="u-next"
+            data-end-turn=""
+            busy={endTurnWaiting}
+            onClick={handleEndTurn}
+          >
             {t("play.endTurn")}
           </Button>
         )}
