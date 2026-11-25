@@ -9,6 +9,11 @@ import {
   parseCharacterEnvelope,
 } from "@/lib/character-codec";
 import { levelUp } from "@/lib/level-up";
+import {
+  maxHpWithoutBonus,
+  withMaxHpEdit,
+  withoutMaxHpBonus,
+} from "@/lib/aggregate-character";
 import { asRaceId } from "@/data/srd-names";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import type { CharacterData } from "@/types/character";
@@ -37,6 +42,9 @@ function reload(character: CharacterData): CharacterData {
   return parsed.character;
 }
 
+const envelopeBuild = (character: CharacterData) =>
+  serializeCharacterEnvelope({ ...MOCK_CHARACTER, character }).build;
+
 describe("level-up — a rolled hit die survives a reload", () => {
   it("a roll of 8 on the d8 (fixed 5) records a surplus of 3: 38 after a reload", () => {
     const { updatedCharacter } = levelUp(monk(), 4, { hpGain: 8 });
@@ -62,5 +70,40 @@ describe("level-up — a rolled hit die survives a reload", () => {
     // 27 + (5 + 3 surplus + 2 CON + 1) + (5 + 2 surplus + 2 CON + 1) = 48.
     expect(second.hpRolled).toBe(5);
     expect(reload(second).hp.max).toBe(48);
+  });
+});
+
+describe("the header's hand edit of max HP — stored as a bonus over the derived max", () => {
+  it("entering 30 on a 27 character stores a bonus of +3; the reload shows 30", () => {
+    const edited = withMaxHpEdit(monk(), 30);
+    expect([edited.hpBonus, edited.hp.max]).toEqual([3, 30]);
+    expect(reload(edited).hp.max).toBe(30);
+  });
+
+  it("the bonus survives a level-up: 30 + 8 = 38 after a reload", () => {
+    const leveled = levelUp(withMaxHpEdit(monk(), 30), 4).updatedCharacter;
+    expect(reload(leveled).hp.max).toBe(38);
+  });
+
+  it("the bonus sits on top of a rolled surplus, never replacing it", () => {
+    const rolled = monk({ hpRolled: 4, hp: { max: 31 } });
+    const edited = withMaxHpEdit(rolled, 33);
+    expect([edited.hpRolled, edited.hpBonus]).toEqual([4, 2]);
+    expect(reload(edited).hp.max).toBe(33);
+  });
+
+  it("entering the derived value clears the bonus", () => {
+    const edited = withMaxHpEdit(monk({ hpBonus: 3, hp: { max: 30 } }), 27);
+    expect(edited.hpBonus).toBeUndefined();
+    expect(envelopeBuild(edited)).not.toHaveProperty("hp");
+  });
+
+  it("reset clears the bonus and keeps the rolls", () => {
+    const reset = withoutMaxHpBonus(monk({ hpRolled: 4, hpBonus: 3, hp: { max: 34 } }));
+    expect([reset.hpRolled, reset.hpBonus, reset.hp.max]).toEqual([4, undefined, 31]);
+  });
+
+  it("maxHpWithoutBonus is the value the reset returns to", () => {
+    expect(maxHpWithoutBonus(monk({ hpRolled: 4, hpBonus: 3 }))).toBe(31);
   });
 });

@@ -36,6 +36,9 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import {
   computeCharacterMaxHp,
   effectiveMaxHpBreakdown,
+  maxHpWithoutBonus,
+  withMaxHpEdit,
+  withoutMaxHpBonus,
 } from "@/lib/aggregate-character";
 import { localizeBreakdown } from "@/lib/views/combat-action-view";
 import { useLocale } from "@/hooks/useLocale";
@@ -47,13 +50,23 @@ import { BreakdownTip } from "@/components/shared/BreakdownTip";
 import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { Icon } from "@/components/ui/icon";
 
-/** Write the max HP, preserving the rest of the hp block (definition value). */
+/** Write a hand-set max HP as its stored input, a bonus over the derived max (#1315). */
 function setHpMax(max: number): void {
   const doc = useCharacterStore.getState().character;
   if (!doc) return;
   useCharacterStore.getState().setCharacter({
     ...doc,
-    character: { ...doc.character, hp: { ...doc.character.hp, max } },
+    character: withMaxHpEdit(doc.character, max),
+  });
+}
+
+/** Reset the hand edit: clear the bonus, keep the rolls (#1315). */
+function resetHpMax(): void {
+  const doc = useCharacterStore.getState().character;
+  if (!doc) return;
+  useCharacterStore.getState().setCharacter({
+    ...doc,
+    character: withoutMaxHpBonus(doc.character),
   });
 }
 
@@ -308,11 +321,11 @@ export function HeaderHpControl() {
             // hand-pinned base / husk class) still shows the EFFECTIVE total; `agg.hpFlat`
             // stays a read-time overlay either way.
             value={sheetMode === "edit" ? storedMax : max}
-            computedValue={computedBase}
+            computedValue={charData ? maxHpWithoutBonus(charData) : computedBase}
             min={1}
             max={999}
             onChange={setHpMax}
-            onReset={() => setHpMax(computedBase)}
+            onReset={resetHpMax}
             ariaLabel={t("character.health.maxHp")}
             valueClassName="text-base text-text-secondary"
           />

@@ -600,6 +600,37 @@ export function deriveMaxHp(character: CharacterDoc["character"]): number {
   return Math.max(totalLevel(character), adjusted);
 }
 
+/** The derived max HP without the hand adjustment: what a reset returns to. */
+export function maxHpWithoutBonus(character: CharacterDoc["character"]): number {
+  return deriveMaxHp({ ...character, hpBonus: undefined });
+}
+
+/**
+ * The header's hand edit of max HP (#1315): stored as the INPUT `hpBonus` = entered −
+ * derived max without it, so a level-up or a CON change still moves the max. Entering
+ * the derived value clears the bonus.
+ */
+export function withMaxHpEdit<C extends CharacterDoc["character"]>(
+  character: C,
+  max: number
+): C {
+  const bonus = max - maxHpWithoutBonus(character);
+  return {
+    ...character,
+    hpBonus: bonus === 0 ? undefined : bonus,
+    hp: { ...character.hp, max },
+  };
+}
+
+/** Reset the hand edit: clear `hpBonus`, keep the rolls, re-derive the max. */
+export function withoutMaxHpBonus<C extends CharacterDoc["character"]>(character: C): C {
+  return {
+    ...character,
+    hpBonus: undefined,
+    hp: { ...character.hp, max: maxHpWithoutBonus(character) },
+  };
+}
+
 /**
  * The per-source {@link RawBreakdownPart}s of a character's COMPUTED max HP for the
  * HP-max breakdown tip: one "Hit Dice" row per class (CON-free dice), one
