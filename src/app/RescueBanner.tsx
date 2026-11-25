@@ -3,7 +3,8 @@
  * Apply / Discard», on the owner's open sheet. Apply goes through the whole-sheet
  * ceremony with a snapshot first (`rescue-apply`); a copy this version cannot bring
  * forward offers Discard only and says why. Pattern source: Google Docs' «recover
- * unsaved changes» bar and the browser's restore-session bar, in our bottom banner.
+ * unsaved changes» bar and the browser's restore-session bar, drawn as our own
+ * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner).
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -62,23 +63,27 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
   };
 
   return (
-    <section
-      aria-label={t("pwa.rescue.label")}
-      className="fixed inset-x-0 bottom-0 z-40 flex flex-wrap items-center gap-3 border-t border-border-subtle bg-surface-raised px-4 py-3"
-    >
-      <p className="min-w-0 flex-1 text-sm">
-        {failed
-          ? t("pwa.rescue.failed")
-          : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
-      </p>
-      {applicable && (
-        <Button size="sm" onClick={() => void apply()} disabled={busy}>
-          {t("combat.apply")}
-        </Button>
-      )}
-      <Button size="sm" variant="ghost" onClick={discard} disabled={busy}>
-        {t("common.discard")}
-      </Button>
-    </section>
+    <div className="pwa-dock">
+      <section
+        aria-label={t("pwa.rescue.label")}
+        className="accent-alert pointer-events-auto justify-between gap-3 md:mx-auto md:mb-3 md:w-full md:max-w-2xl"
+      >
+        <span className="min-w-0 flex-1 text-xs font-medium text-text-primary">
+          {failed
+            ? t("pwa.rescue.failed")
+            : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
+        </span>
+        <div className="flex shrink-0 items-center gap-2">
+          {applicable && (
+            <Button size="sm" onClick={() => void apply()} disabled={busy}>
+              {t("combat.apply")}
+            </Button>
+          )}
+          <Button size="sm" variant="ghost" onClick={discard} disabled={busy}>
+            {t("common.discard")}
+          </Button>
+        </div>
+      </section>
+    </div>
   );
 }

@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Icon } from "@/components/ui/icon";
+import { ModalBody, ModalFoot } from "@/components/ui/modal-head";
 import { shapeGateState, subscribeShapeGate } from "@/lib/shape-gate";
 
 const RELOAD_MARK = "folio.shapeReloadAt";
@@ -80,17 +81,17 @@ export function ShapeGateScreen({
             {title}
           </h2>
         </div>
-        <div className="modal-body">
+        <ModalBody>
           <p id="shape-gate-body" className="text-sm text-text-secondary">
             {body}
           </p>
-        </div>
-        <div className="modal-foot">
+        </ModalBody>
+        <ModalFoot>
           <Button onClick={onReload} disabled={state.rescue === "saving"} autoFocus>
             <Icon as={RefreshCw} size="sm" decorative />
             {t(notReady ? "errorBoundary.retry" : "pwa.reload")}
           </Button>
-        </div>
+        </ModalFoot>
       </div>
     </div>
   );
