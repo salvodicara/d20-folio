@@ -230,6 +230,21 @@ describe("CombatPip", () => {
     expect(screen.queryByPlaceholderText("d20")).toBeNull();
   });
 
+  // Missing = unknown, never 0 (#1303's rule): right after a fight starts, the viewer's
+  // own row may not have loaded its live data. The pip then waits, as with no status,
+  // instead of stating «+0» and writing it into the session report.
+  it("waits while the viewer's own initiative bonus is still unknown", async () => {
+    useCombatStatusStore.setState({
+      status: gc({ initiativeBonus: null }),
+      pip: pip("needs-roll"),
+    });
+    renderPip();
+    fireEvent.click(screen.getByRole("button", { name: /roll your initiative/i }));
+    expect(await screen.findByRole("status")).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText("d20")).toBeNull();
+    expect(screen.queryByText(/\+0\s*=/)).toBeNull();
+  });
+
   // (The old "hold the roller pending until maxHp hydrates" gate tests are gone WITH the
   // gate itself: a roll is now a single campaign-doc field write that touches no HP, so
   // there is no un-hydrated state it could corrupt — the hazard class is structural, not
