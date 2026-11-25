@@ -3896,7 +3896,7 @@
   content: "›";
   margin-left: 12px;
   color: var(--muted);
-  font-size: 22px;
+  font-size: var(--fs-lg);
   line-height: 1;
 }
 /* the rule behind the number, one plain sentence (DDB's pane opens with it) */
