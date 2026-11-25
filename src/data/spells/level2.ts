@@ -1287,6 +1287,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     attackType: "ranged",
     // A failed save: −1d8 on all the target's damage rolls for the spell's duration (it
     // repeats the save at the end of each of its turns, ending the spell on a success).
+    effectEnds: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
     targetStates: [
       {
         type: "while-active",

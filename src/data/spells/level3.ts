@@ -586,6 +586,9 @@ export const SRD_SPELLS_LEVEL3: SrdSpellData[] = [
     // SRD 5.2.1: "An affected target's Speed is halved, it takes a -2 penalty to AC
     // and Dexterity saving throws, and it can't take Reactions." The action economy
     // and the somatic-failure chance are the note.
+    // "An affected target repeats the save at the end of each of its turns, ending the
+    // spell on itself on a success."
+    effectEnds: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
     grants: [
       {
         type: "while-active",
