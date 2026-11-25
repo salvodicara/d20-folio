@@ -16,7 +16,7 @@ import {
   customSpellDraft,
   customSpellFromDraft,
   type CustomSpellDraft,
-} from "@/lib/custom-spell";
+} from "@/domains/spells/custom-spell";
 import type { Locale } from "@/lib/locale";
 import { Button, Chip, Field, TextArea } from "@/ui";
 

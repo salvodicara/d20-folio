@@ -25,7 +25,10 @@ import {
   addCustomSpell,
   keepInLibrary,
 } from "@/features/character/custom-entry-commands";
-import { CUSTOM_SPELL_CASTING_TIMES, customSpellFromDraft } from "@/lib/custom-spell";
+import {
+  CUSTOM_SPELL_CASTING_TIMES,
+  customSpellFromDraft,
+} from "@/domains/spells/custom-spell";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";

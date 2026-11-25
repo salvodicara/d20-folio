@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";
 import { Select } from "@/components/shared/Select";
-import { CUSTOM_SPELL_CASTING_TIMES } from "@/lib/custom-spell";
+import { CUSTOM_SPELL_CASTING_TIMES } from "@/domains/spells/custom-spell";
 import { castingTimeI18nKey } from "@/lib/utils";
 import type { CustomSpell } from "@/types/character";
 import { useLocale } from "@/hooks/useLocale";

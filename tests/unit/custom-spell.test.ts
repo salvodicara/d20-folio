@@ -11,7 +11,7 @@ import {
   customSpellDraft,
   customSpellFromDraft,
   type CustomSpellDraft,
-} from "@/lib/custom-spell";
+} from "@/domains/spells/custom-spell";
 import { homebrewSpellData } from "@/lib/homebrew-spells";
 import type { CustomSpell } from "@/types/character";
 
