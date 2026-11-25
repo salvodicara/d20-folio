@@ -21,7 +21,6 @@
       "allRaw": "This table plays by the 2024 rules as written.",
       "raw": "As written",
       "table": "Table rule",
-      "customize": "Customize",
       "reset": "Back to the rules as written",
       "active_one": "{{count}} table rule in effect",
       "active_other": "{{count}} table rules in effect",

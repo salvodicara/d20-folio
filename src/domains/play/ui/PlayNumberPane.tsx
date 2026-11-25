@@ -84,11 +84,8 @@ export function PlayNumberPane({
           </ul>
         )}
         {!readonly && (
-          <section
-            className="f-stack f-num-custom"
-            aria-label={t("play.number.customize")}
-          >
-            <h3 className="f-lbl">{t("play.number.customize")}</h3>
+          <section className="f-stack f-num-custom" aria-label={t("common.customize")}>
+            <h3 className="f-lbl">{t("common.customize")}</h3>
             <Field
               label={
                 speed

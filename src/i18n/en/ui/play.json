@@ -483,7 +483,6 @@
       }
     },
     "number": {
-      "customize": "Customize",
       "handSet": "Set by hand",
       "override": "Fixed value",
       "overrideHelp": "Replaces the computed value. «Use the computed value» brings it back.",

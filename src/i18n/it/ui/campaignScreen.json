@@ -21,7 +21,6 @@
       "allRaw": "Questo tavolo gioca con le regole del 2024 da manuale.",
       "raw": "Da manuale",
       "table": "Regola del tavolo",
-      "customize": "Personalizza",
       "reset": "Torna alle regole da manuale",
       "active_one": "{{count}} regola del tavolo attiva",
       "active_other": "{{count}} regole del tavolo attive",

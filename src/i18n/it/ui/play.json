@@ -483,7 +483,6 @@
       }
     },
     "number": {
-      "customize": "Personalizza",
       "handSet": "Impostato a mano",
       "override": "Valore fisso",
       "overrideHelp": "Sostituisce il valore calcolato. «Usa il calcolo» lo riporta.",
