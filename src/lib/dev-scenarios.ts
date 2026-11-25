@@ -780,6 +780,39 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "The Wizard's spellbook copy: a full book, so «Aggiungi» offers «Copia» at 2 hours and 50 gp a spell level, paid from the gold with undo.",
   },
+  "thaumaturge-owed": {
+    // A Thaumaturge Cleric built before creation asked the order's extra cantrip:
+    // three cantrips, not four. Visit `/characters/scn-thaumaturge-owed`.
+    name: "Brin, the Short-Spoken",
+    raceId: "halfling",
+    classId: "cleric",
+    level: 1,
+    background: "acolyte",
+    abilityScores: { STR: 10, DEX: 12, CON: 14, INT: 10, WIS: 17, CHA: 12 },
+    spells: [
+      ...["guidance", "sacred-flame", "thaumaturgy"].map((srdId) => ({ srdId })),
+      ...["bless", "cure-wounds", "healing-word", "shield-of-faith"].map((srdId) => ({
+        srdId,
+        prepared: true,
+      })),
+    ],
+    grantBundleChoices: { "cleric-divine-order": "thaumaturge" },
+    owesClassPicks: true,
+    exercises:
+      "Thaumaturge's extra cantrip: «Scelte da completare» owes one Cleric cantrip.",
+  },
+  "fighter-cleric-dip": {
+    // A Fighter 3 with the Wisdom to take a Cleric level. Visit
+    // `/characters/scn-fighter-cleric-dip`, level up and pick «Another class».
+    name: "Tamsin, the Turning",
+    raceId: "human",
+    classId: "fighter",
+    level: 3,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 8, WIS: 14, CHA: 10 },
+    exercises:
+      "A first Cleric level on the level-up: the Thaumaturge order asks its extra cantrip.",
+  },
   "high-elf-rest": {
     // A High Elf fighter: after a Long Rest the lineage's Prestidigitation may become
     // another Wizard cantrip. Visit `/characters/scn-high-elf-rest` and take a Long Rest.
