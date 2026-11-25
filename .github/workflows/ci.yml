@@ -247,7 +247,7 @@ jobs:
           cache: "pnpm"
       - run: pnpm install --frozen-lockfile
       - name: Design rules
-        run: pnpm exec playwright test tests/e2e/ui- tests/e2e/fight-smoke --project=chromium --project=new-ui
+        run: pnpm exec playwright test tests/e2e/ui- tests/e2e/fight-smoke --project=chromium --project=new-ui --project=new-ui-phone
 
   # The e2e smoke on every pull request (2026-11-13): main's Verify was red for hours
   # because PR CI ran no e2e, and a cast that broke the sheet merged unseen. Three paths

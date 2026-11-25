@@ -33,9 +33,10 @@ describe("Frenzy is the 2024 dynamic damage rider (no 2014 attack/exhaustion)", 
         : undefined;
     expect(rider).toMatchObject({
       type: "damage-rider",
-      damageType: "slashing",
+      damageType: "same-as-weapon",
       appliesTo: "melee-weapon",
       oncePerTurn: true,
+      requiresActiveKey: "barbarian-reckless-attack",
     });
   });
 
@@ -63,19 +64,26 @@ describe("Frenzy is the 2024 dynamic damage rider (no 2014 attack/exhaustion)", 
 });
 
 describe("Frenzy rider dice scale on melee attack rows at L1 / L9 / L16 (while raging)", () => {
-  function berserkerAt(level: number, activeRage = true): CharacterDoc {
+  function berserkerAt(level: number, activeRage = true, reckless = true): CharacterDoc {
     return {
       ...MOCK_CHARACTER,
       character: {
         ...MOCK_CHARACTER.character,
         classes: [{ classId: "barbarian", subclassId: "berserker", level: level }],
         // The Rage feature must be present for its while-active toggle to exist.
-        features: [{ srdId: "barbarian-rage" }, { srdId: FRENZY_ID }],
+        features: [
+          { srdId: "barbarian-rage" },
+          { srdId: "barbarian-reckless-attack" },
+          { srdId: FRENZY_ID },
+        ],
         weapons: [{ srdId: "greataxe", quantity: 1 }],
       },
       session: {
         ...MOCK_CHARACTER.session,
-        activeFeatures: activeRage ? ["barbarian-rage"] : [],
+        activeFeatures: [
+          ...(activeRage ? ["barbarian-rage"] : []),
+          ...(reckless ? ["barbarian-reckless-attack"] : []),
+        ],
       },
     };
   }
@@ -113,5 +121,27 @@ describe("Frenzy rider dice scale on melee attack rows at L1 / L9 / L16 (while r
     expect(
       axe?.summary.extraDamage?.find((d) => d.damageType === "slashing")
     ).toBeUndefined();
+  });
+
+  // SRD 5.2.1: «If you use Reckless Attack while your Rage is active, you deal extra
+  // damage … The damage has the same type as the weapon or Unarmed Strike used».
+  it("raging without Reckless Attack: the dice say what they need and are never offered (#1235)", () => {
+    const axe = resolveActions(berserkerAt(9, true, false)).find(
+      (a) => a.source === "weapon"
+    );
+    const rider = axe?.summary.extraDamage?.find((d) => d.dice === "3d6");
+    expect(rider?.needsActiveName).toBeDefined();
+    const both = resolveActions(berserkerAt(9)).find((a) => a.source === "weapon");
+    expect(
+      both?.summary.extraDamage?.find((d) => d.dice === "3d6")?.needsActiveName
+    ).toBeUndefined();
+  });
+
+  it("an Unarmed Strike's Frenzy dice are Bludgeoning, the strike's own type (#1235)", () => {
+    const unarmed = resolveActions(berserkerAt(9)).find((a) => a.id === "unarmed-strike");
+    if (!unarmed) throw new Error("no unarmed strike row");
+    expect(unarmed.summary.extraDamage?.find((d) => d.dice === "3d6")?.damageType).toBe(
+      "bludgeoning"
+    );
   });
 });

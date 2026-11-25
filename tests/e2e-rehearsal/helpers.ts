@@ -6,7 +6,7 @@
 import { execFileSync } from "node:child_process";
 import { test as base, expect, type Page } from "@playwright/test";
 import { visibleWithin } from "../e2e/visible-within";
-import { teamFixtureName } from "../e2e/team-fixture";
+import { devHeroName } from "../e2e/team-fixture";
 import { SESSION_GAP_MS } from "../../src/lib/session-log/recorder";
 
 /**
@@ -39,11 +39,12 @@ export const test = base.extend<{ leaveTheTableClean: undefined }>({
 export const SANDBOX_CAMPAIGN = "SANDBOX";
 export const PLAYER_BARD = "dev-player-bard";
 
-/** The sandbox heroes' character names, read from the pack (personal data, never
- *  written in public code): the full name, and the first word some rows show. */
-export const BARD_NAME = teamFixtureName("bard") ?? "";
+/** The sandbox heroes' names: the made-up ones the seed gives them (DEV_HERO_NAMES,
+ *  `scripts/team-fixture.ts`), never a real player's character, so no CI log, trace or
+ *  screenshot carries one. Empty without the pack. */
+export const BARD_NAME = devHeroName("bard") ?? "";
 export const BARD_FIRST = BARD_NAME.split(" ")[0] ?? "";
-export const PALADIN_NAME = teamFixtureName("paladin") ?? "";
+export const PALADIN_NAME = devHeroName("paladin") ?? "";
 
 /** The emulator project's Firestore REST root (read-only checks; the writes are
  *  {@link startNewSitting}'s and the fixture's fight cleanup). */
