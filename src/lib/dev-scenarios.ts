@@ -839,6 +839,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     level: 3,
     background: "sage",
     abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 10, WIS: 16, CHA: 8 },
+    grantBundleChoices: { "druid-primal-order": "warden" },
     spells: ["cure-wounds", "entangle", "faerie-fire", "moonbeam"].map((srdId) => ({
       srdId,
       prepared: true,
@@ -855,6 +856,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     level: 4,
     background: "sage",
     abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 10, WIS: 17, CHA: 8 },
+    grantBundleChoices: { "druid-primal-order": "warden" },
     spells: ["cure-wounds", "entangle", "faerie-fire", "moonbeam"].map((srdId) => ({
       srdId,
       prepared: true,
