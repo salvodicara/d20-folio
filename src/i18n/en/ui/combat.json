@@ -343,6 +343,7 @@
     "round1DamageDouble": "Round 1 · {{name}}: on a hit, the target makes a DC {{dc}} {{ability}} save or the attack's damage is doubled.",
     "turnStartTempHp": "Gain {{amount}} temporary HP at the start of your turn ({{name}})",
     "turnStartTempHpApply": "Gain {{amount}}",
+    "burningTurnStart": "On fire: at the start of your turn you take {{dice}} fire damage (enter it with Damage).",
     "useGainedTempHp": "{{name}} used: +{{amount}} temp HP",
     "maintainedEndPrompt": "{{name}} is about to end. Keep it going?",
     "maintainedKeepAction": "Keep",

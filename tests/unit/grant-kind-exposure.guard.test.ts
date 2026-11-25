@@ -426,7 +426,7 @@ const EXPOSURE: Record<string, Exposure> = {
   "temp-hp": { via: "tempHpGrants", consumer: "src/lib/smart-tracker.ts" },
   "regen-at-turn-start": {
     via: "resolveStartOfTurnRegen",
-    consumer: "src/features/character/center/ThisTurnTracker.tsx",
+    consumer: "src/domains/play/turn-start-notes.ts",
   },
   "heroic-inspiration-at-turn-start": {
     via: "heroicInspirationAtTurnStart",
@@ -479,10 +479,10 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/features/character/molecules/ResourceRail.tsx",
   },
   // Assassin Death Strike's round-1 save-gated damage-doubler note: resolved by
-  // `resolveRound1DamageDoubles` + rendered round-1-gated in the turn tracker.
+  // `resolveRound1DamageDoubles` into the turn-start notes both turn bands render.
   "round1-damage-double": {
     via: "resolveRound1DamageDoubles",
-    consumer: "src/features/character/center/ThisTurnTracker.tsx",
+    consumer: "src/domains/play/turn-start-notes.ts",
   },
   "roll-floor": {
     via: "rollFloorVMs",

@@ -343,6 +343,7 @@
     "round1DamageDouble": "Round 1 · {{name}}: se colpisci, il bersaglio effettua un TS su {{ability}} con CD {{dc}} o i danni dell'attacco sono raddoppiati.",
     "turnStartTempHp": "Ottieni {{amount}} PF temporanei all'inizio del tuo turno ({{name}})",
     "turnStartTempHpApply": "Ottieni {{amount}}",
+    "burningTurnStart": "In fiamme: a inizio turno subisci {{dice}} danni da fuoco (inseriscili con Danno).",
     "useGainedTempHp": "Usato: {{name}} · +{{amount}} PF temporanei",
     "maintainedEndPrompt": "{{name}} sta per finire. Vuoi mantenerne l'effetto?",
     "maintainedKeepAction": "Mantieni",
