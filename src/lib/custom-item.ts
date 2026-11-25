@@ -14,7 +14,6 @@ import { coinPrice } from "@/lib/coin-price";
 import { homebrewItemMechanics } from "@/lib/homebrew-items";
 import { createItemInstanceId } from "@/lib/item-resources";
 import { usesMetric, type Locale } from "@/lib/locale";
-import { editHomebrewText } from "@/lib/views/homebrew-text-view";
 import type { CurrencyUnit } from "@/data/types";
 import type { CustomEquipment, CustomWeapon } from "@/types/character";
 
@@ -73,10 +72,9 @@ export function customGearFromDraft(
     ok: true,
     item: {
       custom: true,
-      name: editHomebrewText(undefined, locale, name),
-      ...(description
-        ? { description: editHomebrewText(undefined, locale, description) }
-        : {}),
+      // new authored text: one string, in the language it was typed (`HomebrewText`)
+      name,
+      ...(description ? { description } : {}),
       quantity: draft.quantity,
       ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
       instanceId: createItemInstanceId(),
