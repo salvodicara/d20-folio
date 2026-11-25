@@ -84,6 +84,8 @@ function FeatureRow({
       <span className="f-feat-t">
         <b>{row.name}</b>
         {meta && <span className="f-feat-m">{meta}</span>}
+        {/* what it has picked (D&D Beyond lists the invocations under the feature) */}
+        {row.choices && <span className="f-feat-c">{row.choices.join(", ")}</span>}
       </span>
       {row.uses && (
         <span
@@ -146,12 +148,15 @@ export function PlayProficiencies({
   return (
     <Panel color="abi" className="f-prof" title={t("play.sections.proficiencies")}>
       <dl className="f-prof-l">
-        {rows.map(([key, value]) => (
-          <div key={key}>
-            <dt className="f-lbl">{t(key)}</dt>
-            <dd>{value || t("play.features.noneShort")}</dd>
-          </div>
-        ))}
+        {/* a list with nothing in it is left out (a Wizard's armor), as the classic rail */}
+        {rows
+          .filter(([, value]) => value)
+          .map(([key, value]) => (
+            <div key={key}>
+              <dt className="f-lbl">{t(key)}</dt>
+              <dd>{value}</dd>
+            </div>
+          ))}
       </dl>
     </Panel>
   );

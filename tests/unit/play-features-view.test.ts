@@ -11,7 +11,7 @@ import {
   playFeaturesView,
   playProficienciesView,
 } from "@/domains/play/play-features-view";
-import { MOCK_CHARACTER } from "@/lib/mock";
+import { MOCK_CHARACTER, MOCK_MULTICLASS_CHARACTER } from "@/lib/mock";
 import { makeCharacterDoc } from "./_helpers";
 
 describe("playFeaturesView", () => {
@@ -72,6 +72,49 @@ describe("playFeaturesView", () => {
       (r) => r.id === "bard-bardic-inspiration"
     );
     expect(ispirazione).toMatchObject({ name: "Ispirazione Bardica", source: "Bardo 1" });
+  });
+
+  it("a multiclass lists each class's features up to its own level", () => {
+    // Bard 7 / Wizard 2
+    const rows = playFeaturesView(MOCK_MULTICLASS_CHARACTER, "en").groups[0]?.rows ?? [];
+    expect(rows.find((r) => r.id === "wizard-arcane-recovery")?.source).toBe("Wizard 1");
+    const wizardLevels = rows
+      .filter((r) => r.source?.startsWith("Wizard "))
+      .map((r) => Number(r.source?.slice("Wizard ".length)));
+    expect(wizardLevels.length).toBeGreaterThan(0);
+    expect(Math.max(...wizardLevels)).toBe(2);
+  });
+
+  it("a feature with picks names what was picked (invocations, mastered weapons)", () => {
+    const warlock = makeCharacterDoc({
+      classes: [
+        {
+          classId: "warlock",
+          level: 2,
+          invocationChoices: ["agonizing-blast", "armor-of-shadows"],
+        },
+      ] as never,
+    });
+    const invocations = playFeaturesView(warlock, "en").groups[0]?.rows.find(
+      (r) => r.id === "warlock-eldritch-invocations"
+    );
+    expect(invocations?.choices).toEqual(["Agonizing Blast", "Armor of Shadows"]);
+    const fighter = makeCharacterDoc({
+      classes: [
+        { classId: "fighter", level: 1, weaponMasteries: ["longsword"] },
+      ] as never,
+    });
+    const mastery = playFeaturesView(fighter, "it").groups[0]?.rows.find(
+      (r) => r.id === "fighter-weapon-mastery"
+    );
+    expect(mastery?.choices).toEqual(["Spada Lunga"]);
+    // nothing picked yet: no list
+    expect(
+      playFeaturesView(
+        makeCharacterDoc({ classId: "fighter", level: 1 }),
+        "en"
+      ).groups[0]?.rows.find((r) => r.id === "fighter-weapon-mastery")?.choices
+    ).toBeUndefined();
   });
 
   it("a homebrew feature sits last, under its own source line", () => {

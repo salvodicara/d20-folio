@@ -2556,6 +2556,10 @@
   color: var(--muted);
   font-size: var(--fs-sm);
 }
+.fui .f-feat-c {
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
 .fui .f-feat-uses {
   display: flex;
   flex: none;

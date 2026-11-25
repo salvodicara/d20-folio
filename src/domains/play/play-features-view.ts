@@ -9,11 +9,16 @@
  * the player's overrides, Weapon Mastery, the merged tools and languages.
  */
 import { getClassTable } from "@/data/classes";
-import { localizeSrd } from "@/i18n/resolver";
+import { hasSrd, localizeSrd } from "@/i18n/resolver";
+import type { SrdKind } from "@/i18n/srd-en";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
-import { primaryClassId } from "@/lib/classes";
+import { primaryClassEntry, primaryClassId } from "@/lib/classes";
 import { hasWeaponMastery } from "@/lib/compute";
+import { isInvocationPlaceholder } from "@/lib/invocation-pick";
 import type { Locale } from "@/lib/locale";
+import { isManeuverPlaceholder } from "@/lib/maneuver-pick";
+import { isMetamagicPlaceholder } from "@/lib/metamagic-pick";
+import { isWeaponMasteryPlaceholder } from "@/lib/weapon-mastery-pick";
 import { characterFeatureList, type FeatureGroup } from "@/lib/views/feature-list";
 import {
   applySetOverride,
@@ -25,7 +30,7 @@ import {
   trackerRecoveryBadgeBucket,
   type RecoveryBadgeBucket,
 } from "@/lib/views/tracker-view";
-import type { CharacterDoc } from "@/types/character";
+import type { CharacterData, CharacterDoc } from "@/types/character";
 
 export interface PlayFeatureRow {
   id: string;
@@ -35,6 +40,8 @@ export interface PlayFeatureRow {
   source: string | null;
   /** A feat's category id, labelled by the screen. */
   featCategory?: string;
+  /** What the feature has picked (invocations, mastered weapons…), by name. */
+  choices?: string[];
   /** Rules text; empty when the catalogue has none (the row does not open). */
   description: string;
   uses: { left: number; max: number; recovery: RecoveryBadgeBucket | null } | null;
@@ -44,16 +51,39 @@ export interface PlayFeaturesView {
   groups: { group: FeatureGroup; rows: PlayFeatureRow[] }[];
 }
 
+/**
+ * What a "pick N" feature has picked, by name: the classic Features tab's re-pick
+ * groups (invocations, metamagic, maneuvers, mastered weapons), read from the class
+ * entry the classic tab writes them to.
+ */
+function picksOf(featureId: string, cd: CharacterData, locale: Locale): string[] {
+  const entry = primaryClassEntry(cd);
+  const [kind, ids]: [SrdKind, string[] | undefined] = isInvocationPlaceholder(featureId)
+    ? ["invocation", entry.invocationChoices]
+    : isMetamagicPlaceholder(featureId)
+      ? ["metamagic", entry.metamagicChoices]
+      : isManeuverPlaceholder(featureId)
+        ? ["maneuver", entry.maneuverChoices]
+        : isWeaponMasteryPlaceholder(featureId)
+          ? ["equipment", entry.weaponMasteries]
+          : ["equipment", undefined];
+  return (ids ?? []).map((id) =>
+    hasSrd(kind, id, "name", locale) ? localizeSrd(kind, id, "name", locale) : id
+  );
+}
+
 export function playFeaturesView(doc: CharacterDoc, locale: Locale): PlayFeaturesView {
   const trackers = new Map(localizeTrackers(doc, locale).map((t) => [t.id, t]));
   const groups: PlayFeaturesView["groups"] = [];
   for (const f of characterFeatureList(doc.character, locale)) {
     const tracker = trackers.get(f.id);
+    const picks = f.isCustom ? [] : picksOf(f.id, doc.character, locale);
     const row: PlayFeatureRow = {
       id: f.id,
       name: f.name,
       source: f.sourceLabel,
       ...(f.featCategory ? { featCategory: f.featCategory } : {}),
+      ...(picks.length > 0 ? { choices: picks } : {}),
       description: f.description,
       uses: tracker
         ? {

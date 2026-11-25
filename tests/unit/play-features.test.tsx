@@ -8,6 +8,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 
 import { PlayFeatures, PlayProficiencies } from "@/domains/play/ui/PlayFeatures";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { makeCharacterDoc } from "./_helpers";
 
 describe("PlayFeatures", () => {
   it("heads each origin group and says a limited feature's uses", () => {
@@ -38,5 +39,17 @@ describe("PlayProficiencies", () => {
     expect(terms).toEqual(["Armor", "Weapons", "Tools", "Languages"]);
     expect(values[0]).toBe("Light armor");
     expect(values[3]).toBe("Common, Elvish, Draconic, Thieves' Cant");
+  });
+
+  it("leaves out a list with nothing in it (a Wizard wears no armor)", () => {
+    render(
+      <PlayProficiencies
+        doc={makeCharacterDoc({ classId: "wizard", level: 1 })}
+        locale="en"
+      />
+    );
+    const terms = screen.getAllByRole("term").map((t) => t.textContent);
+    expect(terms).not.toContain("Armor");
+    expect(terms).toContain("Weapons");
   });
 });

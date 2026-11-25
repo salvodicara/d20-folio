@@ -497,7 +497,6 @@
       "tab": "Features",
       "species": "Species traits",
       "none": "No features yet.",
-      "noneShort": "None",
       "uses": "{{left}} of {{max}} uses left"
     }
   }

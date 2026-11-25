@@ -497,7 +497,6 @@
       "tab": "Privilegi",
       "species": "Tratti della specie",
       "none": "Ancora nessun privilegio.",
-      "noneShort": "Nessuna",
       "uses": "{{left}} usi rimasti su {{max}}"
     }
   }

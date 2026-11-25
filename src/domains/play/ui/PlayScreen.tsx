@@ -240,6 +240,13 @@ export function PlaySheet({
     if (id === "features") setCentreTab("features");
     else if (id === "actions" && centreTab === "features") setCentreTab("actions");
   };
+  // Both tiles show the centre: the one marked current follows its open tab.
+  const current: Section =
+    section === "actions" || section === "features"
+      ? centreTab === "features"
+        ? "features"
+        : "actions"
+      : section;
   return (
     <main id="main" className="f-page f-sheet">
       <PhoneBar>
@@ -337,7 +344,7 @@ export function PlaySheet({
             key={id}
             type="button"
             className="f-menu-it"
-            aria-current={section === id || undefined}
+            aria-current={current === id || undefined}
             onClick={() => {
               openSection(id);
               setSectionsOpen(false);
