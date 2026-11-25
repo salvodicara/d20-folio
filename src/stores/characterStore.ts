@@ -2743,11 +2743,13 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       // The line goes first, while it is still there: removing it tells the campaign's
       // session log too (after the undo it would already be gone).
       get().removeLogEntry(lossLogId);
-      undoRemoval();
+      // The effects first: the session the undo then restores is projected with
+      // them (a condition held by a solo effect alone comes back, #1333).
       set({
         combatActiveEffects: effectiveCombatEffects(prevLocalEffects),
         combatLegacyActiveEffects: prevLocalEffects,
       });
+      undoRemoval();
       // Re-persist the restored trio so the subdoc converges with the undo.
       persistCombat(get);
       flushParentPersistence(get);
