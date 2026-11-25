@@ -186,7 +186,9 @@
       "readAll": "Leggi tutto",
       "invocation": "Supplica occulta",
       "maneuver": "Manovra",
-      "hoverHint": "Passa sopra un'opzione per leggere cosa fa."
+      "hoverHint": "Passa sopra un'opzione per leggere cosa fa.",
+      "spellMastery": "Maestria negli Incantesimi: un incantesimo di livello {{level}} lanciato con un'azione",
+      "signatureSpells": "Incantesimi Personali: due incantesimi di livello 3"
     },
     "searchFightingStyles": "Cerca Stili di Combattimento"
   }
