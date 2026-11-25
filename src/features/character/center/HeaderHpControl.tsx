@@ -140,11 +140,10 @@ export function HeaderHpControl() {
 
   // #95 / D1 — the Max-HP breakdown tip, OVERRIDE-GATED exactly like AC's. `max`
   // above is now the EFFECTIVE max (stored base + hp-flat boons, incl. a standing
-  // Aid `while-active` grant). A tip can only honestly decompose it when the STORED
-  // `hp.max` STILL equals the by-the-book base composition (per-class hit-die averages
-  // + CON + Tough / Dwarven Toughness + per-level grants); a hand-pinned or rolled
-  // base has no composition to explain — suppress the tip then (override-first; mirrors
-  // `acOverride`). When it matches, the tip shows the base rows PLUS the hp-flat
+  // Aid `while-active` grant). A tip can honestly decompose it when the STORED
+  // `hp.max` equals the derived base (per-class hit dice + CON + per-level grants + the
+  // rolled surplus and hand bonus rows, #1315); an unexplained mismatch (a stale value)
+  // suppresses the tip (override-first; mirrors `acOverride`). When it matches, the tip shows the base rows PLUS the hp-flat
   // boon/item/Aid rows that lift the effective total, so `breakdownTotal === max` by
   // construction (rule 6). The SAME `BreakdownTip` register every value rides (golden
   // rule 3), localized here.

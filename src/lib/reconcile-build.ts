@@ -654,11 +654,6 @@ export function reconcileBuildChoices(
     c.spells = spells;
   }
 
-  // ── Max HP — DERIVED (#1315) from the reconciled classes, CON, grants and the
-  //    max-HP inputs (rolled surplus, hand bonus), exactly as a reload derives it. A
-  //    level edit up then down round-trips; the player's inputs are kept verbatim.
-  if (levelChanged || classSetChanged) c.hp = { max: deriveMaxHp(c) };
-
   // ── A level DECREASE invalidates the level-up checklist (it described levels
   //    the character no longer has).
   if (totalLevel(c) < totalLevel(prev) && c.levelUpChecklist != null) {
@@ -674,7 +669,11 @@ export function reconcileBuildChoices(
 
   // ── Origin feats projection (background / species-feat changes) — the existing
   //    single-source helper keeps `features[]` in sync with the build choices.
-  return syncOriginFeats(c);
+  // ── Max HP — DERIVED (#1315) from the reconciled build (classes, species, feats,
+  //    CON, items) and the max-HP inputs, exactly as a reload derives it: any Bio edit
+  //    (a level, a class, a species, an origin feat) moves it; inputs stay verbatim.
+  const synced = syncOriginFeats(c);
+  return { ...synced, hp: { max: deriveMaxHp(synced) } };
 }
 
 // ─── Session reconciliation ───────────────────────────────────────────────────

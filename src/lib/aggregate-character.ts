@@ -641,6 +641,18 @@ export function withConScore<C extends CharacterDoc["character"]>(
   return { ...next, hp: { ...character.hp, max: deriveMaxHp(next) } };
 }
 
+/**
+ * New equipment (an attunement toggled, an item added or removed): an attuned item
+ * can carry a per-level HP grant, so the max is re-derived with it (#1315).
+ */
+export function withEquipment<C extends CharacterDoc["character"]>(
+  character: C,
+  equipment: C["equipment"]
+): C {
+  const next = { ...character, equipment };
+  return { ...next, hp: { ...character.hp, max: deriveMaxHp(next) } };
+}
+
 /** Reset the hand edit: clear `hpBonus`, keep the rolls, re-derive the max. */
 export function withoutMaxHpBonus<C extends CharacterDoc["character"]>(character: C): C {
   return {
@@ -755,9 +767,9 @@ export function computedInitiativeBreakdown(
  * The EFFECTIVE max HP every play surface clamps/heals/displays against:
  * `stored hp.max + aggregate.hpFlat`.
  *
- * Why a derivation, not a stored value (rule 6 — one source): the stored `hp.max`
- * IS the by-the-book base — die + CON + `hp-per-level` grants — and is exactly what
- * the level-up/creation/Bio-reconcile seams bake and what the player edits inline.
+ * Why a derivation, not a stored value (rule 6 — one source): `hp.max` IS the
+ * derived base ({@link deriveMaxHp}: die + CON + `hp-per-level` grants + the player's
+ * max-HP inputs, #1315), which every writer re-derives and a reload derives too.
  * The `hp-flat` boons (Draconic Resilience +3, Boon of Fortitude +40, an attuned
  * hp-flat item) AND a standing Aid (`hp-flat:5` inside the spell's `while-active`
  * grant — lit only while its toggle is on) are the LIVE transient deltas that are

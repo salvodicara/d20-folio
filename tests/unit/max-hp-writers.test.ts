@@ -9,6 +9,7 @@ import {
   parseCharacterEnvelope,
 } from "@/lib/character-codec";
 import { levelUp } from "@/lib/level-up";
+import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
 import { makeCharacterDoc } from "./_helpers";
 import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
@@ -18,6 +19,7 @@ import {
   effectiveMaxHpBreakdown,
   maxHpWithoutBonus,
   withConScore,
+  withEquipment,
   withMaxHpEdit,
   withoutMaxHpBonus,
 } from "@/lib/aggregate-character";
@@ -290,5 +292,65 @@ describe("the max-HP tip explains the inputs (#1315)", () => {
   it("no input, no extra row", () => {
     const parts = effectiveMaxHpBreakdown(monk(), session);
     expect(JSON.stringify(parts)).not.toMatch(/breakdown\.hp(Rolled|Bonus)/);
+  });
+});
+
+describe("a Bio edit with no level change still re-derives max HP", () => {
+  it("species Dwarf → Human drops Dwarven Toughness: 27 → 24, as a reload shows", () => {
+    const dwarf = monk();
+    const human = reconcileBuildChoices(dwarf, { ...dwarf, race: asRaceId("human") });
+    expect(human.hp.max).toBe(24);
+    expect(reload(human).hp.max).toBe(24);
+  });
+
+  it("species Human → Dwarf adds it back: 24 → 27", () => {
+    const human = monk({ race: asRaceId("human"), hp: { max: 24 } });
+    const dwarf = reconcileBuildChoices(human, { ...human, race: asRaceId("dwarf") });
+    expect(dwarf.hp.max).toBe(27);
+  });
+});
+
+describe("creation — the created max is the derived one", () => {
+  const created = (actions: unknown[]) => {
+    const draft = [{ type: "setName", name: "Ada" }, ...actions].reduce(
+      (d, a) => creationDraftReducer(d, a as CreationDraftAction),
+      initialCreationDraft()
+    );
+    const result = buildNewCharacter(draft, { displayName: null });
+    if (!result.ok) throw new Error(result.error);
+    return result.payload.character;
+  };
+
+  it("a Dwarf Fighter 2 keeps the same max after a reload", () => {
+    const c = created([
+      { type: "selectRace", raceId: "dwarf" },
+      { type: "setLevel", level: 2 },
+    ]);
+    expect(c.hp.max).toBe(deriveMaxHp(c));
+    expect(reload(c).hp.max).toBe(c.hp.max);
+  });
+
+  it("a rolled Dwarf Fighter 2 keeps it too", () => {
+    const c = created([
+      { type: "selectRace", raceId: "dwarf" },
+      { type: "setLevel", level: 2 },
+      { type: "setHpMethod", method: "rolled" },
+      { type: "setRolledHp", rolledHp: 19 },
+    ]);
+    expect(reload(c).hp.max).toBe(c.hp.max);
+  });
+});
+
+describe("attuning a per-level HP item re-derives max HP", () => {
+  // The SRD Berserker Axe: +1 HP per level while attuned. Monk 3 → +3.
+  const axe = (attuned: boolean) => [{ srdId: "berserker-axe", equipped: true, attuned }];
+  it("attuning adds +3 to a Dwarf Monk 3 (27 → 30), as a reload shows", () => {
+    const c = withEquipment(monk({ equipment: axe(false) }), axe(true));
+    expect(c.hp.max).toBe(30);
+    expect(reload(c).hp.max).toBe(30);
+  });
+  it("un-attuning takes it back (30 → 27)", () => {
+    const c = withEquipment(monk({ equipment: axe(true), hp: { max: 30 } }), axe(false));
+    expect(c.hp.max).toBe(27);
   });
 });
