@@ -995,7 +995,8 @@ export async function restoreCharacterSnapshot(
   // A shared character's public sheet must equal the parent after every write, or the
   // rules refuse the whole batch: a level-up, a restore or its undo rewrites it too, as
   // the autosave does (#1276; before, every whole-sheet write of a shared sheet failed).
-  await queuePublicProjection(
+  queuePublicProjectionWith(
+    await preloadParentWrite(),
     batch,
     uid,
     {
