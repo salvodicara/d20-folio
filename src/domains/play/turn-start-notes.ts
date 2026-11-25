@@ -1,6 +1,6 @@
 /**
- * The turn's start, for the new Play screen (headless: direction renders it). What the
- * classic turn band shows as turn notes, from the same resolvers:
+ * The turn's start (headless): the notes the classic turn band and Play's turn strip
+ * both show «at the start of each of your turns», from one source:
  *
  * - a start-of-turn heal or Temporary Hit Points the player may apply in one tap
  *   (Champion Heroic Rally: «5 + CON while Bloodied»; Heroism: the spellcasting
@@ -9,7 +9,8 @@
  *   never doubles the damage; the target's save is the table's).
  *
  * `applyTurnStartOffer` applies one offer through the store's healing / Temporary Hit
- * Point seams, on the session undo stack with the classic toast.
+ * Point seams, once per turn (the mark lives in the combat store's turn), as one undo
+ * step with the classic toast. Both surfaces read `useTurnStartNotes`.
  */
 import type { TFunction } from "i18next";
 
@@ -17,6 +18,7 @@ import { isCharacterAlive } from "@/lib/character-status";
 import { burningTurnStart } from "@/lib/play/environment";
 import { resolveRound1DamageDoubles, resolveStartOfTurnRegen } from "@/lib/smart-tracker";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useCombatStore } from "@/stores/combatStore";
 import { registerUndoableResult } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 
@@ -81,31 +83,43 @@ export function turnStartNotes(
 }
 
 /**
- * Apply one start-of-turn offer to the open sheet, undoable. False when nothing changed
- * (already at full HP; Temporary Hit Points already as high: they don't stack).
+ * The notes still open at the start of this turn, for the classic turn band and Play
+ * alike: an offer applied this turn leaves until the next turn starts (or its undo).
+ */
+export function useTurnStartNotes(
+  doc: Parameters<typeof turnStartNotes>[0] | null,
+  round: number
+): TurnStartNote[] {
+  const applied = useCombatStore((s) => s.turnStartApplied.ids);
+  if (!doc) return [];
+  return turnStartNotes(doc, { round }).filter((n) => !applied.includes(n.id));
+}
+
+/**
+ * Apply one start-of-turn offer to the open sheet, once per turn, as one undo step: the
+ * undo takes back the Hit Points and offers the note again. False when nothing changed
+ * (applied already this turn; already at full HP; Temporary Hit Points already as high:
+ * they don't stack).
  */
 export function applyTurnStartOffer(offer: TurnStartOffer, t: TFunction): boolean {
+  if (useCombatStore.getState().turnStartApplied.ids.includes(offer.id)) return false;
   const store = useCharacterStore.getState();
-  if (offer.kind === "heal") {
-    const prev = store.character?.session.hp.current ?? 0;
-    const undo = store.applyHealing(offer.amount);
-    if (!undo) return false;
-    const next = useCharacterStore.getState().character?.session.hp.current ?? prev;
-    registerUndoableResult(
-      { message: t("combat.hpHealToast", { val: offer.amount, prev, next }) },
-      undo,
-      () => {
-        applyTurnStartOffer(offer, t);
-      }
-    );
-    return true;
-  }
-  const undo = store.gainTempHp(offer.amount);
-  if (!undo) return false;
-  const temp = useCharacterStore.getState().character?.session.hp.temp ?? offer.amount;
+  const heal = offer.kind === "heal";
+  const prev = store.character?.session.hp.current ?? 0;
+  const undoHp = heal ? store.applyHealing(offer.amount) : store.gainTempHp(offer.amount);
+  if (!undoHp) return false;
+  const unmark = useCombatStore.getState().markTurnStartApplied(offer.id);
+  const hp = useCharacterStore.getState().character?.session.hp;
   registerUndoableResult(
-    { message: t("combat.tempHpToast", { val: temp }) },
-    undo,
+    {
+      message: heal
+        ? t("combat.hpHealToast", { val: offer.amount, prev, next: hp?.current ?? prev })
+        : t("combat.tempHpToast", { val: hp?.temp ?? offer.amount }),
+    },
+    () => {
+      undoHp();
+      unmark?.();
+    },
     () => {
       applyTurnStartOffer(offer, t);
     }
