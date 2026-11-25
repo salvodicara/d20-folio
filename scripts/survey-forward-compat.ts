@@ -20,7 +20,7 @@
  *
  *   node --import ./scripts/alias-loader.mjs scripts/survey-forward-compat.ts \
  *     --baseline-root /absolute/path/to/the/deployed/release/app \
- *     [--release v0.26.1 --write-fixture tests/unit/__fixtures__/forward-compat-v0.26.1.json]
+ *     [--release v0.26.1-hotfix-6fe669402 --write-fixture tests/unit/__fixtures__/forward-compat-v0.26.1-hotfix.json]
  * The fixture freezes the release's accepted shape; the gate test reads it in CI.
  */
 /// <reference types="node" />
