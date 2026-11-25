@@ -1961,10 +1961,11 @@
 .fui .f-kind[data-kind="place"] {
   color: var(--c-cmp);
 }
-/* the loot window's coin boxes: one small field per coin, wrapping on phone */
+/* the coin boxes (loot window, coin pane): one small field per coin; the five fit one
+   row even on a phone, so none is left alone on a second line */
 .fui .f-coin-inputs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
   gap: 8px;
 }
 
@@ -3760,6 +3761,80 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
+}
+/* The item's name and the coin row open their panes (D&D Beyond: tap the row): the
+   text stays as it was; the pointer and the hover say it opens. */
+.fui button.f-row-open,
+.fui button.f-coins-open {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.fui button.f-row-open {
+  color: var(--strong);
+  font-weight: var(--fw-name);
+}
+@media (hover: hover) {
+  .fui button.f-row-open:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .fui button.f-coins-open:hover {
+    background-color: var(--hover);
+  }
+}
+.fui button.f-coins-open {
+  border-radius: var(--r-sm);
+}
+/* «Aggiungi un oggetto»: the button beside the weight, then the pane's list (it scrolls
+   inside the pane) of slot, name and Add */
+.fui .f-inv-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 8px;
+}
+.fui .f-inv-tools > .f-spell-sum {
+  margin: 0;
+}
+.fui .f-inv-tools > button {
+  margin-left: auto;
+}
+.fui .f-add-list {
+  max-height: min(56vh, 520px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.fui .f-act.f-add-row {
+  grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
+}
+/* the coin pane: one coin a row, what it is worth beside it */
+.fui .f-coin-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* one line per coin, also on a phone (the tab's phone row stacks number over coin) */
+.fui .f-coin-list > li > .f-coin {
+  flex: none;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+.fui .f-coin-list > li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
 }
 /* «Inventario» (prototype x-play-inv): the coins in a row, an item row of three columns */
 .fui .f-coins {

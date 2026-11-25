@@ -109,7 +109,7 @@ export function classChoiceOptions(
 ): Record<keyof ClassChoicePicks, string[]> {
   return {
     fightingStyles: listFightingStyles(classId).map((f) => f.id),
-    weaponMasteries: listMasterableWeapons().map((w) => w.id),
+    weaponMasteries: listMasterableWeapons(classId).map((w) => w.id),
     invocations: eligibleInvocations(level, []).map((i) => i.id),
     expertise: [...proficientSkills],
   };
