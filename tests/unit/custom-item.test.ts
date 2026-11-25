@@ -38,10 +38,11 @@ describe("customGearFromDraft", () => {
       name: "Lucky stone",
       quantity: 3,
       description: "Warm to the touch.",
-      equipped: true,
     });
     expect(item.instanceId).toMatch(/^[0-9a-f-]{36}$/);
     expect(item.mechanics).toBeUndefined();
+    // it goes in the pack, as a catalogue item added from the same pane does
+    expect(item.equipped).toBeUndefined();
   });
 
   it("trims the name and leaves an empty description out", () => {

@@ -2,8 +2,8 @@
  * A custom item as the Play screen's «Oggetto personalizzato» form makes it (#1230).
  * Pattern source: D&D Beyond's custom item (name, quantity, weight, cost, notes).
  *
- * It is the classic sheet's homebrew gear (`CustomEquipment`: carried, its own
- * `instanceId`). Its weight and cost are stored where the catalogue magic item keeps
+ * It is the classic sheet's homebrew gear (`CustomEquipment`, its own `instanceId`),
+ * put in the pack like a catalogue item added from the same pane (not worn). Its weight and cost are stored where the catalogue magic item keeps
  * them (`mechanics.weight` in pounds, `mechanics.price` named in its own coin,
  * "25 GP"), so the item engine reads one shape and the inventory weighs it. Neither
  * fact gives it grants, charges or attunement.
@@ -77,7 +77,6 @@ export function customGearFromDraft(
       ...(description
         ? { description: editHomebrewText(undefined, locale, description) }
         : {}),
-      equipped: true,
       quantity: draft.quantity,
       ...(Object.keys(mechanics).length > 0 ? { mechanics } : {}),
       instanceId: createItemInstanceId(),
