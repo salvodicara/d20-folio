@@ -33,6 +33,7 @@ import {
 import { ClassCrest } from "@/domains/leveling/ui/ClassCrest";
 import { useCreationDraft } from "@/features/creation/use-creation-draft";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
+import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
 import { useLocale } from "@/hooks/useLocale";
 import { buildNewCharacter } from "@/lib/creation/build";
 import { rapidDraft } from "@/lib/creation/rapid";
@@ -140,6 +141,11 @@ export function CreationScreen() {
           : !facts.abilityBonusValid
             ? t("create.screen.pickAbilities")
             : t("create.screen.overBudget");
+  // Leaving a half-made character asks first (a name typed, a step taken, a pick made).
+  const { finishing } = useLeaveConfirm(
+    draft.name.trim().length > 0 || step > 0 || bgPicked || speciesPicked,
+    { title: t("create.leaveTitle"), message: t("create.leaveMessage") }
+  );
   const last = step === STEPS.length - 1;
   const ready = missingCreationRequirements(draft, facts).length === 0;
   const create = async (from = draft) => {
@@ -155,6 +161,7 @@ export function CreationScreen() {
       // Opens the new sheet at once, online or offline; the draft stays on this device
       // until the server confirms it (#1283).
       const open = (id: string): void => {
+        finishing();
         void navigate(`/characters/${id}`);
         window.scrollTo({ top: 0 });
       };

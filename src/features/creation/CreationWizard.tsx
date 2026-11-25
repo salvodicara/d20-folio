@@ -17,9 +17,10 @@
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
  */
 
-import { useState, useMemo, useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useNavigate, useBlocker } from "react-router";
+import { useNavigate } from "react-router";
+import { useLeaveConfirm } from "@/hooks/useLeaveConfirm";
 import { useConfirmStore, type ConfirmOptions } from "@/stores/confirmStore";
 import { formatSpeed } from "@/lib/utils";
 import { Input, NumberStepper } from "@/components/ui/input";
@@ -289,32 +290,6 @@ export function CreationWizard() {
   const previewPB = facts.proficiencyBonus;
   const previewDC = facts.spellSaveDc;
 
-  const handleCreate = useCallback(async () => {
-    if (!user) return;
-    const built = buildNewCharacter(draft, { displayName: user.displayName });
-    if (!built.ok) {
-      setError(t(BUILD_ERROR_KEYS[built.error]));
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      // Land on the cockpit at once, online or offline; the draft stays on this device
-      // until the server confirms it (#1283). Flag the leave-guard so this doesn't prompt.
-      const open = (id: string): void => {
-        finishingRef.current = true;
-        void navigate(`/characters/${id}`);
-        window.scrollTo({ top: 0, left: 0 });
-      };
-      open(
-        await createCharacterOffline({ uid: user.uid, payload: built.payload, open, t })
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t("character.failedCreate"));
-      setSaving(false);
-    }
-  }, [user, draft, navigate, t]);
-
   // ── Leave-creation guard (A1) ───────────────────────────────────────────────
   // A half-built character is unsaved local state — but only once the player has
   // actually INVESTED something (typed a name, made a pick, moved a step). A
@@ -329,57 +304,36 @@ export function CreationWizard() {
     (mode === "guided" && guidedStep !== "class") ||
     alignment !== "" ||
     sculpted;
-  const finishingRef = useRef(false);
-  const blocker = useBlocker(
-    useCallback(
-      ({
-        currentLocation,
-        nextLocation,
-      }: {
-        currentLocation: { pathname: string };
-        nextLocation: { pathname: string };
-      }) =>
-        dirty &&
-        !finishingRef.current &&
-        currentLocation.pathname !== nextLocation.pathname,
-      [dirty]
-    )
-  );
-  // ONE confirm per blocked navigation (a re-render while blocked must never
-  // stack a second dialog or orphan the first resolver).
-  const confirmingRef = useRef(false);
-  useEffect(() => {
-    if (blocker.state !== "blocked" || confirmingRef.current) return;
-    confirmingRef.current = true;
-    let active = true;
-    void useConfirmStore
-      .getState()
-      .confirm({
-        title: t("create.leaveTitle"),
-        message: t("create.leaveMessage"),
-        confirmLabel: t("common.discard"),
-        cancelLabel: t("common.continue"),
-      })
-      .then((ok) => {
-        confirmingRef.current = false;
-        if (!active) return;
-        if (ok) blocker.proceed();
-        else blocker.reset();
-      });
-    return () => {
-      active = false;
-    };
-  }, [blocker, t]);
-  // Browser-level leave (refresh / tab close) — the native prompt, dirty only.
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (finishingRef.current) return;
-      e.preventDefault();
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
+  const { finishing } = useLeaveConfirm(dirty, {
+    title: t("create.leaveTitle"),
+    message: t("create.leaveMessage"),
+  });
+
+  const handleCreate = useCallback(async () => {
+    if (!user) return;
+    const built = buildNewCharacter(draft, { displayName: user.displayName });
+    if (!built.ok) {
+      setError(t(BUILD_ERROR_KEYS[built.error]));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      // Land on the cockpit at once, online or offline; the draft stays on this device
+      // until the server confirms it (#1283). Flag the leave-guard so this doesn't prompt.
+      const open = (id: string): void => {
+        finishing();
+        void navigate(`/characters/${id}`);
+        window.scrollTo({ top: 0, left: 0 });
+      };
+      open(
+        await createCharacterOffline({ uid: user.uid, payload: built.payload, open, t })
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("character.failedCreate"));
+      setSaving(false);
+    }
+  }, [user, draft, navigate, t, finishing]);
 
   // ─── Create requirements (single source of truth: the core) ──────────────────
   // ONE list drives BOTH the disabled gate AND the "what's left to finish"
