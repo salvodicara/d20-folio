@@ -153,6 +153,7 @@ describe("each pane says the rule its number follows (D&D Beyond's pane opens wi
     [{ kind: "save", ability: "WIS" }, "savingThrow"],
     [{ kind: "skill", id: "stealth" }, "skillCheck"],
     [{ kind: "maxHp" }, "hitPoints"],
+    [{ kind: "passive", id: "perception" }, "passiveScore"],
   ];
   it.each(cases)("%o → the glossary's %s sentence", (key, term) => {
     open(key);

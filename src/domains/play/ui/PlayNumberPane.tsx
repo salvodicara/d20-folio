@@ -174,6 +174,8 @@ function numberTerm(key: SheetNumberKey): GlossaryTermId {
       return "savingThrow";
     case "skill":
       return "skillCheck";
+    case "passive":
+      return "passiveScore";
   }
 }
 
