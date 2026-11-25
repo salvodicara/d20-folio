@@ -1602,7 +1602,7 @@ export interface AggregatedGrants {
    * item-AC pass in `computeAC`.
    */
   acBonusAbilities: ReadonlyArray<{ ability: AbilityCode; min: number }>;
-  /** One-shot flat HP bonus (Boon of Fortitude, Draconic Resilience). */
+  /** One-shot flat HP bonus (Boon of Fortitude, a standing Aid). */
   hpFlat: number;
   /**
    * The per-source attribution of {@link hpFlat} — ONE entry per `hp-flat` grant,

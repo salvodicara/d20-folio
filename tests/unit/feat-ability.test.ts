@@ -136,13 +136,14 @@ describe("a feat spell whose unanswered fallback is the species pick", () => {
 
   const [ref] = injectExpandedSpells([], entry ? [entry] : []);
 
-  it("answered, reads the feat; unanswered, reads the species pick (Charisma unset)", () => {
+  it("answered, reads the feat; unanswered, reads the species pick (unset: the caster's own INT/WIS/CHA)", () => {
     if (!ref) throw new Error("no ref");
     expect(resolveSpellAbility(ref, caster([{ srdId: "x", featAbility: "WIS" }]))).toBe(
       "WIS"
     );
     expect(resolveSpellAbility(ref, caster([{ srdId: "x" }], "INT"))).toBe("INT");
-    expect(resolveSpellAbility(ref, caster([{ srdId: "x" }]))).toBe("CHA");
+    // species pick unset: this Wizard's own Intelligence, never a Charisma it doesn't cast with
+    expect(resolveSpellAbility(ref, caster([{ srdId: "x" }]))).toBe("INT");
   });
 });
 

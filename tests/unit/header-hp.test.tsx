@@ -265,6 +265,9 @@ describe("HeaderHpControl — Max HP edits the BASE, not the effective (B08)", (
     if (!doc) throw new Error("no character");
     // The BASE is written directly (70) — never the effective (would be 75) …
     expect(doc.character.hp.max).toBe(70);
+    // #1315 — stored as its input: a bonus over the derived base (70 − 66), so it
+    // survives a reload and later level-ups.
+    expect(doc.character.hpBonus).toBe(4);
     // … and the grant is untouched: it still lifts the effective max on top (70 + 5 = 75).
     expect(effectiveMaxHp(doc.character, doc.session)).toBe(75);
   });
@@ -284,6 +287,7 @@ describe("HeaderHpControl — Max HP edits the BASE, not the effective (B08)", (
     // Clearing the override recomputes the by-the-book BASE (66), NOT base+grant …
     expect(doc.character.hp.max).toBe(computedBase);
     expect(computedBase).toBe(66);
+    expect(doc.character.hpBonus).toBeUndefined();
     // … and the +5 grant still rides on top of the recomputed base (66 + 5 = 71).
     expect(effectiveMaxHp(doc.character, doc.session)).toBe(71);
   });

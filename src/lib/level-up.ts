@@ -18,6 +18,7 @@ import {
   resolveGrantSourcesForFeatures,
   resolveGrantSourcesForRace,
 } from "@/lib/resolve-grant-sources";
+import { perLevelGrantClass } from "@/lib/srd-feature-lookup";
 import { raceFeatureIndex } from "@/data/races";
 import { applyFeatAsi } from "@/lib/feat-asi";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
@@ -29,6 +30,7 @@ import {
 import type { SrdClassFeatureData } from "@/data/types";
 import type { CharacterData } from "@/types/character";
 import type { SrdFeatureRef, LevelUpChecklistItem } from "@/types/character";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 
 // ─── The advancing-class context ──────────────────────────────────────────────
 // A level-up advances ONE class (id) to a NEW class level. Every resolver reads
@@ -175,7 +177,7 @@ export function levelUp(
   const newFeatures = getFeaturesAtLevel(ctx.classId, ctx.classLevel);
 
   // 1. HP increase (uses the advancing class's hit die).
-  updated = applyHpIncrease(updated, character, changes, options?.hpGain);
+  updated = applyHpIncrease(updated, character, changes, ctx.classId, options?.hpGain);
 
   // 2. Spell slot progression — the 2024 MULTICLASS caster table over all classes
   //    (reduces to the single class's table for a single-class character).
@@ -220,6 +222,20 @@ export function levelUp(
     change.sourceClassLevel = ctx.classLevel;
   }
 
+  // #1315 — the max is DERIVED from the inputs once every step has run (new features,
+  // ability grants): the in-session number is the number a reload derives.
+  const derivedMax = deriveMaxHp(updated);
+  if (derivedMax !== updated.hp.max) {
+    const gain = derivedMax - character.hp.max;
+    for (const change of changes) {
+      if (change.type !== "hp") continue;
+      change.description = change.description
+        .replace(/^HP [+-]?\d+/, `HP ${gain >= 0 ? "+" : ""}${gain}`)
+        .replace(/→ \d+ max$/, `→ ${derivedMax} max`);
+    }
+    updated = { ...updated, hp: { max: derivedMax } };
+  }
+
   return { updatedCharacter: updated, changes };
 }
 
@@ -252,13 +268,14 @@ export function levelUp(
  * the character's own species that IS in `features[]` (the creation draft's
  * granted list) is read from `race` only, so it never counts twice.
  *
- * THE single source for the per-level HP bonus: `applyHpIncrease` (level-up)
- * and the Bio-tab level reconcile (`reconcile-build`) both read it, so a level
- * up and a level down move max HP by the same per-level amount.
+ * A class feature's grant counts only that class's levels (#1316): pass
+ * `forClass`, the class gaining the level, and a grant of another class's feature
+ * is left out (a Fighter level gains no Draconic Resilience).
  */
 export function hpPerLevelGrantBonus(
   character: Pick<CharacterData, "features" | "humanOriginFeat" | "bgFeat"> &
-    Partial<Pick<CharacterData, "race">>
+    Partial<Pick<CharacterData, "race">>,
+  forClass?: string
 ): { bonus: number; parts: Array<{ name: string; amount: number }> } {
   let bonus = 0;
   const parts: Array<{ name: string; amount: number }> = [];
@@ -275,6 +292,8 @@ export function hpPerLevelGrantBonus(
   ]) {
     for (const g of src.grants ?? []) {
       if (g.type === "hp-per-level") {
+        const classId = perLevelGrantClass(src.id);
+        if (forClass && classId !== null && classId !== forClass) continue;
         bonus += g.amount;
         // English-only debug annotation: the source's canonical EN name (a FACT,
         // from the catalogue via `srdEn` — survives the data strip).
@@ -301,6 +320,7 @@ function applyHpIncrease(
   updated: CharacterData,
   previous: CharacterData,
   changes: LevelUpChange[],
+  classId: string,
   dieRollOverride?: number
 ): CharacterData {
   const conMod = abilityModifier(updated.abilityScores.CON);
@@ -312,7 +332,7 @@ function applyHpIncrease(
   // ("If your modifier reduces the total to 0 or less, you gain 1 HP.").
   const coreGain = Math.max(1, dieGain + conMod);
 
-  const perLevel = hpPerLevelGrantBonus(updated);
+  const perLevel = hpPerLevelGrantBonus(updated, classId);
   const perLevelGrantBonus = perLevel.bonus;
   const perLevelNoteParts = perLevel.parts.map((p) => ` + ${p.name} +${p.amount}`);
   const hpGain = coreGain + perLevelGrantBonus;
@@ -330,7 +350,17 @@ function applyHpIncrease(
     description: `HP +${hpGain} (${dieLabel}${conPart}${perLevelNoteParts.join("")}) → ${newMax} max`,
   });
 
-  return { ...updated, hp: { max: newMax } };
+  // #1315 — a roll is the player's INPUT: record its surplus over the fixed value,
+  // so a reload derives the same max (`deriveMaxHp`). The fixed value records nothing.
+  // The surplus compares the FLOORED per-level gains (each level gives at least 1 HP),
+  // so a low roll with a very negative CON records 0, not a phantom loss.
+  const surplus = coreGain - Math.max(1, avg + conMod);
+  if (dieRollOverride === undefined || surplus === 0) {
+    return { ...updated, hp: { max: newMax } };
+  }
+  const earlier = previous.hpRolled;
+  const hpRolled = (Number.isSafeInteger(earlier) ? (earlier as number) : 0) + surplus;
+  return { ...updated, hp: { max: newMax }, hpRolled };
 }
 
 // ─── Spell Slot Progression ──────────────────────────────────────────────────

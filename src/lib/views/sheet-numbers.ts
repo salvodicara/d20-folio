@@ -21,7 +21,7 @@ import {
   aggregateCharacterGrants,
   computeCharacterAcBreakdown,
   formBreakdownPart,
-  computeCharacterMaxHp,
+  deriveMaxHp,
   computedInitiativeBreakdown,
   effectiveMaxHpBreakdown,
 } from "@/lib/aggregate-character";
@@ -216,7 +216,7 @@ export function sheetNumbers(doc: CharacterDoc): SheetNumbers<RawBreakdownPart> 
         : explained(
             sheet.hp.max,
             maxHpParts,
-            character.hp.max !== computeCharacterMaxHp(character)
+            character.hp.max !== deriveMaxHp(character)
           ),
     saves: rail.saves.map((row) => ({
       ability: row.id,

@@ -12,7 +12,11 @@
  * - saves, skills and ability scores are keyed maps; reset drops the key.
  */
 import type { AbilityCode } from "@/data/types";
-import { aggregateCharacterGrants, computeCharacterAC } from "@/lib/aggregate-character";
+import {
+  aggregateCharacterGrants,
+  computeCharacterAC,
+  deriveMaxHp,
+} from "@/lib/aggregate-character";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterData } from "@/types/character";
@@ -84,10 +88,16 @@ function overridePatch(
       return { speedOverride: value };
     case "proficiency":
       return { proficiencyBonusOverride: value };
-    case "ability":
-      return {
-        abilityScoreOverrides: withKey(c.abilityScoreOverrides, key.ability, value),
-      };
+    case "ability": {
+      const abilityScoreOverrides = withKey(c.abilityScoreOverrides, key.ability, value);
+      // A CON pin moves max HP across every level (#1318): re-derive it with the pin.
+      return key.ability === "CON"
+        ? {
+            abilityScoreOverrides,
+            hp: { ...c.hp, max: deriveMaxHp({ ...c, abilityScoreOverrides }) },
+          }
+        : { abilityScoreOverrides };
+    }
     case "save":
       return {
         savingThrowBonusOverrides: withKey(

@@ -14,11 +14,11 @@
  *
  * Pure module — no React, no store, no Firebase.
  */
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
-import { amountAtCastLevel } from "@/lib/scalar";
-import { hpPerLevelGrantBonus, levelUp } from "@/lib/level-up";
+import { levelUp } from "@/lib/level-up";
 import { isUmbrellaTool } from "@/lib/tool-names";
-import { abilityModifier, computeAC } from "@/lib/compute";
+import { computeAC } from "@/lib/compute";
 import { grantSkillProficiency } from "@/lib/skills";
 import { getEquipment } from "@/data/equipment";
 import { getClassTable, getFeaturesAtLevel } from "@/data/classes";
@@ -236,16 +236,10 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
   if (asiChoice && isAsiChoiceComplete(asiChoice)) {
     handledChecklistKeys.push("levelUp.checklistAsi");
     if (asiChoice.mode === "plus2" || asiChoice.mode === "plus1_1") {
-      const prevCon = updated.abilityScores.CON;
       updated = {
         ...updated,
         abilityScores: applyAsiToScores(updated.abilityScores, asiChoice),
       };
-      const newCon = updated.abilityScores.CON;
-      const delta = abilityModifier(newCon) - abilityModifier(prevCon);
-      if (delta > 0) {
-        updated = { ...updated, hp: { max: updated.hp.max + newLevel * delta } };
-      }
     } else if (asiChoice.featId) {
       const feat = SRD_FEATS.find((f) => f.id === asiChoice.featId);
       if (feat) {
@@ -259,17 +253,8 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
             ? { srdId: feat.id, featAbility: asiChoice.featAbility }
             : { srdId: feat.id };
         updated = { ...updated, features: [...updated.features, featRef] };
-        const flatHp = (feat.grants ?? []).reduce(
-          (sum, g) =>
-            g.type === "hp-flat" ? sum + amountAtCastLevel(g.amount, undefined) : sum,
-          0
-        );
-        if (flatHp > 0) {
-          updated = { ...updated, hp: { max: updated.hp.max + flatHp } };
-        }
         const asi = featAsi(feat);
         if (asi && asiChoice.featAbility) {
-          const prevCon = updated.abilityScores.CON;
           updated = {
             ...updated,
             abilityScores: applyFeatAsi(
@@ -279,21 +264,6 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
               asi.cap
             ),
           };
-          const newCon = updated.abilityScores.CON;
-          const delta = abilityModifier(newCon) - abilityModifier(prevCon);
-          if (delta > 0) {
-            updated = {
-              ...updated,
-              hp: { max: updated.hp.max + newLevel * delta },
-            };
-          }
-        }
-        let hpBackfill = 0;
-        for (const g of feat.grants ?? []) {
-          if (g.type === "hp-per-level") hpBackfill += g.amount * newLevel;
-        }
-        if (hpBackfill > 0) {
-          updated = { ...updated, hp: { max: updated.hp.max + hpBackfill } };
         }
         if (feat.id === "resilient" && asiChoice.featAbility) {
           const chosen = asiChoice.featAbility;
@@ -322,15 +292,10 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     const newRefs: SrdFeatureRef[] = subFeatures
       .filter((f) => !existingIds.has(f.id))
       .map((f) => ({ srdId: f.id }));
+    // A subclass feature's per-level HP (Draconic Resilience) counts for every level
+    // already gained: the max is derived from the final character at the end (#1315).
     if (newRefs.length > 0) {
-      // A subclass feature's per-level HP (Draconic Resilience) counts for every
-      // level already gained: the HP step of this level ran before the subclass.
-      const perLevelBefore = hpPerLevelGrantBonus(updated).bonus;
       updated = { ...updated, features: [...updated.features, ...newRefs] };
-      const backfill = (hpPerLevelGrantBonus(updated).bonus - perLevelBefore) * newLevel;
-      if (backfill > 0) {
-        updated = { ...updated, hp: { max: updated.hp.max + backfill } };
-      }
     }
     const expanded = getExpandedSpellsThroughLevel(
       classId,
@@ -512,6 +477,11 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     subclassChoice ?? advancingEntry?.subclassId ?? "",
     newClassLevel
   );
+
+  // #1315 — max HP is DERIVED from the final character (classes, CON, feats, species,
+  // the max-HP inputs), never patched step by step: the in-session max equals the
+  // reload's. A one-shot hp-flat feat (#1317) stays a live delta, never baked in.
+  updated = { ...updated, hp: { max: deriveMaxHp(updated) } };
 
   return {
     ...doc,

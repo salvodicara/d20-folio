@@ -175,6 +175,7 @@ export function buildNewCharacter(
     acOverride: null,
     armorNote: "Unarmored",
     hp: { max: facts.maxHp },
+    ...(facts.hpRolled !== undefined ? { hpRolled: facts.hpRolled } : {}),
     hitDieType: classTable.hitDie,
     initiativeBonusOverride: null,
     // Common is seeded; the origin picks append their ids below.

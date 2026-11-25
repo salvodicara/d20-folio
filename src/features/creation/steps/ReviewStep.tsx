@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { WizardForkTab } from "@/features/wizard/chrome";
 import { classRoleSeal } from "./class-roles";
+import { clampRolledDice, fixedDice, rolledDiceRange } from "@/lib/creation/draft";
 import type { GuidedStep } from "./steps";
 
 /** One recap row: the step's label, the choices made there, a one-tap jump. */
@@ -226,46 +227,53 @@ export function HpModeSelector({
   level: number;
 }) {
   const { t } = useTranslation();
+  // #1315 — the entered number is the CON-free dice total; level 1 is the die maximum.
+  const range = rolledDiceRange(hitDie, level);
+  // Level 1 always takes the die maximum (RAW): there is nothing to roll yet.
+  const canRoll = level > 1;
+  const shown = canRoll ? mode : "average";
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <div className="wiz-fork" role="group" aria-label={t("create.hpLabel")}>
-          <WizardForkTab
-            active={mode === "average"}
-            onClick={() => onModeChange("average")}
-          >
-            {t("create.hpAverage")}
-          </WizardForkTab>
-          <WizardForkTab
-            active={mode === "rolled"}
-            onClick={() => onModeChange("rolled")}
-          >
-            {t("create.hpRolled")}
-          </WizardForkTab>
-        </div>
-        {mode === "average" && (
+        {canRoll && (
+          <div className="wiz-fork" role="group" aria-label={t("create.hpLabel")}>
+            <WizardForkTab
+              active={shown === "average"}
+              onClick={() => onModeChange("average")}
+            >
+              {t("create.hpAverage")}
+            </WizardForkTab>
+            <WizardForkTab
+              active={shown === "rolled"}
+              onClick={() => onModeChange("rolled")}
+            >
+              {t("create.hpRolled")}
+            </WizardForkTab>
+          </div>
+        )}
+        {shown === "average" && (
           <span className="ml-auto self-center font-mono text-sm font-bold text-accent tnum">
             {averageHp + hpBonus} {t("stats.hp")}
           </span>
         )}
       </div>
 
-      {mode === "average" && (
+      {shown === "average" && (
         <p className="on-art text-xs text-text-muted">
           {t("create.hpAverageHint", { hitDie, avg: Math.floor(hitDie / 2) + 1, level })}
         </p>
       )}
 
-      {mode === "rolled" && (
+      {shown === "rolled" && (
         <div className="space-y-1">
           <p className="on-art text-xs text-text-muted">
             {t("create.hpRolledHint", { hitDie })}
           </p>
           <Input
             type="number"
-            min={level}
-            max={hitDie * level}
+            min={range.min}
+            max={range.max}
             value={rolledHp ?? ""}
             onChange={(e) => {
               const val = e.target.value;
@@ -275,15 +283,15 @@ export function HpModeSelector({
               const val = e.target.value;
               if (val === "") return;
               onRolledHpChange(
-                Math.max(level, Math.min(hitDie * level, parseInt(val) || level))
+                clampRolledDice(parseInt(val) || range.min, hitDie, level)
               );
             }}
-            placeholder={String(averageHp)}
+            placeholder={String(fixedDice(hitDie, level))}
             aria-label={t("create.hpRolled")}
             className="num tnum"
           />
           <p className="on-art text-[length:var(--text-micro)] text-text-muted">
-            {t("create.hpRolledRange", { min: level, max: hitDie * level })}
+            {t("create.hpRolledRange", range)}
           </p>
         </div>
       )}

@@ -107,7 +107,7 @@
     "hpAverage": "Media",
     "hpRolled": "Tirati",
     "hpAverageHint": "Livello 1: d{{hitDie}} max ({{hitDie}}). Livelli 2+: d{{hitDie}} media ({{avg}}) + mod COS per livello.",
-    "hpRolledHint": "Inserisci i tuoi PF totali dopo aver tirato d{{hitDie}} per livello (il livello 1 ottiene sempre il dado massimo).",
+    "hpRolledHint": "Somma i tuoi dadi vita: il livello 1 vale il massimo ({{hitDie}}), poi un tiro di d{{hitDie}} per livello. COS e bonus ai PF si aggiungono da soli.",
     "hpRolledRange": "Intervallo valido: {{min}}–{{max}}",
     "abilityScoreInput": "Punteggio di {{ability}}",
     "bgAsiModeLabel": "Modalità aumento di caratteristica",

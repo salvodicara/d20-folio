@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import { applyClassPicks, commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
 import { makeCharacterDoc } from "./_helpers";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 
 const none = (classId: string): LevelUpPicks => ({
   classId,
@@ -78,7 +79,12 @@ describe("commitLevelUp", () => {
   });
 
   it("advances the class a level, raises max and current HP by the same gain", () => {
-    const doc = makeCharacterDoc({ classId: "fighter", level: 3 });
+    // A loaded character's max HP is the derived one (#1315), never the helper's stub.
+    const stub = makeCharacterDoc({ classId: "fighter", level: 3 });
+    const doc = {
+      ...stub,
+      character: { ...stub.character, hp: { max: deriveMaxHp(stub.character) } },
+    };
     const next = commitLevelUp(doc, { ...none("fighter"), hpGain: 7 });
     expect(next.character.classes[0]?.level).toBe(4);
     const gain = next.character.hp.max - doc.character.hp.max;
