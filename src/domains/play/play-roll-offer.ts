@@ -35,8 +35,11 @@ export function playRollOffer(
   if (!controls.roll) return null;
   const myId = `pc-${uid}`;
   if (!encounter) return { bonus: sheetBonus, bonuses: { [myId]: sheetBonus } };
-  const bonuses = Object.fromEntries(
-    fightRows.map((r) => [r.id, r.initiativeBonus ?? 0])
-  );
-  return { bonus: bonuses[myId] ?? sheetBonus, bonuses };
+  // A row that has not loaded its live data yet has no bonus (never 0): the player's own
+  // falls back to the sheet's, so the dialog states and the order uses the real one.
+  const bonuses: Record<string, number> = {};
+  for (const r of fightRows)
+    if (r.initiativeBonus !== undefined) bonuses[r.id] = r.initiativeBonus;
+  bonuses[myId] ??= sheetBonus;
+  return { bonus: bonuses[myId], bonuses };
 }

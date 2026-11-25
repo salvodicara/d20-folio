@@ -54,6 +54,21 @@ describe("playRollOffer", () => {
     ).toBeNull();
   });
 
+  // Rehearsal 10-sheet-initiative (main's Verify, 2026-11-25): right after another
+  // player's roll started the fight, the player's own row had not loaded its live data
+  // yet; its bonus read 0, so the dialog said «+0» and ordered the roll with it while the
+  // DM's table added the real −1. A row that has not loaded has no bonus: the sheet's own
+  // counts.
+  it("in a fight, the player's own row not loaded yet: the sheet's bonus, never 0", () => {
+    const rows = [{ id: "pc-me" }, { id: "pc-ally", initiativeBonus: 4 }];
+    expect(playRollOffer(campaign({ encounter: fight }), "me", "lyra", -1, rows)).toEqual(
+      {
+        bonus: -1,
+        bonuses: { "pc-me": -1, "pc-ally": 4 },
+      }
+    );
+  });
+
   it("offers nothing to a sheet that is not the player's character in the campaign", () => {
     expect(playRollOffer(campaign(), "me", "someone-else", 3, [])).toBeNull();
     expect(playRollOffer(null, "me", "lyra", 3, [])).toBeNull();
