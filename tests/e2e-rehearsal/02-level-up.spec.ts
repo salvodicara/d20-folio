@@ -9,6 +9,7 @@ import {
   expectNoCrash,
   levelUp,
   openCharacter,
+  storedHpInputs,
   watchErrors,
 } from "./helpers";
 
@@ -27,7 +28,9 @@ async function shownMaxHp(page: Page): Promise<number> {
 
 for (const hero of [
   { name: "Rehearsal Bard", className: "Bard", prefer: ["College of Lore"] },
-  { name: "Rehearsal Barbarian", className: "Barbarian", prefer: [] },
+  // The Barbarian rolls the d12's maximum at level 2 (#1315): its stored build then
+  // carries the roll's surplus over the fixed value, 12 − 7 = 5.
+  { name: "Rehearsal Barbarian", className: "Barbarian", prefer: [], rollMaxAt: 2 },
   { name: "Rehearsal Wizard", className: "Wizard", prefer: [] },
 ]) {
   test(`${hero.className} levels from 1 to 5 with every pick`, async ({ page }) => {
@@ -40,6 +43,7 @@ for (const hero of [
           level,
           className: hero.className,
           prefer: hero.prefer,
+          rollMax: "rollMaxAt" in hero && hero.rollMaxAt === level,
         });
         await expectNoCrash(page);
       });
@@ -47,6 +51,12 @@ for (const hero of [
     await expect(page.getByText(new RegExp(`${hero.className} 5`)).first()).toBeVisible();
     // #1315 — the max HP the sheet shows after the level-ups is the one a reload
     // derives from the stored build (real emulator, real save).
+    if ("rollMaxAt" in hero) {
+      // The real save carried the roll (a rerun on kept data may have rolled earlier).
+      await expect
+        .poll(async () => (await storedHpInputs(id))?.rolled ?? 0, { timeout: 30_000 })
+        .toBeGreaterThanOrEqual(5);
+    }
     const shown = await shownMaxHp(page);
     expect(shown).toBeGreaterThan(0);
     await page.reload();
