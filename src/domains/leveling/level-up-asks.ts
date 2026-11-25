@@ -42,7 +42,10 @@ import {
   type SignatureSpellsPicks,
 } from "@/lib/signature-spells-pick";
 import { offeredFeatVMs } from "@/lib/views/feat-pick-view";
+import { hasFightingStyleFeat, listFightingStyles } from "@/lib/fighting-style";
+import { invocationRequires } from "@/lib/invocation-pick";
 import {
+  featName,
   fightingStyleOptions,
   invocationOptions,
   maneuverOptions,
@@ -85,6 +88,11 @@ export interface LevelUpAnswers {
   /** Wizard 20: two level-3 spells. */
   signatureSpells: SignatureSpellsPicks;
   discoverySwap: SpellSwapChoice;
+  /** One known option replaced on a class level (SRD 5.2.1): a Sorcerer's Metamagic
+   *  option, a Warlock's invocation, a Fighter's Fighting Style feat. */
+  metamagicSwap: SpellSwapChoice;
+  invocationSwap: SpellSwapChoice;
+  fightingStyleSwap: SpellSwapChoice;
 }
 
 export const NO_ANSWERS: LevelUpAnswers = {
@@ -107,6 +115,9 @@ export const NO_ANSWERS: LevelUpAnswers = {
   spellMastery: emptySpellMasteryPicks(),
   signatureSpells: emptySignatureSpellsPicks(),
   discoverySwap: emptySwapChoice(),
+  metamagicSwap: emptySwapChoice(),
+  invocationSwap: emptySwapChoice(),
+  fightingStyleSwap: emptySwapChoice(),
 };
 
 /** Which answer a row writes. `slot` rows carry their slot in `slotRow`. */
@@ -136,7 +147,13 @@ export type AskKey =
   | "spellMastery2"
   | "signatureSpells"
   | "discoveryRemove"
-  | "discoveryReplace";
+  | "discoveryReplace"
+  | "fightingStyleRemove"
+  | "fightingStyleReplace"
+  | "metamagicRemove"
+  | "metamagicReplace"
+  | "invocationRemove"
+  | "invocationReplace";
 
 export interface AskRow {
   key: AskKey;
@@ -290,9 +307,37 @@ export function levelUpAsks(
       count: 1,
       picked: one(a.fightingStyle),
       options: fightingStyleOptions(c.features, "", locale, classId)
-        .filter((o) => !o.disabled)
+        .filter((o) => !o.disabled && o.id !== a.fightingStyleSwap.replaceId)
         .map((o) => ({ id: o.id, label: o.label })),
     });
+  }
+  // SRD 5.2.1, Fighter: «Whenever you gain a Fighter level, you can replace the feat
+  // you chose with a different Fighting Style feat».
+  const ownedStyles =
+    classId === "fighter" && plan.advancingEntry
+      ? listFightingStyles(classId)
+          .filter((f) => hasFightingStyleFeat(c.features, f.id))
+          .map((f) => f.id)
+      : [];
+  if (ownedStyles.length > 0) {
+    rows.push({
+      key: "fightingStyleRemove",
+      title: t("levelUp.screen.fightingStyleForget"),
+      count: 0,
+      picked: one(a.fightingStyleSwap.removeId),
+      options: ownedStyles.map((id) => ({ id, label: featName(id, locale) })),
+    });
+    if (a.fightingStyleSwap.removeId) {
+      rows.push({
+        key: "fightingStyleReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.fightingStyleSwap.replaceId),
+        options: fightingStyleOptions(c.features, "", locale, classId)
+          .filter((o) => !o.disabled && o.id !== a.fightingStyle)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
   }
   const expertiseCount =
     plan.needsExpertise && plan.expertiseEligible.length >= EXPERTISE_PICKS_PER_GRANT
@@ -329,9 +374,39 @@ export function levelUpAsks(
       count: plan.metamagicPicksNeeded,
       picked: a.metamagic,
       options: metamagicOptions(new Set(plan.alreadyKnownMetamagic), "", locale)
-        .filter((o) => !o.disabled)
+        .filter((o) => !o.disabled && o.id !== a.metamagicSwap.replaceId)
         .map((o) => ({ id: o.id, label: o.label })),
     });
+  }
+  // SRD 5.2.1, Sorcerer: «Whenever you gain a Sorcerer level, you can replace one of
+  // your Metamagic options with one you don't know».
+  const knownMetamagic = classId === "sorcerer" ? (plan.charMetamagicChoices ?? []) : [];
+  if (knownMetamagic.length > 0) {
+    rows.push({
+      key: "metamagicRemove",
+      title: t("levelUp.screen.metamagicForget"),
+      count: 0,
+      picked: one(a.metamagicSwap.removeId),
+      options: knownMetamagic.map((id) => ({
+        id,
+        label: localizeSrd("metamagic", id, "name", locale),
+      })),
+    });
+    if (a.metamagicSwap.removeId) {
+      rows.push({
+        key: "metamagicReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.metamagicSwap.replaceId),
+        options: metamagicOptions(
+          new Set([...knownMetamagic, ...a.metamagic]),
+          "",
+          locale
+        )
+          .filter((o) => !o.disabled)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
   }
   if (plan.needsInvocations) {
     rows.push({
@@ -344,8 +419,48 @@ export function levelUpAsks(
         plan.charInvocationChoices ?? [],
         "",
         locale
-      ).map((o) => ({ id: o.id, label: o.label })),
+      )
+        .filter((o) => o.id !== a.invocationSwap.replaceId)
+        .map((o) => ({ id: o.id, label: o.label })),
     });
+  }
+  // SRD 5.2.1, Warlock: «Whenever you gain a Warlock level, you can replace one of
+  // your invocations with another one for which you qualify. You can't replace an
+  // invocation if it's a prerequisite for another invocation that you have.»
+  const knownInvocations =
+    classId === "warlock" ? (plan.charInvocationChoices ?? []) : [];
+  const replaceableInvocations = knownInvocations.filter(
+    (id) => !knownInvocations.some((other) => invocationRequires(other, id))
+  );
+  if (replaceableInvocations.length > 0) {
+    rows.push({
+      key: "invocationRemove",
+      title: t("levelUp.screen.invocationForget"),
+      count: 0,
+      picked: one(a.invocationSwap.removeId),
+      options: replaceableInvocations.map((id) => ({
+        id,
+        label: localizeSrd("invocation", id, "name", locale),
+      })),
+    });
+    const removed = a.invocationSwap.removeId;
+    if (removed) {
+      const kept = knownInvocations.filter((id) => id !== removed);
+      rows.push({
+        key: "invocationReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.invocationSwap.replaceId),
+        options: invocationOptions(
+          plan.newClassLevel,
+          [...kept, ...a.invocations],
+          "",
+          locale
+        )
+          .filter((o) => o.id !== removed)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
   }
   if (plan.needsManeuvers) {
     rows.push({
@@ -655,6 +770,9 @@ export function levelUpAsks(
     swap: a.swap,
     cantripSwap: a.cantripSwap,
     ...(discovery ? { discoverySwap: a.discoverySwap } : {}),
+    ...(ownedStyles.length > 0 ? { fightingStyleSwap: a.fightingStyleSwap } : {}),
+    ...(knownMetamagic.length > 0 ? { metamagicSwap: a.metamagicSwap } : {}),
+    ...(replaceableInvocations.length > 0 ? { invocationSwap: a.invocationSwap } : {}),
     bundlePicks: plan.needsBundles ? a.bundlePicks : {},
   };
   return {
@@ -666,6 +784,15 @@ export function levelUpAsks(
     picks,
   };
 }
+
+const SWAP_FIELD = {
+  fightingStyleRemove: "fightingStyleSwap",
+  fightingStyleReplace: "fightingStyleSwap",
+  metamagicRemove: "metamagicSwap",
+  metamagicReplace: "metamagicSwap",
+  invocationRemove: "invocationSwap",
+  invocationReplace: "invocationSwap",
+} as const;
 
 /** The answers with `id` toggled in `row`: a pick-one row takes it, a count row toggles it. */
 export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelUpAnswers {
@@ -758,6 +885,18 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
         ...a,
         discoverySwap: { removeId: flip(a.discoverySwap.removeId), replaceId: null },
       };
+    case "fightingStyleRemove":
+    case "metamagicRemove":
+    case "invocationRemove": {
+      const field = SWAP_FIELD[key];
+      return { ...a, [field]: { removeId: flip(a[field].removeId), replaceId: null } };
+    }
+    case "fightingStyleReplace":
+    case "metamagicReplace":
+    case "invocationReplace": {
+      const field = SWAP_FIELD[key];
+      return { ...a, [field]: { ...a[field], replaceId: flip(a[field].replaceId) } };
+    }
     case "discoveryReplace":
       return {
         ...a,

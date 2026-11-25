@@ -79,8 +79,14 @@ import { ClassCrest } from "./ClassCrest";
 const ROW_INFO: Partial<Record<string, InfoKind>> = {
   feat: "feat",
   fightingStyle: "feat",
+  fightingStyleRemove: "feat",
+  fightingStyleReplace: "feat",
   invocations: "invocation",
+  invocationRemove: "invocation",
+  invocationReplace: "invocation",
   metamagic: "metamagic",
+  metamagicRemove: "metamagic",
+  metamagicReplace: "metamagic",
   maneuvers: "maneuver",
   weaponMasteries: "weapon",
   expertise: "skill",
@@ -92,6 +98,8 @@ const ROW_ART: Partial<Record<string, ArtKind>> = {
   subclass: "subclass",
   feat: "feat",
   fightingStyle: "feat",
+  fightingStyleRemove: "feat",
+  fightingStyleReplace: "feat",
   weaponMasteries: "equipment",
 };
 
