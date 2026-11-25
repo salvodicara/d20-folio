@@ -8,6 +8,7 @@
     "details": "Error details",
     "backHome": "Back to my characters",
     "report": "Report this problem",
-    "sectionMessage": "This section couldn't be shown. The rest of the page is fine."
+    "sectionMessage": "This section couldn't be shown. The rest of the page is fine.",
+    "backToClassic": "Back to the classic interface"
   }
 }

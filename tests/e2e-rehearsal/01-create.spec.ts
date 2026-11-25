@@ -28,7 +28,11 @@ for (const pick of [
     await expect(page.locator(".f-char")).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText(pick.name).first()).toBeVisible();
     await expectNoCrash(page);
-    expect((await ownerCharacterIds()).length).toBe(before + 1);
+    // The Play screen opens at once and the new character's save lands a moment later
+    // (#1295, creation works offline), so wait for the server to hold it.
+    await expect
+      .poll(async () => (await ownerCharacterIds()).length, { timeout: 30_000 })
+      .toBe(before + 1);
     expect(errors).toEqual([]);
   });
 }

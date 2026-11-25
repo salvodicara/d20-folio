@@ -145,9 +145,16 @@ export function CombatPip() {
   // ⇒ the payload isn't ready yet, so the popover shows a brief pending spinner (it NEVER
   // falls back to the navigating switch — the trigger stays the roller).
   const rollName = primary.heroName;
+  // The bonus must be known (missing = unknown, never 0): until it is, the roller waits
+  // in its pending beat, as with no status at all.
+  const rollBonus = status?.initiativeBonus ?? null;
   const rollTarget =
-    isNeedsRoll && status !== null && uid !== undefined && rollName !== null
-      ? { uid, status, name: rollName }
+    isNeedsRoll &&
+    status !== null &&
+    rollBonus !== null &&
+    uid !== undefined &&
+    rollName !== null
+      ? { uid, status, name: rollName, bonus: rollBonus }
       : null;
 
   // Commit a raw d20 roll for the viewer's OWN PC: a single per-key field-path write to
@@ -168,7 +175,8 @@ export function CombatPip() {
     ) {
       applyFirstRollTopUps(t, locale);
     }
-    const { campaignId, initiativeBonus } = rollTarget.status;
+    const { campaignId } = rollTarget.status;
+    const initiativeBonus = rollTarget.bonus;
     void import("@/features/campaigns/campaign-io")
       .then(({ setEncounterInitiative }) =>
         setEncounterInitiative(campaignId, rollTarget.uid, roll)
@@ -259,7 +267,7 @@ export function CombatPip() {
           <div className="party-vitals">
             <InitVital
               value={rollTarget.status.initiativeRoll}
-              bonus={rollTarget.status.initiativeBonus}
+              bonus={rollTarget.bonus}
               canEdit
               autoEdit
               name={rollTarget.name}
