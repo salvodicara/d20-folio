@@ -4,7 +4,12 @@
  * raw score: a hand-set ability pin and an attuned item that sets CON count.
  * SRD content only.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+vi.mock("@/lib/firebase", () => ({}));
+import type { TFunction } from "i18next";
+import { deleteItem } from "@/features/character/inventory-commands";
+import { useCharacterStore } from "@/stores/characterStore";
+import { useUndoStore } from "@/stores/undoStore";
 import {
   serializeCharacterEnvelope,
   parseCharacterEnvelope,
@@ -67,5 +72,25 @@ describe("max HP uses the effective CON (#1318)", () => {
   it("the sheet shows the derived max, counted once", () => {
     const c = monk({ abilityScoreOverrides: { CON: 18 }, hp: { max: 33 } });
     expect(effectiveMaxHp(c, MOCK_CHARACTER.session)).toBe(33);
+  });
+});
+
+describe("deleting an attuned CON item re-derives max HP (#1318)", () => {
+  it("delete then undo: 33 → 27 → 33", () => {
+    const character = monk({
+      equipment: [{ srdId: "amulet-of-health", equipped: true, attuned: true }],
+      hp: { max: 33 },
+    });
+    useCharacterStore.setState({
+      character: { ...structuredClone(MOCK_CHARACTER), character },
+      loading: false,
+      error: null,
+      readonly: false,
+    });
+    const t = ((key: string) => key) as unknown as TFunction;
+    deleteItem("equipment", 0, "Amulet", t);
+    expect(useCharacterStore.getState().character?.character.hp.max).toBe(27);
+    useUndoStore.getState().undo();
+    expect(useCharacterStore.getState().character?.character.hp.max).toBe(33);
   });
 });
