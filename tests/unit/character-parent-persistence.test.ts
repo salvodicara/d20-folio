@@ -314,12 +314,13 @@ describe("character parent persistence (v1: the child owns the play session)", (
         "c1",
         queued.character,
         queued.session,
-        queued.revision
+        queued.revision,
+        queued
       );
       await pending.flush();
 
       expect(harness.commits).toHaveBeenCalledTimes(1);
-      expect(harness.operations).toHaveLength(2);
+      expect(harness.operations).toHaveLength(3);
       expect(harness.operations[0]).toMatchObject({
         kind: "update",
         path: "users/u1/characters/c1",
@@ -417,10 +418,10 @@ describe("character parent persistence (v1: the child owns the play session)", (
     const full = makeCharacterDoc();
     full.session = { ...full.session, notes: "restored", hp: { current: 3, temp: 0 } };
 
-    await restoreCharacterSnapshot("u1", "c1", full, 7);
+    await restoreCharacterSnapshot("u1", "c1", full, 7, full);
 
     expect(harness.commits).toHaveBeenCalledTimes(1);
-    expect(harness.operations).toHaveLength(2);
+    expect(harness.operations).toHaveLength(3);
     expect(harness.operations[0]).toMatchObject({
       kind: "update",
       path: "users/u1/characters/c1",
@@ -432,6 +433,11 @@ describe("character parent persistence (v1: the child owns the play session)", (
       path: "users/u1/characters/c1/combat/state",
     });
     expect(harness.operations[1]?.data).not.toHaveProperty("actionLifecycles");
+    // An unshared sheet: the batch keeps the public sheet absent, as the autosave does.
+    expect(harness.operations[2]).toMatchObject({
+      kind: "delete",
+      path: "users/u1/characters/c1/public/sheet",
+    });
   });
 
   it("hydrates authenticated reads but exposes only the sanitized public projection", async () => {

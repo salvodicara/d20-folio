@@ -13111,6 +13111,14 @@ textarea.input.sess-notes-edit {
 .section-detail-wrap[data-open] .section-detail {
   padding-top: var(--sp-3);
 }
+/* A closed detail is out of reach, not only out of sight (#1222): the 0-px clip box
+   kept real boxes, so Tab walked into hidden controls. The markup sets `inert`; here
+   the box also stops painting once the fold has finished closing (the delay is the
+   fold's own duration, so the closing animation still shows its content). */
+.section-detail-wrap:not([data-open]) .section-detail {
+  visibility: hidden;
+  transition: visibility 0s linear var(--m-normal);
+}
 /* A CLOSED section ends AT its header: the rubric's trailing margin is the
    open-state header→body seam, so collapsed it must not pad the panel tail
    (owner, 2026-07-31 — the tail margin equals the head margin, symmetry).

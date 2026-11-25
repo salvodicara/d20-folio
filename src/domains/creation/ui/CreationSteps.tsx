@@ -24,6 +24,7 @@ import {
 } from "@/domains/creation/creation-view";
 import {
   missingCreationRequirements,
+  slotsWithPrefix,
   type CreationDraft,
   type CreationDraftAction,
   type CreationFacts,
@@ -479,6 +480,20 @@ export function EquipmentStep({
               )
             )}
           </div>
+          {/* The chosen option's own choices (Thaumaturge: one extra cantrip),
+              right under it, so the player picks them here. */}
+          {section.kind === "bundle" && (
+            <SlotChips
+              rows={choiceSlotRows(
+                slotsWithPrefix(facts.otherChoiceSlots, `${section.bundleKey}:`),
+                draft.choicePicks,
+                { skills: new Set(draft.classSkills), spells: new Set(draft.cantrips) },
+                locale
+              )}
+              draft={draft}
+              dispatch={dispatch}
+            />
+          )}
         </div>
       ))}
       {group(t("create.equipFromClass"), classRows, facts.classEquipLabel, (label) =>
