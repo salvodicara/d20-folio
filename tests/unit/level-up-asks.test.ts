@@ -214,3 +214,28 @@ describe("level 19: an Epic Boon or another feat (SRD 5.2.1)", () => {
     expect(feats).toContain("grappler");
   });
 });
+
+describe("starting a new class (multiclass) on the new level-up", () => {
+  const bard = () =>
+    makeCharacterDoc({
+      classId: "bard",
+      level: 4,
+      abilityScores: { STR: 10, DEX: 14, CON: 12, INT: 10, WIS: 10, CHA: 16 },
+    });
+
+  it("a Rogue 1 is asked its one multiclass skill, then saves as a second class", () => {
+    const doc = bard();
+    const first = levelUpAsks(doc, "rogue", NO_ANSWERS, "en");
+    expect(first.plan.newClassLevel).toBe(1);
+    expect(first.rows.find((r) => r.key === "mcSkills")?.count).toBe(1);
+    expect(first.complete).toBe(false);
+    const done = answerAll(doc, "rogue");
+    expect(done.complete).toBe(true);
+    const after = commitLevelUp(doc, done.picks);
+    expect(after.character.classes.map((e) => [e.classId, e.level])).toEqual([
+      ["bard", 4],
+      ["rogue", 1],
+    ]);
+    expect(totalLevel(after.character)).toBe(5);
+  });
+});

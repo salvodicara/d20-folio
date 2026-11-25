@@ -16,7 +16,7 @@
  */
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { amountAtCastLevel } from "@/lib/scalar";
-import { levelUp } from "@/lib/level-up";
+import { hpPerLevelGrantBonus, levelUp } from "@/lib/level-up";
 import { isUmbrellaTool } from "@/lib/tool-names";
 import { abilityModifier, computeAC } from "@/lib/compute";
 import { grantSkillProficiency } from "@/lib/skills";
@@ -323,7 +323,14 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
       .filter((f) => !existingIds.has(f.id))
       .map((f) => ({ srdId: f.id }));
     if (newRefs.length > 0) {
+      // A subclass feature's per-level HP (Draconic Resilience) counts for every
+      // level already gained: the HP step of this level ran before the subclass.
+      const perLevelBefore = hpPerLevelGrantBonus(updated).bonus;
       updated = { ...updated, features: [...updated.features, ...newRefs] };
+      const backfill = (hpPerLevelGrantBonus(updated).bonus - perLevelBefore) * newLevel;
+      if (backfill > 0) {
+        updated = { ...updated, hp: { max: updated.hp.max + backfill } };
+      }
     }
     const expanded = getExpandedSpellsThroughLevel(
       classId,
