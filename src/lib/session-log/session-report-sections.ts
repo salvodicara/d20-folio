@@ -14,5 +14,28 @@ import { buildReport, type ReportSection } from "./report";
 export function sessionReportSections(entries: readonly SessionEntry[]): ReportSection[] {
   return buildReport(
     inferFights(closeForgottenFights(entries), { isAttack: isAttackSource })
-  );
+  ).map(lastInitiativeOnly);
+}
+
+/**
+ * A hero has one initiative per fight: when two rolls land for the same hero (the
+ * player's own from the sheet and the DM's typed one, racing), the fight keeps the
+ * last, as its order does, so the report shows that one line (D&D Beyond Maps: the
+ * last value wins).
+ */
+function lastInitiativeOnly(section: ReportSection): ReportSection {
+  if (section.kind !== "encounter") return section;
+  const lastId = new Map<string, string>();
+  for (const round of section.rounds)
+    for (const entry of round.entries)
+      if (entry.event.kind === "initiative") lastId.set(entry.event.actor, entry.id);
+  const keep = (entry: SessionEntry) =>
+    entry.event.kind !== "initiative" || lastId.get(entry.event.actor) === entry.id;
+  return {
+    ...section,
+    rounds: section.rounds.map((round) => ({
+      ...round,
+      entries: round.entries.filter(keep),
+    })),
+  };
 }
