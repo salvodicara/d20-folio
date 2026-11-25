@@ -1,6 +1,7 @@
 {
   "play": {
     "hpTitle": "Punti ferita",
+    "strip": "Punti ferita e CA",
     "temp": "+{{count}} temporanei",
     "proficiency": "Competenza",
     "effects": "Effetti",

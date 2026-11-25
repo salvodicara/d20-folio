@@ -6,11 +6,12 @@
  * ring, name and identity line, what is going on, the six abilities, the four header
  * numbers and HP.
  */
-import { lazy, Suspense, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useMatch, useNavigate, useParams } from "react-router";
 
 import { playHeaderView, type PlayHeaderView } from "@/domains/play/play-header-view";
+import { hpTone, stripShown } from "@/domains/play/play-strip";
 import { PlayCentre, type CentreTab } from "@/domains/play/ui/PlayCentre";
 import { PlayEffects } from "./PlayEffects";
 import { PlayAbilitySave } from "./PlayAbilitySave";
@@ -223,7 +224,8 @@ export function PlaySheet({
     );
   }
   const view = playHeaderView(doc, locale);
-  // The rest row (the header on a laptop, «Risorse e abilità» on a phone). A table that
+  // The rest row, in the header on a laptop and on a phone (D&D Beyond's phone header
+  // keeps Short / Long Rest one tap away). A table that
   // levels by milestone gets «Sali di livello» first, always at hand (D&D Beyond's
   // milestone header); an XP table gets the note under the header instead.
   const rests = (
@@ -334,7 +336,7 @@ export function PlaySheet({
       <ItemResourceCommandProvider renderPrompts={false}>
         <TurnEconomyProvider renderPrompts={false}>
           <div className="f-play" data-section={section}>
-            <PlayLeft doc={doc} locale={locale} rests={readonly ? undefined : rests} />
+            <PlayLeft doc={doc} locale={locale} />
             <PlayCentre
               doc={doc}
               locale={locale}
@@ -434,237 +436,337 @@ function PlayHeader({
   // The phone's band is D&D Beyond's: a smaller portrait beside the name.
   const narrow = useMediaQuery("(max-width: 800px)");
   const tiny = useMediaQuery("(max-width: 400px)");
+  // The phone's slim strip shows once the whole band has scrolled up out of view.
+  const band = useRef<HTMLElement>(null);
+  const [strip, setStrip] = useState(false);
+  useEffect(() => {
+    const el = band.current;
+    if (!narrow || !el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry)
+        setStrip(
+          stripShown({
+            isIntersecting: entry.isIntersecting,
+            bottom: entry.boundingClientRect.bottom,
+          })
+        );
+    });
+    io.observe(el);
+    return () => {
+      io.disconnect();
+      setStrip(false);
+    };
+  }, [narrow]);
   return (
-    <section className="f-hero f-char" data-identity="" aria-label={view.name}>
-      <div className="f-char-medal">
-        <HpRing
-          hp={view.hp.current}
-          max={view.hp.max}
-          temp={view.hp.temp}
-          size={tiny ? 86 : narrow ? 88 : 120}
-          portrait={view.portraitUrl ?? undefined}
-          name={view.name}
-          ornate
-        />
-      </div>
-      <div className="f-char-id">
-        <h1>{view.name}</h1>
-        {/* the phone keeps the prototype's short line (x-play-m): classes and species */}
-        <p className="f-hero-sub">
-          {(tiny ? view.identityShort : view.identity).join(" · ")}
-        </p>
-        {/* D&D Beyond's header buttons: the rests, the campaign. */}
-        {(!readonly || campaign) && (
-          <div className="f-char-acts">
-            {!readonly && rests}
-            {campaign && (
-              <Link
-                className="f-btn f-char-camp"
-                data-kind="ghost"
-                to={`/campaigns/${campaign.id}`}
-                title={campaign.name}
-              >
-                <Icon name="g-campaign" />
-                <span>{campaign.name}</span>
-              </Link>
-            )}
-          </div>
-        )}
-        {(!readonly ||
-          view.form ||
-          view.concentration ||
-          view.effects > 0 ||
-          view.conditions > 0 ||
-          doc.session.inspiration ||
-          Boolean(doc.session.bardicInspirationDie)) && (
-          <div className="f-char-chips">
-            {/* What the character is now (a form, a held spell) on its own line, then
+    <>
+      <section
+        ref={band}
+        className="f-hero f-char"
+        data-identity=""
+        aria-label={view.name}
+      >
+        <div className="f-char-medal">
+          <HpRing
+            hp={view.hp.current}
+            max={view.hp.max}
+            temp={view.hp.temp}
+            size={tiny ? 86 : narrow ? 88 : 120}
+            portrait={view.portraitUrl ?? undefined}
+            name={view.name}
+            ornate
+          />
+        </div>
+        <div className="f-char-id">
+          <h1>{view.name}</h1>
+          {/* the phone keeps the prototype's short line (x-play-m): classes and species */}
+          <p className="f-hero-sub">
+            {(tiny ? view.identityShort : view.identity).join(" · ")}
+          </p>
+          {/* D&D Beyond's header buttons: the rests, the campaign. */}
+          {(!readonly || campaign) && (
+            <div className="f-char-acts">
+              {!readonly && rests}
+              {campaign && (
+                <Link
+                  className="f-btn f-char-camp"
+                  data-kind="ghost"
+                  to={`/campaigns/${campaign.id}`}
+                  title={campaign.name}
+                >
+                  <Icon name="g-campaign" />
+                  <span>{campaign.name}</span>
+                </Link>
+              )}
+            </div>
+          )}
+          {(!readonly ||
+            view.form ||
+            view.concentration ||
+            view.effects > 0 ||
+            view.conditions > 0 ||
+            doc.session.inspiration ||
+            Boolean(doc.session.bardicInspirationDie)) && (
+            <div className="f-char-chips">
+              {/* What the character is now (a form, a held spell) on its own line, then
                 the three status chips always on one line, so the row never reflows. */}
-            {(view.form || view.concentration) && (
-              <div className="f-chips">
-                {/* In a form the sheet is the beast's: say so first (the source, then it). */}
-                {view.form && (
-                  <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
-                )}
-                {view.form && !readonly && <RevertForm />}
-                <PlayConcentration doc={doc} locale={locale} />
+              {(view.form || view.concentration) && (
+                <div className="f-chips">
+                  {/* In a form the sheet is the beast's: say so first (the source, then it). */}
+                  {view.form && (
+                    <Chip kind="form">{`${view.form.source}: ${view.form.beast}`}</Chip>
+                  )}
+                  {view.form && !readonly && <RevertForm />}
+                  <PlayConcentration doc={doc} locale={locale} />
+                </div>
+              )}
+              <div className="f-chips f-chips-status">
+                <PlayInspiration doc={doc} />
+                <PlayEffects doc={doc} locale={locale} />
+                <PlayConditions doc={doc} locale={locale} />
               </div>
-            )}
-            <div className="f-chips f-chips-status">
-              <PlayInspiration doc={doc} />
-              <PlayEffects doc={doc} locale={locale} />
-              <PlayConditions doc={doc} locale={locale} />
+            </div>
+          )}
+        </div>
+        <dl className="f-abilities f-char-abil">
+          {view.abilities.map((a) => (
+            <div key={a.id} className="f-ability" data-save={a.save || undefined}>
+              <dt className="f-lbl">{t(`abilities.${a.id}_short`)}</dt>
+              <dd>
+                <button
+                  type="button"
+                  className="f-ab-open"
+                  aria-haspopup="dialog"
+                  aria-label={`${t(`abilities.${a.id}`)} ${String(a.score)} (${signed(a.mod)})`}
+                  onClick={() => setNumberOpen({ kind: "ability", ability: a.id })}
+                >
+                  <b>{signed(a.mod)}</b>
+                  <span>{a.score}</span>
+                </button>
+              </dd>
+              <PlayAbilitySave
+                ability={a}
+                onOpen={() => setNumberOpen({ kind: "save", ability: a.id })}
+              />
+            </div>
+          ))}
+        </dl>
+        <div className="f-char-stats">
+          <StatBadge
+            shape="shield"
+            value={String(view.numbers.ac)}
+            label={t("stats.ac")}
+            onOpen={() => setNumberOpen({ kind: "ac" })}
+          />
+          <StatBadge
+            shape="hex"
+            value={signed(view.numbers.initiative)}
+            label={t("character.vitals.initAria")}
+            onOpen={() => setNumberOpen({ kind: "initiative" })}
+          />
+          <StatBadge
+            shape="hex"
+            value={localeDistance(view.numbers.speedFt, locale)}
+            label={t("character.speed")}
+            onOpen={() => setNumberOpen({ kind: "speed" })}
+          />
+          {/* The phone's band keeps D&D Beyond's three: CA, Initiative, Speed. */}
+          {!narrow && (
+            <StatBadge
+              shape="hex"
+              value={signed(view.numbers.proficiency)}
+              label={t("play.proficiency")}
+              onOpen={() => setNumberOpen({ kind: "proficiency" })}
+            />
+          )}
+        </div>
+        {/* The Hit Points open «Danni e cure» (a read-only sheet only shows them). */}
+        {readonly ? (
+          <div className="f-char-hp">
+            <HpReadout view={view} />
+          </div>
+        ) : (
+          <div className="f-char-hp">
+            <button
+              type="button"
+              className="f-char-hp-open"
+              aria-haspopup="dialog"
+              aria-label={`${t("play.hp.title")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
+              onClick={() => setHpOpen("damage")}
+            >
+              <HpReadout view={view} />
+            </button>
+            {/* D&D Beyond's two buttons under the Hit Points; both open «Danni e cure». */}
+            <div className="f-char-hp-acts">
+              <Button
+                icon="g-hp-damage"
+                aria-haspopup="dialog"
+                onClick={() => setHpOpen("damage")}
+              >
+                {t("mechanics.cast.optionDamage")}
+              </Button>
+              <Button
+                icon="g-hp-heal"
+                aria-haspopup="dialog"
+                onClick={() => setHpOpen("heal")}
+              >
+                {t("combat.heal")}
+              </Button>
+            </div>
+            <PlayDown doc={doc} />
+            {/* What waits on this character (a save due, Help's Advantage): one
+              container with its own row on a phone, never a stray grid cell. */}
+            <div className="f-char-notes">
+              <PlayHitReaction />
+              <PlayConcentrationSave doc={doc} />
+              {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
+              <SoloRepeatSavePrompts />
+              {fight && (
+                <HelpedCheck
+                  campaignId={fight.campaignId}
+                  effectOps={fight.encounter.effectOps}
+                  targetId={fight.myId}
+                />
+              )}
+              {fight?.isMyTurn && (
+                <ActionRepeatSaves
+                  campaignId={fight.campaignId}
+                  effectOps={fight.encounter.effectOps}
+                  targetId={fight.myId}
+                  locale={locale}
+                  spendAction
+                />
+              )}
             </div>
           </div>
         )}
-      </div>
-      <dl className="f-abilities f-char-abil">
-        {view.abilities.map((a) => (
-          <div key={a.id} className="f-ability" data-save={a.save || undefined}>
-            <dt className="f-lbl">{t(`abilities.${a.id}_short`)}</dt>
-            <dd>
-              <button
-                type="button"
-                className="f-ab-open"
-                aria-haspopup="dialog"
-                aria-label={`${t(`abilities.${a.id}`)} ${String(a.score)} (${signed(a.mod)})`}
-                onClick={() => setNumberOpen({ kind: "ability", ability: a.id })}
-              >
-                <b>{signed(a.mod)}</b>
-                <span>{a.score}</span>
-              </button>
-            </dd>
-            <PlayAbilitySave
-              ability={a}
-              onOpen={() => setNumberOpen({ kind: "save", ability: a.id })}
-            />
-          </div>
-        ))}
-      </dl>
-      <div className="f-char-stats">
-        <StatBadge
-          shape="shield"
-          value={String(view.numbers.ac)}
-          label={t("stats.ac")}
-          onOpen={() => setNumberOpen({ kind: "ac" })}
-        />
-        <StatBadge
-          shape="hex"
-          value={signed(view.numbers.initiative)}
-          label={t("character.vitals.initAria")}
-          onOpen={() => setNumberOpen({ kind: "initiative" })}
-        />
-        <StatBadge
-          shape="hex"
-          value={localeDistance(view.numbers.speedFt, locale)}
-          label={t("character.speed")}
-          onOpen={() => setNumberOpen({ kind: "speed" })}
-        />
-        {/* The phone's band keeps D&D Beyond's three: CA, Initiative, Speed. */}
-        {!narrow && (
-          <StatBadge
-            shape="hex"
-            value={signed(view.numbers.proficiency)}
-            label={t("play.proficiency")}
-            onOpen={() => setNumberOpen({ kind: "proficiency" })}
+        {hpOpen && (
+          <PlayHp
+            doc={doc}
+            locale={locale}
+            intent={hpOpen}
+            onClose={() => setHpOpen(false)}
+            onOpenMax={() => {
+              setHpOpen(false);
+              setNumberOpen({ kind: "maxHp" });
+            }}
           />
         )}
-      </div>
-      {/* The Hit Points open «Danni e cure» (a read-only sheet only shows them). */}
-      {readonly ? (
-        <div className="f-char-hp">
-          <HpReadout view={view} />
-        </div>
-      ) : (
-        <div className="f-char-hp">
-          <button
-            type="button"
-            className="f-char-hp-open"
-            aria-haspopup="dialog"
-            aria-label={`${t("play.hp.title")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
-            onClick={() => setHpOpen("damage")}
-          >
-            <HpReadout view={view} />
-          </button>
-          {/* D&D Beyond's two buttons under the Hit Points; both open «Danni e cure». */}
-          <div className="f-char-hp-acts">
-            <Button
-              icon="g-hp-damage"
+        {numberOpen && (
+          <PlayNumberPane
+            key={JSON.stringify(numberOpen)}
+            numberKey={numberOpen}
+            doc={doc}
+            locale={locale}
+            readonly={readonly}
+            onClose={() => setNumberOpen(null)}
+          />
+        )}
+        {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di livello» */}
+        {actions.length > 0 && (
+          <>
+            <button
+              type="button"
+              className="f-btn f-char-more"
+              data-kind="ghost"
+              aria-label={t("shell.menu")}
               aria-haspopup="dialog"
+              onClick={() => setMoreOpen(true)}
+            >
+              <Icon name="u-more" />
+            </button>
+            <Menu open={moreOpen} onClose={() => setMoreOpen(false)} title={view.name}>
+              {actions.map((a) => (
+                <button
+                  key={a.label}
+                  type="button"
+                  className="f-menu-it"
+                  onClick={() => {
+                    setMoreOpen(false);
+                    a.onSelect();
+                  }}
+                >
+                  <Icon name={a.icon} />
+                  {a.label}
+                </button>
+              ))}
+            </Menu>
+          </>
+        )}
+      </section>
+      {/* D&D Beyond's phone strip: the band scrolled away, one slim row sticks to the
+        top with the Hit Points (they open «Danni e cure»), the AC and Danni / Cura.
+        It keeps its box while hidden, so showing it never moves the page. */}
+      {narrow && (
+        <div
+          className="f-strip"
+          role="region"
+          aria-label={t("play.strip")}
+          data-on={strip || undefined}
+          // hidden in place (the box stays, see ui.css): out of the tab order and unread
+          aria-hidden={!strip || undefined}
+          inert={!strip}
+        >
+          {readonly ? (
+            <span className="f-strip-hp">
+              <StripHp view={view} />
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="f-strip-hp"
+              aria-haspopup="dialog"
+              aria-label={`${t("play.hpTitle")}: ${String(view.hp.current)} / ${String(view.hp.max)}`}
               onClick={() => setHpOpen("damage")}
             >
-              {t("mechanics.cast.optionDamage")}
-            </Button>
-            <Button
-              icon="g-hp-heal"
-              aria-haspopup="dialog"
-              onClick={() => setHpOpen("heal")}
-            >
-              {t("combat.heal")}
-            </Button>
-          </div>
-          <PlayDown doc={doc} />
-          {/* What waits on this character (a save due, Help's Advantage): one
-              container with its own row on a phone, never a stray grid cell. */}
-          <div className="f-char-notes">
-            <PlayHitReaction />
-            <PlayConcentrationSave doc={doc} />
-            {uid && <RepeatSavePrompts targetIds={[`pc-${uid}`]} locale={locale} />}
-            <SoloRepeatSavePrompts />
-            {fight && (
-              <HelpedCheck
-                campaignId={fight.campaignId}
-                effectOps={fight.encounter.effectOps}
-                targetId={fight.myId}
-              />
-            )}
-            {fight?.isMyTurn && (
-              <ActionRepeatSaves
-                campaignId={fight.campaignId}
-                effectOps={fight.encounter.effectOps}
-                targetId={fight.myId}
-                locale={locale}
-                spendAction
-              />
-            )}
-          </div>
-        </div>
-      )}
-      {hpOpen && (
-        <PlayHp
-          doc={doc}
-          locale={locale}
-          intent={hpOpen}
-          onClose={() => setHpOpen(false)}
-          onOpenMax={() => {
-            setHpOpen(false);
-            setNumberOpen({ kind: "maxHp" });
-          }}
-        />
-      )}
-      {numberOpen && (
-        <PlayNumberPane
-          key={JSON.stringify(numberOpen)}
-          numberKey={numberOpen}
-          doc={doc}
-          locale={locale}
-          readonly={readonly}
-          onClose={() => setNumberOpen(null)}
-        />
-      )}
-      {/* the character's other actions (⋯, D&D Beyond's header menu): «Sali di
-          livello», the saved copies, the sheet as a PDF or a file */}
-      {actions.length > 0 && (
-        <>
+              <StripHp view={view} />
+            </button>
+          )}
           <button
             type="button"
-            className="f-btn f-char-more"
-            data-kind="ghost"
-            aria-label={t("shell.menu")}
+            className="f-strip-ac"
             aria-haspopup="dialog"
-            onClick={() => setMoreOpen(true)}
+            aria-label={`${t("stats.ac")} ${String(view.numbers.ac)}`}
+            onClick={() => setNumberOpen({ kind: "ac" })}
           >
-            <Icon name="u-more" />
+            <b>{view.numbers.ac}</b>
+            <span className="f-lbl">{t("stats.ac")}</span>
           </button>
-          <Menu open={moreOpen} onClose={() => setMoreOpen(false)} title={view.name}>
-            {actions.map((a) => (
-              <button
-                key={a.label}
-                type="button"
-                className="f-menu-it"
-                onClick={() => {
-                  setMoreOpen(false);
-                  a.onSelect();
-                }}
+          {!readonly && (
+            <span className="f-strip-acts">
+              <Button
+                icon="g-hp-damage"
+                aria-haspopup="dialog"
+                onClick={() => setHpOpen("damage")}
               >
-                <Icon name={a.icon} />
-                {a.label}
-              </button>
-            ))}
-          </Menu>
-        </>
+                {t("mechanics.cast.optionDamage")}
+              </Button>
+              <Button
+                icon="g-hp-heal"
+                aria-haspopup="dialog"
+                onClick={() => setHpOpen("heal")}
+              >
+                {t("combat.heal")}
+              </Button>
+            </span>
+          )}
+        </div>
       )}
-    </section>
+    </>
+  );
+}
+
+/** The strip's Hit Points: current (in the band's colour) / max, temporary beside. */
+function StripHp({ view }: { view: PlayHeaderView }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <span className="f-lbl">{t("stats.hp")}</span>
+      <b data-hp={hpTone(view.hp.current, view.hp.max)}>{view.hp.current}</b>
+      <span>{"/ " + String(view.hp.max)}</span>
+      {view.hp.temp > 0 && (
+        <span className="f-char-temp">{`+${String(view.hp.temp)}`}</span>
+      )}
+    </>
   );
 }
 
@@ -672,7 +774,6 @@ function PlayHeader({
  *  can sit inside the button that opens «Danni e cure»). */
 function HpReadout({ view }: { view: PlayHeaderView }) {
   const { t } = useTranslation();
-  const share = view.hp.max > 0 ? view.hp.current / view.hp.max : 0;
   return (
     <>
       <span className="f-char-hp-head">
@@ -682,9 +783,7 @@ function HpReadout({ view }: { view: PlayHeaderView }) {
         )}
       </span>
       <span className="f-char-hp-v">
-        <b data-hp={share > 0.5 ? "ok" : share > 0.25 ? "low" : "bad"}>
-          {view.hp.current}
-        </b>
+        <b data-hp={hpTone(view.hp.current, view.hp.max)}>{view.hp.current}</b>
         <span>{"/ " + String(view.hp.max)}</span>
       </span>
     </>
