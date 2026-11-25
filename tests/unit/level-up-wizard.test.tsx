@@ -744,6 +744,120 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
   });
 });
 
+// ─── Magical Discoveries: one pick replaced on each Bard level (SRD 5.2.1) ────
+
+describe("LevelUpWizard — the Magical Discoveries swap (Lore Bard 9→10)", () => {
+  const discovery = (srdId: string) => ({
+    srdId,
+    prepared: true,
+    alwaysPrepared: true,
+    grantedBy: "bard-lore-additional-magical-secrets",
+  });
+
+  beforeEach(() => {
+    setChar({
+      classes: [{ classId: "bard", subclassId: "college-of-lore", level: 9 }],
+      hitDieType: 8,
+      abilityScores: { STR: 8, DEX: 14, CON: 12, INT: 10, WIS: 12, CHA: 18 },
+      savingThrows: ["DEX", "CHA"],
+      spells: [
+        { srdId: "vicious-mockery" },
+        { srdId: "healing-word", prepared: true },
+        { srdId: "dissonant-whispers", prepared: true },
+        discovery("guidance"),
+        discovery("fireball"),
+      ],
+    });
+  });
+
+  /** Read-then-commit the first row in `scope` whose CTA matches `cta`. */
+  function commitFirst(scope: HTMLElement, cta: RegExp) {
+    const row = within(scope)
+      .getAllByRole("button")
+      .find((b) => b.classList.contains("wiz-row"));
+    if (!row) throw new Error("no row");
+    fireEvent.click(row);
+    const btn = within(scope)
+      .getAllByRole("button")
+      .find((b) => cta.test(b.textContent));
+    if (!btn) throw new Error(`no CTA ${cta}`);
+    fireEvent.click(btn);
+  }
+
+  /** Walk to the swap step, learning the level's new spell and cantrip. */
+  function walkToSwap() {
+    while (!screen.queryByTestId("discovery-swap")) {
+      const spellsStep = screen
+        .getAllByRole("button")
+        .some((b) => b.classList.contains("wiz-fork-tab"));
+      if (spellsStep) {
+        commitFirst(document.body, /^Learn /);
+        const cantripTab = screen
+          .getAllByRole("button")
+          .find(
+            (b) => b.classList.contains("wiz-fork-tab") && /Cantrips/.test(b.textContent)
+          );
+        if (cantripTab) {
+          fireEvent.click(cantripTab);
+          commitFirst(document.body, /^Learn /);
+        }
+      }
+      clickContinue();
+    }
+  }
+
+  it("replaces a pick with a spell of another level; it stays always prepared", async () => {
+    renderWizard();
+    walkToSwap();
+    const section = screen.getByTestId("discovery-swap");
+    // Its picks, a cantrip among them, are the ones it offers to replace.
+    const removable = Array.from(
+      section.querySelectorAll<HTMLElement>(".wiz-entry[data-fid]")
+    ).map((e) => e.getAttribute("data-fid"));
+    expect(removable.sort()).toEqual(["fireball", "guidance"]);
+
+    const fireball = within(section)
+      .getAllByRole("button")
+      .find((b) => b.classList.contains("wiz-row") && b.textContent.includes("Fireball"));
+    if (!fireball) throw new Error("Fireball row not found");
+    fireEvent.click(fireball);
+    fireEvent.click(within(section).getByRole("button", { name: /Replace Fireball/i }));
+
+    // Bard 10 has 5th-level slots: Cone of Cold (5th) yes, Chain Lightning (6th) no.
+    expect(section.querySelector('[data-fid="chain-lightning"]')).toBeNull();
+    const cone = section.querySelector<HTMLElement>(
+      '.wiz-entry[data-fid="cone-of-cold"]'
+    );
+    if (!cone) throw new Error("Cone of Cold not offered");
+    const coneRow = cone.querySelector<HTMLButtonElement>(".wiz-row");
+    if (!coneRow) throw new Error("Cone of Cold row button not found");
+    fireEvent.click(coneRow);
+    const learn = within(cone)
+      .getAllByRole("button")
+      .find((b) => /^Learn /.test(b.textContent));
+    if (!learn) throw new Error("Learn CTA not found");
+    fireEvent.click(learn);
+
+    clickContinue(); // swap → review
+    const confirm = screen
+      .getAllByRole("button")
+      .find((b) => /^Confirm: Level 10/.test(b.textContent));
+    if (!confirm) throw new Error("confirm CTA not found");
+    fireEvent.click(confirm);
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const saved = useCharacterStore.getState().character;
+    if (!saved) throw new Error("no character in store after commit");
+    expect(saved.character.spells).toContainEqual(discovery("cone-of-cold"));
+    expect(saved.character.spells).toContainEqual(discovery("guidance"));
+    expect(
+      saved.character.spells.some((s) => "srdId" in s && s.srdId === "fireball")
+    ).toBe(false);
+  });
+});
+
 // ─── A3 — the completion banner reports the ACHIEVED level ────────────────────
 
 describe("LevelUpWizard — the completion ceremony (A3 + no auto-dismiss)", () => {

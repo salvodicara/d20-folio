@@ -91,6 +91,9 @@ export interface LevelUpPicks {
   /** A feat's Spell Change (Magic Initiate): its pick replaced, keeping what the
    *  feat gave it (free cast, ability, always prepared). Absent: none. */
   featSpellChanges?: ReadonlyArray<SpellSwapChoice>;
+  /** A Lore Bard's Magical Discoveries pick replaced: the new spell keeps the
+   *  always-prepared flag and the feature's mark. Absent: none. */
+  discoverySwap?: SpellSwapChoice;
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -446,8 +449,8 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     };
   }
 
-  for (const change of picks.featSpellChanges ?? []) {
-    if (change.removeId != null && change.replaceId != null) {
+  for (const change of [...(picks.featSpellChanges ?? []), picks.discoverySwap]) {
+    if (change?.removeId != null && change.replaceId != null) {
       updated = {
         ...updated,
         spells: applyFeatSpellChange(updated.spells, change.removeId, change.replaceId),

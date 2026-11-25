@@ -150,6 +150,7 @@
       "chooseSpells_other": "Scegli {{count}} incantesimi",
       "swapForget": "Cambia un incantesimo che conosci (facoltativo)",
       "swapLearn": "Al suo posto",
+      "discoveryForget": "{{feature}}: cambia uno dei suoi incantesimi (facoltativo)",
       "changes": "Cosa cambia",
       "gained": "Ottieni",
       "hp": "Punti ferita massimi",

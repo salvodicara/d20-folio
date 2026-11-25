@@ -35,6 +35,7 @@ export function WizardSpellSwap({
   alsoKnown,
   cantrips = false,
   maxSlotLevel,
+  pool,
   value,
   onChange,
 }: {
@@ -60,6 +61,10 @@ export function WizardSpellSwap({
    *  slots»): the replacement may be any level up to this one. Absent: the same
    *  level as the removed spell (a feat's Spell Change, Magic Initiate). */
   maxSlotLevel?: number;
+  /** The replacements, when a feature sets them (Magical Discoveries: a cantrip or
+   *  any level with slots). Its picks may then be cantrips, and the replacement
+   *  need not match the removed spell's level. */
+  pool?: ReadonlyArray<string>;
   value: SpellSwapChoice;
   onChange: (choice: SpellSwapChoice) => void;
 }) {
@@ -87,7 +92,7 @@ export function WizardSpellSwap({
   const removable = knownSpells
     .flatMap((ref) => {
       const s = allSpells.find((sp) => sp.id === ref.srdId);
-      return s && (cantrips ? s.level === 0 : s.level > 0)
+      return s && (pool || (cantrips ? s.level === 0 : s.level > 0))
         ? [spellPickVM(s, locale)]
         : [];
     })
@@ -99,8 +104,15 @@ export function WizardSpellSwap({
       : null;
   const knownIds = new Set([...knownSpells.map((s) => s.srdId), ...(alsoKnown ?? [])]);
   const allowed = allowedLists ?? new Set([classId.toLowerCase()]);
-  const replacements =
-    removeLevel != null
+  const poolIds = pool ? new Set(pool) : null;
+  const replacements = poolIds
+    ? value.removeId != null
+      ? allSpells
+          .filter((s) => poolIds.has(s.id) && !knownIds.has(s.id))
+          .map((s) => spellPickVM(s, locale))
+          .sort(byLevelThenName(locale))
+      : []
+    : removeLevel != null
       ? allSpells
           .filter(
             (s) =>
@@ -152,11 +164,14 @@ export function WizardSpellSwap({
                     ? "levelUp.swap.cantripReplaceLabel"
                     : "levelUp.swap.replaceLabel"
                 )}
-                {removeLevel != null && !cantrips && maxSlotLevel === undefined && (
-                  <span className="wiz-pick-filter">
-                    {t("levelUp.swap.levelFilter", { level: removeLevel })}
-                  </span>
-                )}
+                {removeLevel != null &&
+                  !cantrips &&
+                  maxSlotLevel === undefined &&
+                  !poolIds && (
+                    <span className="wiz-pick-filter">
+                      {t("levelUp.swap.levelFilter", { level: removeLevel })}
+                    </span>
+                  )}
               </>
             }
             onToggle={(id) =>
