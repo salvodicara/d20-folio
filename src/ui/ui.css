@@ -3958,6 +3958,40 @@
   font: 700 40px/1 var(--font-title);
   color: var(--strong);
 }
+/* «Danni e cure»: the max HP row opens its number pane (DDB's HP manager) */
+.fui button.f-hp-max {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fui button.f-hp-max > b {
+  margin-left: auto;
+  font: 700 20px/1 var(--font-title);
+  color: var(--strong);
+}
+/* a chevron says the row opens its pane */
+.fui button.f-hp-max::after {
+  content: "›";
+  margin-left: 12px;
+  color: var(--muted);
+  font-size: var(--fs-lg);
+  line-height: 1;
+}
+/* the rule behind the number, one plain sentence (DDB's pane opens with it) */
+.fui .f-num-rule {
+  margin: 0;
+  max-width: 60ch;
+  color: var(--muted);
+}
 /* «Impostato a mano»: a status, not a control (D&D Beyond's «Overridden») */
 .fui .f-num-tag {
   color: var(--muted);
@@ -5244,6 +5278,55 @@
   width: 22px;
   height: 22px;
   color: var(--gold);
+}
+/* the picked subclass's preview: what it brings now (BG3's subclass detail) */
+.fui .f-lvl-reveal {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.fui .f-lvl-reveal h3 {
+  margin: 4px 0 0;
+}
+.fui .f-lvl-reveal summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font: 700 var(--fs-md) / 1.3 var(--font-title);
+  color: var(--strong);
+  cursor: pointer;
+}
+/* a disclosure chevron: the feature's text opens under its name */
+.fui .f-lvl-reveal summary::-webkit-details-marker {
+  display: none;
+}
+.fui .f-lvl-reveal summary::before {
+  content: "›";
+  display: inline-block;
+  width: 16px;
+  margin-right: 8px;
+  color: var(--muted);
+  transition: transform 150ms ease;
+}
+.fui .f-lvl-reveal details[open] > summary::before {
+  transform: rotate(90deg);
+}
+@media (prefers-reduced-motion: reduce) {
+  .fui .f-lvl-reveal summary::before {
+    transition: none;
+  }
+}
+.fui .f-lvl-reveal summary {
+  list-style: none;
+}
+.fui .f-lvl-reveal-text {
+  margin: 0 0 8px;
+  max-width: 65ch;
+}
+.fui .f-lvl-reveal-spells {
+  margin: 0;
+  color: var(--strong);
 }
 .fui .f-pick-title {
   display: flex;

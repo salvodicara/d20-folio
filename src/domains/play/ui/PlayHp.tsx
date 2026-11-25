@@ -4,12 +4,14 @@
  * defends against, «Altro tipo» for the rest), Danni or Cura, a note that says what
  * the damage will do (`hpEntryNote`, the same path Danni commits), and the temporary
  * Hit Points, which don't add up. Every change goes through `useHpControls`, with its
- * undo toast.
+ * undo toast. The max HP row opens its number pane (where it comes from, «Personalizza»),
+ * as D&D Beyond's HP manager holds the max HP modifier and override.
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { hpEntryNote } from "@/domains/play/hp-entry-view";
+import { playNumberView } from "@/domains/play/play-number-view";
 import { PlayDefenses } from "@/domains/play/ui/PlayDefenses";
 import { useHpControls } from "@/features/character/molecules/use-hp-controls";
 import type { Locale } from "@/lib/locale";
@@ -26,12 +28,15 @@ export function PlayHp({
   locale,
   onClose,
   intent = "damage",
+  onOpenMax,
 }: {
   doc: CharacterDoc;
   locale: Locale;
   onClose: () => void;
   /** The button that opened it: its action leads (filled) and colours the header. */
   intent?: "damage" | "heal";
+  /** Opens the max HP's number pane; absent, the row is not shown. */
+  onOpenMax?: () => void;
 }) {
   const healing = intent === "heal";
   const { t } = useTranslation();
@@ -175,6 +180,12 @@ export function PlayHp({
           </Button>
         </div>
       </div>
+      {onOpenMax && (
+        <button type="button" className="f-hp-max f-ask" onClick={onOpenMax}>
+          <span className="f-lbl">{t("character.health.maxHp")}</span>
+          <b>{playNumberView(doc, locale, { kind: "maxHp" }).total}</b>
+        </button>
+      )}
       <PlayDefenses doc={doc} locale={locale} />
     </Dialog>
   );

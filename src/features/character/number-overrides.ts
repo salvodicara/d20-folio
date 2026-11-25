@@ -10,12 +10,16 @@
  *   computed AC back in the snapshot.
  * - initiative, speed and proficiency each have one nullable field.
  * - saves, skills and ability scores are keyed maps; reset drops the key.
+ * - max HP is stored as its INPUT (#1315): `hpBonus` = typed max − derived max, so a
+ *   level-up or a CON change still moves it; reset drops the bonus.
  */
 import type { AbilityCode } from "@/data/types";
 import {
   aggregateCharacterGrants,
   computeCharacterAC,
   deriveMaxHp,
+  withMaxHpEdit,
+  withoutMaxHpBonus,
 } from "@/lib/aggregate-character";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
@@ -28,6 +32,7 @@ export type SheetNumberKey =
   | { kind: "initiative" }
   | { kind: "speed" }
   | { kind: "proficiency" }
+  | { kind: "maxHp" }
   | { kind: "ability"; ability: AbilityCode }
   | { kind: "save"; ability: AbilityCode }
   | { kind: "skill"; id: string };
@@ -43,6 +48,10 @@ export function storedOverride(c: CharacterData, key: SheetNumberKey): number | 
       return c.speedOverride ?? null;
     case "proficiency":
       return c.proficiencyBonusOverride ?? null;
+    case "maxHp":
+      // Hand-set when it carries a bonus or the stored max is not the derived one
+      // (the breakdown's «Correzione manuale» test).
+      return c.hpBonus || c.hp.max !== deriveMaxHp(c) ? c.hp.max : null;
     case "ability":
       return c.abilityScoreOverrides?.[key.ability] ?? null;
     case "save":
@@ -88,6 +97,10 @@ function overridePatch(
       return { speedOverride: value };
     case "proficiency":
       return { proficiencyBonusOverride: value };
+    case "maxHp": {
+      const next = value === null ? withoutMaxHpBonus(c) : withMaxHpEdit(c, value);
+      return { hpBonus: next.hpBonus, hp: next.hp };
+    }
     case "ability": {
       const abilityScoreOverrides = withKey(c.abilityScoreOverrides, key.ability, value);
       // A CON pin moves max HP across every level (#1318): re-derive it with the pin.
