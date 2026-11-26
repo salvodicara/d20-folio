@@ -3,20 +3,24 @@
  * 2026-11-05: «like BG3's tooltips, so the choice is informed»): its name, a
  * subtitle, the effect in a few words, the catalogue's gist, chips of facts, and
  * the full text. One shape for every kind: spells, feats and fighting styles,
- * invocations, Metamagic, maneuvers, weapon masteries, skills.
+ * invocations, Metamagic, maneuvers, weapon masteries, skills, beasts (Wild Shape forms).
  *
  * Pure: everything resolves here in the reader's language, from the catalogues.
  */
 import { FEATS_BY_ID } from "@/data/feats";
 import { SRD_INVOCATIONS } from "@/data/invocations";
 import { METAMAGIC_BY_ID } from "@/data/metamagic";
+import { getBeast } from "@/data/beasts";
 import { WEAPONS_BY_ID } from "@/data/weapons";
+import { formBodyFacts } from "@/domains/play/form-facts";
+import { formPickRow } from "@/domains/play/form-picker-view";
 import { spellPickRows } from "@/domains/spells/spell-pick-rows";
 import i18n from "@/i18n";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import type { SrdKind } from "@/i18n/srd-en";
 import { skillAbility } from "@/lib/compute";
 import type { Locale } from "@/lib/locale";
+import { formatCr } from "@/lib/utils";
 
 export type InfoKind =
   | "spell"
@@ -25,7 +29,8 @@ export type InfoKind =
   | "metamagic"
   | "maneuver"
   | "weapon"
-  | "skill";
+  | "skill"
+  | "beast";
 
 export interface OptionInfo {
   name: string;
@@ -142,5 +147,18 @@ export function optionInfo(
         chips: [],
         text: null,
       };
+    case "beast": {
+      const beast = getBeast(id);
+      if (!beast) return null;
+      const row = formPickRow(beast, locale);
+      return {
+        name: row.name,
+        sub: t("polymorph.crShort", { cr: formatCr(beast.cr) }),
+        effect: null,
+        gist: null,
+        chips: formBodyFacts({ ...row, cr: formatCr(beast.cr) }, t, locale),
+        text: null,
+      };
+    }
   }
 }

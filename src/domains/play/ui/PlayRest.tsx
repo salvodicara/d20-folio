@@ -14,6 +14,7 @@ import { hitDieFloorOf, restView, type RestLine } from "@/domains/play/rest-view
 import { shortRestHeal } from "@/lib/play/short-rest-healing";
 import { PlayPrepare } from "@/domains/play/ui/PlayPrepare";
 import { restCantripSwaps } from "@/lib/rest-cantrip-swap";
+import { canSwapFormOnRest } from "@/lib/wild-shape-forms";
 import { PlayRestSummary } from "@/domains/play/ui/PlayRestSummary";
 import { restSummary, type RestSummary } from "@/domains/play/rest-model";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -49,7 +50,9 @@ export function PlayRest({
       ? longRestChange(doc)
       : null;
   // …and a lineage cantrip may be replaced (High Elf), in the same step
-  const swaps = kind === "long" ? restCantripSwaps(doc).length > 0 : false;
+  // …and a Druid's known Wild Shape form (SRD 5.2.1)
+  const swaps =
+    kind === "long" && (restCantripSwaps(doc).length > 0 || canSwapFormOnRest(doc));
   const heal = shortRestHeal(doc, count, typed);
   const floor = hitDieFloorOf(doc);
   const pool = hitDicePool(doc.character);

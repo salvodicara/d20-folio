@@ -58,6 +58,7 @@ import {
 import { localizeText } from "@/lib/views/srd-i18n";
 import { DISCOVERIES_FEATURE_ID } from "@/lib/magical-discoveries";
 import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
+import { knownFormsAt, wildShapeFormsAt } from "@/lib/wild-shape-forms";
 import { choiceSlotRows, toggleCount } from "@/domains/creation/creation-view";
 import type { CharacterData, CharacterDoc } from "@/types/character";
 
@@ -78,6 +79,8 @@ export interface LevelUpAnswers {
   metamagic: readonly string[];
   invocations: readonly string[];
   maneuvers: readonly string[];
+  /** The Druid's Wild Shape forms this level adds (Beast Shapes «Known Forms»). */
+  wildShapeForms: readonly string[];
   choicePicks: ChoicePicks;
   newCantrips: readonly string[];
   newSpells: readonly string[];
@@ -107,6 +110,7 @@ export const NO_ANSWERS: LevelUpAnswers = {
   metamagic: [],
   invocations: [],
   maneuvers: [],
+  wildShapeForms: [],
   choicePicks: EMPTY_CHOICE_PICKS,
   newCantrips: [],
   newSpells: [],
@@ -136,6 +140,7 @@ export type AskKey =
   | "metamagic"
   | "invocations"
   | "maneuvers"
+  | "wildShapeForms"
   | `slot:${string}`
   | "newCantrips"
   | "newSpells"
@@ -388,6 +393,27 @@ export function levelUpAsks(
         plan.charManeuverChoices ?? [],
         locale
       ).map((o) => ({ id: o.id, label: o.label })),
+    });
+  }
+
+  // Wild Shape's known forms (SRD 5.2.1 Beast Shapes): the forms the new Druid level
+  // gives and the Druid doesn't know yet, from the beasts that level allows.
+  const forms =
+    classId === "druid" &&
+    knownFormsAt(plan.newClassLevel) > knownFormsAt(plan.newClassLevel - 1)
+      ? wildShapeFormsAt(doc, plan.newClassLevel)
+      : null;
+  const formsOwed = forms?.owed ?? 0;
+  if (forms && formsOwed > 0) {
+    rows.push({
+      key: "wildShapeForms",
+      title: t("levelUp.screen.chooseWildShapeForms", { count: formsOwed }),
+      count: formsOwed,
+      picked: a.wildShapeForms,
+      options: forms.options.map((b) => ({
+        id: b.id,
+        label: localizeSrd("beasts", b.id, "name", locale),
+      })),
     });
   }
 
@@ -780,6 +806,7 @@ export function levelUpAsks(
     weaponMasteries: newMasteries ? [...masteredAlready, ...a.weaponMasteries] : null,
     metamagic: plan.needsMetamagic ? a.metamagic : [],
     maneuvers: plan.needsManeuvers ? a.maneuvers : [],
+    wildShapeForms: formsOwed ? a.wildShapeForms : [],
     invocations: plan.needsInvocations ? a.invocations : [],
     newCantrips: a.newCantrips,
     newSpells,
@@ -928,6 +955,7 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
     case "metamagic":
     case "invocations":
     case "maneuvers":
+    case "wildShapeForms":
     case "newCantrips":
     case "mcSkills":
       return { ...a, [key]: many(a[key]) };

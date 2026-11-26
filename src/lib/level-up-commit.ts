@@ -61,6 +61,7 @@ import { applyFeatSpellChange } from "@/lib/feat-spell-change";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
 import { preparedLevelledCount } from "@/lib/wizard-spellbook";
+import { learnWildShapeForms } from "@/lib/wild-shape-forms";
 
 /** What the level asks, as the player answered it (empty / null when not asked). */
 export interface LevelUpPicks {
@@ -99,6 +100,8 @@ export interface LevelUpPicks {
   fightingStyleSwap?: SpellSwapChoice;
   metamagicSwap?: SpellSwapChoice;
   invocationSwap?: SpellSwapChoice;
+  /** The Druid's Wild Shape forms this level adds; absent: none. */
+  wildShapeForms?: readonly string[];
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -468,6 +471,14 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
         spells: applySpellSwap(updated.spells, swap.removeId, swap.replaceId),
       };
     }
+  }
+
+  // Wild Shape's known forms this level adds (Beast Shapes «Known Forms»).
+  if (picks.wildShapeForms?.length) {
+    updated = learnWildShapeForms(
+      { ...doc, character: updated },
+      picks.wildShapeForms
+    ).character;
   }
 
   if (updated.levelUpChecklist && handledChecklistKeys.length > 0) {
