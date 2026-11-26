@@ -6,7 +6,7 @@
  * unsaved changes» bar and the browser's restore-session bar, drawn as our own
  * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner).
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,7 +15,11 @@ import {
   upgradeRescueCopy,
 } from "@/features/character/rescue-apply";
 import { useLocale } from "@/hooks/useLocale";
-import { readRescueCopy, type RescueCopy } from "@/lib/local-draft";
+import {
+  readRescueCopy,
+  subscribeRescueCopies,
+  type RescueCopy,
+} from "@/lib/local-draft";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
@@ -37,6 +41,15 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
   );
   const [failed, setFailed] = useState(false);
   const [busy, setBusy] = useState(false);
+  // A lost save is found after the stored sheet loads, and a copy whose save landed
+  // after all is dropped (#1276): re-read on every change in this tab.
+  useEffect(
+    () =>
+      subscribeRescueCopies(() => {
+        setCopy(readRescueCopy(uid, sheet.id, Date.now()));
+      }),
+    [uid, sheet.id]
+  );
 
   if (!copy) return null;
   const date = new Intl.DateTimeFormat(language, {

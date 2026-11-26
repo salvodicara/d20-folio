@@ -276,6 +276,41 @@ export async function waitForStoredCharacter(id: string): Promise<number> {
   return hp;
 }
 
+/** The stored generation (`revision`) of a sandbox character parent (the owner's, or
+ *  a sandbox player's); 0 when none. */
+export async function storedRevision(id: string): Promise<number> {
+  const uid =
+    Object.values(SANDBOX_USERS).find((user) => user.characterId === id)?.uid ??
+    "dev-owner";
+  const response = await fetch(`${FIRESTORE}/users/${uid}/characters/${id}`, {
+    headers: OWNER,
+  });
+  const body = (await response.json()) as {
+    fields?: { revision?: { integerValue?: string } };
+  };
+  return Number(body.fields?.revision?.integerValue ?? 0);
+}
+
+/** The stored total level of an owner's character (`build.classes[].level`). */
+export async function storedLevel(id: string): Promise<number> {
+  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+    headers: OWNER,
+  });
+  type Entry = { mapValue?: { fields?: { level?: { integerValue?: string } } } };
+  const body = (await response.json()) as {
+    fields?: {
+      build?: {
+        mapValue?: { fields?: { classes?: { arrayValue?: { values?: Entry[] } } } };
+      };
+    };
+  };
+  const entries = body.fields?.build?.mapValue?.fields?.classes?.arrayValue?.values ?? [];
+  return entries.reduce(
+    (sum, entry) => sum + Number(entry.mapValue?.fields?.level?.integerValue ?? 0),
+    0
+  );
+}
+
 /** A string field of an owner's character build (`build.<field>`), or null. */
 export async function ownerBuildString(
   id: string,
@@ -393,11 +428,17 @@ export async function levelUp(
     if (clicked === 0) break;
   }
   await expect(page.getByText(/choices? still to make/)).toHaveCount(0);
+  const stored = await storedRevision(id);
   await confirm.click();
   await expect(page).toHaveURL(new RegExp(`/characters/${id}$`), { timeout: 30_000 });
   await expect(page.locator("main")).toContainText(
     new RegExp(`${opts.className}\\s+${opts.level}\\b`)
   );
+  // The level shows at once and its save lands a moment later (#1276, level-up works
+  // offline), so wait for the server to hold it before the next page load.
+  await expect
+    .poll(() => storedRevision(id), { timeout: 30_000 })
+    .toBeGreaterThan(stored);
 }
 
 /** The sandbox players (scripts/dev-seed-sandbox.ts), each a real Auth-emulator account. */

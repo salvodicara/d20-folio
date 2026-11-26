@@ -113,15 +113,26 @@ export async function applyRescueCopy(
   useCharacterStore.getState().setCharacter(after);
   useUndoStore.getState().clear();
   // Queued, not awaited: offline it lands when the device is back (the save badge
-  // says so), and the snapshot above is ahead of it in the queue.
-  replaceCharacterState(
-    uid,
-    current.id,
-    after.character,
-    after.session,
-    current.revision,
-    current
-  ).catch(() => undefined);
+  // says so), and the snapshot above is ahead of it in the queue. With the sheet open
+  // it goes through the sheet's ordered queue (#1276): the next generation at send,
+  // after the play writer's own write of `after`, and traced until acknowledged.
+  const writer = useCharacterStore.getState().wholeSheetWriter;
+  if (writer) {
+    queueMicrotask(() => {
+      writer({ character: after.character, session: after.session }, current).catch(
+        () => undefined
+      );
+    });
+  } else {
+    replaceCharacterState(
+      uid,
+      current.id,
+      after.character,
+      after.session,
+      current.revision,
+      current
+    ).catch(() => undefined);
+  }
   dropRescueCopy(uid, current.id);
   dropUnackedSave(uid, current.id);
   dropUnackedPlay(uid, current.id);
