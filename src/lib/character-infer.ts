@@ -44,8 +44,9 @@ type HitDie = CharacterData["hitDieType"];
 /**
  * The saving-throw proficiencies a class grants — the 2024 rules fix these per
  * class, so a legal character's `savingThrows` is never a free choice. RAW: a
- * MULTICLASS character gains save proficiencies only from its FIRST class, so this
- * reads the PRIMARY entry's class table. Returns the table order verbatim.
+ * MULTICLASS character gains save proficiencies only from its FIRST class (the
+ * class taken at character level 1, `classes[0]`), so callers pass that entry.
+ * Returns the table order verbatim.
  */
 export function inferSavingThrows(entry: ClassEntry): AbilityCode[] {
   const table = classTableIndex.get(entry.classId);

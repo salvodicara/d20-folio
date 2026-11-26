@@ -1,6 +1,8 @@
 /**
  * The DM's «Danni e cure»: the entry lands on every chosen creature (a dropped chip is
  * left out), with its type; Cura is for monsters only; one creature shows its conditions.
+ * «For the players» sets what the players see of the chosen monsters: hidden, exact HP
+ * shown, ally (the classic MonsterCard's toggles).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -38,16 +40,18 @@ describe("DmHitDialog", () => {
   const open = (targets: DmTarget[]) => {
     const onHit = vi.fn();
     const onCondition = vi.fn();
+    const onShow = vi.fn();
     render(
       <DmHitDialog
         targets={targets}
         locale="en"
         onHit={onHit}
         onCondition={onCondition}
+        onShow={onShow}
         onClose={() => {}}
       />
     );
-    return { onHit, onCondition };
+    return { onHit, onCondition, onShow };
   };
 
   it("hits the chosen creatures with the typed amount, leaving out a dropped one", () => {
@@ -76,5 +80,53 @@ describe("DmHitDialog", () => {
     const { onCondition } = open([goblin(1)]);
     fireEvent.click(screen.getByRole("button", { name: "Prone" }));
     expect(onCondition).toHaveBeenCalledWith(goblin(1), "prone", true);
+  });
+
+  describe("for the players", () => {
+    it("hides every chosen monster at once, leaving out a dropped one and the heroes", () => {
+      const { onShow } = open([goblin(1), goblin(2), goblin(3), mara]);
+      fireEvent.click(screen.getByRole("button", { name: /Goblin 3/ }));
+      fireEvent.click(screen.getByRole("button", { name: "Hidden from the players" }));
+      expect(onShow).toHaveBeenCalledWith([goblin(1), goblin(2)], "hidden", true);
+    });
+
+    it("a toggle is on only when every chosen monster has it, and turns it off for all", () => {
+      const { onShow } = open([
+        { ...goblin(1), revealed: true },
+        { ...goblin(2), revealed: true },
+      ]);
+      const reveal = screen.getByRole("button", { name: "Exact HP shown" });
+      expect(reveal).toHaveAttribute("aria-pressed", "true");
+      expect(screen.getByRole("button", { name: "Ally" })).toHaveAttribute(
+        "aria-pressed",
+        "false"
+      );
+      fireEvent.click(reveal);
+      expect(onShow).toHaveBeenCalledWith(
+        [
+          { ...goblin(1), revealed: true },
+          { ...goblin(2), revealed: true },
+        ],
+        "revealed",
+        false
+      );
+    });
+
+    it("with the monsters mixed, a toggle is off and sets it on every one", () => {
+      const { onShow } = open([{ ...goblin(1), side: "ally" }, goblin(2)]);
+      const ally = screen.getByRole("button", { name: "Ally" });
+      expect(ally).toHaveAttribute("aria-pressed", "false");
+      fireEvent.click(ally);
+      expect(onShow).toHaveBeenCalledWith(
+        [{ ...goblin(1), side: "ally" }, goblin(2)],
+        "ally",
+        true
+      );
+    });
+
+    it("has nothing to set on heroes alone", () => {
+      open([mara]);
+      expect(screen.queryByRole("button", { name: "Ally" })).toBeNull();
+    });
   });
 });
