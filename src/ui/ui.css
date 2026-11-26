@@ -6563,8 +6563,8 @@
 .fui .f-dm-step {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: none;
@@ -7378,10 +7378,6 @@
   display: flex;
   gap: 4px;
   margin-top: 4px;
-}
-.fui .f-dm-own > .f-dm-step {
-  width: 44px;
-  height: 44px;
 }
 /* two short numbers side by side (the DM's own monster: AC and max HP) */
 .fui .f-two-fields {
