@@ -1801,6 +1801,19 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
   // Basic Poison — two vials and a dagger: the vial's Bonus Action card spends one
   // and lights the coat; the dagger then carries +1d4 Poison until it deals damage.
   // Visit `/characters/scn-basic-poison` (Play tab).
+  // `/characters/scn-late-thief`: a Rogue 6 who never chose a subclass (#1393), as a
+  // live character is; «Scelte da completare» asks it.
+  "late-thief": {
+    name: "Pip, No Subclass",
+    raceId: "halfling",
+    classId: "rogue",
+    level: 6,
+    background: "criminal",
+    abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 12, WIS: 12, CHA: 10 },
+    weapons: [{ srdId: "shortsword", quantity: 1 }],
+    exercises:
+      "An owed subclass: «Scelte da completare» names «Subclass (Rogue)», the dialog shows the subclass cards, what the pick brings from level 3 on and the choices its features ask; «Salva» picks it with an undo.",
+  },
   "basic-poison": {
     name: "Vex, Basic Poison",
     raceId: "human",
