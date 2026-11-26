@@ -121,7 +121,11 @@ export function useMonsterActions(
           </div>
         )}
         {multiattack && (
-          <p className="f-quiet">
+          // One line on the row; the whole text is on the monster card (its name).
+          <p
+            className="f-quiet f-monster-multi"
+            title={localizeSrd("monster", multiattackKey, "text", locale)}
+          >
             <b>{localizeSrd("monster", multiattackKey, "name", locale)}.</b>{" "}
             {localizeSrd("monster", multiattackKey, "text", locale)}
           </p>

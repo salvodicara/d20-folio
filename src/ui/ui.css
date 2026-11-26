@@ -7348,6 +7348,12 @@
   display: grid;
   gap: 6px;
 }
+/* the Multiattack note stays one line on the row; the card has it whole */
+.fui .f-monster-multi {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .fui .f-target-groups {
   display: grid;
   gap: 8px;
