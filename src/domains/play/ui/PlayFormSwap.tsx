@@ -14,6 +14,7 @@ import { localizeSrd } from "@/i18n/resolver";
 import type { Locale } from "@/lib/locale";
 import {
   canSwapFormOnRest,
+  WILD_SHAPE_ID,
   formSwapOptions,
   storedWildShapeForms,
   swapKnownForm,
@@ -41,10 +42,13 @@ export function PlayFormSwap({ doc, locale }: { doc: CharacterDoc; locale: Local
       character: { ...live.character, wildShapeForms: swapKnownForm(start, out, inn) },
     });
   };
+  // Its own section on the sheet after the Long Rest, named by the feature.
+  const heading = localizeSrd("class-feature", WILD_SHAPE_ID, "name", locale);
   const title = t("play.rest.formSwap");
   const learn = t("levelUp.screen.swapLearn");
   return (
-    <>
+    <section aria-label={heading}>
+      <h3 className="f-act-gh">{heading}</h3>
       <div className="f-ask">
         <span className="f-lbl">{title}</span>
         <PickGrid
@@ -74,6 +78,6 @@ export function PlayFormSwap({ doc, locale }: { doc: CharacterDoc; locale: Local
           />
         </div>
       )}
-    </>
+    </section>
   );
 }

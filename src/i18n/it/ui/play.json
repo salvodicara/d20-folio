@@ -114,9 +114,9 @@
       "changeOne": "Puoi cambiare 1 incantesimo.",
       "changeAny": "Puoi cambiare quelli che vuoi.",
       "keepPrepared": "Tieni così",
-      "cantripTitle": "Dopo il Riposo Lungo",
+      "afterTitle": "Dopo il Riposo Lungo",
       "cantripSwap": "{{source}}: cambia il trucchetto, se vuoi",
-      "formSwap": "Forma Selvatica: cambia una forma conosciuta (facoltativo)",
+      "formSwap": "Cambia una forma conosciuta (facoltativo)",
       "diceSpent_one": "{{count}} dado → +{{hp}} PF",
       "diceSpent_other": "{{count}} dadi → +{{hp}} PF"
     },

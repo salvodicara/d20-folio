@@ -37,7 +37,8 @@ describe("PlayFormSwap", () => {
 
   it("replaces one known form with an eligible one, in its place", () => {
     render(<PlayFormSwap doc={druid} locale="en" />);
-    expect(screen.getByText("Wild Shape: swap a known form (optional)")).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Wild Shape" })).toBeTruthy();
+    expect(screen.getByText("Swap a known form (optional)")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Ape" }));
     // A known form, or a beast that flies before Druid 8, is not offered in its place.
     expect(screen.queryAllByRole("button", { name: "Wolf" })).toHaveLength(1);
