@@ -527,9 +527,11 @@ export async function rollEachHero(
   } else {
     await dm.waitForTimeout(1_500);
   }
+  const rolls = dm.getByRole("button", { name: "Roll initiative" });
   for (let i = 0; i < 6; i++) {
-    const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
+    const roll = rolls.first();
     if (!(await roll.isVisible())) break;
+    const unrolled = await rolls.count();
     const opened = await roll.click({ timeout: 3_000 }).then(
       () => true,
       () => false
@@ -540,6 +542,14 @@ export async function rollEachHero(
     if (!(await visibleWithin(input, 5_000))) continue;
     await input.fill(String(15 - i));
     await input.press("Enter");
+    // The hero's chip keeps «Roll initiative» until the committed roll reaches the card.
+    // A click before that re-opens the SAME hero's roller instead of the next hero's.
+    await expect
+      .poll(() => rolls.count(), {
+        message: "the committed roll shows on its hero's chip before the next roll",
+        timeout: 15_000,
+      })
+      .toBeLessThan(unrolled);
   }
 }
 
