@@ -103,9 +103,10 @@ describe("CreationWizard — create-success navigation", () => {
     expect(createdChar.character.languageIds).toEqual(["common", "dwarvish", "orc"]);
   });
 
-  it("stores the class's own picks, so the new sheet owes none (#1397)", async () => {
+  it("never chooses the class's own picks: the new sheet owes them (#1397)", async () => {
     renderWizard();
-    // The default build is a Fighter: Weapon Mastery 3 and a Fighting Style at 1.
+    // The default build is a Fighter: Weapon Mastery 3 and a Fighting Style at 1. The
+    // player never asked for ready-made picks here, so «Scelte da completare» asks them.
     fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
       target: { value: "Borin" },
     });
@@ -116,9 +117,12 @@ describe("CreationWizard — create-success navigation", () => {
       character: CharacterData;
       session: { grantBundleChoices?: Record<string, string> };
     };
-    expect(created.character.classes[0]?.weaponMasteries).toHaveLength(3);
+    expect(created.character.classes[0]?.weaponMasteries ?? []).toEqual([]);
     expect(owedClassPicks(created.character, created.session.grantBundleChoices)).toEqual(
-      []
+      expect.arrayContaining([
+        { classId: "fighter", pick: "weaponMasteries", owed: 3 },
+        { classId: "fighter", pick: "fightingStyles", owed: 1 },
+      ])
     );
   });
 

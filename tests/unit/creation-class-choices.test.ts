@@ -11,7 +11,11 @@ import { collectGrantBundles } from "@/lib/feature-choices";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { getFeaturesAtLevel } from "@/data/classes";
 import { buildNewCharacter } from "@/lib/creation/build";
-import { owedClassPicks } from "@/lib/owed-class-picks";
+import {
+  applyOwedClassPicks,
+  classPickPool,
+  owedClassPicks,
+} from "@/lib/owed-class-picks";
 import {
   creationDraftReducer,
   creationFacts,
@@ -124,32 +128,50 @@ describe("the class's level-1 choices at creation", () => {
     expect(expertise("rogue", 6)).toBe(4);
   });
 
-  it("a draft with no class picks builds a Bard 9 the sheet then asks 4 Expertise", () => {
-    // Without `setClassPick` or `fillReadyMade` a Bard made at 9 has no skill at
-    // Expertise, and «Choices to finish» asks the table's 4. (The classic form now
-    // fills them before it builds: creation-navigate.test.tsx.)
-    const classic = apply(
-      initialCreationDraft(),
-      { type: "setName", name: "Lia" },
-      { type: "selectClass", classId: "bard" },
-      { type: "setLevel", level: 9 },
-      { type: "setSubclass", subclassId: "college-of-lore" },
-      { type: "selectBackground", backgroundId: "soldier" },
-      { type: "selectRace", raceId: "dwarf" },
-      { type: "toggleClassSkill", skillId: "performance" },
-      { type: "toggleClassSkill", skillId: "persuasion" },
-      { type: "toggleClassSkill", skillId: "insight" }
-    );
-    const built = buildNewCharacter(classic, { displayName: "Player" });
-    if (!built.ok) throw new Error(`build failed: ${JSON.stringify(built.error)}`);
-    const character = built.payload.character;
-    expect(Object.values(character.skills).filter((v) => v === "expertise")).toEqual([]);
-    expect(owedClassPicks(character)).toContainEqual({
-      classId: "bard",
-      pick: "expertise",
-      owed: 4,
+  // The classic form never fills the class picks (owner decision, #1397): a Bard made
+  // at 9+ or a Rogue at 6+ has no skill at Expertise, «Choices to finish» asks the
+  // table's 4 (two grants of two), and answering stores all four.
+  for (const [classId, level, subclassId, skills] of [
+    ["bard", 9, "college-of-lore", ["performance", "persuasion", "insight"]],
+    ["rogue", 6, "thief", ["perception", "investigation", "deception", "acrobatics"]],
+  ] as const) {
+    it(`a classic ${classId} ${level} owes 4 Expertise, and the answer stores 4`, () => {
+      const classic = apply(
+        initialCreationDraft(),
+        { type: "setName", name: "Lia" },
+        { type: "selectClass", classId },
+        { type: "setLevel", level },
+        { type: "setSubclass", subclassId },
+        { type: "selectBackground", backgroundId: "soldier" },
+        { type: "selectRace", raceId: "dwarf" },
+        ...skills.map(
+          (skillId): CreationDraftAction => ({ type: "toggleClassSkill", skillId })
+        )
+      );
+      const built = buildNewCharacter(classic, { displayName: "Player" });
+      if (!built.ok) throw new Error(`build failed: ${JSON.stringify(built.error)}`);
+      const character = built.payload.character;
+      const expert = (c: typeof character) =>
+        Object.values(c.skills).filter((v) => v === "expertise");
+      expect(expert(character)).toEqual([]);
+      expect(owedClassPicks(character)).toContainEqual({
+        classId,
+        pick: "expertise",
+        owed: 4,
+      });
+      const answered = applyOwedClassPicks(character, [
+        {
+          classId,
+          pick: "expertise",
+          ids: classPickPool(character, classId, "expertise").slice(0, 4),
+        },
+      ]);
+      expect(expert(answered)).toHaveLength(4);
+      expect(
+        owedClassPicks(answered).find((o) => o.pick === "expertise")
+      ).toBeUndefined();
     });
-  });
+  }
 
   it("a class change drops the class's picks and bundles, never the species'", () => {
     const cleric = apply(readyClass("cleric"), {

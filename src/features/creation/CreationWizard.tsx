@@ -17,8 +17,9 @@
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
  *
  * Neither path asks the class's own picks (Weapon Mastery, a Fighting Style,
- * invocations, Expertise): «Create» makes them the ready-made way (`fillReadyMade`,
- * D&D Beyond's quick build), so a new sheet never owes them; each stays editable.
+ * invocations, Expertise), and «Create» never chooses them for the player: the new
+ * sheet owes them and «Scelte da completare» asks them (D&D Beyond's pattern). Only
+ * a ready-made request (the new screen's, «Creazione rapida») fills them.
  */
 
 import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
@@ -70,7 +71,6 @@ import { QUICKBUILD_PRESETS } from "@/data/quickbuild";
 import { cryptoRng, rollQuickbuildFlavor } from "@/lib/quickbuild-random";
 import {
   activeCreationSteps,
-  creationDraftReducer,
   creationFacts,
   creationStepBlocked,
   missingCreationRequirements,
@@ -317,10 +317,7 @@ export function CreationWizard() {
 
   const handleCreate = useCallback(async () => {
     if (!user) return;
-    const built = buildNewCharacter(
-      creationDraftReducer(draft, { type: "fillReadyMade" }),
-      { displayName: user.displayName }
-    );
+    const built = buildNewCharacter(draft, { displayName: user.displayName });
     if (!built.ok) {
       setError(t(BUILD_ERROR_KEYS[built.error]));
       return;
