@@ -7347,3 +7347,15 @@
 .fui .f-uses > .f-chips {
   display: contents;
 }
+
+/* the DM's monster actions and traits under its line (Scontro) */
+.fui .f-monster-acts {
+  display: grid;
+  gap: 6px;
+  margin: -4px 0 8px;
+}
+@media (min-width: 768px) {
+  .fui .f-monster-acts {
+    margin-left: 56px;
+  }
+}
