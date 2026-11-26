@@ -1692,6 +1692,127 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
     );
   });
 
+  // #1413 — the write chain. A revision number alone cannot tell whose generation a
+  // write builds on: a queued offline save at R+2 passed after another device stored
+  // R+1, silently overwriting it. A chained build write names the write it builds on
+  // (`baseWriteId`) and its own (`writeId`); the stored `writeId` must match the base.
+  describe("the write chain (#1413)", () => {
+    const chained = ["users", "member", "characters", "char-chained"] as const;
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await setDoc(doc(ctx.firestore(), ...chained), {
+          status: "active",
+          build: { name: "Chained" },
+          state: {},
+          cache: {},
+          schema: 3,
+          revision: 3,
+          writeId: "b1",
+          baseWriteId: "b0",
+        });
+      });
+    });
+
+    it("a sheet with no writeId (every live sheet) accepts the first chained write", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, "users", "member", "characters", "char-member");
+      await assertSucceeds(
+        updateDoc(ref, {
+          build: { name: "Mara II" },
+          revision: 4,
+          writeId: "a1",
+          baseWriteId: null,
+        })
+      );
+    });
+
+    it("the right revision on the wrong base is refused (the queued offline save)", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, ...chained);
+      await assertFails(
+        updateDoc(ref, {
+          build: { name: "A's second offline edit" },
+          revision: 4,
+          writeId: "a2",
+          baseWriteId: "a1",
+        })
+      );
+      // Claiming no base on a chained sheet is a wrong base too.
+      await assertFails(
+        updateDoc(ref, {
+          build: { name: "No base" },
+          revision: 4,
+          writeId: "a3",
+          baseWriteId: null,
+        })
+      );
+    });
+
+    it("the right base passes, and still needs exactly revision + 1", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, ...chained);
+      await assertFails(
+        updateDoc(ref, {
+          build: { name: "x" },
+          revision: 5,
+          writeId: "a2",
+          baseWriteId: "b1",
+        })
+      );
+      await assertSucceeds(
+        updateDoc(ref, {
+          build: { name: "x" },
+          revision: 4,
+          writeId: "a2",
+          baseWriteId: "b1",
+        })
+      );
+    });
+
+    it("a new writeId needs a new generation: no chain step without a build step", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, ...chained);
+      await assertFails(
+        updateDoc(ref, { status: "dead", writeId: "a2", baseWriteId: "b1" })
+      );
+    });
+
+    it("an old tab's unchained build write still passes (follow-up: a build write must chain)", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, ...chained);
+      await assertSucceeds(updateDoc(ref, { build: { name: "Old tab" }, revision: 4 }));
+    });
+
+    it("metadata writes leave the chain alone and pass", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, ...chained);
+      await assertSucceeds(updateDoc(ref, { status: "retired" }));
+      await assertSucceeds(updateDoc(ref, { status: "dead", revision: 4 }));
+    });
+
+    it("the DM's detach still passes on a chained sheet", async () => {
+      await testEnv.withSecurityRulesDisabled(async (ctx) => {
+        await updateDoc(
+          doc(ctx.firestore(), "users", "member", "characters", "char-member"),
+          {
+            writeId: "m1",
+            baseWriteId: null,
+          }
+        );
+      });
+      const dm = testEnv.authenticatedContext("dm").firestore();
+      const batch = writeBatch(dm);
+      batch.update(doc(dm, "campaigns", "campA"), {
+        members: arrayRemove("member"),
+        "memberDetails.member": deleteField(),
+      });
+      batch.update(doc(dm, "users", "member", "characters", "char-member"), {
+        attachedCampaignId: deleteField(),
+      });
+      await assertSucceeds(batch.commit());
+    });
+  });
+
   it("a metadata-only write may leave the generation alone OR advance it by exactly one", async () => {
     // A whole-document ceremony (sharing publish, snapshot restore) rewrites the parent
     // with values that often diff to nothing, yet legitimately advances the generation.
@@ -2138,6 +2259,31 @@ describe("firestore.rules — sanitized public character projection", () => {
     await assertSucceeds(getDoc(doc(anon, ...PRIVATE_SHEET)));
     const stored = await getDoc(doc(owner, ...PRIVATE_PARENT));
     expect(stored.data()?.revision).toBe(4);
+  });
+
+  it("a shared sheet's chained save passes with its projection; a wrong base is refused (#1413)", async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), ...SHARED_PARENT), { writeId: "b1" });
+    });
+    const owner = testEnv.authenticatedContext("member").firestore();
+    const nextBuild = { name: "Mara Chained", classes: [{ id: "rogue", level: 6 }] };
+    const save = (baseWriteId: string) => {
+      const batch = writeBatch(owner);
+      batch.update(doc(owner, ...SHARED_PARENT), {
+        build: nextBuild,
+        revision: 4,
+        writeId: "a2",
+        baseWriteId,
+        updatedAt: NEXT_UPDATED_AT,
+      });
+      batch.set(
+        doc(owner, ...PUBLIC_SHEET),
+        publicSheet({ build: nextBuild, sourceUpdatedAt: NEXT_UPDATED_AT })
+      );
+      return batch.commit();
+    };
+    await assertFails(save("a1"));
+    await assertSucceeds(save("b1"));
   });
 
   it("public-relevant parent updates require the matching projection in the same commit", async () => {
