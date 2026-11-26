@@ -122,7 +122,12 @@ import { getBeast } from "@/data/beasts";
 import type { FamiliarCreatureType } from "@/lib/familiar-ids";
 import { concentrationValue } from "@/lib/concentration";
 import { concentrationSaveDc } from "@/lib/compute";
-import { effectiveAC, effectiveMaxHp, withEquipment } from "@/lib/aggregate-character";
+import {
+  effectiveAC,
+  effectiveMaxHp,
+  maxHpBase,
+  withEquipment,
+} from "@/lib/aggregate-character";
 import { baseBundleKey, resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import { endsConcentration } from "@/lib/status";
 import { conditionBreaksConcentration } from "@/lib/condition-effects";
@@ -1161,7 +1166,7 @@ function undoWorldAction(get: () => CharacterState, actionId: string): void {
   const world = characterWorldState(
     doc,
     uid,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );

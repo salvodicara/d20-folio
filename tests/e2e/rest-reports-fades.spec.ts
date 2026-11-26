@@ -2,7 +2,7 @@
  * A Long Rest says what it faded, in a real browser (Italian, dark, desktop and
  * phone): Lyra carries Raise Dead's −4 and a Hit Point maximum reduced by 10; after
  * the rest the summary shows "Penalità di Rianimare Morti: −4 → −3" and "PF massimi
- * ripristinati: 52 → 62", and the action log records both. Review shots land under
+ * ripristinati: 56 → 66", and the action log records both. Review shots land under
  * REVIEW_SHOTS when set, else in the test output.
  */
 import { test, expect } from "@playwright/test";
@@ -57,7 +57,7 @@ for (const size of ["desktop", "mobile"] as const) {
     const row = (label: string) =>
       dialog.locator(".rest-summary-row").filter({ hasText: label });
     await expect(row("Penalità di Rianimare Morti")).toContainText("−4 → −3");
-    await expect(row("PF massimi ripristinati")).toContainText("52 → 62");
+    await expect(row("PF massimi ripristinati")).toContainText("56 → 66");
     await row("PF massimi ripristinati").scrollIntoViewIfNeeded();
     await freezeMotion(page);
     await page.screenshot({ path: shotPath(`summary-${size}.png`) });
@@ -65,6 +65,6 @@ for (const size of ["desktop", "mobile"] as const) {
     await dialog.getByRole("button", { name: "Fatto" }).click();
     const log = page.getByRole("log", { name: "Registro Azioni" });
     await expect(log).toContainText("Rianimare Morti: −3 ai tiri d20");
-    await expect(log).toContainText("PF massimi ripristinati (62)");
+    await expect(log).toContainText("PF massimi ripristinati (66)");
   });
 }

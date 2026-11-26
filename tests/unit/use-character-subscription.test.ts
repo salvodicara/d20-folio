@@ -1594,6 +1594,37 @@ describe("useCharacterSubscription — play writes leave a trace too (#1320)", (
     expect(readUnackedPlay("u1", "char1")).toBeNull();
   });
 
+  it("a later play write that settles first never clears the trace of one still queued", async () => {
+    const { readUnackedPlay } = await import("@/lib/local-draft");
+    // Offline: the first write waits in the queue. The second settles at once, as a
+    // patch with nothing to write does, while the first is still unacknowledged.
+    let ackFirst: () => void = () => {};
+    writeCombatStateMock
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            ackFirst = resolve;
+          })
+      )
+      .mockImplementationOnce(() => Promise.resolve());
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => useCharacterStore.getState().setHP(10));
+    await flushPlayWrite();
+    act(() => useCharacterStore.getState().setHP(9));
+    await flushPlayWrite();
+    await flushPlayWrite();
+    const traced = readUnackedPlay("u1", "char1");
+    expect((traced?.session as { hp: { current: number } } | undefined)?.hp.current).toBe(
+      9
+    );
+    await act(async () => {
+      ackFirst();
+      await Promise.resolve();
+    });
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
+
   it("a reopened tab whose queued play write was refused keeps a whole-sheet copy", async () => {
     const { keepUnackedPlay } = await import("@/lib/local-draft");
     const edited = doc();
@@ -1788,5 +1819,52 @@ describe("useCharacterSubscription — a level-up the server never acknowledged 
     act(() => callbacks?.onSend?.(sent));
     act(() => snapshotCb()(sent));
     expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull();
+  });
+
+  it("offline, a level-up then a play write that settles at once keep both safety copies until the server answers", async () => {
+    const { readUnackedSave, readUnackedPlay } = await import("@/lib/local-draft");
+    // Offline: the level-up and the first play write wait in the queue. The second play
+    // write settles at once, as a patch with nothing to write does.
+    let ackLevelUp: () => void = () => {};
+    sendWholeSheetMock.mockImplementation((_sheet, _source, callbacks) => {
+      callbacks?.onSend?.(5);
+      return new Promise<void>((resolve) => (ackLevelUp = resolve));
+    });
+    let ackPlay: () => void = () => {};
+    writeCombatStateMock
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            ackPlay = resolve;
+          })
+      )
+      .mockImplementationOnce(() => Promise.resolve());
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const writer = useCharacterStore.getState().wholeSheetWriter;
+    if (!writer) throw new Error("no whole-sheet writer");
+    const levelled = { ...doc().character, quote: "level 2" };
+    const written = writer({ character: levelled, session: doc().session }, source);
+    act(() => useCharacterStore.getState().setHP(10));
+    await flushPlayWrite();
+    act(() => useCharacterStore.getState().setHP(9));
+    await flushPlayWrite();
+    await flushPlayWrite();
+    // Nothing acknowledged yet: both copies stay.
+    expect(readUnackedSave("u1", "char1")).toMatchObject({ revision: 5, whole: true });
+    expect(
+      (readUnackedPlay("u1", "char1")?.session as { hp: { current: number } } | undefined)
+        ?.hp.current
+    ).toBe(9);
+    // The queue drains in order: each copy goes only with its own acknowledgement.
+    ackLevelUp();
+    await written;
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    expect(readUnackedPlay("u1", "char1")).not.toBeNull();
+    await act(async () => {
+      ackPlay();
+      await Promise.resolve();
+    });
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
   });
 });

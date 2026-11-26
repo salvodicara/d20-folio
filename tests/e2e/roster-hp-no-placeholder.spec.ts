@@ -11,15 +11,15 @@
  *
  * THE FAITHFUL REPRO: the dev-only `d20-dev-hp-hydrate-delay` flag drives the REAL prod
  * sequence in a real browser — the tile first paints the full-HP placeholder, then its
- * real (wounded 38/62) combat state folds in after a delay through the ACTUAL
+ * real (wounded 38/66) combat state folds in after a delay through the ACTUAL
  * `applyCombatToRosterDoc` + `combatStates[id]` seam (see `useCharacters.ts`). We sample
  * the wounded tile's `.ch-hp .hp-fill` geometry + running animations every animation
  * frame from navigation through the fold.
  *
  * THE ASSERTIONS (all hold WITH the fix; #3/#4/#5 FAIL on the unfixed roster card,
- * where the fill is always painted and slides 100%→61% with a running width transition):
+ * where the fill is always painted and slides 100%→58% with a running width transition):
  *   1. the wounded tile's HP track renders;
- *   2. the fill eventually paints at the REAL width (~61%);
+ *   2. the fill eventually paints at the REAL width (~58%);
  *   3. the fill is NEVER wider than the real width + ε on ANY frame (no full-HP frame);
  *   4. NO running animation is ever observed on the fill (no width slide);
  *   5. the fill's FIRST painted frame is already at the real width (first-paint-correct).
@@ -48,8 +48,8 @@ declare global {
   }
 }
 
-/** The mock hero is 38/62 → the roster paints `round(38/62*100) = 61%`. */
-const REAL_RATIO = 0.61;
+/** The mock hero is 38/66 → the roster paints `round(38/66*100) = 58%`. */
+const REAL_RATIO = 0.58;
 const EPS = 0.05;
 /** Sampler runtime PAST THE TRACK'S FIRST PAINT — well past the 600 ms hydrate delay +
  *  the 240 ms width transition. Anchored to the first frame where `.ch-hp .hp-bar` is
@@ -152,7 +152,7 @@ test.describe("roster HP fill — no full-HP placeholder slide", () => {
     expect(maxRatio).toBeLessThanOrEqual(REAL_RATIO + EPS);
 
     // (4) NO running animation is EVER observed on the fill — the width never slides.
-    //     On the unfixed card the 100%→61% width transition runs ⇒ maxFillAnims ≥ 1.
+    //     On the unfixed card the 100%→58% width transition runs ⇒ maxFillAnims ≥ 1.
     expect(maxAnims).toBe(0);
 
     // (5) FIRST-PAINT-CORRECT: the very first painted fill is already the real width.

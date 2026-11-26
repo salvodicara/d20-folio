@@ -73,7 +73,7 @@ for (const locale of ["en", "it"] as const) {
           dialog.getByRole("status", {
             name: locale === "en" ? "HP after rest" : "PF dopo il riposo",
           })
-        ).toHaveText(`${before.hp.current} → ${after.hp.current} / 62`);
+        ).toHaveText(`${before.hp.current} → ${after.hp.current} / 66`);
         expect(await savedRestState(page)).toEqual(before);
         await expect(confirm).toBeInViewport();
         const bounds = await add.boundingBox();

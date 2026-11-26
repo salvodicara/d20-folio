@@ -4,6 +4,7 @@
  * regain Hit Points equal to 5 plus your Constitution modifier if you are Bloodied and
  * have at least 1 Hit Point». The player applies it in one tap; it is never automatic.
  */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { TFunction } from "i18next";
 
@@ -15,16 +16,17 @@ import { makeCharacterDoc } from "./_helpers";
 const t = ((key: string) => key) as unknown as TFunction;
 
 /** A level-18 Champion with CON 14 (+2) and 100 maximum HP, at `hp` Hit Points. */
-const champion = (hp: number) =>
-  makeCharacterDoc(
+const champion = (hp: number) => {
+  const doc = makeCharacterDoc(
     {
       classes: [{ classId: "fighter", level: 18, subclassId: "champion" }],
       abilityScores: { STR: 18, DEX: 12, CON: 14, INT: 10, WIS: 10, CHA: 10 },
       features: [{ srdId: "fighter-champion-survivor" }],
-      hp: { max: 100 },
     },
     { hp: { current: hp, temp: 0 } }
   );
+  return { ...doc, character: withMaxHpEdit(doc.character, 100) };
+};
 
 describe("turnStartNotes", () => {
   it("Bloodied with HP left: Heroic Rally offers 5 + CON = 7", () => {

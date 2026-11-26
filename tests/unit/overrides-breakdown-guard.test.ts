@@ -2,7 +2,8 @@
  * Overrides are always possible and stay explained (owner direction, row 13). Every
  * number `sheetNumbers` lists can be set by hand, and a hand-set number keeps its
  * explanation: the computed parts, then ONE "manual adjustment" part for the
- * difference, so the parts still sum to the number the sheet shows. Cases come from
+ * difference, so the parts still sum to the number the sheet shows (for max HP that
+ * part is the stored correction, #1334). Cases come from
  * every dev scenario; a new sheet number without an override path fails here (the
  * table below is typed over every key of `SheetNumbers`, and the keys are compared
  * at run time too).
@@ -10,7 +11,11 @@
 import { describe, expect, it } from "vitest";
 
 import { DEV_SCENARIOS, buildDevScenario } from "@/lib/dev-scenarios";
-import { computeCharacterMaxHp } from "@/lib/aggregate-character";
+import {
+  computeCharacterMaxHp,
+  maxHpWithoutBonus,
+  withMaxHpEdit,
+} from "@/lib/aggregate-character";
 import { exhaustionPenalty } from "@/lib/compute";
 import {
   actionSaveDc,
@@ -115,11 +120,11 @@ const CASES: Record<keyof N, (doc: CharacterDoc) => Case[]> = {
   ],
   maxHp: () => [
     {
-      // The stored max IS the hand-set value; the live boons and a Life Drain still
-      // apply on top, exactly as the sheet shows them.
+      // The hand edit (#1315/#1334) stores its input, the bonus over the derived max:
+      // the one «Manual adjustment» row; the live boons and a Life Drain apply on top.
       name: "maxHp",
       read: (n) => n.maxHp,
-      pin: (d, v) => withChar(d, { hp: { ...d.character.hp, max: v } }),
+      pin: (d, v) => ({ ...d, character: withMaxHpEdit(d.character, v) }),
       shown: (pinned) => deriveCharacter(pinned).hp.max,
       // Off the by-the-book max, whatever the scenario stores.
       value: (d) => computeCharacterMaxHp(d.character) + 3,
@@ -245,16 +250,15 @@ describe("every sheet number can be set by hand and stays explained", () => {
     }
   );
 
-  it("a stored max HP off the by-the-book average reads as a manual adjustment", () => {
-    const entry = docs.find(([, d]) => computeCharacterMaxHp(d.character) > 1);
+  it("a max HP set 4 below the derived one reads as a −4 manual adjustment", () => {
+    const entry = docs.find(([, d]) => computeCharacterMaxHp(d.character) > 10);
     if (!entry) throw new Error("no scenario");
     const doc = entry[1];
-    const computed = computeCharacterMaxHp(doc.character);
-    const n = sheetNumbers(withChar(doc, { hp: { max: computed - 4 } }));
-    expect(n.maxHp.parts?.at(-1)).toEqual({
-      label: { term: OVERRIDE_TERM },
-      value: -4,
-    });
+    const edited = withMaxHpEdit(doc.character, maxHpWithoutBonus(doc.character) - 4);
+    const n = sheetNumbers({ ...doc, character: edited });
+    expect(n.maxHp.parts?.filter((p) => isOverridePart(p))).toEqual([
+      { label: { term: OVERRIDE_TERM }, value: -4 },
+    ]);
   });
 });
 

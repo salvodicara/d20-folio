@@ -3,6 +3,7 @@
  * before and the one the commit would save (never a second computation), as
  * numbers that move and the things it gains.
  */
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { describe, expect, it } from "vitest";
 
 import { classTables } from "@/data/classes";
@@ -53,7 +54,7 @@ describe("levelUpReview", () => {
     const row = (id: string) => review.numbers.find((r) => r.id === id);
 
     expect(row("hp")).toMatchObject({
-      before: before.character.hp.max,
+      before: deriveMaxHp(before.character),
       after: after.character.hp.max,
     });
     expect(after.character.hp.max).toBeGreaterThan(before.character.hp.max);

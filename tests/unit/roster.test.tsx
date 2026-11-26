@@ -262,7 +262,7 @@ describe("CharacterCard", () => {
     expect(container.querySelector(".ch-hp .hp-fill")).toBeNull();
     expect(container.querySelector(".ch-hp-label .hl-num")?.textContent).toBe("—");
 
-    // Once hydrated the fill MOUNTS at the REAL width (Lyra is 38/62 → 61%) and the
+    // Once hydrated the fill MOUNTS at the REAL width (Lyra is 38/66 → 58%) and the
     // number reads the real value — a fresh mount, never a transition from a placeholder.
     rerender(
       <MemoryRouter>
@@ -271,8 +271,8 @@ describe("CharacterCard", () => {
     );
     const fill = container.querySelector(".ch-hp .hp-fill");
     expect(fill).toBeTruthy();
-    expect((fill as HTMLElement).style.getPropertyValue("--w")).toBe("61%");
-    expect(container.querySelector(".ch-hp-label .hl-num")?.textContent).toBe("38 / 62");
+    expect((fill as HTMLElement).style.getPropertyValue("--w")).toBe("58%");
+    expect(container.querySelector(".ch-hp-label .hl-num")?.textContent).toBe("38 / 66");
   });
 
   it("dims a non-active character, drops the HP bar, and flags a fallen hero", () => {

@@ -7,6 +7,7 @@
  * erase the newer change.
  */
 
+import { maxHpBase } from "@/lib/aggregate-character";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { restThroughWorld } from "@/features/character/rest-world-boundary";
@@ -84,7 +85,7 @@ describe("undoing a rest", () => {
 
     expect(restThroughWorld("long")).toBe("engine");
     const rested = live();
-    expect(rested.session.hp.current).toBe(rested.character.hp.max);
+    expect(rested.session.hp.current).toBe(maxHpBase(rested.character, rested.session));
     expect(rested.session.exhaustion).toBe(2);
     expect(isWishStressed(rested.session)).toBe(false);
     const restLines = rested.session.logEntries

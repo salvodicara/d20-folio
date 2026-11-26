@@ -22,7 +22,7 @@ import {
 } from "@/lib/polymorph";
 import { CREATURE_SIZE_ORDER, type AbilityCode } from "@/data/types";
 import { DAMAGE_TYPES } from "@/types/damage";
-import { effectiveAC } from "@/lib/aggregate-character";
+import { effectiveAC, withMaxHpEdit } from "@/lib/aggregate-character";
 import { resolveActions } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
 import { useCharacterStore } from "@/stores/characterStore";
@@ -369,7 +369,9 @@ describe("C2 — depleting the Beast Temp HP ends the form (no CON maintenance s
   });
 
   it("exactly-N damage to a form with N Temp HP ends the form, restores the body, NO CON-save toast", () => {
-    const doc = makeCharacterDoc({ classId: "druid", level: 5 });
+    const stub = makeCharacterDoc({ classId: "druid", level: 5 });
+    // #1334 — the max is derived at read: 44 is a hand edit over the derived 38.
+    const doc = { ...stub, character: withMaxHpEdit(stub.character, 44) };
     doc.session.hp.current = 44;
     const bodyScores = { ...doc.character.abilityScores };
     const bodyAc = doc.character.acOverride ?? null;

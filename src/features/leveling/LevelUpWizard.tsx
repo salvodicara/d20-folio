@@ -166,7 +166,7 @@ import { SpellLevelSeal } from "@/features/wizard/seals";
 import { togglePick } from "@/features/wizard/pick-utils";
 import type { AbilityCode } from "@/data/types";
 import { levelUp, type LevelUpChange } from "@/lib/level-up";
-import { deriveMaxHp } from "@/lib/aggregate-character";
+import { deriveMaxHp, maxHpBase } from "@/lib/aggregate-character";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -603,6 +603,8 @@ export function LevelUpWizard() {
     }
     return projectedCon;
   })();
+  // #1334 — the max the player sees now, derived at read (never the stored number).
+  const currentMaxHp = character && charData ? maxHpBase(charData, character.session) : 0;
   // #1315 — the preview is the max the commit will DERIVE (the advancing class's die,
   // the species and feat per-level grants, the projected CON), never a hand sum.
   const previewMaxHp = (() => {
@@ -617,10 +619,10 @@ export function LevelUpWizard() {
         abilityScores: { ...up.abilityScores, CON: projectedCon },
       });
     } catch {
-      return charData.hp.max;
+      return currentMaxHp;
     }
   })();
-  const resolvedHpGain = charData ? previewMaxHp - charData.hp.max : 0;
+  const resolvedHpGain = charData ? previewMaxHp - currentMaxHp : 0;
 
   // ── early exits ────────────────────────────────────────────────────────────
   if (isLoading || !character || !charData) {
@@ -687,7 +689,7 @@ export function LevelUpWizard() {
         level: newLevel,
         classId,
         classLevel: newClassLevel,
-        hpGained: updated.hp.max - charData.hp.max,
+        hpGained: updated.hp.max - currentMaxHp,
       };
       // The level-up is APPLIED: the leave guard must not re-prompt while the
       // celebration shows / its CTA navigates. The ceremony NEVER auto-
@@ -925,7 +927,7 @@ export function LevelUpWizard() {
             manualHpGain={manualHpGain}
             onUseAverage={setUseAverage}
             onManualHpGain={setManualHpGain}
-            hpFrom={charData.hp.max}
+            hpFrom={currentMaxHp}
             hpTo={previewMaxHp}
             fork={
               forkAvailable ? (
@@ -1591,7 +1593,7 @@ export function LevelUpWizard() {
                     step: "hp",
                     label: t("levelUp.stepHp"),
                     value: t("levelUp.hpWillGain", {
-                      current: charData.hp.max,
+                      current: currentMaxHp,
                       next: previewMaxHp,
                     }),
                     tnum: true,

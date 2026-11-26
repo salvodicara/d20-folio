@@ -30,7 +30,7 @@ import { isValidItemInstanceId } from "@/lib/resources";
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import { classEntryLevel, totalLevel } from "@/lib/classes";
-import { aggregateCharacterGrants } from "@/lib/aggregate-character";
+import { aggregateCharacterGrants, maxHpBase } from "@/lib/aggregate-character";
 import {
   effectiveSpellAttackBonus,
   resolveCastingModifier,
@@ -333,7 +333,7 @@ export function buildCompanionCardViews(
   for (const ref of charData.spells) {
     if ("srdId" in ref) spellIds.add(ref.srdId);
   }
-  const ownerMaxHp = charData.hp.max + agg.hpFlat;
+  const ownerMaxHp = maxHpBase(charData, doc.session) + agg.hpFlat;
   // A non-Concentration spell's creature is on the field once summoned (M6): its
   // `summons` record, at the level it was cast with. A session written before
   // summons were recorded keeps the older rule (prepared = shown).

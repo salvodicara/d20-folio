@@ -15,6 +15,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useCharacterStore } from "@/stores/characterStore";
 import { MOCK_CHARACTER } from "@/lib/mock";
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import type { CombatEvent } from "@/types/combat-log";
 import { conc } from "./__helpers__/concentration";
 
@@ -24,7 +25,7 @@ function load(overrides?: Partial<(typeof MOCK_CHARACTER)["session"]>): void {
   doc.session.concentration = "";
   doc.session.conditions = [];
   doc.session.hp = { current: 30, temp: 0 };
-  doc.character.hp = { ...doc.character.hp, max: 40 };
+  doc.character = withMaxHpEdit(doc.character, 40);
   doc.session.deathSucc = 0;
   doc.session.deathFail = 0;
   if (overrides) Object.assign(doc.session, overrides);
