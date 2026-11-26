@@ -43,6 +43,7 @@ describe("DmHitDialog", () => {
     const onShow = vi.fn();
     const onTempHp = vi.fn();
     const onRemove = vi.fn();
+    const onCard = vi.fn();
     render(
       <DmHitDialog
         targets={targets}
@@ -52,10 +53,11 @@ describe("DmHitDialog", () => {
         onShow={onShow}
         onTempHp={onTempHp}
         onRemove={onRemove}
+        onCard={onCard}
         onClose={() => {}}
       />
     );
-    return { onHit, onCondition, onShow, onTempHp, onRemove };
+    return { onHit, onCondition, onShow, onTempHp, onRemove, onCard };
   };
 
   it("hits the chosen creatures with the typed amount, leaving out a dropped one", () => {
@@ -153,5 +155,16 @@ describe("DmHitDialog", () => {
       expect(screen.queryByRole("button", { name: "Temporary HP" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Remove from the fight" })).toBeNull();
     });
+  });
+
+  it("a lone monster opens its card", () => {
+    const { onCard } = open([goblin(1)]);
+    fireEvent.click(screen.getByRole("button", { name: "Monster card" }));
+    expect(onCard).toHaveBeenCalledWith(goblin(1));
+  });
+
+  it("no card for several creatures at once", () => {
+    open([goblin(1), goblin(2)]);
+    expect(screen.queryByRole("button", { name: "Monster card" })).toBeNull();
   });
 });
