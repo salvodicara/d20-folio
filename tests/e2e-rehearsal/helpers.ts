@@ -256,6 +256,26 @@ export async function ownerCurrentHp(id: string): Promise<number | null> {
   return value === undefined ? null : Number(value);
 }
 
+/**
+ * Wait until a freshly built character is stored, and return its stored HP.
+ *
+ * The builder opens the new sheet before its create write lands (the create is
+ * offline-first and not awaited), so a single read right after `quickBuild` can find
+ * nothing. The parent and `combat/state` are one atomic batch: once the HP is
+ * stored, both documents are.
+ */
+export async function waitForStoredCharacter(id: string): Promise<number> {
+  await expect
+    .poll(() => ownerCurrentHp(id), {
+      message: `the new character ${id} reaches the emulator (combat/state HP)`,
+      timeout: 30_000,
+    })
+    .not.toBeNull();
+  const hp = await ownerCurrentHp(id);
+  if (hp === null) throw new Error(`no stored HP for ${id}`);
+  return hp;
+}
+
 /** A string field of an owner's character build (`build.<field>`), or null. */
 export async function ownerBuildString(
   id: string,

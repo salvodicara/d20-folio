@@ -19,6 +19,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
+import { useCampaignsReadStore } from "@/features/campaigns/campaigns-read";
 import { useEffect, useRef } from "react";
 import { useToastStore } from "@/stores/toastStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -750,6 +751,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // A server snapshot in a shape this client knows: a held refusal was an ordinary
         // conflict (#1203), not a newer shape.
         if (!meta.hasPendingWrites) refusedPayloadRef.current = null;
+        // Whether this character is in a campaign (#1217): solo play never waits for a
+        // campaigns read that keeps failing.
+        if (typeof meta.attached === "boolean")
+          useCampaignsReadStore.getState().setAttachment(characterId, meta.attached);
         reconciler.receiveParent(doc, meta);
         publishResolvedPair();
       },

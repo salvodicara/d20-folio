@@ -193,3 +193,25 @@ it("a stored max that differs from the derived one counts as hand-set too (as it
   setNumberOverride({ kind: "maxHp" }, null, "HP");
   expect(live().character.hp.max).toBe(deriveMaxHp(live().character));
 });
+
+describe("passive scores", () => {
+  it("a hand-set passive is stored in its own field and is the sheet's passive; reset clears it", () => {
+    load();
+    setNumberOverride({ kind: "passive", id: "perception" }, 18, "PP");
+    expect(live().character.passivePerceptionOverride).toBe(18);
+    expect(storedOverride(live().character, { kind: "passive", id: "perception" })).toBe(
+      18
+    );
+    expect(sheetNumbers(live()).passives.perception.total).toBe(18);
+    setNumberOverride({ kind: "passive", id: "perception" }, null, "PP");
+    expect(live().character.passivePerceptionOverride).toBeNull();
+  });
+
+  it("insight and investigation write their own fields", () => {
+    load();
+    setNumberOverride({ kind: "passive", id: "insight" }, 14, "PI");
+    setNumberOverride({ kind: "passive", id: "investigation" }, 9, "PV");
+    expect(live().character.passiveInsightOverride).toBe(14);
+    expect(live().character.passiveInvestigationOverride).toBe(9);
+  });
+});
