@@ -11,6 +11,7 @@ import i18n from "@/i18n";
 import { buildScenario, DEV_SCENARIOS, type ScenarioSpec } from "@/lib/dev-scenarios";
 import { buildCharacterPdfViewModel } from "@/lib/pdf/character-pdf-view";
 import { renderCharacterPdf } from "@/lib/pdf/character-pdf";
+import { P1 } from "@/lib/pdf/sheet-geometry";
 import type { CharacterDoc } from "@/types/character";
 
 const base: ScenarioSpec = (() => {
@@ -88,38 +89,99 @@ describe("PDF Hit Dice line", () => {
 });
 
 describe("PDF Hit Dice box", () => {
-  /** The size and width the renderer draws the Hit Dice line at. */
-  async function drawn(doc: CharacterDoc): Promise<{ size: number; width: number }> {
+  // The Hit Dice column: 47pt between its two dividers, the dice between the
+  // title's hairline and the "max" caption.
+  const cb = P1.combat;
+  const x0 = cb.x + 112;
+  const BOX = 47;
+  const LEGIBLE = 8;
+
+  /** Every line drawn in the dice slot of the Hit Dice column, top to bottom. */
+  async function drawn(
+    doc: CharacterDoc
+  ): Promise<{ text: string; size: number; width: number }[]> {
     const vm = buildCharacterPdfViewModel(doc, "en", i18n.getFixedT("en"));
     const spy = vi.spyOn(PDFPage.prototype, "drawText");
     try {
       await renderCharacterPdf(vm);
-      const call = spy.mock.calls.find(([s]) => s === vm.combat.hitDice);
-      if (!call?.[1]?.font || !call[1].size) throw new Error("Hit Dice line not drawn");
-      return {
-        size: call[1].size,
-        width: call[1].font.widthOfTextAtSize(vm.combat.hitDice, call[1].size),
-      };
+      return spy.mock.calls
+        .flatMap(([text, o]) =>
+          o?.font &&
+          o.size &&
+          o.x !== undefined &&
+          o.y !== undefined &&
+          o.x >= x0 &&
+          o.x <= x0 + BOX &&
+          o.y > cb.y + 28 &&
+          o.y < cb.y + 56
+            ? [
+                {
+                  text,
+                  y: o.y,
+                  size: o.size,
+                  width: o.font.widthOfTextAtSize(text, o.size),
+                },
+              ]
+            : []
+        )
+        .sort((a, b) => b.y - a.y)
+        .map(({ text, size, width }) => ({ text, size, width }));
     } finally {
       spy.mockRestore();
     }
   }
 
-  // The Hit Dice column is 47pt between its two dividers.
-  const BOX = 47;
-
-  it("a single class keeps the full-size line", async () => {
-    expect((await drawn(build([["fighter", 6]]))).size).toBe(13);
+  it("a single class keeps one full-size line", async () => {
+    const lines = await drawn(build([["fighter", 6]]));
+    expect(lines.map((l) => [l.text, l.size])).toEqual([["6d10", 13]]);
   });
 
-  it("four die sizes still fit between the dividers", async () => {
-    const doc = build([
-      ["barbarian", 2],
-      ["fighter", 2],
-      ["cleric", 2],
-      ["wizard", 2],
-    ]);
-    expect(hitDice(doc)).toBe("2d12 + 2d10 + 2d8 + 2d6");
-    expect((await drawn(doc)).width).toBeLessThan(BOX);
-  });
+  it.each([
+    [
+      "two die types stay on one line",
+      [
+        ["wizard", 1],
+        ["fighter", 5],
+      ],
+      ["5d10 + 1d6"],
+    ],
+    [
+      "three die types split over two lines",
+      [
+        ["barbarian", 2],
+        ["fighter", 2],
+        ["wizard", 2],
+      ],
+      ["2d12 + 2d10", "2d6"],
+    ],
+    [
+      "three die types with a high-level class split over two lines",
+      [
+        ["barbarian", 17],
+        ["fighter", 2],
+        ["wizard", 1],
+      ],
+      ["17d12 + 2d10", "1d6"],
+    ],
+    [
+      "four die types split over two lines",
+      [
+        ["barbarian", 2],
+        ["fighter", 2],
+        ["cleric", 2],
+        ["wizard", 2],
+      ],
+      ["2d12 + 2d10", "2d8 + 2d6"],
+    ],
+  ] as [string, [string, number][], string[]][])(
+    "%s, legible and inside the box",
+    async (_name, classes, expected) => {
+      const lines = await drawn(build(classes));
+      expect(lines.map((l) => l.text)).toEqual(expected);
+      for (const line of lines) {
+        expect(line.size).toBeGreaterThanOrEqual(LEGIBLE);
+        expect(line.width).toBeLessThan(BOX);
+      }
+    }
+  );
 });

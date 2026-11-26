@@ -505,9 +505,30 @@ function drawCombatBox(page: PDFPage, fonts: Fonts, vm: CharacterPdfViewModel): 
   // HIT DICE — max over spent (bottom-anchored, aligned with HP fields)
   {
     const { cx } = subTitle(vm.labels.hitDice, sepX1, sepX2, 7);
-    // A multiclass pool ("5d10 + 1d6") shrinks to stay between the dividers.
-    const size = fitSize(fonts.sansBold, vm.combat.hitDice, 13, sepX2 - sepX1 - 6);
-    textCenter(page, vm.combat.hitDice, cx, cb.y + 33, fonts.sansBold, size);
+    // One or two die sizes ("5d10 + 1d6") shrink to stay between the dividers;
+    // three or more split over two lines ("2d12 + 2d10" over "2d8 + 2d6") so the
+    // dice stay legible on paper.
+    const groups = vm.combat.hitDice.split(" + ");
+    const half = Math.ceil(groups.length / 2);
+    const lines =
+      groups.length >= 3
+        ? [groups.slice(0, half).join(" + "), groups.slice(half).join(" + ")]
+        : [vm.combat.hitDice];
+    const maxW = sepX2 - sepX1 - 6;
+    const size = Math.min(
+      lines.length > 1 ? 10 : 13,
+      ...lines.map((ln) => fitSize(fonts.sansBold, ln, 13, maxW))
+    );
+    lines.forEach((ln, i) =>
+      textCenter(
+        page,
+        ln,
+        cx,
+        cb.y + 33 + (lines.length - 1 - i) * size * 1.15,
+        fonts.sansBold,
+        size
+      )
+    );
     captionCenter(page, fonts, vm.labels.max, cx, cb.y + 25, 5.5);
     textCenter(page, String(vm.hitDiceUsed), cx, cb.y + 13, fonts.sansBold, 11);
     captionCenter(page, fonts, vm.labels.spent, cx, cb.y + 5, 5.5);
