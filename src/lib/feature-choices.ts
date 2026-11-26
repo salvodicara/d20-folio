@@ -177,6 +177,27 @@ export function collectGrantBundles(
   return out;
 }
 
+/**
+ * The chosen option of each `choice-grant-bundle` in `sources`, as a source of its
+ * own (`<source id>:<option id>`), so its choices (Thaumaturge's extra cantrip) are
+ * collected and the picks it stores name that option (`grantedBy`).
+ */
+export function chosenBundleSources(
+  sources: ReadonlyArray<GrantSource>,
+  bundleChoices: Readonly<Record<string, string>>
+): GrantSource[] {
+  return sources.flatMap((src) =>
+    (src.grants ?? []).flatMap((g) => {
+      if (g.type !== "choice-grant-bundle") return [];
+      const optionId = bundleChoices[g.bundleKey];
+      const option = g.options.find((o) => o.id === optionId);
+      return option
+        ? [{ ...src, id: `${src.id}:${option.id}`, grants: option.grants }]
+        : [];
+    })
+  );
+}
+
 export function collectChoiceSlots(
   sources: ReadonlyArray<GrantSource>,
   ctx?: SpellChoiceCtx,
@@ -187,14 +208,7 @@ export function collectChoiceSlots(
   if (bundleChoices) {
     sources = sources.flatMap((src) => [
       src,
-      ...(src.grants ?? []).flatMap((g) => {
-        if (g.type !== "choice-grant-bundle") return [];
-        const optionId = bundleChoices[g.bundleKey];
-        const option = g.options.find((o) => o.id === optionId);
-        return option
-          ? [{ ...src, id: `${src.id}:${option.id}`, grants: option.grants }]
-          : [];
-      }),
+      ...chosenBundleSources([src], bundleChoices),
     ]);
   }
   const out: FeatureChoiceSlots = {
