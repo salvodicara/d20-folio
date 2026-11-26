@@ -15,7 +15,11 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { playNumberView, type SheetNumberKey } from "@/domains/play/play-number-view";
+import {
+  PASSIVE_LABEL,
+  playNumberView,
+  type SheetNumberKey,
+} from "@/domains/play/play-number-view";
 import { renderBreakdownLineLabel } from "@/components/shared/breakdown-line";
 import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
@@ -49,7 +53,10 @@ export function PlayNumberPane({
   const [draft, setDraft] = useState(view.stored === null ? "" : toInput(view.stored));
   const name = numberName(numberKey, t);
   const shown =
-    numberKey.kind === "ac" || numberKey.kind === "ability" || numberKey.kind === "maxHp"
+    numberKey.kind === "ac" ||
+    numberKey.kind === "ability" ||
+    numberKey.kind === "maxHp" ||
+    numberKey.kind === "passive"
       ? String(view.total)
       : speed
         ? localeDistance(view.total, locale)
@@ -185,6 +192,8 @@ function numberTerm(key: SheetNumberKey): GlossaryTermId {
       return "savingThrow";
     case "skill":
       return "skillCheck";
+    case "passive":
+      return "passiveScore";
   }
 }
 
@@ -209,5 +218,7 @@ function numberName(
       return `${t("abilities.savingThrowHead")} · ${t(`abilities.${key.ability}`)}`;
     case "skill":
       return t(`skills.${key.id}`);
+    case "passive":
+      return t(PASSIVE_LABEL[key.id]);
   }
 }
