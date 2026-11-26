@@ -9,23 +9,12 @@ import { useTranslation } from "react-i18next";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";
 import { Select } from "@/components/shared/Select";
+import { CUSTOM_SPELL_CASTING_TIMES } from "@/domains/spells/custom-spell";
 import { castingTimeI18nKey } from "@/lib/utils";
 import type { CustomSpell } from "@/types/character";
 import { useLocale } from "@/hooks/useLocale";
 import type { HomebrewText } from "@/lib/homebrew-text";
 import { editHomebrewText, homebrewText } from "@/lib/views/homebrew-text-view";
-
-/** The same casting-time option tokens the creation form offers (stable ids). */
-const CASTING_TIMES = [
-  "action",
-  "bonus",
-  "reaction",
-  "1 minute",
-  "10 minutes",
-  "1 hour",
-  "8 hours",
-  "24 hours",
-] as const;
 
 /** Conform a stored casting time to its option token ("bonus action" → "bonus"). */
 function castingTimeOption(raw: string): string {
@@ -113,7 +102,7 @@ export function CustomSpellEditForm({
             defaultValue={castingTimeOption(spell.castingTime)}
             onChange={(e) => onUpdateField("castingTime", e.target.value)}
           >
-            {CASTING_TIMES.map((ct) => (
+            {CUSTOM_SPELL_CASTING_TIMES.map((ct) => (
               <option key={ct} value={ct}>
                 {t(`srd.castingTime_${ct}`)}
               </option>

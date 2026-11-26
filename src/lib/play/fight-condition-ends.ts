@@ -46,18 +46,33 @@ export function conditionEndsOf(
   return action?.conditionApplication?.ends ?? [];
 }
 
-/** The fight's condition effects that can end early or ask for a repeat save. */
+/** How a spell's own effect on a target ends early when it imposes no condition
+ *  (Slow's WIS repeat save): the spell's `effectEnds`. */
+export function effectEndsOf(
+  source: Pick<ActiveCombatEffect["source"], "kind" | "id">
+): ReadonlyArray<ConditionEnd> {
+  return source.kind === "spell" ? (getSpellById(source.id)?.effectEnds ?? []) : [];
+}
+
+/** The fight's condition effects that can end early or ask for a repeat save, and
+ *  the spell states on a target that do the same with no condition (Slow). */
 export function sourcedFightConditions(
   effectOps: ReadonlyArray<CombatEffectOp> | undefined
 ): SourcedCondition[] {
   return foldCombatEffectOps(effectOps).flatMap((effect) => {
-    if (effect.payload.kind !== "condition") return [];
-    const ends = conditionEndsOf(effect.source, effect.payload.conditionId);
+    const conditionId =
+      effect.payload.kind === "condition" ? effect.payload.conditionId : undefined;
+    const ends =
+      conditionId !== undefined
+        ? conditionEndsOf(effect.source, conditionId)
+        : effect.payload.kind === "grant-group"
+          ? effectEndsOf(effect.source)
+          : [];
     if (ends.length === 0) return [];
     return [
       {
         id: effect.id,
-        conditionId: effect.payload.conditionId,
+        ...(conditionId !== undefined ? { conditionId } : {}),
         targetId: effect.target.combatantId,
         actorId: effect.actor.combatantId,
         ...(effect.bindings?.saveDc !== undefined
@@ -179,6 +194,11 @@ export function fightConditionEnds(
 export function fightActionRepeatSaves(
   effectOps: ReadonlyArray<CombatEffectOp> | undefined,
   combatantId: string
-): DueRepeatSave[] {
-  return actionRepeatSaves(sourcedFightConditions(effectOps), combatantId);
+): Array<DueRepeatSave & { conditionId: string }> {
+  // A condition's only: no spell effect in the catalogue repeats its save with the
+  // target's action, and the attempt's log line names a condition.
+  return actionRepeatSaves(sourcedFightConditions(effectOps), combatantId).filter(
+    (save): save is DueRepeatSave & { conditionId: string } =>
+      save.conditionId !== undefined
+  );
 }

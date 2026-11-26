@@ -11,7 +11,7 @@ import {
   visibleSoloRepeatSaves,
 } from "@/features/character/center/solo-repeat-save-store";
 import { useLocale } from "@/hooks/useLocale";
-import { localizeSrd } from "@/i18n/resolver";
+import { repeatSaveSubject } from "@/domains/combat/repeat-save-copy";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import { useCharacterStore } from "@/stores/characterStore";
 
@@ -33,7 +33,7 @@ export function useSoloRepeatSaveStrips(): SoloRepeatSaveStrip[] {
   const readonly = useCharacterStore((s) => s.readonly);
   if (readonly || !doc) return [];
   return visibleSoloRepeatSaves(saves, doc).map((save) => {
-    const condition = localizeSrd("condition", save.conditionId, "name", locale);
+    const condition = repeatSaveSubject(save, locale);
     const abilityName = t(`abilities.${save.ability}`);
     const values = {
       condition,

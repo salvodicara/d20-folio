@@ -8,11 +8,15 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { classLevelSummary } from "@/lib/views/snapshot-summary";
+import {
+  classLevelSummary,
+  newestFirst,
+  snapshotReasonKey,
+} from "@/lib/views/snapshot-summary";
+import { restoreWithBackup } from "@/lib/snapshot-restore";
 import {
   deleteCharacterSnapshot,
   listCharacterSnapshots,
-  restoreCharacterSnapshot,
   saveCharacterSnapshot,
 } from "@/lib/firestore";
 import type { Locale } from "@/lib/locale";
@@ -47,7 +51,7 @@ export function PlaySnapshots({
     if (!open) return;
     let live = true;
     listCharacterSnapshots(uid, doc.id)
-      .then((l) => live && setList(l))
+      .then((l) => live && setList(newestFirst(l)))
       .catch(() => {
         if (!live) return;
         setError(t("snapshots.loadError"));
@@ -82,7 +86,7 @@ export function PlaySnapshots({
           session: doc.session,
           reason: "manual",
         });
-        setList(await listCharacterSnapshots(uid, doc.id));
+        setList(newestFirst(await listCharacterSnapshots(uid, doc.id)));
       },
       "snapshots.saveError"
     );
@@ -90,14 +94,7 @@ export function PlaySnapshots({
   const restore = async (snap: Snapshot) => {
     const done = await run(
       snap.id,
-      () =>
-        restoreCharacterSnapshot(
-          uid,
-          doc.id,
-          { character: snap.character, session: snap.session },
-          doc.revision,
-          doc
-        ),
+      () => restoreWithBackup(uid, doc, snap),
       "snapshots.restoreError"
     );
     if (!done) return;
@@ -115,12 +112,10 @@ export function PlaySnapshots({
       "snapshots.deleteError"
     );
 
-  const reason = (r: string) =>
-    r === "level-up"
-      ? t("snapshots.reasonLevelUp")
-      : r === "manual"
-        ? t("snapshots.reasonManual")
-        : r;
+  const reason = (r: string) => {
+    const key = snapshotReasonKey(r);
+    return key ? t(key) : r;
+  };
   const when = (d: Date | null) =>
     d
       ? d.toLocaleString(locale, {

@@ -11,10 +11,12 @@
 import type { AbilityCode, ConditionEnd, RepeatSaveMoment } from "@/data/types";
 import type { CatalogueEffect } from "@/lib/catalogue-effects";
 
-/** A condition occurrence with its source facts. */
+/** A condition occurrence with its source facts, or a spell's effect on a target
+ *  that imposes no condition (Slow: `conditionId` absent, the rule is the spell's
+ *  `effectEnds`). */
 export interface SourcedCondition {
   id: string;
-  conditionId: string;
+  conditionId?: string;
   targetId: string;
   /** Who applied it (the grappler, the rogue). */
   actorId?: string;
@@ -31,12 +33,13 @@ export type ConditionEvent =
   | { kind: "turn-end"; combatantId: string }
   | { kind: "incapacitated"; combatantId: string };
 
-/** A repeat save the target owes: success ends the condition. `at`: the moment that
+/** A repeat save the target owes: success ends the condition (or, with no
+ *  `conditionId`, the spell's effect on the target: Slow). `at`: the moment that
  *  made it due; `advantage`: rolled with Advantage; `when`: owed only in that
  *  situation (the prompt asks it first), with the one who applied it. */
 export interface DueRepeatSave {
   id: string;
-  conditionId: string;
+  conditionId?: string;
   targetId: string;
   ability: AbilityCode;
   dc?: number;
@@ -135,7 +138,9 @@ function dueSave(
 ): DueRepeatSave {
   return {
     id: condition.id,
-    conditionId: condition.conditionId,
+    ...(condition.conditionId !== undefined
+      ? { conditionId: condition.conditionId }
+      : {}),
     targetId: condition.targetId,
     ability: end.ability,
     ...(condition.saveDc !== undefined ? { dc: condition.saveDc } : {}),

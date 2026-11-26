@@ -18,7 +18,7 @@ import {
 import { localizeSrd } from "@/i18n/resolver";
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import type { Locale } from "@/lib/locale";
-import { repeatSaveDueCopy } from "@/domains/combat/repeat-save-copy";
+import { repeatSaveDueCopy, repeatSaveSubject } from "@/domains/combat/repeat-save-copy";
 import {
   tallyKey,
   tallyOf,
@@ -100,7 +100,9 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
         ? rerollOffers(sheet, localizeActions(sheet, locale), {
             roll: "save",
             whose: "self",
-            against: save.conditionId as ConditionId,
+            ...(save.conditionId !== undefined
+              ? { against: save.conditionId as ConditionId }
+              : {}),
           }).filter(({ action }) => (action.summary.uses?.current ?? 1) > 0)
         : [],
     [sheet, save.characterId, save.conditionId, locale]
@@ -133,7 +135,8 @@ function RepeatSavePrompt({ save, locale }: { save: PendingRepeatSave; locale: L
         }),
     });
   };
-  const condition = localizeSrd("condition", save.conditionId, "name", locale);
+  // What a success ends: the condition, or the spell when it imposes none (Slow).
+  const condition = repeatSaveSubject({ ...save, source: save.effect.source }, locale);
   const store = () => useRepeatSaveStore.getState();
   // A tracked save (Contagion) counts each answer; only the last one decides.
   const track = save.track;

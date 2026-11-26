@@ -5,6 +5,7 @@
  * filter chips' counts. Rows read the engine's own facts (`actionRowFacts`): a
  * condition that blocks a slot marks its rows blocked.
  */
+import type { SpellSchool } from "@/data/types";
 import { effectiveConditions } from "@/lib/aggregate-character";
 import { resolveConditionEffects } from "@/lib/condition-effects";
 import { conditionFactsFor, type ConditionEncounter } from "@/lib/condition-sources";
@@ -46,6 +47,8 @@ export interface PlayActionRow {
   action: CombatAction;
   name: string;
   spellId?: string;
+  /** A homebrew spell's school (a catalogue spell's comes with its id). */
+  school?: SpellSchool;
   /** Spell level (0 = cantrip), null for anything that is not a spell. */
   level: number | null;
   concentration: boolean;
@@ -115,6 +118,7 @@ export function playActionsView(
       action: a,
       name: a.name,
       ...(a.spellId ? { spellId: a.spellId } : {}),
+      ...homebrewSchool(doc, a),
       level: a.spellLevel,
       concentration: a.concentration,
       ritual: f.ritual,
@@ -162,4 +166,11 @@ function groupNote(
   if (group === "reactions")
     return turn.reactionUsed ? { kind: "spent" } : { kind: "per-round" };
   return undefined;
+}
+
+/** A homebrew spell's school, read from its place in the spell list. */
+function homebrewSchool(doc: CharacterDoc, a: CombatAction): { school?: SpellSchool } {
+  if (a.customSpellIndex === undefined) return {};
+  const ref = doc.character.spells[a.customSpellIndex];
+  return ref && "custom" in ref ? { school: ref.school } : {};
 }

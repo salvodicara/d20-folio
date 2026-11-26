@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { DmHitStep } from "@/domains/combat/dm-hit-plan";
+import type { FightMark } from "@/domains/combat/fight-rows-view";
 import {
   addMonstersMove,
   changeMonsterHp,
@@ -17,6 +18,11 @@ import {
   setPcConditionMove,
   passCombatTurn,
   reopenLastCombat,
+  reorderCombatantMove,
+  setCombatantHiddenMove,
+  setMonsterInitiativeMove,
+  setMonsterRevealedMove,
+  setMonsterSideMove,
   rollForMissing,
   rollIntoCombat,
   stepCombatTurnBack,
@@ -157,6 +163,53 @@ export const dmMoves = {
               active,
             })
           : Promise.resolve(null),
+  /** «Per i giocatori» on every chosen monster, as one move with one undo. */
+  show:
+    (
+      campaignId: string,
+      uid: string,
+      monsterIds: readonly string[],
+      mark: FightMark,
+      on: boolean
+    ) =>
+    () =>
+      together(
+        monsterIds.map(
+          (id) => () =>
+            mark === "hidden"
+              ? setCombatantHiddenMove(campaignId, { uid, id, hidden: on })
+              : mark === "revealed"
+                ? setMonsterRevealedMove(campaignId, { uid, monsterId: id, revealed: on })
+                : setMonsterSideMove(campaignId, {
+                    uid,
+                    monsterId: id,
+                    side: on ? "ally" : "enemy",
+                  })
+        )
+      ),
+  /** A monster line's new initiative, every creature on it; once turns have begun the
+   *  order stands, so they also move before `beforeId` (their number's place). */
+  initiative:
+    (
+      campaignId: string,
+      uid: string,
+      monsterIds: readonly string[],
+      value: number,
+      place: { beforeId: string | null } | null
+    ) =>
+    () =>
+      together([
+        ...monsterIds.map(
+          (monsterId) => () =>
+            setMonsterInitiativeMove(campaignId, { uid, monsterId, value })
+        ),
+        ...(place
+          ? monsterIds.map(
+              (id) => () =>
+                reorderCombatantMove(campaignId, { uid, id, beforeId: place.beforeId })
+            )
+          : []),
+      ]),
   add: (campaignId: string, uid: string, monsters: readonly MonsterInput[]) => () =>
     together(
       monsters.map((monster) => () => addMonstersMove(campaignId, { uid, monster }))

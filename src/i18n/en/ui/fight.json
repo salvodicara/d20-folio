@@ -72,11 +72,51 @@
       "healDone_other": "{{amount}} HP healed on {{count}} targets",
       "conditionOn": "Condition added to {{name}}",
       "conditionOff": "Condition removed from {{name}}",
-      "addN": "Add {{count}}"
+      "addN": "Add {{count}}",
+      "forPlayers": "For the players",
+      "show": {
+        "hidden": "Hidden from the players",
+        "revealed": "Exact HP shown"
+      },
+      "showDone": {
+        "hidden": {
+          "on_one": "Hidden from the players: {{count}} creature",
+          "on_other": "Hidden from the players: {{count}} creatures",
+          "off_one": "Shown to the players again: {{count}} creature",
+          "off_other": "Shown to the players again: {{count}} creatures"
+        },
+        "revealed": {
+          "on_one": "Exact HP shown to the players: {{count}} creature",
+          "on_other": "Exact HP shown to the players: {{count}} creatures",
+          "off_one": "Exact HP hidden again: {{count}} creature",
+          "off_other": "Exact HP hidden again: {{count}} creatures"
+        },
+        "ally": {
+          "on_one": "Now an ally: {{count}} creature",
+          "on_other": "Now allies: {{count}} creatures",
+          "off_one": "Now an enemy: {{count}} creature",
+          "off_other": "Now enemies: {{count}} creatures"
+        }
+      },
+      "initTitle": "Initiative: {{name}}",
+      "initGroup_one": "The whole line moves: {{count}} creature.",
+      "initGroup_other": "The whole line moves: {{count}} creatures.",
+      "initHelp": "The list re-sorts by the new number, even mid-fight.",
+      "initDone": "{{name}} now at initiative {{value}}"
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {
       "notAttached": "Your character isn't attached to this campaign: attach it from the Party tab, then roll."
+    },
+    "mark": {
+      "revealed": "HP shown"
+    },
+    "markN": {
+      "hidden_one": "{{count}} hidden",
+      "hidden_other": "{{count}} hidden",
+      "ally_one": "{{count}} ally",
+      "ally_other": "{{count}} allies",
+      "revealed": "{{count}} with HP shown"
     }
   }
 }

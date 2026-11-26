@@ -73,6 +73,7 @@ import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command"
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
+import { withoutChronicleChapter } from "@/features/campaigns/chronicle-chapters";
 import type { EncounterMonster, EncounterState } from "@/types/campaign";
 import {
   makeDevCampaign,
@@ -2744,6 +2745,41 @@ export async function commitChronicleEdit(
  *  the emulator). */
 export function joinChronicleText(prior: string, chapter: string): string {
   return prior.trim() ? `${prior.trimEnd()}\n\n${chapter}` : chapter;
+}
+
+export { withoutChronicleChapter } from "@/features/campaigns/chronicle-chapters";
+
+/**
+ * Take back one Combat-Chronicle chapter (the undo of a fight's end): the server's
+ * current text, read inside a transaction, loses its last whole copy of `chapter`; the
+ * text before is snapshotted into the version history, so it stays restorable. Resolves
+ * false when the chapter is no longer there as written (nothing is touched).
+ */
+export async function removeChronicleChapter(
+  campaignId: string,
+  remove: { chapter: string; editedBy: string }
+): Promise<boolean> {
+  if (import.meta.env.DEV && DEV_BYPASS) return true;
+  const ref = chronicleDoc(campaignId);
+  return runTransaction(db, async (txn) => {
+    const snap = await txn.get(ref);
+    if (!snap.exists()) return false;
+    const prior = toChronicleDoc(snap.data());
+    const text = withoutChronicleChapter(prior.text, remove.chapter);
+    if (text === null) return false;
+    const versions = pushVersion(prior.versions, {
+      timestamp: prior.lastEditedAt,
+      editedBy: prior.lastEditedBy,
+      editedByName: "",
+      textSnapshot: prior.text,
+    });
+    txn.set(
+      ref,
+      { text, lastEditedBy: remove.editedBy, versions, lastEditedAt: serverTimestamp() },
+      { merge: true }
+    );
+    return true;
+  });
 }
 
 /**
