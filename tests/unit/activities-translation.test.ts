@@ -283,6 +283,7 @@ const SPELL_NOT_ROUND_TRIPPED = new Set([
   "saveIfUnwilling", // read by the tray plan from the catalogue («Consenziente»)
   "appliesOnSuccess", // read by the tray plan from the catalogue («Successo»)
   "failedD20Becomes", // read by the failed-save offer from the catalogue
+  "effectEnds", // read by the fight's repeat saves from the catalogue (Slow, #1346)
 ]);
 
 function spellMechanics(

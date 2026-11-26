@@ -67,8 +67,11 @@ export function raiseSoloRepeatSaves(): () => void {
       ? soloRepeatSavesDue(sheetConditions(doc, cs.combatActiveEffects), {
           campaignConditions: useRepeatSaveStore
             .getState()
-            .saves.filter((s) => s.characterId === doc.id)
-            .map((s) => s.conditionId),
+            .saves.flatMap((s) =>
+              s.characterId === doc.id && s.conditionId !== undefined
+                ? [s.conditionId]
+                : []
+            ),
         }).map((save) => ({ ...save, characterId: doc.id }))
       : [];
   store.set(saves);
@@ -82,7 +85,10 @@ export function visibleSoloRepeatSaves(
 ): PendingSoloRepeatSave[] {
   if (!doc) return [];
   const held = new Set(effectiveSessionConditions(doc.session));
-  return saves.filter((s) => s.characterId === doc.id && held.has(s.conditionId));
+  return saves.filter(
+    (s) =>
+      s.characterId === doc.id && s.conditionId !== undefined && held.has(s.conditionId)
+  );
 }
 
 function withoutSave(id: string): () => void {

@@ -124,6 +124,21 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "WIS",
     area: true,
+    // "Each creature in a 10-foot-radius Sphere": friend or foe. A failed save leaves
+    // the spell on that creature (its behavior table is the table's to roll); "at the
+    // end of each of its turns, an affected target repeats the save, ending the spell
+    // on itself on a success."
+    targeting: { affinity: "any" },
+    effectEnds: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
+    grants: [
+      {
+        type: "while-active",
+        activeKey: "spell-confusion",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
+        grants: [],
+      },
+    ],
     source: "SRD",
   },
   {
@@ -492,12 +507,12 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
   },
   {
     id: "phantasmal-killer",
-    // The canonical-runtime authored program: the
-    // cast forces one WIS save against 4d10 psychic (+1d10 per slot level
-    // above 4, half on a success that also ends the spell); a failure leaves
-    // the target frightened for the duration, and each of its turn-ends the
-    // table declares a "pulse" — repeat WIS save, the same roll on a failure,
-    // and a success ends the program.
+    // SRD 5.2.1: one WIS save against 4d10 Psychic (+1d10 per slot level above 4;
+    // half on a success, which also ends the spell). A failure imposes no condition:
+    // the target has Disadvantage on ability checks and attack rolls for the duration
+    // (the table's, not modelled yet), and "makes a Wisdom saving throw at the end of
+    // each of its turns. On a failed save, it takes the Psychic damage again. On a
+    // successful save, the spell ends." The damage again on a failure is the table's.
     level: 4,
     school: "illusion",
     classes: ["bard", "wizard"],
@@ -511,11 +526,14 @@ export const SRD_SPELLS_LEVEL4: SrdSpellData[] = [
     damageDicePerUpcast: "1d10",
     saveAbility: "WIS",
     damageOnSave: "half",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    effectEnds: [{ on: "repeat-save", ability: "WIS", at: "target-turn-end" }],
     grants: [
       {
         type: "while-active",
         activeKey: "spell-phantasmal-killer",
         duration: timedSpellDuration(1),
+        recipient: "selected",
         grants: [],
       },
     ],
