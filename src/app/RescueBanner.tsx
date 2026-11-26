@@ -6,7 +6,7 @@
  * unsaved changes» bar and the browser's restore-session bar, drawn as our own
  * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner).
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,6 +50,24 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
       }),
     [uid, sheet.id]
   );
+  // Its own lane (#1403), as the PWA bar's `--pwa-banner-h`: the measured height lets
+  // the toasts rise above the strip and the page reserve room for it.
+  const dockRef = useRef<HTMLDivElement>(null);
+  const shown = copy !== null;
+  useEffect(() => {
+    const el = dockRef.current;
+    if (!shown || !el) return;
+    const root = document.documentElement.style;
+    const publish = (): void =>
+      root.setProperty("--rescue-dock-h", `${String(el.offsetHeight)}px`);
+    publish();
+    const ro = new ResizeObserver(publish);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.removeProperty("--rescue-dock-h");
+    };
+  }, [shown]);
 
   if (!copy) return null;
   const date = new Intl.DateTimeFormat(language, {
@@ -76,7 +94,7 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
   };
 
   return (
-    <div className="pwa-dock">
+    <div ref={dockRef} className="pwa-dock">
       <section
         aria-label={t("pwa.rescue.label")}
         className="accent-alert pointer-events-auto justify-between gap-3 md:mx-auto md:mb-3 md:w-full md:max-w-2xl"

@@ -2665,7 +2665,12 @@ button.pr-dot.lg::before {
   position: fixed;
   /* Desktop: bottom-RIGHT so the undo clears the combat economy/turn strip and
      reads as an ambient acknowledgement, not a modal-ish centre banner. */
-  bottom: calc(var(--sp-6) + var(--safe-bottom));
+  /* Lanes, not layers: a bottom dock (the PWA bar, the rescue strip) publishes its
+     height, and the toasts rise above it instead of hiding under it (#1403). */
+  bottom: calc(
+    var(--sp-6) + var(--safe-bottom) + var(--pwa-banner-h, 0px) +
+      var(--rescue-dock-h, 0px)
+  );
   right: var(--sp-6);
   left: auto;
   transform: none;
@@ -2680,7 +2685,10 @@ button.pr-dot.lg::before {
 /* On phone, centre it above the bottom nav (44px) + the safe-area inset. */
 @media (max-width: 720px) {
   .toast-region {
-    bottom: calc(44px + var(--safe-bottom) + var(--sp-3));
+    bottom: calc(
+      44px + var(--safe-bottom) + var(--sp-3) + var(--pwa-banner-h, 0px) +
+        var(--rescue-dock-h, 0px)
+    );
     left: 50%;
     right: auto;
     transform: translateX(-50%);
