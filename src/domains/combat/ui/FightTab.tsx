@@ -367,6 +367,20 @@ function useDmTools(
               })
             );
           }}
+          onShow={(monsters, mark, on) =>
+            move(
+              dmMoves.show(
+                campaign.id,
+                uid,
+                monsters.map((m) => m.id),
+                mark,
+                on
+              ),
+              t(`fight.dm.showDone.${mark}.${on ? "on" : "off"}`, {
+                count: monsters.length,
+              })
+            )
+          }
           onCondition={(target, conditionId, active) =>
             move(
               dmMoves.condition(

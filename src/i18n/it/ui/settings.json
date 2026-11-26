@@ -21,6 +21,19 @@
     "uiClassic": "Classica",
     "uiNew": "Nuova",
     "newUiOffline": "Serve la connessione per cambiare interfaccia.",
-    "newUiFailed": "Non sono riuscito a salvare la scelta. Riprova."
+    "newUiFailed": "Non sono riuscito a salvare la scelta. Riprova.",
+    "myData": {
+      "title": "I tuoi dati",
+      "help": "Scarica una copia di tutto ciò che hai creato, oppure cancella il tuo account.",
+      "download": "Scarica tutti i miei dati",
+      "downloaded": "Dati scaricati ({{count}} personaggi).",
+      "skipped": "{{count}} personaggi non si potevano leggere e non sono nel file.",
+      "downloadFailed": "Il download non è riuscito. Riprova.",
+      "delete": "Elimina il mio account",
+      "deleteTitle": "Eliminare il tuo account?",
+      "deleteBody": "Cancella i tuoi personaggi, la tua libreria e il tuo posto in ogni campagna, su ogni dispositivo. Non si può annullare. Se vuoi una copia, scarica prima i tuoi dati.",
+      "typeEmail": "Scrivi la tua email per confermare",
+      "deleteFailed": "L'account non è stato eliminato. Riprova."
+    }
   }
 }

@@ -4,11 +4,15 @@
  * Cura (D&D Beyond's combat tracker: tap the HP, type, Damage; dnd5e's apply tray: the
  * same entry on every target). With one creature chosen, its conditions toggle below.
  * The look follows the player's own «Danni e cure» (PlayHp).
+ * «Per i giocatori» sets what the players see of the chosen monsters, all at once: hidden
+ * (an ambush), exact HP shown, ally (the classic MonsterCard's toggles; Foundry's tracker
+ * hides a combatant from the players the same way).
  */
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { DmEntry, DmTarget } from "@/domains/combat/dm-hit-plan";
+import type { FightMark } from "@/domains/combat/fight-rows-view";
 import { SRD_CONDITIONS } from "@/data/conditions";
 import type { Locale } from "@/lib/locale";
 import { conditionLabel } from "@/lib/views/tracker-view";
@@ -18,18 +22,28 @@ import { Button, Chip, Dialog, Field } from "@/ui";
 const COMMON: readonly DamageType[] = ["slashing", "piercing", "bludgeoning"];
 /** Exhaustion has levels: it stays on the character's sheet. */
 const TOGGLES = SRD_CONDITIONS.map((c) => c.id).filter((id) => id !== "exhaustion");
+const SHOWS: readonly FightMark[] = ["hidden", "revealed", "ally"];
+const shows = (x: DmTarget, mark: FightMark) =>
+  mark === "hidden"
+    ? x.hidden === true
+    : mark === "revealed"
+      ? x.revealed === true
+      : x.side === "ally";
 
 export function DmHitDialog({
   targets,
   locale,
   onHit,
   onCondition,
+  onShow,
   onClose,
 }: {
   targets: readonly DmTarget[];
   locale: Locale;
   onHit: (targets: readonly DmTarget[], entry: DmEntry) => void;
   onCondition: (target: DmTarget, conditionId: string, active: boolean) => void;
+  /** Set one of «Per i giocatori» on the chosen monsters (all on, or all off). */
+  onShow: (monsters: readonly DmTarget[], mark: FightMark, on: boolean) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -42,6 +56,7 @@ export function DmHitDialog({
   const healable = chosen.some((x) => x.kind === "monster");
   const shown = allTypes ? DAMAGE_TYPES : COMMON;
   const only = chosen.length === 1 ? chosen[0] : undefined;
+  const monsters = chosen.filter((x) => x.kind === "monster");
   const commit = (entry: DmEntry) => {
     onHit(chosen, entry);
     onClose();
@@ -124,6 +139,23 @@ export function DmHitDialog({
       </div>
       {chosen.some((x) => x.kind === "pc") && (
         <p className="f-quiet f-ask">{t("fight.dm.pcRule")}</p>
+      )}
+      {monsters.length > 0 && (
+        <div className="f-ask">
+          <span className="f-lbl">{t("fight.dm.forPlayers")}</span>
+          <div className="f-chips">
+            {SHOWS.map((mark) => {
+              const on = monsters.every((x) => shows(x, mark));
+              return (
+                <Chip key={mark} pressed={on} onClick={() => onShow(monsters, mark, !on)}>
+                  {mark === "ally"
+                    ? t("campaignHub.encounterAlly")
+                    : t(`fight.dm.show.${mark}`)}
+                </Chip>
+              );
+            })}
+          </div>
+        </div>
       )}
       {only && (
         <div className="f-ask">
