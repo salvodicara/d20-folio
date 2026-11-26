@@ -65,6 +65,22 @@ describe("playEffectsView", () => {
     expect(playEffectsView(doc, "it", (id) => names[id] ?? "").rows).toEqual([]);
   });
 
+  it("a spell's success rider says what it does, never the failed-save gist", () => {
+    // Ray of Enfeeblement on a success: Disadvantage on the next attack roll only.
+    const rider = {
+      ...effect("e1", "ray-of-enfeeblement", "ally", { kind: "encounter" }),
+      payload: { kind: "grant-group", activeKey: "ray-of-enfeeblement-next-attack" },
+    } as ActiveCombatEffect;
+    const weakened = {
+      ...effect("e2", "ray-of-enfeeblement", "ally", { kind: "encounter" }),
+      payload: { kind: "grant-group", activeKey: "spell-ray-of-enfeeblement" },
+    } as ActiveCombatEffect;
+    const [riderRow] = playEffectsView(withEffects([rider]), "it", () => "").rows;
+    expect(riderRow?.gist).toBe("Svantaggio al tiro per colpire successivo");
+    const [weakRow] = playEffectsView(withEffects([weakened]), "it", () => "").rows;
+    expect(weakRow?.gist).toMatch(/Forza/);
+  });
+
   it("with nothing on the character, the list is empty", () => {
     expect(playEffectsView(withEffects([]), "it", () => "").count).toBe(0);
   });

@@ -603,6 +603,9 @@
       "willing": "Willing",
       "willingAria": "{{name}} is willing: no save",
       "stateLands": "Under {{name}}",
+      "savedLeaves": {
+        "next-attack-disadvantage": "Disadvantage on its next attack roll"
+      },
       "incomingSave": "Save with {{mode}} ({{source}})"
     },
     "unarmedUnburdenedDie": "{{die}} if not holding a weapon or Shield",

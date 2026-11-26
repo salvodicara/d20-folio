@@ -62,9 +62,14 @@ describe("Ray of Enfeeblement: a failed save weakens the target", () => {
 
   it("leaves one state on the target it names, for the spell's duration", () => {
     expect(spell?.grants).toEqual([WEAKENED]);
-    // No hit rider that ends at the caster's next turn (the 2014 wiring).
-    expect(spell?.effects).toBeUndefined();
-    expect(spell?.targetStates).toBeUndefined();
+    // No hit rider (the 2014 wiring): its only target state is the success's
+    // one-shot Disadvantage (save-success-next-attack-disadvantage.test.ts).
+    expect(spell?.effects?.map((e) => [e.kind, e.saveOutcome])).toEqual([
+      ["next-attack-disadvantage", "success"],
+    ]);
+    expect(spell?.targetStates?.map((s) => s.activeKey)).toEqual([
+      "ray-of-enfeeblement-next-attack",
+    ]);
   });
 
   it("a fight effect on the target resolves to the state by its key", () => {
