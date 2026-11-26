@@ -22,8 +22,13 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import {
   addCustomEquipment,
+  addCustomSpell,
   keepInLibrary,
 } from "@/features/character/custom-entry-commands";
+import {
+  CUSTOM_SPELL_CASTING_TIMES,
+  customSpellFromDraft,
+} from "@/domains/spells/custom-spell";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";
@@ -96,40 +101,36 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
   const [m, setM] = useState(seed?.components.m ?? false);
 
   function handleCreate() {
-    if (!name.trim()) return;
-
-    const newSpell: CustomSpell = {
-      // Keep what the form doesn't show (structured `mechanics`, …): an edit only
-      // overwrites the fields below.
-      ...seed,
-      custom: true,
-      // An edit writes the viewer's language; the other authored ones are kept.
-      name: editHomebrewText(seed?.name, locale, name.trim()),
-      level,
-      school,
-      castingTime,
-      range,
-      components: { v, s, m },
-      duration,
-      concentration,
-      description: editHomebrewText(seed?.description, locale, description),
-      prepared: true,
-      instanceId: seed?.instanceId ?? createItemInstanceId(),
-    };
+    // The one model (`customSpellFromDraft`); what this form does not show (the
+    // ritual tag, the material) is kept from the seed.
+    const out = customSpellFromDraft(
+      {
+        name,
+        level,
+        school,
+        castingTime,
+        range,
+        duration,
+        v,
+        s,
+        m,
+        material: seed?.components.material ?? "",
+        concentration,
+        ritual: seed?.mechanics?.ritual === true,
+        description,
+      },
+      locale,
+      seed
+    );
+    if (!out.ok) return;
+    const newSpell = out.spell;
 
     if (libraryEdit) {
       libraryEdit.onSave({ kind: "spell", item: newSpell });
       return;
     }
     if (!character) return;
-    useCharacterStore.getState().setCharacter({
-      ...character,
-      character: {
-        ...character.character,
-        spells: [...character.character.spells, newSpell],
-      },
-    });
-    keepInLibrary({ kind: "spell", item: newSpell }, t);
+    addCustomSpell(newSpell, t);
 
     onCreated();
   }
@@ -182,16 +183,7 @@ export function CustomSpellForm({ onCreated, libraryEdit }: CustomSpellFormProps
                 value={castingTime}
                 onChange={(e) => setCastingTime(e.target.value)}
               >
-                {[
-                  "action",
-                  "bonus",
-                  "reaction",
-                  "1 minute",
-                  "10 minutes",
-                  "1 hour",
-                  "8 hours",
-                  "24 hours",
-                ].map((ct) => (
+                {CUSTOM_SPELL_CASTING_TIMES.map((ct) => (
                   <option key={ct} value={ct}>
                     {t(`srd.castingTime_${ct}`)}
                   </option>

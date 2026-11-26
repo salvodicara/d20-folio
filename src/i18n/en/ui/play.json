@@ -160,7 +160,17 @@
       "via": "through",
       "alreadyYours": "Already yours",
       "addedToast": "Spell added: {{name}}",
-      "upToLevel": "Up to level {{level}}: the spells you can cast."
+      "upToLevel": "Up to level {{level}}: the spells you can cast.",
+      "customOpen": "Custom spell",
+      "customBack": "Back to the list",
+      "customAdd": "Add the spell",
+      "copyLabel": "Copy into your spellbook: {{name}}",
+      "copyCost": "copy: {{hours}} h, {{gp}} gp",
+      "copyAsk": "Copy {{name}} into your spellbook: {{hours}} hours and {{gp}} gp (2 hours and 50 gp per spell level).",
+      "copyPay": "Copy and pay {{gp}} gp",
+      "copyShort": "Your gold and platinum don't cover it.",
+      "copyUnpaid": "Copy without paying (DM's call)",
+      "copiedToast": "Copied into your spellbook: {{name}}"
     },
     "inv": {
       "pack": "Pack",
@@ -193,7 +203,6 @@
       "customWeight": "Weight each ({{unit}})",
       "customCost": "Cost each (gp)",
       "optional": "Optional",
-      "customNameRequired": "Give it a name.",
       "customNumber": "Write a number, such as 2 or 0.5.",
       "customAdd": "Add to inventory",
       "costEach": "{{cost}} each"
@@ -501,7 +510,12 @@
       "overrideHelp": "Replaces the computed value. «Use the computed value» brings it back.",
       "useComputed": "Use the computed value",
       "setToast": "{{name}}: set by hand",
-      "resetToast": "{{name}}: computed again"
+      "resetToast": "{{name}}: computed again",
+      "maxHpTag": "Adjusted",
+      "maxHpField": "Current maximum",
+      "maxHpHelp": "We save the difference as a correction ({{bonus}}): the maximum still grows with level and CON. «Use the computed value» removes it.",
+      "maxHpHelpPlain": "We save the difference as a correction: the maximum still grows with level and CON. «Use the computed value» removes it.",
+      "maxHpSetToast": "{{name}}: correction saved"
     },
     "features": {
       "species": "Species traits",

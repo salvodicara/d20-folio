@@ -90,6 +90,7 @@
     "resistance": "Resistenza",
     "coins": "Monete",
     "customize": "Personalizza",
-    "reload": "Ricarica"
+    "reload": "Ricarica",
+    "nameRequired": "Dagli un nome."
   }
 }
