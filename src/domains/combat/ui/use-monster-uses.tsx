@@ -1,7 +1,8 @@
 /**
  * The DM's limited-use strip for each monster line of the Scontro tab, as one hook the
  * fight screen mounts: the uses its catalogue stat block prints, read live from the
- * fight, each change one move with its undo in the toast. A group line (several
+ * fight, each change one move with its undo in the toast (once the lazy monster catalogue
+ * that names them is in). A group line (several
  * creatures, each with its own uses) and a homebrew creature show none yet.
  */
 import { useTranslation } from "react-i18next";
@@ -12,6 +13,7 @@ import { MonsterUses } from "@/domains/combat/ui/MonsterUses";
 import type { Toaster } from "@/domains/combat/ui/fight-moves";
 import { cryptoD20, monsterUseMove } from "@/features/campaigns/combat-lifecycle-io";
 import type { MonsterUseChange } from "@/features/campaigns/combat-lifecycle";
+import { useLazySrdKind } from "@/hooks/useLazySrdKind";
 import { localizeSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import type { Locale } from "@/lib/locale";
@@ -33,8 +35,14 @@ export function useMonsterUses(
   onToast: Toaster
 ) {
   const { t } = useTranslation();
+  // The uses' names live in the lazy monster catalogue: wait for it (a fresh load has
+  // not opened «Aggiungi mostri», which loads it too).
+  const named = useLazySrdKind(
+    "monster",
+    encounter.combatants.some((c) => c.kind === "monster" && c.srdId !== undefined)
+  );
   const stripFor = (ids: readonly string[]) => {
-    if (ids.length !== 1) return null;
+    if (!named || ids.length !== 1) return null;
     const monster = encounter.combatants.find((c) => c.id === ids[0]);
     if (monster?.kind !== "monster" || !monster.srdId) return null;
     const block = getMonster(monster.srdId);
