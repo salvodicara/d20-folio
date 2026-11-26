@@ -291,6 +291,26 @@ export async function storedRevision(id: string): Promise<number> {
   return Number(body.fields?.revision?.integerValue ?? 0);
 }
 
+/** The stored total level of an owner's character (`build.classes[].level`). */
+export async function storedLevel(id: string): Promise<number> {
+  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+    headers: OWNER,
+  });
+  type Entry = { mapValue?: { fields?: { level?: { integerValue?: string } } } };
+  const body = (await response.json()) as {
+    fields?: {
+      build?: {
+        mapValue?: { fields?: { classes?: { arrayValue?: { values?: Entry[] } } } };
+      };
+    };
+  };
+  const entries = body.fields?.build?.mapValue?.fields?.classes?.arrayValue?.values ?? [];
+  return entries.reduce(
+    (sum, entry) => sum + Number(entry.mapValue?.fields?.level?.integerValue ?? 0),
+    0
+  );
+}
+
 /** A string field of an owner's character build (`build.<field>`), or null. */
 export async function ownerBuildString(
   id: string,

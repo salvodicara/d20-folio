@@ -681,8 +681,15 @@ export interface DebouncedSaveHandle {
    */
   sendWholeSheet: (
     sheet: { character: CharacterData; session: SessionState },
-    source: WholeSheetSource
+    source: WholeSheetSource,
+    callbacks?: WholeSheetCallbacks
   ) => Promise<void>;
+}
+
+/** `onSend` gets the generation the whole sheet leaves with, synchronously, before the
+ *  batch reaches the SDK (the caller's trace of a write not yet acknowledged, #1276). */
+export interface WholeSheetCallbacks {
+  onSend?: (revision: number) => void;
 }
 
 const pendingParentSaveCancellers = new Map<string, () => void>();
@@ -842,7 +849,8 @@ export function createDebouncedSave(
 
   function sendWholeSheet(
     sheet: { character: CharacterData; session: SessionState },
-    source: WholeSheetSource
+    source: WholeSheetSource,
+    callbacks?: WholeSheetCallbacks
   ): Promise<void> {
     if (DEV_BYPASS_AUTH) return Promise.resolve();
     // #1320 — a newer shape is stored: refused before anything moves, so the pending
@@ -865,6 +873,7 @@ export function createDebouncedSave(
           );
         }
         const revision = allocateRevision();
+        callbacks?.onSend?.(revision);
         saveStatusCallbacks.onSaving();
         let sent: Promise<void>;
         try {

@@ -718,6 +718,20 @@ describe("a whole-sheet write takes its generation in queue order (#1276)", () =
     ).toMatchObject({ revision: 8 });
   });
 
+  // #1276 — the caller traces the sheet before it reaches the SDK, at the generation it
+  // leaves with, so a reload before the acknowledgement can still find it.
+  it("tells the caller its generation before the batch is handed to the SDK", async () => {
+    await preloadParentWrite();
+    const saver = createDebouncedSave("u1", "c1", 500, () => 12);
+    const doc = { ...makeCharacterDoc(), id: "c1", revision: 11 };
+    const seen: Array<[number, number]> = [];
+    void saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc, {
+      onSend: (revision) => seen.push([revision, harness.commits.mock.calls.length]),
+    });
+    expect(seen).toEqual([[12, 0]]);
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+  });
+
   it("a refused whole-sheet write rejects, so the caller can tell the player", async () => {
     await preloadParentWrite();
     harness.commits.mockImplementationOnce(() =>
