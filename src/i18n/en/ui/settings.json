@@ -21,6 +21,19 @@
     "uiClassic": "Classic",
     "uiNew": "New",
     "newUiOffline": "You need a connection to switch interface.",
-    "newUiFailed": "Couldn't save your choice. Try again."
+    "newUiFailed": "Couldn't save your choice. Try again.",
+    "myData": {
+      "title": "Your data",
+      "help": "Download a copy of everything you made, or erase your account.",
+      "download": "Download all my data",
+      "downloaded": "Your data was downloaded ({{count}} characters).",
+      "skipped": "{{count}} characters could not be read and are not in the file.",
+      "downloadFailed": "The download didn't work. Try again.",
+      "delete": "Delete my account",
+      "deleteTitle": "Delete your account?",
+      "deleteBody": "This erases your characters, your library and your place in every campaign, on every device. It can't be undone. Download your data first if you want a copy.",
+      "typeEmail": "Type your email to confirm",
+      "deleteFailed": "The account was not deleted. Try again."
+    }
   }
 }
