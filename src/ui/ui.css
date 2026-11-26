@@ -7321,3 +7321,8 @@
   outline: 2px solid var(--gold-hi);
   outline-offset: 2px;
 }
+
+/* an «up» button: the set's caret (Phosphor caret-down), turned to point up */
+.fui .f-btn[data-icon-up] .f-ic {
+  transform: rotate(180deg);
+}

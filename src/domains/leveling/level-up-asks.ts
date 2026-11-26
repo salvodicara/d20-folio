@@ -8,7 +8,8 @@
  * feat, and the ability a feat raises), each option bundle, Fighting Style,
  * Expertise, Weapon Mastery, Metamagic, Eldritch Invocations, maneuvers, the
  * choices its features and feat open, new cantrips and spells, a new class's
- * skill, and the optional spell swap.
+ * skill, and the optional swaps: a spell, a cantrip, a Fighting Style feat, a
+ * Metamagic option, an invocation.
  *
  * `supported` is false for the few picks this screen does not draw yet (Spell
  * Mastery, Signature Spells): the classic wizard takes those levels.
@@ -42,7 +43,10 @@ import {
   type SignatureSpellsPicks,
 } from "@/lib/signature-spells-pick";
 import { offeredFeatVMs } from "@/lib/views/feat-pick-view";
+import { hasFightingStyleFeat, listFightingStyles } from "@/lib/fighting-style";
+import { invocationHasChoices, invocationRequires } from "@/lib/invocation-pick";
 import {
+  featName,
   fightingStyleOptions,
   invocationOptions,
   maneuverOptions,
@@ -85,6 +89,11 @@ export interface LevelUpAnswers {
   /** Wizard 20: two level-3 spells. */
   signatureSpells: SignatureSpellsPicks;
   discoverySwap: SpellSwapChoice;
+  /** One known option replaced on a class level (SRD 5.2.1): a Sorcerer's Metamagic
+   *  option, a Warlock's invocation, a Fighter's Fighting Style feat. */
+  metamagicSwap: SpellSwapChoice;
+  invocationSwap: SpellSwapChoice;
+  fightingStyleSwap: SpellSwapChoice;
 }
 
 export const NO_ANSWERS: LevelUpAnswers = {
@@ -107,6 +116,9 @@ export const NO_ANSWERS: LevelUpAnswers = {
   spellMastery: emptySpellMasteryPicks(),
   signatureSpells: emptySignatureSpellsPicks(),
   discoverySwap: emptySwapChoice(),
+  metamagicSwap: emptySwapChoice(),
+  invocationSwap: emptySwapChoice(),
+  fightingStyleSwap: emptySwapChoice(),
 };
 
 /** Which answer a row writes. `slot` rows carry their slot in `slotRow`. */
@@ -136,7 +148,13 @@ export type AskKey =
   | "spellMastery2"
   | "signatureSpells"
   | "discoveryRemove"
-  | "discoveryReplace";
+  | "discoveryReplace"
+  | "fightingStyleRemove"
+  | "fightingStyleReplace"
+  | "metamagicRemove"
+  | "metamagicReplace"
+  | "invocationRemove"
+  | "invocationReplace";
 
 export interface AskRow {
   key: AskKey;
@@ -194,6 +212,13 @@ export function levelUpAsks(
     bundlePicks: a.bundlePicks,
   });
   const rows: AskRow[] = [];
+  // A spell picked before the subclass that grants it always prepared (chosen later on
+  // the same screen) is no longer a pick: it would add nothing.
+  const newSpells = a.newSpells.filter((id) => !plan.alwaysPreparedGained.has(id));
+  const swap =
+    a.swap.replaceId && plan.alwaysPreparedGained.has(a.swap.replaceId)
+      ? { ...a.swap, replaceId: null }
+      : a.swap;
   const ability = (code: string) => ({ id: code, label: t(`abilities.${code}`) });
   const one = (v: string | null) => (v ? [v] : []);
 
@@ -290,7 +315,7 @@ export function levelUpAsks(
       count: 1,
       picked: one(a.fightingStyle),
       options: fightingStyleOptions(c.features, "", locale, classId)
-        .filter((o) => !o.disabled)
+        .filter((o) => !o.disabled && o.id !== a.fightingStyleSwap.replaceId)
         .map((o) => ({ id: o.id, label: o.label })),
     });
   }
@@ -329,7 +354,7 @@ export function levelUpAsks(
       count: plan.metamagicPicksNeeded,
       picked: a.metamagic,
       options: metamagicOptions(new Set(plan.alreadyKnownMetamagic), "", locale)
-        .filter((o) => !o.disabled)
+        .filter((o) => !o.disabled && o.id !== a.metamagicSwap.replaceId)
         .map((o) => ({ id: o.id, label: o.label })),
     });
   }
@@ -341,7 +366,12 @@ export function levelUpAsks(
       picked: a.invocations,
       options: invocationOptions(
         plan.newClassLevel,
-        plan.charInvocationChoices ?? [],
+        [
+          ...(plan.charInvocationChoices ?? []).filter(
+            (id) => id !== a.invocationSwap.removeId
+          ),
+          ...one(a.invocationSwap.replaceId),
+        ],
         "",
         locale
       ).map((o) => ({ id: o.id, label: o.label })),
@@ -484,7 +514,7 @@ export function levelUpAsks(
         : t("levelUp.screen.chooseSpells", { count: plan.spellsKnownDiff }),
       ...(plan.spellbookPicks ? { help: t("levelUp.screen.spellbookHelp") } : {}),
       count: plan.spellsKnownDiff,
-      picked: a.newSpells,
+      picked: newSpells,
       options: learnableSpellVMs(
         {
           classId,
@@ -535,14 +565,18 @@ export function levelUpAsks(
         spell: true,
         title: t("levelUp.screen.swapLearn"),
         count: 1,
-        picked: one(a.swap.replaceId),
+        picked: one(swap.replaceId),
         options: learnableSpellVMs(
           {
             classId,
             allowedLists: plan.widenedSpellLists,
             cantripsOnly: false,
             maxLevel: plan.maxSpellLevel,
-            exclude: new Set([...plan.existingSpellIds, ...a.newSpells]),
+            exclude: new Set([
+              ...plan.existingSpellIds,
+              ...plan.alwaysPreparedGained,
+              ...newSpells,
+            ]),
           },
           locale
         ).map((s) => ({ id: s.id, label: s.name })),
@@ -585,6 +619,108 @@ export function levelUpAsks(
     }
   }
 
+  // SRD 5.2.1, Fighter: «Whenever you gain a Fighter level, you can replace the feat
+  // you chose with a different Fighting Style feat».
+  const ownedStyles =
+    classId === "fighter" && plan.advancingEntry
+      ? listFightingStyles(classId)
+          .filter((f) => hasFightingStyleFeat(c.features, f.id))
+          .map((f) => f.id)
+      : [];
+  if (ownedStyles.length > 0) {
+    rows.push({
+      key: "fightingStyleRemove",
+      title: t("levelUp.screen.fightingStyleForget"),
+      count: 0,
+      picked: one(a.fightingStyleSwap.removeId),
+      options: ownedStyles.map((id) => ({ id, label: featName(id, locale) })),
+    });
+    if (a.fightingStyleSwap.removeId) {
+      rows.push({
+        key: "fightingStyleReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.fightingStyleSwap.replaceId),
+        options: fightingStyleOptions(c.features, "", locale, classId)
+          .filter((o) => !o.disabled && o.id !== a.fightingStyle)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
+  }
+  // SRD 5.2.1, Sorcerer: «Whenever you gain a Sorcerer level, you can replace one of
+  // your Metamagic options with one you don't know».
+  const knownMetamagic = classId === "sorcerer" ? (plan.charMetamagicChoices ?? []) : [];
+  if (knownMetamagic.length > 0) {
+    rows.push({
+      key: "metamagicRemove",
+      title: t("levelUp.screen.metamagicForget"),
+      count: 0,
+      picked: one(a.metamagicSwap.removeId),
+      options: knownMetamagic.map((id) => ({
+        id,
+        label: localizeSrd("metamagic", id, "name", locale),
+      })),
+    });
+    if (a.metamagicSwap.removeId) {
+      rows.push({
+        key: "metamagicReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.metamagicSwap.replaceId),
+        options: metamagicOptions(
+          new Set([...knownMetamagic, ...a.metamagic]),
+          "",
+          locale
+        )
+          .filter((o) => !o.disabled)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
+  }
+  // SRD 5.2.1, Warlock: «Whenever you gain a Warlock level, you can replace one of
+  // your invocations with another one for which you qualify. You can't replace an
+  // invocation if it's a prerequisite for another invocation that you have.»
+  const knownInvocations =
+    classId === "warlock" ? (plan.charInvocationChoices ?? []) : [];
+  // Nor one another invocation needs (known, or taken this level), nor one with its own
+  // choices (an origin feat, a Book of Shadows): those would stay behind.
+  const replaceableInvocations = knownInvocations.filter(
+    (id) =>
+      !invocationHasChoices(id) &&
+      ![...knownInvocations, ...a.invocations].some((other) =>
+        invocationRequires(other, id)
+      )
+  );
+  if (replaceableInvocations.length > 0) {
+    rows.push({
+      key: "invocationRemove",
+      title: t("levelUp.screen.invocationForget"),
+      count: 0,
+      picked: one(a.invocationSwap.removeId),
+      options: replaceableInvocations.map((id) => ({
+        id,
+        label: localizeSrd("invocation", id, "name", locale),
+      })),
+    });
+    const removed = a.invocationSwap.removeId;
+    if (removed) {
+      const kept = knownInvocations.filter((id) => id !== removed);
+      rows.push({
+        key: "invocationReplace",
+        title: t("levelUp.screen.swapLearn"),
+        count: 1,
+        picked: one(a.invocationSwap.replaceId),
+        options: invocationOptions(
+          plan.newClassLevel,
+          [...kept, ...a.invocations],
+          "",
+          locale
+        )
+          .filter((o) => o.id !== removed)
+          .map((o) => ({ id: o.id, label: o.label })),
+      });
+    }
+  }
   // SRD 5.2.1, Magical Discoveries: «whenever you gain a Bard level, you can
   // replace one of the spells with another spell that meets these requirements».
   const discovery = plan.discoverySwap;
@@ -603,9 +739,9 @@ export function levelUpAsks(
       })),
     });
     if (a.discoverySwap.removeId) {
-      const taken = new Set([...a.newCantrips, ...a.newSpells]);
-      for (const swap of [a.swap, a.cantripSwap]) {
-        if (swap.replaceId) taken.add(swap.replaceId);
+      const taken = new Set([...a.newCantrips, ...newSpells]);
+      for (const s of [swap, a.cantripSwap]) {
+        if (s.replaceId) taken.add(s.replaceId);
       }
       rows.push({
         key: "discoveryReplace",
@@ -646,15 +782,18 @@ export function levelUpAsks(
     maneuvers: plan.needsManeuvers ? a.maneuvers : [],
     invocations: plan.needsInvocations ? a.invocations : [],
     newCantrips: a.newCantrips,
-    newSpells: a.newSpells,
+    newSpells,
     choiceSlots: plan.choiceSlots,
     choicePicks,
     multiclass: plan.mcGrants ? { grants: plan.mcGrants, skillPicks: a.mcSkills } : null,
     spellMastery: plan.needsSpellMastery ? a.spellMastery : null,
     signatureSpells: plan.needsSignatureSpells ? a.signatureSpells : null,
-    swap: a.swap,
+    swap,
     cantripSwap: a.cantripSwap,
     ...(discovery ? { discoverySwap: a.discoverySwap } : {}),
+    ...(ownedStyles.length > 0 ? { fightingStyleSwap: a.fightingStyleSwap } : {}),
+    ...(knownMetamagic.length > 0 ? { metamagicSwap: a.metamagicSwap } : {}),
+    ...(replaceableInvocations.length > 0 ? { invocationSwap: a.invocationSwap } : {}),
     bundlePicks: plan.needsBundles ? a.bundlePicks : {},
   };
   return {
@@ -666,6 +805,15 @@ export function levelUpAsks(
     picks,
   };
 }
+
+const SWAP_FIELD = {
+  fightingStyleRemove: "fightingStyleSwap",
+  fightingStyleReplace: "fightingStyleSwap",
+  metamagicRemove: "metamagicSwap",
+  metamagicReplace: "metamagicSwap",
+  invocationRemove: "invocationSwap",
+  invocationReplace: "invocationSwap",
+} as const;
 
 /** The answers with `id` toggled in `row`: a pick-one row takes it, a count row toggles it. */
 export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelUpAnswers {
@@ -758,6 +906,18 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
         ...a,
         discoverySwap: { removeId: flip(a.discoverySwap.removeId), replaceId: null },
       };
+    case "fightingStyleRemove":
+    case "metamagicRemove":
+    case "invocationRemove": {
+      const field = SWAP_FIELD[key];
+      return { ...a, [field]: { removeId: flip(a[field].removeId), replaceId: null } };
+    }
+    case "fightingStyleReplace":
+    case "metamagicReplace":
+    case "invocationReplace": {
+      const field = SWAP_FIELD[key];
+      return { ...a, [field]: { ...a[field], replaceId: flip(a[field].replaceId) } };
+    }
     case "discoveryReplace":
       return {
         ...a,
@@ -769,9 +929,11 @@ export function toggleAnswer(a: LevelUpAnswers, row: AskRow, id: string): LevelU
     case "invocations":
     case "maneuvers":
     case "newCantrips":
-    case "newSpells":
     case "mcSkills":
       return { ...a, [key]: many(a[key]) };
+    case "newSpells":
+      // The row's picks, not the stored ones: a pick the subclass made moot drops.
+      return { ...a, newSpells: many(row.picked) };
     default:
       return a;
   }

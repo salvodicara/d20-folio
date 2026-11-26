@@ -41,6 +41,8 @@ describe("DmHitDialog", () => {
     const onHit = vi.fn();
     const onCondition = vi.fn();
     const onShow = vi.fn();
+    const onTempHp = vi.fn();
+    const onRemove = vi.fn();
     render(
       <DmHitDialog
         targets={targets}
@@ -48,10 +50,12 @@ describe("DmHitDialog", () => {
         onHit={onHit}
         onCondition={onCondition}
         onShow={onShow}
+        onTempHp={onTempHp}
+        onRemove={onRemove}
         onClose={() => {}}
       />
     );
-    return { onHit, onCondition, onShow };
+    return { onHit, onCondition, onShow, onTempHp, onRemove };
   };
 
   it("hits the chosen creatures with the typed amount, leaving out a dropped one", () => {
@@ -127,6 +131,27 @@ describe("DmHitDialog", () => {
     it("has nothing to set on heroes alone", () => {
       open([mara]);
       expect(screen.queryByRole("button", { name: "Ally" })).toBeNull();
+    });
+  });
+
+  describe("S3: temp HP and «Togli dallo scontro»", () => {
+    it("gives the chosen monsters the typed temporary HP", () => {
+      const { onTempHp } = open([goblin(1), goblin(2)]);
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "4" } });
+      fireEvent.click(screen.getByRole("button", { name: "Temporary HP" }));
+      expect(onTempHp).toHaveBeenCalledWith([goblin(1), goblin(2)], 4);
+    });
+
+    it("takes the chosen monsters out of the fight; heroes stay", () => {
+      const { onRemove } = open([goblin(1), mara]);
+      fireEvent.click(screen.getByRole("button", { name: "Remove from the fight" }));
+      expect(onRemove).toHaveBeenCalledWith([goblin(1)]);
+    });
+
+    it("neither for heroes alone", () => {
+      open([mara]);
+      expect(screen.queryByRole("button", { name: "Temporary HP" })).toBeNull();
+      expect(screen.queryByRole("button", { name: "Remove from the fight" })).toBeNull();
     });
   });
 });

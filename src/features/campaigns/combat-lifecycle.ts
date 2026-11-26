@@ -15,7 +15,12 @@ import type { DamageRetaliation } from "@/lib/combat-transition";
 import type { DamageInstance } from "@/lib/damage-intake";
 import type { LocText } from "@/lib/loc-text";
 import { stripUndefined } from "@/lib/strip-undefined";
-import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
+import type {
+  CampaignDoc,
+  EncounterCombatant,
+  EncounterEndReason,
+  EncounterState,
+} from "@/types/campaign";
 
 import {
   addMonster,
@@ -27,6 +32,7 @@ import {
   setInitiative,
   setMonsterCondition,
   setMonsterSide,
+  setMonsterTempHp,
   setRevealed,
   type EncounterPcSeed,
   type MonsterInput,
@@ -527,6 +533,120 @@ export function planMonsterSide(
     patch: { encounter: setMonsterSide(fight, input.monsterId, input.side) },
     previous,
   };
+}
+
+/**
+ * The DM types a hero's d20 for a player without the app (the classic hub's InitVital):
+ * the hero's own roll, recorded as if they had rolled it. Null for anyone but the DM, or
+ * for a member who has no hero in this campaign.
+ */
+export function planDmHeroRoll(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: {
+    uid: string;
+    heroUid: string;
+    roll: number | null;
+    bonuses: Readonly<Record<string, number>>;
+    now: number;
+  }
+): RollPlan | null {
+  if (input.uid !== campaign.dmUid) return null;
+  if (!isAttached(campaign.memberDetails[input.heroUid])) return null;
+  return planRoll(campaign, {
+    uid: input.heroUid,
+    roll: input.roll,
+    bonuses: input.bonuses,
+    now: input.now,
+  });
+}
+
+/** What putting a removed creature back needs: itself, its place, the turn it held. */
+export interface RemovedCombatant {
+  combatant: EncounterCombatant;
+  /** Its index among the fight's combatants. */
+  index: number;
+  /** Who followed it in the order (null: it was last, or not in the order). */
+  beforeId: string | null;
+  inOrder: boolean;
+  /** The turn and round it was taken out on, when it held the turn. */
+  turn: { round: number; nextId: string | null } | null;
+}
+
+/**
+ * The DM takes a creature out of the fight (the classic MonsterCard «Remove»). Only a
+ * monster: a hero leaves with their own character. Null for anyone but the DM.
+ */
+export function planRemoveCombatant(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; id: string }
+): { patch: CombatPatch; removed: RemovedCombatant } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const index = fight.combatants.findIndex((c) => c.id === input.id);
+  const combatant = fight.combatants[index];
+  if (combatant?.kind !== "monster") return null;
+  const order = fight.order ?? [];
+  const at = order.indexOf(input.id);
+  const next = removeCombatant(fight, input.id);
+  return {
+    patch: { encounter: next },
+    removed: {
+      combatant,
+      index,
+      beforeId: at >= 0 ? (order[at + 1] ?? null) : null,
+      inOrder: at >= 0,
+      turn:
+        fight.currentCombatantId === input.id
+          ? { round: fight.round, nextId: next.currentCombatantId }
+          : null,
+    },
+  };
+}
+
+/**
+ * The undo of {@link planRemoveCombatant}: the creature comes back to its place, and to
+ * its turn when it held it and the turn has not moved since. Null when it is already
+ * back, or for anyone but the DM.
+ */
+export function planRestoreCombatant(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; removed: RemovedCombatant }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  const { combatant, index, beforeId, inOrder, turn } = input.removed;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  if (fight.combatants.some((c) => c.id === combatant.id)) return null;
+  const combatants = [...fight.combatants];
+  combatants.splice(Math.min(index, combatants.length), 0, combatant);
+  let order = fight.order;
+  if (inOrder && order) {
+    const at = beforeId === null ? -1 : order.indexOf(beforeId);
+    order = [...order];
+    order.splice(at < 0 ? order.length : at, 0, combatant.id);
+  }
+  const back =
+    turn && fight.currentCombatantId === turn.nextId
+      ? { currentCombatantId: combatant.id, round: turn.round }
+      : {};
+  return { encounter: { ...fight, combatants, ...(order ? { order } : {}), ...back } };
+}
+
+/**
+ * The DM gives a monster temporary Hit Points (D&D Beyond's HP menu: Temp HP). Hands
+ * back the old value for the undo. Null for anyone but the DM, for a hero (theirs live on
+ * their sheet), or when nothing changes.
+ */
+export function planMonsterTempHp(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string; temp: number }
+): { patch: CombatPatch; previous: number } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  const next = setMonsterTempHp(fight, monster.id, input.temp);
+  if (next === fight) return null;
+  return { patch: { encounter: next }, previous: monster.hp.temp };
 }
 
 /**

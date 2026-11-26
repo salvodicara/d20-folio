@@ -103,6 +103,18 @@ export function requiredInvocationIds(prereq: string): string[] {
   return ids;
 }
 
+/** Whether invocation `id` opens choices of its own (an origin feat, cantrips, spells). */
+export function invocationHasChoices(id: string): boolean {
+  const inv = SRD_INVOCATIONS.find((i) => i.id === id);
+  return (inv?.grants ?? []).some((g) => g.type.startsWith("choice-"));
+}
+
+/** Whether invocation `id` names invocation `requiredId` as its prerequisite. */
+export function invocationRequires(id: string, requiredId: string): boolean {
+  const inv = SRD_INVOCATIONS.find((i) => i.id === id);
+  return inv ? requiredInvocationIds(inv.prerequisite).includes(requiredId) : false;
+}
+
 /**
  * All 28 SRD 2024 Eldritch Invocations, sorted by their canonical EN name (a
  * stable, locale-independent order; the EN name comes from the i18n catalogue via
