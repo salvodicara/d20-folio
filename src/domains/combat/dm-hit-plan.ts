@@ -17,6 +17,10 @@ export interface DmTarget {
   conditions: string[];
   memberUid?: string;
   characterId?: string;
+  /** Monster: what the players see of it (set from «Per i giocatori»). */
+  hidden?: boolean;
+  revealed?: boolean;
+  side?: "ally" | "enemy";
 }
 
 export type DmEntry =
@@ -51,6 +55,9 @@ export function dmTargets(
         conditions: r.conditions,
         ...(r.memberUid ? { memberUid: r.memberUid } : {}),
         ...(r.characterId ? { characterId: r.characterId } : {}),
+        ...(r.kind === "monster"
+          ? { hidden: r.hidden, revealed: r.revealed === true, side: r.side ?? "enemy" }
+          : {}),
       }))
   );
 }

@@ -20,6 +20,7 @@ function row(
     bands: [],
     chips: [],
     art: null,
+    marks: [],
     ...over,
   };
 }
@@ -132,5 +133,25 @@ describe("playInitiativeRows — the face on a row", () => {
       "pc-a"
     );
     expect(out.map((r) => r.portrait)).toEqual(["/p.webp", null, null]);
+  });
+
+  it("a revealed group still reads as its most hurt creature, not its summed numbers", () => {
+    const out = playInitiativeRows(
+      [
+        row({
+          ids: ["m-1", "m-2", "m-3"],
+          kind: "monster",
+          name: "Raider",
+          count: 3,
+          hp: { current: 24, max: 33, temp: 0 },
+          bands: [
+            { band: "healthy", count: 2 },
+            { band: "nearDeath", count: 1 },
+          ],
+        }),
+      ],
+      "pc-a"
+    );
+    expect(out[0]?.state).toEqual({ kind: "band", band: "nearDeath" });
   });
 });

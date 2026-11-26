@@ -33,10 +33,12 @@ export function playInitiativeRows(
   const nextAt = at < 0 || rows.length < 2 ? -1 : (at + 1) % rows.length;
   return rows.map((r, i) => {
     const mine = r.ids.includes(myId);
-    // A group reads as its most hurt member (the bands run from the healthiest).
-    const band = r.hp
-      ? hpBand(r.hp.current, r.hp.max)
-      : (r.bands.at(-1)?.band ?? "healthy");
+    // A group reads as its most hurt member (the bands run from the healthiest); a
+    // revealed creature's numbers are its group's sum, so a creature reads its bands.
+    const band =
+      r.kind === "pc" && r.hp
+        ? hpBand(r.hp.current, r.hp.max)
+        : (r.bands.at(-1)?.band ?? "healthy");
     return {
       key: r.ids.join("+"),
       ids: r.ids,

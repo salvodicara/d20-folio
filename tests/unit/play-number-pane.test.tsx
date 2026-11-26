@@ -88,17 +88,14 @@ describe("the pane", () => {
     expect(view.parts?.length).toBeGreaterThan(0);
   });
 
-  it("Customize sets a fixed value; the pane then says so and lists the manual adjustment", () => {
+  it("Customize sets a fixed value; the pane then says so", () => {
     const first = open({ kind: "ac" });
     fireEvent.change(screen.getByLabelText("Fixed value"), { target: { value: "21" } });
     fireEvent.click(screen.getByRole("button", { name: "Save" }));
     expect(live().character.acOverride).toBe(21);
     first.unmount();
     open({ kind: "ac" });
-    expect(screen.getByText("Set by hand")).toBeTruthy();
-    expect(screen.getByRole("list", { name: "Breakdown" }).textContent).toContain(
-      "Manual adjustment"
-    );
+    expect(screen.getByText("Fixed value", { selector: ".f-num-tag" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Use the computed value" }));
     expect(live().character.acOverride).toBeNull();
   });
@@ -201,5 +198,66 @@ describe("the max HP pane says what is stored: a correction that keeps moving", 
     const text = screen.getByRole("dialog").textContent;
     expect(text).toContain("Adjusted");
     expect(text).not.toContain("Set by hand");
+  });
+});
+
+describe("a fixed value says it is fixed, never a correction (only max HP is stored as one)", () => {
+  const fixed: Parameters<typeof playNumberView>[2][] = [
+    { kind: "ac" },
+    { kind: "initiative" },
+    { kind: "proficiency" },
+    { kind: "ability", ability: "DEX" },
+    { kind: "save", ability: "WIS" },
+    { kind: "skill", id: "stealth" },
+    { kind: "passive", id: "perception" },
+  ];
+  it.each(fixed)(
+    "%o: tagged «Fixed value», no «Manual adjustment» row, the computed value named",
+    (key) => {
+      const computed = playNumberView(live(), "en", key).total;
+      const first = open(key);
+      fireEvent.change(screen.getByLabelText("Fixed value"), {
+        target: { value: String(computed + 3) },
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      first.unmount();
+      open(key);
+      const dialog = screen.getByRole("dialog");
+      expect(screen.getByText("Fixed value", { selector: ".f-num-tag" })).toBeTruthy();
+      expect(dialog.textContent).not.toContain("Set by hand");
+      const parts = screen.getByRole("list", { name: "Breakdown" });
+      expect(parts.textContent).not.toContain("Manual adjustment");
+      const row = screen.getByText("Computed value").closest("li");
+      expect(row?.textContent).toMatch(new RegExp(`${Math.abs(computed)}$`));
+      expect(dialog.textContent).toContain("level or gear change");
+    }
+  );
+
+  it("in Italian: «Valore fisso», «Valore calcolato», no «Correzione manuale»", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      const doc = live();
+      doc.character.acOverride = 17;
+      useCharacterStore.setState({ character: doc });
+      open({ kind: "ac" }, "it");
+      const text = screen.getByRole("dialog").textContent;
+      expect(screen.getByText("Valore fisso", { selector: ".f-num-tag" })).toBeTruthy();
+      expect(text).not.toContain("Impostato a mano");
+      expect(text).not.toContain("Correzione manuale");
+      expect(text).toContain("Valore calcolato");
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+
+  it("max HP keeps its correction row: that is what it stores", () => {
+    const doc = live();
+    doc.character.hpBonus = 3;
+    useCharacterStore.setState({ character: doc });
+    open({ kind: "maxHp" });
+    expect(screen.getByRole("list", { name: "Breakdown" }).textContent).toContain(
+      "Manual adjustment"
+    );
+    expect(screen.queryByText("Computed value")).toBeNull();
   });
 });

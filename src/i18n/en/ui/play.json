@@ -505,9 +505,10 @@
       }
     },
     "number": {
-      "handSet": "Set by hand",
       "override": "Fixed value",
       "overrideHelp": "Replaces the computed value. «Use the computed value» brings it back.",
+      "computed": "Computed value",
+      "fixedHelp": "It stays {{value}} even if your level or gear change. «Use the computed value» brings back {{computed}}.",
       "useComputed": "Use the computed value",
       "setToast": "{{name}}: set by hand",
       "resetToast": "{{name}}: computed again",
