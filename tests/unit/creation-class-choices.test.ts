@@ -57,7 +57,14 @@ function bundlePicks(classId: string): CreationDraftAction[] {
 describe("the class's level-1 choices at creation", () => {
   for (const table of classTables) {
     it(`${table.id}: complete only once every class choice is made`, () => {
-      let draft = readyClass(table.id);
+      // The ready-made fill makes the class picks too (#1397): undo them, so each
+      // one is made here by hand.
+      let draft = apply(
+        readyClass(table.id),
+        ...KINDS.map(
+          (kind): CreationDraftAction => ({ type: "setClassPick", kind, ids: [] })
+        )
+      );
       const { classNeeds, classOptions } = creationFacts(draft);
       const steps: CreationDraftAction[][] = bundlePicks(table.id).map((a) => [a]);
       for (const kind of KINDS) {
@@ -117,9 +124,10 @@ describe("the class's level-1 choices at creation", () => {
     expect(expertise("rogue", 6)).toBe(4);
   });
 
-  it("the classic creation form (no class picks) builds a Bard 9 the sheet then asks 4 Expertise", () => {
-    // The classic wizard dispatches no `setClassPick` and no `fillReadyMade`: a Bard
-    // made at 9 has no skill at Expertise, and «Choices to finish» asks the table's 4.
+  it("a draft with no class picks builds a Bard 9 the sheet then asks 4 Expertise", () => {
+    // Without `setClassPick` or `fillReadyMade` a Bard made at 9 has no skill at
+    // Expertise, and «Choices to finish» asks the table's 4. (The classic form now
+    // fills them before it builds: creation-navigate.test.tsx.)
     const classic = apply(
       initialCreationDraft(),
       { type: "setName", name: "Lia" },

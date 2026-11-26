@@ -15,6 +15,10 @@
  *   from the class's ready-made build (`data/quickbuild.ts`) with a Randomize
  *   reroll; the live preview card closes the single centred column.
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
+ *
+ * Neither path asks the class's own picks (Weapon Mastery, a Fighting Style,
+ * invocations, Expertise): «Create» makes them the ready-made way (`fillReadyMade`,
+ * D&D Beyond's quick build), so a new sheet never owes them; each stays editable.
  */
 
 import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";
@@ -66,6 +70,7 @@ import { QUICKBUILD_PRESETS } from "@/data/quickbuild";
 import { cryptoRng, rollQuickbuildFlavor } from "@/lib/quickbuild-random";
 import {
   activeCreationSteps,
+  creationDraftReducer,
   creationFacts,
   creationStepBlocked,
   missingCreationRequirements,
@@ -312,7 +317,10 @@ export function CreationWizard() {
 
   const handleCreate = useCallback(async () => {
     if (!user) return;
-    const built = buildNewCharacter(draft, { displayName: user.displayName });
+    const built = buildNewCharacter(
+      creationDraftReducer(draft, { type: "fillReadyMade" }),
+      { displayName: user.displayName }
+    );
     if (!built.ok) {
       setError(t(BUILD_ERROR_KEYS[built.error]));
       return;

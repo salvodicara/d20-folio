@@ -50,7 +50,7 @@ import {
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { applySubclassSpellcasting } from "@/lib/subclass-spellcasting";
 import { hasFightingStyleFeat } from "@/lib/fighting-style";
-import { EXPERTISE_PICKS_PER_GRANT, applyExpertisePicks } from "@/lib/expertise-pick";
+import { applyExpertisePicks } from "@/lib/expertise-pick";
 import {
   applyAsiToScores,
   isAsiChoiceComplete,
@@ -162,7 +162,8 @@ export function applyClassPicks(
     }
   }
 
-  if (expertisePicks.length === EXPERTISE_PICKS_PER_GRANT) {
+  // Two per grant: a Bard created at 9 or a Rogue at 6 brings four at once.
+  if (expertisePicks.length > 0) {
     updated = {
       ...updated,
       skills: applyExpertisePicks(updated.skills, expertisePicks),

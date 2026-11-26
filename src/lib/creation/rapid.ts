@@ -9,20 +9,18 @@
  *      preset's species, otherwise each bundle's first option, the spellcasting
  *      ability its priority puts first, the Versatile feat (first origin feat
  *      the background doesn't grant), and every trait pick from the legal options;
- *   3. the class's ready-made picks still missing (`fillReadyMade`);
- *   4. the class's level-1 choices: each Order's first option, the first
- *      Fighting Style, masteries for the weapons it starts with first, the first
- *      invocation, Expertise in its first proficient skills.
+ *   3. each of the class's level-1 Orders: its first option;
+ *   4. the class's ready-made picks still missing (`fillReadyMade`), its own
+ *      Weapon Mastery, Fighting Style, invocations and Expertise among them.
  *
  * Every pick stays editable later from the sheet. Pure module.
  */
-import { classTables, getFeaturesAtLevel } from "@/data/classes";
+import { getFeaturesAtLevel } from "@/data/classes";
 import { SRD_FEATS } from "@/data/feats";
 import { DEFAULT_QUICKBUILD_PRESET, QUICKBUILD_PRESETS } from "@/data/quickbuild";
 import { SRD_RACES } from "@/data/races";
 import type { Grant } from "@/lib/grants";
 
-import type { ClassChoicePicks } from "./class-choices";
 import {
   creationDraftReducer,
   creationFacts,
@@ -96,35 +94,7 @@ export function rapidDraft(
       draft = apply(draft, { type: "setLineageChoice", bundleKey, optionId });
     }
   }
-  draft = apply(draft, { type: "fillReadyMade" });
-  facts = creationFacts(draft);
-  // The weapons it starts with come first among the masteries.
-  const kit =
-    classTables
-      .find((c) => c.id === classId)
-      ?.startingEquipment.find((o) => o.label === facts.classEquipLabel)
-      ?.items.flatMap((item) => (item.srdId ? [item.srdId] : [])) ?? [];
-  const preferred: Record<keyof ClassChoicePicks, readonly string[]> = {
-    fightingStyles: [],
-    weaponMasteries: kit,
-    invocations: [],
-    expertise: draft.classSkills,
-  };
-  for (const kind of [
-    "fightingStyles",
-    "weaponMasteries",
-    "invocations",
-    "expertise",
-  ] as const) {
-    const count = facts.classNeeds[kind];
-    if (count === 0 || draft.classPicks[kind].length === count) continue;
-    const legal = facts.classOptions[kind];
-    const ordered = [...preferred[kind].filter((id) => legal.includes(id)), ...legal];
-    draft = apply(draft, {
-      type: "setClassPick",
-      kind,
-      ids: [...new Set(ordered)].slice(0, count),
-    });
-  }
-  return draft;
+  // The ready-made picks, the class's own among them (masteries for the weapons it
+  // starts with first, Defense, the first invocations, Expertise in its skills).
+  return apply(draft, { type: "fillReadyMade" });
 }
