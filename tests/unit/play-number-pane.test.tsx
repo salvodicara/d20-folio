@@ -12,6 +12,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { playHeaderView } from "@/domains/play/play-header-view";
 import { playLeftView } from "@/domains/play/play-left-view";
 import { playNumberView } from "@/domains/play/play-number-view";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { PlayNumberPane } from "@/domains/play/ui/PlayNumberPane";
 import i18n from "@/i18n";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -51,6 +52,7 @@ describe("the pane's total is the tile's number", () => {
     expect(total({ kind: "initiative" })).toBe(head.numbers.initiative);
     expect(total({ kind: "speed" })).toBe(head.numbers.speedFt);
     expect(total({ kind: "proficiency" })).toBe(head.numbers.proficiency);
+    expect(total({ kind: "maxHp" })).toBe(head.hp.max);
     for (const a of head.abilities) {
       expect(total({ kind: "ability", ability: a.id })).toBe(a.score);
       expect(total({ kind: "save", ability: a.id })).toBe(a.saveTotal);
@@ -139,5 +141,65 @@ describe("the pane", () => {
     open({ kind: "skill", id: "stealth" }, "en", true);
     expect(screen.queryByLabelText("Fixed value")).toBeNull();
     expect(screen.queryByRole("button", { name: "Save" })).toBeNull();
+  });
+});
+
+describe("each pane says the rule its number follows (D&D Beyond's pane opens with the rule)", () => {
+  const cases: [Parameters<typeof playNumberView>[2], string][] = [
+    [{ kind: "ac" }, "armorClass"],
+    [{ kind: "initiative" }, "initiative"],
+    [{ kind: "speed" }, "speed"],
+    [{ kind: "proficiency" }, "proficiencyBonus"],
+    [{ kind: "ability", ability: "DEX" }, "abilityScores"],
+    [{ kind: "save", ability: "WIS" }, "savingThrow"],
+    [{ kind: "skill", id: "stealth" }, "skillCheck"],
+    [{ kind: "maxHp" }, "hitPoints"],
+    [{ kind: "passive", id: "perception" }, "passiveScore"],
+  ];
+  it.each(cases)("%o → the glossary's %s sentence", (key, term) => {
+    open(key);
+    const rule = i18n.t(`glossary.term.${term}`);
+    expect(rule).not.toContain("glossary.");
+    expect(screen.getByRole("dialog").textContent).toContain(rule);
+  });
+
+  it("in Italian too, and on a read-only sheet", async () => {
+    await i18n.changeLanguage("it");
+    try {
+      open({ kind: "ac" }, "it", true);
+      expect(screen.getByRole("dialog").textContent).toContain(
+        i18n.t("glossary.term.armorClass")
+      );
+    } finally {
+      await i18n.changeLanguage("en");
+    }
+  });
+});
+
+describe("the max HP pane says what is stored: a correction that keeps moving", () => {
+  it("its field is the current maximum and its help names the correction typed", () => {
+    const doc = live();
+    doc.character.hpBonus = undefined;
+    doc.character.hp = { max: deriveMaxHp(doc.character) };
+    useCharacterStore.setState({ character: doc });
+    open({ kind: "maxHp" });
+    const max = playNumberView(live(), "en", { kind: "maxHp" }).total;
+    expect(screen.queryByLabelText("Fixed value")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Current maximum"), {
+      target: { value: String(max - 4) },
+    });
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "We save the difference as a correction (−4)"
+    );
+  });
+
+  it("a corrected max is tagged «Adjusted», not «Set by hand»", () => {
+    const doc = live();
+    doc.character.hpBonus = 3;
+    useCharacterStore.setState({ character: doc });
+    open({ kind: "maxHp" });
+    const text = screen.getByRole("dialog").textContent;
+    expect(text).toContain("Adjusted");
+    expect(text).not.toContain("Set by hand");
   });
 });

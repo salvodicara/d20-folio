@@ -14,6 +14,7 @@ import {
   quickBuild,
   setOwnerCharacterInt,
   setOwnerPlayVersion,
+  waitForStoredCharacter,
 } from "./helpers";
 
 test("an offline edit survives a migration: kept, reload, apply", async ({ browser }) => {
@@ -25,6 +26,8 @@ test("an offline edit survives a migration: kept, reload, apply", async ({ brows
     name: "Rehearsal Rescue",
   });
   await expect(page.locator(".f-char")).toBeVisible({ timeout: 60_000 });
+  // The create must land before the tab goes offline, or it waits in the queue too.
+  await waitForStoredCharacter(id);
 
   // Offline: the edit waits in the write queue; then the tab closes.
   await context.setOffline(true);
@@ -96,8 +99,7 @@ test("an offline play edit survives a play-shape migration: kept, reload, apply"
     name: "Rehearsal Play Rescue",
   });
   await expect(page.locator(".f-char")).toBeVisible({ timeout: 60_000 });
-  const before = await ownerCurrentHp(id);
-  if (before === null) throw new Error("no stored HP");
+  const before = await waitForStoredCharacter(id);
 
   // Offline: an HP change (a play write) waits in the queue; then the tab closes.
   await context.setOffline(true);

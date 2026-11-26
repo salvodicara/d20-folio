@@ -5,24 +5,52 @@
  * classic Add Spell picker): the character's own class list first, a spell already on
  * the sheet marked «Già tra i tuoi», only the levels it can cast, one tap adds it
  * with the 5 s undo. Preparing it
- * is then the other tab's.
+ * is then the other tab's. «Incantesimo personalizzato» opens the homebrew spell form
+ * in its place (`PlayCustomSpell`).
+ *
+ * A Wizard whose book holds its free picks copies a Wizard spell in instead (SRD
+ * «Expanding the Book», `spellbookEntry`): the row says the cost (2 hours and 50 gp a
+ * spell level), «Copia» asks once, and the confirm pays from the gold, with the undo
+ * giving back the spell and the coins. A purse that falls short says so and can copy
+ * without paying (the table settles it).
  */
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { spellSpec } from "@/features/compendium/picker";
 import { useCompendiumPicker } from "@/features/compendium/picker/useCompendiumPicker";
+import { copySpellToBook } from "@/features/character/spellbook-commands";
+import { spellbookEntry } from "@/lib/wizard-spellbook";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
+import type { Locale } from "@/lib/locale";
 import { Button, Field } from "@/ui";
 
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 
+import { PlayCustomSpell } from "./PlayCustomSpell";
+
 /** A long list stays light: the first rows, and the search narrows the rest. */
 const SHOWN = 60;
 
-export function PlayAddSpell() {
+export function PlayAddSpell({
+  locale,
+  onCustomChange,
+}: {
+  locale: Locale;
+  /** The homebrew form opened or closed: the window hides its «Fatto» meanwhile. */
+  onCustomChange?: (open: boolean) => void;
+}) {
   const { t } = useTranslation();
   const picker = useCompendiumPicker(spellSpec, { mode: "add" });
+  const [custom, setCustomState] = useState(false);
+  const setCustom = (open: boolean) => {
+    setCustomState(open);
+    onCustomChange?.(open);
+  };
+  // the spell whose copy is being confirmed
+  const [asking, setAsking] = useState<string | null>(null);
+  const doc = picker.ctx.character;
   type Spell = (typeof picker.filtered)[number];
   // D&D Beyond's «Manage Spells» lists up to the highest level you can cast: the
   // highest level with a slot (pact slots included); cantrips always.
@@ -53,6 +81,11 @@ export function PlayAddSpell() {
       },
       { turnScoped: false }
     );
+  const copy = (s: Spell, pay: boolean) => {
+    setAsking(null);
+    copySpellToBook(s.id, pay, t("play.spells.copiedToast", { name: nameOf(s) }));
+  };
+  if (custom) return <PlayCustomSpell locale={locale} onDone={() => setCustom(false)} />;
   return (
     <div className="f-stack">
       <Field
@@ -69,35 +102,86 @@ export function PlayAddSpell() {
         {castable.slice(0, SHOWN).map((s) => {
           const name = nameOf(s);
           const added = picker.isAdded(s);
+          const entry = doc && !added ? spellbookEntry(doc, s.id) : null;
+          const copyCost = entry?.kind === "copy" ? entry : null;
+          const levelLine =
+            s.level === 0 ? t("spells.cantrip") : t("spells.level", { level: s.level });
           return (
-            <div key={s.id} className="f-act f-add-row">
-              <span className="f-act-slot" data-painted="" aria-hidden="true">
-                <SpellArt id={s.id} school={s.school} size="fill" />
-              </span>
-              <span className="f-row-main">
-                <span className="f-row-t">{name}</span>
-                <span className="f-row-s">
-                  {s.level === 0
-                    ? t("spells.cantrip")
-                    : t("spells.level", { level: s.level })}
+            <div key={s.id} className="f-add-item">
+              <div className="f-act f-add-row">
+                <span className="f-act-slot" data-painted="" aria-hidden="true">
+                  <SpellArt id={s.id} school={s.school} size="fill" />
                 </span>
-              </span>
-              {added ? (
-                <span className="f-quiet">{t("play.spells.alreadyYours")}</span>
-              ) : (
-                <Button
-                  kind="ghost"
-                  aria-label={`${t("common.add")}: ${name}`}
-                  onClick={() => add(s)}
+                <span className="f-row-main">
+                  <span className="f-row-t">{name}</span>
+                  <span className="f-row-s">
+                    {copyCost
+                      ? `${levelLine} · ${t("play.spells.copyCost", copyCost)}`
+                      : levelLine}
+                  </span>
+                </span>
+                {added ? (
+                  <span className="f-quiet">{t("play.spells.alreadyYours")}</span>
+                ) : copyCost ? (
+                  <Button
+                    kind="ghost"
+                    aria-label={t("play.spells.copyLabel", { name })}
+                    aria-expanded={asking === s.id}
+                    onClick={() => setAsking(asking === s.id ? null : s.id)}
+                  >
+                    {t("common.copy")}
+                  </Button>
+                ) : (
+                  <Button
+                    kind="ghost"
+                    aria-label={`${t("common.add")}: ${name}`}
+                    onClick={() => add(s)}
+                  >
+                    {t("common.add")}
+                  </Button>
+                )}
+              </div>
+              {copyCost && asking === s.id && (
+                <div
+                  className="f-copy-ask"
+                  role="group"
+                  aria-label={t("play.spells.copyLabel", { name })}
                 >
-                  {t("common.add")}
-                </Button>
+                  <p className="f-help">
+                    {t("play.spells.copyAsk", {
+                      name,
+                      hours: copyCost.hours,
+                      gp: copyCost.gp,
+                    })}
+                  </p>
+                  {!copyCost.affordable && (
+                    <p className="f-help">{t("play.spells.copyShort")}</p>
+                  )}
+                  <div className="f-copy-acts">
+                    {copyCost.affordable ? (
+                      <Button kind="primary" onClick={() => copy(s, true)}>
+                        {t("play.spells.copyPay", { gp: copyCost.gp })}
+                      </Button>
+                    ) : (
+                      <Button kind="ghost" onClick={() => copy(s, false)}>
+                        {t("play.spells.copyUnpaid")}
+                      </Button>
+                    )}
+                    <Button kind="quiet" onClick={() => setAsking(null)}>
+                      {t("common.cancel")}
+                    </Button>
+                  </div>
+                </div>
               )}
             </div>
           );
         })}
         {castable.length === 0 && <p className="f-quiet">{t("spells.pick.none")}</p>}
       </div>
+      {/* D&D Beyond: a homebrew spell beside the catalogue's */}
+      <Button kind="ghost" onClick={() => setCustom(true)}>
+        {t("play.spells.customOpen")}
+      </Button>
     </div>
   );
 }

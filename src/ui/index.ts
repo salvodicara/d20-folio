@@ -3,7 +3,7 @@ import "./ui.css";
 export { Art } from "./Art";
 export { artUrl, type ArtKind } from "./art-url";
 export { AppShell, PhoneBar, type ShellAction, type ShellLink } from "./AppShell";
-export { usePageMenuActions, useShellMenu } from "./shell-bar";
+export { usePageMenuActions, useShellMenu, type PageMenuAction } from "./shell-bar";
 export { Button } from "./Button";
 export { Chip } from "./Chip";
 export { Choice } from "./Choice";

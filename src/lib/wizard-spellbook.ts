@@ -12,13 +12,18 @@
  * level-up pick from a spell copied in by hand (a scroll, another book), so a copied
  * spell counts too: a stored wizard is never owed more than the rule gives.
  *
+ * Expanding the book: once the free picks are in, a Wizard spell of a level the
+ * Wizard has slots for is copied in for 2 hours and 50 GP per spell level
+ * (`spellbookEntry`, `copyIntoSpellbook`).
+ *
  * Pure module — no React, no store.
  */
 import { getClassTable } from "@/data/classes";
 import { getSpellById } from "@/data/spells";
 import { savantSpellEntitlement } from "@/lib/feat-spell-choices";
 import { getSrdFeatureSource } from "@/lib/srd-feature-lookup";
-import type { CharacterData } from "@/types/character";
+import { adjustCurrency, goldSpendDelta } from "@/lib/play/material-cost";
+import type { CharacterData, CharacterDoc } from "@/types/character";
 
 /** Spells in a level 1 Wizard's book. */
 export const WIZARD_BOOK_START = 6;
@@ -114,4 +119,74 @@ export function preparedLevelledCount(character: Pick<CharacterData, "spells">):
     if ("custom" in s) return s.level > 0;
     return !s.alwaysPrepared && (getSpellById(s.srdId)?.level ?? 0) > 0;
   }).length;
+}
+
+// ─── Copying a spell into the book ───────────────────────────────────────────
+
+/** SRD 5.2.1 Wizard, "Expanding the Book": per spell level, 2 hours and 50 GP. */
+export const COPY_HOURS_PER_LEVEL = 2;
+export const COPY_GP_PER_LEVEL = 50;
+
+export function spellbookCopyCost(level: number): { hours: number; gp: number } {
+  return { hours: COPY_HOURS_PER_LEVEL * level, gp: COPY_GP_PER_LEVEL * level };
+}
+
+/**
+ * What adding this spell is for the character's Wizard: one of the book's free picks
+ * while the book still owes them (`free`, no cost: the level-up's two spells), else a
+ * copy at its cost, with whether the gold (or platinum broken into it) covers it.
+ * Null when there is nothing to copy: not a Wizard, not a levelled Wizard spell, a
+ * level the Wizard has no slots for, or a spell already on the sheet.
+ */
+export function spellbookEntry(
+  doc: CharacterDoc,
+  spellId: string
+):
+  | { kind: "free" }
+  | { kind: "copy"; hours: number; gp: number; affordable: boolean }
+  | null {
+  const wizardLevel = doc.character.classes.find((c) => c.classId === "wizard")?.level;
+  if (!wizardLevel) return null;
+  const spell = getSpellById(spellId);
+  if (!spell || spell.level < 1 || !spell.classes.includes("wizard")) return null;
+  if (spell.level > wizardMaxSpellLevel(wizardLevel)) return null;
+  if (doc.character.spells.some((s) => !("custom" in s) && s.srdId === spellId))
+    return null;
+  if (wizardBookOwed(doc.character, wizardLevel) > 0) return { kind: "free" };
+  const cost = spellbookCopyCost(spell.level);
+  return {
+    kind: "copy",
+    ...cost,
+    affordable: goldSpendDelta(doc.session.currency, cost.gp) !== null,
+  };
+}
+
+/**
+ * The character with the spell copied into the book (on the sheet, not prepared,
+ * as any added spell) and, when `pay`, its cost taken from the gold (platinum broken
+ * when the gold falls short). Null when it is not a copy (`spellbookEntry`), or when
+ * paying and the purse does not hold the cost. Copying without paying leaves the
+ * coins for the table to settle.
+ */
+export function copyIntoSpellbook(
+  doc: CharacterDoc,
+  spellId: string,
+  { pay }: { pay: boolean }
+): CharacterDoc | null {
+  const entry = spellbookEntry(doc, spellId);
+  if (entry?.kind !== "copy") return null;
+  let session = doc.session;
+  if (pay) {
+    const delta = goldSpendDelta(session.currency, entry.gp);
+    if (!delta) return null;
+    session = adjustCurrency(session, delta) ?? session;
+  }
+  return {
+    ...doc,
+    character: {
+      ...doc.character,
+      spells: [...doc.character.spells, { srdId: spellId }],
+    },
+    session,
+  };
 }

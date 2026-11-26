@@ -4,7 +4,7 @@
  * the header is green; from «Danni» or the Hit Points, damage leads in red.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 
 vi.mock("@/lib/firebase", () => ({
   app: {},
@@ -54,5 +54,16 @@ describe("PlayHp intent", () => {
     expect(dialog.getAttribute("data-c")).toBe("ini");
     expect(kind("Damage")).toBe("danger");
     expect(kind("Heal")).toBe("ghost");
+  });
+
+  it("the max HP row shows the sheet's max and opens its pane (DDB's HP manager)", () => {
+    const doc = useCharacterStore.getState().character;
+    if (!doc) throw new Error("no character");
+    const onOpenMax = vi.fn();
+    render(<PlayHp doc={doc} locale="en" onClose={() => {}} onOpenMax={onOpenMax} />);
+    const row = screen.getByRole("button", { name: /Maximum hit points/ });
+    expect(row.textContent).toContain(String(doc.character.hp.max));
+    fireEvent.click(row);
+    expect(onOpenMax).toHaveBeenCalledOnce();
   });
 });

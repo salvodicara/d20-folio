@@ -742,6 +742,44 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "The Wizard's spellbook: «Scelte da completare» owes 5 book spells (levels 1–3), landing unprepared; the level-up to 6 asks 2 for the book, not the prepared count.",
   },
+  "wizard-book-full": {
+    // A Wizard 5 whose book holds all fourteen free picks and 400 gp: the Play
+    // screen's «Gestisci incantesimi» → «Aggiungi» copies a Wizard spell in for
+    // 2 hours and 50 gp a level. Visit `/characters/scn-wizard-book-full`.
+    name: "Ilsa, the Copyist",
+    raceId: "human",
+    classId: "wizard",
+    level: 5,
+    background: "sage",
+    abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
+    spells: [
+      ...["fire-bolt", "light", "mage-hand", "ray-of-frost"].map((srdId) => ({
+        srdId,
+        prepared: true,
+      })),
+      ...[
+        "magic-missile",
+        "shield",
+        "mage-armor",
+        "sleep",
+        "detect-magic",
+        "misty-step",
+        "web",
+        "fireball",
+        "counterspell",
+      ].map((srdId) => ({ srdId, prepared: true })),
+      ...[
+        "burning-hands",
+        "feather-fall",
+        "thunderwave",
+        "invisibility",
+        "hold-person",
+      ].map((srdId) => ({ srdId })),
+    ],
+    currency: { pp: 0, gp: 400, ep: 0, sp: 0, cp: 0 },
+    exercises:
+      "The Wizard's spellbook copy: a full book, so «Aggiungi» offers «Copia» at 2 hours and 50 gp a spell level, paid from the gold with undo.",
+  },
   "high-elf-rest": {
     // A High Elf fighter: after a Long Rest the lineage's Prestidigitation may become
     // another Wizard cantrip. Visit `/characters/scn-high-elf-rest` and take a Long Rest.

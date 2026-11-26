@@ -71,7 +71,7 @@ export function inferHitDie(entry: ClassEntry): HitDie {
  */
 export interface HpClassContribution {
   classId: string;
-  /** The CON-free dice contribution: L1 of the primary = max die, else die avg. */
+  /** The CON-free dice contribution: L1 of the first class = max die, else die avg. */
   dice: number;
   /** The CON contribution this class absorbs (per-level, RAW min-1 floored). */
   con: number;
@@ -85,29 +85,38 @@ export interface HpClassContribution {
  * CON mod, with the RAW per-level min-1 floor ("If your CON modifier reduces the
  * total to 0 or less, you gain 1 HP"). `classes` is the full breakdown so a
  * multiclass character's average is correct (each class contributes its own die).
- * Returns `[]` when the primary class is unknown so the minimizer keeps stored `hp`.
+ *
+ * The FIRST class is `classes[0]` (#1324, 2024 RAW: the class taken at character
+ * level 1 takes the die maximum, whichever class is highest now). Every writer keeps
+ * that order: creation writes one entry, a level in a new class appends, and the
+ * codec round-trips the array as stored.
+ *
+ * Returns `[]` when the headline (highest-level) class is unknown so the minimizer
+ * keeps stored `hp` — the guard is unchanged by #1324, so no stored character flips
+ * between "derived" and "kept".
  */
 export function inferHpContributions(
   classes: readonly ClassEntry[],
   conScore: number
 ): HpClassContribution[] {
   if (classes.length === 0) return [];
-  const primary = classes.reduce((best, e) => (e.level > best.level ? e : best));
-  if (!classTableIndex.has(primary.classId)) return [];
+  const headline = classes.reduce((best, e) => (e.level > best.level ? e : best));
+  if (!classTableIndex.has(headline.classId)) return [];
+  const first = classes[0];
   const conMod = abilityModifier(conScore);
   return classes.map((e) => {
     const table = classTableIndex.get(e.classId);
     const die = table?.hitDie ?? 8;
     const avg = Math.floor(die / 2) + 1;
-    // The primary class spends its first level on the MAX die; its remaining
+    // The first class spends its first level on the MAX die; its remaining
     // levels (and every level of the other classes) take the die average.
-    const isPrimary = e === primary;
-    const firstDie = isPrimary ? die : 0;
-    const avgLevels = isPrimary ? e.level - 1 : e.level;
+    const isFirst = e === first;
+    const firstDie = isFirst ? die : 0;
+    const avgLevels = isFirst ? e.level - 1 : e.level;
     const dice = firstDie + avgLevels * avg;
     // The CON portion is what the RAW per-level total adds OVER the CON-free dice,
     // so the min-1 floor is captured here and the rows always sum to the total.
-    let total = isPrimary ? Math.max(1, die + conMod) : 0;
+    let total = isFirst ? Math.max(1, die + conMod) : 0;
     const perLevelAvg = Math.max(1, avg + conMod);
     total += avgLevels * perLevelAvg;
     return { classId: e.classId, dice, con: total - dice };
