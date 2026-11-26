@@ -206,6 +206,92 @@ export async function storedHpInputs(
   return { rolled: int(hp.rolled), bonus: int(hp.bonus) };
 }
 
+/** Set one top-level integer field on an owner's character parent, as a migration
+ *  script does (the emulator's owner token bypasses the rules). #1320 rehearsal. */
+export async function setOwnerCharacterInt(
+  id: string,
+  field: string,
+  value: number
+): Promise<void> {
+  const response = await fetch(
+    `${FIRESTORE}/users/dev-owner/characters/${id}?updateMask.fieldPaths=${field}`,
+    {
+      method: "PATCH",
+      headers: { ...OWNER, "Content-Type": "application/json" },
+      body: JSON.stringify({ fields: { [field]: { integerValue: String(value) } } }),
+    }
+  );
+  if (!response.ok) throw new Error(`set ${field}: HTTP ${String(response.status)}`);
+}
+
+/** Set the play document's `playState.version`, as a play-shape migration does. */
+export async function setOwnerPlayVersion(id: string, version: number): Promise<void> {
+  const response = await fetch(
+    `${FIRESTORE}/users/dev-owner/characters/${id}/combat/state?updateMask.fieldPaths=playState.version`,
+    {
+      method: "PATCH",
+      headers: { ...OWNER, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: {
+          playState: {
+            mapValue: { fields: { version: { integerValue: String(version) } } },
+          },
+        },
+      }),
+    }
+  );
+  if (!response.ok) throw new Error(`set play version: HTTP ${String(response.status)}`);
+}
+
+/** The stored current HP of an owner's character (its play document). */
+export async function ownerCurrentHp(id: string): Promise<number | null> {
+  const response = await fetch(
+    `${FIRESTORE}/users/dev-owner/characters/${id}/combat/state`,
+    { headers: OWNER }
+  );
+  const body = (await response.json()) as {
+    fields?: { hp?: { mapValue?: { fields?: { current?: { integerValue?: string } } } } };
+  };
+  const value = body.fields?.hp?.mapValue?.fields?.current?.integerValue;
+  return value === undefined ? null : Number(value);
+}
+
+/**
+ * Wait until a freshly built character is stored, and return its stored HP.
+ *
+ * The builder opens the new sheet before its create write lands (the create is
+ * offline-first and not awaited), so a single read right after `quickBuild` can find
+ * nothing. The parent and `combat/state` are one atomic batch: once the HP is
+ * stored, both documents are.
+ */
+export async function waitForStoredCharacter(id: string): Promise<number> {
+  await expect
+    .poll(() => ownerCurrentHp(id), {
+      message: `the new character ${id} reaches the emulator (combat/state HP)`,
+      timeout: 30_000,
+    })
+    .not.toBeNull();
+  const hp = await ownerCurrentHp(id);
+  if (hp === null) throw new Error(`no stored HP for ${id}`);
+  return hp;
+}
+
+/** A string field of an owner's character build (`build.<field>`), or null. */
+export async function ownerBuildString(
+  id: string,
+  field: string
+): Promise<string | null> {
+  const response = await fetch(`${FIRESTORE}/users/dev-owner/characters/${id}`, {
+    headers: OWNER,
+  });
+  const body = (await response.json()) as {
+    fields?: {
+      build?: { mapValue?: { fields?: Record<string, { stringValue?: string }> } };
+    };
+  };
+  return body.fields?.build?.mapValue?.fields?.[field]?.stringValue ?? null;
+}
+
 /** Fail fast on the app's error screen instead of waiting out a timeout. */
 export function watchErrors(page: Page): string[] {
   const errors: string[] = [];
@@ -461,9 +547,11 @@ export async function rollEachHero(
   } else {
     await dm.waitForTimeout(1_500);
   }
+  const rolls = dm.getByRole("button", { name: "Roll initiative" });
   for (let i = 0; i < 6; i++) {
-    const roll = dm.getByRole("button", { name: "Roll initiative" }).first();
+    const roll = rolls.first();
     if (!(await roll.isVisible())) break;
+    const unrolled = await rolls.count();
     const opened = await roll.click({ timeout: 3_000 }).then(
       () => true,
       () => false
@@ -474,6 +562,14 @@ export async function rollEachHero(
     if (!(await visibleWithin(input, 5_000))) continue;
     await input.fill(String(15 - i));
     await input.press("Enter");
+    // The hero's chip keeps «Roll initiative» until the committed roll reaches the card.
+    // A click before that re-opens the SAME hero's roller instead of the next hero's.
+    await expect
+      .poll(() => rolls.count(), {
+        message: "the committed roll shows on its hero's chip before the next roll",
+        timeout: 15_000,
+      })
+      .toBeLessThan(unrolled);
   }
 }
 

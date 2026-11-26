@@ -62,6 +62,7 @@ export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
   useCombatStore((s) => s.timeStopTurns);
   useCombatStore((s) => s.reflexesTaken);
   useCombatStore((s) => s.selected);
+  const fightStarted = useCombatStore((s) => s.fightStarted);
   const doc = useCharacterStore((s) => s.character);
   const alive = doc ? isCharacterAlive(doc.status, doc.session) : false;
   const view = turnModelView();
@@ -108,7 +109,8 @@ export function useSoloTurn(locale: Locale, campaign?: PassTurn) {
       stopWaiting.current = null;
     } else if (landed()) done();
   };
-  const active = solo && (fighting || view.round > 1);
+  // The stored fight counts too: a remount in round 1 keeps the fight (and its notes).
+  const active = solo && (fighting || fightStarted || view.round > 1);
 
   const standUpButton = view.standUp && (
     <Button

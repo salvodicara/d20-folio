@@ -1,14 +1,13 @@
 /**
  * What the start of my turn brings, under the turn strip (the classic turn band's
- * turn-start row, on the rules lane's `turn-start-notes`): a heal or temporary Hit Points
+ * turn-start row, on the same `useTurnStartNotes` source): a heal or temporary Hit Points
  * a feature gives at the turn's start (Heroic Rally, Heroism), as a quiet one-tap apply
  * with undo, never automatic; the round-1 Death Strike reminder as a note. An applied
- * offer leaves the row for the rest of the turn.
+ * offer leaves the row for the rest of the turn, on every surface; its undo brings it back.
  */
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { applyTurnStartOffer, turnStartNotes } from "@/domains/play/turn-start-notes";
+import { applyTurnStartOffer, useTurnStartNotes } from "@/domains/play/turn-start-notes";
 import type { Locale } from "@/lib/locale";
 import { grantSourceLabel } from "@/lib/views/tracker-view";
 import type { CharacterDoc } from "@/types/character";
@@ -24,10 +23,7 @@ export function PlayTurnStart({
   locale: Locale;
 }) {
   const { t } = useTranslation();
-  const [applied, setApplied] = useState<ReadonlySet<string>>(new Set());
-  const notes = turnStartNotes(doc, { round }).filter(
-    (n) => !applied.has(`${String(round)}:${n.id}`)
-  );
+  const notes = useTurnStartNotes(doc, round);
   if (notes.length === 0) return null;
   return (
     <div className="f-turn-start" role="group" aria-label={t("play.turnStart")}>
@@ -37,13 +33,13 @@ export function PlayTurnStart({
         // Burning: its damage at the turn's start, entered in «Danni e cure» (no roll)
         if (note.kind === "burning")
           return (
-            <p key={note.id} className="f-note" data-c="ini">
+            <p key={note.id} className="f-note" data-c="ini" data-note={note.id}>
               {t("play.fire.turnStart", { dice: note.dice })}
             </p>
           );
         if (note.kind === "death-strike")
           return (
-            <p key={note.id} className="f-note" data-c="ini">
+            <p key={note.id} className="f-note" data-c="ini" data-note={note.id}>
               {t("combat.round1DamageDouble", {
                 name,
                 ability: t(`abilities.${note.saveAbility}_short`),
@@ -53,7 +49,12 @@ export function PlayTurnStart({
           );
         const heal = note.kind === "heal";
         return (
-          <div key={note.id} className="f-note f-turn-offer" data-c="cmp">
+          <div
+            key={note.id}
+            className="f-note f-turn-offer"
+            data-c="cmp"
+            data-note={note.id}
+          >
             <span>
               {t(heal ? "combat.turnStartRegen" : "combat.turnStartTempHp", {
                 amount: note.amount,
@@ -63,10 +64,7 @@ export function PlayTurnStart({
             <Button
               kind="ghost"
               icon={heal ? "u-heal" : undefined}
-              onClick={() => {
-                if (applyTurnStartOffer(note, t))
-                  setApplied((s) => new Set(s).add(`${String(round)}:${note.id}`));
-              }}
+              onClick={() => applyTurnStartOffer(note, t)}
             >
               {t(heal ? "combat.turnStartRegenApply" : "combat.turnStartTempHpApply", {
                 amount: note.amount,

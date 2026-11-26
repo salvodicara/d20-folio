@@ -4,6 +4,8 @@
  * opens its pane: the number, where it comes from, and «Customize» with an override.
  *
  * - The number large, «Impostato a mano» when it is hand-set.
+ * - The rule the number follows, in one plain sentence from the glossary (DDB's pane
+ *   opens with it); rule words inside it open their own explanation.
  * - Where it comes from, a line each (the same lines the classic sheet's tips show;
  *   a hand-set number keeps them and adds «Correzione manuale»).
  * - «Personalizza»: a fixed value replaces the computed one, «Usa il calcolo» puts
@@ -13,9 +15,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { playNumberView, type SheetNumberKey } from "@/domains/play/play-number-view";
+import {
+  PASSIVE_LABEL,
+  playNumberView,
+  type SheetNumberKey,
+} from "@/domains/play/play-number-view";
 import { renderBreakdownLineLabel } from "@/components/shared/breakdown-line";
+import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
+import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { setNumberOverride } from "@/features/character/number-overrides";
+import { maxHpWithoutBonus } from "@/lib/aggregate-character";
 import type { Locale } from "@/lib/locale";
 import { localeDistance, speedFromLocaleValue, speedToLocaleValue } from "@/lib/utils";
 import { usesMetric } from "@/lib/locale";
@@ -44,19 +53,29 @@ export function PlayNumberPane({
   const [draft, setDraft] = useState(view.stored === null ? "" : toInput(view.stored));
   const name = numberName(numberKey, t);
   const shown =
-    numberKey.kind === "ac" || numberKey.kind === "ability"
+    numberKey.kind === "ac" ||
+    numberKey.kind === "ability" ||
+    numberKey.kind === "maxHp" ||
+    numberKey.kind === "passive"
       ? String(view.total)
       : speed
         ? localeDistance(view.total, locale)
         : signed(view.total);
   const parsed = parseDraft(draft, speed, locale);
+  // Max HP is stored as a correction over the derived max (#1315), not a fixed value:
+  // the pane says so, with the correction the typed max would save.
+  const maxHp = numberKey.kind === "maxHp";
+  const correction =
+    maxHp && parsed !== null ? parsed - maxHpWithoutBonus(doc.character) : null;
   const apply = (value: number | null) => {
     setNumberOverride(
       numberKey,
       value,
       value === null
         ? t("play.number.resetToast", { name })
-        : t("play.number.setToast", { name })
+        : maxHp
+          ? t("play.number.maxHpSetToast", { name })
+          : t("play.number.setToast", { name })
     );
     onClose();
   };
@@ -72,7 +91,14 @@ export function PlayNumberPane({
         <p className="f-num-total">
           <b>{shown}</b>
           {view.stored !== null && (
-            <span className="f-num-tag">{t("play.number.handSet")}</span>
+            <span className="f-num-tag">
+              {t(maxHp ? "play.number.maxHpTag" : "play.number.handSet")}
+            </span>
+          )}
+        </p>
+        <p className="f-num-rule">
+          {highlightRulesText(locale, { tappable: true })(
+            t(`glossary.term.${numberTerm(numberKey)}`)
           )}
         </p>
         {view.parts && view.parts.length > 0 && (
@@ -92,9 +118,17 @@ export function PlayNumberPane({
               label={
                 speed
                   ? `${t("play.number.override")} (${usesMetric(locale) ? "m" : "ft"})`
-                  : t("play.number.override")
+                  : maxHp
+                    ? t("play.number.maxHpField")
+                    : t("play.number.override")
               }
-              help={t("play.number.overrideHelp")}
+              help={
+                !maxHp
+                  ? t("play.number.overrideHelp")
+                  : correction !== null && correction !== 0
+                    ? t("play.number.maxHpHelp", { bonus: signed(correction) })
+                    : t("play.number.maxHpHelpPlain")
+              }
               type="text"
               inputMode={speed && usesMetric(locale) ? "decimal" : "numeric"}
               autoComplete="off"
@@ -139,6 +173,30 @@ function parseDraft(draft: string, speed: boolean, locale: Locale): number | nul
   return Number.isFinite(value) ? value : null;
 }
 
+/** The glossary term that explains the rule behind a number. */
+function numberTerm(key: SheetNumberKey): GlossaryTermId {
+  switch (key.kind) {
+    case "ac":
+      return "armorClass";
+    case "initiative":
+      return "initiative";
+    case "speed":
+      return "speed";
+    case "proficiency":
+      return "proficiencyBonus";
+    case "maxHp":
+      return "hitPoints";
+    case "ability":
+      return "abilityScores";
+    case "save":
+      return "savingThrow";
+    case "skill":
+      return "skillCheck";
+    case "passive":
+      return "passiveScore";
+  }
+}
+
 function numberName(
   key: SheetNumberKey,
   t: ReturnType<typeof useTranslation>["t"]
@@ -152,11 +210,15 @@ function numberName(
       return t("character.speed");
     case "proficiency":
       return t("play.proficiency");
+    case "maxHp":
+      return t("character.health.maxHp");
     case "ability":
       return t(`abilities.${key.ability}`);
     case "save":
       return `${t("abilities.savingThrowHead")} · ${t(`abilities.${key.ability}`)}`;
     case "skill":
       return t(`skills.${key.id}`);
+    case "passive":
+      return t(PASSIVE_LABEL[key.id]);
   }
 }

@@ -42,6 +42,8 @@ export function PlayPrepare({
   // D&D Beyond's «Manage Spells»: prepare and add in one window (not in a rest step)
   const canAdd = !longRest && !afterLongRest;
   const [tab, setTab] = useState<"prepared" | "add">("prepared");
+  // the homebrew spell form is open: its own add and back are the only way on
+  const [customOpen, setCustomOpen] = useState(false);
   // each spell's level line and effect tag, as the spell picks show them
   const pick = new Map(
     spellPickRows(
@@ -96,16 +98,18 @@ export function PlayPrepare({
       )}
       closeLabel={t("common.close")}
       actions={
-        <>
-          {longRest && (
-            <Button kind="quiet" onClick={keep}>
-              {t("play.rest.keepPrepared")}
+        tab === "add" && customOpen ? undefined : (
+          <>
+            {longRest && (
+              <Button kind="quiet" onClick={keep}>
+                {t("play.rest.keepPrepared")}
+              </Button>
+            )}
+            <Button kind="primary" onClick={onClose}>
+              {t("common.done")}
             </Button>
-          )}
-          <Button kind="primary" onClick={onClose}>
-            {t("common.done")}
-          </Button>
-        </>
+          </>
+        )
       }
     >
       {canAdd && (
@@ -116,10 +120,17 @@ export function PlayPrepare({
             { id: "add", label: t("common.add") },
           ]}
           value={tab}
-          onChange={setTab}
+          onChange={(next) => {
+            setTab(next);
+            setCustomOpen(false);
+          }}
         />
       )}
-      {tab === "add" ? <PlayAddSpell /> : preparedList()}
+      {tab === "add" ? (
+        <PlayAddSpell locale={locale} onCustomChange={setCustomOpen} />
+      ) : (
+        preparedList()
+      )}
     </Dialog>
   );
 

@@ -11,13 +11,17 @@
 import { useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { History, RotateCcw, Trash2, Save } from "lucide-react";
-import { restoreCharacterSnapshot, deleteCharacterSnapshot } from "@/lib/firestore";
+import { deleteCharacterSnapshot } from "@/lib/firestore";
+import { restoreWithBackup } from "@/lib/snapshot-restore";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { localizeClassName } from "@/lib/views/srd-i18n";
-import { totalLevel } from "@/lib/classes";
+import {
+  classLevelSummary,
+  newestFirst,
+  snapshotReasonKey,
+} from "@/lib/views/snapshot-summary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,7 +32,6 @@ import {
   Icon,
 } from "@/components/ui";
 import type { CharacterData, SessionState } from "@/types/character";
-import type { Locale } from "@/lib/locale";
 
 export interface SnapshotItem {
   id: string;
@@ -49,25 +52,6 @@ interface Props {
   onSave?: () => void;
   /** True while a manual save is in flight (disables the Save control). */
   saving?: boolean;
-}
-
-/**
- * Compact class·level summary DERIVED at render from the snapshot's OWN stored
- * character data — what this snapshot would restore (owner, 2026-06-12). Never
- * a stored display string (rules 6/7/10: the old stored EN "Pre level-up
- * snapshot (Lv N)" label leaked English into the IT UI and is gone).
- * Single-class: "Barbaro 4"; multiclass: "Ladro 3 · Mago 2 — Liv 5".
- */
-function classLevelSummary(
-  character: CharacterData,
-  locale: Locale,
-  lvlLabel: string
-): string {
-  const entries = character.classes.filter((e) => e.classId);
-  if (entries.length === 0) return "";
-  const parts = entries.map((e) => `${localizeClassName(e.classId, locale)} ${e.level}`);
-  if (parts.length === 1) return parts[0] ?? "";
-  return `${parts.join(" · ")} — ${lvlLabel} ${totalLevel(character)}`;
 }
 
 /** Carved tile for each snapshot row — folio surface + lapidary radius token. */
@@ -104,14 +88,7 @@ export function SnapshotsModal({
     setRestoring(id);
     setError(null);
     try {
-      await restoreCharacterSnapshot(
-        user.uid,
-        char.id,
-        { character: snap.character, session: snap.session },
-        // Compare-and-set base: the generation of the document this modal is showing.
-        char.revision,
-        char
-      );
+      await restoreWithBackup(user.uid, char, snap);
       // Undo-stack FENCE (§5.4): restoring a snapshot rewrites the whole sheet, so a
       // pre-restore reverse-applier would clobber the restored state. Drop the stack.
       useUndoStore.getState().clear();
@@ -152,9 +129,8 @@ export function SnapshotsModal({
   }
 
   function reasonLabel(reason: string) {
-    if (reason === "level-up") return t("snapshots.reasonLevelUp");
-    if (reason === "manual") return t("snapshots.reasonManual");
-    return reason;
+    const key = snapshotReasonKey(reason);
+    return key ? t(key) : reason;
   }
 
   function handleOpenChange(next: boolean) {
@@ -253,7 +229,7 @@ export function SnapshotsModal({
                 padding: 0,
               }}
             >
-              {snapshots.map((snap) => {
+              {newestFirst(snapshots).map((snap) => {
                 const summary = classLevelSummary(snap.character, locale, t("stats.lvl"));
                 return (
                   <li

@@ -48,6 +48,7 @@ import {
   maneuverOptions,
   metamagicOptions,
   subclassOptions,
+  subclassReveal,
   weaponMasteryOptions,
 } from "@/lib/views/level-up-view";
 import { localizeText } from "@/lib/views/srd-i18n";
@@ -151,6 +152,11 @@ export interface AskRow {
   help?: string;
   /** Set on `slot:` rows: what `toggleAnswer` needs to write the pick. */
   slotRow?: ReturnType<typeof choiceSlotRows>[number];
+  /**
+   * The subclass row, once a subclass is picked: what it brings at this level, its
+   * features and its always-prepared spells (BG3's and D&D Beyond's subclass detail).
+   */
+  reveal?: ReturnType<typeof subclassReveal>;
 }
 
 export interface LevelUpAsks {
@@ -200,6 +206,9 @@ export function levelUpAsks(
         id: o.id,
         label: o.label,
       })),
+      ...(a.subclassId
+        ? { reveal: subclassReveal(classId, a.subclassId, plan.newClassLevel, locale) }
+        : {}),
     });
   }
 

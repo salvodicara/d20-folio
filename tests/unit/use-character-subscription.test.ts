@@ -60,7 +60,7 @@ const {
       charId: string,
       cb: (
         d: import("@/types/character").CharacterDoc | null,
-        meta: { hasPendingWrites: boolean }
+        meta: { hasPendingWrites: boolean; attached?: boolean }
       ) => void,
       onError?: (err: Error) => void
     ) => () => void
@@ -336,7 +336,8 @@ describe("useCharacterSubscription — domain-rule-D8 sync invariants", () => {
       "u1",
       "char1",
       expect.any(Function),
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(Function) // #1320: the too-new signal
     );
   });
 
@@ -507,7 +508,8 @@ describe("useCharacterSubscription — combat/state subdoc hydration", () => {
       "u1",
       "char1",
       expect.any(Function),
-      expect.any(Function)
+      expect.any(Function),
+      expect.any(Function) // #1320: the too-new signal
     );
   });
 
@@ -1257,5 +1259,375 @@ describe("useCharacterSubscription — the build save leaves when the page is hi
     setVisibility("hidden");
     expect(debouncedFlush).toHaveBeenCalledTimes(1);
     setVisibility("visible");
+  });
+});
+
+// ─── #1320 — a newer shape on the server closes the gate and rescues local edits ───
+import {
+  resetShapeGateForTests as resetGate1320,
+  shapeGateState as gate1320,
+  writesFenced as fenced1320,
+} from "@/lib/shape-gate";
+import { readRescueCopy as readRescue1320 } from "@/lib/local-draft";
+
+function tooNewCb(
+  which: "parent" | "combat"
+): (meta: { hasPendingWrites: boolean }) => void {
+  const calls =
+    which === "parent" ? subscribeMock.mock.calls : combatSubscribeMock.mock.calls;
+  const cb = (calls.at(-1) as unknown[] | undefined)?.[4] as
+    | ((meta: { hasPendingWrites: boolean }) => void)
+    | undefined;
+  if (!cb) throw new Error(`${which} too-new callback not captured`);
+  return cb;
+}
+
+async function settleRescue(): Promise<void> {
+  await act(async () => {
+    for (
+      let i = 0;
+      i < 20 &&
+      gate1320().closed &&
+      (gate1320() as { rescue: string }).rescue === "saving";
+      i++
+    )
+      await new Promise((resolve) => setTimeout(resolve, 5));
+  });
+}
+
+describe("useCharacterSubscription — the shape gate (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("no local edit: the gate closes, writes stop, nothing is kept", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(fenced1320()).toBe(true);
+    expect(gate1320()).toEqual({ closed: true, rescue: "none" });
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a pending build edit is kept as the rescue copy", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "kept edit" },
+      })
+    );
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    const copy = readRescue1320("u1", "char1", Date.now());
+    expect(JSON.stringify(copy?.build)).toContain("kept edit");
+  });
+
+  it("a tab reopened with writes still queued (the last snapshot was pending) keeps them", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const offline = {
+      ...doc(),
+      character: { ...doc().character, quote: "offline edit" },
+    };
+    act(() => {
+      snapshotCb({ hasPendingWrites: true })(offline);
+      combatCb({ hasPendingWrites: true })(sessionToCombatState(offline.session));
+    });
+    act(() => tooNewCb("combat")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "offline edit"
+    );
+  });
+
+  it("a refusal before the newer snapshot: the refused payload is still kept", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "refused edit" },
+      })
+    );
+    const [sent, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    act(() =>
+      callbacks?.onRejected?.(sent as CharacterDoc, { code: "permission-denied" })
+    );
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "refused edit"
+    );
+  });
+});
+
+describe("useCharacterSubscription — the shape gate before the sheet has loaded (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a reopened tab refused before its play document arrived still keeps the pending parent", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const offline = { ...doc(), character: { ...doc().character, quote: "early edit" } };
+    // Only the parent's cached snapshot (with the queued write) has arrived: the
+    // sheet is not published yet, so the store holds nothing.
+    act(() => snapshotCb({ hasPendingWrites: true })(offline));
+    expect(useCharacterStore.getState().character).toBeNull();
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "early edit"
+    );
+  });
+});
+
+describe("useCharacterSubscription — a save the tab never saw acknowledged (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a tab reopened online, its queued save already refused, still rescues the edit", async () => {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    const edited = {
+      ...doc(),
+      character: { ...doc().character, quote: "closed tab edit" },
+    };
+    keepUnackedSave("u1", "char1", {
+      character: edited.character,
+      session: edited.session,
+      revision: 5,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // revision 4: the save at 5 never landed
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "closed tab edit"
+    );
+  });
+
+  it("a stored sheet at the save's revision proves it landed: nothing to rescue", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", { character: {}, session: {}, revision: 4 });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // revision 4
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "none" });
+  });
+
+  it("a build save leaving is recorded, and its acknowledgement clears it", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "in flight" },
+      })
+    );
+    const [queued, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    const sent = { ...(queued as CharacterDoc), revision: 5 };
+    act(() => callbacks?.onSend?.(sent));
+    expect(readUnackedSave("u1", "char1")?.revision).toBe(5);
+    act(() => callbacks?.onResolved?.(sent));
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+});
+
+describe("useCharacterSubscription — the save trace and the local echo (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("the tab's own optimistic echo at the new revision is NOT proof the save landed", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    keepUnackedSave("u1", "char1", { character: {}, session: {}, revision: 5 });
+    const echo = { ...doc(), revision: 5 };
+    act(() => snapshotCb({ hasPendingWrites: true })(echo));
+    expect(readUnackedSave("u1", "char1")?.revision).toBe(5);
+    act(() => snapshotCb({ hasPendingWrites: false })(echo));
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+});
+
+describe("useCharacterSubscription — the trace is retired once kept (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("writing the copy drops the trace; a second pass keeps the first copy unchanged", async () => {
+    const { keepUnackedSave, readUnackedSave, keepRescueCopy, readRescueCopy } =
+      await import("@/lib/local-draft");
+    const first = {
+      savedAt: Date.now(),
+      schema: 3,
+      playVersion: 1,
+      build: { name: "first copy" },
+      state: {},
+    };
+    keepRescueCopy("u1", "char1", first);
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 9,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(readRescueCopy("u1", "char1", Date.now())).toEqual(first);
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+
+  it("a fresh copy also drops the trace it came from", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 9,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+});
+
+describe("useCharacterSubscription — the copy records what was unsaved (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a build edit alone is a build-only copy", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "build part" },
+      })
+    );
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(readRescue1320("u1", "char1", Date.now())?.part).toBe("build");
+  });
+
+  it("queued play writes make it a whole-sheet copy", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    const offline = doc();
+    act(() => {
+      snapshotCb({ hasPendingWrites: true })(offline);
+      combatCb({ hasPendingWrites: true })(sessionToCombatState(offline.session));
+    });
+    act(() => tooNewCb("combat")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(readRescue1320("u1", "char1", Date.now())?.part).toBe("all");
+  });
+});
+
+describe("useCharacterSubscription — play writes leave a trace too (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("a play write leaving is traced as the whole sheet, and its acknowledgement clears it", async () => {
+    const { readUnackedPlay } = await import("@/lib/local-draft");
+    let ack: () => void = () => {};
+    writeCombatStateMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          ack = resolve;
+        })
+    );
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => useCharacterStore.getState().setHP(10));
+    await flushPlayWrite();
+    const traced = readUnackedPlay("u1", "char1");
+    expect((traced?.session as { hp: { current: number } } | undefined)?.hp.current).toBe(
+      10
+    );
+    await act(async () => {
+      ack();
+      await Promise.resolve();
+    });
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
+
+  it("a reopened tab whose queued play write was refused keeps a whole-sheet copy", async () => {
+    const { keepUnackedPlay } = await import("@/lib/local-draft");
+    const edited = doc();
+    edited.session = { ...edited.session, hp: { ...edited.session.hp, current: 3 } };
+    keepUnackedPlay("u1", "char1", {
+      character: edited.character,
+      session: edited.session,
+      at: Date.now(),
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // the server's play state does not hold HP 3
+    act(() => tooNewCb("combat")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    const copy = readRescue1320("u1", "char1", Date.now());
+    expect(copy?.part).toBe("all");
+    expect(JSON.stringify(copy?.state)).toContain('"current":3');
+  });
+
+  it("a server play state equal to the traced one proves it landed", async () => {
+    const { keepUnackedPlay, readUnackedPlay } = await import("@/lib/local-draft");
+    const landed = doc();
+    keepUnackedPlay("u1", "char1", {
+      character: landed.character,
+      session: landed.session,
+      at: Date.now(),
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter(landed));
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
+});
+
+describe("useCharacterSubscription — the character's campaign attachment (#1217)", () => {
+  it("publishes whether the open character is attached to a campaign, from its own snapshot", async () => {
+    const { useCampaignsReadStore } = await import("@/features/campaigns/campaigns-read");
+    useCampaignsReadStore.setState({ attachment: null });
+    renderHook(() => useCharacterSubscription("char1"));
+    const cb = subscribeMock.mock.calls.at(-1)?.[2];
+    if (!cb) throw new Error("subscription callback not captured");
+    act(() => cb(doc(), { hasPendingWrites: false, attached: false }));
+    expect(useCampaignsReadStore.getState().attachment).toEqual({
+      characterId: "char1",
+      attached: false,
+    });
+    act(() => cb(doc(), { hasPendingWrites: false, attached: true }));
+    expect(useCampaignsReadStore.getState().attachment).toEqual({
+      characterId: "char1",
+      attached: true,
+    });
   });
 });

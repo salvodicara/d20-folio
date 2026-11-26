@@ -18,6 +18,7 @@
  * access to the campaign, so the document stays member-only readable.
  */
 
+import { PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { resolveDamageIntake, type DamageInstance } from "@/lib/damage-intake";
 import { effectiveDoc, effectsOnTarget } from "@/lib/play/effective-doc";
@@ -902,7 +903,16 @@ function writePeerCombatEffect(
 ): boolean {
   const effect = peerCombatEffectPatch(before, after);
   if (Object.keys(effect).length === 0) return false;
-  txn.set(ref, { ...effect, updatedAt: serverTimestamp() }, { merge: true });
+  // #1320 — the play shape rides every write (a merge keeps the rest of `playState`).
+  txn.set(
+    ref,
+    {
+      ...effect,
+      playState: { version: PLAY_STATE_VERSION },
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
   return true;
 }
 
@@ -2336,7 +2346,9 @@ const CAMPAIGNS_READ_TIMEOUT_MS = 10_000;
  */
 export function subscribeToSharedCampaigns(
   uid: string,
-  callback: (campaigns: CampaignDoc[]) => void,
+  /** `meta.fromCache`: the answer came from the local cache, not the server. Absent
+   *  (the dev bypass), the answer is final. */
+  callback: (campaigns: CampaignDoc[], meta?: { fromCache: boolean }) => void,
   onError?: (err: Error) => void
 ): () => void {
   if (import.meta.env.DEV && DEV_BYPASS) {
@@ -2361,9 +2373,18 @@ export function subscribeToSharedCampaigns(
     );
   }
   const q = query(collection(db, "campaigns"), where("members", "array-contains", uid));
+  // Metadata changes too: the server's confirmation of an unchanged cached answer comes
+  // only as a metadata change, and «campaigns read» waits for it (#1217). A snapshot that
+  // changes no document hands back the same list, so nothing re-renders for it.
+  let last: CampaignDoc[] | null = null;
   return onSnapshot(
     q,
-    (snap) => callback(snap.docs.map((d) => toCampaignDoc(d.id, d.data()))),
+    { includeMetadataChanges: true },
+    (snap) => {
+      if (last === null || snap.docChanges().length > 0)
+        last = snap.docs.map((d) => toCampaignDoc(d.id, d.data()));
+      callback(last, { fromCache: snap.metadata.fromCache });
+    },
     (err) => onError?.(err)
   );
 }

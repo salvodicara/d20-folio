@@ -150,6 +150,7 @@ import {
   listSharedCampaigns,
   persistBeginTurns,
   subscribeToCampaign,
+  subscribeToSharedCampaigns,
   subscribeToCampaignNotes,
   undoTreasuryEntry,
   updateCampaign,
@@ -242,11 +243,13 @@ describe("campaign-io — reviewed combat effects", () => {
       expect.anything(),
       {
         hp: { current: 7, temp: 0 },
+        playState: { version: 1 },
         updatedAt: { __serverTimestamp: true },
       },
       { merge: true }
     );
-    expect(set.mock.calls[0]?.[1]).not.toHaveProperty("playState");
+    // #1320 — the merge names the play shape only; the owner's play state is untouched.
+    expect(set.mock.calls[0]?.[1]).toHaveProperty("playState", { version: 1 });
     expect(JSON.stringify(playState)).toBe(
       JSON.stringify({ version: 1, state: { exhaustion: 2 } })
     );
@@ -2144,7 +2147,11 @@ describe("a hit from someone else lands through the target's own rule (edge-case
     await hit(9);
     expect(set).toHaveBeenCalledWith(
       expect.anything(),
-      { hp: { current: 0, temp: 0 }, updatedAt: { __serverTimestamp: true } },
+      {
+        hp: { current: 0, temp: 0 },
+        playState: { version: 1 },
+        updatedAt: { __serverTimestamp: true },
+      },
       { merge: true }
     );
   });
@@ -2322,4 +2329,36 @@ describe("a hit from another device records what it spent (the spends ledger)", 
       expect(effectsRead).toBe(reads);
     }
   );
+});
+
+describe("subscribeToSharedCampaigns — what «campaigns read» needs from the listener (#1217)", () => {
+  type Snap = {
+    docs: Array<{ id: string; data: () => Record<string, unknown> }>;
+    docChanges: () => unknown[];
+    metadata: { fromCache: boolean };
+  };
+  const snap = (fromCache: boolean, changed: boolean): Snap => ({
+    docs: [{ id: "c1", data: () => ({ name: "Camp", members: ["u1"] }) }],
+    docChanges: () => (changed ? [{}] : []),
+    metadata: { fromCache },
+  });
+
+  it("listens to metadata changes and reports where each answer came from", () => {
+    const seen: Array<[unknown[], { fromCache: boolean } | undefined]> = [];
+    subscribeToSharedCampaigns("u1", (campaigns, meta) => seen.push([campaigns, meta]));
+    const [, options, next] = onSnapshotMock.mock.calls.at(-1) as unknown as [
+      unknown,
+      { includeMetadataChanges?: boolean },
+      (s: Snap) => void,
+    ];
+    // The server's confirmation of an unchanged cached answer is a metadata change.
+    expect(options.includeMetadataChanges).toBe(true);
+    next(snap(true, true));
+    next(snap(false, false));
+    expect(seen.map(([, meta]) => meta?.fromCache)).toEqual([true, false]);
+    // A snapshot that changes no document hands back the same list: nothing re-renders.
+    expect(seen[1]?.[0]).toBe(seen[0]?.[0]);
+    next(snap(false, true));
+    expect(seen[2]?.[0]).not.toBe(seen[1]?.[0]);
+  });
 });

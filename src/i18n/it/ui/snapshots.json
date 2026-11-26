@@ -2,7 +2,7 @@
   "snapshots": {
     "title": "Istantanee",
     "rubric": "Cronologia",
-    "hint": "Le istantanee catturano lo stato del personaggio. Il ripristino sovrascrive il foglio attuale. Non può essere annullato.",
+    "hint": "Il ripristino sostituisce la scheda attuale; ne salviamo prima una copia.",
     "empty": "Nessuna istantanea. Le istantanee vengono create automaticamente prima di ogni aumento di livello.",
     "emptyEyebrow": "Ancora nessuna cronologia",
     "emptyTitle": "Niente da ripristinare",
@@ -18,6 +18,8 @@
     "button": "Cronologia",
     "saving": "Salvataggio…",
     "saveNow": "Salva istantanea",
-    "saveError": "Impossibile salvare l'istantanea."
+    "saveError": "Impossibile salvare l'istantanea.",
+    "reasonRescue": "Prima di applicare le modifiche conservate",
+    "reasonPreRestore": "Prima del ripristino"
   }
 }

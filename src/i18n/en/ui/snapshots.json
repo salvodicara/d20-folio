@@ -2,7 +2,7 @@
   "snapshots": {
     "title": "Snapshots",
     "rubric": "History",
-    "hint": "Snapshots capture your character state. Restoring will overwrite your current sheet, and this cannot be undone.",
+    "hint": "Restoring replaces the current sheet; we save a copy of it first.",
     "empty": "No snapshots yet. Snapshots are created automatically before each level-up.",
     "emptyEyebrow": "No history yet",
     "emptyTitle": "Nothing to restore",
@@ -18,6 +18,8 @@
     "button": "History",
     "saving": "Saving…",
     "saveNow": "Save snapshot",
-    "saveError": "Could not save snapshot."
+    "saveError": "Could not save snapshot.",
+    "reasonRescue": "Before applying kept changes",
+    "reasonPreRestore": "Before restore"
   }
 }

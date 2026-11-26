@@ -49,6 +49,8 @@
  * replica (`dev-document-store`): optimistic echoes, reload survival, and cross-tab
  * snapshots stay testable without touching Firebase.
  */
+import { closeShapeGate, writesFenced } from "@/lib/shape-gate";
+import { PLAY_STATE_VERSION, playShapeTooNew } from "@/lib/shape-numbers";
 import {
   arrayRemove,
   arrayUnion,
@@ -161,7 +163,9 @@ export function subscribeCombatState(
   uid: string,
   charId: string,
   cb: (state: CombatState | null, meta: { hasPendingWrites: boolean }) => void,
-  onError?: (err: Error) => void
+  onError?: (err: Error) => void,
+  /** #1320 — the stored play document has a newer `playState.version`: never parsed. */
+  onTooNew?: (meta: { hasPendingWrites: boolean }) => void
 ): () => void {
   if (devBypassEnabled()) {
     return subscribeDevDocument<Record<string, unknown>>(
@@ -197,6 +201,12 @@ export function subscribeCombatState(
       // reads it so a snapshot-leg undo never clobbers another writer's edit.
       if (!snap.exists()) {
         cb(null, { hasPendingWrites: snap.metadata.hasPendingWrites });
+        return;
+      }
+      if (playShapeTooNew(snap.data())) {
+        // A reader with no handler of its own must not go silent (see firestore.ts).
+        if (onTooNew) onTooNew({ hasPendingWrites: snap.metadata.hasPendingWrites });
+        else closeShapeGate({ rescue: "none" });
         return;
       }
       const parsed = parseCombatState(snap.data());
@@ -357,6 +367,8 @@ export async function writeCombatState(
   state: CombatState,
   base?: CombatState | null
 ): Promise<void> {
+  // #1320 — a newer shape is on the server: the old play shape never goes out.
+  if (writesFenced()) return;
   if (devBypassEnabled()) {
     writeDevDocument(
       DEV_COMBAT_COLLECTION,
@@ -373,7 +385,12 @@ export async function writeCombatState(
   }
   const ops = ownerCombatPatch(combatStateWriteData(base), mine);
   if (ops.length === 0) return;
-  await updateDoc(combatStateRef(uid, charId), fieldUpdate(ops));
+  // #1320 — every play write names its shape, so the rules can refuse an old shape
+  // after M3 (the "no number, no write" requirement ships with M3, not before).
+  await updateDoc(combatStateRef(uid, charId), {
+    ...fieldUpdate(ops),
+    "playState.version": PLAY_STATE_VERSION,
+  });
 }
 
 /**
