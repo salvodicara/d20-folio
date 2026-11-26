@@ -221,7 +221,7 @@ describe("LevelUpWizard — unchosen Divine Order bundle (Cleric 5→6)", () => 
   beforeEach(() => {
     setChar(
       {
-        classes: [{ classId: "cleric", level: 5 }],
+        classes: [{ classId: "cleric", subclassId: "life-domain", level: 5 }],
         hitDieType: 8,
         abilityScores: { STR: 10, DEX: 12, CON: 14, INT: 10, WIS: 16, CHA: 8 },
         savingThrows: ["WIS", "CHA"],

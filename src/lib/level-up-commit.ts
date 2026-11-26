@@ -21,7 +21,7 @@ import { isUmbrellaTool } from "@/lib/tool-names";
 import { computeAC } from "@/lib/compute";
 import { grantSkillProficiency } from "@/lib/skills";
 import { getEquipment } from "@/data/equipment";
-import { getClassTable, getFeaturesAtLevel } from "@/data/classes";
+import { getClassTable, getSubclassFeatures } from "@/data/classes";
 import type {
   CharacterData,
   CharacterDoc,
@@ -318,8 +318,10 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
   if (subclassChoice) {
     handledChecklistKeys.push("levelUp.checklistSubclass");
     updated = patchClassEntry(updated, classId, { subclassId: subclassChoice });
-    const subFeatures = getFeaturesAtLevel(classId, newClassLevel).filter(
-      (f) => f.subclass && f.subclass.toLowerCase() === subclassChoice.toLowerCase()
+    // Every subclass feature up to the new level: a subclass picked late (a build
+    // that reached Rogue 6 without one) brings its earlier levels' features too.
+    const subFeatures = getSubclassFeatures(classId, subclassChoice).filter(
+      (f) => f.level <= newClassLevel
     );
     const existingIds = new Set(
       updated.features

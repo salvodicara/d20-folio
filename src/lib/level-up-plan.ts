@@ -99,9 +99,11 @@ export function levelUpPlan(
   // (only the class actually reaching its L19 grants the boon).
   const isEpicBoonGate =
     needsAsi && levelData.featureIds.some((id) => id.endsWith("-epic-boon"));
+  // At the subclass level, or any later level a build without one reaches: the
+  // subclass is owed until it is picked.
   const needsSubclass =
     classTable != null &&
-    newClassLevel === classTable.subclassLevel &&
+    newClassLevel >= classTable.subclassLevel &&
     !(advancingEntry?.subclassId ?? "");
 
   const needsFightingStyle = (() => {
