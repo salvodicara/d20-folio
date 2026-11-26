@@ -12,6 +12,7 @@ import { withCampaignClock, type ProjectedCampaignClock } from "@/lib/play/clock
 import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
 import { applyOwedClassPicks, type ClassPickAnswer } from "@/lib/owed-class-picks";
+import { learnWildShapeForms } from "@/lib/wild-shape-forms";
 import { markDiscoveries } from "@/lib/magical-discoveries";
 import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import type { ChoicePicks } from "@/lib/feature-choices";
@@ -19,7 +20,9 @@ import type { AbilityCode } from "@/types/ability";
 import { equipmentKeyMatches } from "@/lib/equipment-key";
 import { highestSpellSlotLevel } from "@/lib/multiclass-slots";
 import { causalPatch, undoPatch } from "@/lib/play/causal-patch";
-import { create } from "zustand";
+import { create, type StateCreator } from "zustand";
+import { noteHpClamp, setHpClampRestorer } from "@/stores/hp-clamp-ledger";
+import { hpClampedToDroppedMax } from "@/lib/play/max-hp-drop";
 import type {
   CharacterDoc,
   LogEntry,
@@ -744,6 +747,11 @@ interface CharacterState {
    */
   resolveClassPicks: (answers: readonly ClassPickAnswer[]) => void;
   /**
+   * The Druid's Wild Shape known forms picked in «Scelte da completare»: each eligible
+   * form not yet known, never past the count. Writes nothing on a read-only sheet.
+   */
+  learnWildShapeForms: (ids: readonly string[]) => void;
+  /**
    * The player's confirm of a Lore Bard's Magical Discoveries: `spellIds` (from the
    * candidates the sheet flagged) get the always-prepared mark, freeing the Bard's
    * normal prepared places. One undoable change; null when nothing was written.
@@ -1436,7 +1444,76 @@ function endUnheldItemStates(get: () => CharacterState): void {
   persistCombat(get);
 }
 
-export const useCharacterStore = create<CharacterState>()((set, get) => ({
+/**
+ * #1365 — every store write passes the one clamp of current HP when the max drops
+ * ({@link hpClampedToDroppedMax}; a sheet event already applied it as a consequence).
+ * Only an editable character clamps, so a read-only sheet is never touched. The clamp
+ * is noted for the undo entry of the command that caused it (`hp-clamp-ledger`).
+ */
+export function clampHpOnMaxDrop(
+  before: CharacterDoc | null,
+  after: CharacterDoc | null,
+  readonly: boolean
+): CharacterDoc | null {
+  if (!before || !after || readonly) return after;
+  const clamped = hpClampedToDroppedMax(before, after);
+  if (clamped !== after) {
+    noteHpClamp({
+      characterId: after.id,
+      from: after.session.hp.current,
+      to: clamped.session.hp.current,
+    });
+  }
+  return clamped;
+}
+
+/** Every write of the store (its own `set` and `setState`) passes the clamp. */
+function withHpClamp(config: StateCreator<CharacterState>): StateCreator<CharacterState> {
+  return (set, get, api) => {
+    const clampPatch = <P extends Partial<CharacterState>>(
+      state: CharacterState,
+      patch: P
+    ): P => {
+      if (!("character" in patch)) return patch;
+      const readonly = "readonly" in patch ? (patch.readonly ?? false) : state.readonly;
+      const character = clampHpOnMaxDrop(
+        state.character,
+        patch.character ?? null,
+        readonly
+      );
+      return character === patch.character ? patch : { ...patch, character };
+    };
+    const clamped: typeof set = (partial, replace) => {
+      const resolve = (state: CharacterState) =>
+        typeof partial === "function" ? partial(state) : partial;
+      if (replace === true) {
+        set((state) => clampPatch(state, resolve(state) as CharacterState), true);
+      } else {
+        set((state) => clampPatch(state, resolve(state)));
+      }
+    };
+    api.setState = clamped;
+    return config(clamped, get, api);
+  };
+}
+
+setHpClampRestorer((clamp) => {
+  const state = useCharacterStore.getState();
+  const doc = state.character;
+  if (!doc || state.readonly || doc.id !== clamp.characterId) return;
+  // Only when nothing moved the HP since: a hit taken meanwhile stays.
+  if (doc.session.hp.current !== clamp.to) return;
+  const current = Math.min(clamp.from, effectiveMaxHp(doc.character, doc.session));
+  if (current <= clamp.to) return;
+  useCharacterStore.setState({
+    character: {
+      ...doc,
+      session: { ...doc.session, hp: { ...doc.session.hp, current } },
+    },
+  });
+});
+
+const createCharacterState: StateCreator<CharacterState> = (set, get) => ({
   character: null,
   loading: false,
   error: null,
@@ -1967,7 +2044,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     // low-level `setHP` shed it silently above).
     if (wasUnconsciousAtZero) {
       logIds.push(
-        get().logEvent({ kind: "condition-loss", conditionId: UNCONSCIOUS_CONDITION_ID })
+        get().logEvent({
+          kind: "condition-loss",
+          conditionId: UNCONSCIOUS_CONDITION_ID,
+        })
       );
     }
     persistCombat(get);
@@ -2364,7 +2444,9 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
       if (current)
         next[currentIndex] = { ...current, quantity: (current.quantity ?? 1) + 1 };
       else next.splice(Math.min(index, next.length), 0, { ...ref, quantity: 1 });
-      set({ character: { ...live, character: { ...live.character, equipment: next } } });
+      set({
+        character: { ...live, character: { ...live.character, equipment: next } },
+      });
       restored = true;
       return true;
     };
@@ -3534,6 +3616,14 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     set({ character: { ...character, character: next } });
   },
 
+  learnWildShapeForms: (ids) => {
+    if (get().readonly) return;
+    const { character } = get();
+    if (!character) return;
+    const next = learnWildShapeForms(character, ids);
+    if (next !== character) set({ character: next });
+  },
+
   confirmDiscoveries: (spellIds) => {
     if (get().readonly) return null;
     const { character } = get();
@@ -3576,7 +3666,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const next = [...features];
     next[index] = { ...feat, featAbility: ability };
     set({
-      character: { ...character, character: { ...character.character, features: next } },
+      character: {
+        ...character,
+        character: { ...character.character, features: next },
+      },
     });
   },
 
@@ -4013,7 +4106,10 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     });
     void clearLogFromIDB(character.id);
   },
-}));
+});
+export const useCharacterStore = create<CharacterState>()(
+  withHpClamp(createCharacterState)
+);
 
 // Registered before UI/auto-save subscribers: every immutable session replacement is
 // decorated for render without becoming enumerable/persistable. This also reattaches a

@@ -1384,6 +1384,83 @@ describe("useCharacterSubscription — the shape gate (#1320)", () => {
   });
 });
 
+describe("useCharacterSubscription — the shape gate's four guarantees (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("another reader closing the gate first does not cost the open sheet its unsaved edit", async () => {
+    const { closeShapeGate } = await import("@/lib/shape-gate");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "party view saw it first" },
+      })
+    );
+    // A reader with no handler of its own (the party's play states) saw the newer
+    // shape first: it knows of no unsaved edit.
+    act(() => closeShapeGate({ rescue: "none" }));
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "party view saw it first"
+    );
+  });
+
+  it("a rescue copy that cannot be built settles «failed»: the Reload button never stays disabled", async () => {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    // A trace left by an older build, unreadable by this one.
+    keepUnackedSave("u1", "char1", {
+      character: null,
+      session: null,
+      revision: 9,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "failed" });
+  });
+
+  it("a save refused with permission-denied, the stored shape known: no block", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "stale revision" },
+      })
+    );
+    const [sent, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    act(() =>
+      callbacks?.onRejected?.(sent as CharacterDoc, { code: "permission-denied" })
+    );
+    // The server's copy arrives at the shape this client knows (another device saved).
+    act(() => snapshotCb()({ ...doc(), revision: 7 }));
+    await settleRescue();
+    expect(fenced1320()).toBe(false);
+    expect(gate1320()).toEqual({ closed: false });
+  });
+
+  it("a listener refused with permission-denied (signed out, share revoked): no block", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const denied = Object.assign(new Error("Missing or insufficient permissions."), {
+      code: "permission-denied",
+    });
+    act(() => parentErrorCb()(denied));
+    act(() => combatErrorCb()(denied));
+    expect(fenced1320()).toBe(false);
+    expect(gate1320()).toEqual({ closed: false });
+  });
+});
+
 describe("useCharacterSubscription — the shape gate before the sheet has loaded (#1320)", () => {
   beforeEach(() => {
     resetGate1320();
@@ -1431,6 +1508,23 @@ describe("useCharacterSubscription — a save the tab never saw acknowledged (#1
     expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
       "closed tab edit"
     );
+  });
+
+  it("an unreadable trace (left by an older build) is retired on load, never thrown", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      keepUnackedSave("u1", "char1", { character: null, session: null, revision: 9 });
+      renderHook(() => useCharacterSubscription("char1"));
+      act(() => seedCharacter()); // revision 4: the trace looks like a lost save
+      await vi.waitFor(() => expect(readUnackedSave("u1", "char1")).toBeNull());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
   });
 
   it("a stored sheet at the save's revision proves it landed: nothing to rescue", async () => {

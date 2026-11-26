@@ -2414,6 +2414,18 @@
     "name": "Raggio di Affaticamento",
     "range": "18 metri"
   },
+  "ray-of-enfeeblement.grants.0": {
+    "label": "Raggio di Affaticamento"
+  },
+  "ray-of-enfeeblement.grants.0.grants.0": {
+    "description": "Prove di Forza (Raggio di Affaticamento)"
+  },
+  "ray-of-enfeeblement.grants.0.grants.1": {
+    "description": "Tiri salvezza su Forza (Raggio di Affaticamento)"
+  },
+  "ray-of-enfeeblement.grants.0.grants.2": {
+    "description": "Tiri per colpire basati sulla Forza (Raggio di Affaticamento)"
+  },
   "ray-of-frost": {
     "description": "Un raggio gelido di luce bianco-azzurra sfreccia verso una creatura entro gittata, contro cui l'incantatore effettua un attacco a distanza con incantesimo. Se il colpo va a segno, il bersaglio subisce 1d8 danni da freddo e la sua velocità è ridotta di 3 metri fino all'inizio del turno successivo dell'incantatore.",
     "gist": "Attacco a distanza con incantesimo: 1d8 danni da Freddo e velocità ridotta di 3 metri",

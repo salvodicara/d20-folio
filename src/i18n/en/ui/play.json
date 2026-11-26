@@ -114,8 +114,9 @@
       "changeOne": "You can change 1 spell.",
       "changeAny": "You can change as many as you like.",
       "keepPrepared": "Keep them",
-      "cantripTitle": "After the Long Rest",
+      "afterTitle": "After the Long Rest",
       "cantripSwap": "{{source}}: change the cantrip, if you like",
+      "formSwap": "Swap a known form (optional)",
       "diceSpent_one": "{{count}} die → +{{hp}} HP",
       "diceSpent_other": "{{count}} dice → +{{hp}} HP"
     },
@@ -365,7 +366,9 @@
         "spellbook_one": "{{count}} spellbook spell",
         "spellbook_other": "{{count}} spellbook spells",
         "expertise_one": "{{count}} Expertise skill",
-        "expertise_other": "{{count}} Expertise skills"
+        "expertise_other": "{{count}} Expertise skills",
+        "wildShapeForms_one": "{{count}} Wild Shape form",
+        "wildShapeForms_other": "{{count}} Wild Shape forms"
       },
       "spellbookTitle_one": "Add {{count}} spell to your spellbook: it stays unprepared",
       "spellbookTitle_other": "Add {{count}} spells to your spellbook: they stay unprepared"

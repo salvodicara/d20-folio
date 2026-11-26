@@ -41,6 +41,7 @@ import type { CombatConditionLifetime } from "@/data/types";
 import { useAuthStore } from "@/stores/authStore";
 import {
   effectIdsConsumedByAttack,
+  nextAttackModes,
   foldCombatEffectOps,
   turnBoundaryAfter,
 } from "@/lib/combat-effects";
@@ -142,8 +143,9 @@ function consumedByAttacks(
   const status = useCombatStatusStore.getState().status;
   if (!status) return [];
   const live = foldCombatEffectOps(status.encounter.effectOps);
-  const ids = new Set(
-    targets.flatMap((target, index) =>
+  const attacked = targets.some((_, index) => rows[index]?.attack);
+  const ids = new Set([
+    ...targets.flatMap((target, index) =>
       rows[index]?.attack
         ? effectIdsConsumedByAttack(
             status.encounter.effectOps,
@@ -152,8 +154,12 @@ function consumedByAttacks(
             fightSideOf(status.view.rows)
           )
         : []
-    )
-  );
+    ),
+    // And my own next attack roll's state (Sap, Ray of Enfeeblement's success).
+    ...(attacked
+      ? nextAttackModes(status.encounter.effectOps, status.myId).map((m) => m.effect.id)
+      : []),
+  ]);
   return live.filter((effect) => ids.has(effect.id));
 }
 

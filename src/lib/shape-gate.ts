@@ -5,9 +5,9 @@
  * {@link writesFenced}; the reload screen watches {@link subscribeShapeGate}.
  * Dependency-free: the eager persistence layer imports it.
  *
- * Closed until the page reloads. The FIRST close wins: it is the one that knows
- * whether unsaved edits were kept as a rescue copy, and a later close (another
- * document, no edits) must not hide that.
+ * Closed until the page reloads. A later close never hides what an earlier one knew
+ * about the unsaved edits: only a close that knew of none ("none", e.g. a reader with
+ * no handler of its own) gives way to one that has edits to keep.
  */
 
 /** What happened to this tab's unsaved edits when the gate closed. */
@@ -26,7 +26,7 @@ export function shapeGateState(): ShapeGateState {
 }
 
 export function closeShapeGate(outcome: { rescue: RescueOutcome }): void {
-  if (state.closed) return;
+  if (state.closed && (state.rescue !== "none" || outcome.rescue === "none")) return;
   state = { closed: true, rescue: outcome.rescue };
   for (const listener of listeners) listener();
 }

@@ -37,6 +37,12 @@
 
 import { create } from "zustand";
 import { useToastStore } from "@/stores/toastStore";
+import {
+  recordHpClamps,
+  restoreHpClamps,
+  takePendingHpClamps,
+  type HpClamp,
+} from "@/stores/hp-clamp-ledger";
 import type { ToastIntent } from "@/types/toast";
 
 /**
@@ -135,6 +141,19 @@ export function setRemoteUndoGuard(guard: RemoteUndoGuard | null): void {
 
 let nextId = 0;
 
+/** An undo that also puts back the HP clamps its command caused (#1365). */
+function withHpClampsRestored(
+  undo: UndoApplier,
+  clamps: readonly HpClamp[]
+): UndoApplier {
+  if (clamps.length === 0) return undo;
+  return () => {
+    const result = undo();
+    if (result !== false) restoreHpClamps(clamps);
+    return result;
+  };
+}
+
 /**
  * Set around a redo replay so `register` (re-invoked by the re-execution) does NOT
  * truncate the remaining `future`. Module-level: every mutation here is synchronous
@@ -159,7 +178,9 @@ export const useUndoStore = create<UndoState>()((set, get) => ({
 
   register: (e) => {
     const id = `undo-${++nextId}`;
-    const entry: UndoEntry = { ...e, id };
+    // #1365 — a clamp the mutation made just before this registration undoes with it.
+    const clamps = takePendingHpClamps();
+    const entry: UndoEntry = { ...e, id, undo: withHpClampsRestored(e.undo, clamps) };
     set((s) => ({
       past: capped([...s.past, entry]),
       // A fresh action after an undo truncates the redo branch (the standard
@@ -268,8 +289,10 @@ export function registerUndoable(
   execute: () => UndoApplier | null,
   opts: { turnScoped: boolean }
 ): string | null {
-  const undo = execute();
-  if (!undo) return null;
+  // #1365 — a current-HP clamp the command caused undoes with it.
+  const { result: cause, clamps } = recordHpClamps(execute);
+  if (!cause) return null;
+  const undo = withHpClampsRestored(cause, clamps);
   return useUndoStore.getState().register({
     label,
     ...opts,

@@ -41,8 +41,10 @@ describe("DmHitDialog", () => {
     const onHit = vi.fn();
     const onCondition = vi.fn();
     const onShow = vi.fn();
+    const onDeathSave = vi.fn();
     const onTempHp = vi.fn();
     const onRemove = vi.fn();
+    const onCard = vi.fn();
     render(
       <DmHitDialog
         targets={targets}
@@ -50,12 +52,14 @@ describe("DmHitDialog", () => {
         onHit={onHit}
         onCondition={onCondition}
         onShow={onShow}
+        onDeathSave={onDeathSave}
         onTempHp={onTempHp}
         onRemove={onRemove}
+        onCard={onCard}
         onClose={() => {}}
       />
     );
-    return { onHit, onCondition, onShow, onTempHp, onRemove };
+    return { onHit, onCondition, onShow, onTempHp, onRemove, onCard, onDeathSave };
   };
 
   it("hits the chosen creatures with the typed amount, leaving out a dropped one", () => {
@@ -152,6 +156,44 @@ describe("DmHitDialog", () => {
       open([mara]);
       expect(screen.queryByRole("button", { name: "Temporary HP" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Remove from the fight" })).toBeNull();
+    });
+  });
+
+  it("a lone monster opens its card", () => {
+    const { onCard } = open([goblin(1)]);
+    fireEvent.click(screen.getByRole("button", { name: "Monster card" }));
+    expect(onCard).toHaveBeenCalledWith(goblin(1));
+  });
+
+  it("no card for several creatures at once", () => {
+    open([goblin(1), goblin(2)]);
+    expect(screen.queryByRole("button", { name: "Monster card" })).toBeNull();
+  });
+
+  describe("a hero at 0 HP", () => {
+    const down: DmTarget = {
+      ...mara,
+      hp: { current: 0, max: 38, temp: 0 },
+      deathSaves: { successes: 1, failures: 2 },
+    };
+
+    it("the DM ticks a success or a failure, and reads the marks so far", () => {
+      const { onDeathSave } = open([down]);
+      expect(screen.getByText("Successes 1/3 · Failures 2/3")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "+1 success" }));
+      expect(onDeathSave).toHaveBeenCalledWith(down, "success");
+      fireEvent.click(screen.getByRole("button", { name: "+1 failure" }));
+      expect(onDeathSave).toHaveBeenCalledWith(down, "failure");
+    });
+
+    it("nothing to tick for a hero standing, a monster, or a full track", () => {
+      open([mara]);
+      expect(screen.queryByRole("button", { name: "+1 success" })).toBeNull();
+    });
+
+    it("a full track has no more ticks", () => {
+      open([{ ...down, deathSaves: { successes: 3, failures: 0 } }]);
+      expect(screen.queryByRole("button", { name: "+1 success" })).toBeNull();
     });
   });
 });

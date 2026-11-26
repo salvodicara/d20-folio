@@ -34,6 +34,7 @@ export type CatalogueEffect = Extract<
       | "speed-halved"
       | "speed-zero"
       | "next-attack-advantage"
+      | "next-attack-disadvantage"
       | "save-disadvantage"
       | "recover-slots"
       | "exhaustion"
@@ -116,6 +117,10 @@ export const CATALOGUE_EFFECT_SCHEMA: ExactSchema = discriminatedUnionSchema("ki
   "next-attack-advantage": objectSchema(
     { kind: literalSchema("next-attack-advantage") },
     { ...BASE, against: literalSchema("target"), until: UNTIL, activeKey: stringSchema }
+  ),
+  "next-attack-disadvantage": objectSchema(
+    { kind: literalSchema("next-attack-disadvantage") },
+    { ...BASE, until: UNTIL, activeKey: stringSchema }
   ),
   "save-disadvantage": objectSchema(
     { kind: literalSchema("save-disadvantage"), against: literalSchema("actor-spells") },

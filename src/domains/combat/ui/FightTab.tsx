@@ -19,11 +19,15 @@ import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
+import { NextAttackNotes } from "@/domains/combat/ui/NextAttackNote";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
+import { useMonsterUses } from "@/domains/combat/ui/use-monster-uses";
+import { useMonsterActions } from "@/domains/combat/ui/use-monster-actions";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
 import { initiativePlace, lineNeighbourPlace } from "@/domains/combat/initiative-edit";
+import { useMonsterCard } from "@/domains/combat/ui/use-monster-card";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -205,6 +209,10 @@ function LiveFight({
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
   const dm = useDmTools(campaign, encounter, view.rows, rows, uid, isDm, locale, onToast);
+  // The DM's limited uses (Recharge, N/Day, legendary) under each monster line.
+  const uses = useMonsterUses(campaign.id, encounter, uid, locale, onToast);
+  // ...and its printed actions and traits (the classic one-tap monster actions).
+  const acts = useMonsterActions(campaign.id, encounter, view.rows, uid, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
   const writeUp = useEndFight(
     campaign,
@@ -277,25 +285,46 @@ function LiveFight({
               <FightLine
                 row={row}
                 dm={dm.line(row)}
+                // the line's own tools, under its name (Foundry's and D&D Beyond's
+                // encounter rows): the DM's printed actions and the limited uses, then the
+                // area spell on the monster's turn
                 action={
-                  monsterTurn &&
-                  row.ids.includes(monsterTurn.id) && (
-                    <MonsterZoneCast
-                      campaignId={campaign.id}
-                      monsterId={monsterTurn.id}
-                      monsterName={
-                        view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
-                      }
-                      defaultDc={monsterSpellDc(
-                        monsterStatBlockOf(encounter, monsterTurn.id)
+                  (isDm || monsterTurn) && (
+                    <>
+                      {isDm && acts.stripFor(row.ids)}
+                      {isDm && uses.stripFor(row.ids)}
+                      {monsterTurn && row.ids.includes(monsterTurn.id) && (
+                        <MonsterZoneCast
+                          campaignId={campaign.id}
+                          monsterId={monsterTurn.id}
+                          monsterName={
+                            view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
+                          }
+                          defaultDc={monsterSpellDc(
+                            monsterStatBlockOf(encounter, monsterTurn.id)
+                          )}
+                          locale={locale}
+                          onToast={onToast}
+                        />
                       )}
-                      locale={locale}
-                      onToast={onToast}
-                    />
+                    </>
                   )
                 }
               />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* a monster's own next attack roll with Disadvantage (Ray of
+                  Enfeeblement on a success, Sap): the DM spends it when rolling */}
+              {isDm && (
+                <NextAttackNotes
+                  campaignId={campaign.id}
+                  effectOps={encounter.effectOps}
+                  targetIds={row.ids.filter(
+                    (id) => view.rows.find((r) => r.id === id)?.kind === "monster"
+                  )}
+                  nameOf={(id) => view.rows.find((r) => r.id === id)?.name ?? ""}
+                  locale={locale}
+                />
+              )}
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
                 <MonsterZoneHits
@@ -325,6 +354,7 @@ function LiveFight({
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
         {dm.dialogs}
+        {isDm && acts.dialog}
         {writeUp.dialog}
       </div>
       <Feed
@@ -377,6 +407,13 @@ function useDmTools(
       dmMoves.reorder(campaign.id, uid, initFor.ids, place.beforeId),
       t("fight.dm.movedDone", { name: initFor.name })
     );
+  const card = useMonsterCard(
+    campaign.id,
+    campaign.encounter as EncounterState,
+    uid,
+    locale,
+    onToast
+  );
   const line = (row: FightRow): FightLineDm | undefined => {
     if (!isDm) return undefined;
     const members = fighters.filter((f) => row.ids.includes(f.id));
@@ -401,6 +438,27 @@ function useDmTools(
           targets={targets}
           locale={locale}
           onClose={() => setHitting(null)}
+          onCard={(target) => {
+            setHitting(null);
+            card.open(target.id);
+          }}
+          onDeathSave={(target, outcome) =>
+            target.memberUid &&
+            target.characterId &&
+            move(
+              dmMoves.deathSave(
+                campaign.id,
+                uid,
+                {
+                  memberUid: target.memberUid,
+                  characterId: target.characterId,
+                  maxHp: target.hp.max,
+                },
+                outcome
+              ),
+              t(`fight.dm.deathSaveDone.${outcome}`, { name: target.name })
+            )
+          }
           onHit={(chosenTargets, entry) => {
             move(
               dmMoves.hit(campaign.id, uid, planDmHit(chosenTargets, entry)),
@@ -505,6 +563,7 @@ function useDmTools(
           }
         />
       )}
+      {card.dialog}
       {adding && (
         <Suspense fallback={null}>
           <AddMonstersDialog

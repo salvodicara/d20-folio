@@ -48,6 +48,12 @@
       "inside": "Dentro",
       "applied": "{{amount}} danni a {{name}}"
     },
+    "nextAttack": {
+      "title": "Tiro per colpire successivo",
+      "mine": "{{mode}} al tuo tiro per colpire successivo ({{sources}}).",
+      "theirs": "{{name}}: {{mode}} al suo tiro per colpire successivo ({{sources}}).",
+      "usedToast": "Usato: {{mode}}"
+    },
     "dm": {
       "addMonsters": "Aggiungi mostri",
       "search": "Cerca un mostro",
@@ -112,7 +118,19 @@
       "removeDone_one": "Tolta dallo scontro: {{count}} creatura",
       "removeDone_other": "Tolte dallo scontro: {{count}} creature",
       "tempDone_one": "{{amount}} PF temporanei a {{count}} creatura",
-      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature"
+      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature",
+      "card": "Scheda del mostro",
+      "cardDone": "Scheda salvata: {{name}}",
+      "deathSaves": "Tiri salvezza contro la morte",
+      "deathSaveMarks": "Successi {{successes}}/3 · Fallimenti {{failures}}/3",
+      "deathSaveTick": {
+        "success": "+1 successo",
+        "failure": "+1 fallimento"
+      },
+      "deathSaveDone": {
+        "success": "Successo nel tiro contro la morte per {{name}}, segnato dal master",
+        "failure": "Fallimento nel tiro contro la morte per {{name}}, segnato dal master"
+      }
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {
@@ -127,6 +145,28 @@
       "ally_one": "{{count}} alleato",
       "ally_other": "{{count}} alleati",
       "revealed": "{{count}} con PF visibili"
+    },
+    "uses": {
+      "title": "Usi limitati",
+      "rollRecharge": "Tira la ricarica: {{name}}",
+      "legendary": "Azioni leggendarie {{left}}/{{max}}",
+      "regain": "Recupera le azioni leggendarie",
+      "spentDone": "{{name}}: usato",
+      "rechargeBack": "Ricarica {{d6}}: {{name}} torna disponibile",
+      "rechargeMiss": "Ricarica {{d6}}: {{name}} resta da ricaricare",
+      "regainDone": "Azioni leggendarie recuperate: {{name}}",
+      "legendarySpent": "Azione leggendaria usata: {{name}}"
+    },
+    "actions": {
+      "title": "{{name}}: azioni",
+      "applied": "{{name}}: applicata",
+      "traits": "{{name}}: tratti",
+      "rowDamage_one": "{{count}} danno",
+      "rowDamage_other": "{{count}} danni",
+      "group": {
+        "heroes": "Eroi",
+        "ownSide": "Dalla sua parte"
+      }
     }
   }
 }

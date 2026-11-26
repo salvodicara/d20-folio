@@ -9,18 +9,6 @@
  */
 import type { SrdCatalogue } from "@/i18n/srd-en";
 
-/**
- * Ids the public SRD data took over from the pack. While a pack that still carries one
- * is composed (pack main before its lockstep change lands), the pack copy yields to the
- * public entry instead of throwing, so the app and the pack can land in either order.
- * Transitional: empty this set once the pack no longer carries these ids.
- */
-const PROMOTED_TO_PUBLIC: ReadonlySet<string> = new Set([
-  // #1248: the SRD 5.2.1 Fighting Style feats of the Paladin and the Ranger.
-  "blessed-warrior",
-  "druidic-warrior",
-]);
-
 /** Concatenate pack entries onto a public id-carrying array; throw on id collision. */
 export function mergePack<T extends { readonly id: string }>(
   kind: string,
@@ -29,14 +17,13 @@ export function mergePack<T extends { readonly id: string }>(
 ): T[] {
   if (pack.length === 0) return [...base];
   const ids = new Set(base.map((e) => e.id));
-  const kept = pack.filter((e) => !(PROMOTED_TO_PUBLIC.has(e.id) && ids.has(e.id)));
-  for (const e of kept) {
+  for (const e of pack) {
     if (ids.has(e.id)) {
       throw new Error(`[content-pack] duplicate ${kind} id "${e.id}" (public + pack)`);
     }
     ids.add(e.id);
   }
-  return [...base, ...kept];
+  return [...base, ...pack];
 }
 
 /** Merge two id-keyed records (pack entries onto public); throw on key collision. */
@@ -47,7 +34,6 @@ export function mergePackRecord<T>(
 ): Record<string, T> {
   const out: Record<string, T> = { ...base };
   for (const [id, value] of Object.entries(pack)) {
-    if (PROMOTED_TO_PUBLIC.has(id) && id in base) continue;
     if (id in out) {
       throw new Error(`[content-pack] duplicate ${kind} id "${id}" (public + pack)`);
     }
@@ -70,7 +56,6 @@ export function mergeCatalogue(
   if (!additions && !patches) return base;
   const out: SrdCatalogue = { ...base };
   for (const [id, entry] of Object.entries(additions ?? {})) {
-    if (PROMOTED_TO_PUBLIC.has(id) && id in base) continue;
     if (id in out) {
       throw new Error(`[content-pack] duplicate ${kind} catalogue key "${id}"`);
     }

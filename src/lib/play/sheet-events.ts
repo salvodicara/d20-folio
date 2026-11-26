@@ -9,6 +9,7 @@ import { docAtClock } from "./campaign-clock";
 import { recoverAmmunition, withAmmoSpent } from "./ammunition";
 import { attuneItem, unattuneItem, type AttuneResult } from "@/lib/attunement-guard";
 import { settleZeroHpConsequence } from "./zero-hp-savers";
+import { hpClampedToDroppedMax } from "./max-hp-drop";
 import { isCharacterAlive } from "@/lib/character-status";
 import { addEquipmentRef } from "@/lib/equipment-add";
 import type { CoverStateLevel } from "@/lib/cover-states";
@@ -276,14 +277,20 @@ export function applySheetEvent(
 
 /**
  * What every change to the sheet brings with it, whichever path made it (an event,
- * or a store write that bypasses one): a consequence of dropping to 0 (Disintegrate)
- * settles once the savers are decided, and dying ends attunement.
+ * or a store write that bypasses one): current HP follows a lower max down (#1365),
+ * a consequence of dropping to 0 (Disintegrate) settles once the savers are decided,
+ * and dying ends attunement.
  */
 export function withEventConsequences(
   before: CharacterDoc,
   after: CharacterDoc
 ): CharacterDoc {
-  return afterDeath(before, settleZeroHpConsequence(after));
+  // #1365 — a lower max brings current HP down with it, inside the event, so the
+  // play log's fold reproduces it.
+  return afterDeath(
+    before,
+    settleZeroHpConsequence(hpClampedToDroppedMax(before, after))
+  );
 }
 
 /**

@@ -27,14 +27,21 @@ import {
   addRosterCombatant,
   parseEncounterState,
   removeCombatant,
+  restoreMonsterUse,
+  rollMonsterRecharge,
+  spendMonsterUse,
   reorderCombatant,
   setHidden,
   setInitiative,
+  setMonsterAc,
   setMonsterCondition,
+  setMonsterName,
+  setMonsterNotes,
   setMonsterSide,
   setMonsterTempHp,
   setRevealed,
   type EncounterPcSeed,
+  type MonsterLimitedUse,
   type MonsterInput,
   type RosterCombatantInput,
 } from "@/lib/play/encounter";
@@ -535,6 +542,45 @@ export function planMonsterSide(
   };
 }
 
+/** A monster card's fields the DM edits (the classic MonsterCard body). */
+export interface MonsterEdit {
+  name: string;
+  ac: number;
+  notes: string;
+}
+
+/**
+ * The DM edits a monster's card: its name, Armor Class and private notes. Hands back the
+ * old values, so the undo puts every field back. Null for anyone but the DM, for a hero,
+ * or when nothing changes (a blank name is no name: the old one stays).
+ */
+export function planMonsterEdit(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string } & Partial<MonsterEdit>
+): { patch: CombatPatch; previous: MonsterEdit } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  let next = fight;
+  if (input.name !== undefined) next = setMonsterName(next, monster.id, input.name);
+  if (input.ac !== undefined) next = setMonsterAc(next, monster.id, input.ac);
+  if (input.notes !== undefined && input.notes.trim() !== (monster.notes ?? "").trim())
+    next = setMonsterNotes(next, monster.id, input.notes);
+  const edited = next.combatants.find((c) => c.id === monster.id);
+  if (
+    edited?.kind !== "monster" ||
+    (edited.name === monster.name &&
+      edited.ac === monster.ac &&
+      (edited.notes ?? "") === (monster.notes ?? ""))
+  )
+    return null;
+  return {
+    patch: { encounter: next },
+    previous: { name: monster.name, ac: monster.ac, notes: monster.notes ?? "" },
+  };
+}
+
 /**
  * The DM types a hero's d20 for a player without the app (the classic hub's InitVital):
  * the hero's own roll, recorded as if they had rolled it. Null for anyone but the DM, or
@@ -647,6 +693,57 @@ export function planMonsterTempHp(
   const next = setMonsterTempHp(fight, monster.id, input.temp);
   if (next === fight) return null;
   return { patch: { encounter: next }, previous: monster.hp.temp };
+}
+
+/** A change to one monster limited use: spend one; roll the d6 for a spent Recharge;
+ *  regain them all (legendary actions at the start of its turn); or put `count` back
+ *  as it was (the undo). */
+export type MonsterUseChange =
+  | { kind: "spend" }
+  | { kind: "recharge"; d6: number }
+  | { kind: "regain" }
+  | { kind: "set"; count: number };
+
+/**
+ * The DM changes one of a monster's limited uses (SRD 5.2.1: Recharge, N/Day, a per-day
+ * spell, the legendary pool). Hands back the spent count before, for the undo, and for
+ * a Recharge roll whether the use came back. Null for anyone but the DM, for a hero, or
+ * when nothing changes (a roll that misses still answers, with no patch to write).
+ */
+export function planMonsterUse(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: {
+    uid: string;
+    monsterId: string;
+    use: MonsterLimitedUse;
+    change: MonsterUseChange;
+  }
+): { patch: CombatPatch | null; previous: number; back: boolean } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  const { use, change } = input;
+  const previous = monster.spent?.[use.key] ?? 0;
+  let next = fight;
+  if (change.kind === "spend")
+    next = spendMonsterUse(fight, monster.id, use.key, use.max);
+  else if (change.kind === "recharge")
+    next = rollMonsterRecharge(fight, monster.id, use, change.d6);
+  else {
+    const target = change.kind === "regain" ? 0 : Math.max(0, change.count);
+    for (let used = previous; used > target; used--)
+      next = restoreMonsterUse(next, monster.id, use.key);
+    for (let used = previous; used < target; used++)
+      next = spendMonsterUse(next, monster.id, use.key, use.max);
+  }
+  const changed = next !== fight;
+  if (!changed && change.kind !== "recharge") return null;
+  return {
+    patch: changed ? { encounter: next } : null,
+    previous,
+    back: change.kind === "recharge" && changed,
+  };
 }
 
 /**

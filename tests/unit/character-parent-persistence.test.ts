@@ -744,3 +744,53 @@ describe("a whole-sheet write takes its generation in queue order (#1276)", () =
     ).rejects.toThrow("denied");
   });
 });
+
+// Forward compatibility of a build key a newer app writes (the Druid's known Wild Shape
+// forms, `build.wildShapeForms`): an older tab reads the stored character and saves it
+// through the real write path. The key must come back verbatim on the parent, and the
+// public sheet must still equal the parent (the rules compare `build` and `cache`), so a
+// shared Druid's save is not refused. `aNewerBuildKey` keeps the unknown-key path proven
+// once this version knows `wildShapeForms`.
+describe("an older tab keeps a newer build key through read and save", () => {
+  it.each([
+    ["wildShapeForms", ["wolf", "giant-badger"]],
+    ["aNewerBuildKey", { kept: true }],
+  ] as const)(
+    "%s survives, and the public sheet still equals the parent",
+    async (key, value) => {
+      vi.useFakeTimers();
+      try {
+        const full = makeCharacterDoc({ classId: "druid", level: 4 });
+        const parent = parentData(full);
+        parent.build = { ...(parent.build as Record<string, unknown>), [key]: value };
+        const child = combatStateWriteData(sessionToCombatState(full.session));
+        harness.getDoc.mockImplementation((ref: { path: string }) =>
+          Promise.resolve(
+            ref.path.endsWith("/combat/state")
+              ? snapshot("state", child)
+              : snapshot("c1", parent)
+          )
+        );
+        const read = await getFullCharacter("u1", "c1");
+        if (!read) throw new Error("the stored character did not read");
+
+        const pending = createDebouncedSave("u1", "c1");
+        pending.save({ ...read, id: "c1", shared: true });
+        await vi.advanceTimersByTimeAsync(2_000);
+        await pending.flush();
+
+        const written = harness.operations.find(
+          ({ path }) => path === "users/u1/characters/c1"
+        )?.data;
+        const sheet = harness.operations.find(
+          ({ path }) => path === "users/u1/characters/c1/public/sheet"
+        )?.data;
+        expect((written?.build as Record<string, unknown>)[key]).toEqual(value);
+        expect(sheet?.build).toEqual(written?.build);
+        expect(sheet?.cache).toEqual(written?.cache);
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+  );
+});
