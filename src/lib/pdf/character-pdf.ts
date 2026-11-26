@@ -106,6 +106,12 @@ function textRight(
   text(page, s, rx - width(font, s, size), y, font, size, color);
 }
 
+/** The size, at most `size`, at which `s` fits in `maxW`. */
+function fitSize(font: PDFFont, s: string, size: number, maxW: number): number {
+  const w = width(font, s, size);
+  return w <= maxW ? size : Math.floor(((size * maxW) / w) * 10) / 10;
+}
+
 /** Truncate with an ellipsis to fit `maxW`. */
 function clip(font: PDFFont, s: string, size: number, maxW: number): string {
   const clean = sane(s);
@@ -499,7 +505,9 @@ function drawCombatBox(page: PDFPage, fonts: Fonts, vm: CharacterPdfViewModel): 
   // HIT DICE — max over spent (bottom-anchored, aligned with HP fields)
   {
     const { cx } = subTitle(vm.labels.hitDice, sepX1, sepX2, 7);
-    textCenter(page, vm.combat.hitDice, cx, cb.y + 33, fonts.sansBold, 13);
+    // A multiclass pool ("5d10 + 1d6") shrinks to stay between the dividers.
+    const size = fitSize(fonts.sansBold, vm.combat.hitDice, 13, sepX2 - sepX1 - 6);
+    textCenter(page, vm.combat.hitDice, cx, cb.y + 33, fonts.sansBold, size);
     captionCenter(page, fonts, vm.labels.max, cx, cb.y + 25, 5.5);
     textCenter(page, String(vm.hitDiceUsed), cx, cb.y + 13, fonts.sansBold, 11);
     captionCenter(page, fonts, vm.labels.spent, cx, cb.y + 5, 5.5);
