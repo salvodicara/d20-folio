@@ -3,8 +3,10 @@
  * background, species and abilities are chosen, whatever the build still lacks
  * is filled the way the class's own quickbuild preset would (its class skills,
  * cantrips and level-1 spells, its other choice picks when it shares the
- * background), then from the first legal options. The Riepilogo shows the result
- * and every pick stays editable later from the sheet.
+ * background), then from the first legal options; then the class's own picks
+ * (`fillClassPicks`: Weapon Mastery, a Fighting Style, invocations, Expertise).
+ * The Riepilogo shows the result and every pick stays editable later from the
+ * sheet. Pattern source: D&D Beyond's quick build, which makes every class pick.
  *
  * Only what is MISSING is filled: a pick the player made is kept, and the
  * species' own choices (its traits, a Human's Versatile feat and that feat's
@@ -12,6 +14,7 @@
  *
  * Pure module — no React, no locale reads.
  */
+import { classTables } from "@/data/classes";
 import { DEFAULT_QUICKBUILD_PRESET, QUICKBUILD_PRESETS } from "@/data/quickbuild";
 import { spells as allSpells } from "@/data/spells";
 import { ALL_SKILLS } from "@/lib/skills";
@@ -24,6 +27,7 @@ import { listAvailableForSlot } from "@/lib/feat-spell-choices";
 import type { ChoicePicks, FeatureChoiceSlots } from "@/lib/feature-choices";
 import { classSkillPool, quickbuildDraft } from "@/lib/quickbuild";
 
+import type { ClassChoicePicks } from "./class-choices";
 import type { CreationDraft, CreationFacts } from "./draft";
 
 /** `kept` topped up to `count` from `candidates`, in order, without repeats. */
@@ -157,7 +161,50 @@ export function fillReadyMadePicks(
     };
   }
 
+  // ── The class's own picks, last: Expertise reads the skills chosen above ───
+  next = fillClassPicks(next, factsOf(next));
+
   return next === draft || JSON.stringify(next) === JSON.stringify(draft) ? draft : next;
+}
+
+/** Every class with a Fighting Style starts in armor, so Defense always applies. */
+const READY_MADE_STYLE = "defense";
+
+/**
+ * `draft` with each class pick (Fighting Style, Weapon Mastery, invocations,
+ * Expertise) at its count: the legal picks already made are kept, then the ones a
+ * player would make — Defense, the weapons the chosen starting kit carries, the
+ * class skills — then the first legal options.
+ */
+function fillClassPicks(draft: CreationDraft, facts: CreationFacts): CreationDraft {
+  const kit =
+    classTables
+      .find((c) => c.id === draft.classId)
+      ?.startingEquipment.find((o) => o.label === facts.classEquipLabel)
+      ?.items.flatMap((item) => (item.srdId ? [item.srdId] : [])) ?? [];
+  const preferred: Record<keyof ClassChoicePicks, readonly string[]> = {
+    fightingStyles: [READY_MADE_STYLE],
+    weaponMasteries: kit,
+    invocations: [],
+    expertise: draft.classSkills,
+  };
+  let classPicks = draft.classPicks;
+  for (const kind of Object.keys(preferred) as (keyof ClassChoicePicks)[]) {
+    const count = facts.classNeeds[kind];
+    const legal = facts.classOptions[kind];
+    const have = draft.classPicks[kind];
+    const kept = have.filter((id) => legal.includes(id));
+    if (kept.length === have.length && have.length === count) continue;
+    classPicks = {
+      ...classPicks,
+      [kind]: topUp(
+        kept,
+        [...preferred[kind].filter((id) => legal.includes(id)), ...legal],
+        count
+      ),
+    };
+  }
+  return classPicks === draft.classPicks ? draft : { ...draft, classPicks };
 }
 
 /**
