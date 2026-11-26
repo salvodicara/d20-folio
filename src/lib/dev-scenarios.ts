@@ -691,6 +691,33 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Owed Expertise: the banner asks 4 Expertise skills (Bard) and offers the proficient skills; answering raises them.",
   },
+  "paladin-5-no-class-picks": {
+    // A Paladin 5 as the classic creation left one before #1397 (it asked no class
+    // picks): «Scelte da completare» owes two Weapon Masteries and the Fighting
+    // Style. Visit `/characters/scn-paladin-5-no-class-picks`.
+    name: "Ser Hale, Unsworn",
+    raceId: "human",
+    classId: "paladin",
+    subclassId: "oath-of-devotion",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 8, WIS: 10, CHA: 16 },
+    weapons: [
+      { srdId: "longsword", quantity: 1 },
+      { srdId: "javelin", quantity: 6 },
+    ],
+    equipment: [
+      { srdId: "chain-mail", equipped: true },
+      { srdId: "shield", equipped: true },
+    ],
+    spells: [
+      { srdId: "bless", prepared: true },
+      { srdId: "cure-wounds", prepared: true },
+    ],
+    owesClassPicks: true,
+    exercises:
+      "Owed class picks: the banner asks 2 Weapon Masteries (the Longsword and Javelins first) and a Fighting Style; saving stores them and the banner goes.",
+  },
   "bard-8": {
     // A Bard 8 holding its two Expertise skills: the level-up to 9 asks two more.
     // Visit `/characters/scn-bard-8` and level up.

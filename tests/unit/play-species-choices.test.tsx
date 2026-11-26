@@ -4,10 +4,12 @@
  * Save. A read-only sheet, or a species that owes nothing, shows no banner.
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { asRaceId } from "@/data/srd-names";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
+import { buildDevScenario } from "@/lib/dev-scenarios";
+import { owedClassPicks } from "@/lib/owed-class-picks";
 import { preparedLevelledCount } from "@/lib/wizard-spellbook";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CharacterDoc } from "@/types/character";
@@ -230,4 +232,78 @@ describe("PlaySpeciesChoices: Magical Discoveries saved without their mark", () 
     expect(preparedLevelledCount(after)).toBe(2);
     expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
   });
+});
+
+describe("PlaySpeciesChoices: the four kinds the live survey found owed (#1397)", () => {
+  /** Opens the banner's dialog on a dev scenario. */
+  function open(id: string) {
+    const doc = buildDevScenario(id);
+    if (!doc) throw new Error(id);
+    useCharacterStore.getState().setCharacter(doc);
+    render(<Banner />);
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    return screen.getByRole("dialog");
+  }
+  const owedNow = () => {
+    const doc = useCharacterStore.getState().character;
+    if (!doc) throw new Error("no character");
+    return owedClassPicks(doc.character, doc.session.grantBundleChoices);
+  };
+  const pick = (dialog: HTMLElement, name: string) =>
+    fireEvent.click(within(dialog).getByRole("button", { name: new RegExp(`^${name}`) }));
+
+  it("a Paladin 5 picks 2 Weapon Masteries and a Fighting Style, and owes none", () => {
+    const dialog = open("paladin-5-no-class-picks");
+    expect(within(dialog).getByText("Choose a Fighting Style")).toBeTruthy();
+    for (const name of ["Defense", "Longsword", "Javelin"]) pick(dialog, name);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    const character = useCharacterStore.getState().character?.character;
+    expect(character?.classes[0]?.weaponMasteries).toEqual(["longsword", "javelin"]);
+    expect(character?.features).toContainEqual({ srdId: "defense" });
+    expect(owedNow()).toEqual([]);
+  }, 15_000);
+
+  it("a Bard 9 raises 4 proficient skills to Expertise, and owes none", () => {
+    const dialog = open("bard-9-no-expertise");
+    expect(within(dialog).getByText("Choose 4 skills for Expertise")).toBeTruthy();
+    for (const name of ["Performance", "Persuasion", "Deception", "Insight"])
+      pick(dialog, name);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    const skills = useCharacterStore.getState().character?.character.skills ?? {};
+    const expert = Object.entries(skills).filter(([, v]) => v === "expertise");
+    expect(expert.map(([id]) => id).sort()).toEqual([
+      "deception",
+      "insight",
+      "performance",
+      "persuasion",
+    ]);
+    expect(owedNow()).toEqual([]);
+  }, 15_000);
+
+  it("a Wizard 5 adds 5 spells to the book, unprepared, and owes none", () => {
+    const dialog = open("wizard-book-short");
+    expect(
+      within(dialog).getByText("Add 5 spells to your spellbook: they stay unprepared")
+    ).toBeTruthy();
+    // The long list opens on one spell level: show them all, then search each.
+    fireEvent.click(within(dialog).getByRole("button", { name: "All" }));
+    const search = within(dialog).getByRole("searchbox", { name: "Search spells" });
+    const added = ["Burning Hands", "Charm Person", "Feather Fall", "Thunderwave"];
+    for (const name of [...added, "Invisibility"]) {
+      fireEvent.change(search, { target: { value: name } });
+      pick(dialog, name);
+    }
+    fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+    const spells = useCharacterStore.getState().character?.character.spells ?? [];
+    expect(spells.slice(-5)).toEqual(
+      [
+        "burning-hands",
+        "charm-person",
+        "feather-fall",
+        "thunderwave",
+        "invisibility",
+      ].map((srdId) => ({ srdId, prepared: false }))
+    );
+    expect(owedNow()).toEqual([]);
+  }, 15_000);
 });
