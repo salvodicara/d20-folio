@@ -182,15 +182,27 @@ describe("max HP is hand-set as its input (#1315): a bonus over the derived max"
   });
 });
 
-it("a stored max that differs from the derived one counts as hand-set too (as its breakdown says)", () => {
+it("a stale stored max with no correction is not hand-set: the sheet shows the derived max (#1334)", () => {
   load((doc) => {
     doc.character.hpBonus = undefined;
     doc.character.hp = { max: deriveMaxHp(doc.character) - 4 };
   });
   const c = live().character;
-  expect(storedOverride(c, { kind: "maxHp" })).toBe(c.hp.max);
+  expect(storedOverride(c, { kind: "maxHp" })).toBeNull();
+  expect(isHandSet(sheetNumbers(live()).maxHp.parts)).toBe(false);
+  expect(sheetNumbers(live()).maxHp.total).toBe(deriveMaxHp(c));
+});
+
+it("a corrected max is hand-set at the derived value, correction included (#1334)", () => {
+  load((doc) => {
+    doc.character.hpBonus = -4;
+    doc.character.hp = { max: 1 };
+  });
+  const c = live().character;
+  expect(storedOverride(c, { kind: "maxHp" })).toBe(deriveMaxHp(c));
   expect(isHandSet(sheetNumbers(live()).maxHp.parts)).toBe(true);
   setNumberOverride({ kind: "maxHp" }, null, "HP");
+  expect(live().character.hpBonus).toBeUndefined();
   expect(live().character.hp.max).toBe(deriveMaxHp(live().character));
 });
 

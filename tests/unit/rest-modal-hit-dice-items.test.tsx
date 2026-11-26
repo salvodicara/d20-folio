@@ -5,6 +5,7 @@
  * and ignored the Periapt of Wound Closure ("Hit Point Dice ... restore twice the
  * number of Hit Points"), so the preview and the heal were half.
  */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { RestModal } from "@/features/character/RestModal";
@@ -18,7 +19,6 @@ function seedWithPeriapt() {
   const doc = structuredClone(MOCK_CHARACTER);
   doc.character.abilityScores.CON = 14; // +2
   doc.character.hitDieType = 8;
-  doc.character.hp.max = 40;
   doc.character.equipment = [
     {
       srdId: "periapt-of-wound-closure",
@@ -27,6 +27,7 @@ function seedWithPeriapt() {
       attuned: true,
     },
   ];
+  doc.character = withMaxHpEdit(doc.character, 40);
   doc.session.hp = { current: 10, temp: 0 };
   doc.session.hitDice = { used: 2 };
   useCharacterStore.setState({ character: doc, loading: false, error: null });

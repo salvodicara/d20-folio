@@ -72,7 +72,7 @@ test.describe("Rest Flow", () => {
     await expect(confirm).toBeDisabled();
     await dialog.getByRole("spinbutton", { name: "Dice total" }).fill("6");
     await expect(dialog.getByRole("status", { name: "HP after rest" })).toHaveText(
-      "38 → 46 / 62"
+      "38 → 46 / 66"
     );
     await confirm.click();
     await expect(dialog.getByText("Short Rest Complete")).toBeVisible();

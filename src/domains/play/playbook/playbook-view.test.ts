@@ -72,7 +72,7 @@ describe("playbookView", () => {
     );
     expect(line).toMatchObject({
       shape: "anytime",
-      before: "Sei a 25 su 44: un ",
+      before: "Sei a 25 su 38: un ",
       strong: "riposo breve",
       after: " ti porterebbe al massimo.",
       why: "Ti restano 5 Dadi Vita su 5.",

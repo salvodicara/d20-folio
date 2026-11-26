@@ -47,6 +47,7 @@
  * STANDING (fail-closed is always late, never early).
  */
 
+import { maxHpBase } from "@/lib/aggregate-character";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import {
   partyLeaseIdentity,
@@ -97,7 +98,7 @@ function openCharacterWorld(): OpenCharacterWorld | null {
   const world = characterWorldState(
     doc,
     uid,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );

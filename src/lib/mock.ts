@@ -57,7 +57,7 @@ export const MOCK_CHARACTER: CharacterDoc = {
     ac: 17,
     acOverride: 17,
     armorNote: "Studded Leather + DEX +3",
-    hp: { max: 62 },
+    hp: { max: 66 },
     hitDieType: 8,
     // Initiative is auto-computed; no override. (The legacy `initiativeBonus` slot
     // was deleted from the type — golden rule 10.)

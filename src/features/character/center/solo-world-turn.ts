@@ -19,6 +19,7 @@
  * legacy round — a crossed engine boundary is a fact, not an animation.
  */
 
+import { maxHpBase } from "@/lib/aggregate-character";
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import {
   boundaryCommitFacts,
@@ -52,7 +53,7 @@ function soloWorldFor(): {
   const world = characterWorldState(
     doc,
     uid,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );

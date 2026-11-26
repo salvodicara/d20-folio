@@ -13,6 +13,10 @@
     "name": "Archery",
     "prerequisite": "Level 1+, Warrior or Priest Group"
   },
+  "blessed-warrior": {
+    "description": "You learn two Cleric cantrips of your choice. Guidance and Sacred Flame are recommended. The chosen cantrips count as Paladin spells for you, and Charisma is your spellcasting ability for them. Whenever you gain a Paladin level, you can replace one of these cantrips with another Cleric cantrip.",
+    "name": "Blessed Warrior"
+  },
   "boon-of-combat-prowess": {
     "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase one ability score of your choice by 1, to a maximum of 30.\n\n**Peerless Aim.** When you miss with an attack roll, you can hit instead. Once you use this benefit, you can't use it again until the start of your next turn.",
     "name": "Boon of Combat Prowess",
@@ -52,6 +56,10 @@
     "description": "While you're wearing Light, Medium, or Heavy armor, you gain a +1 bonus to Armor Class.",
     "name": "Defense",
     "prerequisite": "Level 1+, Warrior or Priest Group"
+  },
+  "druidic-warrior": {
+    "description": "You learn two Druid cantrips of your choice. Guidance and Starry Wisp are recommended. The chosen cantrips count as Ranger spells for you, and Wisdom is your spellcasting ability for them. Whenever you gain a Ranger level, you can replace one of these cantrips with another Druid cantrip.",
+    "name": "Druidic Warrior"
   },
   "grappler": {
     "description": "You gain the following benefits:\n\n**Ability Score Increase.** Increase your Strength or Dexterity score by 1, to a maximum of 20.\n\n**Punch and Grab.** When you hit a creature with an Unarmed Strike as part of the Attack action on your turn, you can use both the Damage and the Grapple option. You can use this benefit only once per turn.\n\n**Attack Advantage.** You have Advantage on attack rolls against a creature Grappled by you.\n\n**Fast Wrestler.** You don't have to spend extra movement to move a creature Grappled by you if the creature is your size or smaller.",

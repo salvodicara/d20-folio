@@ -4,6 +4,7 @@
  * The store's own behaviour is pinned by `character-store-world-vitals.test.ts`; these
  * cases pin the rules on the functions themselves, with and without a world.
  */
+import { maxHpBase } from "@/lib/aggregate-character";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({
@@ -44,7 +45,7 @@ function withWorld(doc: CharacterDoc): CharacterDoc {
   const world = characterWorldState(
     doc,
     UID,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );
@@ -63,7 +64,7 @@ describe("setHp", () => {
     const doc = wizard({ hp: { current: 10, temp: 0 } });
     const before = structuredClone(doc);
     const next = setHp(doc, 999);
-    expect(next.hp.current).toBe(doc.character.hp.max);
+    expect(next.hp.current).toBe(maxHpBase(doc.character, doc.session));
     expect(doc).toEqual(before);
   });
 
@@ -304,7 +305,10 @@ describe("rests", () => {
       deathFail: 1,
     });
     const rested = longRestCharacter(tired);
-    expect(rested.session.hp).toEqual({ current: tired.character.hp.max, temp: 0 });
+    expect(rested.session.hp).toEqual({
+      current: maxHpBase(tired.character, tired.session),
+      temp: 0,
+    });
     expect(rested.session.spellSlots).toEqual({});
     expect(rested.session.hitDice).toEqual({ used: 0 });
     expect(rested.session).toMatchObject({ deathSucc: 0, deathFail: 0 });

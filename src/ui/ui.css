@@ -7326,3 +7326,10 @@
 .fui .f-btn[data-icon-up] .f-ic {
   transform: rotate(180deg);
 }
+
+/* the DM's monster card (Scontro): the name and its Armor Class side by side */
+.fui .f-card-fields {
+  display: grid;
+  grid-template-columns: 1fr 5.5rem;
+  gap: 12px;
+}

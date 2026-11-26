@@ -112,7 +112,19 @@
       "removeDone_one": "Tolta dallo scontro: {{count}} creatura",
       "removeDone_other": "Tolte dallo scontro: {{count}} creature",
       "tempDone_one": "{{amount}} PF temporanei a {{count}} creatura",
-      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature"
+      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature",
+      "card": "Scheda del mostro",
+      "cardDone": "Scheda salvata: {{name}}",
+      "deathSaves": "Tiri salvezza contro la morte",
+      "deathSaveMarks": "Successi {{successes}}/3 · Fallimenti {{failures}}/3",
+      "deathSaveTick": {
+        "success": "+1 successo",
+        "failure": "+1 fallimento"
+      },
+      "deathSaveDone": {
+        "success": "Successo nel tiro contro la morte per {{name}}, segnato dal master",
+        "failure": "Fallimento nel tiro contro la morte per {{name}}, segnato dal master"
+      }
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {

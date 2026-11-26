@@ -60,9 +60,9 @@ export function storedOverride(c: CharacterData, key: SheetNumberKey): number | 
     case "proficiency":
       return c.proficiencyBonusOverride ?? null;
     case "maxHp":
-      // Hand-set when it carries a bonus or the stored max is not the derived one
-      // (the breakdown's «Correzione manuale» test).
-      return c.hpBonus || c.hp.max !== deriveMaxHp(c) ? c.hp.max : null;
+      // Hand-set when it carries a correction (the breakdown's «Correzione manuale»
+      // row); the max is derived at read (#1334), so a stale stored number is not.
+      return c.hpBonus ? deriveMaxHp(c) : null;
     case "ability":
       return c.abilityScoreOverrides?.[key.ability] ?? null;
     case "save":

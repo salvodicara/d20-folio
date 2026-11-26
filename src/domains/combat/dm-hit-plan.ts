@@ -21,6 +21,8 @@ export interface DmTarget {
   hidden?: boolean;
   revealed?: boolean;
   side?: "ally" | "enemy";
+  /** A hero's death-save marks (a hero at 0 HP: the DM may tick them). */
+  deathSaves?: { successes: number; failures: number };
 }
 
 export type DmEntry =
@@ -58,6 +60,7 @@ export function dmTargets(
         ...(r.kind === "monster"
           ? { hidden: r.hidden, revealed: r.revealed === true, side: r.side ?? "enemy" }
           : {}),
+        ...(r.kind === "pc" && r.deathSaves ? { deathSaves: r.deathSaves } : {}),
       }))
   );
 }
