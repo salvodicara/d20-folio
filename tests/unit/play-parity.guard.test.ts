@@ -150,10 +150,9 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "Custom monsters": {
     classic: "src/features/campaigns/encounter-custom-monsters.tsx",
-    answer: {
-      model: "src/domains/combat/custom-monsters.ts",
-      pending: "direction: the control on screen",
-    },
+    // «Nuovo mostro», edit and delete in «Aggiungi mostri» (gap map row 17); the
+    // portrait upload stays classic-only for now.
+    answer: { covered: "src/domains/combat/ui/AddMonstersDialog.tsx" },
   },
   "End-of-fight write-up": {
     classic: "src/features/campaigns/party-chronicle.tsx",
