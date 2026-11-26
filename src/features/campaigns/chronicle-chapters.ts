@@ -45,3 +45,30 @@ export function splitChapters(text: string): Chapter[] {
   flush();
   return chapters.length > 0 ? chapters : [{ title: null, body: text, start: 0 }];
 }
+
+/**
+ * The Chronicle text without the LAST whole copy of `chapter` (a block that starts the
+ * text or follows a blank line, and ends it or precedes one), with its blank-line join;
+ * null when no such copy is there. Exact text only: the undo of a fight's end takes back
+ * the chapter that end appended and nothing else, and a chapter edited since stays.
+ */
+export function withoutChronicleChapter(text: string, chapter: string): string | null {
+  if (!chapter) return null;
+  for (
+    let at = text.lastIndexOf(chapter);
+    at >= 0;
+    at = text.lastIndexOf(chapter, at - 1)
+  ) {
+    const end = at + chapter.length;
+    const startsBlock = at === 0 || text.slice(0, at).endsWith("\n\n");
+    const endsBlock = end === text.length || text.slice(end).startsWith("\n\n");
+    if (!startsBlock || !endsBlock) {
+      if (at === 0) break;
+      continue;
+    }
+    const before = text.slice(0, at).replace(/\n\n$/, "");
+    const after = text.slice(end).replace(/^\n\n/, "");
+    return before && after ? `${before}\n\n${after}` : before || after;
+  }
+  return null;
+}

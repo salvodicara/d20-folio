@@ -5,7 +5,12 @@
  * Chronicle» dialog and the new fight screen.
  */
 import type { TFunction } from "i18next";
-import { appendChronicleChapter } from "@/features/campaigns/campaign-io";
+import {
+  appendChronicleChapter,
+  removeChronicleChapter,
+} from "@/features/campaigns/campaign-io";
+import { endCombatNow, type CombatUndo } from "@/features/campaigns/combat-lifecycle-io";
+import type { EncounterEndReason } from "@/types/campaign";
 import { useChronicleStore } from "@/features/campaigns/chronicleStore";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { encounterCloseDrafts } from "@/lib/session-log/encounter-mirror";
@@ -87,4 +92,34 @@ export function saveFightToChronicle(
       throw error;
     }
   );
+}
+
+/**
+ * The DM's «Salva nella Cronaca»: the chapter goes in, then the fight ends. The undo
+ * reopens the fight AND takes back the chapter this end wrote (only that exact text),
+ * so end → undo → end leaves one chapter, never two (coordinator, 2026-11-26).
+ */
+export async function endFightWithChapter(
+  args: Parameters<typeof saveFightToChronicle>[0] & {
+    reason?: Exclude<EncounterEndReason, "manual">;
+  },
+  t: TFunction
+): Promise<CombatUndo | null> {
+  await saveFightToChronicle(args, t);
+  const reopen = await endCombatNow(
+    args.campaignId,
+    args.reason ? { reason: args.reason } : {}
+  );
+  if (!reopen) return null;
+  return async () => {
+    const reopened = await reopen();
+    if (!reopened) return false;
+    const { chapter } = args.close;
+    if (DEV_BYPASS_AUTH)
+      useChronicleStore.getState().removeChapter(chapter, args.uid, new Date());
+    await removeChronicleChapter(args.campaignId, { chapter, editedBy: args.uid }).catch(
+      (error: unknown) => console.error("Chronicle chapter take-back failed", error)
+    );
+    return true;
+  };
 }

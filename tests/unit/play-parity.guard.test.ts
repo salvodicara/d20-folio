@@ -157,10 +157,8 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "End-of-fight write-up": {
     classic: "src/features/campaigns/party-chronicle.tsx",
-    answer: {
-      model: "src/domains/combat/fight-write-up.ts",
-      pending: "direction: the control on screen",
-    },
+    // The DM's «Fine scontro» opens it (coordinator, 2026-11-26: classic parity).
+    answer: { covered: "src/domains/combat/ui/use-end-fight.tsx" },
   },
   "Chronicle editing, versions, .md download": {
     classic: "src/features/campaigns/Chronicle.tsx",

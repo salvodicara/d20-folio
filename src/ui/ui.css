@@ -7258,3 +7258,47 @@
   margin: 8px 0 0;
   padding-left: 20px;
 }
+
+/* the DM's end-of-fight write-up (Scontro): the fight's record, each line removable */
+.fui .f-endlines {
+  display: grid;
+  gap: 2px;
+  margin: 4px 0 0;
+  padding: 8px;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+}
+.fui .f-endlines li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+}
+.fui .f-endlines li > span {
+  flex: 1;
+}
+.fui .f-endlines li[data-gone] > span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+.fui .f-endline-x {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.fui .f-endline-x:hover,
+.fui .f-endline-x[aria-pressed="true"] {
+  color: var(--strong);
+  background: var(--hover);
+}
+.fui .f-endline-x:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 2px;
+}

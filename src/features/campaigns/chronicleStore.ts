@@ -10,6 +10,7 @@
 
 import { create } from "zustand";
 import type { ChronicleDoc } from "@/types/campaign";
+import { withoutChronicleChapter } from "@/features/campaigns/chronicle-chapters";
 import { pushVersion } from "@/features/campaigns/chronicle-versions";
 
 const EMPTY_CHRONICLE: ChronicleDoc = {
@@ -48,6 +49,9 @@ export interface ChronicleState {
    * dev/e2e Chronicle. Idempotent-safe last-write-wins, exactly like the live echo.
    */
   appendChapter: (chapter: string, editedBy: string, at: Date) => void;
+
+  /** Take one appended chapter back (dev mirror of `removeChronicleChapter`). */
+  removeChapter: (chapter: string, editedBy: string, at: Date) => void;
 }
 
 export const useChronicleStore = create<ChronicleState>()((set, get) => ({
@@ -71,6 +75,21 @@ export const useChronicleStore = create<ChronicleState>()((set, get) => ({
       timestamp: base.lastEditedAt,
       editedBy: base.lastEditedBy,
       editedByName,
+      textSnapshot: base.text,
+    });
+    set({
+      chronicle: { ...base, text, lastEditedBy: editedBy, lastEditedAt: at, versions },
+    });
+  },
+
+  removeChapter: (chapter, editedBy, at) => {
+    const base = get().chronicle ?? EMPTY_CHRONICLE;
+    const text = withoutChronicleChapter(base.text, chapter);
+    if (text === null) return;
+    const versions = pushVersion(base.versions, {
+      timestamp: base.lastEditedAt,
+      editedBy: base.lastEditedBy,
+      editedByName: "",
       textSnapshot: base.text,
     });
     set({
