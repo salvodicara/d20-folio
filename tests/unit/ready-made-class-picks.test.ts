@@ -177,3 +177,79 @@ describe("the ready-made fill makes the class's own picks", () => {
     expect(draft.classPicks.weaponMasteries).toHaveLength(2);
   });
 });
+
+describe("the new screen's path: class, background, species, then the fill", () => {
+  for (const classId of ["paladin", "bard", "wizard", "fighter", "rogue"]) {
+    // The four SRD 5.2.1 backgrounds.
+    for (const backgroundId of ["acolyte", "criminal", "sage", "soldier"]) {
+      for (const level of [1, 3, 9]) {
+        it(`${classId} ${level} + ${backgroundId}: nothing owed`, () => {
+          const draft = apply(
+            initialCreationDraft(),
+            { type: "setName", name: "Lia" },
+            { type: "selectClass", classId },
+            { type: "setLevel", level },
+            {
+              type: "setSubclass",
+              subclassId:
+                level >= 3
+                  ? (classTables.find((t) => t.id === classId)?.subclasses[0]?.id ?? "")
+                  : "",
+            },
+            { type: "selectBackground", backgroundId },
+            { type: "selectRace", raceId: "dwarf" },
+            { type: "fillReadyMade" }
+          );
+          expect(owed(draft)).toEqual([]);
+        });
+      }
+    }
+  }
+});
+
+describe("Expertise is offered only in a skill the character will hold", () => {
+  /** A Human Bard 3 with Skilled: its three picks may be skills or tools. */
+  function skilledBard(picks: string[]): CreationDraft {
+    let draft = apply(
+      initialCreationDraft(),
+      { type: "setName", name: "Lia" },
+      { type: "selectClass", classId: "bard" },
+      { type: "setLevel", level: 3 },
+      { type: "setSubclass", subclassId: "college-of-lore" },
+      { type: "selectBackground", backgroundId: "soldier" },
+      { type: "selectRace", raceId: "human" },
+      { type: "setHumanFeat", featId: "skilled" }
+    );
+    const slot = creationFacts(draft).humanFeatSlots.skillOrTool[0];
+    if (!slot) throw new Error("Skilled has no skill-or-tool slot");
+    draft = apply(draft, {
+      type: "setChoicePicks",
+      picks: { ...draft.choicePicks, skillOrTool: { [slot.slotId]: picks } },
+    });
+    return draft;
+  }
+
+  it("never a tool chosen with Skilled (Thieves' Tools, Lute)", () => {
+    const options = creationFacts(skilledBard(["thieves-tools", "arcana", "lute"]))
+      .classOptions.expertise;
+    expect(options).toContain("arcana");
+    expect(options).not.toContain("thieves-tools");
+    expect(options).not.toContain("lute");
+  });
+
+  it("never a pick its feat no longer gives (Skilled swapped for Alert)", () => {
+    const draft = apply(skilledBard(["thieves-tools", "arcana", "lute"]), {
+      type: "setHumanFeat",
+      featId: "alert",
+    });
+    expect(creationFacts(draft).classOptions.expertise).not.toContain("arcana");
+  });
+
+  it("so every Expertise option offered lands on the sheet", () => {
+    const draft = skilledBard(["thieves-tools", "arcana", "lute"]);
+    const options = creationFacts(draft).classOptions.expertise;
+    const filled = apply(draft, { type: "fillReadyMade" });
+    const skills = built(filled).skills;
+    for (const id of options) expect(skills[id], id).toBeDefined();
+  });
+});
