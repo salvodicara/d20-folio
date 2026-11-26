@@ -36,6 +36,8 @@ export function DmHitDialog({
   onHit,
   onCondition,
   onShow,
+  onTempHp,
+  onRemove,
   onClose,
 }: {
   targets: readonly DmTarget[];
@@ -44,6 +46,10 @@ export function DmHitDialog({
   onCondition: (target: DmTarget, conditionId: string, active: boolean) => void;
   /** Set one of «Per i giocatori» on the chosen monsters (all on, or all off). */
   onShow: (monsters: readonly DmTarget[], mark: FightMark, on: boolean) => void;
+  /** Temporary HP on the chosen monsters (a hero's live on their own sheet). */
+  onTempHp?: (monsters: readonly DmTarget[], amount: number) => void;
+  /** Take the chosen monsters out of the fight (one undo). */
+  onRemove?: (monsters: readonly DmTarget[]) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -137,6 +143,21 @@ export function DmHitDialog({
           {t("combat.heal")}
         </Button>
       </div>
+      {onTempHp && monsters.length > 0 && (
+        <div className="f-ask">
+          <Button
+            wide
+            disabled={!amount}
+            onClick={() => {
+              if (!amount) return;
+              onTempHp(monsters, amount);
+              onClose();
+            }}
+          >
+            {t("combat.tempHpRollLabel")}
+          </Button>
+        </div>
+      )}
       {chosen.some((x) => x.kind === "pc") && (
         <p className="f-quiet f-ask">{t("fight.dm.pcRule")}</p>
       )}
@@ -170,6 +191,20 @@ export function DmHitDialog({
               );
             })}
           </div>
+        </div>
+      )}
+      {onRemove && monsters.length > 0 && (
+        <div className="f-ask">
+          <Button
+            kind="quiet"
+            icon="u-delete"
+            onClick={() => {
+              onRemove(monsters);
+              onClose();
+            }}
+          >
+            {t("fight.dm.remove")}
+          </Button>
         </div>
       )}
     </Dialog>

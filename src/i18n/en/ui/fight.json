@@ -102,7 +102,17 @@
       "initGroup_one": "The whole line moves: {{count}} creature.",
       "initGroup_other": "The whole line moves: {{count}} creatures.",
       "initHelp": "The list re-sorts by the new number, even mid-fight.",
-      "initDone": "{{name}} now at initiative {{value}}"
+      "initDone": "{{name}} now at initiative {{value}}",
+      "heroRollLabel": "d20 roll",
+      "heroRollTotal": "Bonus {{bonus}} · total {{total}}",
+      "heroRollHelp": "For a player without the app: the roll is theirs, the report says the DM typed it.",
+      "heroRollDone": "{{name}}: initiative {{total}}, rolled by the DM",
+      "movedDone": "Turn order changed: {{name}}",
+      "remove": "Remove from the fight",
+      "removeDone_one": "Removed from the fight: {{count}} creature",
+      "removeDone_other": "Removed from the fight: {{count}} creatures",
+      "tempDone_one": "{{amount}} temporary HP on {{count}} creature",
+      "tempDone_other": "{{amount}} temporary HP on {{count}} creatures"
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {

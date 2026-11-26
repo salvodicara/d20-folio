@@ -23,7 +23,7 @@ import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
-import { initiativePlace } from "@/domains/combat/initiative-edit";
+import { initiativePlace, lineNeighbourPlace } from "@/domains/combat/initiative-edit";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -204,7 +204,7 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
-  const dm = useDmTools(campaign, encounter, view.rows, uid, isDm, locale, onToast);
+  const dm = useDmTools(campaign, encounter, view.rows, rows, uid, isDm, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
   const writeUp = useEndFight(
     campaign,
@@ -347,6 +347,8 @@ function useDmTools(
   campaign: CampaignDoc,
   encounter: EncounterState,
   fighters: ReturnType<typeof buildEncounterView>["rows"],
+  /** The list's lines in turn order (a group is one line). */
+  lines: readonly FightRow[],
   uid: string,
   isDm: boolean,
   locale: Locale,
@@ -358,6 +360,23 @@ function useDmTools(
   const [adding, setAdding] = useState(false);
   const [initFor, setInitFor] = useState<FightRow | null>(null);
   const targets = hitting ? dmTargets(fighters, hitting) : [];
+  // The «Iniziativa» dialog's line: a hero's d20, and «Su» / «Giù» once the order
+  // stands (before turns begin the numbers decide it).
+  const hero =
+    initFor?.kind === "pc" ? fighters.find((f) => f.id === initFor.ids[0]) : undefined;
+  const settled = !encounter.clock || encounter.clock.turnsBegun;
+  const placeFor = (dir: "up" | "down") =>
+    initFor && settled
+      ? lineNeighbourPlace(encounter.order ?? [], lines, initFor.ids, dir)
+      : null;
+  const up = placeFor("up");
+  const down = placeFor("down");
+  const reorder = (place: { beforeId: string | null }) =>
+    initFor &&
+    move(
+      dmMoves.reorder(campaign.id, uid, initFor.ids, place.beforeId),
+      t("fight.dm.movedDone", { name: initFor.name })
+    );
   const line = (row: FightRow): FightLineDm | undefined => {
     if (!isDm) return undefined;
     const members = fighters.filter((f) => row.ids.includes(f.id));
@@ -370,12 +389,9 @@ function useDmTools(
       hp,
       label,
       onHp: () => setHitting(row.ids),
-      ...(row.kind === "monster"
-        ? {
-            onInit: () => setInitFor(row),
-            initLabel: t("fight.dm.initTitle", { name: row.name }),
-          }
-        : {}),
+      // a monster's number, or a hero's d20 for a player without the app
+      onInit: () => setInitFor(row),
+      initLabel: t("fight.dm.initTitle", { name: row.name }),
     };
   };
   const dialogs = isDm && (
@@ -394,6 +410,27 @@ function useDmTools(
               })
             );
           }}
+          onTempHp={(monsters, amount) =>
+            move(
+              dmMoves.tempHp(
+                campaign.id,
+                uid,
+                monsters.map((m) => m.id),
+                amount
+              ),
+              t("fight.dm.tempDone", { amount, count: monsters.length })
+            )
+          }
+          onRemove={(monsters) =>
+            move(
+              dmMoves.remove(
+                campaign.id,
+                uid,
+                monsters.map((m) => m.id)
+              ),
+              t("fight.dm.removeDone", { count: monsters.length })
+            )
+          }
           onShow={(monsters, mark, on) =>
             move(
               dmMoves.show(
@@ -428,19 +465,32 @@ function useDmTools(
         <InitiativeDialog
           name={initFor.name}
           count={initFor.count}
-          value={initFor.initiative}
+          value={hero ? (hero.initiativeRoll ?? null) : initFor.initiative}
+          {...(hero ? { hero: { bonus: hero.initiativeBonus ?? 0 } } : {})}
+          {...(up ? { onUp: () => reorder(up) } : {})}
+          {...(down ? { onDown: () => reorder(down) } : {})}
           onClose={() => setInitFor(null)}
           onSave={(value) =>
-            move(
-              dmMoves.initiative(
-                campaign.id,
-                uid,
-                initFor.ids,
-                value,
-                initiativePlace(encounter, fighters, initFor.ids, value)
-              ),
-              t("fight.dm.initDone", { name: initFor.name, value })
-            )
+            hero?.memberUid
+              ? move(
+                  dmMoves.heroRoll(campaign.id, uid, hero.memberUid, value, {
+                    [hero.id]: hero.initiativeBonus ?? 0,
+                  }),
+                  t("fight.dm.heroRollDone", {
+                    name: initFor.name,
+                    total: value + (hero.initiativeBonus ?? 0),
+                  })
+                )
+              : move(
+                  dmMoves.initiative(
+                    campaign.id,
+                    uid,
+                    initFor.ids,
+                    value,
+                    initiativePlace(encounter, fighters, initFor.ids, value)
+                  ),
+                  t("fight.dm.initDone", { name: initFor.name, value })
+                )
           }
         />
       )}

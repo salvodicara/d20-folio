@@ -11,6 +11,9 @@ import type { DmHitStep } from "@/domains/combat/dm-hit-plan";
 import type { FightMark } from "@/domains/combat/fight-rows-view";
 import {
   addMonstersMove,
+  typeHeroRollMove,
+  setMonsterTempHpMove,
+  removeCombatantMove,
   changeMonsterHp,
   damagePcFromDm,
   endCombatNow,
@@ -214,4 +217,32 @@ export const dmMoves = {
     together(
       monsters.map((monster) => () => addMonstersMove(campaignId, { uid, monster }))
     ),
+  /** The DM types a hero's d20 (a player without the app); the report says so. */
+  heroRoll:
+    (
+      campaignId: string,
+      uid: string,
+      heroUid: string,
+      roll: number,
+      bonuses: Readonly<Record<string, number>>
+    ) =>
+    () =>
+      typeHeroRollMove(campaignId, { uid, heroUid, roll, bonuses }),
+  /** The chosen creatures leave the fight, as one move with one undo. */
+  remove: (campaignId: string, uid: string, ids: readonly string[]) => () =>
+    together(ids.map((id) => () => removeCombatantMove(campaignId, { uid, id }))),
+  /** Temporary HP on the chosen monsters, as one move with one undo. */
+  tempHp: (campaignId: string, uid: string, ids: readonly string[], temp: number) => () =>
+    together(
+      ids.map(
+        (monsterId) => () => setMonsterTempHpMove(campaignId, { uid, monsterId, temp })
+      )
+    ),
+  /** «Su» / «Giù»: the line's creatures move before `beforeId`, one undo. */
+  reorder:
+    (campaignId: string, uid: string, ids: readonly string[], beforeId: string | null) =>
+    () =>
+      together(
+        ids.map((id) => () => reorderCombatantMove(campaignId, { uid, id, beforeId }))
+      ),
 };
