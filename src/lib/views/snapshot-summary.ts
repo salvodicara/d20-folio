@@ -21,3 +21,27 @@ export function classLevelSummary(
   if (parts.length === 1) return parts[0] ?? "";
   return `${parts.join(" · ")} — ${lvlLabel} ${totalLevel(character)}`;
 }
+
+/** The reason's label key; an unknown reason shows as stored. */
+export function snapshotReasonKey(reason: string): string | null {
+  switch (reason) {
+    case "level-up":
+      return "snapshots.reasonLevelUp";
+    case "manual":
+      return "snapshots.reasonManual";
+    case "rescue":
+      return "snapshots.reasonRescue";
+    case "pre-restore":
+      return "snapshots.reasonPreRestore";
+    default:
+      return null;
+  }
+}
+
+/** A backup list reads newest first; a snapshot with no time yet (just saved) leads. */
+export function newestFirst<T extends { createdAt: Date | null }>(
+  list: readonly T[]
+): T[] {
+  const at = (s: T) => s.createdAt?.getTime() ?? Number.POSITIVE_INFINITY;
+  return [...list].sort((a, b) => at(b) - at(a));
+}

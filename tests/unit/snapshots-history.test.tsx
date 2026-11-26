@@ -11,16 +11,18 @@ import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import i18n from "@/i18n";
 import { MOCK_CHARACTER } from "@/lib/mock";
 
-const { listMock, saveMock } = vi.hoisted(() => ({
+const { listMock, saveMock, restoreMock, calls } = vi.hoisted(() => ({
   listMock: vi.fn(),
   saveMock: vi.fn(),
+  restoreMock: vi.fn(),
+  calls: [] as string[],
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 vi.mock("@/lib/firestore", () => ({
   listCharacterSnapshots: listMock,
   saveCharacterSnapshot: saveMock,
-  restoreCharacterSnapshot: vi.fn(),
+  restoreCharacterSnapshot: restoreMock,
   deleteCharacterSnapshot: vi.fn(),
 }));
 vi.mock("@/stores/authStore", () => ({
@@ -52,7 +54,34 @@ function Harness({ initialOpen = false }: { initialOpen?: boolean }) {
 describe("SnapshotsHistory", () => {
   beforeEach(() => {
     listMock.mockReset().mockResolvedValue([]);
-    saveMock.mockReset().mockResolvedValue("snap-1");
+    calls.length = 0;
+    saveMock
+      .mockReset()
+      .mockImplementation((_u: string, _c: string, d: { reason: string }) => {
+        calls.push(`save:${d.reason}`);
+        return Promise.resolve("snap-1");
+      });
+    restoreMock.mockReset().mockImplementation(() => {
+      calls.push("restore");
+      return Promise.resolve();
+    });
+  });
+
+  it("a restore first saves the current sheet as a «before restore» snapshot", async () => {
+    listMock.mockResolvedValue([
+      {
+        id: "snap-old",
+        reason: "manual",
+        createdAt: new Date("2026-06-12T01:00:00Z"),
+        character: MOCK_CHARACTER.character,
+        session: MOCK_CHARACTER.session,
+      },
+    ]);
+    render(<Harness initialOpen />);
+    fireEvent.click(await screen.findByRole("button", { name: /^restore$/i }));
+    fireEvent.click(screen.getByRole("button", { name: /confirm restore/i }));
+    await waitFor(() => expect(calls).toEqual(["save:pre-restore", "restore"]));
+    expect(saveMock.mock.calls[0]?.[2]).toMatchObject({ character: charDoc.character });
   });
 
   it("does not fetch while closed", () => {
