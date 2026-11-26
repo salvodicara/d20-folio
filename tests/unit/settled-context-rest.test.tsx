@@ -6,7 +6,7 @@
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { User } from "firebase/auth";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const io = vi.hoisted(() => ({
   stepCampaignClock: vi.fn(() => Promise.resolve(null)),
@@ -55,7 +55,6 @@ function commands(): ItemResourceCommandApi {
 }
 
 beforeEach(() => {
-  vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
   vi.clearAllMocks();
   useAuthStore.setState({ user: { uid: "u1" } as User });
   useToastStore.setState({ toasts: [], timers: {} });
@@ -67,7 +66,6 @@ beforeEach(() => {
     readerMounted: true,
   });
 });
-afterEach(() => vi.unstubAllEnvs());
 
 describe("a rest before the campaign is read (settled-context gap)", () => {
   it(

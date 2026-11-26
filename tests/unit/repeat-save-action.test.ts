@@ -36,7 +36,6 @@ const save = {
 };
 
 function setUp() {
-  vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
   useCharacterStore.setState({
     character: {
       ...MOCK_CHARACTER,
@@ -48,7 +47,6 @@ function setUp() {
 }
 
 afterEach(() => {
-  vi.unstubAllEnvs();
   useUndoStore.getState().clear(null);
   useCharacterStore.setState({ character: null });
   Object.values(io).forEach((fn) => fn.mockClear());

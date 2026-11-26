@@ -3,7 +3,7 @@
  * campaign's, or its own sheet's. `clockFor` is the one read of either: no other
  * reader touches `session.timeOfDay` (tests/unit/clock-reads.guard.test.ts). It
  * depends on nothing in play, so the clock's own transitions (`time.ts`) read it too.
- * The clock is projected only with this release's rules deployed (`global-combat`).
+ * The campaign's clock is projected by `global-combat`.
  */
 import type { CharacterDoc } from "@/types/character";
 

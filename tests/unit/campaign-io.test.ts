@@ -162,7 +162,6 @@ import {
   revokePersistentCombatEffectsBySource,
   setJoinsLocked,
   deleteSession,
-  deliverQueuedMemberEffects,
   updateSession,
   listSessions,
   deleteCampaign,
@@ -180,26 +179,6 @@ beforeEach(() => {
 const PLAY_STATE = { version: 1 as const, state: {} };
 
 describe("campaign-io — reviewed combat effects", () => {
-  const encounter: EncounterState = {
-    nextMonsterOrdinal: 2,
-    round: 2,
-    currentCombatantId: "pc-a",
-    order: ["pc-a", "monster-1"],
-    epoch: 1,
-    status: "active",
-    combatants: [
-      { kind: "pc", id: "pc-a", memberUid: "a", characterId: "char-a" },
-      {
-        kind: "monster",
-        id: "monster-1",
-        name: "Goblin",
-        ac: 13,
-        initiative: 8,
-        conditions: [],
-        hp: { current: 5, temp: 0, max: 7 },
-      },
-    ],
-  };
   it("fresh-reads a manual campaign correction and writes only its effect root", async () => {
     const set = vi.fn();
     const playState = { version: 1 as const, state: { exhaustion: 2 } };
@@ -307,60 +286,6 @@ describe("campaign-io — reviewed combat effects", () => {
       expect.objectContaining({ hp: { current: 23, temp: 0 } }),
       { merge: true }
     );
-  });
-
-  it("fresh-reads queued peer death saves and rejects healing at three failures", async () => {
-    const set = vi.fn();
-    const update = vi.fn();
-    const queuedEncounter: EncounterState = {
-      ...encounter,
-      memberEffects: [
-        { id: "heal-dead-pc", targetId: "pc-a", kind: "healing", amount: 5 },
-      ],
-    };
-    runTransactionMock.mockImplementationOnce(async (_db, fn) =>
-      fn({
-        get: (ref: { __doc?: unknown[] }) => {
-          const path = ref.__doc?.slice(1).join("/");
-          if (path === "campaigns/camp-1") {
-            return Promise.resolve({
-              data: () => ({ memberDetails: {}, encounter: queuedEncounter }),
-            });
-          }
-          if (path === "users/a/characters/char-a") {
-            return Promise.resolve({
-              exists: () => true,
-              data: () => ({ status: "active", state: { exhaustion: 0 } }),
-            });
-          }
-          return Promise.resolve({
-            exists: () => true,
-            data: () => ({
-              hp: { current: 0, temp: 0 },
-              conditions: ["unconscious"],
-              initiativeRoll: null,
-              deathSaves: { successes: 0, failures: 3 },
-              round: 2,
-              appliedEffectIds: [],
-              playState: PLAY_STATE,
-            }),
-          });
-        },
-        set,
-        update,
-      })
-    );
-
-    await deliverQueuedMemberEffects({
-      campaignId: "camp-1",
-      uid: "a",
-      characterId: "char-a",
-      targetId: "pc-a",
-      maxHp: 20,
-    });
-
-    expect(set).not.toHaveBeenCalled();
-    expect(update).not.toHaveBeenCalled();
   });
 });
 
@@ -2303,32 +2228,25 @@ describe("a hit from another device records what it spent (the spends ledger)", 
     expect(runTransactionMock).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ["with this release's rules, reads", "true", true],
-    ["without them, leaves out", "", false],
-  ])(
-    "a hit %s the effects the campaign left on the target out of a fight",
-    async (_label, v26, reads) => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", v26);
-      getDocMock
-        .mockResolvedValueOnce({
-          exists: () => true,
-          data: () => ({ attachedCampaignId: "camp-1" }),
-        })
-        .mockResolvedValueOnce({
-          exists: () => true,
-          data: () => ({ gameClock: { minute: 5 } }),
-        });
-      if (reads) getDocsMock.mockResolvedValueOnce({ docs: [] });
-      hydrateTarget.mockResolvedValueOnce(warded());
-      transaction(null);
-      await hit(10);
-      const effectsRead = collectionMock.mock.calls.some(
-        (call) => call.slice(1).join("/") === "campaigns/camp-1/effects"
-      );
-      expect(effectsRead).toBe(reads);
-    }
-  );
+  it("a hit reads the effects the campaign left on the target out of a fight", async () => {
+    getDocMock
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ attachedCampaignId: "camp-1" }),
+      })
+      .mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ gameClock: { minute: 5 } }),
+      });
+    getDocsMock.mockResolvedValueOnce({ docs: [] });
+    hydrateTarget.mockResolvedValueOnce(warded());
+    transaction(null);
+    await hit(10);
+    const effectsRead = collectionMock.mock.calls.some(
+      (call) => call.slice(1).join("/") === "campaigns/camp-1/effects"
+    );
+    expect(effectsRead).toBe(true);
+  });
 });
 
 describe("subscribeToSharedCampaigns — what «campaigns read» needs from the listener (#1217)", () => {

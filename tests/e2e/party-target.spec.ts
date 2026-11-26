@@ -38,7 +38,6 @@ for (const size of ["desktop", "mobile"] as const) {
     await seedLang(page, "it");
     await seedUI(page, "dark", "play");
     await page.addInitScript(() => {
-      window.localStorage.setItem("d20-dev-effects-v26", "1");
       window.localStorage.setItem("d20-dev-party", "1");
     });
     await page.goto("/characters/scn-evoker-wizard?tab=play");
