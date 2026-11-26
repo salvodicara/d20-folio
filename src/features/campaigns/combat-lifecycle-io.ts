@@ -16,6 +16,7 @@ import { readDevDocument, updateDevDocument } from "@/lib/dev-document-store";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import { db } from "@/lib/firebase";
 import type { CampaignDoc, EncounterEndReason, EncounterState } from "@/types/campaign";
+import type { MonsterLimitedUse } from "@/lib/play/encounter";
 import type { DamageInstance } from "@/lib/damage-intake";
 import type { LocText } from "@/lib/loc-text";
 
@@ -53,6 +54,8 @@ import {
   planMonsterRevealed,
   planMonsterEdit,
   planMonsterSide,
+  planMonsterUse,
+  type MonsterUseChange,
   planDmHeroRoll,
   planMonsterTempHp,
   planRemoveCombatant,
@@ -710,6 +713,48 @@ export async function editMonsterMove(
     })) === true;
 }
 
+/**
+ * The DM changes one of a monster's limited uses. Hands back whether a Recharge roll
+ * brought the use back, and the undo that puts the spent count back as it was. Null
+ * for anyone but the DM, or when nothing changed and nothing was rolled.
+ */
+export async function monsterUseMove(
+  campaignId: string,
+  input: {
+    uid: string;
+    monsterId: string;
+    use: MonsterLimitedUse;
+    change: MonsterUseChange;
+  }
+): Promise<{ back: boolean; undo: CombatUndo } | null> {
+  // A Recharge roll under its number changes nothing: no write, just the answer.
+  const { use, change } = input;
+  if (change.kind === "recharge" && change.d6 < (use.recharge ?? 7)) {
+    const campaign = useCampaignStore.getState().campaign;
+    if (campaign?.id !== campaignId || campaign.dmUid !== input.uid) return null;
+    return { back: false, undo: () => Promise.resolve(true) };
+  }
+  const done = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterUse(campaign, input);
+    return planned?.patch ? { patch: planned.patch, result: planned } : null;
+  });
+  if (!done) return null;
+  return {
+    back: done.back,
+    undo: async () => {
+      return (
+        (await applyMove(campaignId, (campaign) => {
+          const planned = planMonsterUse(campaign, {
+            ...input,
+            change: { kind: "set", count: done.previous },
+          });
+          return planned?.patch ? { patch: planned.patch, result: true } : null;
+        })) === true
+      );
+    },
+  };
+}
+
 /** The DM moves a combatant in the turn order; the undo puts it back where it was. */
 export async function reorderCombatantMove(
   campaignId: string,
@@ -750,6 +795,74 @@ export async function setMonsterInitiativeMove(
       });
       return planned && { patch: planned.patch, result: true };
     })) === true;
+}
+
+/**
+ * The DM ticks a hero's death save from the fight (coordinator, 2026-11-26; Foundry's GM
+ * marks it on the actor): additive, the player can still tick their own. Written through
+ * the normal peer write (its shape fence rides it), and logged «by the DM» in the
+ * session log. Its undo reverts the write and takes the line off. Null for anyone but
+ * this campaign's DM, or for anyone not a hero of this campaign's fight.
+ */
+export async function dmDeathSaveMove(
+  campaignId: string,
+  input: {
+    uid: string;
+    memberUid: string;
+    characterId: string;
+    maxHp: number;
+    outcome: "success" | "failure";
+  },
+  recorder: Pick<SessionRecorder, "record" | "retract"> = createSessionRecorder({
+    store: sessionLogStoreFor(campaignId),
+    uid: input.uid,
+  })
+): Promise<CombatUndo | null> {
+  const campaign = useCampaignStore.getState().campaign;
+  const fight = campaign?.encounter;
+  if (campaign?.id !== campaignId || campaign.dmUid !== input.uid || !fight) return null;
+  const hero = fight.combatants.find(
+    (c) => c.kind === "pc" && c.memberUid === input.memberUid
+  );
+  if (
+    hero?.kind !== "pc" ||
+    hero.characterId !== input.characterId ||
+    campaign.memberDetails[input.memberUid]?.characterId !== input.characterId
+  )
+    return null;
+  const { before, after } = await writeCampaignCombatEffect(
+    input.memberUid,
+    input.characterId,
+    null,
+    input.maxHp,
+    { kind: "death-save", outcome: input.outcome }
+  );
+  const line = await recorder
+    .record(
+      {
+        kind: "death-save",
+        outcome: input.outcome,
+        actor: `pc-${input.memberUid}`,
+        rolledBy: "dm",
+      },
+      { seen: fightOf({ epoch: fight.epoch, round: fight.round }) }
+    )
+    .catch(() => null);
+  return async () => {
+    await writeCampaignCombatEffect(
+      input.memberUid,
+      input.characterId,
+      null,
+      input.maxHp,
+      {
+        kind: "revert",
+        written: after,
+        previous: before,
+      }
+    );
+    if (line) await recorder.retract(line).catch(() => null);
+    return true;
+  };
 }
 
 /**

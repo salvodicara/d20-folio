@@ -8,8 +8,8 @@
  * (invocations, cantrips, Metamagic, maneuvers, Weapon Mastery) are asked here
  * too, as the creation class step's chips, and so are a Lore Bard's Magical
  * Discoveries held without their always-prepared mark (preselected: one «Salva»
- * marks them, with an undo). Hidden on a read-only sheet and when
- * nothing is owed.
+ * marks them, with an undo). A Druid owing Wild Shape known forms picks them here
+ * too (this screen only). Hidden on a read-only sheet and when nothing is owed.
  */
 import type { InfoKind } from "@/domains/spells/option-info";
 import type { ClassPickKind } from "@/lib/owed-class-picks";
@@ -28,6 +28,7 @@ import { pendingSpeciesChoices } from "@/lib/species-choices";
 import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
 import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
+import { owedWildShapeForms } from "@/domains/play/wild-shape-forms-owed";
 import {
   discoverySentence,
   pendingSpeciesItems,
@@ -66,7 +67,9 @@ export function PlaySpeciesChoices({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const items = pendingSpeciesItems(doc.character, doc.session, locale);
-  if (readonly || items.length === 0) return null;
+  // A Druid's Wild Shape known forms (new Play screen only).
+  const forms = owedWildShapeForms(doc, locale);
+  if (readonly || (items.length === 0 && !forms)) return null;
   return (
     <div
       className="f-note f-suggest f-species-due"
@@ -81,7 +84,8 @@ export function PlaySpeciesChoices({
           t,
           locale,
           doc.character,
-          t(`abilities.${unpickedSpeciesAbility(doc.character)}`)
+          t(`abilities.${unpickedSpeciesAbility(doc.character)}`),
+          forms ? [forms.label] : []
         )}
       </p>
       <Button kind="primary" aria-haspopup="dialog" onClick={() => setOpen(true)}>
@@ -138,6 +142,8 @@ function SpeciesChoicesDialog({
     doc.session.grantBundleChoices
   );
   const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
+  const forms = owedWildShapeForms(doc, locale);
+  const [formPicks, setFormPicks] = useState<string[]>([]);
   // A Lore Bard's Magical Discoveries without their mark: the likely ones preselected,
   // so confirming them is the one tap on «Salva».
   const discovery = pendingSpeciesItems(doc.character, doc.session, locale).find(
@@ -147,6 +153,7 @@ function SpeciesChoicesDialog({
     discovery?.preselected ?? []
   );
   const chosen =
+    formPicks.length > 0 ||
     discoveryPicks.length > 0 ||
     Object.values(classPicks).some((ids) => ids.length > 0) ||
     Object.keys(bundlePicks).length > 0 ||
@@ -170,6 +177,7 @@ function SpeciesChoicesDialog({
         ids: classPicks[row.key] ?? [],
       }))
     );
+    if (formPicks.length > 0) store.learnWildShapeForms(formPicks);
     // Last, so its one undo restores only this mark.
     if (discoveryPicks.length > 0) {
       registerUndoableToast(
@@ -296,6 +304,24 @@ function SpeciesChoicesDialog({
             />
           </div>
         ))}
+        {forms && (
+          <div className="f-ask">
+            <span className="f-lbl">{forms.source}</span>
+            <p className="f-help">{forms.title}</p>
+            {/* The level-up's forms step: the beasts' art, their card, a name filter. */}
+            <PickGrid
+              label={forms.title}
+              options={forms.options}
+              picked={formPicks}
+              art="monster"
+              info="beast"
+              count={forms.owed}
+              locale={locale}
+              searchLabel={t("polymorph.search")}
+              onToggle={(id) => setFormPicks(togglePick(formPicks, id, forms.owed))}
+            />
+          </div>
+        )}
         {discovery && (
           <div className="f-ask">
             <span className="f-lbl">{t("play.speciesChoices.discoveryLabel")}</span>

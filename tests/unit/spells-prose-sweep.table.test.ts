@@ -276,6 +276,12 @@ const STANDING_SPELLS = [
     targeting: { affinity: "enemy", maxTargets: 6 },
   },
   {
+    // "On a failed save, the target has Disadvantage on Strength-based D20 Tests"
+    id: "ray-of-enfeeblement",
+    recipient: "selected",
+    targeting: { affinity: "enemy", maxTargets: 1 },
+  },
+  {
     id: "ottos-irresistible-dance",
     recipient: "selected",
     targeting: { affinity: "enemy", maxTargets: 1 },

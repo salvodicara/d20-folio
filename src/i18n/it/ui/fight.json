@@ -114,7 +114,17 @@
       "tempDone_one": "{{amount}} PF temporanei a {{count}} creatura",
       "tempDone_other": "{{amount}} PF temporanei a {{count}} creature",
       "card": "Scheda del mostro",
-      "cardDone": "Scheda salvata: {{name}}"
+      "cardDone": "Scheda salvata: {{name}}",
+      "deathSaves": "Tiri salvezza contro la morte",
+      "deathSaveMarks": "Successi {{successes}}/3 · Fallimenti {{failures}}/3",
+      "deathSaveTick": {
+        "success": "+1 successo",
+        "failure": "+1 fallimento"
+      },
+      "deathSaveDone": {
+        "success": "Successo nel tiro contro la morte per {{name}}, segnato dal master",
+        "failure": "Fallimento nel tiro contro la morte per {{name}}, segnato dal master"
+      }
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {
@@ -129,6 +139,17 @@
       "ally_one": "{{count}} alleato",
       "ally_other": "{{count}} alleati",
       "revealed": "{{count}} con PF visibili"
+    },
+    "uses": {
+      "title": "Usi limitati",
+      "rollRecharge": "Tira la ricarica: {{name}}",
+      "legendary": "Azioni leggendarie {{left}}/{{max}}",
+      "regain": "Recupera le azioni leggendarie",
+      "spentDone": "{{name}}: usato",
+      "rechargeBack": "Ricarica {{d6}}: {{name}} torna disponibile",
+      "rechargeMiss": "Ricarica {{d6}}: {{name}} resta da ricaricare",
+      "regainDone": "Azioni leggendarie recuperate: {{name}}",
+      "legendarySpent": "Azione leggendaria usata: {{name}}"
     }
   }
 }

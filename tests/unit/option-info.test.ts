@@ -25,6 +25,17 @@ describe("optionInfo", () => {
     expect(fb?.text).toBe(localizeSrd("spell", "fireball", "description", "it"));
   });
 
+  it("a beast (a Wild Shape form): its Challenge Rating, AC, Hit Points and speeds", () => {
+    const wolf = optionInfo("beast", "wolf", "it");
+    expect(wolf).toMatchObject({ name: "Lupo", sub: "GS 1/4" });
+    expect(wolf?.chips).toEqual(["CA 12", "PF 11", "Camminata 12 m"]);
+    expect(optionInfo("beast", "wolf", "en")?.chips).toEqual([
+      "AC 12",
+      "HP 11",
+      "Walk 40 ft",
+    ]);
+  });
+
   it("a feat: its category, prerequisite as a chip, gist and text", () => {
     const g = optionInfo("feat", "grappler", "en");
     expect(g?.name).toBe(localizeSrd("feat", "grappler", "name", "en"));

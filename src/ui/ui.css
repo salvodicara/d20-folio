@@ -7333,3 +7333,17 @@
   grid-template-columns: 1fr 5.5rem;
   gap: 12px;
 }
+
+/* the DM's limited uses under a monster line (Scontro): a row of chips, set in from the
+   line's art column */
+.fui .f-uses {
+  margin: -4px 0 8px;
+}
+@media (min-width: 768px) {
+  .fui .f-uses {
+    margin-left: 56px;
+  }
+}
+.fui .f-uses > .f-chips {
+  display: contents;
+}
