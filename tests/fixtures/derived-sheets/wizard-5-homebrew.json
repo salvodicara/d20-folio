@@ -1,0 +1,114 @@
+[
+  {
+    "path": "users/fixtures/characters/wizard-5-homebrew",
+    "data": {
+      "schema": 3,
+      "build": {
+        "name": "Fixture Wizard",
+        "race": "elf",
+        "classes": [
+          {
+            "classId": "wizard",
+            "level": 5
+          }
+        ],
+        "background": "soldier",
+        "alignment": "neutral-good",
+        "abilities": {
+          "STR": 8,
+          "DEX": 14,
+          "CON": 14,
+          "INT": 17,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "speed": "30 ft",
+        "spellcasting": {
+          "ability": "INT",
+          "preparedCaster": true,
+          "preparedMax": 8,
+          "saveDCOverride": null,
+          "attackBonusOverride": null
+        },
+        "spellSlots": [],
+        "spells": [
+          {
+            "srdId": "fire-bolt"
+          },
+          {
+            "srdId": "mage-hand"
+          },
+          {
+            "srdId": "magic-missile",
+            "prepared": true
+          },
+          {
+            "srdId": "shield",
+            "prepared": true
+          },
+          {
+            "srdId": "misty-step",
+            "prepared": true
+          },
+          {
+            "srdId": "fireball",
+            "prepared": true
+          }
+        ],
+        "weapons": [
+          {
+            "srdId": "quarterstaff",
+            "quantity": 1
+          }
+        ],
+        "overrides": {
+          "initiativeBonus": 6
+        },
+        "customs": {
+          "features": [
+            {
+              "custom": true,
+              "title": "Owl Sight",
+              "emoji": "*",
+              "source": "Homebrew",
+              "tags": [],
+              "contentBlocks": [],
+              "grants": [
+                {
+                  "type": "darkvision",
+                  "range": 90
+                }
+              ],
+              "instanceId": "custom-owl-sight"
+            }
+          ]
+        }
+      },
+      "state": {},
+      "revision": 0,
+      "playStateVersion": 1
+    }
+  },
+  {
+    "path": "users/fixtures/characters/wizard-5-homebrew/combat/state",
+    "data": {
+      "hp": {
+        "current": 44,
+        "temp": 0
+      },
+      "conditions": [],
+      "initiativeRoll": null,
+      "deathSaves": {
+        "successes": 0,
+        "failures": 0
+      },
+      "bardicInspirationDie": "",
+      "heroicInspiration": false,
+      "round": 1,
+      "playState": {
+        "version": 1,
+        "state": {}
+      }
+    }
+  }
+]

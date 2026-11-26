@@ -1,0 +1,121 @@
+{
+  "composed": false,
+  "format": "d20-folio-derived-digest-v1",
+  "sheets": {
+    "users/fixtures/characters/barbarian-3-raging": {
+      "sections": {
+        "abilities": "8db23e9e7ca48447",
+        "ac": "c47a57b652939ee2",
+        "actions": "b93fab63d9894eff",
+        "attacks": "24cf1bbcfef2b7dd",
+        "conditions": "d4bcf287f9044942",
+        "defenses": "fd2bbeeee0260a19",
+        "hp": "20053c16f5e25284",
+        "initiative": "7187f5caa3350daa",
+        "level": "669df24ebdc219da",
+        "other": "44136fa355b3678a",
+        "passives": "cf5967de84139556",
+        "resources": "09cf747127208edf",
+        "saves": "e2ffadc9c2bc626c",
+        "senses": "1d0e316ea53e9d7b",
+        "skills": "0289bd92d423945f",
+        "speed": "7c6c82c7d53a255b",
+        "spellcasting": "e785468329fb4d21",
+        "spells": "78d7cd45aaf997c7"
+      },
+      "sheet": "915c4f4601362b2e"
+    },
+    "users/fixtures/characters/bard-9-mid-fight": {
+      "sections": {
+        "abilities": "01fccf21d065bbc7",
+        "ac": "1ca3adbaaff64a1c",
+        "actions": "57c303fd028fa560",
+        "attacks": "dda09c539e8fd350",
+        "conditions": "b6794d24ec17c510",
+        "defenses": "9b46f1e6aad7f70d",
+        "hp": "40aa9c8fc4dcdfe2",
+        "initiative": "313b5e7cea99b811",
+        "level": "e7c9809a83c0ff3f",
+        "other": "44136fa355b3678a",
+        "passives": "44b1a9f86f4edb3d",
+        "resources": "8a87715a7a3e547d",
+        "saves": "a7b7011e46e77137",
+        "senses": "c18cff2317124dd9",
+        "skills": "7f0036e210a8fb3a",
+        "speed": "7c6c82c7d53a255b",
+        "spellcasting": "8d3be01dbb3e0c38",
+        "spells": "142ff99db1cd0fc5"
+      },
+      "sheet": "db497888867ad9cf"
+    },
+    "users/fixtures/characters/fighter-5-armoured": {
+      "sections": {
+        "abilities": "45356a38b546eda9",
+        "ac": "39dc5980367c0314",
+        "actions": "39921a43bbbbeff2",
+        "attacks": "469394167faa4698",
+        "conditions": "6100b09776534a00",
+        "defenses": "8f700b1086fa73d3",
+        "hp": "80cf04ab2edab57b",
+        "initiative": "a6810f94bd22d497",
+        "level": "3dba933aefc728c4",
+        "other": "44136fa355b3678a",
+        "passives": "83429d27b81ab061",
+        "resources": "467023682e11bc73",
+        "saves": "b31c2412d052416a",
+        "senses": "7c2fb77c40db3bd5",
+        "skills": "c305fbb299d3b2a4",
+        "speed": "3910935e5dbc7cf3",
+        "spellcasting": "e785468329fb4d21",
+        "spells": "24cacacb705f3f05"
+      },
+      "sheet": "270c1de947bbe52c"
+    },
+    "users/fixtures/characters/multiclass": {
+      "sections": {
+        "abilities": "01fccf21d065bbc7",
+        "ac": "1ca3adbaaff64a1c",
+        "actions": "18722636fdfe1f9c",
+        "attacks": "dda09c539e8fd350",
+        "conditions": "b6794d24ec17c510",
+        "defenses": "9b46f1e6aad7f70d",
+        "hp": "edb875d6051315c8",
+        "initiative": "313b5e7cea99b811",
+        "level": "e7c9809a83c0ff3f",
+        "other": "44136fa355b3678a",
+        "passives": "44b1a9f86f4edb3d",
+        "resources": "a435d99e8b066021",
+        "saves": "a7b7011e46e77137",
+        "senses": "c18cff2317124dd9",
+        "skills": "7f0036e210a8fb3a",
+        "speed": "7c6c82c7d53a255b",
+        "spellcasting": "8d3be01dbb3e0c38",
+        "spells": "3a7439c6febd587b"
+      },
+      "sheet": "d00dadd8dcb9a580"
+    },
+    "users/fixtures/characters/wizard-5-homebrew": {
+      "sections": {
+        "abilities": "f50e6f0732d0915f",
+        "ac": "328db7ec96779994",
+        "actions": "5e637851f408a489",
+        "attacks": "1a5aa80a878d168b",
+        "conditions": "d4bcf287f9044942",
+        "defenses": "9b46f1e6aad7f70d",
+        "hp": "30ece12e65a2d63a",
+        "initiative": "929813fef15c061d",
+        "level": "3dba933aefc728c4",
+        "other": "44136fa355b3678a",
+        "passives": "86d9c8784e25dd78",
+        "resources": "197a1b9624787ee7",
+        "saves": "7fa0081c8ea9e980",
+        "senses": "046488f6dc4c2f7c",
+        "skills": "0937505a831c94ff",
+        "speed": "7c6c82c7d53a255b",
+        "spellcasting": "1feb736fd32fbbf8",
+        "spells": "89b497e6f3f0aab0"
+      },
+      "sheet": "cc98905b9d5e2fa3"
+    }
+  }
+}
