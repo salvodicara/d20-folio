@@ -36,6 +36,14 @@ export function FightLine({
       : band === "bloodied"
         ? t("character.health.bloodied")
         : t(`campaignHub.hpBand.${band}`);
+  const markLabel = (mark: FightRow["marks"][number]["mark"]) =>
+    mark === "hidden"
+      ? t("campaignHub.encounterHidden")
+      : mark === "ally"
+        ? t("campaignHub.encounterAlly")
+        : t("fight.mark.revealed");
+  // What the DM set on the line: the DM reads every mark, a player only «Alleato».
+  const marks = dm ? row.marks : row.marks.filter((m) => m.mark === "ally");
   // The worst state colours the line; each state is counted when the row is a group.
   const worst = row.bands.at(-1)?.band;
   const value = hp && (
@@ -67,8 +75,15 @@ export function FightLine({
               .join("\u00a0· ")}
           </div>
         )}
-        {row.chips.length > 0 && (
+        {(row.chips.length > 0 || marks.length > 0) && (
           <div className="f-chips">
+            {marks.map((m) => (
+              <Chip key={m.mark}>
+                {row.count > 1
+                  ? t(`fight.markN.${m.mark}`, { count: m.count })
+                  : markLabel(m.mark)}
+              </Chip>
+            ))}
             {row.chips.map((c) => (
               <Chip key={c.kind + c.label} kind={c.kind}>
                 {c.label}

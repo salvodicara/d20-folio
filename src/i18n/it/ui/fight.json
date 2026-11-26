@@ -72,11 +72,46 @@
       "healDone_other": "{{amount}} PF curati a {{count}} bersagli",
       "conditionOn": "Condizione aggiunta a {{name}}",
       "conditionOff": "Condizione tolta a {{name}}",
-      "addN": "Aggiungi {{count}}"
+      "addN": "Aggiungi {{count}}",
+      "forPlayers": "Per i giocatori",
+      "show": {
+        "hidden": "Nascosto ai giocatori",
+        "revealed": "PF esatti visibili"
+      },
+      "showDone": {
+        "hidden": {
+          "on_one": "Nascosta ai giocatori: {{count}} creatura",
+          "on_other": "Nascoste ai giocatori: {{count}} creature",
+          "off_one": "Di nuovo visibile: {{count}} creatura",
+          "off_other": "Di nuovo visibili: {{count}} creature"
+        },
+        "revealed": {
+          "on_one": "PF esatti visibili ai giocatori: {{count}} creatura",
+          "on_other": "PF esatti visibili ai giocatori: {{count}} creature",
+          "off_one": "PF esatti di nuovo nascosti: {{count}} creatura",
+          "off_other": "PF esatti di nuovo nascosti: {{count}} creature"
+        },
+        "ally": {
+          "on_one": "Ora alleata: {{count}} creatura",
+          "on_other": "Ora alleate: {{count}} creature",
+          "off_one": "Ora nemica: {{count}} creatura",
+          "off_other": "Ora nemiche: {{count}} creature"
+        }
+      }
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {
       "notAttached": "Il tuo personaggio non è agganciato a questa campagna: aggancialo dalla scheda Gruppo, poi tira."
+    },
+    "mark": {
+      "revealed": "PF visibili"
+    },
+    "markN": {
+      "hidden_one": "{{count}} nascosto",
+      "hidden_other": "{{count}} nascosti",
+      "ally_one": "{{count}} alleato",
+      "ally_other": "{{count}} alleati",
+      "revealed": "{{count}} con PF visibili"
     }
   }
 }
