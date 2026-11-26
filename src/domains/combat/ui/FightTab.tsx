@@ -21,6 +21,7 @@ import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
+import { useMonsterUses } from "@/domains/combat/ui/use-monster-uses";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
 import { initiativePlace, lineNeighbourPlace } from "@/domains/combat/initiative-edit";
@@ -206,6 +207,8 @@ function LiveFight({
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
   const dm = useDmTools(campaign, encounter, view.rows, rows, uid, isDm, locale, onToast);
+  // The DM's limited uses (Recharge, N/Day, legendary) under each monster line.
+  const uses = useMonsterUses(campaign.id, encounter, uid, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
   const writeUp = useEndFight(
     campaign,
@@ -296,6 +299,7 @@ function LiveFight({
                   )
                 }
               />
+              {isDm && uses.stripFor(row.ids)}
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (

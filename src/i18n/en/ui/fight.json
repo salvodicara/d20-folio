@@ -139,6 +139,17 @@
       "ally_one": "{{count}} ally",
       "ally_other": "{{count}} allies",
       "revealed": "{{count}} with HP shown"
+    },
+    "uses": {
+      "title": "Limited uses",
+      "rollRecharge": "Roll recharge: {{name}}",
+      "legendary": "Legendary actions {{left}}/{{max}}",
+      "regain": "Regain legendary actions",
+      "spentDone": "{{name}}: used",
+      "rechargeBack": "Recharge {{d6}}: {{name}} is back",
+      "rechargeMiss": "Recharge {{d6}}: {{name}} stays spent",
+      "regainDone": "Legendary actions regained: {{name}}",
+      "legendarySpent": "Legendary action used: {{name}}"
     }
   }
 }
