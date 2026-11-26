@@ -1,0 +1,94 @@
+[
+  {
+    "path": "users/fixtures/characters/barbarian-3-raging",
+    "data": {
+      "schema": 3,
+      "build": {
+        "name": "Fixture Barbarian",
+        "race": "dwarf",
+        "classes": [
+          {
+            "classId": "barbarian",
+            "level": 3
+          }
+        ],
+        "background": "soldier",
+        "alignment": "neutral-good",
+        "abilities": {
+          "STR": 17,
+          "DEX": 14,
+          "CON": 16,
+          "INT": 8,
+          "WIS": 12,
+          "CHA": 10
+        },
+        "speed": "30 ft",
+        "weapons": [
+          {
+            "srdId": "greataxe",
+            "quantity": 1
+          },
+          {
+            "srdId": "handaxe",
+            "quantity": 2
+          }
+        ]
+      },
+      "state": {},
+      "revision": 0,
+      "playStateVersion": 1,
+      "createdAt": {
+        "_seconds": 1767225600,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1767225600,
+        "_nanoseconds": 0
+      },
+      "portraitUrl": null,
+      "portraitCrop": null,
+      "shared": false,
+      "status": "active",
+      "cache": {
+        "name": "Fixture Barbarian",
+        "race": "dwarf",
+        "classes": [
+          {
+            "classId": "barbarian",
+            "level": 3
+          }
+        ],
+        "hpMax": 35,
+        "ac": 15
+      }
+    }
+  },
+  {
+    "path": "users/fixtures/characters/barbarian-3-raging/combat/state",
+    "data": {
+      "hp": {
+        "current": 44,
+        "temp": 0
+      },
+      "conditions": [],
+      "initiativeRoll": null,
+      "deathSaves": {
+        "successes": 0,
+        "failures": 0
+      },
+      "bardicInspirationDie": "",
+      "heroicInspiration": false,
+      "round": 1,
+      "playState": {
+        "version": 1,
+        "state": {
+          "activeFeatures": ["barbarian-rage"]
+        }
+      },
+      "updatedAt": {
+        "_seconds": 1767225600,
+        "_nanoseconds": 0
+      }
+    }
+  }
+]
