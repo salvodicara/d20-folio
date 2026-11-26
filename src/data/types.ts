@@ -1166,6 +1166,11 @@ export interface SrdSpellData {
   /** Conditions this resolution can apply. `max` omitted means all listed
    * conditions apply together; a finite max is a table choice. */
   conditionApplication?: CombatConditionApplication;
+  /** How the spell's own effect on a target ends early when it imposes no condition
+   *  (Slow: the target repeats the WIS save at the end of each of its turns, ending
+   *  the spell on itself on a success). The same rule as `conditionApplication.ends`,
+   *  read for the state the cast leaves on each target. */
+  effectEnds?: ReadonlyArray<ConditionEnd>;
   /** Explicit target shape for effects whose target count is not one. Omitted means
    * the ordinary single target; absent `maxTargets` means any number in range. */
   targeting?: CombatTargeting;

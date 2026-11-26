@@ -106,6 +106,9 @@ export interface RescueCopy {
    *  state is not newer than the server's), or the whole sheet (unsaved play edits too).
    *  Absent reads as "all" (the copy holds a whole sheet). */
   part?: "build" | "all";
+  /** The generation the lost write was sent at (#1276): a stored sheet at or past it
+   *  shows the write landed after all, and the copy is dropped. */
+  revision?: number;
   savedAt: number;
   schema: number;
   playVersion: number;
@@ -133,6 +136,18 @@ function isRescueCopy(value: unknown): value is RescueCopy {
   );
 }
 
+const rescueListeners = new Set<() => void>();
+
+/** Called when a rescue copy is kept or dropped in this tab: an open banner re-reads. */
+export function subscribeRescueCopies(listener: () => void): () => void {
+  rescueListeners.add(listener);
+  return () => rescueListeners.delete(listener);
+}
+
+function rescueChanged(): void {
+  for (const listener of rescueListeners) listener();
+}
+
 /** Keep the copy. Returns whether it was REALLY written: a caller may only tell the
  *  player "your changes are kept on this device" on `true`. */
 export function keepRescueCopy(
@@ -145,10 +160,11 @@ export function keepRescueCopy(
       rescueKey(uid, characterId),
       JSON.stringify({ v: VERSION, draft: copy })
     );
-    return true;
   } catch {
     return false;
   }
+  rescueChanged();
+  return true;
 }
 
 /** The character's rescue copy, or null (none, malformed, or older than 30 days, which
@@ -169,6 +185,7 @@ export function readRescueCopy(
 
 export function dropRescueCopy(uid: string, characterId: string): void {
   remove(rescueKey(uid, characterId));
+  rescueChanged();
 }
 
 /**
@@ -186,6 +203,8 @@ export interface UnackedSave {
   revision: number;
   /** When it was sent (compared with the play trace's time). */
   at?: number;
+  /** A whole-sheet write (a level-up, its undo, #1276): build AND play state. */
+  whole?: boolean;
 }
 const unackedPrefix = (uid: string) => `folio.unacked.${uid}.`;
 const unackedKey = (uid: string, characterId: string) =>
@@ -209,6 +228,7 @@ export function readUnackedSave(uid: string, characterId: string): UnackedSave |
         session: s.session,
         revision: s.revision,
         ...(typeof s.at === "number" ? { at: s.at } : {}),
+        ...(s.whole === true ? { whole: true } : {}),
       }
     : null;
 }

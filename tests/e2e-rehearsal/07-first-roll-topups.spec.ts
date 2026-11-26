@@ -15,6 +15,7 @@ import {
   signInAs,
   test,
   watchErrors,
+  dmEndFight,
 } from "./helpers";
 
 const STATE = `http://127.0.0.1:8080/v1/projects/demo-d20folio/databases/(default)/documents/users/${PLAYER_BARD}/characters/${SANDBOX_USERS.bard.characterId}/combat/state`;
@@ -47,7 +48,7 @@ test("the Bard's first roll from the new sheet regains Bardic Inspiration", asyn
   await test.step("no fight is running", async () => {
     await openFightTab(dm);
     const end = dm.getByRole("button", { name: "End fight" });
-    if (await end.isVisible()) await end.click();
+    if (await end.isVisible()) await dmEndFight(dm);
   });
 
   await test.step("the Bard is level 18 with every use spent", async () => {
@@ -84,7 +85,7 @@ test("the Bard's first roll from the new sheet regains Bardic Inspiration", asyn
   });
 
   await test.step("the DM ends the fight", async () => {
-    await dm.getByRole("button", { name: "End fight" }).click();
+    await dmEndFight(dm);
   });
 
   await expectNoCrash(bard);

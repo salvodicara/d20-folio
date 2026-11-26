@@ -9,6 +9,7 @@ import { useCombatStatusStore } from "@/features/campaigns/global-combat-context
 import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
 import { hitPointDiceContext } from "@/lib/play/hit-point-dice";
+import { effectEndsOf } from "@/lib/play/fight-condition-ends";
 import {
   outcomeEffects,
   stateEffectsFor,
@@ -260,6 +261,10 @@ export function standingOutcomeWriter(
     action.slotLevel !== undefined && spec.source.kind === "spell"
       ? { ...spec, source: { ...spec.source, castLevel: action.slotLevel } }
       : spec;
+  const saveDc =
+    outcome === "failed-save" && effectEndsOf(spec.source).length > 0
+      ? action.summary.saveDC
+      : undefined;
   return (targetId) =>
     targetId === status.myId
       ? []
@@ -274,6 +279,8 @@ export function standingOutcomeWriter(
             order: status.encounter.order ?? status.view.turnOrderIds,
           },
           spellcastingModifier: hitPointDiceContext(doc).spellcastingMod,
+          // The repeat save's DC, when the state ends on one (Slow).
+          ...(saveDc !== undefined ? { saveDc } : {}),
           newId: () => crypto.randomUUID(),
         });
 }

@@ -4,7 +4,8 @@
  * «Failed: it stays» only closes the prompt.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import i18n from "@/i18n";
 
 const io = vi.hoisted(() => ({
   revokePersistentCombatEffect: vi.fn(() => Promise.resolve()),
@@ -150,6 +151,79 @@ describe("RepeatSavePrompts", () => {
   });
 
   it("a failure keeps the condition and closes the prompt", () => {
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Failed: it stays" }));
+    expect(io.revokePersistentCombatEffect).not.toHaveBeenCalled();
+    expect(useRepeatSaveStore.getState().saves).toEqual([]);
+  });
+});
+
+/** A spell effect with no condition (Slow, #1346): the prompt names the spell. */
+describe("a repeat save that ends a spell effect", () => {
+  const slow: PendingRepeatSave = {
+    id: "slow-a",
+    campaignId: "c1",
+    targetId: "m1",
+    targetName: "Goblin",
+    ability: "WIS",
+    at: "target-turn-end",
+    dc: 15,
+    effect: {
+      id: "slow-a",
+      source: { kind: "spell", id: "slow", actionId: "spell-slow" },
+    } as PendingRepeatSave["effect"],
+  };
+
+  beforeEach(() => {
+    io.revokePersistentCombatEffect.mockClear();
+    io.reinstatePersistentCombatEffect.mockClear();
+    rules.v26 = true;
+    useRepeatSaveStore.setState({ saves: [slow] });
+    useToastStore.setState({ toasts: [] });
+  });
+
+  it("names the spell in EN and IT", async () => {
+    const { unmount } = render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    expect(
+      screen.getByText(
+        "End of Goblin's turn: a successful Wisdom save (DC 15) ends Slow."
+      )
+    ).toBeTruthy();
+    unmount();
+    await act(async () => {
+      await i18n.changeLanguage("it");
+    });
+    try {
+      render(<RepeatSavePrompts targetIds={["m1"]} locale="it" />);
+      expect(
+        screen.getByText(
+          "Fine del turno di Goblin: se il TS su Saggezza (CD 15) riesce, Lentezza termina."
+        )
+      ).toBeTruthy();
+    } finally {
+      await act(async () => {
+        await i18n.changeLanguage("en");
+      });
+    }
+  });
+
+  it("a success ends the effect on that target, with one undo that puts it back", async () => {
+    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
+    fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
+    await waitFor(() =>
+      expect(io.revokePersistentCombatEffect).toHaveBeenCalledWith("c1", "slow-a")
+    );
+    expect(io.revokePersistentCombatEffect).toHaveBeenCalledOnce();
+    const toasts = useToastStore.getState().toasts;
+    expect(toasts.map((toast) => toast.message)).toEqual(["Slow ends: Goblin"]);
+    toasts[0]?.onUndo?.();
+    await waitFor(() =>
+      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith("c1", "slow-a")
+    );
+    expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["slow-a"]);
+  });
+
+  it("a failure keeps the effect", () => {
     render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
     fireEvent.click(screen.getByRole("button", { name: "Failed: it stays" }));
     expect(io.revokePersistentCombatEffect).not.toHaveBeenCalled();

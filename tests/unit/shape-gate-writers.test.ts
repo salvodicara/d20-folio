@@ -102,6 +102,27 @@ describe("writers once the shape gate is closed", () => {
     expect(h.commits).toBe(0);
   });
 
+  // #1276: a level-up and its undo go through the open sheet's ordered queue. Fenced,
+  // it is refused, burns no generation, and keeps the pending edit (the rescue copy's).
+  it("a whole-sheet write through the sheet's queue is refused and keeps the pending edit", async () => {
+    const allocate = vi.fn(() => 5);
+    const cancelled = vi.fn();
+    const saver = createDebouncedSave("u1", "c1", 500, allocate);
+    saver.save(doc, { onCancelled: cancelled });
+    closeShapeGate({ rescue: "none" });
+    await expect(
+      saver.sendWholeSheet(doc, {
+        shared: false,
+        status: "active",
+        portraitUrl: null,
+        portraitCrop: null,
+      })
+    ).rejects.toThrow(/shape-fenced/);
+    expect(h.commits).toBe(0);
+    expect(allocate).not.toHaveBeenCalled();
+    expect(cancelled).not.toHaveBeenCalled();
+  });
+
   it("the play writer sends nothing", async () => {
     closeShapeGate({ rescue: "none" });
     await writeCombatState("u1", "c1", sessionToCombatState(doc.session));

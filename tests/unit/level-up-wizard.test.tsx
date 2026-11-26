@@ -17,9 +17,20 @@ import i18n from "@/i18n";
 
 vi.mock("@/lib/firebase", () => ({ db: {}, auth: {}, storage: {} }));
 vi.mock("@/lib/firestore", () => ({
-  replaceCharacterState: vi.fn().mockResolvedValue(undefined),
-  saveCharacterSnapshot: vi.fn().mockResolvedValue(undefined),
+  // Offline (#1276): the snapshot is handed to the SDK and its server answer never
+  // comes; the wizard must complete anyway.
+  queueCharacterSnapshot: vi.fn(() => ({
+    id: "snap",
+    written: new Promise<void>(() => undefined),
+  })),
 }));
+// The sheet's ordered save queue, as the subscription injects it: offline, it never
+// answers either.
+beforeEach(() => {
+  useCharacterStore
+    .getState()
+    .setWholeSheetWriter(() => new Promise<void>(() => undefined));
+});
 // The route normally subscribes to Firestore; tests preset the store directly.
 vi.mock("@/hooks/useCharacterSubscription", () => ({
   useCharacterSubscription: () => {},
@@ -670,13 +681,11 @@ describe("LevelUpWizard — the spell-swap step (Bard 3→4)", () => {
       .getAllByRole("button")
       .find((b) => /^Confirm: Level 4/.test(b.textContent));
     if (!confirm) throw new Error("confirm CTA not found");
-    // `setCharacter(updatedDoc)` runs synchronously in the confirm handler
-    // (before its `await updateCharacter`); flush the trailing async write so no
-    // act() warning escapes.
     fireEvent.click(confirm);
-    await act(async () => {
-      await Promise.resolve();
-    });
+    // The level is applied once the codec is loaded (a local wait, never the server).
+    await waitFor(() =>
+      expect(useCharacterStore.getState().character?.character.classes[0]?.level).toBe(4)
+    );
 
     // The committed character carries the swap: replacement in, removed out, the
     // other two known spells untouched.

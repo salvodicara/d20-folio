@@ -13,7 +13,10 @@
  *
  * Pure: the sourced conditions in, the strips out. A condition carries a source when
  * a solo effect holds it or when the player named its origin in the Conditions
- * picker («From what?»: `repeatSaveOriginsFor` lists the choices).
+ * picker («From what?»: `repeatSaveOriginsFor` lists the choices). A spell effect
+ * with no condition (Slow, #1346) is read by the same rule from the spell's
+ * `effectEnds`; no solo flow puts such an effect on the player's own sheet yet, so
+ * the store does not raise it.
  */
 import type { AbilityCode, ConditionId, RepeatSaveMoment } from "@/data/types";
 import type { CatalogueEffect } from "@/lib/catalogue-effects";
@@ -25,14 +28,16 @@ import {
 } from "@/lib/condition-ends";
 import { classFeatureIndex } from "@/data/classes";
 import { getSpellById, spells } from "@/data/spells";
-import { conditionEndsOf } from "@/lib/play/fight-condition-ends";
+import { conditionEndsOf, effectEndsOf } from "@/lib/play/fight-condition-ends";
 import type { ActiveCombatEffect } from "@/types/combat-effect";
 
 /** A condition the sheet holds, with the catalogue entry that gave it. */
 export interface SheetSourcedCondition {
   /** The occurrence's identity (the condition effect's id). */
   key: string;
-  conditionId: string;
+  /** Absent: the spell's own effect, which imposes no condition (Slow); its rule is
+   *  the spell's `effectEnds`. */
+  conditionId?: string;
   source: { kind: "spell" | "feature"; id: string; actionId?: string };
   /** The source's own save DC, when it was recorded with the condition. */
   saveDc?: number;
@@ -42,8 +47,8 @@ export interface SheetSourcedCondition {
 export interface SoloRepeatSave {
   /** The first occurrence's key: the strip's identity. */
   id: string;
-  /** The condition the strip names. */
-  conditionId: string;
+  /** The condition the strip names; absent, it names the spell (Slow). */
+  conditionId?: string;
   /** Every condition the same cast left on the sheet (Hideous Laughter's Prone and
    *  Incapacitated): one save answers for all of them. */
   conditionIds: string[];
@@ -152,13 +157,17 @@ export function soloRepeatSavesDue(
 ): SoloRepeatSave[] {
   const silent = new Set(opts.campaignConditions ?? []);
   const sourced = conditions.flatMap((c): SourcedCondition[] => {
-    if (silent.has(c.conditionId)) return [];
-    const ends = conditionEndsOf(c.source, c.conditionId);
+    const conditionId = c.conditionId;
+    if (conditionId !== undefined && silent.has(conditionId)) return [];
+    const ends =
+      conditionId !== undefined
+        ? conditionEndsOf(c.source, conditionId)
+        : effectEndsOf(c.source);
     return ends.length > 0
       ? [
           {
             id: c.key,
-            conditionId: c.conditionId,
+            ...(conditionId !== undefined ? { conditionId } : {}),
             targetId: SELF,
             ...(c.saveDc !== undefined ? { saveDc: c.saveDc } : {}),
             ends,
@@ -192,16 +201,17 @@ export function soloRepeatSavesDue(
         s.source.id === origin.source.id &&
         s.keys.some((k) => byKey.get(k)?.source.actionId === origin.source.actionId)
     );
+    const conditionId = save.conditionId;
     if (twin) {
       twin.keys.push(save.id);
-      if (!twin.conditionIds.includes(save.conditionId))
-        twin.conditionIds.push(save.conditionId);
+      if (conditionId !== undefined && !twin.conditionIds.includes(conditionId))
+        twin.conditionIds.push(conditionId);
       continue;
     }
     strips.push({
       id: save.id,
-      conditionId: save.conditionId,
-      conditionIds: [save.conditionId],
+      ...(conditionId !== undefined ? { conditionId } : {}),
+      conditionIds: conditionId !== undefined ? [conditionId] : [],
       keys: [save.id],
       source: { kind: origin.source.kind, id: origin.source.id },
       ability: save.ability,

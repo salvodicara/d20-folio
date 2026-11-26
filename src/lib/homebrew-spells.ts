@@ -54,7 +54,11 @@ import {
   TRUE,
 } from "@/lib/homebrew-conform";
 import { conformGrants } from "@/lib/homebrew-grants";
-import { CONDITION_APPLICATION_SCHEMA, homebrewActionDef } from "@/lib/homebrew-actions";
+import {
+  CONDITION_APPLICATION_SCHEMA,
+  CONDITION_END_SCHEMA,
+  homebrewActionDef,
+} from "@/lib/homebrew-actions";
 import { classifySpellCastingTime } from "@/lib/cast-options";
 import {
   CUSTOM_CONCENTRATION_PREFIX,
@@ -130,6 +134,7 @@ export const HOMEBREW_SPELL_FIELD_SCHEMAS: {
     { max: numberSchema }
   ),
   conditionApplication: CONDITION_APPLICATION_SCHEMA,
+  effectEnds: arraySchema(CONDITION_END_SCHEMA),
   suppressesMagic: TRUE,
   formRule: objectSchema(
     {

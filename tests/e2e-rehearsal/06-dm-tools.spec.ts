@@ -5,7 +5,7 @@
  * finding never hides the rest.
  */
 import { expect, test } from "@playwright/test";
-import { expectNoCrash, openFightTab, watchErrors } from "./helpers";
+import { expectNoCrash, openFightTab, watchErrors, dmEndFight } from "./helpers";
 
 test("the DM runs a fight: add monsters, damage a group, set a condition, end", async ({
   page,
@@ -91,7 +91,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
   });
 
   await test.step("the DM ends the fight", async () => {
-    await page.getByRole("button", { name: "End fight" }).click();
+    await dmEndFight(page);
     await expect(page.getByText(/No fight running/i)).toBeVisible();
   });
 

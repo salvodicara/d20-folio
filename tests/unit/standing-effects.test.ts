@@ -57,6 +57,24 @@ describe("standingEffectsForTargets", () => {
     });
   });
 
+  it("freezes the repeat save's DC beside the modifier (Slow, #1346); none, no bindings", () => {
+    const write = (input: { spellcastingModifier?: number; saveDc?: number }) =>
+      standingEffectsForTargets({
+        spec: spec({ concentration: true }),
+        caster,
+        targets: [ally],
+        position,
+        ...input,
+        newId,
+      })[0];
+    expect(write({ spellcastingModifier: 4, saveDc: 15 })?.bindings).toEqual({
+      spellcastingModifier: 4,
+      saveDc: 15,
+    });
+    expect(write({ saveDc: 15 })?.bindings).toEqual({ saveDc: 15 });
+    expect(write({})).not.toHaveProperty("bindings");
+  });
+
   it("is held by Concentration, or ends at the caster's turn edge or after its rounds", () => {
     const one = (lifetime: CombatStandingEffectSpec["lifetime"]) =>
       standingEffectsForTargets({

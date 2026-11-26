@@ -678,3 +678,69 @@ describe("the build save reaches the SDK at once (#1275)", () => {
     expect(PARENT_SAVE_DELAY_MS).toBeLessThanOrEqual(500);
   });
 });
+
+// #1276: a level-up goes through the saver's ordered queue. Offline, an edit made just
+// before it is still unacknowledged; the level-up must take the NEXT generation, never
+// the sheet's acknowledged one (which the edit already holds), or the rules refuse one
+// of the two on reconnect.
+describe("a whole-sheet write takes its generation in queue order (#1276)", () => {
+  it("after an unacknowledged autosave, the level-up gets the next generation", async () => {
+    await preloadParentWrite();
+    harness.commits.mockImplementation(() => new Promise<void>(() => undefined));
+    try {
+      let cursor = 4;
+      const saver = createDebouncedSave("u1", "c1", 500, () => ++cursor);
+      const doc = { ...makeCharacterDoc(), id: "c1", revision: 4 };
+      saver.save({ ...doc, character: { ...doc.character, quote: "edit" } });
+      void saver.flush(); // offline: never acknowledged
+      void saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc);
+      const revisions = harness.operations
+        .filter((op) => op.path === "users/u1/characters/c1" && op.kind === "update")
+        .map((op) => op.data.revision);
+      expect(revisions).toEqual([5, 6]);
+    } finally {
+      harness.commits.mockImplementation(() => Promise.resolve());
+    }
+  });
+
+  it("supersedes the pending autosave it carries, and is handed over at once", async () => {
+    await preloadParentWrite();
+    let cursor = 7;
+    const saver = createDebouncedSave("u1", "c1", 500, () => ++cursor);
+    const doc = { ...makeCharacterDoc(), id: "c1", revision: 7 };
+    const onCancelled = vi.fn();
+    saver.save(doc, { onCancelled });
+    void saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc);
+    expect(onCancelled).toHaveBeenCalledTimes(1);
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+    expect(
+      harness.operations.find((op) => op.path === "users/u1/characters/c1")?.data
+    ).toMatchObject({ revision: 8 });
+  });
+
+  // #1276 — the caller traces the sheet before it reaches the SDK, at the generation it
+  // leaves with, so a reload before the acknowledgement can still find it.
+  it("tells the caller its generation before the batch is handed to the SDK", async () => {
+    await preloadParentWrite();
+    const saver = createDebouncedSave("u1", "c1", 500, () => 12);
+    const doc = { ...makeCharacterDoc(), id: "c1", revision: 11 };
+    const seen: Array<[number, number]> = [];
+    void saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc, {
+      onSend: (revision) => seen.push([revision, harness.commits.mock.calls.length]),
+    });
+    expect(seen).toEqual([[12, 0]]);
+    expect(harness.commits).toHaveBeenCalledTimes(1);
+  });
+
+  it("a refused whole-sheet write rejects, so the caller can tell the player", async () => {
+    await preloadParentWrite();
+    harness.commits.mockImplementationOnce(() =>
+      Promise.reject(Object.assign(new Error("denied"), { code: "permission-denied" }))
+    );
+    const saver = createDebouncedSave("u1", "c1", 500, () => 9);
+    const doc = { ...makeCharacterDoc(), id: "c1", revision: 8 };
+    await expect(
+      saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc)
+    ).rejects.toThrow("denied");
+  });
+});
