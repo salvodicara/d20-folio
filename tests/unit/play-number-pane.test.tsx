@@ -12,6 +12,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { playHeaderView } from "@/domains/play/play-header-view";
 import { playLeftView } from "@/domains/play/play-left-view";
 import { playNumberView } from "@/domains/play/play-number-view";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { PlayNumberPane } from "@/domains/play/ui/PlayNumberPane";
 import i18n from "@/i18n";
 import { MOCK_CHARACTER } from "@/lib/mock";
@@ -51,6 +52,7 @@ describe("the pane's total is the tile's number", () => {
     expect(total({ kind: "initiative" })).toBe(head.numbers.initiative);
     expect(total({ kind: "speed" })).toBe(head.numbers.speedFt);
     expect(total({ kind: "proficiency" })).toBe(head.numbers.proficiency);
+    expect(total({ kind: "maxHp" })).toBe(head.hp.max);
     for (const a of head.abilities) {
       expect(total({ kind: "ability", ability: a.id })).toBe(a.score);
       expect(total({ kind: "save", ability: a.id })).toBe(a.saveTotal);
@@ -151,6 +153,8 @@ describe("each pane says the rule its number follows (D&D Beyond's pane opens wi
     [{ kind: "ability", ability: "DEX" }, "abilityScores"],
     [{ kind: "save", ability: "WIS" }, "savingThrow"],
     [{ kind: "skill", id: "stealth" }, "skillCheck"],
+    [{ kind: "maxHp" }, "hitPoints"],
+    [{ kind: "passive", id: "perception" }, "passiveScore"],
   ];
   it.each(cases)("%o → the glossary's %s sentence", (key, term) => {
     open(key);
@@ -169,5 +173,33 @@ describe("each pane says the rule its number follows (D&D Beyond's pane opens wi
     } finally {
       await i18n.changeLanguage("en");
     }
+  });
+});
+
+describe("the max HP pane says what is stored: a correction that keeps moving", () => {
+  it("its field is the current maximum and its help names the correction typed", () => {
+    const doc = live();
+    doc.character.hpBonus = undefined;
+    doc.character.hp = { max: deriveMaxHp(doc.character) };
+    useCharacterStore.setState({ character: doc });
+    open({ kind: "maxHp" });
+    const max = playNumberView(live(), "en", { kind: "maxHp" }).total;
+    expect(screen.queryByLabelText("Fixed value")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Current maximum"), {
+      target: { value: String(max - 4) },
+    });
+    expect(screen.getByRole("dialog").textContent).toContain(
+      "We save the difference as a correction (−4)"
+    );
+  });
+
+  it("a corrected max is tagged «Adjusted», not «Set by hand»", () => {
+    const doc = live();
+    doc.character.hpBonus = 3;
+    useCharacterStore.setState({ character: doc });
+    open({ kind: "maxHp" });
+    const text = screen.getByRole("dialog").textContent;
+    expect(text).toContain("Adjusted");
+    expect(text).not.toContain("Set by hand");
   });
 });

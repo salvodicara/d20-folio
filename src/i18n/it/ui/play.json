@@ -1,6 +1,7 @@
 {
   "play": {
     "hpTitle": "Punti ferita",
+    "strip": "Punti ferita e CA",
     "temp": "+{{count}} temporanei",
     "proficiency": "Competenza",
     "effects": "Effetti",
@@ -83,7 +84,9 @@
     },
     "sections": {
       "resources": "Risorse e abilità",
-      "fight": "Scontro e resoconto"
+      "fight": "Scontro e resoconto",
+      "features": "Privilegi e tratti",
+      "proficiencies": "Competenze e addestramento"
     },
     "endTurn": "Fine turno",
     "turnMine": "Tocca a te",
@@ -184,7 +187,16 @@
       "searchItems": "Cerca un oggetto",
       "noMatch": "Nessun oggetto corrisponde.",
       "addedToast": "Aggiunto: {{name}}",
-      "add": "Aggiungi un oggetto"
+      "add": "Aggiungi un oggetto",
+      "catalogue": "Catalogo",
+      "custom": "Oggetto personalizzato",
+      "customWeight": "Peso l'uno ({{unit}})",
+      "customCost": "Costo l'uno (mo)",
+      "optional": "Facoltativo",
+      "customNameRequired": "Dagli un nome.",
+      "customNumber": "Scrivi un numero, come 2 o 0,5.",
+      "customAdd": "Aggiungi all'inventario",
+      "costEach": "{{cost}} l'uno"
     },
     "tray": {
       "ifAtOrBelow": "Se ha {{max}} punti ferita o meno: {{then}}.",
@@ -489,7 +501,17 @@
       "overrideHelp": "Sostituisce il valore calcolato. «Usa il calcolo» lo riporta.",
       "useComputed": "Usa il calcolo",
       "setToast": "{{name}}: valore impostato a mano",
-      "resetToast": "{{name}}: di nuovo calcolato"
+      "resetToast": "{{name}}: di nuovo calcolato",
+      "maxHpTag": "Con correzione",
+      "maxHpField": "Massimo attuale",
+      "maxHpHelp": "Salviamo la differenza come correzione ({{bonus}}): il massimo continua a crescere con livello e COS. «Usa il calcolo» la toglie.",
+      "maxHpHelpPlain": "Salviamo la differenza come correzione: il massimo continua a crescere con livello e COS. «Usa il calcolo» la toglie.",
+      "maxHpSetToast": "{{name}}: correzione salvata"
+    },
+    "features": {
+      "species": "Tratti della specie",
+      "none": "Ancora nessun privilegio.",
+      "uses": "{{left}} usi rimasti su {{max}}"
     }
   }
 }

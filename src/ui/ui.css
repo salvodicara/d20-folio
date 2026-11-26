@@ -2320,6 +2320,14 @@
   text-align: left;
   cursor: pointer;
 }
+/* «Sensi»: a passive row is a name and its score, no ability column (DDB's Senses) */
+.fui .f-senses button.f-skill {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 44px;
+}
+.fui .f-senses .f-prof-l {
+  margin-top: 8px;
+}
 @media (hover: hover) {
   .fui button.f-skill:hover,
   .fui button.f-ab-open:hover,
@@ -2500,6 +2508,85 @@
 }
 .fui .f-playbook-h[aria-expanded="true"] .f-ic:last-child {
   transform: rotate(180deg);
+}
+/* «Privilegi e tratti» (D&D Beyond's Features & Traits): a row is the name over its
+   source, the uses left on the right; a tap opens the rules text under it */
+.fui .f-feat {
+  border-bottom: 1px solid var(--divider);
+}
+.fui .f-feat:last-child {
+  border-bottom: 0;
+}
+.fui .f-feat,
+.fui .f-feat-h {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 8px 0;
+}
+.fui .f-feat:has(> .f-feat-h) {
+  display: block;
+  padding: 0;
+}
+.fui .f-feat-h {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .fui .f-feat-h:hover {
+    background-color: var(--hover);
+  }
+}
+.fui .f-feat-h > .f-ic:last-child {
+  flex: none;
+  color: var(--muted);
+}
+.fui .f-feat-h[aria-expanded="true"] > .f-ic:last-child {
+  transform: rotate(180deg);
+}
+.fui .f-feat-t {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+.fui .f-feat-t > b {
+  color: var(--strong);
+  font-weight: 600;
+}
+.fui .f-feat-m {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.fui .f-feat-c {
+  color: var(--text);
+  font-size: var(--fs-sm);
+}
+.fui .f-feat-uses {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  --pip: var(--c-tes);
+}
+.fui .f-feat-d {
+  padding: 0 0 16px;
+}
+/* Proficiencies & Training: each list under its label */
+.fui .f-prof-l {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+.fui .f-prof-l dd {
+  margin: 2px 0 0;
+  color: var(--text);
 }
 @media (max-width: 640px) {
   .fui .f-act {
@@ -3111,6 +3198,137 @@
 .fui .f-sheet .f-char-acts > .f-btn {
   text-decoration: none;
 }
+/* The phone's slim strip (D&D Beyond's phone header strip): once the band has scrolled
+   away, one row sticks to the top with the Hit Points, the AC and Danni / Cura. It is
+   in the flow but takes no room (the negative margins), and keeps its box while
+   hidden, so showing it never moves the page; content scrolled under it stays
+   reachable, and focus or a jump lands below it (scroll-margin). */
+.fui .f-strip {
+  display: none;
+}
+@media (max-width: 800px) {
+  .fui .f-sheet {
+    --strip-h: 56px;
+    --strip-pad: 24px;
+  }
+  .fui .f-strip {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    height: calc(var(--strip-h) + env(safe-area-inset-top, 0px));
+    margin: 0 calc(-1 * var(--strip-pad))
+      calc(-1 * var(--strip-h) - env(safe-area-inset-top, 0px));
+    padding: env(safe-area-inset-top, 0px) var(--strip-pad) 0;
+    border-bottom: 1px solid var(--line-soft);
+    background: var(--bar);
+    box-shadow: 0 8px 24px var(--bar-shadow);
+    transition:
+      opacity 0.15s,
+      transform 0.15s;
+  }
+  /* the grid's gap is not doubled around the strip's empty row */
+  .fui .f-strip + * {
+    margin-top: -24px;
+  }
+  .fui .f-strip:not([data-on]) {
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  /* the page's own controls, not the strip's (a page-wide scroll-padding would
+     scroll the page when a tap focuses the strip itself), never inside a pane */
+  .fui .f-sheet:has(> .f-strip[data-on]) > :not(.f-strip) :not(dialog, dialog *) {
+    scroll-margin-top: calc(var(--strip-h) + 8px);
+  }
+  .fui .f-strip-hp,
+  .fui .f-strip-ac {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-height: 44px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: var(--r-sm);
+    background: none;
+    color: var(--phone-hp-max);
+    font: 400 var(--fs-sm) var(--font-text);
+    line-height: 44px;
+    white-space: nowrap;
+  }
+  .fui button.f-strip-hp,
+  .fui button.f-strip-ac {
+    cursor: pointer;
+  }
+  .fui .f-strip-hp b,
+  .fui .f-strip-ac b {
+    font-size: var(--fs-phone-num);
+    font-weight: 700;
+    color: var(--white);
+  }
+  .fui .f-strip-hp b[data-hp="ok"] {
+    color: var(--hp);
+  }
+  .fui .f-strip-hp b[data-hp="low"] {
+    color: var(--hp-y);
+  }
+  .fui .f-strip-hp b[data-hp="bad"] {
+    color: var(--hp-r);
+  }
+  .fui .f-strip .f-lbl {
+    margin: 0;
+    font-weight: 700;
+    color: var(--phone-label);
+  }
+  .fui .f-strip .f-char-temp {
+    font-weight: 700;
+    color: var(--temp);
+  }
+  .fui .f-strip-acts {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+  .fui .f-strip-acts > .f-btn {
+    min-height: 44px;
+    padding: 0 12px;
+    border-color: var(--frame);
+    color: var(--text-hi);
+  }
+}
+@media (max-width: 640px) {
+  .fui .f-sheet {
+    --strip-pad: 16px;
+  }
+}
+/* a narrow phone (360px): the same row, tighter, so «Cura» still fits */
+@media (max-width: 400px) {
+  .fui .f-strip {
+    gap: 4px;
+  }
+  .fui .f-strip-hp,
+  .fui .f-strip-ac {
+    padding: 0 2px;
+  }
+  .fui .f-strip-acts {
+    gap: 4px;
+  }
+  .fui .f-strip-acts > .f-btn {
+    gap: 4px;
+    padding: 0 8px;
+  }
+}
+@media (max-width: 800px) and (prefers-reduced-motion: reduce) {
+  .fui .f-strip {
+    transition: none;
+  }
+  .fui .f-strip:not([data-on]) {
+    transform: none;
+  }
+}
 /* the phone's own top bar: back, then who */
 .fui .f-tb-page {
   display: none;
@@ -3171,8 +3389,16 @@
     cursor: pointer;
   }
   .fui .f-play[data-section="actions"] > :not(:nth-child(2)),
+  .fui .f-play[data-section="features"] > :not(:nth-child(2)),
   .fui .f-play[data-section="resources"] > :not(:nth-child(1)),
+  .fui .f-play[data-section="proficiencies"] > :not(:nth-child(1)),
   .fui .f-play[data-section="fight"] > :not(:nth-child(3)) {
+    display: none;
+  }
+  /* Proficiencies & Training is its own section here (D&D Beyond's phone), not a
+     box under the skills */
+  .fui .f-play[data-section="resources"] > :nth-child(1) > .f-prof,
+  .fui .f-play[data-section="proficiencies"] > :nth-child(1) > :not(.f-prof) {
     display: none;
   }
   .fui .f-menu-it[aria-current] {
@@ -3191,6 +3417,7 @@
       "hp hp"
       "stats stats"
       "acts acts"
+      "rests rests"
       "down down"
       "notes notes"
       "chips chips"
@@ -3212,8 +3439,27 @@
     align-self: start;
     font-size: var(--fs-sm);
   }
-  /* the phone header has no header buttons (prototype x-play-m) */
+  /* the rests one tap away (D&D Beyond's phone header: Short / Long Rest), two a
+     row; the campaign stays off the phone band, as before */
   .fui .f-sheet .f-char-acts {
+    grid-area: rests;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .fui .f-sheet .f-char-acts > .f-btn {
+    min-height: 44px;
+    padding: 0 8px;
+  }
+  /* Short and Long rest pair on the first row, whatever else the row holds */
+  .fui .f-sheet .f-char-acts > [data-rest] {
+    order: -1;
+  }
+  .fui .f-sheet .f-char-acts > .f-char-camp {
+    display: none;
+  }
+  .fui .f-sheet .f-char-acts:not(:has(> button)) {
     display: none;
   }
   /* the states stay chips in a row, not full-width pills */
@@ -3742,16 +3988,6 @@
   padding-left: 16px;
   border-left: 2px solid var(--line-strong);
 }
-.fui .f-rest-phone {
-  display: none;
-}
-@media (max-width: 800px) {
-  .fui .f-rest-phone {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-}
 .fui .f-rest-dice {
   grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
 }
@@ -3860,6 +4096,19 @@
 .fui .f-act.f-add-row {
   grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
 }
+/* a homebrew item's own notes, as written (line breaks kept) */
+.fui .f-item-notes {
+  margin: 0;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+/* two short fields side by side (a custom item's weight and cost) */
+.fui .f-form-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 12px;
+  align-items: start;
+}
 /* a number's pane: the number large, «Impostato a mano» beside it, then its parts */
 .fui .f-num-total {
   display: flex;
@@ -3870,6 +4119,34 @@
 .fui .f-num-total > b {
   font: 700 40px/1 var(--font-title);
   color: var(--strong);
+}
+/* «Danni e cure»: the max HP row opens its number pane (DDB's HP manager) */
+.fui button.f-hp-max {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.fui button.f-hp-max > b {
+  margin-left: auto;
+  font: 700 20px/1 var(--font-title);
+  color: var(--strong);
+}
+/* a chevron says the row opens its pane */
+.fui button.f-hp-max::after {
+  content: "›";
+  margin-left: 12px;
+  color: var(--muted);
+  font-size: var(--fs-lg);
+  line-height: 1;
 }
 /* the rule behind the number, one plain sentence (DDB's pane opens with it) */
 .fui .f-num-rule {
@@ -6466,10 +6743,12 @@
   font-size: var(--fs-prose);
   line-height: 1.45;
 }
-.fui .f-char-hp-acts > .f-btn:first-child .f-ic {
+.fui .f-char-hp-acts > .f-btn:first-child .f-ic,
+.fui .f-strip-acts > .f-btn:first-child .f-ic {
   color: var(--hp-hi);
 }
-.fui .f-char-hp-acts > .f-btn:last-child .f-ic {
+.fui .f-char-hp-acts > .f-btn:last-child .f-ic,
+.fui .f-strip-acts > .f-btn:last-child .f-ic {
   color: var(--heal);
 }
 .fui .f-sheet .f-char-hp-acts .f-ic {
