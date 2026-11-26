@@ -16,6 +16,10 @@ import {
   type FightLook,
 } from "@/lib/play/fight-condition-ends";
 import { soloRepeatSavesDue } from "@/lib/play/solo-repeat-saves";
+import { combatResolutionSpec } from "@/lib/combat-resolution";
+import { resolveActions } from "@/lib/smart-tracker";
+import { localizeAction } from "@/lib/views/combat-action-view";
+import { makeCharacterDoc } from "./_helpers";
 import type {
   ActiveCombatEffect,
   CombatantRef,
@@ -50,6 +54,27 @@ describe("spells whose effect ends on a repeat save, with no condition", () => {
       expect(states).toHaveLength(1);
     }
   );
+});
+
+describe("a cast leaves the state on each failed target", () => {
+  const doc = makeCharacterDoc({
+    classes: [{ classId: "wizard", level: 20 }],
+    spells: ["slow", "confusion", "phantasmal-killer"].map((srdId) => ({ srdId })),
+  });
+  const rows = resolveActions(doc, "spellbook").map((row) => localizeAction(row, "en"));
+
+  it.each([
+    ["slow", "spell-slow"],
+    ["confusion", "spell-confusion"],
+    ["phantasmal-killer", "spell-phantasmal-killer"],
+  ])("%s: a save whose failure writes the %s state on the target", (id, activeKey) => {
+    const cast = rows.find((a) => a.spellId === id && !a.id.endsWith("-recurring"));
+    if (!cast) throw new Error(`no cast row for ${id}`);
+    const spec = combatResolutionSpec(cast);
+    expect(spec.kind).toBe("save");
+    expect(spec.standingEffect?.payload).toEqual({ kind: "grant-group", activeKey });
+    expect(spec.standingEffect?.source.id).toBe(id);
+  });
 });
 
 const caster: CombatantRef = {
