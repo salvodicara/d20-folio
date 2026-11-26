@@ -2768,7 +2768,7 @@ button.pr-dot.lg::before {
 .rescue-strip .btn.ghost {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--text-xs);
   letter-spacing: 0.05em;
   text-transform: none;
 }
