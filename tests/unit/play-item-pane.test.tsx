@@ -131,6 +131,39 @@ describe("the item pane", () => {
     expect(screen.queryByRole("button", { name: "One more" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Remove from inventory" })).toBeNull();
   });
+
+  it("a custom item shows its weight, its cost and its notes", () => {
+    const doc = live();
+    useCharacterStore.setState({
+      character: {
+        ...doc,
+        character: {
+          ...doc.character,
+          equipment: [
+            {
+              custom: true,
+              name: "Lucky stone",
+              description: "Warm to the touch.",
+              quantity: 1,
+              mechanics: { weight: 0.5, price: "25 GP" },
+              instanceId: "4b7e1c62-3f0a-4c7e-9d11-2a6f5b8e9c01",
+            },
+          ],
+        },
+      },
+    });
+    render(
+      <PlayItemPane
+        item={itemNamed(/lucky stone/i)}
+        line={null}
+        locale="en"
+        readonly={false}
+        onClose={() => undefined}
+      />
+    );
+    expect(screen.getByText("0.5 lb each · 25 gp each")).toBeTruthy();
+    expect(screen.getByText("Warm to the touch.")).toBeTruthy();
+  });
 });
 
 describe("the coin pane", () => {

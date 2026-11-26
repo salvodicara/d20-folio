@@ -46,6 +46,8 @@ export function playNumberView(
         return n.saves.find((s) => s.ability === key.ability);
       case "skill":
         return n.skills.find((s) => s.id === key.id);
+      case "passive":
+        return n.passives[key.id];
     }
   };
   const value = pick();
@@ -55,3 +57,10 @@ export function playNumberView(
     stored: storedOverride(doc.character, key),
   };
 }
+
+/** Each passive score's label key («Percezione Passiva»). */
+export const PASSIVE_LABEL = {
+  perception: "abilities.passivePerceptionLabel",
+  insight: "abilities.passiveInsightLabel",
+  investigation: "abilities.passiveInvestigationLabel",
+} as const;

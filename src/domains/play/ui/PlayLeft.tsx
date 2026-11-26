@@ -3,7 +3,7 @@
  * what is left of it as pips (numbers alone past eight), and «Abilità», the six skills
  * worth seeing at a glance with all 18 one tap away; a skill opens its pane.
  */
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -22,20 +22,12 @@ import { Button, Panel } from "@/ui";
 
 import { PlayProficiencies } from "./PlayFeatures";
 import { PlayNumberPane } from "./PlayNumberPane";
+import { PlaySenses } from "./PlaySenses";
 
 const MAX_PIPS = 8;
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
 
-export function PlayLeft({
-  doc,
-  locale,
-  rests,
-}: {
-  doc: CharacterDoc;
-  locale: Locale;
-  /** The rest buttons, drawn here on a phone (the header carries them on a laptop). */
-  rests?: ReactNode;
-}) {
+export function PlayLeft({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const { t } = useTranslation();
   const view = playLeftView(doc, locale);
   const readonly = useSheetReadonly();
@@ -56,7 +48,6 @@ export function PlayLeft({
   };
   return (
     <div className="f-stack">
-      {rests && <div className="f-rest-phone">{rests}</div>}
       {view.resources.length > 0 && (
         <Panel color="res" title={t("character.hud.resources")}>
           {view.resources.map((r) => {
@@ -166,6 +157,8 @@ export function PlayLeft({
             : t("play.allSkills", { count: view.allSkills.length })}
         </Button>
       </Panel>
+      {/* D&D Beyond's Senses box under the skills: the passives and the senses */}
+      <PlaySenses doc={doc} locale={locale} readonly={readonly} />
       {/* D&D Beyond's box under the skills; on a phone its own «Sezioni» tile */}
       <PlayProficiencies doc={doc} locale={locale} />
       {skillOpen && (

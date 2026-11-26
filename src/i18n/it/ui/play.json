@@ -1,6 +1,7 @@
 {
   "play": {
     "hpTitle": "Punti ferita",
+    "strip": "Punti ferita e CA",
     "temp": "+{{count}} temporanei",
     "proficiency": "Competenza",
     "effects": "Effetti",
@@ -159,7 +160,17 @@
       "via": "tramite",
       "alreadyYours": "Già tra i tuoi",
       "addedToast": "Incantesimo aggiunto: {{name}}",
-      "upToLevel": "Fino al livello {{level}}: gli incantesimi che puoi lanciare."
+      "upToLevel": "Fino al livello {{level}}: gli incantesimi che puoi lanciare.",
+      "customOpen": "Incantesimo personalizzato",
+      "customBack": "Torna all'elenco",
+      "customAdd": "Aggiungi l'incantesimo",
+      "copyLabel": "Copia nel libro: {{name}}",
+      "copyCost": "copia: {{hours}} ore, {{gp}} mo",
+      "copyAsk": "Copia {{name}} nel libro degli incantesimi: {{hours}} ore e {{gp}} mo (2 ore e 50 mo per livello).",
+      "copyPay": "Copia e paga {{gp}} mo",
+      "copyShort": "Oro e platino non bastano.",
+      "copyUnpaid": "Copia senza pagare (deciso dal master)",
+      "copiedToast": "Copiato nel libro: {{name}}"
     },
     "inv": {
       "pack": "Zaino",
@@ -186,7 +197,15 @@
       "searchItems": "Cerca un oggetto",
       "noMatch": "Nessun oggetto corrisponde.",
       "addedToast": "Aggiunto: {{name}}",
-      "add": "Aggiungi un oggetto"
+      "add": "Aggiungi un oggetto",
+      "catalogue": "Catalogo",
+      "custom": "Oggetto personalizzato",
+      "customWeight": "Peso l'uno ({{unit}})",
+      "customCost": "Costo l'uno (mo)",
+      "optional": "Facoltativo",
+      "customNumber": "Scrivi un numero, come 2 o 0,5.",
+      "customAdd": "Aggiungi all'inventario",
+      "costEach": "{{cost}} l'uno"
     },
     "tray": {
       "ifAtOrBelow": "Se ha {{max}} punti ferita o meno: {{then}}.",
@@ -491,7 +510,12 @@
       "overrideHelp": "Sostituisce il valore calcolato. «Usa il calcolo» lo riporta.",
       "useComputed": "Usa il calcolo",
       "setToast": "{{name}}: valore impostato a mano",
-      "resetToast": "{{name}}: di nuovo calcolato"
+      "resetToast": "{{name}}: di nuovo calcolato",
+      "maxHpTag": "Con correzione",
+      "maxHpField": "Massimo attuale",
+      "maxHpHelp": "Salviamo la differenza come correzione ({{bonus}}): il massimo continua a crescere con livello e COS. «Usa il calcolo» la toglie.",
+      "maxHpHelpPlain": "Salviamo la differenza come correzione: il massimo continua a crescere con livello e COS. «Usa il calcolo» la toglie.",
+      "maxHpSetToast": "{{name}}: correzione salvata"
     },
     "features": {
       "species": "Tratti della specie",
