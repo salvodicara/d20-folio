@@ -204,8 +204,16 @@ function LiveFight({
   const suggest = controls.suggestEnd;
   const dm = useDmTools(campaign, view.rows, uid, isDm, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
-  const writeUp = useEndFight(campaign, encounter, uid, locale, onToast);
-  const endFight = isDm ? writeUp.open : actions.end;
+  const writeUp = useEndFight(
+    campaign,
+    encounter,
+    uid,
+    isDm,
+    locale,
+    onToast,
+    actions.end
+  );
+  const endFight = writeUp.end;
   // The monster whose turn it is: the DM may cast an area spell for it, from the head.
   const monsterTurn =
     isDm && encounter.currentCombatantId
@@ -315,7 +323,7 @@ function LiveFight({
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
         {dm.dialogs}
-        {isDm && writeUp.dialog}
+        {writeUp.dialog}
       </div>
       <Feed
         campaign={campaign}

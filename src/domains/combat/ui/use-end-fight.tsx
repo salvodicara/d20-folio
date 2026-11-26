@@ -1,6 +1,7 @@
 /**
- * The DM's «Fine scontro» on the Scontro tab: the end-of-fight write-up first (as the
- * classic hub did), then the end. Save appends one Chronicle chapter and ends the fight;
+ * «Fine scontro» on the Scontro tab. The DM's opens the end-of-fight write-up first (as
+ * the classic hub did), then the end; anyone else's ends the fight at once (anyone may
+ * end, owner 2026-10-23), with no write-up. Save appends one Chronicle chapter and ends the fight;
  * Skip ends it without saving; closing the dialog keeps it running. The fight's record
  * is the same feed the tab shows, in words.
  */
@@ -10,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useReportNames } from "@/domains/chronicle/ui/report-names";
 import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import type { FightControls } from "@/domains/combat/fight-controls";
-import { inferOutcome, saveFightToChronicle } from "@/domains/combat/fight-write-up";
+import { endFightWithChapter, inferOutcome } from "@/domains/combat/fight-write-up";
 import { EndFightDialog } from "@/domains/combat/ui/EndFightDialog";
 import { moves, useFightMove, type Toaster } from "@/domains/combat/ui/fight-moves";
 import { useSessionLog } from "@/features/campaigns/useSessionLog";
@@ -25,8 +26,11 @@ export function useEndFight(
   campaign: CampaignDoc,
   encounter: EncounterState,
   uid: string,
+  isDm: boolean,
   locale: Locale,
-  onToast: Toaster
+  onToast: Toaster,
+  /** The plain end (no write-up): a player's «Fine scontro». */
+  endNow: (reason?: Reason) => void
 ) {
   const { t } = useTranslation();
   const move = useFightMove(onToast);
@@ -54,7 +58,7 @@ export function useEndFight(
       moves.end(campaign.id, why === "open" ? undefined : (why ?? undefined)),
       t("fight.endDone")
     );
-  const dialog = reason !== null && (
+  const dialog = isDm && reason !== null && (
     <EndFightDialog
       lines={lines}
       outcome={inferOutcome(encounter)}
@@ -64,21 +68,35 @@ export function useEndFight(
         end(reason);
       }}
       onSave={(close) =>
-        saveFightToChronicle(
+        // A refused chapter rejects (the dialog stays open, the fight running); once it
+        // is in, the fight ends, and the end's undo also takes the chapter back.
+        endFightWithChapter(
           {
             campaignId: campaign.id,
             uid,
             encounterId,
             close,
             writeLog: (drafts) => void log.append(drafts).catch(() => undefined),
+            ...(reason !== "open" ? { reason } : {}),
           },
           t
-        ).then(() => {
+        ).then((undo) => {
           setReason(null);
-          end(reason);
+          if (!undo) {
+            onToast(t("fight.moved"));
+            return;
+          }
+          onToast(t("fight.endDone"), () => {
+            void undo().then((ok) => {
+              if (!ok) onToast(t("fight.tooLate"));
+            });
+          });
         })
       }
     />
   );
-  return { open: (why?: Reason) => setReason(why ?? "open"), dialog };
+  return {
+    end: (why?: Reason) => (isDm ? setReason(why ?? "open") : endNow(why)),
+    dialog,
+  };
 }
