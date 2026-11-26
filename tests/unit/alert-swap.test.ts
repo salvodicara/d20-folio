@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 
 import { alertSwapAllies, withSwappedInitiatives } from "@/domains/combat/alert-swap";
 import { planAlertSwap, planAlertSwapUndo } from "@/features/campaigns/combat-lifecycle";
+import { lifecycleOrdered } from "@/lib/play/encounter";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 
 const row = (
@@ -126,6 +127,25 @@ describe("the DM's Alert swap", () => {
       targetId: "pc-bo",
     });
     expect(undone?.encounter?.currentCombatantId).toBe("pc-bo");
+  });
+
+  it("a roll after the swap, before turns begin, keeps it", () => {
+    const before = {
+      ...fight(),
+      clock: { startedAt: 0, lastActivityAt: 0, turnStartedAt: 0, turnsBegun: false },
+    } as EncounterState;
+    const done = planAlertSwap(table(before), {
+      uid: "dm",
+      sourceId: "pc-ana",
+      targetId: "pc-bo",
+    });
+    const swapped = done?.patch.encounter ?? before;
+    // Every roll re-sorts the order before turns begin: ana 9, bo 12, the goblin 15.
+    const resorted = lifecycleOrdered({
+      ...swapped,
+      initiatives: { "pc-ana": 9, "pc-bo": 12 },
+    });
+    expect(resorted.order).toEqual(["monster-1", "pc-ana", "pc-bo"]);
   });
 
   it("only the DM, only a hero, never with an enemy", () => {

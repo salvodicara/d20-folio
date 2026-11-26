@@ -798,7 +798,11 @@ export function lifecycleOrdered(state: EncounterState): EncounterState {
     const initiative = lifecycleInitiative(state, c);
     return initiative === null ? [] : [{ id: c.id, initiative }];
   });
-  const sorted = sortByInitiative(rolled).map((r) => r.id);
+  // An Alert hero's Initiative Swap holds through every re-sort before turns begin.
+  const sorted = applyInitiativeSwaps(
+    sortByInitiative(rolled).map((r) => r.id),
+    state.initiativeSwaps
+  );
   if (!clock.turnsBegun) {
     return { ...state, order: sorted, currentCombatantId: sorted[0] ?? null };
   }
