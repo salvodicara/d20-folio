@@ -2574,6 +2574,8 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     await assertSucceeds(setDoc(doc(dm, ...COMBAT_PATH), tick(1), { merge: true }));
     // Another table's DM: not a member of the hero's campaign.
     await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      // An active account (isNotBlocked reads it), so only the campaign fence decides.
+      await setDoc(doc(ctx.firestore(), "users", "dmB"), { status: "active" });
       await setDoc(
         doc(ctx.firestore(), "campaigns", "campB"),
         campaignDoc(["dmB", "member"], "dmB", {})
