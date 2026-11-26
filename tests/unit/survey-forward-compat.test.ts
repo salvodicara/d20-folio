@@ -97,18 +97,29 @@ describe("the forward-compat check", () => {
   });
 
   it("writes a build carrying the max-HP inputs, watched on build.hp (#1315)", () => {
-    expect(input.builds.map((b) => [b.value, b.watch])).toEqual([["build.hp", ["hp"]]]);
+    expect(input.builds.map((b) => [b.value, b.watch])).toEqual([
+      ["build.hp", ["hp"]],
+      ["build.wildShapeForms", ["wildShapeForms"]],
+    ]);
     expect(input.builds[0]?.build.hp).toEqual({ rolled: 4, bonus: 2 });
   });
 
-  it("this tree's own codec keeps build.hp through a read and a write", () => {
+  it("writes a Druid build carrying its known Wild Shape forms", () => {
+    const build = input.builds.find((b) => b.value === "build.wildShapeForms")?.build;
+    expect(build?.wildShapeForms).toEqual(["wolf", "giant-badger"]);
+  });
+
+  it("this tree's own codec keeps each watched build key through a read and a write", () => {
     expect(
       readBuilds(
         parseCharacterEnvelope,
         serializeCharacterEnvelope as unknown as Parameters<typeof readBuilds>[1],
         input.builds
       )
-    ).toEqual([{ value: "build.hp", result: "kept" }]);
+    ).toEqual([
+      { value: "build.hp", result: "kept" },
+      { value: "build.wildShapeForms", result: "kept" },
+    ]);
   });
 
   it("a reader that drops build.hp on write is a problem, named by key", () => {
@@ -122,7 +133,7 @@ describe("the forward-compat check", () => {
           build: Object.fromEntries(Object.entries(build).filter(([k]) => k !== "hp")),
         };
       },
-      input.builds
+      input.builds.filter((b) => b.value === "build.hp")
     );
     expect(dropping).toEqual([{ value: "build.hp", result: "changed", where: "hp" }]);
     const allRead = readCases(() => ({ ok: true }), input.cases);

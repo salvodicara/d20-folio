@@ -161,7 +161,10 @@ export function speciesChoicesLine(
   locale: Locale,
   character: BuildForChoices,
   /** The ability the species spells use until the pick (its name, localized). */
-  abilityToday?: string
+  abilityToday?: string,
+  /** More class picks to name with the class ones (the new Play screen's Wild Shape
+   *  forms), already labelled. */
+  moreClassPicks: readonly string[] = []
 ): string {
   const names = items.flatMap((item) =>
     item.kind === "bundle" || item.kind === "feat" || item.kind === "slot"
@@ -190,7 +193,10 @@ export function speciesChoicesLine(
   if (feats.length > 0) {
     parts.push(t("play.speciesChoices.featAbilityNote", { feats: list(feats) }));
   }
-  const owed = items.flatMap((item) => (item.kind === "class-pick" ? [item.label] : []));
+  const owed = [
+    ...items.flatMap((item) => (item.kind === "class-pick" ? [item.label] : [])),
+    ...moreClassPicks,
+  ];
   if (owed.length > 0) {
     parts.push(t("play.speciesChoices.classBody", { items: list(owed) }));
   }
