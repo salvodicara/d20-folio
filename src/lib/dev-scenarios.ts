@@ -987,6 +987,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       // A failed save's state (Slow) and a hit's (Ray of Frost) for the tray e2e.
       { srdId: "slow", prepared: true },
       { srdId: "ray-of-frost" },
+      // A single-target save whose failure weakens the target (Ray of Enfeeblement).
+      { srdId: "ray-of-enfeeblement", prepared: true },
       // An ally-or-enemy save state with a willing ally (Enlarge/Reduce).
       { srdId: "enlarge-reduce", prepared: true },
       // A buff that outlasts a fight, cast on the party out of one (Mage Armor).

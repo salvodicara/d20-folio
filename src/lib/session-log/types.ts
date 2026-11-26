@@ -154,7 +154,13 @@ export type PlayEvent =
     }
   /** Heroic Inspiration was gained or spent (given by someone else: `resource-grant`). */
   | { kind: "inspiration"; gained: boolean; target?: CombatantId; source?: LocText }
-  | { kind: "death-save"; outcome: "success" | "failure"; actor?: CombatantId }
+  /** A death-save mark; `rolledBy: "dm"` when the DM ticked it from the fight. */
+  | {
+      kind: "death-save";
+      outcome: "success" | "failure";
+      actor?: CombatantId;
+      rolledBy?: "dm";
+    }
   /** A class resource spent or regained (Bardic Inspiration, Rage, Second Wind…):
    *  `resource` is the feature's stable id, named at render. */
   | {

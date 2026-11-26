@@ -265,13 +265,15 @@ describe("conformance · 7. effects that modify other effects", () => {
       status: "works",
     },
     () => {
-      // Ray of Enfeeblement's −1d8 isn't damage: its crit has no damage to double.
+      // Ray of Enfeeblement's −1d8 isn't damage: the tray has no damage to double.
+      // (SRD 5.2.1 makes it a Constitution save, so there is no attack to crit.)
       const plan = damageTrayPlan(
         spellCard("ray-of-enfeeblement"),
         ["monster-1"],
         "pc-me"
       );
       expect(plan?.effect).toBeNull();
+      expect(plan?.attack).toBeUndefined();
     }
   );
 

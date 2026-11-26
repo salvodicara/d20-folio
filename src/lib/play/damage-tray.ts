@@ -193,7 +193,7 @@ export function damageTrayPlan(
   const standsOnSave =
     spec.standingEffect !== undefined && spec.kind === "save" && otherTargets.length > 0;
   // An attack at a picked target always has its result to say, even with nothing
-  // else to apply (Ray of Enfeeblement).
+  // else to apply.
   if (items.length === 0 && !(attacks && targets.length > 0) && !standsOnSave)
     return null;
   // A pool spend (Lay on Hands) already chose its amount in its own picker: there is

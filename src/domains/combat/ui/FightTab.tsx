@@ -24,6 +24,7 @@ import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
 import { initiativePlace, lineNeighbourPlace } from "@/domains/combat/initiative-edit";
+import { useMonsterCard } from "@/domains/combat/ui/use-monster-card";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -377,6 +378,13 @@ function useDmTools(
       dmMoves.reorder(campaign.id, uid, initFor.ids, place.beforeId),
       t("fight.dm.movedDone", { name: initFor.name })
     );
+  const card = useMonsterCard(
+    campaign.id,
+    campaign.encounter as EncounterState,
+    uid,
+    locale,
+    onToast
+  );
   const line = (row: FightRow): FightLineDm | undefined => {
     if (!isDm) return undefined;
     const members = fighters.filter((f) => row.ids.includes(f.id));
@@ -401,6 +409,27 @@ function useDmTools(
           targets={targets}
           locale={locale}
           onClose={() => setHitting(null)}
+          onCard={(target) => {
+            setHitting(null);
+            card.open(target.id);
+          }}
+          onDeathSave={(target, outcome) =>
+            target.memberUid &&
+            target.characterId &&
+            move(
+              dmMoves.deathSave(
+                campaign.id,
+                uid,
+                {
+                  memberUid: target.memberUid,
+                  characterId: target.characterId,
+                  maxHp: target.hp.max,
+                },
+                outcome
+              ),
+              t(`fight.dm.deathSaveDone.${outcome}`, { name: target.name })
+            )
+          }
           onHit={(chosenTargets, entry) => {
             move(
               dmMoves.hit(campaign.id, uid, planDmHit(chosenTargets, entry)),
@@ -505,6 +534,7 @@ function useDmTools(
           }
         />
       )}
+      {card.dialog}
       {adding && (
         <Suspense fallback={null}>
           <AddMonstersDialog
