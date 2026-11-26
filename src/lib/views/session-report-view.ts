@@ -306,8 +306,12 @@ export function localizePlayEvent(
           target: who(event.target),
         })
       );
-    case "death-save":
-      return t(`sessionReport.deathSave.${event.outcome}`, { actor: who(event.actor) });
+    case "death-save": {
+      const line = t(`sessionReport.deathSave.${event.outcome}`, {
+        actor: who(event.actor),
+      });
+      return event.rolledBy === "dm" ? t("sessionReport.byDm", { line }) : line;
+    }
     case "rest":
       return withRestRecovery(
         t(`sessionReport.rest.${event.rest}`, { actor: who(event.actor) }),
