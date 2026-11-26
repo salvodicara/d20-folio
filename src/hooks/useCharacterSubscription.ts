@@ -811,37 +811,47 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // The trace stays until the copy is kept, so a shape gate closing meanwhile still
     // finds it.
     const rescueLostSave = (lost: UnackedSave): void => {
-      void import("@/lib/character-codec").then(({ serializeCharacterEnvelope }) => {
-        if (
-          quarantined ||
-          readUnackedSave(user.uid, characterId)?.revision !== lost.revision
-        )
-          return;
-        const retire = (): void => {
-          dropUnackedSave(user.uid, characterId);
-          if (lost.whole) dropUnackedPlay(user.uid, characterId);
-        };
-        if (readRescueCopy(user.uid, characterId, Date.now())) {
-          retire();
-          return;
-        }
-        const envelope = serializeCharacterEnvelope({
-          character: lost.character,
-          session: lost.session,
-        } as CharacterDoc);
-        const kept = keepRescueCopy(user.uid, characterId, {
-          // A level-up rewrote the play state too; a build save did not.
-          part: lost.whole ? "all" : "build",
-          revision: lost.revision,
-          savedAt: lost.at ?? Date.now(),
-          schema: CHARACTER_SCHEMA,
-          playVersion: PLAY_STATE_VERSION,
-          build: envelope.build,
-          state: envelope.state,
+      const retire = (): void => {
+        dropUnackedSave(user.uid, characterId);
+        if (lost.whole) dropUnackedPlay(user.uid, characterId);
+      };
+      void import("@/lib/character-codec")
+        .then(({ serializeCharacterEnvelope }) => {
+          if (
+            quarantined ||
+            readUnackedSave(user.uid, characterId)?.revision !== lost.revision
+          )
+            return;
+          if (readRescueCopy(user.uid, characterId, Date.now())) {
+            retire();
+            return;
+          }
+          const envelope = serializeCharacterEnvelope({
+            character: lost.character,
+            session: lost.session,
+          } as CharacterDoc);
+          const kept = keepRescueCopy(user.uid, characterId, {
+            // A level-up rewrote the play state too; a build save did not.
+            part: lost.whole ? "all" : "build",
+            revision: lost.revision,
+            savedAt: lost.at ?? Date.now(),
+            schema: CHARACTER_SCHEMA,
+            playVersion: PLAY_STATE_VERSION,
+            build: envelope.build,
+            state: envelope.state,
+          });
+          // Kept: the trace has done its job. Not kept (storage full): it stays.
+          if (kept) retire();
+        })
+        // A trace this build cannot read (left by an older one) can never become a
+        // copy: retire it, so it does not throw again on every load.
+        .catch((err: unknown) => {
+          diagnosticsLog("warn", "character.unreadable-trace", {
+            message: err instanceof Error ? err.message : String(err),
+          });
+          if (readUnackedSave(user.uid, characterId)?.revision === lost.revision)
+            retire();
         });
-        // Kept: the trace has done its job. Not kept (storage full): it stays.
-        if (kept) retire();
-      });
     };
     // Only the FIRST server-confirmed sheet of this load decides: while the reopened
     // tab's queue still holds the save, its snapshots carry `hasPendingWrites`, and a

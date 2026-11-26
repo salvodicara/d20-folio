@@ -1510,6 +1510,23 @@ describe("useCharacterSubscription — a save the tab never saw acknowledged (#1
     );
   });
 
+  it("an unreadable trace (left by an older build) is retired on load, never thrown", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      keepUnackedSave("u1", "char1", { character: null, session: null, revision: 9 });
+      renderHook(() => useCharacterSubscription("char1"));
+      act(() => seedCharacter()); // revision 4: the trace looks like a lost save
+      await vi.waitFor(() => expect(readUnackedSave("u1", "char1")).toBeNull());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
+  });
+
   it("a stored sheet at the save's revision proves it landed: nothing to rescue", async () => {
     const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
     keepUnackedSave("u1", "char1", { character: {}, session: {}, revision: 4 });
