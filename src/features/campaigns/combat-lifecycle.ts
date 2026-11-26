@@ -29,6 +29,7 @@ import {
   removeCombatant,
   restoreMonsterUse,
   rollMonsterRecharge,
+  setMonsterBardicInspirationDie,
   spendMonsterUse,
   reorderCombatant,
   setHidden,
@@ -703,6 +704,25 @@ export type MonsterUseChange =
   | { kind: "recharge"; d6: number }
   | { kind: "regain" }
   | { kind: "set"; count: number };
+
+/** The DM spends the Bardic Inspiration die a creature in the fight holds (`die` ""),
+ *  or gives it back on undo (`die` the one it held). Null for anyone but the DM, or when
+ *  nothing changes. */
+export function planMonsterBardicDie(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string; die: string }
+): { patch: CombatPatch; previous: string } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  const previous = monster.bardicInspirationDie ?? "";
+  if (previous === input.die) return null;
+  return {
+    patch: { encounter: setMonsterBardicInspirationDie(fight, monster.id, input.die) },
+    previous,
+  };
+}
 
 /**
  * The DM changes one of a monster's limited uses (SRD 5.2.1: Recharge, N/Day, a per-day

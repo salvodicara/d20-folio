@@ -156,7 +156,8 @@
       "rechargeBack": "Ricarica {{d6}}: {{name}} torna disponibile",
       "rechargeMiss": "Ricarica {{d6}}: {{name}} resta da ricaricare",
       "regainDone": "Azioni leggendarie recuperate: {{name}}",
-      "legendarySpent": "Azione leggendaria usata: {{name}}"
+      "legendarySpent": "Azione leggendaria usata: {{name}}",
+      "bardicSpent": "Ispirazione Bardica {{die}} spesa: {{name}}"
     },
     "actions": {
       "title": "{{name}}: azioni",

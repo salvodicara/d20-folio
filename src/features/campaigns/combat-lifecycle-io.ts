@@ -54,6 +54,7 @@ import {
   planMonsterRevealed,
   planMonsterEdit,
   planMonsterSide,
+  planMonsterBardicDie,
   planMonsterUse,
   type MonsterUseChange,
   planDmHeroRoll,
@@ -557,6 +558,23 @@ export async function undoFeedBeat(
       return patch && { patch, result: true };
     })) === true
   );
+}
+
+/** The DM spends a creature's Bardic Inspiration die; the undo gives the same die back. */
+export async function spendMonsterBardicDieMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string }
+): Promise<CombatUndo | null> {
+  const previous = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterBardicDie(campaign, { ...input, die: "" });
+    return planned && { patch: planned.patch, result: planned.previous };
+  });
+  if (previous === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const planned = planMonsterBardicDie(campaign, { ...input, die: previous });
+      return planned && { patch: planned.patch, result: true };
+    })) === true;
 }
 
 /** The DM toggles a condition on a monster in the fight; the undo inverts it. */
