@@ -19,6 +19,7 @@ import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
+import { NextAttackNotes } from "@/domains/combat/ui/NextAttackNote";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
@@ -297,6 +298,19 @@ function LiveFight({
                 }
               />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* a monster's own next attack roll with Disadvantage (Ray of
+                  Enfeeblement on a success, Sap): the DM spends it when rolling */}
+              {isDm && (
+                <NextAttackNotes
+                  campaignId={campaign.id}
+                  effectOps={encounter.effectOps}
+                  targetIds={row.ids.filter(
+                    (id) => view.rows.find((r) => r.id === id)?.kind === "monster"
+                  )}
+                  nameOf={(id) => view.rows.find((r) => r.id === id)?.name ?? ""}
+                  locale={locale}
+                />
+              )}
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
                 <MonsterZoneHits

@@ -30,6 +30,7 @@ import { PlayHp } from "@/domains/play/ui/PlayHp";
 import { PlayLeft } from "@/domains/play/ui/PlayLeft";
 import { PlayPrompts } from "@/domains/play/ui/PlayPrompts";
 import { HelpedCheck } from "@/domains/combat/ui/HelpedCheck";
+import { NextAttackNotes } from "@/domains/combat/ui/NextAttackNote";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
 import { PlayRest } from "@/domains/play/ui/PlayRest";
 import { PlaySnapshots } from "@/domains/play/ui/PlaySnapshots";
@@ -627,6 +628,14 @@ function PlayHeader({
                   campaignId={fight.campaignId}
                   effectOps={fight.encounter.effectOps}
                   targetId={fight.myId}
+                />
+              )}
+              {fight && (
+                <NextAttackNotes
+                  campaignId={fight.campaignId}
+                  effectOps={fight.encounter.effectOps}
+                  targetIds={[fight.myId]}
+                  locale={locale}
                 />
               )}
               {fight?.isMyTurn && (
