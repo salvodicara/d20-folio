@@ -11,8 +11,7 @@ codec and the revision fence. The engine's in-memory rules model is not. Four ru
 `Grant` union folded into one wide aggregate, `lib/rules` compiling only part of the passive kinds, the `mechanics-*`
 kernel that ADR-0003 did not adopt, and Activities translated from catalogue fields). Play state has one field per
 feature, overrides and build choices come in many shapes, and no stored document says which engine wrote it.
-Homebrew features and items store their rules as `Grant[]` inside the character, so the authoring format cannot
-change without a data migration.
+A homebrew feature stores its rules as `Grant[]` inside the character document (`CustomFeature.grants`).
 
 ## Decision
 
@@ -20,13 +19,11 @@ change without a data migration.
   fact), **Activity** (anything usable), **Status** (something applied to a creature for a while), **Resource** (a
   counter that is spent and recovered) and **Choice/Progression** (what a level or a feature lets the player pick).
 - **Grant is the single compiled storage format.** SRD, private pack and homebrew author mechanics as `Grant`, a
-  versioned format with **one** compiler to the five pieces. Kinds are never removed or renamed without a data
-  migration. Where ADR-0006 proposed a separate `Program` format for active mechanics, active mechanics run as
+  versioned format with **one** compiler to the five pieces. Where ADR-0006 proposed a separate `Program` format for active mechanics, active mechanics run as
   Activities compiled from Grant and catalogue data instead; no second authoring dialect is built. The dead kernel
   code goes, as ADR-0003 decided.
-- **Placement.** The engine stays on the client. `packages/folio-core` becomes a real package boundary (pure rules,
-  no Firebase IO, no import of the app), so the same code can later run in a script, a Cloud Function or a public
-  package. There is no rules server.
+- **Placement.** The engine stays on the client. `packages/folio-core` becomes a real shared package boundary. There
+  is no rules server.
 - **Migration, M0 to M5.**
   - M0–M2 change no stored data. M0: the before/after derived-sheet harness (`scripts/derived-digest.ts`) and the
     folio-core boundary. M1: every passive Grant kind compiles to a Rule. M2: Activities are the single runtime shape
@@ -43,16 +40,16 @@ change without a data migration.
 
 ### Alternative 1: A rules server (the engine behind an API)
 
-- **Pros**: one place computes every sheet; a public API comes for free.
-- **Cons**: running cost and latency; no offline play at the table.
-- **Why not**: two friendly groups, a zero-cost budget and no cheating threat; a real package gives the API later
-  without a server now.
+- **Pros**: one place computes every sheet.
+- **Cons**: a running cost and a network round trip for every number on the sheet.
+- **Why not**: the owner chose the client engine (#1272); the product brief asks to spend nothing now.
 
 ### Alternative 2: Replace Grant with a new runtime-shaped format
 
 - **Pros**: the stored format would match the runtime one to one.
-- **Cons**: every homebrew feature stored in a character would need a migration, and the pack would be rewritten.
-- **Why not**: the runtime can change freely behind one compiler; the stored format does not have to.
+- **Cons**: homebrew grants stored in characters and every catalogue entry would have to be rewritten.
+- **Why not**: #1267 keeps Grant as the versioned authoring and storage format; the runtime changes behind one
+  compiler.
 
 ### Alternative 3: Stored-shape changes over several releases with old and new shapes side by side
 
@@ -66,7 +63,6 @@ change without a data migration.
 
 - A new mechanic is data plus at most one compiler case, read in one place.
 - Each migration step has a measured exit: the harness digest of every sheet.
-- The engine can be published as a package without a server.
 
 ### Negative
 

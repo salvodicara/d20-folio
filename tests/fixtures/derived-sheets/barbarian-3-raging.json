@@ -36,7 +36,31 @@
       },
       "state": {},
       "revision": 0,
-      "playStateVersion": 1
+      "playStateVersion": 1,
+      "createdAt": {
+        "_seconds": 1767225600,
+        "_nanoseconds": 0
+      },
+      "updatedAt": {
+        "_seconds": 1767225600,
+        "_nanoseconds": 0
+      },
+      "portraitUrl": null,
+      "portraitCrop": null,
+      "shared": false,
+      "status": "active",
+      "cache": {
+        "name": "Fixture Barbarian",
+        "race": "dwarf",
+        "classes": [
+          {
+            "classId": "barbarian",
+            "level": 3
+          }
+        ],
+        "hpMax": 35,
+        "ac": 15
+      }
     }
   },
   {
@@ -60,6 +84,10 @@
         "state": {
           "activeFeatures": ["barbarian-rage"]
         }
+      },
+      "updatedAt": {
+        "_seconds": 1767225600,
+        "_nanoseconds": 0
       }
     }
   }

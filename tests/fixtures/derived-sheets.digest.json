@@ -8,6 +8,7 @@
         "ac": "c47a57b652939ee2",
         "actions": "b93fab63d9894eff",
         "attacks": "24cf1bbcfef2b7dd",
+        "breakdowns": "ea191dc74ec1c5e6",
         "conditions": "d4bcf287f9044942",
         "defenses": "fd2bbeeee0260a19",
         "hp": "20053c16f5e25284",
@@ -23,7 +24,7 @@
         "spellcasting": "e785468329fb4d21",
         "spells": "78d7cd45aaf997c7"
       },
-      "sheet": "915c4f4601362b2e"
+      "sheet": "50e0f299628d3f04"
     },
     "users/fixtures/characters/bard-9-mid-fight": {
       "sections": {
@@ -31,6 +32,7 @@
         "ac": "1ca3adbaaff64a1c",
         "actions": "57c303fd028fa560",
         "attacks": "dda09c539e8fd350",
+        "breakdowns": "e6e960e726b70b07",
         "conditions": "b6794d24ec17c510",
         "defenses": "9b46f1e6aad7f70d",
         "hp": "40aa9c8fc4dcdfe2",
@@ -46,7 +48,7 @@
         "spellcasting": "8d3be01dbb3e0c38",
         "spells": "142ff99db1cd0fc5"
       },
-      "sheet": "db497888867ad9cf"
+      "sheet": "de66c75de5fc4586"
     },
     "users/fixtures/characters/fighter-5-armoured": {
       "sections": {
@@ -54,6 +56,7 @@
         "ac": "39dc5980367c0314",
         "actions": "39921a43bbbbeff2",
         "attacks": "469394167faa4698",
+        "breakdowns": "2c32b68840a93df3",
         "conditions": "6100b09776534a00",
         "defenses": "8f700b1086fa73d3",
         "hp": "80cf04ab2edab57b",
@@ -69,7 +72,7 @@
         "spellcasting": "e785468329fb4d21",
         "spells": "24cacacb705f3f05"
       },
-      "sheet": "270c1de947bbe52c"
+      "sheet": "1ffb5abbca71e8cb"
     },
     "users/fixtures/characters/multiclass": {
       "sections": {
@@ -77,6 +80,7 @@
         "ac": "1ca3adbaaff64a1c",
         "actions": "18722636fdfe1f9c",
         "attacks": "dda09c539e8fd350",
+        "breakdowns": "f7656edde8d4112f",
         "conditions": "b6794d24ec17c510",
         "defenses": "9b46f1e6aad7f70d",
         "hp": "edb875d6051315c8",
@@ -92,7 +96,7 @@
         "spellcasting": "8d3be01dbb3e0c38",
         "spells": "3a7439c6febd587b"
       },
-      "sheet": "d00dadd8dcb9a580"
+      "sheet": "60a097d8081a4c52"
     },
     "users/fixtures/characters/wizard-5-homebrew": {
       "sections": {
@@ -100,6 +104,7 @@
         "ac": "328db7ec96779994",
         "actions": "5e637851f408a489",
         "attacks": "1a5aa80a878d168b",
+        "breakdowns": "51e9ce87ced66cb7",
         "conditions": "d4bcf287f9044942",
         "defenses": "9b46f1e6aad7f70d",
         "hp": "30ece12e65a2d63a",
@@ -115,7 +120,7 @@
         "spellcasting": "1feb736fd32fbbf8",
         "spells": "89b497e6f3f0aab0"
       },
-      "sheet": "cc98905b9d5e2fa3"
+      "sheet": "10bf08afe38ffaed"
     }
   }
 }

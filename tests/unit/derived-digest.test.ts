@@ -72,6 +72,8 @@ describe("the canonical form", () => {
 });
 
 describe("the digest of the fixture sheets", () => {
+  // One fixture (the barbarian) carries the Firestore-only fields a live dump has:
+  // timestamps as plain JSON objects, the roster cache, the share and status flags.
   it("covers every fixture, readable, with every section", async () => {
     const digest = await digestDocuments(await fixtures(), false);
     const sheets = Object.values(digest.sheets);
@@ -105,7 +107,7 @@ describe("the digest of the fixture sheets", () => {
 });
 
 describe("the comparison names the sheet and the section", () => {
-  it("armour taken off moves the fighter's AC, nothing else", async () => {
+  it("armour taken off moves the fighter's AC and its explanation, nothing else", async () => {
     const documents = await fixtures();
     const before = await digestDocuments(documents, false);
     const after = await digestDocuments(
@@ -116,10 +118,10 @@ describe("the comparison names the sheet and the section", () => {
     );
     const comparison = compareDigests(before, after);
     expect(comparison.changed).toEqual({
-      "users/fixtures/characters/fighter-5-armoured": ["ac"],
+      "users/fixtures/characters/fighter-5-armoured": ["ac", "breakdowns"],
     });
     expect(namedReport(comparison)).toContain(
-      "changed      users/fixtures/characters/fighter-5-armoured: ac"
+      "changed      users/fixtures/characters/fighter-5-armoured: ac, breakdowns"
     );
   });
 
@@ -145,6 +147,19 @@ describe("the comparison names the sheet and the section", () => {
     expect(hasChanges(comparison)).toBe(true);
   });
 
+  it("a sheet unreadable on both sides is not a pass", async () => {
+    const documents = fighter(await fixtures()).filter((d) => !d.path.endsWith("/state"));
+    const digest = await digestDocuments(documents, false);
+    const comparison = compareDigests(digest, digest);
+    expect(comparison).toMatchObject({ sheets: 1, compared: 0, unchanged: 0 });
+    expect(hasChanges(comparison)).toBe(true);
+    expect(countsReport(comparison)).toMatchObject({
+      unreadableBefore: 1,
+      unreadableAfter: 1,
+      unreadableChanged: 0,
+    });
+  });
+
   it("refuses two digests taken with different pack composition", async () => {
     const documents = fighter(await fixtures());
     const srd = await digestDocuments(documents, false);
@@ -164,7 +179,7 @@ describe("the counts-only report for live sheets", () => {
       false
     );
     const report = countsReport(compareDigests(before, after));
-    expect(report).toMatchObject({ sheets: 5, unchanged: 4, changed: 1 });
+    expect(report).toMatchObject({ sheets: 5, compared: 5, unchanged: 4, changed: 1 });
     expect(report.bySection.ac).toBe(1);
     expect(report.bySection.spells).toBe(0);
     expect(Object.keys(report.bySection)).toEqual([...SECTIONS]);

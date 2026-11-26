@@ -34,6 +34,7 @@ interface Engine {
     combat: unknown
   ) => Promise<StoredSheet>;
   deriveCharacter: (doc: StoredSheet) => RawMap;
+  sheetNumbers: (doc: StoredSheet) => RawMap;
   resolveTrackers: (doc: StoredSheet) => unknown[];
   resolveActions: (doc: StoredSheet) => Array<{ summary: RawMap }>;
   buildSpellsViewModel: (
@@ -73,6 +74,10 @@ export function loadEngine(): Promise<Engine> {
       "smart-tracker",
       "resolveActions"
     )) as Engine["resolveActions"],
+    sheetNumbers: (await engineFunction(
+      "views/sheet-numbers",
+      "sheetNumbers"
+    )) as Engine["sheetNumbers"],
     buildSpellsViewModel: (await engineFunction(
       "views/spells-view",
       "buildSpellsViewModel"
@@ -103,6 +108,7 @@ export const SECTIONS = [
   "attacks",
   "actions",
   "spells",
+  "breakdowns",
   "other",
 ] as const;
 export type Section = (typeof SECTIONS)[number];
@@ -242,6 +248,8 @@ export function derivedSections(
   >;
   for (const [field, value] of Object.entries(engine.deriveCharacter(doc)))
     sections[SHEET_SECTION[field] ?? "other"][field] = value;
+  // Each number's explanation (the parts the sheet shows), carrying capacity, jumps.
+  sections.breakdowns.numbers = engine.sheetNumbers(doc);
   sections.resources.trackers = engine.resolveTrackers(doc);
   const actions = engine.resolveActions(doc);
   const isAttack = (a: { summary: RawMap }) => typeof a.summary.attackBonus === "number";
@@ -325,13 +333,18 @@ export async function readStoredDocuments(directory: string): Promise<StoredDocu
   const files = (await readdir(directory)).filter((f) => f.endsWith(".json")).sort();
   const documents: StoredDocument[] = [];
   for (const file of files) {
-    const parsed: unknown = JSON.parse(await readFile(join(directory, file), "utf8"));
+    // A file is named by its index, never by its name or a parse message: a live
+    // dump's names and contents carry ids and values.
+    const place = `file #${files.indexOf(file) + 1}`;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(await readFile(join(directory, file), "utf8"));
+    } catch {
+      throw new TypeError(`${place} is not readable JSON`);
+    }
     const list: unknown[] = Array.isArray(parsed) ? parsed : [parsed];
     for (const item of list) {
-      // The file is named by its index, never by its name: a live dump's file
-      // names can carry ids.
-      if (!isStoredDocument(item))
-        throw new TypeError(`file #${files.indexOf(file) + 1} holds a non-document`);
+      if (!isStoredDocument(item)) throw new TypeError(`${place} holds a non-document`);
       documents.push(item);
     }
   }
@@ -352,6 +365,9 @@ export async function digestDocuments(
 
 export interface Comparison {
   sheets: number;
+  /** Sheets read on both sides, so their sections were compared. */
+  compared: number;
+  /** Compared sheets with no section moved. */
   unchanged: number;
   /** Sheet → the sections whose hash moved. */
   changed: Record<string, Section[]>;
@@ -380,6 +396,7 @@ export function compareDigests(before: Digest, after: Digest): Comparison {
   ].sort(compareText);
   const result: Comparison = {
     sheets: keys.length,
+    compared: 0,
     unchanged: 0,
     changed: {},
     onlyBefore: [],
@@ -402,10 +419,9 @@ export function compareDigests(before: Digest, after: Digest): Comparison {
         before: "unreadable" in a ? a.unreadable : null,
         after: "unreadable" in b ? b.unreadable : null,
       };
-      if ("unreadable" in a && "unreadable" in b && a.unreadable === b.unreadable)
-        result.unchanged += 1;
       continue;
     }
+    result.compared += 1;
     const moved = SECTIONS.filter(
       (section) => a.sections[section] !== b.sections[section]
     );
@@ -415,7 +431,8 @@ export function compareDigests(before: Digest, after: Digest): Comparison {
   return result;
 }
 
-/** True when the two digests differ in any way the harness reports. */
+/** True unless every sheet was read and compared on both sides with no section
+ *  moved: a sheet unreadable even on both sides is not a pass. */
 export function hasChanges(comparison: Comparison): boolean {
   return comparison.unchanged !== comparison.sheets;
 }
@@ -423,7 +440,7 @@ export function hasChanges(comparison: Comparison): boolean {
 /** The named report: which sheet, which sections. For fixtures and owner-only runs. */
 export function namedReport(comparison: Comparison): string {
   const lines = [
-    `derived sheets: ${comparison.sheets}, unchanged ${comparison.unchanged}, ` +
+    `derived sheets: ${comparison.sheets}, compared ${comparison.compared}, unchanged ${comparison.unchanged}, ` +
       `changed ${Object.keys(comparison.changed).length}, only before ${comparison.onlyBefore.length}, ` +
       `only after ${comparison.onlyAfter.length}, unreadable ${Object.keys(comparison.unreadable).length}`,
   ];
@@ -440,6 +457,7 @@ export function namedReport(comparison: Comparison): string {
 
 export interface CountsReport {
   sheets: number;
+  compared: number;
   unchanged: number;
   changed: number;
   onlyBefore: number;
@@ -464,6 +482,7 @@ export function countsReport(comparison: Comparison): CountsReport {
     for (const section of sections) bySection[section] += 1;
   return {
     sheets: comparison.sheets,
+    compared: comparison.compared,
     unchanged: comparison.unchanged,
     changed: Object.keys(comparison.changed).length,
     onlyBefore: comparison.onlyBefore.length,

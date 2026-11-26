@@ -1,7 +1,7 @@
 # ADR-0006: One versioned mechanics authoring format for SRD, pack and homebrew
 
 **Date**: 2026-09-02
-**Status**: proposed; the separate `Program` format superseded by ADR-0010
+**Status**: proposed
 **Deciders**: owner (licensing partition is legal, not scope), architecture round
 
 ## Context
