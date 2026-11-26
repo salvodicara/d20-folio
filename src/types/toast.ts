@@ -46,9 +46,10 @@ export type ToastIntent =
   | { kind: "defense-removed"; defenseKind: SessionDefenseKind; defenseId: string }
   /**
    * #1203 — the rules refused a save as a conflict (another tab or device saved
-   * first): the edit is dropped and the sheet shows the server's copy.
+   * first): the edit is dropped and the sheet shows the server's copy. #1403 — `kept`:
+   * the edit is kept on this device, offered back by the rescue strip.
    */
-  | { kind: "edit-not-saved" }
+  | { kind: "edit-not-saved"; kept?: boolean }
   /**
    * #1277 — End Turn in a shared fight did not reach the campaign (a transaction:
    * offline it always fails). The turn is still the player's.

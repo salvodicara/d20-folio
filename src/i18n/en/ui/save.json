@@ -5,6 +5,7 @@
     "saving": "Saving...",
     "error": "Save error",
     "offline": "Offline",
-    "editNotSaved": "Your last change was not saved: this sheet changed on another device."
+    "editNotSaved": "Your last change was not saved: this sheet changed on another device.",
+    "editKept": "This sheet changed on another device. Your last change is kept on this device: apply or discard it below."
   }
 }
