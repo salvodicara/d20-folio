@@ -4162,13 +4162,19 @@
   font-size: var(--fs-lg);
   line-height: 1;
 }
+/* a fixed value's «Valore calcolato»: the computed lines' total, ruled off like a sum */
+.fui .f-ab-parts > li.f-num-computed {
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+}
 /* the rule behind the number, one plain sentence (DDB's pane opens with it) */
 .fui .f-num-rule {
   margin: 0;
   max-width: 60ch;
   color: var(--muted);
 }
-/* «Impostato a mano»: a status, not a control (D&D Beyond's «Overridden») */
+/* «Valore fisso» / «Con correzione»: a status, not a control (D&D Beyond's «Overridden») */
 .fui .f-num-tag {
   color: var(--muted);
   font: 600 var(--fs-sm) var(--font-label);
