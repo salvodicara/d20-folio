@@ -24,6 +24,8 @@ export function standingEffectsForTargets(input: {
   targets: ReadonlyArray<CombatantRef>;
   position: EncounterPosition;
   spellcastingModifier?: number;
+  /** The DC the target's repeat save is made against (Slow's `effectEnds`). */
+  saveDc?: number;
   newId: () => string;
 }): ActiveCombatEffect[] {
   const { spec, caster, position } = input;
@@ -52,15 +54,19 @@ export function standingEffectsForTargets(input: {
             phase: "turn-end",
           }
         : { kind: "encounter" }));
+  const bindings = {
+    ...(input.spellcastingModifier !== undefined
+      ? { spellcastingModifier: input.spellcastingModifier }
+      : {}),
+    ...(input.saveDc !== undefined ? { saveDc: input.saveDc } : {}),
+  };
   return input.targets.map((target) => ({
     id: input.newId(),
     actor: caster,
     target,
     source: spec.source,
     payload: spec.payload,
-    ...(input.spellcastingModifier !== undefined
-      ? { bindings: { spellcastingModifier: input.spellcastingModifier } }
-      : {}),
+    ...(Object.keys(bindings).length > 0 ? { bindings } : {}),
     duration,
   }));
 }

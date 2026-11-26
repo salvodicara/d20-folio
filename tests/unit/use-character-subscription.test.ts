@@ -20,6 +20,7 @@ const {
   debouncedSave,
   debouncedFlush,
   debouncedCancel,
+  sendWholeSheetMock,
   createDebouncedSaveMock,
   subscribeMock,
   refreshAttachedSheetsMock,
@@ -54,6 +55,15 @@ const {
     >(),
   debouncedFlush: vi.fn(() => Promise.resolve()),
   debouncedCancel: vi.fn(),
+  // The saver's whole-sheet write (a level-up, its undo): `onSend` gets the revision it
+  // leaves at, before the batch reaches the SDK.
+  sendWholeSheetMock: vi.fn<
+    (
+      sheet: unknown,
+      source: unknown,
+      callbacks?: { onSend?: (revision: number) => void }
+    ) => Promise<void>
+  >(() => Promise.resolve()),
   subscribeMock: vi.fn<
     (
       uid: string,
@@ -111,7 +121,12 @@ vi.mock("@/lib/firestore", () => ({
     allocateRevision?: () => number
   ) => {
     createDebouncedSaveMock(uid, charId, delayMs, allocateRevision);
-    return { save: debouncedSave, flush: debouncedFlush, cancel: debouncedCancel };
+    return {
+      save: debouncedSave,
+      flush: debouncedFlush,
+      cancel: debouncedCancel,
+      sendWholeSheet: sendWholeSheetMock,
+    };
   },
   saveStatusCallbacks: { onPending() {}, onSaving() {}, onSaved() {}, onError() {} },
 }));
@@ -1629,5 +1644,149 @@ describe("useCharacterSubscription — the character's campaign attachment (#121
       characterId: "char1",
       attached: true,
     });
+  });
+});
+
+// #1276 — a level-up never waits for the server, so a reload or a closed tab before the
+// acknowledgement must not lose it silently. Its whole-sheet write leaves a trace when it
+// is sent; a trace the stored sheet never reached is offered back on the next load.
+describe("useCharacterSubscription — a level-up the server never acknowledged (#1276)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+    sendWholeSheetMock.mockReset();
+  });
+
+  const source = {
+    shared: false,
+    status: "active" as const,
+    portraitUrl: null,
+    portraitCrop: null,
+  };
+
+  it("the whole-sheet write is traced as the whole sheet when it leaves, and its acknowledgement clears it", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    let ack: () => void = () => {};
+    sendWholeSheetMock.mockImplementation((_sheet, _source, callbacks) => {
+      callbacks?.onSend?.(5);
+      return new Promise<void>((resolve) => (ack = resolve));
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const levelled = { ...doc().character, quote: "level 2" };
+    const writer = useCharacterStore.getState().wholeSheetWriter;
+    if (!writer) throw new Error("no whole-sheet writer");
+    const written = writer({ character: levelled, session: doc().session }, source);
+    expect(readUnackedSave("u1", "char1")).toMatchObject({ revision: 5, whole: true });
+    expect(JSON.stringify(readUnackedSave("u1", "char1")?.character)).toContain(
+      "level 2"
+    );
+    ack();
+    await written;
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+
+  it("a refusal the player is told about drops the trace", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    sendWholeSheetMock.mockImplementation((_sheet, _source, callbacks) => {
+      callbacks?.onSend?.(5);
+      return Promise.reject(new Error("denied"));
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const writer = useCharacterStore.getState().wholeSheetWriter;
+    if (!writer) throw new Error("no whole-sheet writer");
+    await expect(
+      writer({ character: doc().character, session: doc().session }, source)
+    ).rejects.toThrow("denied");
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+
+  it("on load, a stored sheet behind the traced level-up offers it back as a whole-sheet copy", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    const levelled = { ...doc().character, quote: "lost level-up" };
+    keepUnackedSave("u1", "char1", {
+      character: levelled,
+      session: doc().session,
+      revision: 5,
+      whole: true,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter()); // revision 4, no write pending: the level-up is gone
+    await vi.waitFor(() =>
+      expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull()
+    );
+    const copy = readRescue1320("u1", "char1", Date.now());
+    expect(copy?.part).toBe("all");
+    expect(JSON.stringify(copy?.build)).toContain("lost level-up");
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    // A rescue on load is not the shape gate: writes go on.
+    expect(gate1320().closed).toBe(false);
+  });
+
+  it("on load, the queued level-up still pending and then landing offers nothing", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 5,
+      whole: true,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    // The reopened tab's queue still holds the write: its local view is pending.
+    act(() => {
+      snapshotCb({ hasPendingWrites: true })({ ...doc(), revision: 5 });
+      combatCb({ hasPendingWrites: true })(sessionToCombatState(doc().session));
+    });
+    act(() => seedCharacter({ ...doc(), revision: 5 })); // the server took it
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+  });
+
+  it("a kept copy is dropped when the stored sheet later reaches its revision", async () => {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 5,
+      whole: true,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    await vi.waitFor(() =>
+      expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull()
+    );
+    // Another tab of this device still had it in flight: it lands after all.
+    act(() => snapshotCb()({ ...doc(), revision: 5 }));
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("an edit this tab saves after the load reaching that revision is no proof: the copy stays", async () => {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: doc().character,
+      session: doc().session,
+      revision: 5,
+      whole: true,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    await vi.waitFor(() =>
+      expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull()
+    );
+    // The player edits before deciding: that save leaves at 5 and lands.
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "new edit" },
+      })
+    );
+    const [queued, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    const sent = { ...(queued as CharacterDoc), revision: 5 };
+    act(() => callbacks?.onSend?.(sent));
+    act(() => snapshotCb()(sent));
+    expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull();
   });
 });

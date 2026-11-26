@@ -51,6 +51,10 @@ import {
   planMonsterInitiative,
   planMonsterRevealed,
   planMonsterSide,
+  planDmHeroRoll,
+  planMonsterTempHp,
+  planRemoveCombatant,
+  planRestoreCombatant,
   planPcDamageBeat,
   planRemoveUntouched,
   planReorder,
@@ -598,6 +602,91 @@ export async function setMonsterSideMove(
   return async () =>
     (await applyMove(campaignId, (campaign) => {
       const planned = planMonsterSide(campaign, { ...input, side: previous });
+      return planned && { patch: planned.patch, result: true };
+    })) === true;
+}
+
+/**
+ * The DM types a hero's d20 for a player without the app; the report gains the line
+ * «rolled by the DM». The undo gives the hero back the roll they had (none, mostly) and
+ * takes the line off, while the fight and the typed roll still stand.
+ */
+export async function typeHeroRollMove(
+  campaignId: string,
+  input: {
+    uid: string;
+    heroUid: string;
+    roll: number;
+    bonuses: Readonly<Record<string, number>>;
+  },
+  recorder: Pick<SessionRecorder, "record" | "retract"> = createSessionRecorder({
+    store: sessionLogStoreFor(campaignId),
+    uid: input.uid,
+  })
+): Promise<CombatUndo | null> {
+  const done = await applyMove(campaignId, (campaign) => {
+    const plan = planDmHeroRoll(campaign, { ...input, now: Date.now() });
+    return plan && { patch: plan.patch, result: plan };
+  });
+  if (!done) return null;
+  const line = await recorder
+    .record(
+      {
+        kind: "initiative",
+        actor: `pc-${input.heroUid}`,
+        roll: input.roll,
+        total: input.roll + (input.bonuses[`pc-${input.heroUid}`] ?? 0),
+        rolledBy: "dm",
+      },
+      { seen: fightOf(done) }
+    )
+    .catch(() => null);
+  return async () => {
+    const restored = await applyMove(campaignId, (campaign) => {
+      if (campaign.encounter?.epoch !== done.epoch) return null;
+      if ((campaign.encounterInit?.[input.heroUid] ?? null) !== input.roll) return null;
+      const plan = planDmHeroRoll(campaign, {
+        ...input,
+        roll: done.previous,
+        now: Date.now(),
+      });
+      return plan && { patch: plan.patch, result: true };
+    });
+    if (restored === true && line) await recorder.retract(line).catch(() => null);
+    return restored === true;
+  };
+}
+
+/** The DM takes a creature out of the fight; the undo puts it back in its place. */
+export async function removeCombatantMove(
+  campaignId: string,
+  input: { uid: string; id: string }
+): Promise<CombatUndo | null> {
+  const removed = await applyMove(campaignId, (campaign) => {
+    const planned = planRemoveCombatant(campaign, input);
+    return planned && { patch: planned.patch, result: planned.removed };
+  });
+  if (removed === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planRestoreCombatant(campaign, { uid: input.uid, removed });
+      return patch && { patch, result: true };
+    })) === true;
+}
+
+/** The DM sets a monster's temporary Hit Points; the undo puts the old value back. */
+export async function setMonsterTempHpMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string; temp: number }
+): Promise<CombatUndo | null> {
+  const previous = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterTempHp(campaign, input);
+    return planned && { patch: planned.patch, result: { temp: planned.previous } };
+  });
+  if (previous === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const planned = planMonsterTempHp(campaign, { ...input, temp: previous.temp });
       return planned && { patch: planned.patch, result: true };
     })) === true;
 }

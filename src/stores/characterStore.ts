@@ -228,6 +228,13 @@ function trackerStateEquals(a: TrackerState | undefined, b: TrackerState): boole
   );
 }
 
+/** A whole-sheet write: the sheet (build + session) and the metadata its public copy needs.
+ *  Resolves when the server accepts it; rejects when the server refuses it. */
+export type WholeSheetWriter = (
+  sheet: { character: CharacterDoc["character"]; session: CharacterDoc["session"] },
+  source: Pick<CharacterDoc, "shared" | "status" | "portraitUrl" | "portraitCrop">
+) => Promise<void>;
+
 interface CharacterState {
   /** The active character document (null if none loaded) */
   character: CharacterDoc | null;
@@ -258,6 +265,10 @@ interface CharacterState {
   /** Flush the already-scheduled parent-character save after a play-resource mutation.
    * Injected by the subscription so this store remains Firebase-free. */
   parentPersistenceFlush: (() => void) | null;
+  /** Send a whole-sheet write (a level-up, its undo) through the open sheet's ordered
+   * save queue (#1276): it takes the next generation at send and never waits for the
+   * server. Injected by the subscription; null when no sheet is subscribed. */
+  wholeSheetWriter: WholeSheetWriter | null;
   /** Where a hit's shared damage goes (Warding Bond: the caster takes the same amount).
    * Injected by the campaign layer, which lands each share on the caster's sheet; with
    * none (no campaign) a share has nowhere to go. */
@@ -326,6 +337,7 @@ interface CharacterState {
   /** Persist the current complete play owner through the injected seam. */
   persistPlayState: () => void;
   setParentPersistenceFlush: (flush: (() => void) | null) => void;
+  setWholeSheetWriter: (writer: WholeSheetWriter | null) => void;
   setDamageTransferSink: (sink: ((transfers: DamageTransfer[]) => void) | null) => void;
   setStateEndingActSink: (sink: ((act: StateEndingAct) => void) | null) => void;
   /** T4 — load a sheet in read-only mode (DM viewing a member's character). */
@@ -1426,6 +1438,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   readonly: false,
   combatPersistence: null,
   parentPersistenceFlush: null,
+  wholeSheetWriter: null,
   damageTransferSink: null,
   stateEndingActSink: null,
   combatRound: 1,
@@ -1570,6 +1583,7 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
   setCombatPersistence: (persistence) => set({ combatPersistence: persistence }),
   persistPlayState: () => persistCombat(get),
   setParentPersistenceFlush: (flush) => set({ parentPersistenceFlush: flush }),
+  setWholeSheetWriter: (writer) => set({ wholeSheetWriter: writer }),
   setDamageTransferSink: (sink) => set({ damageTransferSink: sink }),
   setStateEndingActSink: (sink) => set({ stateEndingActSink: sink }),
   setLoading: (loading) => set({ loading }),

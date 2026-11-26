@@ -46,3 +46,26 @@ export function initiativePlace(
   });
   return { beforeId: placeByInitiative(order, movedIds, value) };
 }
+
+/**
+ * «Su» / «Giù» for a line (a tie the number cannot break; Foundry's tracker drags a
+ * combatant): past the line above or below as a whole, a group with it. Lines are in
+ * turn order; one still to roll is not in the order and is skipped. Null when there is
+ * nowhere to go.
+ */
+export function lineNeighbourPlace(
+  order: readonly string[],
+  rows: readonly { ids: readonly string[] }[],
+  ids: readonly string[],
+  dir: "up" | "down"
+): { beforeId: string | null } | null {
+  const lines = rows.filter((r) => r.ids.every((id) => order.includes(id)));
+  const at = lines.findIndex((r) => r.ids[0] === ids[0]);
+  if (at < 0) return null;
+  if (dir === "up") {
+    const above = lines[at - 1];
+    return above?.ids[0] ? { beforeId: above.ids[0] } : null;
+  }
+  if (at + 1 >= lines.length) return null;
+  return { beforeId: lines[at + 2]?.ids[0] ?? null };
+}

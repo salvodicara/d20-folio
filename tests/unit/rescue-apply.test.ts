@@ -167,6 +167,27 @@ describe("a build-only copy never touches the play state", () => {
 });
 
 describe("Apply offline", () => {
+  // #1276 — with the sheet open, Apply goes through its ordered save queue like the
+  // level-up it brings back: the next generation at send, and its own trace.
+  it("with the sheet open, the kept sheet goes through the sheet's whole-sheet writer", async () => {
+    const { useCharacterStore } = await import("@/stores/characterStore");
+    const sent: Array<{ character: CharacterDoc["character"] }> = [];
+    useCharacterStore.getState().setWholeSheetWriter((sheet) => {
+      sent.push(sheet);
+      return Promise.resolve();
+    });
+    try {
+      const copy = copyOf("through the queue");
+      keepRescueCopy("u1", "c1", copy);
+      expect(await applyRescueCopy("u1", server, copy)).toBe("applied");
+      await vi.waitFor(() => expect(sent).toHaveLength(1));
+      expect(sent[0]?.character.quote).toBe("through the queue");
+      expect(h.replaced).toHaveLength(0);
+    } finally {
+      useCharacterStore.getState().setWholeSheetWriter(null);
+    }
+  });
+
   it("queues the snapshot then the sheet and returns at once (the writes wait in order)", async () => {
     h.offline = true;
     const copy = copyOf("offline apply");

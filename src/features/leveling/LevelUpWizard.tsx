@@ -48,12 +48,11 @@ import { GlossaryTip } from "@/components/shared/GlossaryTip";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
-import { useUndoStore } from "@/stores/undoStore";
 import { useCharacterSubscription } from "@/hooks/useCharacterSubscription";
 import { useLocale } from "@/hooks/useLocale";
 import { useDocumentTitle } from "@/hooks/useDocumentTitle";
 import { asLocale } from "@/lib/locale";
-import { replaceCharacterState, saveCharacterSnapshot } from "@/lib/firestore";
+import { applyLevelUp } from "@/features/leveling/level-up-save";
 
 import { localizeSrd } from "@/i18n/resolver";
 
@@ -196,7 +195,6 @@ export function LevelUpWizard() {
   const navigate = useNavigate();
   const character = useCharacterStore((s) => s.character);
   const isLoading = useCharacterStore((s) => s.loading);
-  const setCharacter = useCharacterStore((s) => s.setCharacter);
   const showToast = useToastStore((s) => s.showToast);
   const user = useAuthStore((s) => s.user);
 
@@ -237,7 +235,6 @@ export function LevelUpWizard() {
   const [mcSkillPicks, setMcSkillPicks] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [doneInfo, setDoneInfo] = useState<DoneInfo | null>(null);
-  const [snapshotSaved, setSnapshotSaved] = useState(false);
 
   // ── leave guard (A1) ────────────────────────────────────────────────────────
   // The wizard is DIRTY once the player has invested anything (moved past the
@@ -648,15 +645,6 @@ export function LevelUpWizard() {
     if (!character || !charData || !user || !canConfirm) return;
     setSaving(true);
     try {
-      if (!snapshotSaved) {
-        await saveCharacterSnapshot(user.uid, character.id, {
-          character: charData,
-          session: character.session,
-          reason: "level-up",
-        });
-        setSnapshotSaved(true);
-      }
-
       const updatedDoc = commitLevelUp(character, {
         classId,
         hpGain: rawDieGain,
@@ -694,34 +682,35 @@ export function LevelUpWizard() {
       const updated = updatedDoc.character;
       // A3 — capture what was ACHIEVED before the store advances underneath us
       // (post-confirm, `totalLevel(charData)` is already the new level — reading
-      // live state off-by-oned the banner to N+1).
-      setDoneInfo({
+      // live state off-by-oned the banner to N+1). Shown once the level is applied.
+      const achieved: DoneInfo = {
         level: newLevel,
         classId,
         classLevel: newClassLevel,
         hpGained: updated.hp.max - charData.hp.max,
-      });
+      };
       // The level-up is APPLIED: the leave guard must not re-prompt while the
       // celebration shows / its CTA navigates. The ceremony NEVER auto-
       // dismisses (owner 2026-06-11: the user reads it at their own pace) —
       // the explicit "To the sheet" CTA is the one way out.
       finishing();
-      setCharacter(updatedDoc);
-      // Undo-stack FENCE (§5.4): a completed level-up rewrites the whole sheet
-      // (features, slots, HP, ASI), so a pre-level-up reverse-applier could restore
-      // state that no longer coheres. Drop the stack on commit.
-      useUndoStore.getState().clear();
-      await replaceCharacterState(
-        user.uid,
-        character.id,
-        updated,
-        updatedDoc.session,
-        // Compare-and-set base: the generation the wizard opened on.
-        character.revision,
-        character
-      );
+      // Applies the level at once and queues the pre-level snapshot and the whole sheet:
+      // offline it never waits for the server (#1276). The undo stack is fenced there.
+      const before = character;
+      const { written } = await applyLevelUp({
+        uid: user.uid,
+        before,
+        after: updatedDoc,
+      });
       // The level-up's line in the log, and through it the campaign's session.
-      recordLevelUp({ from: newLevel - 1, to: newLevel, classId });
+      const takeLineBack = recordLevelUp({ from: newLevel - 1, to: newLevel, classId });
+      setDoneInfo(achieved);
+      // The server refused it (a conflict, a rule): the old sheet comes back and says why.
+      written.catch((e: unknown) => {
+        takeLineBack();
+        const msg = e instanceof Error ? e.message : t("common.unknownError");
+        showToast({ message: t("levelUp.saveFailed", { error: msg }), duration: 8000 });
+      });
     } catch (e) {
       const msg = e instanceof Error ? e.message : t("common.unknownError");
       console.error("Level-up save failed", e);
