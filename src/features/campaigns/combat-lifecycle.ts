@@ -27,6 +27,9 @@ import {
   addRosterCombatant,
   parseEncounterState,
   removeCombatant,
+  restoreMonsterUse,
+  rollMonsterRecharge,
+  spendMonsterUse,
   reorderCombatant,
   setHidden,
   setInitiative,
@@ -38,6 +41,7 @@ import {
   setMonsterTempHp,
   setRevealed,
   type EncounterPcSeed,
+  type MonsterLimitedUse,
   type MonsterInput,
   type RosterCombatantInput,
 } from "@/lib/play/encounter";
@@ -689,6 +693,57 @@ export function planMonsterTempHp(
   const next = setMonsterTempHp(fight, monster.id, input.temp);
   if (next === fight) return null;
   return { patch: { encounter: next }, previous: monster.hp.temp };
+}
+
+/** A change to one monster limited use: spend one; roll the d6 for a spent Recharge;
+ *  regain them all (legendary actions at the start of its turn); or put `count` back
+ *  as it was (the undo). */
+export type MonsterUseChange =
+  | { kind: "spend" }
+  | { kind: "recharge"; d6: number }
+  | { kind: "regain" }
+  | { kind: "set"; count: number };
+
+/**
+ * The DM changes one of a monster's limited uses (SRD 5.2.1: Recharge, N/Day, a per-day
+ * spell, the legendary pool). Hands back the spent count before, for the undo, and for
+ * a Recharge roll whether the use came back. Null for anyone but the DM, for a hero, or
+ * when nothing changes (a roll that misses still answers, with no patch to write).
+ */
+export function planMonsterUse(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: {
+    uid: string;
+    monsterId: string;
+    use: MonsterLimitedUse;
+    change: MonsterUseChange;
+  }
+): { patch: CombatPatch | null; previous: number; back: boolean } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  const { use, change } = input;
+  const previous = monster.spent?.[use.key] ?? 0;
+  let next = fight;
+  if (change.kind === "spend")
+    next = spendMonsterUse(fight, monster.id, use.key, use.max);
+  else if (change.kind === "recharge")
+    next = rollMonsterRecharge(fight, monster.id, use, change.d6);
+  else {
+    const target = change.kind === "regain" ? 0 : Math.max(0, change.count);
+    for (let used = previous; used > target; used--)
+      next = restoreMonsterUse(next, monster.id, use.key);
+    for (let used = previous; used < target; used++)
+      next = spendMonsterUse(next, monster.id, use.key, use.max);
+  }
+  const changed = next !== fight;
+  if (!changed && change.kind !== "recharge") return null;
+  return {
+    patch: changed ? { encounter: next } : null,
+    previous,
+    back: change.kind === "recharge" && changed,
+  };
 }
 
 /**

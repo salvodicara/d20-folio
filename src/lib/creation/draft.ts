@@ -70,7 +70,7 @@ import {
   toolChoiceContextForBackground,
   toolChoiceContextForClass,
 } from "@/lib/resolve-grant-sources";
-import { skillNameToId } from "@/lib/skills";
+import { ALL_SKILLS, skillNameToId } from "@/lib/skills";
 import type { SrdFeatureRef } from "@/types/character";
 import { pointBuyRemaining } from "./point-buy";
 import { CREATION_STEPS, type CreationStep } from "./steps";
@@ -315,6 +315,8 @@ export function creationDraftReducer(
 }
 
 // ─── Derivations ──────────────────────────────────────────────────────────────
+
+const SKILL_IDS: ReadonlySet<string> = new Set(ALL_SKILLS.map((s) => s.id));
 
 function classTableOf(classId: string): SrdClassTable | undefined {
   return classTables.find((c) => c.id === classId);
@@ -581,17 +583,19 @@ export function creationFacts(draft: CreationDraft): CreationFacts {
 
   const speciesChoiceSlots = slotsWithPrefix(choiceSlots, SPECIES_SLOT_PREFIX);
   const classNeeds = classChoiceNeeds(draft.classId, draft.level, draft.subclassId);
-  // Expertise promotes a skill the character is already proficient in.
+  // Expertise promotes a skill the character is already proficient in: only a skill
+  // (a tool chosen with Skilled can't take it) from a pick the build still holds,
+  // or the build would silently drop the pick and owe it (#1397).
   const proficient = [
     ...new Set([
       ...(backgroundData?.skillProficiencies ?? [])
         .map(skillNameToId)
         .filter((id): id is string => id !== null),
       ...draft.classSkills,
-      ...Object.values(draft.choicePicks.skill).flat(),
-      ...Object.values(draft.choicePicks.skillOrTool).flat(),
+      ...Object.values(choicePicks.skill).flat(),
+      ...Object.values(choicePicks.skillOrTool).flat(),
     ]),
-  ];
+  ].filter((id) => SKILL_IDS.has(id));
   const classOptions = classChoiceOptions(draft.classId, draft.level, proficient);
   const lineageBundleKeys = creationLineageBundleKeys(draft.raceId);
 

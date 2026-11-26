@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { DmHitStep } from "@/domains/combat/dm-hit-plan";
+import type { MonsterActionStep } from "@/domains/combat/monster-action-steps";
 import type { FightMark } from "@/domains/combat/fight-rows-view";
 import {
   addMonstersMove,
@@ -271,4 +272,48 @@ export const dmMoves = {
     ) =>
     () =>
       dmDeathSaveMove(campaignId, { uid, ...hero, outcome }),
+  /** A monster's printed action: every target's damage and failed-save condition,
+   *  as one move with one undo (the classic `applyMonsterAction`). */
+  monsterAction:
+    (campaignId: string, uid: string, steps: readonly MonsterActionStep[]) => () =>
+      together(
+        steps.map((s) =>
+          s.kind === "monster"
+            ? () =>
+                changeMonsterHp(campaignId, {
+                  uid,
+                  monsterId: s.monsterId,
+                  change: s.change,
+                })
+            : s.kind === "pc"
+              ? () =>
+                  damagePcFromDm(campaignId, {
+                    uid,
+                    memberUid: s.memberUid,
+                    characterId: s.characterId,
+                    maxHp: s.maxHp,
+                    parts: s.parts,
+                    ...(s.attacker ? { attacker: s.attacker } : {}),
+                  })
+              : s.target.kind === "monster"
+                ? () =>
+                    setMonsterConditionMove(campaignId, {
+                      uid,
+                      monsterId: s.target.id,
+                      conditionId: s.conditionId,
+                      active: true,
+                    })
+                : s.target.memberUid && s.target.characterId
+                  ? () =>
+                      setPcConditionMove(campaignId, {
+                        uid,
+                        memberUid: s.target.memberUid as string,
+                        characterId: s.target.characterId as string,
+                        maxHp: s.target.hp.max,
+                        conditionId: s.conditionId,
+                        active: true,
+                      })
+                  : () => Promise.resolve(null)
+        )
+      ),
 };
