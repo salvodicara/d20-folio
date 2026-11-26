@@ -813,7 +813,8 @@
   position: fixed;
   z-index: 60;
   left: 50%;
-  bottom: 32px;
+  /* above a bottom dock (the PWA bar, the rescue strip), which publishes its height */
+  bottom: calc(32px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -835,7 +836,7 @@
   .fui .f-toast {
     left: 16px;
     right: 16px;
-    bottom: 16px;
+    bottom: calc(16px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
     width: auto;
     transform: none;
   }
@@ -7089,12 +7090,12 @@
 /* the toast sits above a bottom bar, never over it («Sezioni», the level-up bar) */
 @media (max-width: 960px) {
   .fui.f-app:has(.f-secbar) .f-toast {
-    bottom: 72px;
+    bottom: calc(72px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
   }
 }
 @media (max-width: 760px) {
   .fui.f-app:has(.f-lvl-bar) .f-toast {
-    bottom: 88px;
+    bottom: calc(88px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
   }
 }
 

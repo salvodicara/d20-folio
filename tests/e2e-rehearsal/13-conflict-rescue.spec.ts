@@ -137,6 +137,14 @@ async function journey(browser: Browser, variant: (typeof VARIANTS)[number]) {
   const offer = pageA.getByRole("region", { name: variant.strip });
   await expect(offer).toBeVisible({ timeout: 30_000 });
   expect(await ownerBuildString(id, "quote")).toBe("B second edit");
+  // The notice rises above the strip instead of hiding under it (lanes, not layers).
+  await expect
+    .poll(async () => {
+      const toast = await pageA.locator(".f-toast").first().boundingBox();
+      const strip = await offer.boundingBox();
+      return toast && strip ? toast.y + toast.height <= strip.y + 1 : false;
+    })
+    .toBe(true);
   if (SHOTS) await pageA.screenshot({ path: `${SHOTS}/${variant.name}.png` });
 
   // Apply stores A's newest edit over B's sheet.
