@@ -1256,7 +1256,22 @@ export function makeDevTableFight(): NonNullable<CampaignDoc["encounter"]> {
 
 function makeDevEncounter(mode: EncounterDemoMode): CampaignDoc["encounter"] {
   if (mode === null) return null;
-  if (mode === "table") return makeDevTableFight();
+  if (mode === "table") {
+    // Opt-in (`d20-dev-combat-effects`): states already on the table's creatures, for
+    // the DM fight screen's review shots (a monster's next-attack Disadvantage).
+    const fight = makeDevTableFight();
+    const seeded = readDevCombatEffects();
+    return seeded.length > 0
+      ? {
+          ...fight,
+          effectOps: seeded.map((effect, i) => ({
+            id: `dev-effect-op-${i}`,
+            kind: "apply" as const,
+            effect,
+          })),
+        }
+      : fight;
+  }
   const gathering = mode === "gathering" || mode === "reflexes";
   return {
     round: gathering ? 1 : 2,
