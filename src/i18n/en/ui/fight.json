@@ -112,7 +112,19 @@
       "removeDone_one": "Removed from the fight: {{count}} creature",
       "removeDone_other": "Removed from the fight: {{count}} creatures",
       "tempDone_one": "{{amount}} temporary HP on {{count}} creature",
-      "tempDone_other": "{{amount}} temporary HP on {{count}} creatures"
+      "tempDone_other": "{{amount}} temporary HP on {{count}} creatures",
+      "card": "Monster card",
+      "cardDone": "Card saved: {{name}}",
+      "deathSaves": "Death saving throws",
+      "deathSaveMarks": "Successes {{successes}}/3 · Failures {{failures}}/3",
+      "deathSaveTick": {
+        "success": "+1 success",
+        "failure": "+1 failure"
+      },
+      "deathSaveDone": {
+        "success": "Death save success for {{name}}, marked by the DM",
+        "failure": "Death save failure for {{name}}, marked by the DM"
+      }
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {

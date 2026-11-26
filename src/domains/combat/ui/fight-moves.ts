@@ -16,6 +16,7 @@ import {
   removeCombatantMove,
   changeMonsterHp,
   damagePcFromDm,
+  dmDeathSaveMove,
   endCombatNow,
   setMonsterConditionMove,
   setPcConditionMove,
@@ -261,4 +262,13 @@ export const dmMoves = {
       together(
         ids.map((id) => () => reorderCombatantMove(campaignId, { uid, id, beforeId }))
       ),
+  deathSave:
+    (
+      campaignId: string,
+      uid: string,
+      hero: { memberUid: string; characterId: string; maxHp: number },
+      outcome: "success" | "failure"
+    ) =>
+    () =>
+      dmDeathSaveMove(campaignId, { uid, ...hero, outcome }),
 };

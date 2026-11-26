@@ -1284,15 +1284,29 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     concentration: true,
     duration: { kind: "minutes", amount: 1 },
     saveAbility: "CON",
-    attackType: "ranged",
-    // A failed save: −1d8 on all the target's damage rolls for the spell's duration (it
-    // repeats the save at the end of each of its turns, ending the spell on a success).
+    // SRD 5.2.1: no attack roll. "The target must make a Constitution saving throw."
+    targeting: { affinity: "enemy", maxTargets: 1 },
+    // "On a failed save, the target has Disadvantage on Strength-based D20 Tests for
+    // the duration. During that time, it also subtracts 1d8 from all its damage
+    // rolls. The target repeats the save at the end of each of its turns, ending the
+    // spell on a success." The success's Disadvantage on the target's next attack
+    // roll is the table's.
     effectEnds: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
-    targetStates: [
+    grants: [
       {
         type: "while-active",
-        activeKey: "ray-of-enfeeblement-weakened",
+        activeKey: "spell-ray-of-enfeeblement",
+        duration: timedSpellDuration(1),
+        recipient: "selected",
         grants: [
+          { type: "disadvantage-on", rollType: "check", vs: "str" },
+          { type: "disadvantage-on", rollType: "save", vs: "str" },
+          {
+            type: "disadvantage-on",
+            rollType: "attack",
+            scope: "strength",
+            vs: "ray-of-enfeeblement",
+          },
           {
             type: "roll-die-adjustment",
             rollType: "damage",
@@ -1301,13 +1315,6 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
             consume: "each",
           },
         ],
-      },
-    ],
-    effects: [
-      {
-        kind: "damage-roll-penalty",
-        dice: "1d8",
-        activeKey: "ray-of-enfeeblement-weakened",
       },
     ],
     source: "SRD",
