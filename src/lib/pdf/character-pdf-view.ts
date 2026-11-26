@@ -24,6 +24,7 @@ import type { CharacterDoc } from "@/types/character";
 import type { AbilityCode, Recovery, ResourceRecoveryTrigger } from "@/data/types";
 import { totalLevel, primaryClassId, getClasses } from "@/lib/classes";
 import { effectiveProficiencyBonus } from "@/lib/compute";
+import { hitDiceNotation, hitDicePool } from "@/lib/play/hit-dice";
 import { aggregateCharacterGrants } from "@/lib/aggregate-character";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import {
@@ -632,7 +633,8 @@ export function buildCharacterPdfViewModel(
     speed: formatSpeed(walkingSpeedFt, locale),
     hpCurrent: session.hp.current,
     hpMax: sheet.hp.max,
-    hitDice: `${level}d${charData.hitDieType}`,
+    // The sheet's own pool: each class's die, same sizes grouped, largest first.
+    hitDice: hitDiceNotation(hitDicePool(charData)),
     pb: fmtMod(pb),
   };
 

@@ -90,6 +90,11 @@ export function hitDiceLabel(
   };
 }
 
+/** The whole pool in dice notation, in the pool's order: "6d10", or "5d10 + 1d6" when mixed. */
+export function hitDiceNotation(pool: ReadonlyArray<HitDiceEntry>): string {
+  return pool.map((entry) => `${entry.count}d${entry.die}`).join(" + ");
+}
+
 /**
  * The HP that spent Hit Point Dice restore: the rolled total plus the Constitution
  * modifier per die (at least 1 per die). A `hit-dice-healing` `maximum` grant
