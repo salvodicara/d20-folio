@@ -75,7 +75,12 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Typecheck
         run: pnpm typecheck
+      # The public tree alone peaks near eslint's default ~4 GB heap (verify.yml measured
+      # 4.5 GB RSS, 2026-11-12) and died out of memory on run 45737775866 (exit 134,
+      # 2026-11-26). Same 7 GB heap as Verify's lint steps, inside the 16 GB runner.
       - name: Lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=7168
         run: pnpm lint --max-warnings 0
       # The pre-commit hook formats, but a commit made around it reached main unformatted
       # (2026-11-12). The files a change touches are checked here, where it cannot be skipped.
