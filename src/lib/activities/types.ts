@@ -403,6 +403,15 @@ export type ActivityEffect =
       /** The catalogue state that holds it on the target (`targetStates`). */
       activeKey?: string;
     })
+  /** The target's OWN next attack roll has Disadvantage until `until` (Ray of
+   *  Enfeeblement on a success; the same one-shot state as Sap and Vicious Mockery).
+   *  That attack roll spends it. */
+  | (EffectBase & {
+      kind: "next-attack-disadvantage";
+      until?: EffectUntil;
+      /** The catalogue state that holds it on the target (`targetStates`). */
+      activeKey?: string;
+    })
   /** The target has Disadvantage on saving throws against the user's spells until
    *  `until` (a subclass feature's rider on Stunning Strike). */
   | (EffectBase & {

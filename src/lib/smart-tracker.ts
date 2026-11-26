@@ -5663,6 +5663,7 @@ function isCatalogueStateEffect(effect: ActivityEffect): effect is CatalogueEffe
     effect.kind === "speed-zero" ||
     effect.kind === "speed-halved" ||
     effect.kind === "next-attack-advantage" ||
+    effect.kind === "next-attack-disadvantage" ||
     effect.kind === "save-disadvantage"
   );
 }

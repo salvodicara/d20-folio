@@ -1289,8 +1289,7 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
     // "On a failed save, the target has Disadvantage on Strength-based D20 Tests for
     // the duration. During that time, it also subtracts 1d8 from all its damage
     // rolls. The target repeats the save at the end of each of its turns, ending the
-    // spell on a success." The success's Disadvantage on the target's next attack
-    // roll is the table's.
+    // spell on a success."
     effectEnds: [{ on: "repeat-save", ability: "CON", at: "target-turn-end" }],
     grants: [
       {
@@ -1313,6 +1312,33 @@ export const SRD_SPELLS_LEVEL2: SrdSpellData[] = [
             operation: "subtract",
             dice: "1d8",
             consume: "each",
+          },
+        ],
+      },
+    ],
+    // "On a successful save, the target has Disadvantage on the next attack roll it
+    // makes until the start of your next turn." Written by the damage tray on a row
+    // marked Saved; that attack roll spends it.
+    effects: [
+      {
+        kind: "next-attack-disadvantage",
+        saveOutcome: "success",
+        until: { phase: "turn-start", anchor: "actor" },
+        activeKey: "ray-of-enfeeblement-next-attack",
+      },
+    ],
+    targetStates: [
+      {
+        type: "while-active",
+        activeKey: "ray-of-enfeeblement-next-attack",
+        duration: { kind: "turn-boundary", phase: "turn-start", turns: 1 },
+        grants: [
+          {
+            type: "disadvantage-on",
+            rollType: "attack",
+            scope: "all",
+            vs: "next-attack-roll",
+            consume: "next",
           },
         ],
       },
