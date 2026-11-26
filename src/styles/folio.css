@@ -2763,6 +2763,15 @@ button.pr-dot.lg::before {
     var(--elev-resting);
   color: var(--text-primary);
 }
+/* The rescue strip's Discard reads as its Apply does («Applica» / «Scarta»): the
+   ghost button takes the primary's sentence-case type here only (#1403). */
+.rescue-strip .btn.ghost {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: none;
+}
 .accent-alert::before {
   content: "";
   position: absolute;

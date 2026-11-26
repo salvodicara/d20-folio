@@ -97,7 +97,7 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
     <div ref={dockRef} className="pwa-dock">
       <section
         aria-label={t("pwa.rescue.label")}
-        className="accent-alert pointer-events-auto justify-between gap-3 md:mx-auto md:mb-3 md:w-full md:max-w-2xl"
+        className="rescue-strip accent-alert pointer-events-auto justify-between gap-3 md:mx-auto md:mb-3 md:w-full md:max-w-2xl"
       >
         <span className="min-w-0 flex-1 text-xs font-medium text-text-primary">
           {failed
