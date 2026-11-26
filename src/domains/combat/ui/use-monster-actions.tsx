@@ -17,6 +17,7 @@ import { MonsterActionDialog } from "@/domains/combat/ui/MonsterActionDialog";
 import { dmMoves, useFightMove, type Toaster } from "@/domains/combat/ui/fight-moves";
 import type { EncounterCombatantView } from "@/features/campaigns/encounter-view";
 import { traitFactLabel } from "@/features/campaigns/encounter-trait-facts";
+import { useLazySrdKind } from "@/hooks/useLazySrdKind";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import type { Locale } from "@/lib/locale";
@@ -72,9 +73,15 @@ export function useMonsterActions(
   };
   const blockOf = (m: EncounterMonster | undefined) =>
     m?.srdId ? getMonster(m.srdId) : undefined;
+  // The actions' names live in the lazy monster catalogue: wait for it (a fresh load
+  // has not opened «Aggiungi mostri», which loads it too).
+  const named = useLazySrdKind(
+    "monster",
+    encounter.combatants.some((c) => c.kind === "monster" && c.srdId !== undefined)
+  );
 
   const stripFor = (ids: readonly string[]) => {
-    if (ids.length !== 1) return null;
+    if (!named || ids.length !== 1) return null;
     const monster = monsterOf(ids[0]);
     const block = blockOf(monster);
     if (!monster || !block) return null;
@@ -139,7 +146,7 @@ export function useMonsterActions(
   const monster = monsterOf(open?.monsterId);
   const block = blockOf(monster);
   const dialog =
-    open && monster && block
+    named && open && monster && block
       ? (() => {
           const { primary, more } = rankAttackers(fighters, monster.id, null);
           const candidates = [...primary, ...more];
