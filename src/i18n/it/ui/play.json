@@ -510,7 +510,12 @@
       "overrideHelp": "Sostituisce il valore calcolato. «Usa il calcolo» lo riporta.",
       "useComputed": "Usa il calcolo",
       "setToast": "{{name}}: valore impostato a mano",
-      "resetToast": "{{name}}: di nuovo calcolato"
+      "resetToast": "{{name}}: di nuovo calcolato",
+      "maxHpTag": "Con correzione",
+      "maxHpField": "Massimo attuale",
+      "maxHpHelp": "Salviamo la differenza come correzione ({{bonus}}): il massimo continua a crescere con livello e COS. «Usa il calcolo» la toglie.",
+      "maxHpHelpPlain": "Salviamo la differenza come correzione: il massimo continua a crescere con livello e COS. «Usa il calcolo» la toglie.",
+      "maxHpSetToast": "{{name}}: correzione salvata"
     },
     "features": {
       "species": "Tratti della specie",

@@ -2320,6 +2320,14 @@
   text-align: left;
   cursor: pointer;
 }
+/* «Sensi»: a passive row is a name and its score, no ability column (DDB's Senses) */
+.fui .f-senses button.f-skill {
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 44px;
+}
+.fui .f-senses .f-prof-l {
+  margin-top: 8px;
+}
 @media (hover: hover) {
   .fui button.f-skill:hover,
   .fui button.f-ab-open:hover,

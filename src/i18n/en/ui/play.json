@@ -510,7 +510,12 @@
       "overrideHelp": "Replaces the computed value. «Use the computed value» brings it back.",
       "useComputed": "Use the computed value",
       "setToast": "{{name}}: set by hand",
-      "resetToast": "{{name}}: computed again"
+      "resetToast": "{{name}}: computed again",
+      "maxHpTag": "Adjusted",
+      "maxHpField": "Current maximum",
+      "maxHpHelp": "We save the difference as a correction ({{bonus}}): the maximum still grows with level and CON. «Use the computed value» removes it.",
+      "maxHpHelpPlain": "We save the difference as a correction: the maximum still grows with level and CON. «Use the computed value» removes it.",
+      "maxHpSetToast": "{{name}}: correction saved"
     },
     "features": {
       "species": "Species traits",
