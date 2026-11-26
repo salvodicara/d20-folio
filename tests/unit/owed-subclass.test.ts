@@ -82,13 +82,13 @@ describe("the owed subclass", () => {
     expect(subclassOwed(build("rogue", 6, { subclassId: "thief" }))).toEqual([]);
   });
 
-  it("the banner names it «Subclass (Rogue)», with the class's subclasses to pick", () => {
+  it("the banner names it «Rogue subclass», with the class's subclasses to pick", () => {
     const doc = build("rogue", 6);
     const items = pendingSpeciesItems(doc.character, doc.session, "en");
-    expect(items.map((i) => ("label" in i ? i.label : ""))).toContain("Subclass (Rogue)");
+    expect(items.map((i) => ("label" in i ? i.label : ""))).toContain("Rogue subclass");
     const it_ = pendingSpeciesItems(doc.character, doc.session, "it");
     expect(it_.map((i) => ("label" in i ? i.label : ""))).toContain(
-      "Sottoclasse (Ladro)"
+      "Sottoclasse del Ladro"
     );
     const row = owedClassPickRows(doc.character, "en").find((r) => r.pick === "subclass");
     expect(row?.options.map((o) => o.id)).toContain("thief");

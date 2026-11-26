@@ -140,7 +140,7 @@ describe("SpeciesChoicesBanner", () => {
       render(<SpeciesChoicesBanner />);
       expect(
         screen.getByRole("group", { name: "Choices to finish" }).textContent
-      ).toContain("Your class lets you choose more: 2 Eldritch Invocations (Warlock).");
+      ).toContain("Missing: 2 Eldritch Invocations (Warlock).");
       fireEvent.click(screen.getByRole("button", { name: "Finish" }));
       expect(screen.getByText("Choose 2 Eldritch Invocations")).toBeTruthy();
       for (const name of [/^Devil.s Sight$/, /^Eldritch Mind$/]) {

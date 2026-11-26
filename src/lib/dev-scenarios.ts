@@ -1812,7 +1812,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 12, WIS: 12, CHA: 10 },
     weapons: [{ srdId: "shortsword", quantity: 1 }],
     exercises:
-      "An owed subclass: «Scelte da completare» names «Subclass (Rogue)», the dialog shows the subclass cards, what the pick brings from level 3 on and the choices its features ask; «Salva» picks it with an undo.",
+      "An owed subclass: «Scelte da completare» names «Missing: Rogue subclass», the dialog shows the subclass cards, what the pick brings from level 3 on and the choices its features ask; «Salva» picks it with an undo.",
   },
   "basic-poison": {
     name: "Vex, Basic Poison",

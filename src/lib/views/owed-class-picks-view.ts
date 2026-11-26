@@ -54,7 +54,8 @@ export interface OwedClassPickRow {
 
 type Build = BuildForClassPicks & Pick<Required<BuildForClassPicks>, "classes">;
 
-/** The banner's name for an owed pick: «4 Suppliche Occulte (Warlock)». */
+/** The banner's name for an owed pick: «4 Suppliche Occulte (Warlock)», «Sottoclasse
+ *  del Ladro». */
 export function owedClassPickLabel(
   pick: ClassPickKind,
   owed: number,
@@ -62,6 +63,9 @@ export function owedClassPickLabel(
   locale: Locale
 ): string {
   const t = i18n.getFixedT(locale);
+  // «Sottoclasse del Ladro» / "Rogue subclass": one key per class, so the Italian
+  // article agrees with the class («dello Stregone»).
+  if (pick === "subclass") return t(`play.speciesChoices.subclassOf.${classId}`);
   return t("play.speciesChoices.classItem", {
     what: t(`play.speciesChoices.owed.${pick}`, { count: owed }),
     className: className(classId, locale),

@@ -151,7 +151,7 @@ describe("PlaySpeciesChoices", () => {
     render(<Banner />);
     expect(
       screen.getByRole("group", { name: "Choices to finish" }).textContent
-    ).toContain("Your class lets you choose more: 2 cantrips (Wizard).");
+    ).toContain("Missing: 2 cantrips (Wizard).");
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     expect(screen.getByText("Pick 2 Wizard Cantrips")).toBeTruthy();
     // A cantrip already known isn't offered again.
@@ -366,7 +366,7 @@ describe("PlaySpeciesChoices: a subclass never chosen (#1393)", () => {
     render(<Banner />);
     expect(
       screen.getByRole("group", { name: "Choices to finish" }).textContent
-    ).toContain("Your class lets you choose more: Subclass (Rogue).");
+    ).toContain("Missing: Rogue subclass.");
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     expect(
       screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")
