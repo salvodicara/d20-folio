@@ -63,7 +63,7 @@ export function PlayCustomItem({
         autoComplete="off"
         required
         value={draft.name}
-        error={errors.name ? t("play.inv.customNameRequired") : undefined}
+        error={errors.name ? t("common.nameRequired") : undefined}
         onChange={(e) => set({ name: e.target.value })}
       />
       <div className="f-field">

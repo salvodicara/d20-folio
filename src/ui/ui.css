@@ -4096,6 +4096,20 @@
 .fui .f-act.f-add-row {
   grid-template-columns: var(--slot-size) minmax(0, 1fr) max-content;
 }
+/* a Wizard's «Copia nel libro»: the cost, then pay or cancel, under its row */
+.fui .f-copy-ask {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0 12px calc(var(--slot-size) + 12px);
+}
+.fui .f-copy-ask > p {
+  margin: 0;
+}
+.fui .f-copy-acts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
 /* a homebrew item's own notes, as written (line breaks kept) */
 .fui .f-item-notes {
   margin: 0;
