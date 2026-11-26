@@ -1,6 +1,7 @@
 {
   "play": {
     "hpTitle": "Hit points",
+    "strip": "Hit points and AC",
     "temp": "+{{count}} temporary",
     "proficiency": "Proficiency",
     "effects": "Effects",
@@ -83,7 +84,9 @@
     },
     "sections": {
       "resources": "Resources and skills",
-      "fight": "Fight and report"
+      "fight": "Fight and report",
+      "features": "Features and traits",
+      "proficiencies": "Proficiencies and training"
     },
     "endTurn": "End turn",
     "turnMine": "Your turn",
@@ -157,7 +160,17 @@
       "via": "through",
       "alreadyYours": "Already yours",
       "addedToast": "Spell added: {{name}}",
-      "upToLevel": "Up to level {{level}}: the spells you can cast."
+      "upToLevel": "Up to level {{level}}: the spells you can cast.",
+      "customOpen": "Custom spell",
+      "customBack": "Back to the list",
+      "customAdd": "Add the spell",
+      "copyLabel": "Copy into your spellbook: {{name}}",
+      "copyCost": "copy: {{hours}} h, {{gp}} gp",
+      "copyAsk": "Copy {{name}} into your spellbook: {{hours}} hours and {{gp}} gp (2 hours and 50 gp per spell level).",
+      "copyPay": "Copy and pay {{gp}} gp",
+      "copyShort": "Your gold and platinum don't cover it.",
+      "copyUnpaid": "Copy without paying (DM's call)",
+      "copiedToast": "Copied into your spellbook: {{name}}"
     },
     "inv": {
       "pack": "Pack",
@@ -184,7 +197,15 @@
       "searchItems": "Search items",
       "noMatch": "Nothing matches.",
       "addedToast": "Added: {{name}}",
-      "add": "Add an item"
+      "add": "Add an item",
+      "catalogue": "Catalogue",
+      "custom": "Custom item",
+      "customWeight": "Weight each ({{unit}})",
+      "customCost": "Cost each (gp)",
+      "optional": "Optional",
+      "customNumber": "Write a number, such as 2 or 0.5.",
+      "customAdd": "Add to inventory",
+      "costEach": "{{cost}} each"
     },
     "tray": {
       "ifAtOrBelow": "With {{max}} Hit Points or fewer: {{then}}.",
@@ -489,7 +510,17 @@
       "overrideHelp": "Replaces the computed value. «Use the computed value» brings it back.",
       "useComputed": "Use the computed value",
       "setToast": "{{name}}: set by hand",
-      "resetToast": "{{name}}: computed again"
+      "resetToast": "{{name}}: computed again",
+      "maxHpTag": "Adjusted",
+      "maxHpField": "Current maximum",
+      "maxHpHelp": "We save the difference as a correction ({{bonus}}): the maximum still grows with level and CON. «Use the computed value» removes it.",
+      "maxHpHelpPlain": "We save the difference as a correction: the maximum still grows with level and CON. «Use the computed value» removes it.",
+      "maxHpSetToast": "{{name}}: correction saved"
+    },
+    "features": {
+      "species": "Species traits",
+      "none": "No features yet.",
+      "uses": "{{left}} of {{max}} uses left"
     }
   }
 }
