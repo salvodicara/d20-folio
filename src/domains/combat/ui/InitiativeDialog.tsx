@@ -96,7 +96,8 @@ export function InitiativeDialog({
         <div className="f-ask f-chips">
           {onUp && (
             <Button
-              icon="u-back"
+              icon="u-expand"
+              data-icon-up=""
               onClick={() => {
                 onUp();
                 onClose();
@@ -107,7 +108,7 @@ export function InitiativeDialog({
           )}
           {onDown && (
             <Button
-              icon="u-next"
+              icon="u-expand"
               onClick={() => {
                 onDown();
                 onClose();

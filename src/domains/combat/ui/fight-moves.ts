@@ -217,17 +217,33 @@ export const dmMoves = {
     together(
       monsters.map((monster) => () => addMonstersMove(campaignId, { uid, monster }))
     ),
-  /** The DM types a hero's d20 (a player without the app); the report says so. */
+  /** The DM types a hero's d20 (a player without the app); the report says so. Once
+   *  turns have begun the order stands, so the hero also moves to the new total's
+   *  place (`place`), as a monster's edited number does; whose turn it is never
+   *  changes. A new number overrides an earlier «Sposta su/giù» (Foundry's tracker). */
   heroRoll:
     (
       campaignId: string,
       uid: string,
       heroUid: string,
       roll: number,
-      bonuses: Readonly<Record<string, number>>
+      bonuses: Readonly<Record<string, number>>,
+      place: { beforeId: string | null } | null = null
     ) =>
     () =>
-      typeHeroRollMove(campaignId, { uid, heroUid, roll, bonuses }),
+      together([
+        () => typeHeroRollMove(campaignId, { uid, heroUid, roll, bonuses }),
+        ...(place
+          ? [
+              () =>
+                reorderCombatantMove(campaignId, {
+                  uid,
+                  id: `pc-${heroUid}`,
+                  beforeId: place.beforeId,
+                }),
+            ]
+          : []),
+      ]),
   /** The chosen creatures leave the fight, as one move with one undo. */
   remove: (campaignId: string, uid: string, ids: readonly string[]) => () =>
     together(ids.map((id) => () => removeCombatantMove(campaignId, { uid, id }))),

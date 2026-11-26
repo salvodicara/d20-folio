@@ -473,9 +473,20 @@ function useDmTools(
           onSave={(value) =>
             hero?.memberUid
               ? move(
-                  dmMoves.heroRoll(campaign.id, uid, hero.memberUid, value, {
-                    [hero.id]: hero.initiativeBonus ?? 0,
-                  }),
+                  dmMoves.heroRoll(
+                    campaign.id,
+                    uid,
+                    hero.memberUid,
+                    value,
+                    { [hero.id]: hero.initiativeBonus ?? 0 },
+                    // the new total re-sorts the line, as a monster's number does
+                    initiativePlace(
+                      encounter,
+                      fighters,
+                      initFor.ids,
+                      value + (hero.initiativeBonus ?? 0)
+                    )
+                  ),
                   t("fight.dm.heroRollDone", {
                     name: initFor.name,
                     total: value + (hero.initiativeBonus ?? 0),
