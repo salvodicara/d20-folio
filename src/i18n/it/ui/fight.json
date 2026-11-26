@@ -131,7 +131,10 @@
       "deathSaveDone": {
         "success": "Successo nel tiro contro la morte per {{name}}, segnato dal master",
         "failure": "Fallimento nel tiro contro la morte per {{name}}, segnato dal master"
-      }
+      },
+      "alertSwap": "Scambia iniziativa (Allerta)",
+      "alertSwapHelp": "Con un alleato consenziente che ha tirato e non è Incapacitato: vi scambiate il posto.",
+      "alertSwapDone": "{{name}} si scambia il posto con {{ally}}."
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {
