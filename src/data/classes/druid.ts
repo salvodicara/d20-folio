@@ -119,6 +119,8 @@ export const DRUID_TABLE: SrdClassTable = {
     // (`moonWildShapeMaxCROverride`), not here (the table is subclass-agnostic).
     const wildShapeMaxCR =
       level >= 8 ? "1" : level >= 4 ? "1/2" : level >= 2 ? "1/4" : "0";
+    // Beast Shapes «Known Forms» (SRD 5.2.1): 4 at level 2, 6 at 4, 8 at 8.
+    const wildShapeKnownForms = level >= 8 ? 8 : level >= 4 ? 6 : level >= 2 ? 4 : 0;
     const cantripsKnown = level >= 10 ? 4 : level >= 4 ? 3 : 2;
     // 2024 PHB Druid "Prepared Spells" column
     const PREPARED_SPELLS = [
@@ -132,7 +134,7 @@ export const DRUID_TABLE: SrdClassTable = {
       cantripsKnown,
       spellsKnown: PREPARED_SPELLS[i],
       spellSlots: FULL_CASTER_SLOTS[i],
-      classSpecific: { wildShapeMaxCR },
+      classSpecific: { wildShapeMaxCR, wildShapeKnownForms },
     };
     if (asi) entry.asi = true;
     return entry;

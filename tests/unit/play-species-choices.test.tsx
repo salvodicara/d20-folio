@@ -161,6 +161,39 @@ describe("PlaySpeciesChoices", () => {
   });
 });
 
+describe("PlaySpeciesChoices: a Druid's Wild Shape known forms", () => {
+  afterEach(() => useCharacterStore.getState().setCharacter(null));
+
+  it("a Druid 2 with 3 forms owes 1 (4 at Druid 2), picked and stored on Save", () => {
+    const base = makeCharacterDoc({
+      race: asRaceId("dwarf"),
+      classes: [{ classId: "druid", level: 2 }],
+      // The Druid's two cantrips, so only the forms are owed.
+      spells: [{ srdId: "druidcraft" }, { srdId: "produce-flame" }],
+      wildShapeForms: ["wolf", "boar", "panther"],
+    });
+    useCharacterStore.getState().setCharacter(base);
+    render(<Banner />);
+    expect(
+      screen.getByRole("group", { name: "Choices to finish" }).textContent
+    ).toContain("Your class lets you choose more: 1 Wild Shape form (Druid).");
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    expect(screen.getByText("Choose 1 known form for Wild Shape")).toBeTruthy();
+    // A known form isn't offered again; a CR 1/2 beast waits for Druid 4.
+    expect(screen.queryByRole("button", { name: "Wolf" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Black Bear" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Giant Badger" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(useCharacterStore.getState().character?.character.wildShapeForms).toEqual([
+      "wolf",
+      "boar",
+      "panther",
+      "giant-badger",
+    ]);
+    expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+  });
+});
+
 describe("PlaySpeciesChoices: a long owed list can be searched", () => {
   // A Paladin 5 owes 2 Weapon Masteries out of about 38 weapons: the new Play offers
   // the level-up's pick grid with a name filter, as the classic list does.

@@ -232,6 +232,19 @@ export function buildInput<State>(
       }).build,
       watch: ["hp"],
     },
+    // The Druid's known Wild Shape forms ride a top-level build key too.
+    {
+      value: "build.wildShapeForms",
+      build: serializeCharacterEnvelope({
+        ...MOCK_CHARACTER,
+        character: {
+          ...MOCK_CHARACTER.character,
+          classes: [{ classId: "druid", level: 4 }],
+          wildShapeForms: ["wolf", "giant-badger"],
+        },
+      }).build,
+      watch: ["wildShapeForms"],
+    },
   ];
   return { cases, lists, builds, notStored };
 }
