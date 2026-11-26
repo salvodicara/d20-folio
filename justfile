@@ -73,8 +73,8 @@ ci-srd-only:
 e2e-pack:
     bash scripts/pack/e2e-pack.sh
 
-# The release rehearsal: a player's whole journey on the new-UI build (VITE_NEW_UI +
-# the v0.26 combat effects) against the seeded emulators. Run it under the heavy lock.
+# The release rehearsal: a player's whole journey on the new-UI build (VITE_NEW_UI)
+# against the seeded emulators. Run it under the heavy lock.
 e2e-rehearsal *args:
     bash scripts/e2e-rehearsal.sh {{args}}
 
