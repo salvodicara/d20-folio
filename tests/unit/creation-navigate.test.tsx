@@ -42,6 +42,7 @@ import { createMemoryRouter, RouterProvider } from "react-router";
 import { CreationWizard } from "@/features/creation/CreationWizard";
 import { useConfirmStore } from "@/stores/confirmStore";
 import { evaluateGrants } from "@/lib/grants";
+import { owedClassPicks } from "@/lib/owed-class-picks";
 import { resolveAllGrantSources } from "@/lib/resolve-grant-sources";
 import type { CharacterData } from "@/types/character";
 import i18n from "@/i18n";
@@ -100,6 +101,29 @@ describe("CreationWizard — create-success navigation", () => {
       character: { languageIds: string[] };
     };
     expect(createdChar.character.languageIds).toEqual(["common", "dwarvish", "orc"]);
+  });
+
+  it("never chooses the class's own picks: the new sheet owes them (#1397)", async () => {
+    renderWizard();
+    // The default build is a Fighter: Weapon Mastery 3 and a Fighting Style at 1. The
+    // player never asked for ready-made picks here, so «Scelte da completare» asks them.
+    fireEvent.change(screen.getByPlaceholderText(/enter name/i), {
+      target: { value: "Borin" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /create character/i }));
+
+    await waitFor(() => expect(createMock).toHaveBeenCalledTimes(1));
+    const created = createMock.mock.calls[0]?.[1] as {
+      character: CharacterData;
+      session: { grantBundleChoices?: Record<string, string> };
+    };
+    expect(created.character.classes[0]?.weaponMasteries ?? []).toEqual([]);
+    expect(owedClassPicks(created.character, created.session.grantBundleChoices)).toEqual(
+      expect.arrayContaining([
+        { classId: "fighter", pick: "weaponMasteries", owed: 3 },
+        { classId: "fighter", pick: "fightingStyles", owed: 1 },
+      ])
+    );
   });
 
   // Explicit 15s budget: the heaviest interaction case in the file (a full
