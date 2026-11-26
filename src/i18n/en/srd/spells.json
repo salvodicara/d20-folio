@@ -2161,6 +2161,18 @@
     "name": "Ray of Enfeeblement",
     "range": "60 feet"
   },
+  "ray-of-enfeeblement.grants.0": {
+    "label": "Ray of Enfeeblement"
+  },
+  "ray-of-enfeeblement.grants.0.grants.0": {
+    "description": "Strength checks (Ray of Enfeeblement)"
+  },
+  "ray-of-enfeeblement.grants.0.grants.1": {
+    "description": "Strength saving throws (Ray of Enfeeblement)"
+  },
+  "ray-of-enfeeblement.grants.0.grants.2": {
+    "description": "Strength-based attack rolls (Ray of Enfeeblement)"
+  },
   "ray-of-frost": {
     "description": "A frigid beam of blue-white light streaks toward a creature within range. Make a ranged spell attack against the target. On a hit, it takes 1d8 Cold damage, and its Speed is reduced by 10 feet until the start of your next turn.",
     "duration": "Instantaneous",

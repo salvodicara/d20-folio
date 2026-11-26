@@ -45,7 +45,7 @@ describe("spells whose effect ends on a repeat save, with no condition", () => {
     expect(spell?.conditionApplication).toBeUndefined();
   });
 
-  it.each(["slow", "confusion", "phantasmal-killer"])(
+  it.each(["slow", "confusion", "phantasmal-killer", "ray-of-enfeeblement"])(
     "%s leaves its state on each failed target (a selected-recipient state)",
     (id) => {
       const states = (getSpellById(id)?.grants ?? []).filter(
@@ -59,7 +59,9 @@ describe("spells whose effect ends on a repeat save, with no condition", () => {
 describe("a cast leaves the state on each failed target", () => {
   const doc = makeCharacterDoc({
     classes: [{ classId: "wizard", level: 20 }],
-    spells: ["slow", "confusion", "phantasmal-killer"].map((srdId) => ({ srdId })),
+    spells: ["slow", "confusion", "phantasmal-killer", "ray-of-enfeeblement"].map(
+      (srdId) => ({ srdId })
+    ),
   });
   const rows = resolveActions(doc, "spellbook").map((row) => localizeAction(row, "en"));
 
@@ -67,6 +69,8 @@ describe("a cast leaves the state on each failed target", () => {
     ["slow", "spell-slow"],
     ["confusion", "spell-confusion"],
     ["phantasmal-killer", "spell-phantasmal-killer"],
+    // SRD 5.2.1: "The target must make a Constitution saving throw" — no attack roll.
+    ["ray-of-enfeeblement", "spell-ray-of-enfeeblement"],
   ])("%s: a save whose failure writes the %s state on the target", (id, activeKey) => {
     const cast = rows.find((a) => a.spellId === id && !a.id.endsWith("-recurring"));
     if (!cast) throw new Error(`no cast row for ${id}`);
