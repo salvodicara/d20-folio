@@ -516,6 +516,16 @@ export async function openFightTab(page: Page): Promise<void> {
     .click();
 }
 
+/**
+ * The DM ends the campaign fight from the Fight tab. Since #1381 the DM's «End fight»
+ * opens the write-up («Save this fight to the Chronicle», the classic hub's parity);
+ * «Skip» ends the fight without a chapter, the DM's one path that saves nothing.
+ */
+export async function dmEndFight(dm: Page): Promise<void> {
+  await dm.getByRole("button", { name: "End fight" }).click();
+  await dm.getByRole("button", { name: "Skip", exact: true }).click();
+}
+
 /** The class level the open sheet shows ("Bard 3 · …" → 3). */
 export async function classLevel(page: Page, className: string): Promise<number> {
   const text = await page.locator("main").innerText();

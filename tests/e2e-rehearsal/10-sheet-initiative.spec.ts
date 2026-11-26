@@ -16,6 +16,7 @@ import {
   signInAs,
   test,
   watchErrors,
+  dmEndFight,
 } from "./helpers";
 
 const errors: string[][] = [];
@@ -78,7 +79,7 @@ test("members roll initiative from the new Play sheet and land in the DM's order
   await test.step("no fight is running", async () => {
     await openFightTab(dm);
     const end = dm.getByRole("button", { name: "End fight" });
-    if (await end.isVisible()) await end.click();
+    if (await end.isVisible()) await dmEndFight(dm);
     await expect(dm.getByText(/No fight running/i)).toBeVisible();
   });
 
@@ -105,7 +106,7 @@ test("members roll initiative from the new Play sheet and land in the DM's order
   });
 
   await test.step("the DM ends the fight", async () => {
-    await dm.getByRole("button", { name: "End fight" }).click();
+    await dmEndFight(dm);
     await expect(dm.getByText(/No fight running/i)).toBeVisible();
   });
 
