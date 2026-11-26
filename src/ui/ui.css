@@ -6505,6 +6505,24 @@
   outline: 2px solid var(--gold-hi);
   outline-offset: 2px;
 }
+/* B: a monster line's initiative is a button (D&D Beyond's tracker: type it in place) */
+.fui .f-init-edit {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  cursor: pointer;
+  text-decoration: underline dotted color-mix(in srgb, var(--strong) 40%, transparent);
+  text-underline-offset: 4px;
+}
+.fui .f-init-edit:hover {
+  background: var(--hover);
+}
+.fui .f-init-edit:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 2px;
+}
 /* the add sheet: D&D Beyond's builder rows, «+» at the end, the count beside it */
 .fui .f-dm-list {
   margin-top: 8px;

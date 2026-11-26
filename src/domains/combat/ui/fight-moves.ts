@@ -18,7 +18,9 @@ import {
   setPcConditionMove,
   passCombatTurn,
   reopenLastCombat,
+  reorderCombatantMove,
   setCombatantHiddenMove,
+  setMonsterInitiativeMove,
   setMonsterRevealedMove,
   setMonsterSideMove,
   rollForMissing,
@@ -185,6 +187,29 @@ export const dmMoves = {
                   })
         )
       ),
+  /** A monster line's new initiative, every creature on it; once turns have begun the
+   *  order stands, so they also move before `beforeId` (their number's place). */
+  initiative:
+    (
+      campaignId: string,
+      uid: string,
+      monsterIds: readonly string[],
+      value: number,
+      place: { beforeId: string | null } | null
+    ) =>
+    () =>
+      together([
+        ...monsterIds.map(
+          (monsterId) => () =>
+            setMonsterInitiativeMove(campaignId, { uid, monsterId, value })
+        ),
+        ...(place
+          ? monsterIds.map(
+              (id) => () =>
+                reorderCombatantMove(campaignId, { uid, id, beforeId: place.beforeId })
+            )
+          : []),
+      ]),
   add: (campaignId: string, uid: string, monsters: readonly MonsterInput[]) => () =>
     together(
       monsters.map((monster) => () => addMonstersMove(campaignId, { uid, monster }))
