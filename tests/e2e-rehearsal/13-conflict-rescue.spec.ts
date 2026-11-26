@@ -114,6 +114,8 @@ async function journey(browser: Browser, variant: (typeof VARIANTS)[number]) {
   const pageA = await contextA.newPage();
   await pageA.goto(`/characters/${id}`);
   await expect(pageA.locator(".f-char")).toBeVisible({ timeout: 60_000 });
+  // The emulator's own warning bar (never in production) covers the strip on a phone.
+  await pageA.addStyleTag({ content: ".firebase-emulator-warning{display:none}" });
   const base = await storedRevision(id);
 
   // A, offline, changes the sheet twice: two saves wait in its queue.
