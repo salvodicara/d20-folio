@@ -24,6 +24,7 @@ import { renderBreakdownLineLabel } from "@/components/shared/breakdown-line";
 import type { GlossaryTermId } from "@/components/shared/GlossaryTip";
 import { highlightRulesText } from "@/components/shared/highlightRulesText";
 import { setNumberOverride } from "@/features/character/number-overrides";
+import { maxHpWithoutBonus } from "@/lib/aggregate-character";
 import type { Locale } from "@/lib/locale";
 import { localeDistance, speedFromLocaleValue, speedToLocaleValue } from "@/lib/utils";
 import { usesMetric } from "@/lib/locale";
@@ -61,13 +62,20 @@ export function PlayNumberPane({
         ? localeDistance(view.total, locale)
         : signed(view.total);
   const parsed = parseDraft(draft, speed, locale);
+  // Max HP is stored as a correction over the derived max (#1315), not a fixed value:
+  // the pane says so, with the correction the typed max would save.
+  const maxHp = numberKey.kind === "maxHp";
+  const correction =
+    maxHp && parsed !== null ? parsed - maxHpWithoutBonus(doc.character) : null;
   const apply = (value: number | null) => {
     setNumberOverride(
       numberKey,
       value,
       value === null
         ? t("play.number.resetToast", { name })
-        : t("play.number.setToast", { name })
+        : maxHp
+          ? t("play.number.maxHpSetToast", { name })
+          : t("play.number.setToast", { name })
     );
     onClose();
   };
@@ -83,7 +91,9 @@ export function PlayNumberPane({
         <p className="f-num-total">
           <b>{shown}</b>
           {view.stored !== null && (
-            <span className="f-num-tag">{t("play.number.handSet")}</span>
+            <span className="f-num-tag">
+              {t(maxHp ? "play.number.maxHpTag" : "play.number.handSet")}
+            </span>
           )}
         </p>
         <p className="f-num-rule">
@@ -108,9 +118,17 @@ export function PlayNumberPane({
               label={
                 speed
                   ? `${t("play.number.override")} (${usesMetric(locale) ? "m" : "ft"})`
-                  : t("play.number.override")
+                  : maxHp
+                    ? t("play.number.maxHpField")
+                    : t("play.number.override")
               }
-              help={t("play.number.overrideHelp")}
+              help={
+                !maxHp
+                  ? t("play.number.overrideHelp")
+                  : correction !== null && correction !== 0
+                    ? t("play.number.maxHpHelp", { bonus: signed(correction) })
+                    : t("play.number.maxHpHelpPlain")
+              }
               type="text"
               inputMode={speed && usesMetric(locale) ? "decimal" : "numeric"}
               autoComplete="off"

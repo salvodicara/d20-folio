@@ -20,8 +20,10 @@ import { useTranslation } from "react-i18next";
 import { Plus, Check } from "lucide-react";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
-import { useToastStore } from "@/stores/toastStore";
-import { FREE_TIER_LIMITS } from "@/lib/limits";
+import {
+  addCustomEquipment,
+  keepInLibrary,
+} from "@/features/character/custom-entry-commands";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { CheckboxField } from "@/components/ui/selection";
@@ -29,7 +31,6 @@ import { Icon } from "@/components/ui/icon";
 import { Select } from "@/components/shared/Select";
 import { IconPicker } from "@/components/shared/icon-picker";
 import { DEFAULT_ALGO_ICON } from "@/components/shared/icon-registry";
-import type { TFunction } from "i18next";
 import { createItemInstanceId } from "@/lib/item-resources";
 import {
   readItemEffects,
@@ -52,13 +53,6 @@ import { DAMAGE_TYPES, type DamageType } from "@/types/damage";
 import type { SpellSchool } from "@/data/types";
 
 /**
- * Keep a freshly created homebrew in the account library, and SAY SO when the
- * free-tier cap refused it (the item still lands on the sheet — only the reusable
- * template is lost). Every create path routes through here, so the one deliberate act
- * gets one honest outcome; the per-keystroke edit seams stay silent by design
- * (`libraryStore.syncFromCharacter`).
- */
-/**
  * LIBRARY-EDIT mode (the Custom tab's pencil): the form opens PRE-FILLED from a kept
  * entry and, on submit, hands the rebuilt draft back instead of touching the character.
  * One optional prop per form — no forked component, no duplicated field markup. The CTA
@@ -67,15 +61,6 @@ import type { SpellSchool } from "@/data/types";
 export interface LibraryEditProps<TItem> {
   item: TItem;
   onSave: (draft: LibraryDraft) => void;
-}
-
-function keepInLibrary(draft: LibraryDraft, t: TFunction): void {
-  const { outcome } = useLibraryStore.getState().saveToLibrary(draft);
-  if (outcome !== "full") return;
-  useToastStore.getState().showToast({
-    message: t("custom.libraryFull", { max: FREE_TIER_LIMITS.libraryEntries }),
-    duration: 6000,
-  });
 }
 
 // ─── Custom Spell Form ───────────────────────────────────────────────────────
@@ -413,14 +398,7 @@ export function CustomEquipmentForm({
         return;
       }
       if (!character) return;
-      store.setCharacter({
-        ...character,
-        character: {
-          ...character.character,
-          equipment: [...character.character.equipment, armor],
-        },
-      });
-      keepInLibrary({ kind: "equipment", item: armor }, t);
+      addCustomEquipment(armor, t);
     } else {
       const equipment: CustomEquipment = {
         ...seedGear,
@@ -445,14 +423,7 @@ export function CustomEquipmentForm({
         return;
       }
       if (!character) return;
-      store.setCharacter({
-        ...character,
-        character: {
-          ...character.character,
-          equipment: [...character.character.equipment, equipment],
-        },
-      });
-      keepInLibrary({ kind: "equipment", item: equipment }, t);
+      addCustomEquipment(equipment, t);
     }
 
     onCreated();
