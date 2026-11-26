@@ -2562,6 +2562,36 @@ describe("firestore.rules — combat/state: the play owner and its peer effect f
     await assertSucceeds(getDoc(doc(owner, ...COMBAT_PATH)));
   });
 
+  it("the DM's death-save tick (new fight screen): the hero's own campaign DM may, with the play shape; another campaign's DM may not; a lower shape is refused", async () => {
+    // The exact payload the peer writer sends (writePeerCombatEffect): the changed
+    // root, the play shape number, the server timestamp, merged.
+    const tick = (successes: number, version = 1) => ({
+      deathSaves: { successes, failures: 0 },
+      playState: { version },
+      updatedAt: Timestamp.now(),
+    });
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(setDoc(doc(dm, ...COMBAT_PATH), tick(1), { merge: true }));
+    // Another table's DM: not a member of the hero's campaign.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(
+        doc(ctx.firestore(), "campaigns", "campB"),
+        campaignDoc(["dmB", "member"], "dmB", {})
+      );
+    });
+    const dmB = testEnv.authenticatedContext("dmB").firestore();
+    await assertFails(setDoc(doc(dmB, ...COMBAT_PATH), tick(2), { merge: true }));
+    // The shape fence (#1320): a document already on a newer play shape refuses a tick
+    // carrying an older number.
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await updateDoc(doc(ctx.firestore(), ...COMBAT_PATH), {
+        "playState.version": 2,
+      });
+    });
+    await assertFails(setDoc(doc(dm, ...COMBAT_PATH), tick(2, 1), { merge: true }));
+    await assertSucceeds(setDoc(doc(dm, ...COMBAT_PATH), tick(2, 2), { merge: true }));
+  });
+
   it("the DM is effect-fenced too, and an UNATTACHED char has no cross-user grant", async () => {
     const dm = testEnv.authenticatedContext("dm").firestore();
     await assertSucceeds(updateDoc(doc(dm, ...COMBAT_PATH), { conditions: ["prone"] }));

@@ -753,6 +753,74 @@ export async function setMonsterInitiativeMove(
 }
 
 /**
+ * The DM ticks a hero's death save from the fight (coordinator, 2026-11-26; Foundry's GM
+ * marks it on the actor): additive, the player can still tick their own. Written through
+ * the normal peer write (its shape fence rides it), and logged «by the DM» in the
+ * session log. Its undo reverts the write and takes the line off. Null for anyone but
+ * this campaign's DM, or for anyone not a hero of this campaign's fight.
+ */
+export async function dmDeathSaveMove(
+  campaignId: string,
+  input: {
+    uid: string;
+    memberUid: string;
+    characterId: string;
+    maxHp: number;
+    outcome: "success" | "failure";
+  },
+  recorder: Pick<SessionRecorder, "record" | "retract"> = createSessionRecorder({
+    store: sessionLogStoreFor(campaignId),
+    uid: input.uid,
+  })
+): Promise<CombatUndo | null> {
+  const campaign = useCampaignStore.getState().campaign;
+  const fight = campaign?.encounter;
+  if (campaign?.id !== campaignId || campaign.dmUid !== input.uid || !fight) return null;
+  const hero = fight.combatants.find(
+    (c) => c.kind === "pc" && c.memberUid === input.memberUid
+  );
+  if (
+    hero?.kind !== "pc" ||
+    hero.characterId !== input.characterId ||
+    campaign.memberDetails[input.memberUid]?.characterId !== input.characterId
+  )
+    return null;
+  const { before, after } = await writeCampaignCombatEffect(
+    input.memberUid,
+    input.characterId,
+    null,
+    input.maxHp,
+    { kind: "death-save", outcome: input.outcome }
+  );
+  const line = await recorder
+    .record(
+      {
+        kind: "death-save",
+        outcome: input.outcome,
+        actor: `pc-${input.memberUid}`,
+        rolledBy: "dm",
+      },
+      { seen: fightOf({ epoch: fight.epoch, round: fight.round }) }
+    )
+    .catch(() => null);
+  return async () => {
+    await writeCampaignCombatEffect(
+      input.memberUid,
+      input.characterId,
+      null,
+      input.maxHp,
+      {
+        kind: "revert",
+        written: after,
+        previous: before,
+      }
+    );
+    if (line) await recorder.retract(line).catch(() => null);
+    return true;
+  };
+}
+
+/**
  * The DM toggles a condition on a PC: written on the PC's own combat state (the peer
  * write), then recorded in the fight. The undo reverts the write and takes the line
  * off. Null for anyone but the DM, or with no fight running.

@@ -413,6 +413,23 @@ function useDmTools(
             setHitting(null);
             card.open(target.id);
           }}
+          onDeathSave={(target, outcome) =>
+            target.memberUid &&
+            target.characterId &&
+            move(
+              dmMoves.deathSave(
+                campaign.id,
+                uid,
+                {
+                  memberUid: target.memberUid,
+                  characterId: target.characterId,
+                  maxHp: target.hp.max,
+                },
+                outcome
+              ),
+              t(`fight.dm.deathSaveDone.${outcome}`, { name: target.name })
+            )
+          }
           onHit={(chosenTargets, entry) => {
             move(
               dmMoves.hit(campaign.id, uid, planDmHit(chosenTargets, entry)),
