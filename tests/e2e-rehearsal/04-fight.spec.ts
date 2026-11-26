@@ -20,6 +20,7 @@ import {
   test,
   turnWriteSent,
   watchErrors,
+  dmEndFight,
 } from "./helpers";
 
 const errors: string[][] = [];
@@ -141,7 +142,7 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
   await test.step("the DM can start the fight (Roll for the missing)", async () => {
     await openFightTab(dm);
     const end = dm.getByRole("button", { name: "End fight" });
-    if (await end.isVisible()) await end.click(); // a leftover from a previous run
+    if (await end.isVisible()) await dmEndFight(dm); // a leftover from a previous run
     const missing = dm.getByRole("button", { name: "Roll for the missing" });
     await expect.soft(missing, "the DM's button to start a fight").toBeVisible();
     if (await missing.isVisible()) await missing.click();
@@ -219,7 +220,7 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
     for (let i = 0; i < 6 && !(await wardingBond.isVisible()); i++) {
       for (const page of [paladin, bard]) {
         const end = page.locator("[data-end-turn]");
-        if (await end.isVisible()) await end.click();
+        if (await end.isVisible()) await dmEndFight(dm);
       }
       await wardingBond.waitFor({ timeout: 5_000 }).catch(() => undefined);
     }
@@ -302,7 +303,7 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
 
   await test.step("the DM ends the fight; Warding Bond outlives it", async () => {
     await openFightTab(dm);
-    await dm.getByRole("button", { name: "End fight" }).click();
+    await dmEndFight(dm);
     await expect(dm.getByText(/No fight running/i)).toBeVisible();
     await bard.reload();
     await expect(bard.locator(".f-char")).toBeVisible({ timeout: 60_000 });
