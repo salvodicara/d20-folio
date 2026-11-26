@@ -1013,6 +1013,15 @@ export function rowTakesState(plan: DamageTrayPlan, row: TrayRow): boolean {
   return row.attack === "hit" || row.attack === "critical";
 }
 
+/** What this row still takes on its successful save (Ray of Enfeeblement: Disadvantage
+ *  on its next attack roll); none for a row that failed. */
+export function rowSavedLeaves(
+  plan: DamageTrayPlan,
+  row: TrayRow
+): ReadonlyArray<"next-attack-disadvantage"> {
+  return row.saved && !row.willing ? (plan.savedLeaves ?? []) : [];
+}
+
 /** Whether a target may be willing (an ally: a player character, or a creature on
  *  the party's side) on a spell whose save is only for the unwilling. */
 export function offersWilling(

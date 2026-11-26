@@ -25,10 +25,16 @@ import {
   saveSuccessWriter,
   standingOutcomeWriter,
 } from "@/features/character/center/outcome-offer";
+import i18n from "@/i18n";
 import en from "@/i18n/en/srd/spells.json";
 import { effectIdsConsumedByRoll, foldCombatEffectOps } from "@/lib/combat-effects";
 import { resolveCombatEffectGrants } from "@/lib/resolve-grant-sources";
-import { damageTrayPlan, initialTrayRow, toggleSaved } from "@/lib/play/damage-tray";
+import {
+  damageTrayPlan,
+  initialTrayRow,
+  rowSavedLeaves,
+  toggleSaved,
+} from "@/lib/play/damage-tray";
 import { sourcedFightConditions } from "@/lib/play/fight-condition-ends";
 import { monsterTurnModifiers } from "@/lib/play/monster-turn-modifiers";
 import { outcomeEffects } from "@/lib/play/outcome-effects";
@@ -208,6 +214,26 @@ describe("the tray: a saved row takes the rider, a failed row the full effect", 
   it("the plan says what a saved row still takes", () => {
     const plan = damageTrayPlan(ray, ["goblin-a"], "pc-me");
     expect(plan?.savedLeaves).toEqual(["next-attack-disadvantage"]);
+  });
+
+  it("a saved row reads the rider, never «No effect»; a failed row does not", async () => {
+    const plan = damageTrayPlan(ray, ["goblin-a"], "pc-me");
+    if (!plan) throw new Error("no tray plan");
+    const failed = initialTrayRow(plan, "goblin-a");
+    const saved = toggleSaved(failed, plan);
+    expect(rowSavedLeaves(plan, failed)).toEqual([]);
+    const [kind] = rowSavedLeaves(plan, saved);
+    expect(kind).toBe("next-attack-disadvantage");
+    await i18n.changeLanguage("en");
+    expect(i18n.t(`combat.damageTray.savedLeaves.${kind}`)).toBe(
+      "Disadvantage on its next attack roll"
+    );
+    await i18n.changeLanguage("it");
+    // The Italian SRD: «svantaggio al suo tiro per colpire successivo».
+    expect(i18n.t(`combat.damageTray.savedLeaves.${kind}`)).toBe(
+      "Svantaggio al tiro per colpire successivo"
+    );
+    await i18n.changeLanguage("en");
   });
 
   it("writes the rider on the saved Goblin and the weakened state on the failed one", async () => {

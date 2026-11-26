@@ -7,13 +7,14 @@ import { fightSideOf } from "./outcome-offer";
 import { useMemo } from "react";
 
 import {
+  attackRowChips,
   trayTargetFromRow,
   type TrayTarget,
 } from "@/components/shared/damage-tray-target";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { useHpControls } from "@/features/character/molecules/use-hp-controls";
 import type { DamageTrayPlan } from "@/lib/play/damage-tray";
-import { incomingAttackModes, incomingSaveModes } from "@/lib/combat-effects";
+import { incomingSaveModes } from "@/lib/combat-effects";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 
@@ -39,20 +40,16 @@ export function useTrayTargets(plan: DamageTrayPlan): TrayTarget[] {
         const row = status?.view.rows.find((r) => r.id === id);
         if (!row) return { id, name: id, kind: "monster" };
         const target = trayTargetFromRow(row, row.kind === "pc" || row.side === "ally");
-        // An attack's Advantage or Disadvantage from the fight's effects on it.
+        // An attack's Advantage or Disadvantage from the fight's effects on it, and
+        // on me (my next attack roll's Disadvantage).
         const incoming =
           plan.attack && status
-            ? incomingAttackModes(
+            ? attackRowChips(
                 status.encounter.effectOps,
                 id,
                 status.myId,
                 fightSideOf(status.view.rows)
-              ).map((m) => ({
-                sourceKind: m.effect.source.kind,
-                sourceId: m.sourceId,
-                mode: m.mode,
-                consumed: m.consumed,
-              }))
+              )
             : [];
         // A spell's save: the Disadvantage a state on it gives against my spells.
         const incomingSave =

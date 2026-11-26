@@ -17,6 +17,8 @@ import type { CreatureType } from "@/data/types";
 import { conditionLabel } from "@/lib/views/tracker-view";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
 import type { MonsterTurnModifiers } from "@/lib/play/monster-turn-modifiers";
+import { incomingAttackModes, nextAttackModes } from "@/lib/combat-effects";
+import type { CombatEffectOp } from "@/types/combat-effect";
 
 /** One target as the tray shows it. */
 export interface TrayTarget {
@@ -33,7 +35,8 @@ export interface TrayTarget {
   creatureType?: CreatureType;
   row?: EncounterCombatantView;
   /** What the fight's effects on this creature do to an attack against it (Guiding
-   *  Bolt's Advantage), and whether this attack spends them. */
+   *  Bolt's Advantage), and the attacker's own next-attack states (Sap's
+   *  Disadvantage), and whether this attack spends them (`attackRowChips`). */
   incoming?: ReadonlyArray<IncomingAttackChip>;
   /** What the fight's effects on this creature do to its save against the caster's
    *  spell (Disadvantage against that caster's spells). */
@@ -46,6 +49,31 @@ export interface IncomingAttackChip {
   sourceId: string;
   mode: "advantage" | "disadvantage";
   consumed: boolean;
+}
+
+/** An attack row's modes: the fight's states on the target (Guiding Bolt's
+ *  Advantage), then the attacker's own next-attack states (Sap, Ray of Enfeeblement's
+ *  success: Disadvantage), which this attack spends. */
+export function attackRowChips(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetId: string,
+  attackerId: string,
+  sideOf?: (combatantId: string) => "party" | "enemy"
+): IncomingAttackChip[] {
+  return [
+    ...incomingAttackModes(operations, targetId, attackerId, sideOf).map((m) => ({
+      sourceKind: m.effect.source.kind,
+      sourceId: m.sourceId,
+      mode: m.mode,
+      consumed: m.consumed,
+    })),
+    ...nextAttackModes(operations, attackerId).map((m) => ({
+      sourceKind: m.sourceKind,
+      sourceId: m.sourceId,
+      mode: m.mode,
+      consumed: true,
+    })),
+  ];
 }
 
 /** The target's first tray row, with everything the tray reads from the creature:

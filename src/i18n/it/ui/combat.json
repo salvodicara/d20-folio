@@ -603,6 +603,9 @@
       "willing": "Consenziente",
       "willingAria": "{{name}} è consenziente: nessun TS",
       "stateLands": "Sotto {{name}}",
+      "savedLeaves": {
+        "next-attack-disadvantage": "Svantaggio al tiro per colpire successivo"
+      },
       "incomingSave": "TS con {{mode}} ({{source}})"
     },
     "unarmedUnburdenedDie": "{{die}} se non impugni armi o Scudo",

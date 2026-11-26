@@ -44,6 +44,7 @@ import {
   toggleWilling,
   offersWilling,
   withDamageTypeChoice,
+  rowSavedLeaves,
   rowTakesState,
   knockOutOffer,
   type DamageTrayPlan,
@@ -357,6 +358,7 @@ function TrayTargetRow({
           conditions={conditions}
           knockOut={row.knockOut === true}
           takesState={rowTakesState(plan, row)}
+          savedLeaves={rowSavedLeaves(plan, row)}
         />
       </div>
       {outcome?.kind === "threshold" && (
@@ -574,6 +576,7 @@ function Preview({
   conditions,
   knockOut = false,
   takesState = false,
+  savedLeaves = [],
 }: {
   plan: DamageTrayPlan;
   amount: number | null;
@@ -583,13 +586,19 @@ function Preview({
   knockOut?: boolean;
   /** The row takes the use's state (a failed save, a willing ally, a hit). */
   takesState?: boolean;
+  /** What the row still takes on its successful save (`rowSavedLeaves`). */
+  savedLeaves?: ReadonlyArray<"next-attack-disadvantage">;
 }) {
   const { t } = useTranslation();
   const { effect } = plan;
   const stateLabel =
     takesState && plan.leavesState
       ? t("combat.damageTray.stateLands", { name: plan.leavesState.name })
-      : null;
+      : savedLeaves.length > 0
+        ? savedLeaves
+            .map((kind) => t(`combat.damageTray.savedLeaves.${kind}`))
+            .join(" · ")
+        : null;
   // A revival: the Hit Points it comes back with, as a heal reads.
   if (effect === null && plan.revive && hp && hp.current === 0) {
     const back =
