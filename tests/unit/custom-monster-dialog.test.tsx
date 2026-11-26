@@ -86,6 +86,42 @@ describe("the DM's own monsters", () => {
     expect(entry?.kind === "monster" && entry.item.ac).toBe(15);
   });
 
+  it("a number out of range says why «Save» is off", () => {
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "New monster" }));
+    fireEvent.change(screen.getByRole("textbox", { name: "AC" }), {
+      target: { value: "50" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: "Max HP" }), {
+      target: { value: "0" },
+    });
+    fireEvent.change(screen.getByRole("textbox", { name: /Challenge Rating/ }), {
+      target: { value: "1/3" },
+    });
+    expect(screen.getByRole("textbox", { name: "AC" })).toHaveAccessibleDescription(
+      "Enter a whole number from 0 to 40."
+    );
+    expect(screen.getByRole("textbox", { name: "Max HP" })).toHaveAccessibleDescription(
+      "Enter a whole number from 1 to 9999."
+    );
+    expect(screen.getByRole("textbox", { name: /Challenge Rating/ })).toHaveAttribute(
+      "aria-invalid",
+      "true"
+    );
+    expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
+      "aria-disabled",
+      "true"
+    );
+  });
+
+  it("the delete confirmation can be cancelled", () => {
+    open();
+    fireEvent.click(screen.getByRole("button", { name: "Delete: Ash Raider" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
+    expect(useLibraryStore.getState().entries).toHaveLength(1);
+  });
+
   it("an own monster is deleted only after the DM confirms", () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: "Delete: Ash Raider" }));

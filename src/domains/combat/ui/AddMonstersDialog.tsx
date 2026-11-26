@@ -270,22 +270,26 @@ export function AddMonstersDialog({
           title={t("common.deleteTitle", { name: deleting.name })}
           closeLabel={t("common.close")}
           actions={
-            <Button
-              kind="danger"
-              wide
-              onClick={() => {
-                deleteCustomMonster(deleting.id);
-                setPicked((now) => {
-                  const next = new Map(now);
-                  next.delete(`h:${deleting.id}`);
-                  return next;
-                });
-                toast(t("fight.custom.deletedDone", { name: deleting.name }));
-                setDeleting(null);
-              }}
-            >
-              {t("common.delete")}
-            </Button>
+            <>
+              <Button kind="ghost" onClick={() => setDeleting(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                kind="danger"
+                onClick={() => {
+                  deleteCustomMonster(deleting.id);
+                  setPicked((now) => {
+                    const next = new Map(now);
+                    next.delete(`h:${deleting.id}`);
+                    return next;
+                  });
+                  toast(t("fight.custom.deletedDone", { name: deleting.name }));
+                  setDeleting(null);
+                }}
+              >
+                {t("common.delete")}
+              </Button>
+            </>
           }
         >
           <p className="f-ask">{t("fight.custom.deleteBody")}</p>

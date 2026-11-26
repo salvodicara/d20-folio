@@ -33,6 +33,10 @@ export function parseCrInput(text: string): string | undefined | null {
   return n <= 30 ? String(n) : null;
 }
 
+/** The ranges the form accepts for the two whole numbers. */
+export const AC_RANGE = { min: 0, max: 40 } as const;
+export const MAX_HP_RANGE = { min: 1, max: 9999 } as const;
+
 const whole = (text: string, min: number, max: number): number | null => {
   const s = text.trim();
   if (!/^\d{1,4}$/.test(s)) return null;
@@ -46,8 +50,8 @@ export function customMonsterFromForm(
   before?: CustomMonster
 ): CustomMonster | null {
   const name = form.name.trim();
-  const ac = whole(form.ac, 0, 40);
-  const maxHp = whole(form.maxHp, 1, 9999);
+  const ac = whole(form.ac, AC_RANGE.min, AC_RANGE.max);
+  const maxHp = whole(form.maxHp, MAX_HP_RANGE.min, MAX_HP_RANGE.max);
   const cr = parseCrInput(form.cr);
   if (!name || ac === null || maxHp === null || cr === null) return null;
   const notes = form.notes.trim();
@@ -62,6 +66,21 @@ export function customMonsterFromForm(
     maxHp,
     ...(cr ? { cr } : {}),
     ...(notes ? { notes } : {}),
+  };
+}
+
+/** The typed fields the form cannot take (blank is not wrong, only unfinished). */
+export function customMonsterFormErrors(form: CustomMonsterForm): {
+  ac: boolean;
+  maxHp: boolean;
+  cr: boolean;
+} {
+  const wrong = (text: string, range: { min: number; max: number }) =>
+    text.trim() !== "" && whole(text, range.min, range.max) === null;
+  return {
+    ac: wrong(form.ac, AC_RANGE),
+    maxHp: wrong(form.maxHp, MAX_HP_RANGE),
+    cr: parseCrInput(form.cr) === null,
   };
 }
 

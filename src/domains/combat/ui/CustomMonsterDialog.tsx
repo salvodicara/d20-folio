@@ -8,6 +8,9 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
+  AC_RANGE,
+  MAX_HP_RANGE,
+  customMonsterFormErrors,
   customMonsterFromForm,
   customMonsterToForm,
   type CustomMonsterForm,
@@ -28,6 +31,8 @@ export function CustomMonsterDialog({
   const { t } = useTranslation();
   const [form, setForm] = useState<CustomMonsterForm>(() => customMonsterToForm(initial));
   const monster = customMonsterFromForm(form, initial);
+  // «Salva» stays off until the form is whole; a wrong number says why under its field.
+  const wrong = customMonsterFormErrors(form);
   const set = (key: keyof CustomMonsterForm) => (value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
   return (
@@ -68,6 +73,7 @@ export function CustomMonsterDialog({
           inputMode="numeric"
           autoComplete="off"
           value={form.ac}
+          {...(wrong.ac ? { error: t("rest.diceTotalError", AC_RANGE) } : {})}
           onChange={(e) => set("ac")(e.target.value)}
         />
         <Field
@@ -75,13 +81,16 @@ export function CustomMonsterDialog({
           inputMode="numeric"
           autoComplete="off"
           value={form.maxHp}
+          {...(wrong.maxHp ? { error: t("rest.diceTotalError", MAX_HP_RANGE) } : {})}
           onChange={(e) => set("maxHp")(e.target.value)}
         />
       </div>
       <div className="f-ask">
         <Field
           label={t("fight.dm.crLabel")}
-          help={t("fight.custom.crHelp")}
+          {...(wrong.cr
+            ? { error: t("fight.custom.crHelp") }
+            : { help: t("fight.custom.crHelp") })}
           autoComplete="off"
           value={form.cr}
           onChange={(e) => set("cr")(e.target.value)}
