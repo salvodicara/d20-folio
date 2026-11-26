@@ -36,6 +36,7 @@ export function readDocMeta(
   | "portraitCrop"
   | "shared"
   | "revision"
+  | "writeId"
   | "status"
 > {
   // The compare-and-set generation is REQUIRED (ADR-0009: the cutover migration
@@ -62,6 +63,8 @@ export function readDocMeta(
     // A doc written before public share links carries no field → not shared.
     shared: data.shared === true,
     revision: data.revision,
+    // The write chain (#1413): the build write that stored this generation.
+    writeId: typeof data.writeId === "string" ? data.writeId : null,
     status:
       data.status === "retired" || data.status === "dead" || data.status === "archived"
         ? data.status
