@@ -47,9 +47,16 @@ export function playSpellsView(
   const cards = new Map(
     model.levels.flatMap((g) => g.spells).map((card) => [card.data?.id ?? card.key, card])
   );
+  // A catalogue spell (its id) or a homebrew one (its instance), by the key its card
+  // carries in the Spells model; every other action stays on the actions list.
+  const cardKey = (row: PlayActionRow): string | null =>
+    row.spellId ??
+    (row.action.customSpellInstanceId
+      ? `custom-${row.action.customSpellInstanceId}`
+      : null);
   const rows = playActionsView(doc, locale, turn, "spellbook")
     .groups.flatMap((g) => g.rows)
-    .filter((row) => row.spellId !== undefined && row.level !== null);
+    .filter((row) => cardKey(row) !== null && row.level !== null);
   const levels = [...new Set(rows.map((r) => r.level ?? 0))].sort((a, b) => a - b);
   const cs = model.castSummary;
   return {
@@ -70,7 +77,7 @@ export function playSpellsView(
         spells: rows
           .filter((r) => (r.level ?? 0) === level)
           .map((row) => {
-            const card = cards.get(row.spellId ?? "");
+            const card = cards.get(cardKey(row) ?? "");
             return {
               row,
               prepared: level === 0 || !card || card.isPrepared || card.isAlwaysPrepared,
