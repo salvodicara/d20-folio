@@ -220,7 +220,7 @@ test("a campaign fight, from initiative to the end, with the DM and two players"
     for (let i = 0; i < 6 && !(await wardingBond.isVisible()); i++) {
       for (const page of [paladin, bard]) {
         const end = page.locator("[data-end-turn]");
-        if (await end.isVisible()) await dmEndFight(dm);
+        if (await end.isVisible()) await end.click();
       }
       await wardingBond.waitFor({ timeout: 5_000 }).catch(() => undefined);
     }
