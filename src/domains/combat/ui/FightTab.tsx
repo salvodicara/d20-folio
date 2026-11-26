@@ -21,6 +21,7 @@ import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
+import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -202,6 +203,9 @@ function LiveFight({
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
   const dm = useDmTools(campaign, view.rows, uid, isDm, locale, onToast);
+  // The DM ends with the write-up first (classic parity); anyone else ends at once.
+  const writeUp = useEndFight(campaign, encounter, uid, locale, onToast);
+  const endFight = isDm ? writeUp.open : actions.end;
   // The monster whose turn it is: the DM may cast an area spell for it, from the head.
   const monsterTurn =
     isDm && encounter.currentCombatantId
@@ -215,7 +219,7 @@ function LiveFight({
         {suggest && (
           <div className="f-note f-suggest" role="status">
             <span>{t(`fight.suggest.${suggest}`)}</span>
-            <Button onClick={() => actions.end(suggest)}>{t("fight.end")}</Button>
+            <Button onClick={() => endFight(suggest)}>{t("fight.end")}</Button>
           </div>
         )}
         <Panel
@@ -251,7 +255,7 @@ function LiveFight({
                 <Button onClick={actions.rollMissing}>{t("fight.rollMissing")}</Button>
               )}
               {controls.end && (
-                <Button kind="quiet" onClick={() => actions.end()}>
+                <Button kind="quiet" onClick={() => endFight()}>
                   {t("fight.end")}
                 </Button>
               )}
@@ -311,6 +315,7 @@ function LiveFight({
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
         {dm.dialogs}
+        {isDm && writeUp.dialog}
       </div>
       <Feed
         campaign={campaign}
