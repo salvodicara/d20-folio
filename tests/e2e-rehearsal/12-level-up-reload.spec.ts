@@ -49,7 +49,13 @@ test("online, a reload 0.3 s after «Confirm» never loses the level-up", async 
       { timeout: 30_000 }
     )
     .not.toBe("waiting");
-  if ((await storedLevel(id)) !== 2) {
+  const landed = (await storedLevel(id)) === 2;
+  // Which way it went this run (both are correct): read in the rehearsal's log.
+  test.info().annotations.push({
+    type: "reload at +0.3 s",
+    description: landed ? "the queued write landed" : "offered back, applied",
+  });
+  if (!landed) {
     await banner(page)
       .getByRole("button", { name: /^apply$/i })
       .click();
@@ -75,7 +81,9 @@ test("offline, a level-up whose queue was lost is offered back, and Apply stores
     .toBe(true);
   await page.close();
   // The tab closed before Firestore kept its queue: the queue is gone (the sign-in
-  // and the level-up's trace, in other stores, are not).
+  // and the level-up's trace, in other stores, are not). Back online, a plain file of
+  // the app (no Firestore client runs there) clears it.
+  await context.setOffline(false);
   const back = await context.newPage();
   await back.goto("/favicon.svg");
   await back.evaluate(async () => {
@@ -95,7 +103,6 @@ test("offline, a level-up whose queue was lost is offered back, and Apply stores
         )
     );
   });
-  await context.setOffline(false);
   expect(await storedLevel(id)).toBe(1);
 
   await back.goto(`/characters/${id}`);
