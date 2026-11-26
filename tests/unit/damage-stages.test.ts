@@ -7,6 +7,7 @@
  * Corpus: "When hit" vs "when damaged" (Uncanny Dodge, SAC #59); Arcane Ward's place
  * in the pipeline (SAC #73).
  */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { describe, expect, it } from "vitest";
 
 import { sessionToCombatState } from "@/lib/combat-state";
@@ -25,7 +26,7 @@ function rogue(session: Partial<SessionState> = {}): CharacterDoc {
     { classId: "rogue", level: 5, features: [{ srdId: "rogue-uncanny-dodge" }] },
     { hp: { current: 40, temp: 0 }, ...session }
   );
-  return { ...doc, character: { ...doc.character, hp: { max: 40 } } };
+  return { ...doc, character: withMaxHpEdit(doc.character, 40) };
 }
 
 const DODGING = "rogue-uncanny-dodge";
@@ -70,7 +71,7 @@ function warded(session: Partial<SessionState> = {}): CharacterDoc {
   const doc = makeCharacterDoc({}, { hp: { current: 30, temp: 5 }, ...session });
   return {
     ...doc,
-    character: { ...doc.character, hp: { max: 30 }, features: [feature] },
+    character: withMaxHpEdit({ ...doc.character, features: [feature] }, 30),
   };
 }
 

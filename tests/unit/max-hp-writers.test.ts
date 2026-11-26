@@ -285,14 +285,14 @@ describe("the max-HP tip explains the inputs (#1315)", () => {
       parts.filter((p) => JSON.stringify(p).includes("breakdown.hpRolled"))
     ).toHaveLength(1);
     expect(
-      parts.filter((p) => JSON.stringify(p).includes("breakdown.hpBonus"))
+      parts.filter((p) => JSON.stringify(p).includes("breakdown.override"))
     ).toHaveLength(1);
     expect(breakdownTotal(parts)).toBe(effectiveMaxHp(c, session));
   });
 
   it("no input, no extra row", () => {
     const parts = effectiveMaxHpBreakdown(monk(), session);
-    expect(JSON.stringify(parts)).not.toMatch(/breakdown\.hp(Rolled|Bonus)/);
+    expect(JSON.stringify(parts)).not.toMatch(/breakdown\.(hpRolled|override)/);
   });
 });
 

@@ -5,7 +5,7 @@
  * a prominent dying affordance (death saves + a quick heal) at 0 HP. Max HP and
  * the hit-dice total stay definition values (edit-mode editors in the popover);
  * Damage / Heal / Temp stay live. The store is the real Zustand store hydrated
- * with MOCK_CHARACTER (hp.max 62, current 38, temp 5, deathSucc 2 / deathFail 1).
+ * with MOCK_CHARACTER (hp.max 66, current 38, temp 5, deathSucc 2 / deathFail 1).
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
@@ -27,10 +27,10 @@ function load(overrides?: Partial<(typeof MOCK_CHARACTER)["session"]>): void {
 
 /**
  * Load MOCK with a live `+5` hp-flat grant (a standing Aid: prepared `aid` spell +
- * the `spell-aid` while-active chip) — the exact scenario B08 protects. Stored base
- * `hp.max` stays 62 (a hand-pin ≠ the by-the-book base 66); effective max = 62 + 5 = 67.
+ * the `spell-aid` while-active chip) — the exact scenario B08 protects. The base is
+ * the derived 66 (#1334); effective max = 66 + 5 = 71. `hpBonus` is a hand adjustment.
  */
-function loadWithAid(): void {
+function loadWithAid(hpBonus?: number): void {
   const base = structuredClone(MOCK_CHARACTER);
   useCharacterStore.setState({
     character: {
@@ -38,6 +38,7 @@ function loadWithAid(): void {
       character: {
         ...base.character,
         spells: [...base.character.spells, { srdId: "aid", prepared: true }],
+        ...(hpBonus === undefined ? {} : { hpBonus }),
       },
       session: { ...base.session, activeFeatures: ["spell-aid"] },
     },
@@ -58,7 +59,7 @@ describe("HeaderHpControl — alive", () => {
     const trigger = screen.getByRole("button", { name: /hit points/i });
     expect(trigger.querySelector(".hp-bar")).not.toBeNull();
     expect(within(trigger).getByText("38")).toBeInTheDocument();
-    expect(within(trigger).getByText(/62/)).toBeInTheDocument();
+    expect(within(trigger).getByText(/66/)).toBeInTheDocument();
     expect(within(trigger).getByText("+5")).toBeInTheDocument();
     // Controls are progressive-disclosure — not in the DOM until the popover opens.
     expect(screen.queryByRole("button", { name: /^damage$/i })).not.toBeInTheDocument();
@@ -68,12 +69,12 @@ describe("HeaderHpControl — alive", () => {
     load();
     render(<HeaderHpControl />);
     const trigger = screen.getByRole("button", { name: /hit points/i });
-    // Mock: 38/62 + 5 temp → base fill 61%, temp segment 8% starting at 61%
+    // Mock: 38/66 + 5 temp → base fill 58%, temp segment 8% starting at 58%
     // (the Liquid-Mercury recipe's lapis buffer, DESIGN.md §5 — clamped so the
     // two beads can never overflow the channel).
     const tempSeg = trigger.querySelector(".hp-fill-temp") as HTMLElement;
     expect(tempSeg).not.toBeNull();
-    expect(tempSeg.style.getPropertyValue("--w")).toBe("61%");
+    expect(tempSeg.style.getPropertyValue("--w")).toBe("58%");
     expect(tempSeg.style.getPropertyValue("--tw")).toBe("8%");
   });
 
@@ -219,14 +220,14 @@ describe("HeaderHpControl — popover stability + focus (Phase-6 triage)", () =>
 
 describe("HeaderHpControl — Bloodied indicator (S5)", () => {
   it("shows the Bloodied mark when current HP is at or below half max", () => {
-    // Mock max 62 → ⌊62/2⌋ = 31. Drop to 31 → Bloodied.
+    // Mock max 66 → ⌊66/2⌋ = 33. Drop to 31 → Bloodied.
     load({ hp: { ...MOCK_CHARACTER.session.hp, current: 31 } });
     render(<HeaderHpControl />);
     expect(screen.getByText(/bloodied/i)).toBeInTheDocument();
   });
 
   it("does NOT show the Bloodied mark above half max", () => {
-    // Default mock current 38 (> 31) → not Bloodied.
+    // Default mock current 38 (> 33) → not Bloodied.
     load();
     render(<HeaderHpControl />);
     expect(screen.queryByText(/bloodied/i)).not.toBeInTheDocument();
@@ -240,16 +241,16 @@ describe("HeaderHpControl — Bloodied indicator (S5)", () => {
 });
 
 describe("HeaderHpControl — Max HP edits the BASE, not the effective (B08)", () => {
-  it("edit mode shows the STORED BASE (62), never the grant-inflated effective (67)", () => {
-    // With a +5 Aid boon the effective max is 67, but the editable field must show the
-    // by-the-book BASE (62) so an edit can't bake the +5 permanently into the stored base.
+  it("edit mode shows the BASE (66), never the grant-inflated effective (71)", () => {
+    // With a +5 Aid boon the effective max is 71, but the editable field must show the
+    // by-the-book BASE (66) so an edit can't bake the +5 permanently into the base.
     loadWithAid();
     useUIStore.setState({ sheetMode: "edit" });
     render(<HeaderHpControl />);
     fireEvent.click(screen.getByRole("button", { name: /hit points/i }));
     const maxBtn = screen.getByRole("button", { name: /maximum hit points/i });
-    expect(maxBtn).toHaveTextContent("62");
-    expect(maxBtn).not.toHaveTextContent("67");
+    expect(maxBtn).toHaveTextContent("66");
+    expect(maxBtn).not.toHaveTextContent("71");
   });
 
   it("editing Max HP writes the new BASE, leaving the +5 grant to add on top", () => {
@@ -273,9 +274,9 @@ describe("HeaderHpControl — Max HP edits the BASE, not the effective (B08)", (
   });
 
   it("the override round-trips: a hand-pinned base shows the reset affordance; reset recomputes base+grants", () => {
-    // MOCK's stored `hp.max` (62) is already a hand-pin ≠ the by-the-book base (66), so the
-    // field is overridden and the reset-to-auto affordance shows.
-    loadWithAid();
+    // A hand adjustment of −4 (62 ≠ the by-the-book base 66) overrides the field, so
+    // the reset-to-auto affordance shows.
+    loadWithAid(-4);
     const computedBase = computeCharacterMaxHp(MOCK_CHARACTER.character); // 66
     useUIStore.setState({ sheetMode: "edit" });
     render(<HeaderHpControl />);

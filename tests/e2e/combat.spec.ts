@@ -5,7 +5,7 @@
  * promoted into the persistent center `ThisTurnTracker` and the Play-tab action
  * cards are the commit surface; both dispatch through the one shared economy owner.
  * Drives the REAL flow against the dev server (VITE_DEV_BYPASS_AUTH=true, mock
- * Lyra Voss at /characters/mock-1 — Bard 9, mid-combat: 38/62 HP + 5 temp,
+ * Lyra Voss at /characters/mock-1 — Bard 9, mid-combat: 38/66 HP + 5 temp,
  * concentrating on Hypnotic Pattern, round 5).
  *
  * Desktop-only: live play is desktop-first (Constitution §3); the Resources rail
@@ -42,7 +42,7 @@ test.describe("Combat live-play loop (cockpit)", () => {
     // HP relocated into the header (Phase-6 IA revision): a slim bar trigger.
     const hp = page.getByRole("button", { name: /hit points: open/i });
     await expect(hp).toContainText("38");
-    await expect(hp).toContainText("62");
+    await expect(hp).toContainText("66");
     await expect(hp).toContainText("+5");
   });
 

@@ -59,7 +59,7 @@ import i18next from "i18next";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
 import { canCharacterRest } from "@/lib/character-status";
-import { effectiveMaxHp } from "@/lib/aggregate-character";
+import { effectiveMaxHp, maxHpBase } from "@/lib/aggregate-character";
 import {
   longRestFadeEvents,
   longRestFades,
@@ -600,7 +600,7 @@ function restOnce(kind: RestWorldKind, entered: RestWorldEntries): RestWorldOutc
   const world = characterWorldState(
     doc,
     uid,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );

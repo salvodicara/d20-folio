@@ -20,6 +20,7 @@ vi.mock("@/lib/firebase", () => ({
 import { PlaySheet } from "@/domains/play/ui/PlayScreen";
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";
+import { effectiveMaxHp } from "@/lib/aggregate-character";
 
 let observed: ((entries: Partial<IntersectionObserverEntry>[]) => void)[] = [];
 class FakeObserver {
@@ -102,7 +103,8 @@ describe("the phone's Hit Points strip", () => {
     renderSheet();
     scrollBandAway();
     const strip = screen.getByRole("region", STRIP);
-    const max = String(doc.character.hp.max);
+    // #1334 — the max is derived at read (Fighter 3, CON 14: 28), not the fixture's stored 44.
+    const max = String(effectiveMaxHp(doc.character, doc.session));
     expect(
       within(strip).getByRole("button", { name: `Hit points: 17 / ${max}` })
     ).toBeTruthy();

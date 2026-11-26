@@ -18,6 +18,7 @@
  * start of each of your turns, you regain Hit Points equal to 5 plus your
  * Constitution modifier if you are Bloodied and have at least 1 Hit Point."
  */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { describe, it, expect } from "vitest";
 import { getSpellById } from "@/data/spells";
 import { asRaceId } from "@/data/srd-names";
@@ -121,8 +122,10 @@ describe("isBloodied — current HP ≤ half max (2024 RAW)", () => {
 
   it("uses the floor of half max (odd max)", () => {
     // max 9 → ⌊9/2⌋ = 4; 4 is Bloodied, 5 is not.
-    expect(isBloodied(makeChar({ hp: { max: 9 } }, { current: 4 }))).toBe(true);
-    expect(isBloodied(makeChar({ hp: { max: 9 } }, { current: 5 }))).toBe(false);
+    expect(isBloodied(makeChar({ level: 1, hp: { max: 9 } }, { current: 4 }))).toBe(true);
+    expect(isBloodied(makeChar({ level: 1, hp: { max: 9 } }, { current: 5 }))).toBe(
+      false
+    );
   });
 
   it("is never Bloodied with a degenerate max of 0", () => {
@@ -360,56 +363,60 @@ function makeChar(
     shared: false,
     revision: 0,
     status: "active",
-    character: {
-      name: assertNonEmptyString("Tester"),
-      quote: "",
-      race: asRaceId("human"),
-      classes: [{ classId: "fighter", subclassId: "champion", level: 18 }],
-      background: "soldier",
-      alignment: asAlignmentId("neutral"),
-      playerName: "P",
-      speed: "30 ft",
-      ac: 16,
-      armorNote: "",
-      hp: { max },
-      hitDieType: 10,
-      languageIds: ["common"],
-      customLanguages: [],
-      toolProficiencyIds: [],
-      customToolProficiencies: [],
-      abilityBudget: 27,
-      proficiencyBonusOverride: null,
-      levelUpChecklist: null,
-      backgroundAsi: {},
-      humanOriginFeat: "",
-      bgFeat: "",
-      lore: {
-        traits: "",
-        ideals: "",
-        bonds: "",
-        flaws: "",
-        backstory: "",
-        age: "",
-        height: "",
-        weight: "",
-        eyes: "",
-        hair: "",
-        skin: "",
+    // #1334 — the max is derived at read: the fixture's max is a hand edit over it.
+    character: withMaxHpEdit(
+      {
+        name: assertNonEmptyString("Tester"),
+        quote: "",
+        race: asRaceId("human"),
+        classes: [{ classId: "fighter", subclassId: "champion", level: 18 }],
+        background: "soldier",
+        alignment: asAlignmentId("neutral"),
+        playerName: "P",
+        speed: "30 ft",
+        ac: 16,
+        armorNote: "",
+        hp: { max },
+        hitDieType: 10,
+        languageIds: ["common"],
+        customLanguages: [],
+        toolProficiencyIds: [],
+        customToolProficiencies: [],
+        abilityBudget: 27,
+        proficiencyBonusOverride: null,
+        levelUpChecklist: null,
+        backgroundAsi: {},
+        humanOriginFeat: "",
+        bgFeat: "",
+        lore: {
+          traits: "",
+          ideals: "",
+          bonds: "",
+          flaws: "",
+          backstory: "",
+          age: "",
+          height: "",
+          weight: "",
+          eyes: "",
+          hair: "",
+          skin: "",
+        },
+        abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 12, CHA: 10 },
+        savingThrows: ["STR", "CON"],
+        skills: {},
+        spellcasting: null,
+        spellSlots: [],
+        spells: [],
+        weapons: [],
+        equipment: [],
+        features: [],
+        combatAlgorithm: [],
+        customConditions: [],
+        sidebar: [],
+        ...foldLegacyClass(overrides, "fighter", "champion"),
       },
-      abilityScores: { STR: 16, DEX: 12, CON: 14, INT: 10, WIS: 12, CHA: 10 },
-      savingThrows: ["STR", "CON"],
-      skills: {},
-      spellcasting: null,
-      spellSlots: [],
-      spells: [],
-      weapons: [],
-      equipment: [],
-      features: [],
-      combatAlgorithm: [],
-      customConditions: [],
-      sidebar: [],
-      ...foldLegacyClass(overrides, "fighter", "champion"),
-    },
+      max
+    ),
     session: {
       hp: { current: max, temp: 0, ...sessionHp },
       hitDice: { used: 0 },

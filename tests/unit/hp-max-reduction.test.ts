@@ -20,6 +20,7 @@ import {
   computeCharacterMaxHp,
   effectiveMaxHp,
   effectiveMaxHpBreakdown,
+  withMaxHpEdit,
 } from "@/lib/aggregate-character";
 import { characterTrackerSeeds, characterWorldState } from "@/lib/mechanics-world-store";
 import { applySheetEvent } from "@/lib/play/sheet-events";
@@ -122,7 +123,7 @@ const fighter = (session: Partial<SessionState> = {}): CharacterDoc => {
   const max = 120;
   return {
     ...doc,
-    character: { ...doc.character, hp: { ...doc.character.hp, max } },
+    character: withMaxHpEdit(doc.character, max),
     session: { ...doc.session, hp: { current: max, temp: 0 }, ...session },
   };
 };

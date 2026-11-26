@@ -3,6 +3,7 @@
  * as a 3): the rest asks the faces, one per die, and heals by the floored faces plus
  * CON per die.
  */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { describe, it, expect, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { RestModal } from "@/features/character/RestModal";
@@ -27,7 +28,7 @@ function seed() {
   const doc = structuredClone(MOCK_CHARACTER);
   doc.character.abilityScores.CON = 14;
   doc.character.hitDieType = 8;
-  doc.character.hp.max = 30;
+  doc.character = withMaxHpEdit(doc.character, 30);
   doc.character.features = [...doc.character.features, recovery];
   doc.session.hp = { current: 10, temp: 0 };
   doc.session.hitDice = { used: 0 };
