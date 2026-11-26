@@ -22,6 +22,7 @@ import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useMonsterUses } from "@/domains/combat/ui/use-monster-uses";
+import { useMonsterActions } from "@/domains/combat/ui/use-monster-actions";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
 import { initiativePlace, lineNeighbourPlace } from "@/domains/combat/initiative-edit";
@@ -209,6 +210,8 @@ function LiveFight({
   const dm = useDmTools(campaign, encounter, view.rows, rows, uid, isDm, locale, onToast);
   // The DM's limited uses (Recharge, N/Day, legendary) under each monster line.
   const uses = useMonsterUses(campaign.id, encounter, uid, locale, onToast);
+  // ...and its printed actions and traits (the classic one-tap monster actions).
+  const acts = useMonsterActions(campaign.id, encounter, view.rows, uid, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
   const writeUp = useEndFight(
     campaign,
@@ -281,25 +284,32 @@ function LiveFight({
               <FightLine
                 row={row}
                 dm={dm.line(row)}
+                // the line's own tools, under its name (Foundry's and D&D Beyond's
+                // encounter rows): the DM's printed actions and the limited uses, then the
+                // area spell on the monster's turn
                 action={
-                  monsterTurn &&
-                  row.ids.includes(monsterTurn.id) && (
-                    <MonsterZoneCast
-                      campaignId={campaign.id}
-                      monsterId={monsterTurn.id}
-                      monsterName={
-                        view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
-                      }
-                      defaultDc={monsterSpellDc(
-                        monsterStatBlockOf(encounter, monsterTurn.id)
+                  (isDm || monsterTurn) && (
+                    <>
+                      {isDm && acts.stripFor(row.ids)}
+                      {isDm && uses.stripFor(row.ids)}
+                      {monsterTurn && row.ids.includes(monsterTurn.id) && (
+                        <MonsterZoneCast
+                          campaignId={campaign.id}
+                          monsterId={monsterTurn.id}
+                          monsterName={
+                            view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
+                          }
+                          defaultDc={monsterSpellDc(
+                            monsterStatBlockOf(encounter, monsterTurn.id)
+                          )}
+                          locale={locale}
+                          onToast={onToast}
+                        />
                       )}
-                      locale={locale}
-                      onToast={onToast}
-                    />
+                    </>
                   )
                 }
               />
-              {isDm && uses.stripFor(row.ids)}
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
@@ -330,6 +340,7 @@ function LiveFight({
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
         {dm.dialogs}
+        {isDm && acts.dialog}
         {writeUp.dialog}
       </div>
       <Feed

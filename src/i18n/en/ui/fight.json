@@ -150,6 +150,17 @@
       "rechargeMiss": "Recharge {{d6}}: {{name}} stays spent",
       "regainDone": "Legendary actions regained: {{name}}",
       "legendarySpent": "Legendary action used: {{name}}"
+    },
+    "actions": {
+      "title": "{{name}}: actions",
+      "applied": "{{name}}: applied",
+      "traits": "{{name}}: traits",
+      "rowDamage_one": "{{count}} damage",
+      "rowDamage_other": "{{count}} damage",
+      "group": {
+        "heroes": "Heroes",
+        "ownSide": "Its own side"
+      }
     }
   }
 }
