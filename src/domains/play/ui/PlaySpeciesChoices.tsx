@@ -132,7 +132,11 @@ function SpeciesChoicesDialog({
   };
   const rows = choiceSlotRows(pending.slots, picks, owned, locale);
   // The class picks owed, answered by row key.
-  const classRows = owedClassPickRows(doc.character, locale);
+  const classRows = owedClassPickRows(
+    doc.character,
+    locale,
+    doc.session.grantBundleChoices
+  );
   const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
   // A Lore Bard's Magical Discoveries without their mark: the likely ones preselected,
   // so confirming them is the one tap on «Salva».

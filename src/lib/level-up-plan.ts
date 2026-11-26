@@ -18,7 +18,11 @@ import { proficientSkillIds } from "@/lib/skills";
 import { getClassTable, getFeaturesAtLevel } from "@/data/classes";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import { multiclassEntryGrants } from "@/lib/multiclass";
-import { collectChoiceSlots, collectGrantBundles } from "@/lib/feature-choices";
+import {
+  chosenBundleSources,
+  collectChoiceSlots,
+  collectGrantBundles,
+} from "@/lib/feature-choices";
 import {
   eligibleSpellMasteryPicks,
   hasEligibleSpellsAtLevel,
@@ -58,6 +62,8 @@ export interface LevelUpInterim {
   subclassId: string | null;
   asiChoice: AsiChoice;
   fightingStyle: string | null;
+  /** The option picked for each bundle this level asks (Divine Order → Thaumaturge). */
+  bundlePicks?: Readonly<Record<string, string>>;
 }
 
 export function levelUpPlan(
@@ -316,12 +322,26 @@ export function levelUpPlan(
       rows[classId] = classTable.levels.find((l) => l.level === 1)?.spellSlots ?? [];
       priorRows[classId] = [];
     }
-    const slots = collectChoiceSlots(resolveGrantSourcesForFeatures(refs), {
-      spellSlotsByClass: rows,
-    });
     const gainedIds = new Set(refs.map((r) => r.srdId));
     const ownedRefs: SrdFeatureRef[] = charData.features.filter(
       (f): f is SrdFeatureRef => !("custom" in f) && !gainedIds.has(f.srdId)
+    );
+    // An option picked on this level for a bundle still unchosen (Divine Order on
+    // a first Cleric level) owes its own choices too: Thaumaturge's extra cantrip.
+    const chosen = character.session.grantBundleChoices ?? {};
+    const pendingBundlePicks = Object.fromEntries(
+      Object.entries(interim.bundlePicks ?? {}).filter(([key]) => !chosen[key])
+    );
+    const gainedSources = resolveGrantSourcesForFeatures(refs);
+    const slots = collectChoiceSlots(
+      [
+        ...gainedSources,
+        ...chosenBundleSources(
+          [...gainedSources, ...resolveGrantSourcesForFeatures(ownedRefs)],
+          pendingBundlePicks
+        ),
+      ],
+      { spellSlotsByClass: rows }
     );
     const recurringSources = resolveGrantSourcesForFeatures(ownedRefs)
       .map((src) => ({

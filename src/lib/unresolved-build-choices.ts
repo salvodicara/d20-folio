@@ -63,7 +63,9 @@ export function unresolvedBuildChoices(
   )) {
     out.push({ kind: "feat-ability", featId });
   }
-  for (const owed of owedClassPicks(character)) out.push({ kind: "class-pick", ...owed });
+  for (const owed of owedClassPicks(character, session.grantBundleChoices)) {
+    out.push({ kind: "class-pick", ...owed });
+  }
   const discoveries = unmarkedDiscoveries({
     classes: character.classes ?? [],
     spells: character.spells ?? [],

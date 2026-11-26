@@ -22,6 +22,8 @@ import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
+import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
+import { initiativePlace } from "@/domains/combat/initiative-edit";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -202,7 +204,7 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
-  const dm = useDmTools(campaign, view.rows, uid, isDm, locale, onToast);
+  const dm = useDmTools(campaign, encounter, view.rows, uid, isDm, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
   const writeUp = useEndFight(
     campaign,
@@ -343,6 +345,7 @@ function LiveFight({
  */
 function useDmTools(
   campaign: CampaignDoc,
+  encounter: EncounterState,
   fighters: ReturnType<typeof buildEncounterView>["rows"],
   uid: string,
   isDm: boolean,
@@ -353,6 +356,7 @@ function useDmTools(
   const move = useFightMove(onToast);
   const [hitting, setHitting] = useState<readonly string[] | null>(null);
   const [adding, setAdding] = useState(false);
+  const [initFor, setInitFor] = useState<FightRow | null>(null);
   const targets = hitting ? dmTargets(fighters, hitting) : [];
   const line = (row: FightRow): FightLineDm | undefined => {
     if (!isDm) return undefined;
@@ -362,7 +366,17 @@ function useDmTools(
       { current: 0, max: 0 }
     );
     const label = t("fight.dm.hpFor", { name: row.name });
-    return { hp, label, onHp: () => setHitting(row.ids) };
+    return {
+      hp,
+      label,
+      onHp: () => setHitting(row.ids),
+      ...(row.kind === "monster"
+        ? {
+            onInit: () => setInitFor(row),
+            initLabel: t("fight.dm.initTitle", { name: row.name }),
+          }
+        : {}),
+    };
   };
   const dialogs = isDm && (
     <>
@@ -406,6 +420,26 @@ function useDmTools(
               t(active ? "fight.dm.conditionOn" : "fight.dm.conditionOff", {
                 name: target.name,
               })
+            )
+          }
+        />
+      )}
+      {initFor && (
+        <InitiativeDialog
+          name={initFor.name}
+          count={initFor.count}
+          value={initFor.initiative}
+          onClose={() => setInitFor(null)}
+          onSave={(value) =>
+            move(
+              dmMoves.initiative(
+                campaign.id,
+                uid,
+                initFor.ids,
+                value,
+                initiativePlace(encounter, fighters, initFor.ids, value)
+              ),
+              t("fight.dm.initDone", { name: initFor.name, value })
             )
           }
         />

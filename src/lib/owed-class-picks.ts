@@ -44,6 +44,8 @@ import {
   listExpertiseEligibleSkills,
 } from "@/lib/expertise-pick";
 import { applyClassPicks } from "@/lib/level-up-commit";
+import { chosenBundleSources } from "@/lib/feature-choices";
+import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import {
   eligibleManeuvers,
   isManeuverPlaceholder,
@@ -105,26 +107,66 @@ function levelOf(entry: ClassEntry): number {
   return Math.max(1, Math.min(20, Math.floor(entry.level)));
 }
 
-/** The table's cantrip count for each entry, by class id. */
-function cantripBudgets(build: BuildForClassPicks): Map<string, number> {
+/** The chosen option of each bundle (`session.grantBundleChoices`). */
+export type BundleChoices = Readonly<Record<string, string>>;
+
+/**
+ * The extra class cantrips a chosen bundle option gives (Thaumaturge: «one extra
+ * cantrip from the Cleric spell list»): the source each is stored under
+ * (`grantedBy`), its class list, and how many.
+ */
+function bundleCantrips(build: BuildForClassPicks, bundleChoices: BundleChoices) {
+  const owned = new Set(entries(build).map((e) => e.classId));
+  const refs = (build.features ?? []).filter((f) => "srdId" in f);
+  return chosenBundleSources(resolveGrantSourcesForFeatures(refs), bundleChoices).flatMap(
+    (src) =>
+      (src.grants ?? []).flatMap((g) =>
+        g.type === "choice-cantrip" &&
+        g.classSpellList !== undefined &&
+        owned.has(g.classSpellList)
+          ? [{ sourceId: src.id, classId: g.classSpellList, amount: g.amount }]
+          : []
+      )
+  );
+}
+
+/** The table's cantrip count for each entry, by class id, plus a chosen option's. */
+function cantripBudgets(
+  build: BuildForClassPicks,
+  extra: ReadonlyArray<{ classId: string; amount: number }>
+): Map<string, number> {
   const out = new Map<string, number>();
   for (const e of entries(build)) {
     const row = getClassTable(e.classId)?.levels.find((l) => l.level === levelOf(e));
     const n = row?.cantripsKnown ?? 0;
     if (n > 0) out.set(e.classId, (out.get(e.classId) ?? 0) + n);
   }
+  for (const { classId, amount } of extra) {
+    out.set(classId, (out.get(classId) ?? 0) + amount);
+  }
   return out;
 }
 
 /** How many of each class's cantrips are still to learn. */
-function cantripsOwed(build: BuildForClassPicks): Map<string, number> {
-  const left = cantripBudgets(build);
+function cantripsOwed(
+  build: BuildForClassPicks,
+  bundleChoices: BundleChoices
+): Map<string, number> {
+  const extra = bundleCantrips(build, bundleChoices);
+  const left = cantripBudgets(build, extra);
   if (left.size === 0) return left;
   const classIds = [...left.keys()];
+  const extraClass = new Map(extra.map((x) => [x.sourceId, x.classId]));
   const lists: string[][] = [];
   for (const s of build.spells ?? []) {
     if ("custom" in s) {
       if (s.level === 0) lists.push([]);
+      continue;
+    }
+    // The chosen option's own cantrip (stored always prepared, `grantedBy` it).
+    const viaOption = s.grantedBy ? extraClass.get(s.grantedBy) : undefined;
+    if (viaOption) {
+      if (getSpellById(s.srdId)?.level === 0) lists.push([viaOption]);
       continue;
     }
     if (s.alwaysPrepared || s.freeCastSource != null || s.speciesSpellAbility) continue;
@@ -190,12 +232,15 @@ function expertiseOwed(build: BuildForClassPicks): Map<string, number> {
 }
 
 /** Every class pick the character owes, per class, in a stable order. */
-export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
+export function owedClassPicks(
+  build: BuildForClassPicks,
+  bundleChoices: BundleChoices = {}
+): OwedClassPick[] {
   const out: OwedClassPick[] = [];
   const hasManeuvers = (build.features ?? []).some(
     (f) => "srdId" in f && isManeuverPlaceholder(f.srdId)
   );
-  const cantrips = cantripsOwed(build);
+  const cantrips = cantripsOwed(build, bundleChoices);
   const expertise = expertiseOwed(build);
   // Styles held (style feats among the features), set against each class's
   // Fighting Style slots in class order.
@@ -255,9 +300,10 @@ export function owedClassPicks(build: BuildForClassPicks): OwedClassPick[] {
  */
 export function applyOwedClassPicks(
   character: CharacterData,
-  answers: readonly ClassPickAnswer[]
+  answers: readonly ClassPickAnswer[],
+  bundleChoices: BundleChoices = {}
 ): CharacterData {
-  const owed = owedClassPicks(character);
+  const owed = owedClassPicks(character, bundleChoices);
   let next = character;
   for (const answer of answers) {
     const debt = owed.find((o) => o.classId === answer.classId && o.pick === answer.pick);

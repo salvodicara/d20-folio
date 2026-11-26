@@ -30,6 +30,7 @@ import {
   startNewSitting,
   test,
   watchErrors,
+  dmEndFight,
 } from "./helpers";
 import {
   BARD_WEAPON,
@@ -142,7 +143,7 @@ test("an evening with no fight started: the DM's Journal tells it as one inferre
     const end = dm.getByRole("button", { name: "End fight" });
     const idle = dm.getByText(/No fight running/i);
     await expect(end.or(idle).first()).toBeVisible({ timeout: 60_000 });
-    if (await end.isVisible()) await end.click();
+    if (await end.isVisible()) await dmEndFight(dm);
     await expect(idle).toBeVisible();
     // The end must be on the server, not only on this page, before it closes.
     await openFightTab(dm);

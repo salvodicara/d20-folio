@@ -3506,7 +3506,11 @@ export const useCharacterStore = create<CharacterState>()((set, get) => ({
     const { character } = get();
     if (!character) return;
     const charData = character.character;
-    const next = applyOwedClassPicks(charData, answers);
+    const next = applyOwedClassPicks(
+      charData,
+      answers,
+      character.session.grantBundleChoices
+    );
     if (next === charData) return;
     set({ character: { ...character, character: next } });
   },

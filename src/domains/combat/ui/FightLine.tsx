@@ -11,6 +11,9 @@ export interface FightLineDm {
   hp: { current: number; max: number };
   label: string;
   onHp: () => void;
+  /** A monster line: a tap on its initiative edits it (D&D Beyond's tracker). */
+  onInit?: () => void;
+  initLabel?: string;
 }
 
 /** One line of the initiative list (the campaign's Scontro and the sheet's Iniziativa),
@@ -57,7 +60,18 @@ export function FightLine({
   );
   return (
     <div className="f-row f-fight" data-current={row.current || undefined}>
-      <span className="f-init">{row.initiative ?? ""}</span>
+      {dm?.onInit ? (
+        <button
+          type="button"
+          className="f-init f-init-edit"
+          aria-label={dm.initLabel}
+          onClick={dm.onInit}
+        >
+          {row.initiative ?? "–"}
+        </button>
+      ) : (
+        <span className="f-init">{row.initiative ?? ""}</span>
+      )}
       <span className="f-act-slot" data-painted="" aria-hidden="true">
         <LineArt art={row.art} name={row.name} />
       </span>

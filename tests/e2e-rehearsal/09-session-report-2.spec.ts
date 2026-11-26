@@ -39,6 +39,7 @@ import {
   startNewSitting,
   test,
   watchErrors,
+  dmEndFight,
 } from "./helpers";
 import {
   BARD_D20,
@@ -150,7 +151,7 @@ async function endFight(dm: Page): Promise<void> {
   const end = dm.getByRole("button", { name: "End fight" });
   const idle = dm.getByText(/No fight running/i);
   await expect(end.or(idle).first()).toBeVisible({ timeout: 60_000 });
-  if (await end.isVisible()) await end.click();
+  if (await end.isVisible()) await dmEndFight(dm);
   await expect(idle).toBeVisible();
 }
 
@@ -262,7 +263,7 @@ test("a second evening: saves, a level-up, a started fight and a forgotten one, 
     await attack(bard, BARD_WEAPON);
     await markMiss(bard);
     await openFightTab(dm);
-    await dm.getByRole("button", { name: "End fight" }).click();
+    await dmEndFight(dm);
     await expect(dm.getByText(/No fight running/i)).toBeVisible();
   });
 
