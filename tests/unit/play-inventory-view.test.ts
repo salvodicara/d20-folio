@@ -285,3 +285,33 @@ describe("the item pane's moves (#1230)", () => {
     expect(items().find((i) => i.source.list === "weapons")?.equip).toBeUndefined();
   });
 });
+
+describe("what the item pane tells about an item (D&D Beyond's item details)", () => {
+  const items = () => {
+    const d = structuredClone(MOCK_CHARACTER);
+    d.character.weapons = [];
+    d.character.equipment = [
+      { srdId: "torch", instanceId: "torch", quantity: 4 },
+      {
+        custom: true,
+        name: "Lucky stone",
+        description: "Warm to the touch.",
+        quantity: 1,
+        mechanics: { weight: 0.5, price: "25 GP" },
+        instanceId: "4b7e1c62-3f0a-4c7e-9d11-2a6f5b8e9c01",
+      },
+    ];
+    return playInventoryView(d, "en").groups.flatMap((g) => g.items);
+  };
+
+  it("its cost, from the catalogue or the homebrew item's own", () => {
+    expect(items().map((i) => i.cost)).toEqual([
+      { amount: 1, unit: "cp" },
+      { amount: 25, unit: "gp" },
+    ]);
+  });
+
+  it("a homebrew item's notes; a catalogue item's long text stays in the Compendium", () => {
+    expect(items().map((i) => i.notes)).toEqual([undefined, "Warm to the touch."]);
+  });
+});
