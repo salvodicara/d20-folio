@@ -20,6 +20,7 @@ beforeAll(loadCampaignIo);
 import i18n from "@/i18n";
 import {
   attackRowChips,
+  attackRowsChips,
   incomingAttackLabel,
 } from "@/components/shared/damage-tray-target";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
@@ -121,6 +122,14 @@ describe("my tray says it on each attack row", () => {
         consumed: true,
       },
     ]);
+  });
+
+  it("only the first attack row: a second ray's roll (Scorching Ray) is a straight one", () => {
+    const rows = attackRowsChips([rider], ["goblin-a", "goblin-b"], ME);
+    expect(rows[0]).toEqual([
+      expect.objectContaining({ sourceId: "ray-of-enfeeblement" }),
+    ]);
+    expect(rows[1]).toEqual([]);
   });
 
   it("«Disadvantage (Ray of Enfeeblement, spent by this attack)», in both languages", async () => {

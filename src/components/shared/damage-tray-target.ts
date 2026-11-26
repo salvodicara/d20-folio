@@ -53,12 +53,14 @@ export interface IncomingAttackChip {
 
 /** An attack row's modes: the fight's states on the target (Guiding Bolt's
  *  Advantage), then the attacker's own next-attack states (Sap, Ray of Enfeeblement's
- *  success: Disadvantage), which this attack spends. */
+ *  success: Disadvantage), which this attack spends; `withOwn` false for a later
+ *  roll of the same use ({@link attackRowsChips}). */
 export function attackRowChips(
   operations: ReadonlyArray<CombatEffectOp> | undefined,
   targetId: string,
   attackerId: string,
-  sideOf?: (combatantId: string) => "party" | "enemy"
+  sideOf?: (combatantId: string) => "party" | "enemy",
+  withOwn = true
 ): IncomingAttackChip[] {
   return [
     ...incomingAttackModes(operations, targetId, attackerId, sideOf).map((m) => ({
@@ -67,13 +69,30 @@ export function attackRowChips(
       mode: m.mode,
       consumed: m.consumed,
     })),
-    ...nextAttackModes(operations, attackerId).map((m) => ({
+    ...(withOwn ? nextAttackModes(operations, attackerId) : []).map((m) => ({
       sourceKind: m.sourceKind,
       sourceId: m.sourceId,
       mode: m.mode,
       consumed: true,
     })),
   ];
+}
+
+/** Each attack row's modes, in the tray's target order: the attacker's own
+ *  next-attack state rides the first row only, the roll that spends it (a second
+ *  Scorching Ray ray is a straight roll). Rows that are me read none. */
+export function attackRowsChips(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  targetIds: ReadonlyArray<string>,
+  attackerId: string,
+  sideOf?: (combatantId: string) => "party" | "enemy"
+): IncomingAttackChip[][] {
+  const first = targetIds.findIndex((id) => id !== attackerId);
+  return targetIds.map((id, index) =>
+    id === attackerId
+      ? []
+      : attackRowChips(operations, id, attackerId, sideOf, index === first)
+  );
 }
 
 /** The target's first tray row, with everything the tray reads from the creature:
