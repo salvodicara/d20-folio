@@ -697,6 +697,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     name: "Pell, the Practiced",
     raceId: "dwarf",
     classId: "bard",
+    // A Bard 8 has its subclass (a build past level 3 without one is asked it first).
+    subclassId: "college-of-lore",
     level: 8,
     background: "entertainer",
     abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 17 },
