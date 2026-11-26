@@ -98,11 +98,11 @@ describe("sheetNumbers", () => {
       expect(breakdownTotal(number.parts ?? [])).toBe(total);
       expect(adjustment(number.parts)?.label).toEqual({ term: "breakdown.override" });
     }
-    // A hand-adjusted max HP names its bonus as a row of the composition.
+    // A hand-adjusted max HP names its bonus as the manual adjustment row.
     expect(n.maxHp.total).toBe(deriveCharacter(doc).hp.max);
     expect(breakdownTotal(n.maxHp.parts ?? [])).toBe(n.maxHp.total);
     expect(n.maxHp.parts).toContainEqual({
-      label: { term: "breakdown.hpBonus" },
+      label: { term: "breakdown.override" },
       value: 3,
     });
   });

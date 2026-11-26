@@ -2,8 +2,8 @@
  * Overrides are always possible and stay explained (owner direction, row 13). Every
  * number `sheetNumbers` lists can be set by hand, and a hand-set number keeps its
  * explanation: the computed parts, then ONE "manual adjustment" part for the
- * difference, so the parts still sum to the number the sheet shows (max HP names its
- * hand adjustment as the bonus row, #1334). Cases come from
+ * difference, so the parts still sum to the number the sheet shows (for max HP that
+ * part is the stored correction, #1334). Cases come from
  * every dev scenario; a new sheet number without an override path fails here (the
  * table below is typed over every key of `SheetNumbers`, and the keys are compared
  * at run time too).
@@ -66,8 +66,6 @@ interface Case {
   shown?: (pinned: CharacterDoc, value: number) => number;
   /** The value to pin (default: the shown number + 3, never the computed one). */
   value?: (doc: CharacterDoc, shownBefore: number) => number;
-  /** The term of the ONE hand-set part (default: the manual adjustment). */
-  handSetTerm?: string;
 }
 
 const withChar = (
@@ -122,12 +120,11 @@ const CASES: Record<keyof N, (doc: CharacterDoc) => Case[]> = {
   ],
   maxHp: () => [
     {
-      // The hand edit (#1315/#1334) stores its input, the bonus over the derived max,
-      // and names it as a row; the live boons and a Life Drain still apply on top.
+      // The hand edit (#1315/#1334) stores its input, the bonus over the derived max:
+      // the one «Manual adjustment» row; the live boons and a Life Drain apply on top.
       name: "maxHp",
       read: (n) => n.maxHp,
       pin: (d, v) => ({ ...d, character: withMaxHpEdit(d.character, v) }),
-      handSetTerm: "breakdown.hpBonus",
       shown: (pinned) => deriveCharacter(pinned).hp.max,
       // Off the by-the-book max, whatever the scenario stores.
       value: (d) => computeCharacterMaxHp(d.character) + 3,
@@ -206,10 +203,8 @@ const CASES: Record<keyof N, (doc: CharacterDoc) => Case[]> = {
     })),
 };
 
-const isOverridePart = (
-  p: RawBreakdownPart | undefined,
-  term: string = OVERRIDE_TERM
-): boolean => p != null && "term" in p.label && p.label.term === term;
+const isOverridePart = (p: RawBreakdownPart | undefined): boolean =>
+  p != null && "term" in p.label && p.label.term === OVERRIDE_TERM;
 
 describe("every sheet number can be set by hand and stays explained", () => {
   it("the override table covers every sheet number", () => {
@@ -242,14 +237,12 @@ describe("every sheet number can be set by hand and stays explained", () => {
         expect(after?.parts, c.name).not.toBeNull();
         const parts = after?.parts ?? [];
         expect(breakdownTotal(parts), c.name).toBe(shown);
-        const term = c.handSetTerm ?? OVERRIDE_TERM;
-        const handSet = (p: RawBreakdownPart) => isOverridePart(p, term);
-        if (term === OVERRIDE_TERM) expect(isHandSet(parts), c.name).toBe(true);
-        expect(parts.filter(handSet), c.name).toHaveLength(1);
+        expect(isHandSet(parts), c.name).toBe(true);
+        expect(parts.filter(isOverridePart), c.name).toHaveLength(1);
         // The computed explanation is kept as it was (a by-the-book baseline).
-        if (before.parts && !before.parts.some(handSet)) {
+        if (before.parts && !before.parts.some(isOverridePart)) {
           expect(
-            parts.filter((p) => !handSet(p)),
+            parts.filter((p) => !isOverridePart(p)),
             c.name
           ).toEqual(before.parts);
         }
@@ -257,17 +250,15 @@ describe("every sheet number can be set by hand and stays explained", () => {
     }
   );
 
-  it("a max HP set 4 below the derived one reads as a −4 hand adjustment row", () => {
+  it("a max HP set 4 below the derived one reads as a −4 manual adjustment", () => {
     const entry = docs.find(([, d]) => computeCharacterMaxHp(d.character) > 10);
     if (!entry) throw new Error("no scenario");
     const doc = entry[1];
     const edited = withMaxHpEdit(doc.character, maxHpWithoutBonus(doc.character) - 4);
     const n = sheetNumbers({ ...doc, character: edited });
-    expect(n.maxHp.parts).toContainEqual({
-      label: { term: "breakdown.hpBonus" },
-      value: -4,
-    });
-    expect(n.maxHp.parts?.some((p) => isOverridePart(p))).toBe(false);
+    expect(n.maxHp.parts?.filter((p) => isOverridePart(p))).toEqual([
+      { label: { term: OVERRIDE_TERM }, value: -4 },
+    ]);
   });
 });
 

@@ -55,6 +55,7 @@ import { inferHpContributions } from "@/lib/character-infer";
 import { getClasses, totalLevel } from "@/lib/classes";
 import {
   abilityPart,
+  OVERRIDE_TERM,
   locPart,
   breakdownTotal,
   termPart,
@@ -873,14 +874,15 @@ export function effectiveMaxHpBreakdown(
     .map((p) => locPart(srdText(p.ref.kind, p.ref.key, "name"), p.amount));
   const reduction = hpMaxReductionOf(session);
   // #1315 — the player's max-HP inputs are named rows, so a rolled or hand-adjusted
-  // max still has an honest composition.
+  // max still has an honest composition. The hand adjustment IS the correction the
+  // max HP pane names «Correzione manuale» / «Manual adjustment» (#1359/#1380).
   const input = (v: unknown) => (Number.isSafeInteger(v) && v !== 0 ? (v as number) : 0);
   const rolled = input(character.hpRolled);
   const bonus = input(character.hpBonus);
   return [
     ...base,
     ...(rolled !== 0 ? [termPart("breakdown.hpRolled", rolled)] : []),
-    ...(bonus !== 0 ? [termPart("breakdown.hpBonus", bonus)] : []),
+    ...(bonus !== 0 ? [termPart(OVERRIDE_TERM, bonus)] : []),
     ...flatParts,
     ...(reduction > 0 ? [termPart("breakdown.hpMaxReduction", -reduction)] : []),
   ];
