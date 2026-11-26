@@ -23,7 +23,7 @@ import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
-import { placeByInitiative } from "@/domains/combat/initiative-edit";
+import { initiativePlace } from "@/domains/combat/initiative-edit";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
@@ -430,27 +430,18 @@ function useDmTools(
           count={initFor.count}
           value={initFor.initiative}
           onClose={() => setInitFor(null)}
-          onSave={(value) => {
-            // Before turns begin the engine sorts by itself; after, the order stands
-            // and the line moves to its number's place.
-            const settled = !encounter.clock || encounter.clock.turnsBegun;
-            const order = (encounter.order ?? []).flatMap((id) => {
-              const f = fighters.find((x) => x.id === id);
-              return f ? [{ id, initiative: f.initiative }] : [];
-            });
+          onSave={(value) =>
             move(
               dmMoves.initiative(
                 campaign.id,
                 uid,
                 initFor.ids,
                 value,
-                settled
-                  ? { beforeId: placeByInitiative(order, initFor.ids, value) }
-                  : null
+                initiativePlace(encounter, fighters, initFor.ids, value)
               ),
               t("fight.dm.initDone", { name: initFor.name, value })
-            );
-          }}
+            )
+          }
         />
       )}
       {adding && (

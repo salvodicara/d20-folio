@@ -4,6 +4,7 @@
  * turns begin the engine re-sorts by itself; once they have begun the order stands, so
  * the edited creatures move to their number's place with the reorder move.
  */
+import type { EncounterState } from "@/types/campaign";
 
 /** A whole number from -9 to 99; null for anything else. */
 export function parseInitiative(text: string): number | null {
@@ -26,4 +27,22 @@ export function placeByInitiative(
     (r) => !moved.has(r.id) && r.initiative !== null && r.initiative < value
   );
   return next?.id ?? null;
+}
+
+/**
+ * Where an edited line goes, for the move: null before turns begin (the engine re-sorts
+ * by itself), else its number's place in the standing order.
+ */
+export function initiativePlace(
+  fight: Pick<EncounterState, "clock" | "order">,
+  fighters: readonly { id: string; initiative: number | null }[],
+  movedIds: readonly string[],
+  value: number
+): { beforeId: string | null } | null {
+  if (fight.clock && !fight.clock.turnsBegun) return null;
+  const order = (fight.order ?? []).flatMap((id) => {
+    const f = fighters.find((x) => x.id === id);
+    return f ? [{ id, initiative: f.initiative }] : [];
+  });
+  return { beforeId: placeByInitiative(order, movedIds, value) };
 }

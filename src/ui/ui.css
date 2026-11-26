@@ -6507,6 +6507,7 @@
 }
 /* B: a monster line's initiative is a button (D&D Beyond's tracker: type it in place) */
 .fui .f-init-edit {
+  min-width: 44px;
   min-height: 44px;
   padding: 0;
   border: 0;
