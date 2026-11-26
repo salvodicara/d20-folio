@@ -505,9 +505,10 @@
       }
     },
     "number": {
-      "handSet": "Impostato a mano",
       "override": "Valore fisso",
       "overrideHelp": "Sostituisce il valore calcolato. «Usa il calcolo» lo riporta.",
+      "computed": "Valore calcolato",
+      "fixedHelp": "Resta {{value}} anche se cambiano livello o equipaggiamento. «Usa il calcolo» riporta {{computed}}.",
       "useComputed": "Usa il calcolo",
       "setToast": "{{name}}: valore impostato a mano",
       "resetToast": "{{name}}: di nuovo calcolato",
