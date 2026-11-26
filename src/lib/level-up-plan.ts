@@ -15,7 +15,7 @@
  */
 import { getAverageHpGain, levelUp } from "@/lib/level-up";
 import { proficientSkillIds } from "@/lib/skills";
-import { getClassTable, getFeaturesAtLevel } from "@/data/classes";
+import { classFeatureIndex, getClassTable, getFeaturesAtLevel } from "@/data/classes";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import { multiclassEntryGrants } from "@/lib/multiclass";
 import {
@@ -248,7 +248,24 @@ export function levelUpPlan(
     const gained = getFeaturesAtLevel(classId, newClassLevel)
       .filter((f) => !f.subclass || f.subclass.toLowerCase() === effectiveSubclass)
       .map((f) => ({ srdId: f.id }));
+    // A feature already held whose spells unlock at a later level, through the option
+    // the player chose (Circle of the Land, Arid: Blight at Druid 7).
+    const held = resolveGrantSourcesForFeatures(
+      (charData?.features ?? []).filter(
+        (f): f is SrdFeatureRef =>
+          !("custom" in f) && classFeatureIndex.get(f.srdId)?.class === classId
+      )
+    );
+    const bundleChoices = new Map(
+      Object.entries(character?.session.grantBundleChoices ?? {})
+    );
+    const heldAt = (level: number) =>
+      getAlwaysPreparedFromGrants(held, { level, bundleChoices }).map((entry) =>
+        typeof entry === "string" ? entry : entry.spellId
+      );
+    const heldBefore = new Set(heldAt(currentClassLevel));
     return new Set([
+      ...heldAt(newClassLevel).filter((id) => !heldBefore.has(id)),
       ...getExpandedSpellsAtLevel(classId, subclass, newClassLevel),
       ...getAlwaysPreparedFromGrants(resolveGrantSourcesForFeatures(gained), {
         level: newClassLevel,
