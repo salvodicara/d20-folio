@@ -7372,3 +7372,20 @@
   padding-top: 6px;
   padding-bottom: 6px;
 }
+
+/* the DM's own monster rows in «Aggiungi mostri»: edit and delete beside the count */
+.fui .f-dm-own {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.fui .f-dm-own > .f-dm-step {
+  width: 44px;
+  height: 44px;
+}
+/* two short numbers side by side (the DM's own monster: AC and max HP) */
+.fui .f-two-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}

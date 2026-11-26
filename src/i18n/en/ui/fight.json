@@ -161,6 +161,15 @@
         "heroes": "Heroes",
         "ownSide": "Its own side"
       }
+    },
+    "custom": {
+      "new": "New monster",
+      "crHelp": "0 to 30, or 1/8, 1/4, 1/2",
+      "edit": "Edit: {{name}}",
+      "delete": "Delete: {{name}}",
+      "deleteBody": "It leaves your monsters. Creatures already in a fight stay.",
+      "savedDone": "Saved to your monsters: {{name}}",
+      "deletedDone": "Deleted: {{name}}"
     }
   }
 }

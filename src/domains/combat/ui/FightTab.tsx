@@ -555,6 +555,7 @@ function useDmTools(
           <AddMonstersDialog
             campaign={campaign}
             locale={locale}
+            uid={uid}
             onClose={() => setAdding(false)}
             onAdd={(inputs, label) =>
               move(

@@ -161,6 +161,15 @@
         "heroes": "Eroi",
         "ownSide": "Dalla sua parte"
       }
+    },
+    "custom": {
+      "new": "Nuovo mostro",
+      "crHelp": "Da 0 a 30, oppure 1/8, 1/4, 1/2",
+      "edit": "Modifica: {{name}}",
+      "delete": "Elimina: {{name}}",
+      "deleteBody": "Esce dai tuoi mostri. Le creature già in uno scontro restano.",
+      "savedDone": "Salvato nei tuoi mostri: {{name}}",
+      "deletedDone": "Eliminato: {{name}}"
     }
   }
 }
