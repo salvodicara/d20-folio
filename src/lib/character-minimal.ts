@@ -101,7 +101,11 @@ interface DerivableField {
 }
 
 const DERIVABLE: DerivableField[] = [
-  { key: "savingThrows", derive: (classes) => inferSavingThrows(primaryEntry(classes)) },
+  // Saving throws come from the FIRST class (`classes[0]`, the class taken at
+  // character level 1): a class added by multiclassing grants none (#1366).
+  { key: "savingThrows", derive: (classes) => inferSavingThrows(firstEntry(classes)) },
+  // The hit die is the headline class's die, a single-die summary (the PDF, the
+  // homebrew fallback of the Hit Dice pool). First-level HP reads each class table.
   { key: "hitDieType", derive: (classes) => inferHitDie(primaryEntry(classes)) },
   {
     // Single-class → the class table's own slots. Multiclass → the 2024 Multiclass
@@ -111,6 +115,8 @@ const DERIVABLE: DerivableField[] = [
   },
   { key: "speed", derive: (_classes, c) => inferSpeed({ race: c.race }) },
   {
+    // The headline class's block. Each class casts with its own ability, so no
+    // first-class rule applies here (a Fighter 1 / Wizard 5 casts as a Wizard).
     key: "spellcasting",
     derive: (classes) => inferSpellcasting(primaryEntry(classes)),
   },
@@ -141,6 +147,11 @@ const DERIVABLE: DerivableField[] = [
 function byTheBookMaxHp(classes: ClassEntry[], c: CharacterData): number {
   const average = inferHpMax(classes, c.abilityScores.CON);
   return deriveMaxHp({ ...c, classes, hp: { max: average } });
+}
+
+/** The first entry (the class taken at character level 1) of a non-empty classes array. */
+function firstEntry(classes: ClassEntry[]): ClassEntry {
+  return classes[0] ?? primaryEntry(classes);
 }
 
 /** The primary (highest-level, ties → first) entry of a non-empty classes array. */
