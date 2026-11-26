@@ -370,6 +370,8 @@
         "invocations_other": "{{count}} Eldritch Invocations",
         "cantrips_one": "{{count}} cantrip",
         "cantrips_other": "{{count}} cantrips",
+        "spells_one": "{{count}} spell",
+        "spells_other": "{{count}} spells",
         "metamagic_one": "{{count}} Metamagic option",
         "metamagic_other": "{{count}} Metamagic options",
         "maneuvers_one": "{{count}} maneuver",

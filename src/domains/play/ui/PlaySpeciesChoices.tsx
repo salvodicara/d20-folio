@@ -346,7 +346,11 @@ function SpeciesChoicesDialog({
               label={row.title}
               options={row.options.map((o) => ({ id: o.id, label: o.name }))}
               picked={classPicks[row.key] ?? []}
-              spells={row.pick === "cantrips" || row.pick === "spellbook"}
+              spells={
+                row.pick === "cantrips" ||
+                row.pick === "spells" ||
+                row.pick === "spellbook"
+              }
               {...(PICK_ART[row.pick] ? { art: PICK_ART[row.pick] } : {})}
               {...(PICK_INFO[row.pick] ? { info: PICK_INFO[row.pick] } : {})}
               count={row.owed}

@@ -16,6 +16,9 @@
  *     prepared and isn't one of them), each counted for a class whose list has it,
  *     the narrowest first; a cantrip on no owing list (added by hand) still fills
  *     a gap, so a player who has the count is never asked;
+ *   - spells — a third caster's spells (a class that doesn't cast, whose subclass
+ *     does): its subclass table's count vs the levelled spells of its list held for
+ *     it; its cantrips count with the class's own (`thirdCasterKnown`);
  *   - spellbook — the Wizard's book (6, then 2 per Wizard level) vs the levelled Wizard
  *     spells on the sheet (`wizard-spellbook.ts`); the picks land in the book, not
  *     prepared;
@@ -61,12 +64,14 @@ import {
 } from "@/lib/weapon-mastery-pick";
 import { wizardBookOwed, wizardMaxSpellLevel } from "@/lib/wizard-spellbook";
 import { owesSubclass } from "@/lib/subclass-pick";
+import { thirdCasterKnown } from "@/lib/subclass-spellcasting";
 import type { CharacterData, ClassEntry } from "@/types/character";
 
 export type ClassPickKind =
   | "subclass"
   | "invocations"
   | "cantrips"
+  | "spells"
   | "metamagic"
   | "maneuvers"
   | "weaponMasteries"
@@ -99,6 +104,7 @@ const ORDER: readonly ClassPickKind[] = [
   "weaponMasteries",
   "fightingStyles",
   "cantrips",
+  "spells",
   "spellbook",
   "expertise",
 ];
@@ -144,13 +150,26 @@ function cantripBudgets(
   const out = new Map<string, number>();
   for (const e of entries(build)) {
     const row = getClassTable(e.classId)?.levels.find((l) => l.level === levelOf(e));
-    const n = row?.cantripsKnown ?? 0;
+    const n =
+      row?.cantripsKnown ??
+      thirdCasterKnown(e.classId, e.subclassId, levelOf(e))?.cantrips ??
+      0;
     if (n > 0) out.set(e.classId, (out.get(e.classId) ?? 0) + n);
   }
   for (const { classId, amount } of extra) {
     out.set(classId, (out.get(classId) ?? 0) + amount);
   }
   return out;
+}
+
+/** The spell list a class entry learns from: its own, or its subclass's (a third
+ *  caster learns the Wizard's). */
+function spellListOf(build: BuildForClassPicks, classId: string): string {
+  const entry = entries(build).find((e) => e.classId === classId);
+  return (
+    (entry && thirdCasterKnown(classId, entry.subclassId, levelOf(entry))?.spellList) ??
+    classId
+  );
 }
 
 /** How many of each class's cantrips are still to learn. */
@@ -237,6 +256,29 @@ function expertiseOwed(build: BuildForClassPicks): Map<string, number> {
   return out;
 }
 
+/**
+ * A third caster's spells still to learn: its table's count minus the levelled
+ * spells of its list it holds as its own (stored for it, or, with no other class
+ * learning that list, any plain one: not always prepared, not a feat's or a
+ * species').
+ */
+function thirdCasterSpellsOwed(build: BuildForClassPicks, entry: ClassEntry): number {
+  const known = thirdCasterKnown(entry.classId, entry.subclassId, levelOf(entry));
+  if (!known) return 0;
+  const shared = entries(build).some(
+    (e) =>
+      e.classId !== entry.classId && spellListOf(build, e.classId) === known.spellList
+  );
+  const held = (build.spells ?? []).filter((s) => {
+    if ("custom" in s || s.alwaysPrepared || s.grantedBy) return false;
+    if (s.freeCastSource != null || s.speciesSpellAbility) return false;
+    if (s.viaClass) return s.viaClass === entry.classId;
+    const data = getSpellById(s.srdId);
+    return !shared && (data?.level ?? 0) >= 1 && data?.classes.includes(known.spellList);
+  }).length;
+  return Math.max(0, known.spells - held);
+}
+
 /** Every class pick the character owes, per class, in a stable order. */
 export function owedClassPicks(
   build: BuildForClassPicks,
@@ -273,6 +315,7 @@ export function owedClassPicks(
       weaponMasteries:
         weaponMasteryCountForClass(e.classId, level) - (e.weaponMasteries?.length ?? 0),
       cantrips: cantrips.get(e.classId) ?? 0,
+      spells: thirdCasterSpellsOwed(build, e),
       fightingStyles: 0,
       spellbook:
         e.classId === "wizard"
@@ -329,6 +372,16 @@ export function applyOwedClassPicks(
     }
     if (answer.pick === "expertise") {
       next = { ...next, skills: applyExpertisePicks(next.skills, ids) };
+      continue;
+    }
+    if (answer.pick === "spells") {
+      // A third caster's: prepared, and stored as its class's.
+      const refs = ids.map((srdId) => ({
+        srdId,
+        prepared: true,
+        viaClass: answer.classId,
+      }));
+      next = { ...next, spells: [...next.spells, ...refs] };
       continue;
     }
     if (answer.pick === "fightingStyles") {
@@ -388,9 +441,28 @@ export function classPickPool(
       const known = new Set(
         (build.spells ?? []).flatMap((s) => ("custom" in s ? [] : [s.srdId]))
       );
+      const list = spellListOf(build, classId);
       return ids(
         allSpells.filter(
-          (s) => s.level === 0 && s.classes.includes(classId) && !known.has(s.id)
+          (s) => s.level === 0 && s.classes.includes(list) && !known.has(s.id)
+        )
+      );
+    }
+    case "spells": {
+      // A third caster's: its list, its schools, up to the spell level its slots reach.
+      const caster = entry ? thirdCasterKnown(classId, entry.subclassId, level) : null;
+      if (!caster) return [];
+      const known = new Set(
+        (build.spells ?? []).flatMap((s) => ("custom" in s ? [] : [s.srdId]))
+      );
+      return ids(
+        allSpells.filter(
+          (s) =>
+            s.level >= 1 &&
+            s.level <= caster.maxSpellLevel &&
+            s.classes.includes(caster.spellList) &&
+            (!caster.schools || caster.schools.includes(s.school)) &&
+            !known.has(s.id)
         )
       );
     }

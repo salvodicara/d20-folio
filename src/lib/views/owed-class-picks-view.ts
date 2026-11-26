@@ -27,6 +27,7 @@ import {
 } from "@/lib/views/level-up-view";
 import { learnableSpellVMs } from "@/lib/views/spell-pick-view";
 import { wizardMaxSpellLevel } from "@/lib/wizard-spellbook";
+import { thirdCasterKnown } from "@/lib/subclass-spellcasting";
 
 /** One option, shaped for the level-up pick list. */
 export interface OwedPickOptionVM {
@@ -185,6 +186,26 @@ export function owedClassPickRows(
       searchText: vm.searchText,
       searchDesc: vm.searchDesc,
     });
+    if (pick === "spells") {
+      // A third caster's spells: the pool `owedClassPicks` counts against (its
+      // subclass's list and schools, up to its slots), landing prepared.
+      const pool = new Set(classPickPool(build, classId, "spells"));
+      const maxLevel =
+        thirdCasterKnown(classId, entry?.subclassId, level)?.maxSpellLevel ?? 0;
+      const list =
+        thirdCasterKnown(classId, entry?.subclassId, level)?.spellList ?? classId;
+      return {
+        ...base,
+        title: t("levelUp.screen.chooseSpells", { count: owed }),
+        searchPlaceholder: t("levelUp.spells.searchSpells"),
+        options: learnableSpellVMs(
+          { classId: list, cantripsOnly: false, maxLevel, exclude: known },
+          locale
+        )
+          .filter((vm) => pool.has(vm.id))
+          .map(spellOption),
+      };
+    }
     if (pick === "spellbook") {
       // The Wizard's book: spells of a level the Wizard has slots for, landing unprepared.
       return {
@@ -209,8 +230,15 @@ export function owedClassPickRows(
         className: base.source,
       }).replace(/<\/?c>/g, ""),
       searchPlaceholder: t("levelUp.spells.searchSpells"),
+      // A third caster's cantrips come from its subclass's list.
       options: learnableSpellVMs(
-        { classId, cantripsOnly: true, maxLevel: 0, exclude: known },
+        {
+          classId:
+            thirdCasterKnown(classId, entry?.subclassId, level)?.spellList ?? classId,
+          cantripsOnly: true,
+          maxLevel: 0,
+          exclude: known,
+        },
         locale
       ).map(spellOption),
     };

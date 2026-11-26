@@ -38,6 +38,7 @@ import {
   getExpandedSpellsThroughLevel,
 } from "@/lib/expanded-spells";
 import { subclassFeaturesThrough } from "@/lib/subclass-pick";
+import { thirdCasterKnown } from "@/lib/subclass-spellcasting";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import {
   isExpertisePlaceholder,
@@ -109,6 +110,17 @@ export function levelUpPlan(
     !(advancingEntry?.subclassId ?? "");
   // The subclass picked on this level (at its level, or late).
   const subclassPicked = needsSubclass && subclassChoice ? subclassChoice : null;
+  // A third caster (a class that doesn't cast, whose subclass does) learns from its
+  // subclass's own table: a subclass picked now asks all of it up to the new level
+  // (at its level, or late), a held one only what this level adds.
+  const thirdNew = thirdCasterKnown(
+    classId,
+    subclassPicked ?? advancingSubclassId,
+    newClassLevel
+  );
+  const thirdPrev = subclassPicked
+    ? null
+    : thirdCasterKnown(classId, advancingSubclassId, currentClassLevel);
   // The features this level brings: the class's own at the new level and the
   // subclass's — a subclass picked now brings every one up to the new level
   // (`subclassFeaturesThrough`, shared with the sheet's owed pick), a held one only
@@ -173,6 +185,8 @@ export function levelUpPlan(
   // level-up (Lore picked at L3 widens the L6 Discoveries, etc.).
   const widenedSpellLists = (() => {
     if (!charData || !classId) return new Set<string>();
+    // A third caster learns its subclass's list.
+    if (thirdNew) return new Set<string>([thirdNew.spellList]);
     return widenedSpellListsAtLevel(
       classId,
       newClassLevel,
@@ -233,19 +247,23 @@ export function levelUpPlan(
   // A Wizard's level-up adds to the spellbook (6 at its first Wizard level, then 2),
   // not the Prepared Spells increase: the higher limit is filled from the book.
   const spellbookPicks = classId === "wizard" && levelData?.spellsKnown != null;
-  const spellsKnownDiff = spellbookPicks
-    ? isNewClass
-      ? WIZARD_BOOK_START
-      : WIZARD_BOOK_PER_LEVEL
-    : levelData?.spellsKnown != null && prevSpellsKnown != null
-      ? Math.max(0, levelData.spellsKnown - prevSpellsKnown)
-      : 0;
-  const cantripsKnownDiff =
-    levelData?.cantripsKnown != null && prevCantripsKnown != null
+  const spellsKnownDiff = thirdNew
+    ? Math.max(0, thirdNew.spells - (thirdPrev?.spells ?? 0))
+    : spellbookPicks
+      ? isNewClass
+        ? WIZARD_BOOK_START
+        : WIZARD_BOOK_PER_LEVEL
+      : levelData?.spellsKnown != null && prevSpellsKnown != null
+        ? Math.max(0, levelData.spellsKnown - prevSpellsKnown)
+        : 0;
+  const cantripsKnownDiff = thirdNew
+    ? Math.max(0, thirdNew.cantrips - (thirdPrev?.cantrips ?? 0))
+    : levelData?.cantripsKnown != null && prevCantripsKnown != null
       ? Math.max(0, levelData.cantripsKnown - prevCantripsKnown)
       : 0;
 
   const maxSpellLevel = (() => {
+    if (thirdNew) return thirdNew.maxSpellLevel;
     if (!levelData?.spellSlots) return 0;
     for (let i = levelData.spellSlots.length - 1; i >= 0; i--) {
       if ((levelData.spellSlots[i] ?? 0) > 0) return i + 1;
@@ -494,6 +512,10 @@ export function levelUpPlan(
     spellsKnownDiff,
     spellbookPicks,
     cantripsKnownDiff,
+    /** The list the new cantrips come from: the class's, a third caster's subclass's. */
+    cantripListId: thirdNew?.spellList ?? classId,
+    /** A third caster's schools, when its subclass names any. */
+    spellSchools: thirdNew?.schools ?? null,
     maxSpellLevel,
     existingSpellIds,
     alwaysPreparedGained,

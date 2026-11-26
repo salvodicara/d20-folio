@@ -370,6 +370,8 @@
         "invocations_other": "{{count}} Suppliche Occulte",
         "cantrips_one": "{{count}} trucchetto",
         "cantrips_other": "{{count}} trucchetti",
+        "spells_one": "{{count}} incantesimo",
+        "spells_other": "{{count}} incantesimi",
         "metamagic_one": "{{count}} opzione di Metamagia",
         "metamagic_other": "{{count}} opzioni di Metamagia",
         "maneuvers_one": "{{count}} manovra",
