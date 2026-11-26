@@ -105,7 +105,6 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
   await testEnv.clearFirestore();
   await testEnv.withSecurityRulesDisabled(async (ctx) => {
     for (const uid of ["dm", "a", "b"])

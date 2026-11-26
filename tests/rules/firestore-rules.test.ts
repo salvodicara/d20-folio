@@ -682,8 +682,8 @@ describe("firestore.rules — /campaigns access", () => {
   // MEMBER-owned PC applying to it. A member may write ONLY `encounter.{combatants,
   // events, world}` for new actions (the `combatEffectFieldsOnlyChanged()` grant):
   // monster HP plus chronicle events plus the engine layer the adversary world seam
-  // commits in the same transaction. Legacy `memberEffects` remains append-only solely for
-  // transition draining. The combatants COUNT is unchanged (no add/remove) while events
+  // commits in the same transaction. Legacy `memberEffects` stays append-only so a stored
+  // queue never blocks a write; no client reads or drains it. The combatants COUNT is unchanged (no add/remove) while events
   // only GROW (no deleting the DM's lines). Any other encounter edit, a combatant add/remove,
   // or an events shrink stays DM-only; a non-member is denied outright.
   describe("a player applies reviewed combat effects (diff-scoped member grant)", () => {

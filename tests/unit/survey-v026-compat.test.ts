@@ -334,22 +334,6 @@ describe("the survey script", () => {
     expect(source).toMatch(/\.limit\(READ_CAP \+ 1\)/);
     expect(source).toMatch(/listUsers\(ACCOUNT_CAP\)/);
   });
-
-  it("the readers it runs do not depend on the v0.26 writer flag", () => {
-    for (const file of [
-      "src/lib/character-read.ts",
-      "src/lib/character-codec.ts",
-      "src/lib/combat-state-codec.ts",
-      "src/lib/session-state-codec.ts",
-      "src/features/campaigns/campaign-codec.ts",
-      "src/lib/play/encounter.ts",
-      "src/lib/play/campaign-roster.ts",
-      "src/lib/session-log-io.ts",
-    ]) {
-      const text = readFileSync(resolve(__dirname, "../..", file), "utf8");
-      expect(text, file).not.toMatch(/COMBAT_EFFECTS_V26|combatEffectsV26On/);
-    }
-  });
 });
 
 // Deploy surveys, 2026-11-12: `rewrites build.speed 1`. A save that rewrites a stored

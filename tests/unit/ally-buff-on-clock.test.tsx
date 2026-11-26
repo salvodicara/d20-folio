@@ -1,9 +1,8 @@
 /**
- * Out of a fight, in a campaign (v0.26.0 rules): a buff cast on another party member
+ * Out of a fight, in a campaign: a buff cast on another party member
  * lands on the campaign clock (`campaigns/{id}/effects`), not on a fight. The target
  * list is the party (`targetRoster`, out of a fight), and the cast writes the effect
- * on the named member (`leaveStandingsOnClock`). Without the v0.26.0 rules nothing is
- * written. The twin of `ally-buff-writes.test.tsx`, which casts inside a fight.
+ * on the named member (`leaveStandingsOnClock`). The twin of `ally-buff-writes.test.tsx`, which casts inside a fight.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, render, waitFor } from "@testing-library/react";
@@ -46,7 +45,6 @@ import { makeCharacterDoc } from "./_helpers";
 
 afterEach(() => {
   usePlayPromptStore.setState({ open: {} });
-  vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
   usePartyRosterStore.setState({
     party: null,
@@ -139,7 +137,6 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
     "offers the party and lands on the named member through the campaign clock",
     { timeout: 20000 },
     async () => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       const choices = await castWardingBondOnTheParty();
       expect(choices).toContain("pc-u2");
       await waitFor(() => expect(writeCampaignEffects).toHaveBeenCalled(), {
@@ -163,7 +160,6 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
     "waits for the party when the cast comes before the campaign is read",
     { timeout: 20000 },
     async () => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       // Rehearsal 2026-11-13: the Paladin cast Warding Bond a moment after opening the
       // sheet; the party was not known yet, so the slot went with no one bonded.
       const choices = await castWardingBondOnTheParty("after-the-click");
@@ -178,7 +174,6 @@ describe("an ally buff cast out of a fight, in a campaign", () => {
     "when the campaign is never read, nothing is spent and a message says to try again",
     { timeout: 20000 },
     async () => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       vi.useFakeTimers({ shouldAdvanceTime: true });
       await castWardingBondOnTheParty("never");
       expect(usePlayPromptStore.getState().open.target).toBeUndefined();

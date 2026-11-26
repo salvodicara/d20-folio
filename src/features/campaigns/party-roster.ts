@@ -1,7 +1,7 @@
 /**
  * The open character's party out of a fight: the campaign's other characters, named
  * as the party panel names them, for the «Su chi?» step's «Il gruppo» group. Published
- * by the shell (`global-combat`) with this release's rules deployed; a cast out of a
+ * by the shell (`global-combat`); a cast out of a
  * fight that leaves a state on one of them writes it on the campaign clock.
  */
 import { create } from "zustand";

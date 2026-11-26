@@ -8,13 +8,10 @@
 import { useTranslation } from "react-i18next";
 
 import {
-  appendPersistentCombatEffect,
   reinstatePersistentCombatEffect,
   revokePersistentCombatEffect,
 } from "@/features/campaigns/campaign-io";
 import { localizeSrd } from "@/i18n/resolver";
-import { foldCombatEffectOps } from "@/lib/combat-effects";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import type { Locale } from "@/lib/locale";
 import { fightActionRepeatSaves } from "@/lib/play/fight-condition-ends";
 import {
@@ -64,12 +61,6 @@ export function ActionRepeatSaves({
           }
         );
         // On Play the attempt is the character's own action: one undoable act.
-        const restoreLegacy = () => {
-          const effect = foldCombatEffectOps(effectOps).find((e) => e.id === save.id);
-          if (!effect) return;
-          const copy = { ...effect, id: `${effect.id}~${String(Date.now())}` };
-          void appendPersistentCombatEffect(campaignId, copy).catch(() => undefined);
-        };
         const attempt = (passed: boolean) =>
           takeRepeatSaveAction({
             campaignId,
@@ -79,17 +70,14 @@ export function ActionRepeatSaves({
             label: passed
               ? t("combat.actionRepeatSaveEnded", { condition })
               : t("combat.actionRepeatSaveSpent"),
-            restoreLegacy,
           });
         const saved = () => {
           if (spendAction) return attempt(true);
           void revokePersistentCombatEffect(campaignId, save.id).catch(() => undefined);
           toast(t("combat.actionRepeatSaveEnded", { condition }), () => {
-            if (combatEffectsV26On()) {
-              void reinstatePersistentCombatEffect(campaignId, save.id).catch(
-                () => undefined
-              );
-            } else restoreLegacy();
+            void reinstatePersistentCombatEffect(campaignId, save.id).catch(
+              () => undefined
+            );
           });
         };
         const failed = () => {

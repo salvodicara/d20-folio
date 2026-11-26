@@ -21,7 +21,6 @@ async function openEvoker(page: Page, size: "desktop" | "mobile" = "desktop") {
   await seedUI(page, "dark", "play");
   await page.addInitScript(() => {
     window.localStorage.setItem("d20-dev-combat-chronicle", "1");
-    window.localStorage.setItem("d20-dev-effects-v26", "1");
     window.localStorage.setItem("d20-dev-combat-ally", "1");
   });
   await page.goto("/characters/scn-evoker-wizard?tab=play");

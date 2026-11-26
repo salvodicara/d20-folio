@@ -42,7 +42,7 @@ export function applyMasteryRider(
         restoreTurnUse?.();
         return null;
       }
-      // In a fight on the v0.26.0 rules, Vex is a state on the creature hit (the
+      // In a fight, Vex is a state on the creature hit (the
       // tray writes it, `vexWriter`); elsewhere the sheet's next attack gets it.
       const restoreAdvantage =
         rider.apply === "next-attack-advantage" && !vexIsTargeted()

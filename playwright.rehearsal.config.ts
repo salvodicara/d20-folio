@@ -3,8 +3,7 @@ import { FOLIO_SERVER_GUARD, folioServers } from "./tests/folio-server-guard";
 
 /**
  * The release rehearsal: a player's whole journey on the build v0.26.0 ships, the
- * new UI (`VITE_NEW_UI=1`) with the v0.26 combat effects (`VITE_COMBAT_EFFECTS_V26`),
- * against the Firebase emulators the sandbox seed fills (`scripts/e2e-rehearsal.sh`).
+ * new UI (`VITE_NEW_UI=1`), against the Firebase emulators the sandbox seed fills (`scripts/e2e-rehearsal.sh`).
  * Every real path runs: Auth, Firestore rules, listeners, transactions.
  */
 const EMULATOR_CLIENT_ENV = {
@@ -23,7 +22,6 @@ const CLASSIC_PORT = PORT + 1;
 export const REHEARSAL_CLASSIC_URL = `http://127.0.0.1:${CLASSIC_PORT}`;
 /** The deploy's flags (deploy.yml): the rehearsal runs the writers players get. */
 const DEPLOY_FLAGS = {
-  VITE_COMBAT_EFFECTS_V26: "true",
   VITE_PEER_SPENDS_LEDGER: "true",
 };
 

@@ -22,7 +22,6 @@ import { PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import { deriveCharacter } from "@/lib/views/derive-character";
 import { resolveDamageIntake, type DamageInstance } from "@/lib/damage-intake";
 import { effectiveDoc, effectsOnTarget } from "@/lib/play/effective-doc";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { conformCampaignEffect } from "@/features/campaigns/campaign-effects-io";
 import { conformCampaignClock } from "@/lib/play/campaign-clock";
 import type { DamageOptions } from "@/lib/play/damage";
@@ -68,7 +67,6 @@ import {
   type PeerSpend,
 } from "@/lib/play/peer-spends";
 import { parsePeerSpends, peerSpendsRef } from "@/lib/peer-spends-io";
-import { recordCondition, recordPcHp } from "@/features/campaigns/combat-chronicle";
 import { stepEncounterTurn } from "@/features/campaigns/encounter-world-command";
 import { attachViolatesOneCampaign } from "@/features/campaigns/attach-guard";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
@@ -111,7 +109,6 @@ import {
   reduceKill,
   reduceRevive,
   reduceHpDelta,
-  reduceMemberCombatEffects,
   setTempAbsolute,
 } from "@/lib/combat-state";
 import {
@@ -1236,7 +1233,7 @@ async function writeCombatEffectOnce(
 
 /**
  * The effects others left on `uid`'s PC in its attached campaign: the live fight's
- * and, with this release's rules, the campaign's out of a fight at the clock's minute
+ * and the campaign's out of a fight at the clock's minute
  * (`effectsOnTarget`). None when the sheet is in no campaign or a read fails (the hit
  * still lands, by the sheet alone, and the failure is reported).
  */
@@ -1255,14 +1252,12 @@ async function effectsLeftOn(
     const data = campaignSnap.data();
     const encounter = storedEncounter(data.encounter);
     const minute = conformCampaignClock(data.gameClock)?.minute ?? 0;
-    const store = combatEffectsV26On()
-      ? (await getDocs(collection(db, "campaigns", campaignId, "effects"))).docs.flatMap(
-          (stored) => {
-            const effect = conformCampaignEffect(stored.data());
-            return effect ? [effect] : [];
-          }
-        )
-      : [];
+    const store = (
+      await getDocs(collection(db, "campaigns", campaignId, "effects"))
+    ).docs.flatMap((stored) => {
+      const effect = conformCampaignEffect(stored.data());
+      return effect ? [effect] : [];
+    });
     return effectsOnTarget(`pc-${uid}`, {
       ...(encounter
         ? {
@@ -1371,113 +1366,6 @@ export interface DeclaredCombatContext {
    * can still trigger deterministic reactions. */
   hitTargetIds?: ReadonlyArray<string>;
   attackMode?: "melee" | "ranged";
-}
-
-/**
- * Drain effects queued by the previously deployed owner-client delivery model. New
- * actions never append here: {@link applyDeclaredCombatEffects} writes the narrow target
- * combat slice directly, so an offline target does not delay the table. Keeping this
- * one-way drain during the transition prevents an already-running live encounter from
- * losing a queued effect; the ids remain idempotent in the target combat state.
- */
-export async function deliverQueuedMemberEffects(args: {
-  campaignId: string;
-  uid: string;
-  characterId: string;
-  targetId: string;
-  maxHp: number;
-}): Promise<void> {
-  if ((import.meta.env.DEV && DEV_BYPASS) || args.maxHp <= 0) return;
-  const campaignRef = campaignDoc(args.campaignId);
-  const combatRef = combatStateRef(args.uid, args.characterId);
-  const characterRef = memberCharacterDoc(args.uid, args.characterId);
-  await runTransaction(db, async (txn) => {
-    const campaignSnap = await txn.get(campaignRef);
-    const encounter = storedEncounter(campaignSnap.data()?.encounter);
-    if (!encounter) return;
-    const target = encounter.combatants.find(
-      (combatant) => combatant.id === args.targetId
-    );
-    if (
-      target?.kind !== "pc" ||
-      target.memberUid !== args.uid ||
-      target.characterId !== args.characterId
-    ) {
-      return;
-    }
-
-    const queued = (encounter.memberEffects ?? []).filter(
-      (effect) => effect.targetId === args.targetId
-    );
-    if (queued.length === 0) return;
-    const [combatSnap, characterSnap] = await Promise.all([
-      txn.get(combatRef),
-      txn.get(characterRef),
-    ]);
-    const parentData = characterSnap.exists() ? characterSnap.data() : null;
-    const beforeCombat = storedTargetCombatState(
-      combatSnap.exists() ? combatSnap.data() : null,
-      parentData
-    );
-    let combat = beforeCombat;
-    let chronicle = encounter;
-    let changed = false;
-
-    for (const effect of queued) {
-      if (
-        effect.kind === "healing" &&
-        !storedCharacterLifecycleEligible(parentData, combat.deathSaves.failures, combat)
-      ) {
-        continue;
-      }
-      const before = combat;
-      const after = reduceMemberCombatEffects(
-        before,
-        encounter.epoch,
-        [effect],
-        args.maxHp
-      );
-      if (after === before) continue;
-      changed = true;
-      combat = after;
-      if (effect.kind === "condition") {
-        const wasActive = before.conditions.includes(effect.conditionId);
-        const isActive = after.conditions.includes(effect.conditionId);
-        if (wasActive !== isActive) {
-          chronicle = recordCondition(
-            chronicle,
-            args.targetId,
-            effect.conditionId,
-            isActive
-          );
-        }
-        continue;
-      }
-      if (effect.kind === "temp-hp") continue;
-      const landed =
-        effect.kind === "healing"
-          ? after.hp.current - before.hp.current
-          : before.hp.current - after.hp.current + (before.hp.temp - after.hp.temp);
-      if (landed <= 0) continue;
-      chronicle = recordPcHp(chronicle, {
-        targetId: args.targetId,
-        kind: effect.kind === "healing" ? "heal" : "damage",
-        amount: landed,
-        preCurrent: before.hp.current,
-        postCurrent: after.hp.current,
-        max: args.maxHp,
-      });
-    }
-
-    if (!changed) return;
-    writePeerCombatEffect(txn, combatRef, beforeCombat, combat);
-    if (chronicle !== encounter) {
-      txn.update(campaignRef, {
-        "encounter.events": chronicle.events ?? [],
-        updatedAt: serverTimestamp(),
-      });
-    }
-  });
 }
 
 /**

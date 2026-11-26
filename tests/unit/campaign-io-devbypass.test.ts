@@ -297,7 +297,6 @@ describe("campaign-io under dev bypass", () => {
 
 describe("Help through the dev store", () => {
   it("giveHelp lands Help on the enemy, and its undo revokes it", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const campaign = makeDevCampaign();
     campaign.encounter = {
       nextMonsterOrdinal: 2,
@@ -342,7 +341,6 @@ describe("Help through the dev store", () => {
     await vi.waitFor(() => expect(helped()).toBe(true));
     undo?.();
     await vi.waitFor(() => expect(helped()).toBe(false));
-    vi.unstubAllEnvs();
   });
 });
 

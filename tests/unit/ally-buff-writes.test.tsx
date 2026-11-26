@@ -40,7 +40,6 @@ import { makeCharacterDoc } from "./_helpers";
 afterEach(() => {
   revokePersistentCombatEffect.mockClear();
   usePlayPromptStore.setState({ open: {} });
-  vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
   useCombatStatusStore.setState({ status: null });
   useUndoStore.getState().clear(null);
@@ -52,7 +51,6 @@ describe("an ally buff cast in a fight", () => {
     "lands on the ally with the caster's modifier, and the undo takes it back",
     { timeout: 20000 },
     async () => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       const doc = makeCharacterDoc({
         classId: "cleric",
         level: 5,

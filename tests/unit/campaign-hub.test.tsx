@@ -37,6 +37,11 @@ const { order, onDataRef, unsubSpy, flushSpy, saveSpy, subscribeMock } = vi.hois
 
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+// The campaign's effects out of a fight are read live; this test needs none.
+vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/campaigns/campaign-effects-io")>()),
+  subscribeCampaignEffects: () => () => undefined,
+}));
 // The Party's attach picker reads the current user's roster via useCharacters
 // (a Firestore subscription) — mock it so this CI-pure test never touches firebase.
 vi.mock("@/hooks/useCharacters", () => ({

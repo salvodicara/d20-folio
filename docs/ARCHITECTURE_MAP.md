@@ -104,7 +104,7 @@ There are six parallel records. The same hit can land in four of them.
   | ------------------ | --------------------------------------------------------------------------------------- |
   | round              | 4: `combatStore`, `characterStore.combatRound`, `combat/state.round`, `encounter.round` |
   | initiative         | 3                                                                                       |
-  | PC HP / conditions | 2 (`combat/state` fields + `world` vitals), plus staging in `memberEffects`             |
+  | PC HP / conditions | 2 (`combat/state` fields + `world` vitals)                                              |
   | monster HP         | 2                                                                                       |
   | log                | 2 (Firestore + IndexedDB)                                                               |
 

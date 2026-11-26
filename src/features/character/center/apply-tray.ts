@@ -39,7 +39,6 @@ import type {
 } from "@/types/combat-effect";
 import type { CombatConditionLifetime } from "@/data/types";
 import { useAuthStore } from "@/stores/authStore";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import {
   effectIdsConsumedByAttack,
   foldCombatEffectOps,
@@ -158,16 +157,9 @@ function consumedByAttacks(
   return live.filter((effect) => ids.has(effect.id));
 }
 
-/** Undo a revoke: the same occurrence back (`reinstate`, same id) once the v0.26.0
- *  rules accept it; before them, a fresh copy as before. */
+/** Undo a revoke: the same occurrence back (`reinstate`, same id). */
 function undoRevoke(campaignId: string, effect: ActiveCombatEffect, t: T): void {
-  writeFightEffect(
-    campaignId,
-    combatEffectsV26On()
-      ? { reinstate: effect.id }
-      : { append: { ...effect, id: crypto.randomUUID() } },
-    t
-  );
+  writeFightEffect(campaignId, { reinstate: effect.id }, t);
 }
 
 /** The sourced condition effects a tray apply writes in a fight: each condition on
@@ -213,8 +205,8 @@ function sourcedConditionEffects(
         target: ref,
         source: { kind: source.kind, id: source.id, actionId: offer.actionId },
         payload: { kind: "condition", conditionId },
-        // The repeat save's DC, once the deployed rules accept it.
-        ...(dc !== undefined && combatEffectsV26On() ? { bindings: { saveDc: dc } } : {}),
+        // The repeat save's DC.
+        ...(dc !== undefined ? { bindings: { saveDc: dc } } : {}),
         duration: conditionDuration(lifetimes?.[conditionId], status.myId, position),
       })
     );

@@ -80,7 +80,6 @@ async function poison(): Promise<unknown> {
 
 describe("a rider condition's duration in the fight", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     useCharacterStore.setState({ character: doc, readonly: false });
   });
 

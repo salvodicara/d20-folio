@@ -1,7 +1,7 @@
 /**
  * «Use your action: repeat the save» (Otto's Irresistible Dance, #748): the dancer
  * may spend its action to repeat the WIS save. Saved ends the Charmed effect (undo
- * reinstates it under the v0.26 rules); either way, on Play, the action is spent.
+ * reinstates it); either way, on Play, the action is spent.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -19,7 +19,6 @@ vi.mock("@/lib/firebase", () => ({
   functions: {},
   storage: {},
 }));
-vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => true }));
 
 import { ActionRepeatSaves } from "@/domains/combat/ui/ActionRepeatSaves";
 import { useCombatStore } from "@/stores/combatStore";

@@ -1,7 +1,6 @@
 /**
  * The DM's item documents (M20): `dmItems` and `itemReveals` under the campaign, one
- * per copy by its instanceId; nothing is read or written before the v0.26 rules
- * deploy; an empty state removes the document; a malformed id is refused.
+ * per copy by its instanceId; an empty state removes the document; a malformed id is refused.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -26,8 +25,6 @@ const fs = vi.hoisted(() => ({
 }));
 vi.mock("firebase/firestore", () => fs);
 vi.mock("@/lib/firebase", () => ({ db: {} }));
-const rules = vi.hoisted(() => ({ v26: true }));
-vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }));
 
 import {
   subscribeDmItems,
@@ -37,7 +34,6 @@ import {
 
 describe("the DM's item documents", () => {
   beforeEach(() => {
-    rules.v26 = true;
     fs.setDoc.mockClear();
     fs.deleteDoc.mockClear();
     fs.onSnapshot.mockClear();
@@ -66,18 +62,8 @@ describe("the DM's item documents", () => {
     expect(seen).toEqual([{ "axe-1": { cursed: true, notes: "Thirsty" } }]);
   });
 
-  it("nothing before the rules deploy, and no malformed id", async () => {
+  it("no malformed id", async () => {
     expect(await writeItemReveal("c1", "bad/id", { curse: true })).toBe(false);
-    rules.v26 = false;
-    expect(await writeDmItem("c1", "axe-1", { cursed: true })).toBe(false);
-    const seen: unknown[] = [];
-    subscribeDmItems(
-      "c1",
-      (docs) => seen.push(docs),
-      () => undefined
-    );
-    expect(seen).toEqual([{}]);
-    expect(fs.onSnapshot).not.toHaveBeenCalled();
     expect(fs.setDoc).not.toHaveBeenCalled();
   });
 });

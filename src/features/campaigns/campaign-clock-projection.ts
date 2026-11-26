@@ -1,24 +1,21 @@
 /**
- * The campaign clock projected onto the sheets that read it (`lib/play/clock.ts`),
- * with this release's rules deployed. The open sheet gets the projection (its own,
+ * The campaign clock projected onto the sheets that read it (`lib/play/clock.ts`). The open sheet gets the projection (its own,
  * or a teammate's read-only one, which the store reads at the clock: `docAtClock`);
  * the party's docs are read at the clock directly.
  */
 import { useEffect } from "react";
 
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { docAtClock, withCampaignClock } from "@/lib/play/campaign-clock";
 import type { ProjectedCampaignClock } from "@/lib/play/clock";
 import { useCharacterStore } from "@/stores/characterStore";
 import type { CampaignDoc } from "@/types/campaign";
 import type { CharacterDoc } from "@/types/character";
 
-/** The campaign's clock as a sheet reads it, or null (no campaign, or the rules that
- *  hold it are not deployed). */
+/** The campaign's clock as a sheet reads it, or null (no campaign). */
 export function projectedClock(
   campaign: Pick<CampaignDoc, "id" | "gameClock"> | null | undefined
 ): ProjectedCampaignClock | null {
-  if (!campaign || !combatEffectsV26On()) return null;
+  if (!campaign) return null;
   return { campaignId: campaign.id, clock: campaign.gameClock ?? { minute: 0 } };
 }
 

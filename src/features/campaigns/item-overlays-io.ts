@@ -3,13 +3,11 @@
  * docs/architecture/2026-11-dm-state-and-roster.md), one document per physical copy,
  * keyed by its instanceId: `campaigns/{c}/dmItems/{id}` (DM only: is this copy cursed,
  * its rolled artifact properties, notes) and `campaigns/{c}/itemReveals/{id}`
- * (members read, the DM writes what is revealed). Both wait for the v0.26 rules
- * deploy (`combatEffectsV26On`): before it, nothing is read or written. Imports only
- * the Firestore functions it uses, so the shared eager Firebase chunk stays small.
+ * (members read, the DM writes what is revealed). Imports only the Firestore
+ * functions it uses, so the shared eager Firebase chunk stays small.
  */
 import { collection, deleteDoc, doc, onSnapshot, setDoc } from "firebase/firestore";
 
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { db } from "@/lib/firebase";
 import {
   parseDmItemState,
@@ -30,10 +28,6 @@ function listen<T>(
   onDocs: (docs: Docs<T>) => void,
   onError: (error: Error) => void
 ): () => void {
-  if (!combatEffectsV26On()) {
-    onDocs({});
-    return () => undefined;
-  }
   return onSnapshot(
     collection(db, "campaigns", campaignId, sub),
     (snap) =>
@@ -68,7 +62,7 @@ async function write(
   instanceId: string,
   data: DmItemState | ItemReveal
 ): Promise<boolean> {
-  if (!combatEffectsV26On() || !validId(instanceId)) return false;
+  if (!validId(instanceId)) return false;
   const ref = doc(db, "campaigns", campaignId, sub, instanceId);
   if (Object.keys(data).length === 0) await deleteDoc(ref);
   else await setDoc(ref, data);

@@ -139,7 +139,7 @@ describe("the tray spends it", () => {
     });
   });
 
-  it("an attack, hit or miss, revokes the spent state, and undo brings it back", async () => {
+  it("an attack, hit or miss, revokes the spent state", async () => {
     const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "miss", plan);
     applyTray(offer, [target], [row], [0], t);
     await writesSettled();
@@ -149,18 +149,9 @@ describe("the tray spends it", () => {
     );
     // Faerie Fire lasts.
     expect(io.revokePersistentCombatEffect).toHaveBeenCalledTimes(1);
-    useUndoStore.getState().undo();
-    await writesSettled();
-    expect(io.appendPersistentCombatEffect).toHaveBeenCalledWith(
-      "c1",
-      expect.objectContaining({
-        payload: { kind: "grant-group", activeKey: "guiding-bolt-glimmer" },
-      })
-    );
   });
 
-  it("on the v0.26.0 rules, undo reinstates the same occurrence", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+  it("undo reinstates the same occurrence", async () => {
     const row = setAttackOutcome(initialTrayRow(plan, "monster-1"), "hit", plan);
     applyTray(offer, [target], [row], [0], t);
     await writesSettled();
@@ -171,6 +162,5 @@ describe("the tray spends it", () => {
       "c1",
       "guiding-bolt-glimmer-monster-1"
     );
-    vi.unstubAllEnvs();
   });
 });

@@ -89,7 +89,6 @@ import type { ActionGroup } from "@/lib/views/action-row-view";
 import { useCampaignsReadStore } from "@/features/campaigns/campaigns-read";
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
 import { giveHelp } from "@/features/character/center/outcome-offer";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
@@ -953,7 +952,7 @@ function ActionLine({
   const [picking, setPicking] = useState<WeaponPick[] | null>(null);
   // A zone that spares whom its caster designates (Spirit Guardians) asks whom.
   const [sparing, setSparing] = useState<SpareView | null>(null);
-  // Help in a fight asks «Su chi?» then «Per chi?» (the effect needs the v0.26 rules).
+  // Help in a fight asks «Su chi?» then «Per chi?».
   const [helping, setHelping] = useState<HelpView | null>(null);
   const [checking, setChecking] = useState<CheckEntry[] | null>(null);
   // Find Familiar's form picker: open for a cast, or for a cast as a Ritual.
@@ -974,7 +973,7 @@ function ActionLine({
       setRolling(rollView);
       return;
     }
-    if (row.action.id === "base-help" && combatEffectsV26On()) {
+    if (row.action.id === "base-help") {
       const help =
         status && doc && status.characterId === doc.id
           ? helpView({ myId: status.myId, rows: status.view.rows })

@@ -1,8 +1,7 @@
 /**
  * The campaign's creature roster (edge-case M19): `campaigns/{c}/roster/{id}`
  * (members read, the DM writes) and `dmRoster/{id}` (the DM only), one document per
- * creature. Both wait for the v0.26 rules deploy (`combatEffectsV26On`): before it,
- * nothing is read or written. Imports only the Firestore functions it uses.
+ * creature. Imports only the Firestore functions it uses.
  */
 import {
   collection,
@@ -14,7 +13,6 @@ import {
   updateDoc,
 } from "firebase/firestore";
 
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { db } from "@/lib/firebase";
 import {
   parseDmRosterEntry,
@@ -34,10 +32,6 @@ export function subscribeRoster(
   onDocs: (docs: Docs<RosterEntry>) => void,
   onError: (error: Error) => void
 ): () => void {
-  if (!combatEffectsV26On()) {
-    onDocs({});
-    return () => undefined;
-  }
   return onSnapshot(
     collection(db, "campaigns", campaignId, "roster"),
     (snap) =>
@@ -55,7 +49,6 @@ export function subscribeRoster(
 
 /** The roster the party knows, read once (the end-of-fight HP write-back). */
 export async function readRoster(campaignId: string): Promise<Docs<RosterEntry>> {
-  if (!combatEffectsV26On()) return {};
   const snap = await getDocs(collection(db, "campaigns", campaignId, "roster"));
   return Object.fromEntries(
     snap.docs.flatMap((stored) => {
@@ -71,10 +64,6 @@ export function subscribeDmRoster(
   onDocs: (docs: Docs<DmRosterEntry>) => void,
   onError: (error: Error) => void
 ): () => void {
-  if (!combatEffectsV26On()) {
-    onDocs({});
-    return () => undefined;
-  }
   return onSnapshot(
     collection(db, "campaigns", campaignId, "dmRoster"),
     (snap) =>
@@ -93,7 +82,7 @@ export async function writeRosterEntry(
   entryId: string,
   entry: RosterEntry | null
 ): Promise<boolean> {
-  if (!combatEffectsV26On() || !validId(entryId)) return false;
+  if (!validId(entryId)) return false;
   const known = doc(db, "campaigns", campaignId, "roster", entryId);
   if (entry) await setDoc(known, entry);
   else {
@@ -112,7 +101,7 @@ export async function writeRosterHp(
   entryId: string,
   hp: NonNullable<RosterEntry["hp"]>
 ): Promise<boolean> {
-  if (!combatEffectsV26On() || !validId(entryId)) return false;
+  if (!validId(entryId)) return false;
   await updateDoc(doc(db, "campaigns", campaignId, "roster", entryId), { hp });
   return true;
 }
@@ -123,7 +112,7 @@ export async function writeDmRosterEntry(
   entryId: string,
   entry: DmRosterEntry
 ): Promise<boolean> {
-  if (!combatEffectsV26On() || !validId(entryId)) return false;
+  if (!validId(entryId)) return false;
   const ref = doc(db, "campaigns", campaignId, "dmRoster", entryId);
   if (Object.keys(entry).length === 0) await deleteDoc(ref);
   else await setDoc(ref, entry);

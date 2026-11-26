@@ -10,8 +10,7 @@
  *   - kept fights: `parseEncounterState`;
  *   - roster and DM roster entries: `parseRosterEntry` and `parseDmRosterEntry`;
  *   - session logs: `isLogItem`.
- * `VITE_COMBAT_EFFECTS_V26` gates writers only; none of these readers looks at it
- * (a test pins that). The existing guards run too:
+ * The existing guards run too:
  *   - the role claims (`planRoleClaims`);
  *   - the item-resource migration (`planItemResourceMigration`, behind the catalogue
  *     fingerprint).

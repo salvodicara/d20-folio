@@ -148,14 +148,10 @@ jobs:
       # - the peer-spends ledger writer (#558) needs the `combat/spends` rules, which
       #   this same deploy releases BEFORE Hosting (the two steps below), so a client
       #   that writes the ledger never meets rules that refuse it;
-      # - the v0.26.0 combat-effect writers (a feature's state on its target, a zone, a
-      #   condition's save DC, #708/#710) need the effect rules this same deploy releases
-      #   BEFORE Hosting, so they are on as well;
       # - the new UI is off as a build flag: every build ships both interfaces and each
       #   player opts in from Settings (#1233). VITE_NEW_UI=1 forces it for everyone, so
       #   production never sets it.
       VITE_PEER_SPENDS_LEDGER: "true"
-      VITE_COMBAT_EFFECTS_V26: "true"
       VITE_NEW_UI: "0"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4

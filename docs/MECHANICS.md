@@ -276,8 +276,7 @@ effects (log, undo, persistence, the encounter) stay with the store
   derived on read: `docAtClock` passes the campaign minutes since `session.clockSeen`, so any
   viewer sees them; the owner's device stores that catch-up (`catchUpCampaignClock`). A member's
   «Passa il tempo» or rest steps the clock forward (at most 1440 minutes, recorded as theirs);
-  the undo steps back, by the writer or the DM only (firestore.rules `gameClockWrite`). Behind
-  `VITE_COMBAT_EFFECTS_V26`.
+  the undo steps back, by the writer or the DM only (firestore.rules `gameClockWrite`).
 - Effects out of a fight (`src/lib/play/campaign-effects.ts`, `campaigns/{id}/effects`): a
   state one creature left on another with a `game-clock` duration (until a campaign minute,
   optionally held by its caster's Concentration). The target's sheet projects the live ones
@@ -360,9 +359,7 @@ effects (log, undo, persistence, the encounter) stay with the store
   stacking key; undo revokes the exact instance.
 - The target's aggregate folds them in (`resolveCombatEffectGrantSources`). Outcome riders
   (Stunning Strike's success, Web Bolt): `src/lib/play/outcome-effects.ts`.
-- Writers of a feature's target state, a zone and a condition's save DC wait for the v0.26.0
-  Firestore rules behind `VITE_COMBAT_EFFECTS_V26` (`src/lib/deployed-rules.ts`). Pool and
-  state spends from another device wait behind `VITE_PEER_SPENDS_LEDGER`
+- Pool and state spends from another device wait behind `VITE_PEER_SPENDS_LEDGER`
   (`docs/architecture/2026-11-cross-device-hits.md`).
 - The DM's monsters play from their stat block: `src/lib/play/monster-action.ts`,
   `monster-multiattack.ts`, `monster-concentration.ts`; the encounter world:

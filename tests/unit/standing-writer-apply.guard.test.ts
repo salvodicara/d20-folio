@@ -41,7 +41,6 @@ const gated = spells.filter((spell) => {
 
 describe("a state on a failed save or a hit, through the real tray", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     io.appendPersistentCombatEffect.mockClear();
     useAuthStore.setState({ user: { uid: "me" } as User });
   });

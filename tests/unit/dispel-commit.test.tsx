@@ -27,7 +27,6 @@ import { usePlayPromptStore } from "@/features/character/center/playPromptStore"
 import { useUndoStore } from "@/stores/undoStore";
 
 afterEach(() => {
-  vi.unstubAllEnvs();
   usePlayPromptStore.setState({ open: {} });
   useUndoStore.getState().clear(null);
   io.revokePersistentCombatEffect.mockClear();
@@ -36,7 +35,6 @@ afterEach(() => {
 
 describe("dispelSpell", () => {
   it("revokes every effect of the spell, and the undo reinstates them", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     expect(dispelSpell("camp", ["b", "c"], "Hold Person ends")).toBe(true);
     await vi.waitFor(() =>
       expect(io.revokePersistentCombatEffect.mock.calls).toEqual([
