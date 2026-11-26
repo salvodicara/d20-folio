@@ -21,6 +21,7 @@ import {
   invocationOptions,
   maneuverOptions,
   metamagicOptions,
+  subclassOptions,
   weaponMasteryOptions,
   type LevelUpOptionVM,
 } from "@/lib/views/level-up-view";
@@ -95,6 +96,15 @@ export function owedClassPickRows(
       owed,
       source: className(classId, locale),
     };
+    if (pick === "subclass") {
+      // The level-up's subclass cards: each subclass named, its first feature as the text.
+      return {
+        ...base,
+        title: t("levelUp.titleSubclass"),
+        searchPlaceholder: t("levelUp.titleSubclass"),
+        options: subclassOptions(classId, locale).map((vm) => fromLevelUp(vm)),
+      };
+    }
     if (pick === "invocations") {
       return {
         ...base,

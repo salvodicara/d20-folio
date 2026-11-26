@@ -3,6 +3,9 @@
  * class entry, at that class's own level, the table's count minus the picks the
  * entry holds. Never negative, never a pick the table doesn't give.
  *
+ *   - subclass — one, at or past the class's subclass level with none chosen (a
+ *     live Rogue 6 has none); answered through `resolveOwedSubclass`, which also
+ *     asks the choices its features bring;
  *   - invocations — Warlock "Eldritch Invocations" column vs `invocationChoices`;
  *   - metamagic — Sorcerer "Metamagic" (2 / 4 / 6 at 2 / 10 / 17) vs `metamagicChoices`;
  *   - maneuvers — Combat Superiority (3 / 5 / 7 / 9 at Fighter 3 / 7 / 10 / 15), only
@@ -57,9 +60,11 @@ import {
   weaponMasteryCountForClass,
 } from "@/lib/weapon-mastery-pick";
 import { wizardBookOwed, wizardMaxSpellLevel } from "@/lib/wizard-spellbook";
+import { owesSubclass } from "@/lib/subclass-pick";
 import type { CharacterData, ClassEntry } from "@/types/character";
 
 export type ClassPickKind =
+  | "subclass"
   | "invocations"
   | "cantrips"
   | "metamagic"
@@ -87,6 +92,7 @@ export type BuildForClassPicks = Partial<
 >;
 
 const ORDER: readonly ClassPickKind[] = [
+  "subclass",
   "metamagic",
   "invocations",
   "maneuvers",
@@ -251,6 +257,7 @@ export function owedClassPicks(
     seen.add(e.classId);
     const level = levelOf(e);
     const due: Record<ClassPickKind, number> = {
+      subclass: owesSubclass({ ...e, level }) ? 1 : 0,
       invocations:
         e.classId === "warlock"
           ? invocationsKnownAt(level) - (e.invocationChoices?.length ?? 0)
@@ -308,6 +315,9 @@ export function applyOwedClassPicks(
   for (const answer of answers) {
     const debt = owed.find((o) => o.classId === answer.classId && o.pick === answer.pick);
     if (!debt) continue;
+    // The subclass brings features that ask their own choices and move the Hit
+    // Points: it is answered through `resolveOwedSubclass`, never here.
+    if (answer.pick === "subclass") continue;
     const ids = [...new Set(answer.ids)].slice(0, debt.owed);
     if (ids.length === 0) continue;
     if (answer.pick === "spellbook") {
@@ -356,6 +366,8 @@ export function classPickPool(
   const level = entry ? levelOf(entry) : 1;
   const ids = (list: ReadonlyArray<{ id: string }>) => list.map((x) => x.id);
   switch (pick) {
+    case "subclass":
+      return ids(getClassTable(classId)?.subclasses ?? []);
     case "invocations":
       return ids(eligibleInvocations(level, entry?.invocationChoices ?? []));
     case "metamagic": {
@@ -429,9 +441,11 @@ function masteryPreference(character: CharacterData, classId: string, pool: stri
  * The character with every owed class pick filled by the first legal options of
  * its pool (Weapon Mastery: proficient weapons, carried ones first), stored like
  * the banner's answers. Picks the character holds are kept; only the gap is filled.
+ * The subclass is never filled: a character names its own, or owes it.
  */
 export function fillOwedClassPicks(character: CharacterData): CharacterData {
-  const answers = owedClassPicks(character).map(({ classId, pick, owed }) => {
+  const owed = owedClassPicks(character).filter((o) => o.pick !== "subclass");
+  const answers = owed.map(({ classId, pick, owed }) => {
     const pool = classPickPool(character, classId, pick);
     const ordered =
       pick === "weaponMasteries" ? masteryPreference(character, classId, pool) : pool;

@@ -15,8 +15,8 @@
  * (`featAbility`, written by level-ups since it existed).
  *
  * And the class picks its level table gives that the build lacks (`class-pick`,
- * from `owedClassPicks`): invocations, cantrips, Metamagic, maneuvers, Weapon
- * Mastery, counted per class at that class's own level.
+ * from `owedClassPicks`): a missing subclass, invocations, cantrips, Metamagic,
+ * maneuvers, Weapon Mastery, counted per class at that class's own level.
  *
  * And a Lore Bard's Magical Discoveries held without their always-prepared mark
  * (`discovery-mark`, from `unmarkedDiscoveries`): the spells that can be them,

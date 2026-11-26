@@ -35,7 +35,9 @@ import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import {
   getAlwaysPreparedFromGrants,
   getExpandedSpellsAtLevel,
+  getExpandedSpellsThroughLevel,
 } from "@/lib/expanded-spells";
+import { subclassFeaturesThrough } from "@/lib/subclass-pick";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import {
   isExpertisePlaceholder,
@@ -105,6 +107,26 @@ export function levelUpPlan(
     classTable != null &&
     newClassLevel >= classTable.subclassLevel &&
     !(advancingEntry?.subclassId ?? "");
+  // The subclass picked on this level (at its level, or late).
+  const subclassPicked = needsSubclass && subclassChoice ? subclassChoice : null;
+  // The features this level brings: the class's own at the new level and the
+  // subclass's — a subclass picked now brings every one up to the new level
+  // (`subclassFeaturesThrough`, shared with the sheet's owed pick), a held one only
+  // this level's. Their choices, bundles and always-prepared spells are asked here.
+  const gainedRefs: SrdFeatureRef[] = (() => {
+    const effectiveSubclass = (subclassChoice ?? advancingSubclassId).toLowerCase();
+    const refs: SrdFeatureRef[] = [];
+    for (const f of getFeaturesAtLevel(classId, newClassLevel)) {
+      if (!f.subclass) refs.push({ srdId: f.id });
+      else if (!subclassPicked && f.subclass.toLowerCase() === effectiveSubclass) {
+        refs.push({ srdId: f.id });
+      }
+    }
+    if (subclassPicked) {
+      refs.push(...subclassFeaturesThrough(classId, subclassPicked, newClassLevel));
+    }
+    return refs;
+  })();
 
   const needsFightingStyle = (() => {
     if (!charData) return false;
@@ -244,10 +266,7 @@ export function levelUpPlan(
   // a pick spent on one adds nothing and leaves the prepared list one short.
   const alwaysPreparedGained = (() => {
     const subclass = subclassChoice ?? advancingSubclassId;
-    const effectiveSubclass = subclass.toLowerCase();
-    const gained = getFeaturesAtLevel(classId, newClassLevel)
-      .filter((f) => !f.subclass || f.subclass.toLowerCase() === effectiveSubclass)
-      .map((f) => ({ srdId: f.id }));
+    const gained = gainedRefs;
     // A feature already held whose spells unlock at a later level, through the option
     // the player chose (Circle of the Land, Arid: Blight at Druid 7).
     const held = resolveGrantSourcesForFeatures(
@@ -266,7 +285,9 @@ export function levelUpPlan(
     const heldBefore = new Set(heldAt(currentClassLevel));
     return new Set([
       ...heldAt(newClassLevel).filter((id) => !heldBefore.has(id)),
-      ...getExpandedSpellsAtLevel(classId, subclass, newClassLevel),
+      ...(subclassPicked
+        ? getExpandedSpellsThroughLevel(classId, subclassPicked, newClassLevel)
+        : getExpandedSpellsAtLevel(classId, subclass, newClassLevel)),
       ...getAlwaysPreparedFromGrants(resolveGrantSourcesForFeatures(gained), {
         level: newClassLevel,
       }).map((entry) => (typeof entry === "string" ? entry : entry.spellId)),
@@ -301,17 +322,7 @@ export function levelUpPlan(
       newRows: {} as Record<string, ReadonlyArray<number>>,
     };
     if (!charData) return empty;
-    const effectiveSubclass = (subclassChoice ?? advancingSubclassId).toLowerCase();
-    const refs: SrdFeatureRef[] = [];
-    for (const f of getFeaturesAtLevel(classId, newClassLevel)) {
-      if (f.subclass) {
-        if (effectiveSubclass && f.subclass.toLowerCase() === effectiveSubclass) {
-          refs.push({ srdId: f.id });
-        }
-      } else {
-        refs.push({ srdId: f.id });
-      }
-    }
+    const refs: SrdFeatureRef[] = [...gainedRefs];
     if (asiChoice.mode === "feat" && asiChoice.featId) {
       refs.push({ srdId: asiChoice.featId });
     }
@@ -390,13 +401,7 @@ export function levelUpPlan(
   const sessionBundleChoices = character?.session.grantBundleChoices;
   const levelUpBundles = (() => {
     if (!charData) return [];
-    const effectiveSubclass = (subclassChoice ?? advancingSubclassId).toLowerCase();
-    const refs: SrdFeatureRef[] = [];
-    for (const f of getFeaturesAtLevel(classId, newClassLevel)) {
-      if (!f.subclass || f.subclass.toLowerCase() === effectiveSubclass) {
-        refs.push({ srdId: f.id });
-      }
-    }
+    const refs: SrdFeatureRef[] = [...gainedRefs];
     for (const f of charData.features) {
       if ("srdId" in f) refs.push({ srdId: f.srdId });
     }

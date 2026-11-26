@@ -351,6 +351,8 @@
       "discoveryKeeps_other": "{{spells}} are your Magical Discoveries. Confirming keeps them always prepared.",
       "discoveryUndo": "Magical Discoveries confirmed",
       "owed": {
+        "subclass_one": "Subclass",
+        "subclass_other": "Subclass",
         "invocations_one": "{{count}} Eldritch Invocation",
         "invocations_other": "{{count}} Eldritch Invocations",
         "cantrips_one": "{{count}} cantrip",

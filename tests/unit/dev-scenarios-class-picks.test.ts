@@ -5,8 +5,13 @@
  */
 import { describe, expect, it } from "vitest";
 import { DEV_SCENARIOS, buildScenario, type ScenarioSpec } from "@/lib/dev-scenarios";
-import { classPickPool, owedClassPicks } from "@/lib/owed-class-picks";
+import { classPickPool, owedClassPicks as owedAll } from "@/lib/owed-class-picks";
 import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
+
+/** The level table's picks: a scenario names its subclass only when it matters, and
+ *  one without owes it (owed-subclass.test.ts). */
+const owedClassPicks = (...args: Parameters<typeof owedAll>) =>
+  owedAll(...args).filter((o) => o.pick !== "subclass");
 
 const WARLOCK_6: ScenarioSpec = {
   name: "Owing Warlock",
@@ -68,7 +73,8 @@ describe("dev scenarios — the class picks the level table gives are filled", (
 
   it("a scenario meant to owe its picks keeps owing them", () => {
     const { character } = buildScenario({ ...WARLOCK_6, owesClassPicks: true });
-    expect(owedClassPicks(character)).toEqual([
+    expect(owedAll(character)).toEqual([
+      { classId: "warlock", pick: "subclass", owed: 1 },
       { classId: "warlock", pick: "invocations", owed: 4 },
       { classId: "warlock", pick: "cantrips", owed: 2 },
     ]);

@@ -79,9 +79,8 @@ describe("a level-up past the subclass level, with no subclass", () => {
     );
   });
 
-  // Known red (#1393): the sheet's «Scelte da completare» does not list a missing
-  // subclass yet. When it does, this turns red: flip `it.fails` to `it`.
-  it.fails("a Rogue 6 with no subclass owes it on the sheet", () => {
+  // #1393: the sheet's «Scelte da completare» lists the missing subclass.
+  it("a Rogue 6 with no subclass owes it on the sheet", () => {
     const doc = rogue6();
     expect(owedChoiceCount(doc.character, doc.session)).toBeGreaterThan(0);
   });

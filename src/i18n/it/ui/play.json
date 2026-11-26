@@ -351,6 +351,8 @@
       "discoveryKeeps_other": "{{spells}} sono le tue Scoperte Magiche. Confermando restano sempre preparati.",
       "discoveryUndo": "Scoperte Magiche confermate",
       "owed": {
+        "subclass_one": "Sottoclasse",
+        "subclass_other": "Sottoclasse",
         "invocations_one": "{{count}} Supplica Occulta",
         "invocations_other": "{{count}} Suppliche Occulte",
         "cantrips_one": "{{count}} trucchetto",

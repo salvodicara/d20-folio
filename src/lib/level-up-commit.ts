@@ -21,11 +21,11 @@ import { isUmbrellaTool } from "@/lib/tool-names";
 import { computeAC } from "@/lib/compute";
 import { grantSkillProficiency } from "@/lib/skills";
 import { getEquipment } from "@/data/equipment";
-import { getClassTable, getSubclassFeatures } from "@/data/classes";
+import { getClassTable } from "@/data/classes";
+import { applySubclass } from "@/lib/subclass-pick";
 import type {
   CharacterData,
   CharacterDoc,
-  ClassEntry,
   SrdFeatureRef,
   SrdSpellRef,
 } from "@/types/character";
@@ -44,7 +44,6 @@ import {
 import {
   getAlwaysPreparedFromGrants,
   getExpandedSpellsAtLevel,
-  getExpandedSpellsThroughLevel,
   injectExpandedSpells,
 } from "@/lib/expanded-spells";
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
@@ -58,7 +57,7 @@ import {
 } from "@/lib/level-up-choices";
 import { applySpellSwap, swapIn, type SpellSwapChoice } from "@/lib/spell-swap";
 import { applyFeatSpellChange } from "@/lib/feat-spell-change";
-import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
+import { classEntryLevel, getClasses, patchClassEntry, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
 import { preparedLevelledCount } from "@/lib/wizard-spellbook";
 import { learnWildShapeForms } from "@/lib/wild-shape-forms";
@@ -103,31 +102,6 @@ export interface LevelUpPicks {
   /** The Druid's Wild Shape forms this level adds; absent: none. */
   wildShapeForms?: readonly string[];
   bundlePicks: Readonly<Record<string, string>>;
-}
-
-/**
- * Merge a patch onto the ADVANCING class's entry of `classes[]` (after the
- * engine ran, the entry exists — including a freshly-added multiclass entry).
- * Returns a fresh CharacterData; never mutates. A key set to `undefined` is
- * dropped (rebuild by inclusion — no dynamic delete).
- */
-export function patchClassEntry(
-  c: CharacterData,
-  classId: string,
-  patch: Partial<ClassEntry>
-): CharacterData {
-  const classes = c.classes.map((e) => ({ ...e }));
-  const idx = classes.findIndex((e) => e.classId === classId);
-  const target = idx >= 0 ? idx : 0;
-  const base = classes[target];
-  if (!base) return c;
-  const merged = { ...base, ...patch } as Record<string, unknown>;
-  const next: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(merged)) {
-    if (v !== undefined) next[k] = v;
-  }
-  classes[target] = next as unknown as ClassEntry;
-  return { ...c, classes };
 }
 
 /**
@@ -321,36 +295,15 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
 
   if (subclassChoice) {
     handledChecklistKeys.push("levelUp.checklistSubclass");
-    updated = patchClassEntry(updated, classId, { subclassId: subclassChoice });
-    // Every subclass feature up to the new level: a subclass picked late (a build
-    // that reached Rogue 6 without one) brings its earlier levels' features too.
-    const subFeatures = getSubclassFeatures(classId, subclassChoice).filter(
-      (f) => f.level <= newClassLevel
-    );
-    const existingIds = new Set(
-      updated.features
-        .filter((f): f is SrdFeatureRef => !("custom" in f))
-        .map((f) => f.srdId)
-    );
-    const newRefs: SrdFeatureRef[] = subFeatures
-      .filter((f) => !existingIds.has(f.id))
-      .map((f) => ({ srdId: f.id }));
-    // A subclass feature's per-level HP (Draconic Resilience) counts for every level
-    // already gained: the max is derived from the final character at the end (#1315).
-    if (newRefs.length > 0) {
-      updated = { ...updated, features: [...updated.features, ...newRefs] };
-    }
-    const expanded = getExpandedSpellsThroughLevel(
-      classId,
-      subclassChoice,
-      newClassLevel
-    );
-    if (expanded.length > 0) {
-      updated = {
-        ...updated,
-        spells: injectExpandedSpells(updated.spells, expanded),
-      };
-    }
+    // The shared subclass step (`applySubclass`, the sheet's owed pick uses it too):
+    // every subclass feature up to the new level, so a late pick (a build that
+    // reached Rogue 6 without one) brings its earlier levels' features, and the
+    // subclass spells through it. A per-level HP feature (Draconic Resilience)
+    // counts every level: the max is derived from the final character (#1315).
+    updated = applySubclass(updated, classId, subclassChoice, newClassLevel, {
+      ...doc.session.grantBundleChoices,
+      ...bundlePicks,
+    });
   } else {
     const incremental = getExpandedSpellsAtLevel(
       classId,
