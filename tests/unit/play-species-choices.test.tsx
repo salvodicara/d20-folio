@@ -413,7 +413,7 @@ describe("PlaySpeciesChoices: a subclass never chosen (#1393)", () => {
     // Named in what the pick brings, and over its question.
     expect(screen.getAllByText("Bonus Proficiencies")).toHaveLength(2);
     // One of the class's own cantrips picked.
-    fireEvent.click(screen.getByRole("button", { name: /^Blade Ward/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Vicious Mockery/ }));
     expect(
       screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")
     ).toBe("true");
