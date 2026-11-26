@@ -18,7 +18,7 @@ import { useCharacterStore } from "@/stores/characterStore";
 import { useLibraryStore } from "@/stores/libraryStore";
 import { useToastStore } from "@/stores/toastStore";
 import { registerUndoableToast } from "@/stores/undoStore";
-import type { CustomEquipment } from "@/types/character";
+import type { CustomEquipment, CustomSpell } from "@/types/character";
 
 /** Keep a freshly created homebrew in the account library, and say so when the
  *  free-tier cap refused it (the item still lands on the sheet). */
@@ -64,6 +64,48 @@ export function addCustomEquipmentUndoable(
             ...now.character,
             equipment: now.character.equipment.filter(
               (row) => !("custom" in row) || row.instanceId !== item.instanceId
+            ),
+          },
+        });
+      };
+    },
+    { turnScoped: false }
+  );
+}
+
+/** Put a homebrew spell on the sheet and keep it in the library. */
+export function addCustomSpell(spell: CustomSpell, t: TFunction): void {
+  const store = useCharacterStore.getState();
+  const doc = store.character;
+  if (!doc) return;
+  store.setCharacter({
+    ...doc,
+    character: { ...doc.character, spells: [...doc.character.spells, spell] },
+  });
+  keepInLibrary({ kind: "spell", item: spell }, t);
+}
+
+/** The Play screen's add: {@link addCustomSpell} with the 5 s undo, which takes the
+ *  spell back off the sheet (the library keeps its template). */
+export function addCustomSpellUndoable(
+  spell: CustomSpell,
+  message: string,
+  t: TFunction
+): void {
+  registerUndoableToast(
+    { message },
+    () => {
+      if (!useCharacterStore.getState().character) return null;
+      addCustomSpell(spell, t);
+      return () => {
+        const now = useCharacterStore.getState().character;
+        if (!now) return;
+        useCharacterStore.getState().setCharacter({
+          ...now,
+          character: {
+            ...now.character,
+            spells: now.character.spells.filter(
+              (row) => !("custom" in row) || row.instanceId !== spell.instanceId
             ),
           },
         });

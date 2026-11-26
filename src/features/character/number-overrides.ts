@@ -12,6 +12,7 @@
  * - saves, skills and ability scores are keyed maps; reset drops the key.
  * - max HP is stored as its INPUT (#1315): `hpBonus` = typed max − derived max, so a
  *   level-up or a CON change still moves it; reset drops the bonus.
+ * - each passive score has its own nullable field.
  */
 import type { AbilityCode } from "@/data/types";
 import {
@@ -35,7 +36,17 @@ export type SheetNumberKey =
   | { kind: "maxHp" }
   | { kind: "ability"; ability: AbilityCode }
   | { kind: "save"; ability: AbilityCode }
-  | { kind: "skill"; id: string };
+  | { kind: "skill"; id: string }
+  | { kind: "passive"; id: PassiveId };
+
+export type PassiveId = "perception" | "insight" | "investigation";
+
+/** The stored field of each passive score's hand-set value. */
+const PASSIVE_FIELD = {
+  perception: "passivePerceptionOverride",
+  insight: "passiveInsightOverride",
+  investigation: "passiveInvestigationOverride",
+} as const satisfies Record<PassiveId, keyof CharacterData>;
 
 /** The hand-set total stored for this number, or null when it is computed. */
 export function storedOverride(c: CharacterData, key: SheetNumberKey): number | null {
@@ -58,6 +69,8 @@ export function storedOverride(c: CharacterData, key: SheetNumberKey): number | 
       return c.savingThrowBonusOverrides?.[key.ability] ?? null;
     case "skill":
       return c.skillBonusOverrides?.[key.id] ?? null;
+    case "passive":
+      return c[PASSIVE_FIELD[key.id]] ?? null;
   }
 }
 
@@ -126,6 +139,8 @@ function overridePatch(
           number
         >,
       };
+    case "passive":
+      return { [PASSIVE_FIELD[key.id]]: value };
   }
 }
 

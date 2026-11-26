@@ -11,12 +11,17 @@
 import { useState, type CSSProperties } from "react";
 import { useTranslation } from "react-i18next";
 import { History, RotateCcw, Trash2, Save } from "lucide-react";
-import { restoreCharacterSnapshot, deleteCharacterSnapshot } from "@/lib/firestore";
+import { deleteCharacterSnapshot } from "@/lib/firestore";
+import { restoreWithBackup } from "@/lib/snapshot-restore";
 import { useAuthStore } from "@/stores/authStore";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useUndoStore } from "@/stores/undoStore";
 import { useLocale } from "@/hooks/useLocale";
-import { classLevelSummary } from "@/lib/views/snapshot-summary";
+import {
+  classLevelSummary,
+  newestFirst,
+  snapshotReasonKey,
+} from "@/lib/views/snapshot-summary";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,14 +88,7 @@ export function SnapshotsModal({
     setRestoring(id);
     setError(null);
     try {
-      await restoreCharacterSnapshot(
-        user.uid,
-        char.id,
-        { character: snap.character, session: snap.session },
-        // Compare-and-set base: the generation of the document this modal is showing.
-        char.revision,
-        char
-      );
+      await restoreWithBackup(user.uid, char, snap);
       // Undo-stack FENCE (§5.4): restoring a snapshot rewrites the whole sheet, so a
       // pre-restore reverse-applier would clobber the restored state. Drop the stack.
       useUndoStore.getState().clear();
@@ -131,10 +129,8 @@ export function SnapshotsModal({
   }
 
   function reasonLabel(reason: string) {
-    if (reason === "level-up") return t("snapshots.reasonLevelUp");
-    if (reason === "manual") return t("snapshots.reasonManual");
-    if (reason === "rescue") return t("snapshots.reasonRescue");
-    return reason;
+    const key = snapshotReasonKey(reason);
+    return key ? t(key) : reason;
   }
 
   function handleOpenChange(next: boolean) {
@@ -233,7 +229,7 @@ export function SnapshotsModal({
                 padding: 0,
               }}
             >
-              {snapshots.map((snap) => {
+              {newestFirst(snapshots).map((snap) => {
                 const summary = classLevelSummary(snap.character, locale, t("stats.lvl"));
                 return (
                   <li

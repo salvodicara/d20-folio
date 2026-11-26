@@ -22,6 +22,7 @@ import { Button, Panel } from "@/ui";
 
 import { PlayProficiencies } from "./PlayFeatures";
 import { PlayNumberPane } from "./PlayNumberPane";
+import { PlaySenses } from "./PlaySenses";
 
 const MAX_PIPS = 8;
 const signed = (n: number) => (n >= 0 ? `+${String(n)}` : `−${String(Math.abs(n))}`);
@@ -156,6 +157,8 @@ export function PlayLeft({ doc, locale }: { doc: CharacterDoc; locale: Locale })
             : t("play.allSkills", { count: view.allSkills.length })}
         </Button>
       </Panel>
+      {/* D&D Beyond's Senses box under the skills: the passives and the senses */}
+      <PlaySenses doc={doc} locale={locale} readonly={readonly} />
       {/* D&D Beyond's box under the skills; on a phone its own «Sezioni» tile */}
       <PlayProficiencies doc={doc} locale={locale} />
       {skillOpen && (

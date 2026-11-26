@@ -58,7 +58,7 @@ export function planCampaignUpdate(c: CampaignLike, deletedUid: string): Campaig
   let dmUid = c.dmUid;
   if (c.dmUid === deletedUid) {
     // DM-orphaning: promote the first remaining member (deterministic: members[0]).
-    dmUid = members[0];
+    dmUid = members[0] ?? c.dmUid;
     const promoted = memberDetails[dmUid];
     if (promoted) memberDetails[dmUid] = { ...promoted, role: "dm" };
   }

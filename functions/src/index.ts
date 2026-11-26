@@ -47,12 +47,12 @@ import {
 } from "./issue-format";
 import { resolveMailConfig, type MailConfig, type MailMessage } from "./owner-mail";
 import { formatOwnerDigest, type DigestReport } from "./owner-digest";
+import { authorizeAccountDeletion } from "./delete-user-plan";
 import {
-  planCampaignUpdate,
-  emailMatches,
-  authorizeAccountDeletion,
-  type CampaignLike,
-} from "./delete-user-plan";
+  DeletionError,
+  runAccountDeletion,
+  type DeletionCounts,
+} from "./delete-user-cascade";
 import { parseBudgetNotification, decideBudgetKill } from "./budget-kill";
 import { syncRoleClaims } from "./role-claims";
 import {
@@ -315,103 +315,49 @@ export const deleteUser = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "targetEmail is required.");
   }
 
-  // ── 2. Typed-confirm — re-read the target + assert the email matches ─────────
-  const targetSnap = await db.collection("users").doc(targetUid).get();
-  if (!targetSnap.exists) {
-    throw new HttpsError("not-found", "Target user not found (already deleted?).");
-  }
-  const storedEmail = targetSnap.get("email") as string | undefined;
-  if (!emailMatches(storedEmail, confirmEmail)) {
-    throw new HttpsError(
-      "failed-precondition",
-      "Confirmation email does not match the target account."
+  // ── 2–3. Typed confirm, then the cascade (`delete-user-cascade.ts`) ─────────
+  let counts: DeletionCounts;
+  try {
+    counts = await runAccountDeletion(
+      {
+        db,
+        serverTimestamp: () => FieldValue.serverTimestamp(),
+        purgePrefix: async (prefix) => {
+          try {
+            await getStorage().bucket().deleteFiles({ prefix });
+          } catch (err) {
+            // Non-fatal: a missing bucket/object must not strand the rest.
+            logger.warn("deleteUser: storage purge failed (non-fatal)", { prefix, err });
+          }
+        },
+        authEmail: async (uid) => {
+          try {
+            return (await getAuth().getUser(uid)).email ?? null;
+          } catch {
+            return null;
+          }
+        },
+        deleteAuthUser: async (uid) => {
+          try {
+            await getAuth().deleteUser(uid);
+          } catch (err: unknown) {
+            // `auth/user-not-found` is fine (a re-run, or never-signed-in record).
+            if ((err as { code?: string })?.code === "auth/user-not-found") return;
+            logger.error("deleteUser: Auth deletion failed", err);
+            throw err;
+          }
+        },
+      },
+      {
+        callerUid: callerUid ?? "",
+        targetUid,
+        confirmEmail,
+        selfService: gate.selfService,
+      }
     );
-  }
-
-  const counts = {
-    characters: 0,
-    campaignsUpdated: 0,
-    campaignsDeleted: 0,
-  };
-
-  // ── 3a. Characters subcollection (recursive — combat/ + snapshots/ go too) ───
-  const charsCol = db.collection("users").doc(targetUid).collection("characters");
-  const charDocs = await charsCol.get();
-  counts.characters = charDocs.size;
-  // recursiveDelete removes each char doc AND its `combat/` + `snapshots/` subdocs.
-  await db.recursiveDelete(charsCol);
-
-  // ── 3b. Storage portraits — the whole `users/{uid}/` prefix ──────────────────
-  try {
-    await getStorage()
-      .bucket()
-      .deleteFiles({ prefix: `users/${targetUid}/` });
   } catch (err) {
-    // Non-fatal: a missing bucket/object must not strand the rest of the cascade.
-    logger.warn("deleteUser: storage purge failed (non-fatal)", err);
-  }
-
-  // ── 3c. Campaigns — membership and DM-orphaning ─────────────────────────────
-  const campaignsSnap = await db
-    .collection("campaigns")
-    .where("members", "array-contains", targetUid)
-    .get();
-  for (const campDoc of campaignsSnap.docs) {
-    const plan = planCampaignUpdate(campDoc.data() as CampaignLike, targetUid);
-    if (plan.kind === "delete") {
-      await db.recursiveDelete(campDoc.ref);
-      counts.campaignsDeleted++;
-    } else {
-      await campDoc.ref.update({
-        members: plan.members,
-        memberDetails: plan.memberDetails,
-        dmUid: plan.dmUid,
-      });
-      counts.campaignsUpdated++;
-    }
-  }
-
-  // ── 3d. Everything else filed under the account ────────────────────────────
-  // Their automatic error reports and bug reports (Firestore + screenshots).
-  for (const [collection, field] of [
-    ["diagnostics", "uid"],
-    ["bug_reports", "reporterUid"],
-  ] as const) {
-    const owned = await db.collection(collection).where(field, "==", targetUid).get();
-    await Promise.all(owned.docs.map((doc) => db.recursiveDelete(doc.ref)));
-  }
-  try {
-    await getStorage()
-      .bucket()
-      .deleteFiles({ prefix: `bug-reports/${targetUid}/` });
-  } catch (err) {
-    logger.warn("deleteUser: bug-report screenshot purge failed (non-fatal)", err);
-  }
-
-  // ── 3e. The user doc itself, with every subcollection (library, …) ──────────
-  await db.recursiveDelete(db.collection("users").doc(targetUid));
-
-  // ── 3f. Immutable audit record (who deleted whom, when, + cascade counts) ────
-  // A player erasing their own account leaves no email behind; an admin removal
-  // keeps it (abuse handling).
-  await db.collection("admin_audit").add({
-    action: gate.selfService ? "deleteOwnAccount" : "deleteUser",
-    actorUid: callerUid,
-    targetUid,
-    ...(gate.selfService ? {} : { targetEmail: storedEmail ?? confirmEmail }),
-    counts,
-    at: FieldValue.serverTimestamp(),
-  });
-
-  // ── 3g. Auth user LAST (data before Auth) — idempotent on already-gone ───────
-  try {
-    await getAuth().deleteUser(targetUid);
-  } catch (err: unknown) {
-    // `auth/user-not-found` is fine (a re-run, or never-signed-in record).
-    if ((err as { code?: string })?.code !== "auth/user-not-found") {
-      logger.error("deleteUser: Auth deletion failed", err);
-      throw new HttpsError("internal", "Account data removed, but Auth deletion failed.");
-    }
+    if (err instanceof DeletionError) throw new HttpsError(err.code, err.message);
+    throw err;
   }
 
   logger.info("deleteUser cascade complete", { actorUid: callerUid, targetUid, counts });

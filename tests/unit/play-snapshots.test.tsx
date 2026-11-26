@@ -10,11 +10,22 @@ const h = vi.hoisted(() => ({
   restored: [] as unknown[],
   deleted: [] as string[],
   saved: 0,
+  // every write in order: what a restore does first matters
+  calls: [] as Array<[string, string?, unknown?]>,
+  failSave: false,
 }));
 vi.mock("@/lib/firebase", () => ({}));
 vi.mock("@/lib/firestore", () => ({
   listCharacterSnapshots: () =>
     Promise.resolve([
+      // the store's order is not trusted: the dialog shows the newest first
+      {
+        id: "s0",
+        reason: "manual",
+        createdAt: new Date(Date.UTC(2026, 10, 10, 18, 0)),
+        character: { classes: [], quote: "older" },
+        session: {},
+      },
       {
         id: "s1",
         reason: "level-up",
@@ -23,11 +34,18 @@ vi.mock("@/lib/firestore", () => ({
         session: {},
       },
     ]),
-  saveCharacterSnapshot: () => {
+  saveCharacterSnapshot: (
+    _uid: string,
+    _id: string,
+    data: { reason: string; character: unknown }
+  ) => {
+    h.calls.push(["save", data.reason, data.character]);
+    if (h.failSave) return Promise.reject(new Error("offline"));
     h.saved += 1;
     return Promise.resolve("s2");
   },
   restoreCharacterSnapshot: (...args: unknown[]) => {
+    h.calls.push(["restore"]);
     h.restored.push(args);
     return Promise.resolve();
   },
@@ -47,10 +65,19 @@ beforeEach(() => {
   h.restored.length = 0;
   h.deleted.length = 0;
   h.saved = 0;
+  h.calls.length = 0;
+  h.failSave = false;
   HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
     this.open = true;
   };
 });
+
+/** The first row's button: the newest snapshot. */
+function firstButton(name: RegExp): HTMLElement {
+  const [first] = screen.getAllByRole("button", { name, hidden: true });
+  if (!first) throw new Error(`no button ${String(name)}`);
+  return first;
+}
 
 async function openDialog() {
   render(<PlaySnapshots uid="u1" doc={doc} open onClose={() => {}} />);
@@ -68,7 +95,7 @@ describe("snapshots on the Play screen", () => {
   it("restore asks to confirm, then writes the snapshot at the sheet's revision", async () => {
     const clear = vi.spyOn(useUndoStore.getState(), "clear");
     await openDialog();
-    fireEvent.click(screen.getByRole("button", { name: /^restore$/i, hidden: true }));
+    fireEvent.click(firstButton(/^restore$/i));
     expect(h.restored).toHaveLength(0);
     await act(async () => {
       fireEvent.click(
@@ -94,11 +121,11 @@ describe("snapshots on the Play screen", () => {
 
   it("delete asks to confirm, then deletes", async () => {
     await openDialog();
-    fireEvent.click(screen.getByRole("button", { name: /^delete$/i, hidden: true }));
+    fireEvent.click(firstButton(/^delete$/i));
     expect(h.deleted).toEqual([]);
     expect(screen.getByRole("button", { name: /cancel/i, hidden: true })).toBeTruthy();
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /^delete$/i, hidden: true }));
+      fireEvent.click(firstButton(/^delete$/i));
       await Promise.resolve();
     });
     expect(h.deleted).toEqual(["s1"]);
@@ -113,5 +140,44 @@ describe("snapshots on the Play screen", () => {
       await Promise.resolve();
     });
     expect(h.saved).toBe(1);
+  });
+
+  it("lists the newest snapshot first", async () => {
+    await openDialog();
+    const rows = screen.getAllByText(/level-up|manual/i).map((el) => el.textContent);
+    expect(rows[0]).toMatch(/level-up/i);
+    expect(rows[1]).toMatch(/manual/i);
+  });
+
+  it("a restore first saves the current sheet as a «before restore» snapshot", async () => {
+    await openDialog();
+    fireEvent.click(firstButton(/^restore$/i));
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: /confirm restore/i, hidden: true })
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(h.calls.map(([kind, reason]) => [kind, reason])).toEqual([
+      ["save", "pre-restore"],
+      ["restore", undefined],
+    ]);
+    expect(h.calls[0]?.[2]).toBe(doc.character);
+  });
+
+  it("no backup, no restore: the sheet stays as it is", async () => {
+    h.failSave = true;
+    await openDialog();
+    fireEvent.click(firstButton(/^restore$/i));
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: /confirm restore/i, hidden: true })
+      );
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(h.restored).toHaveLength(0);
+    expect(screen.getByRole("alert", { hidden: true })).toBeInTheDocument();
   });
 });
