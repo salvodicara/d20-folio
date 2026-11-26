@@ -7333,3 +7333,42 @@
   grid-template-columns: 1fr 5.5rem;
   gap: 12px;
 }
+
+/* the DM's limited uses under a monster line (Scontro): a row of chips, set in from the
+   line's art column */
+.fui .f-uses {
+  margin: 0;
+}
+.fui .f-uses > .f-chips {
+  display: contents;
+}
+
+/* the DM's monster actions and traits under its line (Scontro) */
+.fui .f-monster-acts {
+  display: grid;
+  gap: 6px;
+}
+/* the Multiattack note stays one line on the row; the card has it whole */
+.fui .f-monster-multi {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.fui .f-target-groups {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-target-group {
+  display: grid;
+  gap: 4px;
+}
+
+/* a line's action and use chips stay inside the name column: a long label wraps */
+.fui .f-monster-acts .f-chip,
+.fui .f-uses .f-chip {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}

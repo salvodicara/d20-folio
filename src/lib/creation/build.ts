@@ -276,12 +276,16 @@ export function buildNewCharacter(
   // The class's own creation picks (style, Expertise, masteries, invocations)
   // land through the one writer level-up uses too.
   const { weaponMasteries, invocations, fightingStyles, expertise } = draft.classPicks;
-  const picked = applyClassPicks(withChoices, draft.classId, {
-    fightingStyle: fightingStyles[0] ?? null,
-    expertise,
-    weaponMasteries: weaponMasteries.length > 0 ? weaponMasteries : null,
-    invocations,
-  });
+  // A Champion created at 7+ holds two styles: each lands as its own feature.
+  const picked = fightingStyles.reduce(
+    (character, fightingStyle) =>
+      applyClassPicks(character, draft.classId, { fightingStyle }),
+    applyClassPicks(withChoices, draft.classId, {
+      expertise,
+      weaponMasteries: weaponMasteries.length > 0 ? weaponMasteries : null,
+      invocations,
+    })
+  );
   // The AC the sheet will show (the starting armor worn, shield, grants): the same
   // single source the auto-save stamps, never the unarmored placeholder.
   const finalCharacter = { ...picked, ac: effectiveAC(picked, session) };

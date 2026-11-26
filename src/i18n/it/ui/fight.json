@@ -139,6 +139,28 @@
       "ally_one": "{{count}} alleato",
       "ally_other": "{{count}} alleati",
       "revealed": "{{count}} con PF visibili"
+    },
+    "uses": {
+      "title": "Usi limitati",
+      "rollRecharge": "Tira la ricarica: {{name}}",
+      "legendary": "Azioni leggendarie {{left}}/{{max}}",
+      "regain": "Recupera le azioni leggendarie",
+      "spentDone": "{{name}}: usato",
+      "rechargeBack": "Ricarica {{d6}}: {{name}} torna disponibile",
+      "rechargeMiss": "Ricarica {{d6}}: {{name}} resta da ricaricare",
+      "regainDone": "Azioni leggendarie recuperate: {{name}}",
+      "legendarySpent": "Azione leggendaria usata: {{name}}"
+    },
+    "actions": {
+      "title": "{{name}}: azioni",
+      "applied": "{{name}}: applicata",
+      "traits": "{{name}}: tratti",
+      "rowDamage_one": "{{count}} danno",
+      "rowDamage_other": "{{count}} danni",
+      "group": {
+        "heroes": "Eroi",
+        "ownSide": "Dalla sua parte"
+      }
     }
   }
 }
