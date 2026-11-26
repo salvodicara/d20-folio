@@ -349,6 +349,7 @@
       "discoveryFrees_other": "{{spells}} are your Magical Discoveries. Confirming keeps them always prepared and frees {{freed}} of your normal prepared places.",
       "discoveryKeeps_one": "{{spells}} is your Magical Discovery. Confirming keeps it always prepared.",
       "discoveryKeeps_other": "{{spells}} are your Magical Discoveries. Confirming keeps them always prepared.",
+      "subclassUndo": "Subclass chosen: {{name}}",
       "discoveryUndo": "Magical Discoveries confirmed",
       "owed": {
         "subclass_one": "Subclass",

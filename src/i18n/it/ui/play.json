@@ -349,6 +349,7 @@
       "discoveryFrees_other": "{{spells}} sono le tue Scoperte Magiche. Confermando restano sempre preparati e recuperi {{freed}} dei tuoi posti normali per gli incantesimi preparati.",
       "discoveryKeeps_one": "{{spells}} è la tua Scoperta Magica. Confermando resta sempre preparato.",
       "discoveryKeeps_other": "{{spells}} sono le tue Scoperte Magiche. Confermando restano sempre preparati.",
+      "subclassUndo": "Sottoclasse scelta: {{name}}",
       "discoveryUndo": "Scoperte Magiche confermate",
       "owed": {
         "subclass_one": "Sottoclasse",

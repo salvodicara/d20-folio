@@ -9,7 +9,12 @@
  * too, as the creation class step's chips, and so are a Lore Bard's Magical
  * Discoveries held without their always-prepared mark (preselected: one «Salva»
  * marks them, with an undo). A Druid owing Wild Shape known forms picks them here
- * too (this screen only). Hidden on a read-only sheet and when nothing is owed.
+ * too (this screen only). A class past its subclass level with none (#1393) is
+ * asked it with the level-up's subclass cards and reveal, then the choices its
+ * features bring (Lore's skills, a land); «Salva» picks it through the level-up's
+ * own step, with an undo. Pattern source: D&D Beyond lists an unmade subclass as a
+ * required choice on the class panel; BG3 asks it at the level. Hidden on a
+ * read-only sheet and when nothing is owed.
  */
 import type { InfoKind } from "@/domains/spells/option-info";
 import type { ClassPickKind } from "@/lib/owed-class-picks";
@@ -27,8 +32,13 @@ import type { Locale } from "@/lib/locale";
 import { pendingSpeciesChoices } from "@/lib/species-choices";
 import { originFeatVMs } from "@/lib/views/feat-pick-view";
 import { lineageBundleVMs } from "@/lib/views/creation-view";
-import { owedClassPickRows } from "@/lib/views/owed-class-picks-view";
 import { owedWildShapeForms } from "@/domains/play/wild-shape-forms-owed";
+import {
+  owedClassPickRows,
+  type OwedClassPickRow,
+} from "@/lib/views/owed-class-picks-view";
+import { owedSubclassAsks } from "@/domains/play/owed-subclass-view";
+import { SubclassReveal } from "@/domains/leveling/ui/SubclassReveal";
 import {
   discoverySentence,
   pendingSpeciesItems,
@@ -44,6 +54,7 @@ const ABILITIES = ["INT", "WIS", "CHA"] as const;
 
 /** The art and the card each owed class pick wears, as on the level-up. */
 const PICK_ART: Partial<Record<ClassPickKind, ArtKind>> = {
+  subclass: "subclass",
   weaponMasteries: "equipment",
   fightingStyles: "feat",
 };
@@ -136,14 +147,31 @@ function SpeciesChoicesDialog({
   };
   const rows = choiceSlotRows(pending.slots, picks, owned, locale);
   // The class picks owed, answered by row key.
-  const classRows = owedClassPickRows(
+  const allClassRows = owedClassPickRows(
     doc.character,
     locale,
     doc.session.grantBundleChoices
   );
+  const classRows = allClassRows.filter((row) => row.pick !== "subclass");
   const [classPicks, setClassPicks] = useState<Record<string, string[]>>({});
   const forms = owedWildShapeForms(doc, locale);
   const [formPicks, setFormPicks] = useState<string[]>([]);
+  // The subclass a class never chose (the first one owed), and the choices its
+  // features ask, answered here until «Salva».
+  const subclassRow = allClassRows.find((row) => row.pick === "subclass");
+  const [subclassId, setSubclassId] = useState<string | null>(null);
+  const [subclassChoices, setSubclassChoices] = useState<ChoicePicks>(EMPTY_CHOICE_PICKS);
+  const [subclassBundles, setSubclassBundles] = useState<Record<string, string>>({});
+  const subclassAnswers = { choicePicks: subclassChoices, bundlePicks: subclassBundles };
+  const subclass = subclassRow
+    ? owedSubclassAsks(doc, subclassRow.classId, subclassId, subclassAnswers, locale)
+    : null;
+  const pickSubclass = (id: string) => {
+    // Another subclass asks other choices: they start over.
+    setSubclassId(subclassId === id ? null : id);
+    setSubclassChoices(EMPTY_CHOICE_PICKS);
+    setSubclassBundles({});
+  };
   // A Lore Bard's Magical Discoveries without their mark: the likely ones preselected,
   // so confirming them is the one tap on «Salva».
   const discovery = pendingSpeciesItems(doc.character, doc.session, locale).find(
@@ -152,8 +180,11 @@ function SpeciesChoicesDialog({
   const [discoveryPicks, setDiscoveryPicks] = useState<string[]>(
     discovery?.preselected ?? []
   );
+  // A subclass picked with a choice still open can't be saved yet.
+  const subclassOpen = subclassId !== null && subclass?.complete !== true;
   const chosen =
     formPicks.length > 0 ||
+    subclass?.complete === true ||
     discoveryPicks.length > 0 ||
     Object.values(classPicks).some((ids) => ids.length > 0) ||
     Object.keys(bundlePicks).length > 0 ||
@@ -178,6 +209,18 @@ function SpeciesChoicesDialog({
       }))
     );
     if (formPicks.length > 0) store.learnWildShapeForms(formPicks);
+    if (subclassRow && subclassId && subclass?.complete) {
+      const classId = subclassRow.classId;
+      const name = subclassRow.options.find((o) => o.id === subclassId)?.name ?? "";
+      registerUndoableToast(
+        { message: t("play.speciesChoices.subclassUndo", { name }) },
+        () =>
+          useCharacterStore
+            .getState()
+            .resolveSubclass(classId, subclassId, subclassAnswers),
+        { turnScoped: false }
+      );
+    }
     // Last, so its one undo restores only this mark.
     if (discoveryPicks.length > 0) {
       registerUndoableToast(
@@ -199,7 +242,7 @@ function SpeciesChoicesDialog({
           <Button kind="ghost" onClick={onClose}>
             {t("common.cancel")}
           </Button>
-          <Button kind="primary" disabled={!chosen} onClick={save}>
+          <Button kind="primary" disabled={!chosen || subclassOpen} onClick={save}>
             {t("common.save")}
           </Button>
         </>
@@ -279,6 +322,20 @@ function SpeciesChoicesDialog({
           rows={rows}
           onToggle={(row, id) => setPicks(toggleChoicePick(picks, row, id))}
         />
+        {subclassRow && subclass && (
+          <OwedSubclass
+            row={subclassRow}
+            picked={subclassId}
+            asks={subclass}
+            bundlePicks={subclassBundles}
+            locale={locale}
+            onPick={pickSubclass}
+            onBundle={(key, id) => setSubclassBundles({ ...subclassBundles, [key]: id })}
+            onChoice={(row, id) =>
+              setSubclassChoices(toggleChoicePick(subclassChoices, row, id))
+            }
+          />
+        )}
         {classRows.map((row) => (
           <div key={row.key} className="f-ask">
             <span className="f-lbl">{row.source}</span>
@@ -347,5 +404,63 @@ function SpeciesChoicesDialog({
         )}
       </div>
     </Dialog>
+  );
+}
+
+/**
+ * The owed subclass: the level-up's subclass cards, then what the pick brings (its
+ * features up to the class's level, its spells) and the choices those features ask.
+ */
+function OwedSubclass({
+  row,
+  picked,
+  asks,
+  bundlePicks,
+  locale,
+  onPick,
+  onBundle,
+  onChoice,
+}: {
+  row: OwedClassPickRow;
+  picked: string | null;
+  asks: ReturnType<typeof owedSubclassAsks>;
+  bundlePicks: Readonly<Record<string, string>>;
+  locale: Locale;
+  onPick: (id: string) => void;
+  onBundle: (bundleKey: string, optionId: string) => void;
+  onChoice: Parameters<typeof ChoiceRowChips>[0]["onToggle"];
+}) {
+  return (
+    <div className="f-ask">
+      <span className="f-lbl">{row.source}</span>
+      <p className="f-help">{row.title}</p>
+      <PickGrid
+        label={row.title}
+        options={row.options.map((o) => ({ id: o.id, label: o.name }))}
+        picked={picked ? [picked] : []}
+        art="subclass"
+        count={1}
+        locale={locale}
+        onToggle={onPick}
+      />
+      {asks.reveal && <SubclassReveal reveal={asks.reveal} locale={locale} />}
+      {asks.bundles.map((b) => (
+        <div key={b.bundleKey} className="f-ask">
+          <span className="f-lbl">{b.label}</span>
+          <div className="f-chips">
+            {b.options.map((o) => (
+              <Chip
+                key={o.id}
+                pressed={bundlePicks[b.bundleKey] === o.id}
+                onClick={() => onBundle(b.bundleKey, o.id)}
+              >
+                {o.label}
+              </Chip>
+            ))}
+          </div>
+        </div>
+      ))}
+      <ChoiceRowChips rows={asks.rows} onToggle={onChoice} />
+    </div>
   );
 }
