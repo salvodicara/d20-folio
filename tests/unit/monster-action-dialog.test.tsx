@@ -121,4 +121,40 @@ describe("MonsterActionDialog", () => {
     const rows = (onApply.mock.calls[0] as [unknown, { saved: boolean }[]])[1];
     expect(rows.map((r) => r.saved)).toEqual([false, true]);
   });
+
+  it("says a target's damage in plain words, once its result is picked", () => {
+    open(attackPlan, ["pc-ana"]);
+    fireEvent.change(screen.getByRole("textbox", { name: "Rolled total" }), {
+      target: { value: "6" },
+    });
+    expect(screen.getByText("6 damage")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Miss" }));
+    expect(screen.queryByText(/damage$/)).toBeNull();
+  });
+});
+
+describe("the targets, grouped", () => {
+  const wolf = { ...view("monster-9", "Wolf", "monster"), side: "ally" as const };
+  const orc = view("monster-3", "Orc", "monster");
+
+  it("heroes first, then allied creatures, then the monster's own side", () => {
+    render(
+      <MonsterActionDialog
+        title="Scimitar"
+        numbers=""
+        candidates={[wolf, ana, orc, bo]}
+        ownSide={[orc]}
+        initiallyPicked={[]}
+        planFor={attackPlan}
+        onApply={() => {}}
+        onClose={() => {}}
+      />
+    );
+    const group = screen.getByRole("group", { name: "On whom?" });
+    const names = [...group.querySelectorAll("button")].map((b) => b.textContent);
+    expect(names).toEqual(["Ana", "Bo", "Wolf", "Orc"]);
+    expect(screen.getByText("Heroes")).toBeInTheDocument();
+    expect(screen.getByText("Allies")).toBeInTheDocument();
+    expect(screen.getByText("Its own side")).toBeInTheDocument();
+  });
 });

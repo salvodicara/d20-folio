@@ -162,6 +162,7 @@ export function useMonsterActions(
               title={title}
               numbers={`${monster.name} · ${numbersLine(open.action, t, monster.hp)}`}
               candidates={candidates}
+              ownSide={more}
               // a save is usually an area: every opponent starts picked; an attack
               // picks its one opponent only when there is no choice to make
               initiallyPicked={

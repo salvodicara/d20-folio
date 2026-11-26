@@ -154,7 +154,13 @@
     "actions": {
       "title": "{{name}}: actions",
       "applied": "{{name}}: applied",
-      "traits": "{{name}}: traits"
+      "traits": "{{name}}: traits",
+      "rowDamage_one": "{{count}} damage",
+      "rowDamage_other": "{{count}} damage",
+      "group": {
+        "heroes": "Heroes",
+        "ownSide": "Its own side"
+      }
     }
   }
 }

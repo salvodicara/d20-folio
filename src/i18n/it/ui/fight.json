@@ -154,7 +154,13 @@
     "actions": {
       "title": "{{name}}: azioni",
       "applied": "{{name}}: applicata",
-      "traits": "{{name}}: tratti"
+      "traits": "{{name}}: tratti",
+      "rowDamage_one": "{{count}} danno",
+      "rowDamage_other": "{{count}} danni",
+      "group": {
+        "heroes": "Eroi",
+        "ownSide": "Dalla sua parte"
+      }
     }
   }
 }

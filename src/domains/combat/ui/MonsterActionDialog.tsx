@@ -26,6 +26,7 @@ export function MonsterActionDialog({
   title,
   numbers,
   candidates,
+  ownSide = [],
   initiallyPicked,
   planFor,
   onApply,
@@ -36,6 +37,9 @@ export function MonsterActionDialog({
   numbers: string;
   /** The creatures it can strike: its opponents first, its own side after. */
   candidates: ReadonlyArray<EncounterCombatantView>;
+  /** The monster's own side, shown last under its own label (Foundry's and Roll20's
+   *  target pickers keep the heroes apart from the creatures). */
+  ownSide?: ReadonlyArray<EncounterCombatantView>;
   initiallyPicked: ReadonlyArray<string>;
   planFor: (ids: readonly string[]) => DamageTrayPlan;
   onApply: (plan: DamageTrayPlan, rows: TrayRow[], total: number) => void;
@@ -64,6 +68,18 @@ export function MonsterActionDialog({
   // An attack row starts at «Hit» (the classic tray's default); a miss needs no total.
   const ready = rows.length > 0 && (!needsTotal || total !== null);
   const edit = (row: TrayRow) => setEdits((all) => ({ ...all, [row.targetId]: row }));
+  const own = new Set(ownSide.map((c) => c.id));
+  const groups = [
+    {
+      key: "heroes",
+      rows: candidates.filter((c) => c.kind === "pc" && !own.has(c.id)),
+    },
+    {
+      key: "allies",
+      rows: candidates.filter((c) => c.kind !== "pc" && !own.has(c.id)),
+    },
+    { key: "ownSide", rows: candidates.filter((c) => own.has(c.id)) },
+  ].filter((g) => g.rows.length > 0);
   const toggle = (id: string) =>
     setPicked((now) => (now.includes(id) ? now.filter((x) => x !== id) : [...now, id]));
   return (
@@ -91,11 +107,30 @@ export function MonsterActionDialog({
       <p className="f-quiet f-ask">{numbers}</p>
       <div className="f-ask">
         <span className="f-lbl">{t("campaignHub.encounterActionOnWhom")}</span>
-        <div className="f-chips">
-          {candidates.map((c) => (
-            <Chip key={c.id} pressed={picked.includes(c.id)} onClick={() => toggle(c.id)}>
-              {c.name}
-            </Chip>
+        <div
+          className="f-target-groups"
+          role="group"
+          aria-label={t("campaignHub.encounterActionOnWhom")}
+        >
+          {groups.map((g) => (
+            <div key={g.key} className="f-target-group">
+              <span className="f-quiet">
+                {g.key === "allies"
+                  ? t("combat.targetAllies")
+                  : t(`fight.actions.group.${g.key}`)}
+              </span>
+              <div className="f-chips">
+                {g.rows.map((c) => (
+                  <Chip
+                    key={c.id}
+                    pressed={picked.includes(c.id)}
+                    onClick={() => toggle(c.id)}
+                  >
+                    {c.name}
+                  </Chip>
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </div>
@@ -105,10 +140,7 @@ export function MonsterActionDialog({
         const amount = total !== null ? rowAmount(total, row, plan) : null;
         return (
           <div key={row.targetId} className="f-ask">
-            <span className="f-lbl">
-              {target.name}
-              {amount !== null && amount > 0 ? ` · −${String(amount)}` : ""}
-            </span>
+            <span className="f-lbl">{target.name}</span>
             <div className="f-chips">
               {row.attack !== undefined || plan.attack
                 ? ATTACK_OUTCOMES.map((o) => (
@@ -127,6 +159,9 @@ export function MonsterActionDialog({
                 </Chip>
               )}
             </div>
+            {amount !== null && amount > 0 && (
+              <p className="f-help">{t("fight.actions.rowDamage", { count: amount })}</p>
+            )}
           </div>
         );
       })}

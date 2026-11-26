@@ -284,26 +284,32 @@ function LiveFight({
               <FightLine
                 row={row}
                 dm={dm.line(row)}
+                // the line's own tools, under its name (Foundry's and D&D Beyond's
+                // encounter rows): the DM's printed actions and the limited uses, then the
+                // area spell on the monster's turn
                 action={
-                  monsterTurn &&
-                  row.ids.includes(monsterTurn.id) && (
-                    <MonsterZoneCast
-                      campaignId={campaign.id}
-                      monsterId={monsterTurn.id}
-                      monsterName={
-                        view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
-                      }
-                      defaultDc={monsterSpellDc(
-                        monsterStatBlockOf(encounter, monsterTurn.id)
+                  (isDm || monsterTurn) && (
+                    <>
+                      {isDm && acts.stripFor(row.ids)}
+                      {isDm && uses.stripFor(row.ids)}
+                      {monsterTurn && row.ids.includes(monsterTurn.id) && (
+                        <MonsterZoneCast
+                          campaignId={campaign.id}
+                          monsterId={monsterTurn.id}
+                          monsterName={
+                            view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
+                          }
+                          defaultDc={monsterSpellDc(
+                            monsterStatBlockOf(encounter, monsterTurn.id)
+                          )}
+                          locale={locale}
+                          onToast={onToast}
+                        />
                       )}
-                      locale={locale}
-                      onToast={onToast}
-                    />
+                    </>
                   )
                 }
               />
-              {isDm && acts.stripFor(row.ids)}
-              {isDm && uses.stripFor(row.ids)}
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
