@@ -12,6 +12,7 @@
  * recovery, and the fail-closed degradations (corrupt world, no owner).
  */
 
+import { maxHpBase } from "@/lib/aggregate-character";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { canonicalFingerprint } from "@/lib/canonical-fingerprint";
@@ -47,7 +48,7 @@ function worldFor(doc: CharacterDoc): Readonly<CharacterMaterialState> {
   const world = characterWorldState(
     doc,
     UID,
-    doc.character.hp.max,
+    maxHpBase(doc.character, doc.session),
     {},
     characterTrackerSeeds(doc)
   );
@@ -136,7 +137,7 @@ function driveAndCommit(
     facts: [
       {
         address: ["hit-point-maximum"],
-        expected: { present: true, value: doc.character.hp.max },
+        expected: { present: true, value: maxHpBase(doc.character, doc.session) },
         lifecycle: "commit-redo",
         owner: characterSelfRef(doc, UID),
       },
@@ -373,8 +374,10 @@ describe("restThroughWorld: short rest", () => {
 
     // A second entered roll clamps at the effective max, never beyond.
     expect(restThroughWorld("short", { healedHp: 999 })).toBe("engine");
-    expect(liveDoc().session.hp.current).toBe(doc.character.hp.max);
-    expect(worldFor(liveDoc()).vitals.hitPoints.current).toBe(doc.character.hp.max);
+    expect(liveDoc().session.hp.current).toBe(maxHpBase(doc.character, doc.session));
+    expect(worldFor(liveDoc()).vitals.hitPoints.current).toBe(
+      maxHpBase(doc.character, doc.session)
+    );
   });
 
   it("does not end an until-long-rest engine lifetime", () => {
@@ -419,7 +422,10 @@ describe("restThroughWorld: long rest", () => {
     expect(restThroughWorld("long")).toBe("engine");
 
     const session = liveDoc().session;
-    expect(session.hp).toMatchObject({ current: doc.character.hp.max, temp: 0 });
+    expect(session.hp).toMatchObject({
+      current: maxHpBase(doc.character, doc.session),
+      temp: 0,
+    });
     expect(session.exhaustion).toBe(2);
     expect(session.hitDice.used).toBe(0);
     expect(session.spellSlots["1"]?.used ?? 0).toBe(0);
@@ -432,7 +438,7 @@ describe("restThroughWorld: long rest", () => {
     expect(liveDoc().character.equipment[1]?.charges).toMatchObject({ current: 3 });
 
     const world = worldFor(liveDoc());
-    expect(world.vitals.hitPoints.current).toBe(doc.character.hp.max);
+    expect(world.vitals.hitPoints.current).toBe(maxHpBase(doc.character, doc.session));
     expect(world.vitals.hitPoints.temporary.current).toBe(0);
     expect(world.vitals.zeroHitPoints).toBeNull();
     expect(world.exhaustion).toBe(2);
@@ -453,8 +459,10 @@ describe("restThroughWorld: long rest", () => {
     expect(restThroughWorld("long")).toBe("engine");
 
     expect(liveDoc().session.hpMaxReduction).toBeUndefined();
-    expect(liveDoc().session.hp.current).toBe(doc.character.hp.max);
-    expect(worldFor(liveDoc()).vitals.hitPoints.current).toBe(doc.character.hp.max);
+    expect(liveDoc().session.hp.current).toBe(maxHpBase(doc.character, doc.session));
+    expect(worldFor(liveDoc()).vitals.hitPoints.current).toBe(
+      maxHpBase(doc.character, doc.session)
+    );
   });
 
   it("counts a fading D20 Test penalty down by one", () => {

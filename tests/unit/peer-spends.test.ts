@@ -4,6 +4,7 @@
  * the hit spent on the target's sheet; every reader folds the pending entries; the
  * owner folds them into its sheet once, by id.
  */
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
@@ -94,7 +95,7 @@ describe("a hit from another device, with the ledger", () => {
     const doc = makeCharacterDoc({}, { hp: { current: 30, temp: 5 } });
     return {
       ...doc,
-      character: { ...doc.character, hp: { max: 30 }, features: [wardFeature] },
+      character: withMaxHpEdit({ ...doc.character, features: [wardFeature] }, 30),
     };
   };
   const ids = () => {
@@ -125,7 +126,7 @@ describe("a hit from another device, with the ledger", () => {
       { classId: "rogue", level: 5, features: [{ srdId: "rogue-uncanny-dodge" }] },
       { hp: { current: 40, temp: 0 }, activeFeatures: ["rogue-uncanny-dodge"] }
     );
-    const doc = { ...base, character: { ...base.character, hp: { max: 40 } } };
+    const doc = { ...base, character: withMaxHpEdit(base.character, 40) };
     const first = peerHit(doc, sessionToCombatState(doc.session), [], 20, {}, ids());
     expect(first.state.hp.current).toBe(30);
     expect(first.spends).toContainEqual(

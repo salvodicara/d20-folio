@@ -102,7 +102,17 @@
       "initGroup_one": "Si sposta tutta la riga: {{count}} creatura.",
       "initGroup_other": "Si sposta tutta la riga: {{count}} creature.",
       "initHelp": "L'elenco si riordina col nuovo numero, anche a scontro avviato.",
-      "initDone": "{{name}} ora a iniziativa {{value}}"
+      "initDone": "{{name}} ora a iniziativa {{value}}",
+      "heroRollLabel": "Tiro del d20",
+      "heroRollTotal": "Bonus {{bonus}} · totale {{total}}",
+      "heroRollHelp": "Per chi gioca senza l'app: il tiro è suo, il resoconto dice che l'ha scritto il master.",
+      "heroRollDone": "{{name}}: iniziativa {{total}}, tirata dal master",
+      "movedDone": "Ordine dei turni cambiato: {{name}}",
+      "remove": "Togli dallo scontro",
+      "removeDone_one": "Tolta dallo scontro: {{count}} creatura",
+      "removeDone_other": "Tolte dallo scontro: {{count}} creature",
+      "tempDone_one": "{{amount}} PF temporanei a {{count}} creatura",
+      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature"
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {

@@ -840,7 +840,7 @@ export function summarizeBuildDiscards(
     classFeaturesRemoved,
     picksRemoved,
     expertiseDemoted,
-    hpMaxDelta: next.hp.max - prev.hp.max,
+    hpMaxDelta: next.hp.max - deriveMaxHp(prev),
     abilityReviewNeeded: asiEntitlement(nextClasses) < asiEntitlement(prevClasses),
   };
 }

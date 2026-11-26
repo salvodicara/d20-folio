@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withMaxHpEdit } from "@/lib/aggregate-character";
 import { useCharacterStore } from "@/stores/characterStore";
 import { makeCharacterDoc } from "./_helpers";
 import { conc } from "./__helpers__/concentration";
@@ -6,11 +7,10 @@ import { sessionToPlayStateV1 } from "@/lib/session-state-codec";
 import type { CharacterDoc } from "@/types/character";
 
 function concentratingCharacter() {
-  return makeCharacterDoc(
+  const doc = makeCharacterDoc(
     {
       classes: [{ classId: "paladin", level: 5 }],
       spells: [{ srdId: "shield-of-faith", prepared: true }],
-      hp: { max: 100 },
     },
     {
       hp: { current: 100, temp: 0 },
@@ -25,6 +25,8 @@ function concentratingCharacter() {
       concentrationConditions: ["restrained"],
     }
   );
+  // #1334 — the max is derived at read: 100 is a hand edit over it.
+  return { ...doc, character: withMaxHpEdit(doc.character, 100) };
 }
 
 beforeEach(() => {
@@ -252,7 +254,7 @@ describe("characterStore — entered D20 lifecycle", () => {
     );
 
     const highHp = concentratingCharacter();
-    highHp.character.hp.max = 200;
+    highHp.character = withMaxHpEdit(highHp.character, 200);
     highHp.session.hp.current = 200;
     // An edit of the same sheet keeps the save still to roll; the new damage queues
     // its own save after it (each damage asks for one).

@@ -15,6 +15,7 @@
 import { localizeSrd, hasSrd } from "@/i18n/resolver";
 import { getClassTable } from "@/data/classes";
 import { totalLevel } from "@/lib/classes";
+import { deriveMaxHp } from "@/lib/aggregate-character";
 import { localeDistance } from "@/lib/utils";
 import { proficiencyBonus } from "@/lib/proficiency";
 import type { Locale } from "@/lib/locale";
@@ -129,7 +130,7 @@ export function levelUpReview(
   const b = before.character;
   const a = after.character;
   const numbers: ReviewNumber[] = [
-    { id: "hp", kind: "hp", before: b.hp.max, after: a.hp.max },
+    { id: "hp", kind: "hp", before: deriveMaxHp(b), after: a.hp.max },
   ];
   const prof = [
     proficiencyBonus(totalLevel(b)),
