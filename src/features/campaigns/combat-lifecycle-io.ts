@@ -41,6 +41,7 @@ import {
 import { readRoster, writeRosterHp } from "./roster-io";
 import { sessionLogStoreFor } from "./session-log-source";
 import {
+  type MonsterEdit,
   planCancel,
   planEnd,
   planAddMonsters,
@@ -50,6 +51,7 @@ import {
   planMonsterHp,
   planMonsterInitiative,
   planMonsterRevealed,
+  planMonsterEdit,
   planMonsterSide,
   planDmHeroRoll,
   planMonsterTempHp,
@@ -687,6 +689,23 @@ export async function setMonsterTempHpMove(
   return async () =>
     (await applyMove(campaignId, (campaign) => {
       const planned = planMonsterTempHp(campaign, { ...input, temp: previous.temp });
+      return planned && { patch: planned.patch, result: true };
+    })) === true;
+}
+
+/** The DM edits a monster's card (name, AC, notes); the undo puts every field back. */
+export async function editMonsterMove(
+  campaignId: string,
+  input: { uid: string; monsterId: string } & Partial<MonsterEdit>
+): Promise<CombatUndo | null> {
+  const previous = await applyMove(campaignId, (campaign) => {
+    const planned = planMonsterEdit(campaign, input);
+    return planned && { patch: planned.patch, result: planned.previous };
+  });
+  if (previous === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const planned = planMonsterEdit(campaign, { ...input, ...previous });
       return planned && { patch: planned.patch, result: true };
     })) === true;
 }

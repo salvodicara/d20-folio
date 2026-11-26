@@ -30,7 +30,10 @@ import {
   reorderCombatant,
   setHidden,
   setInitiative,
+  setMonsterAc,
   setMonsterCondition,
+  setMonsterName,
+  setMonsterNotes,
   setMonsterSide,
   setMonsterTempHp,
   setRevealed,
@@ -532,6 +535,45 @@ export function planMonsterSide(
   return {
     patch: { encounter: setMonsterSide(fight, input.monsterId, input.side) },
     previous,
+  };
+}
+
+/** A monster card's fields the DM edits (the classic MonsterCard body). */
+export interface MonsterEdit {
+  name: string;
+  ac: number;
+  notes: string;
+}
+
+/**
+ * The DM edits a monster's card: its name, Armor Class and private notes. Hands back the
+ * old values, so the undo puts every field back. Null for anyone but the DM, for a hero,
+ * or when nothing changes (a blank name is no name: the old one stays).
+ */
+export function planMonsterEdit(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; monsterId: string } & Partial<MonsterEdit>
+): { patch: CombatPatch; previous: MonsterEdit } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const monster = fight.combatants.find((c) => c.id === input.monsterId);
+  if (monster?.kind !== "monster") return null;
+  let next = fight;
+  if (input.name !== undefined) next = setMonsterName(next, monster.id, input.name);
+  if (input.ac !== undefined) next = setMonsterAc(next, monster.id, input.ac);
+  if (input.notes !== undefined && input.notes.trim() !== (monster.notes ?? "").trim())
+    next = setMonsterNotes(next, monster.id, input.notes);
+  const edited = next.combatants.find((c) => c.id === monster.id);
+  if (
+    edited?.kind !== "monster" ||
+    (edited.name === monster.name &&
+      edited.ac === monster.ac &&
+      (edited.notes ?? "") === (monster.notes ?? ""))
+  )
+    return null;
+  return {
+    patch: { encounter: next },
+    previous: { name: monster.name, ac: monster.ac, notes: monster.notes ?? "" },
   };
 }
 
