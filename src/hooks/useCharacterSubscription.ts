@@ -515,6 +515,11 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     const logWrite = (err: unknown): void => {
       console.error("Combat-state write failed", err);
     };
+    // Play writes sent and not settled yet. A write can settle before an earlier one
+    // (a patch with nothing to write resolves at once, offline too), so the trace is
+    // retired only when none is left, never by the first answer.
+    let playWritesInFlight = 0;
+    let lastTracedAt: number | null = null;
     // At most one write per change (src/lib/combat-state-writer.ts): the asks of one
     // command coalesce, and a state the server holds or is about to hold is not resent.
     const writer = createCombatStateWriter({
@@ -524,20 +529,31 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // queued patch, it is the rescue copy.
         const shown = useCharacterStore.getState().character;
         const at = Date.now();
-        if (shown && shown.id === characterId)
+        if (shown && shown.id === characterId) {
           keepUnackedPlay(user.uid, characterId, {
             character: shown.character,
             session: shown.session,
             at,
           });
+          lastTracedAt = at;
+        }
+        playWritesInFlight += 1;
         const sent = writeCombatState(uid, characterId, state, base);
         void sent.then(
           () => {
-            // Acknowledged: retire the trace, unless a newer write traced again since.
-            if (readUnackedPlay(user.uid, characterId)?.at === at)
+            playWritesInFlight -= 1;
+            // All settled: retire the trace this tab wrote last (a trace written
+            // elsewhere since is not this tab's to retire).
+            if (
+              playWritesInFlight === 0 &&
+              lastTracedAt !== null &&
+              readUnackedPlay(user.uid, characterId)?.at === lastTracedAt
+            )
               dropUnackedPlay(user.uid, characterId);
           },
-          () => undefined
+          () => {
+            playWritesInFlight -= 1;
+          }
         );
         return sent;
       },
