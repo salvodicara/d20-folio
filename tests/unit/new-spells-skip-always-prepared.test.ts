@@ -40,4 +40,62 @@ describe("new spells skip what the level makes always prepared", () => {
     expect(after).not.toContain("chromatic-orb");
     expect(after).not.toContain("command");
   });
+
+  it("a spell picked before the subclass that grants it drops out of the picks", () => {
+    const doc = makeCharacterDoc({ classes: [{ classId: "sorcerer", level: 2 }] });
+    const early = levelUpAsks(
+      doc,
+      "sorcerer",
+      { ...NO_ANSWERS, newSpells: ["chromatic-orb"] },
+      "en"
+    );
+    expect(early.rows.find((r) => r.key === "newSpells")?.picked).toEqual([
+      "chromatic-orb",
+    ]);
+    const asks = levelUpAsks(
+      doc,
+      "sorcerer",
+      { ...NO_ANSWERS, newSpells: ["chromatic-orb"], subclassId: "draconic-sorcery" },
+      "en"
+    );
+    expect(asks.rows.find((r) => r.key === "newSpells")?.picked).toEqual([]);
+    expect(asks.picks.newSpells).toEqual([]);
+  });
+
+  it("a swap's replacement skips what the level makes always prepared", () => {
+    const doc = makeCharacterDoc({
+      classes: [{ classId: "sorcerer", subclassId: "draconic-sorcery", level: 4 }],
+      spells: [{ srdId: "burning-hands", prepared: true }],
+    });
+    const asks = levelUpAsks(
+      doc,
+      "sorcerer",
+      { ...NO_ANSWERS, swap: { removeId: "burning-hands", replaceId: null } },
+      "en"
+    );
+    const ids = asks.rows.find((r) => r.key === "swapReplace")?.options.map((o) => o.id);
+    expect(ids?.length).toBeGreaterThan(0);
+    // Draconic Spells at Sorcerer 5: Fear and Fly.
+    expect(ids).toContain("fireball");
+    for (const id of ["fear", "fly"]) expect(ids).not.toContain(id);
+  });
+
+  it("a swap's replacement picked before the subclass that grants it is asked again", () => {
+    const doc = makeCharacterDoc({
+      classes: [{ classId: "sorcerer", level: 2 }],
+      spells: [{ srdId: "burning-hands", prepared: true }],
+    });
+    const asks = levelUpAsks(
+      doc,
+      "sorcerer",
+      {
+        ...NO_ANSWERS,
+        subclassId: "draconic-sorcery",
+        swap: { removeId: "burning-hands", replaceId: "chromatic-orb" },
+      },
+      "en"
+    );
+    expect(asks.picks.swap.replaceId).toBeNull();
+    expect(asks.rows.find((r) => r.key === "swapReplace")?.picked).toEqual([]);
+  });
 });

@@ -56,7 +56,7 @@ import {
   isAsiChoiceComplete,
   type AsiChoice,
 } from "@/lib/level-up-choices";
-import { applySpellSwap, type SpellSwapChoice } from "@/lib/spell-swap";
+import { applySpellSwap, swapIn, type SpellSwapChoice } from "@/lib/spell-swap";
 import { applyFeatSpellChange } from "@/lib/feat-spell-change";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
@@ -94,6 +94,11 @@ export interface LevelUpPicks {
   /** A Lore Bard's Magical Discoveries pick replaced: the new spell keeps the
    *  always-prepared flag and the feature's mark. Absent: none. */
   discoverySwap?: SpellSwapChoice;
+  /** One known class option replaced (SRD 5.2.1: a Fighter's Fighting Style feat, a
+   *  Sorcerer's Metamagic option, a Warlock's invocation). Absent: none. */
+  fightingStyleSwap?: SpellSwapChoice;
+  metamagicSwap?: SpellSwapChoice;
+  invocationSwap?: SpellSwapChoice;
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -200,6 +205,38 @@ export function applyClassPicks(
   if (cantripPicks.length > 0) {
     const cantripRefs: SrdSpellRef[] = cantripPicks.map((id) => ({ srdId: id }));
     updated = { ...updated, spells: [...updated.spells, ...cantripRefs] };
+  }
+  return updated;
+}
+
+/** The class options the player replaced this level (Fighting Style, Metamagic,
+ *  invocation), each swapped where it lives. */
+function applyClassOptionSwaps(
+  character: CharacterData,
+  classId: string,
+  picks: Pick<LevelUpPicks, "fightingStyleSwap" | "metamagicSwap" | "invocationSwap">
+): CharacterData {
+  let updated = character;
+  const style = picks.fightingStyleSwap;
+  if (style?.removeId && style.replaceId) {
+    const { removeId, replaceId } = style;
+    updated = {
+      ...updated,
+      features: updated.features.map((f) =>
+        !("custom" in f) && f.srdId === removeId ? { srdId: replaceId } : f
+      ),
+    };
+  }
+  const entry = updated.classes.find((e) => e.classId === classId);
+  if (picks.metamagicSwap?.replaceId && entry?.metamagicChoices) {
+    updated = patchClassEntry(updated, classId, {
+      metamagicChoices: swapIn(entry.metamagicChoices, picks.metamagicSwap),
+    });
+  }
+  if (picks.invocationSwap?.replaceId && entry?.invocationChoices) {
+    updated = patchClassEntry(updated, classId, {
+      invocationChoices: swapIn(entry.invocationChoices, picks.invocationSwap),
+    });
   }
   return updated;
 }
@@ -350,6 +387,7 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
     cantrips: newCantrips,
   });
   if (newCantrips.length > 0) handledChecklistKeys.push("levelUp.checklistLearnCantrip");
+  updated = applyClassOptionSwaps(updated, classId, picks);
 
   updated = applyChoicePicks(updated, choiceSlots, activeChoicePicks);
 
