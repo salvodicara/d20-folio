@@ -960,6 +960,8 @@ const BUILD_PASSTHROUGH: readonly string[] = [
   "customLanguages",
   "toolProficiencyIds",
   "customToolProficiencies",
+  // The Druid's known Wild Shape forms (beast ids). The minimizer drops an empty list.
+  "wildShapeForms",
 ];
 
 /** Scalar/map override fields → their `build.overrides` key. */

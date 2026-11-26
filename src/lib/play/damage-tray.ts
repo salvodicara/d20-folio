@@ -102,6 +102,9 @@ export interface DamageTrayPlan {
   /** The use leaves its state on a target that fails its save or is hit (Bane, Ray
    *  of Frost): `name` is the use's own, for the row's outcome. */
   leavesState?: { on: "failed-save" | "hit"; name: string };
+  /** What a target that saves still takes (Ray of Enfeeblement: Disadvantage on its
+   *  next attack roll), so its row never reads «No effect». */
+  savedLeaves?: ReadonlyArray<"next-attack-disadvantage">;
   /** The save the targets make. `onSave` is what a success leaves of the damage;
    *  `bySpell` when it is a save against the user's spell (a state on a target may
    *  change it: `incomingSaveModes`). */
@@ -192,8 +195,11 @@ export function damageTrayPlan(
   const otherTargets = targets.filter((id) => id !== selfId);
   const standsOnSave =
     spec.standingEffect !== undefined && spec.kind === "save" && otherTargets.length > 0;
+  const savedLeaves = (action.summary.saveSuccessEffects ?? []).flatMap((effect) =>
+    effect.kind === "next-attack-disadvantage" ? [effect.kind] : []
+  );
   // An attack at a picked target always has its result to say, even with nothing
-  // else to apply (Ray of Enfeeblement).
+  // else to apply.
   if (items.length === 0 && !(attacks && targets.length > 0) && !standsOnSave)
     return null;
   // A pool spend (Lay on Hands) already chose its amount in its own picker: there is
@@ -340,6 +346,7 @@ export function damageTrayPlan(
       : attacks && spec.standingEffect !== undefined
         ? { leavesState: { on: "hit" as const, name: action.name } }
         : {}),
+    ...(savedLeaves.length > 0 ? { savedLeaves } : {}),
     ...(standsOnSave && action.spellId && getSpellById(action.spellId)?.saveIfUnwilling
       ? { willing: true as const }
       : {}),
@@ -1004,6 +1011,15 @@ export function rowTakesState(plan: DamageTrayPlan, row: TrayRow): boolean {
   if (!plan.leavesState) return false;
   if (plan.leavesState.on === "failed-save") return !row.saved;
   return row.attack === "hit" || row.attack === "critical";
+}
+
+/** What this row still takes on its successful save (Ray of Enfeeblement: Disadvantage
+ *  on its next attack roll); none for a row that failed. */
+export function rowSavedLeaves(
+  plan: DamageTrayPlan,
+  row: TrayRow
+): ReadonlyArray<"next-attack-disadvantage"> {
+  return row.saved && !row.willing ? (plan.savedLeaves ?? []) : [];
 }
 
 /** Whether a target may be willing (an ally: a player character, or a creature on

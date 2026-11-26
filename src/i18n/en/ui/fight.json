@@ -48,6 +48,12 @@
       "inside": "Inside",
       "applied": "{{amount}} damage to {{name}}"
     },
+    "nextAttack": {
+      "title": "Next attack roll",
+      "mine": "{{mode}} on your next attack roll ({{sources}}).",
+      "theirs": "{{name}}: {{mode}} on its next attack roll ({{sources}}).",
+      "usedToast": "Used: {{mode}}"
+    },
     "dm": {
       "addMonsters": "Add monsters",
       "search": "Search for a monster",
@@ -112,7 +118,19 @@
       "removeDone_one": "Removed from the fight: {{count}} creature",
       "removeDone_other": "Removed from the fight: {{count}} creatures",
       "tempDone_one": "{{amount}} temporary HP on {{count}} creature",
-      "tempDone_other": "{{amount}} temporary HP on {{count}} creatures"
+      "tempDone_other": "{{amount}} temporary HP on {{count}} creatures",
+      "card": "Monster card",
+      "cardDone": "Card saved: {{name}}",
+      "deathSaves": "Death saving throws",
+      "deathSaveMarks": "Successes {{successes}}/3 · Failures {{failures}}/3",
+      "deathSaveTick": {
+        "success": "+1 success",
+        "failure": "+1 failure"
+      },
+      "deathSaveDone": {
+        "success": "Death save success for {{name}}, marked by the DM",
+        "failure": "Death save failure for {{name}}, marked by the DM"
+      }
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {
@@ -127,6 +145,28 @@
       "ally_one": "{{count}} ally",
       "ally_other": "{{count}} allies",
       "revealed": "{{count}} with HP shown"
+    },
+    "uses": {
+      "title": "Limited uses",
+      "rollRecharge": "Roll recharge: {{name}}",
+      "legendary": "Legendary actions {{left}}/{{max}}",
+      "regain": "Regain legendary actions",
+      "spentDone": "{{name}}: used",
+      "rechargeBack": "Recharge {{d6}}: {{name}} is back",
+      "rechargeMiss": "Recharge {{d6}}: {{name}} stays spent",
+      "regainDone": "Legendary actions regained: {{name}}",
+      "legendarySpent": "Legendary action used: {{name}}"
+    },
+    "actions": {
+      "title": "{{name}}: actions",
+      "applied": "{{name}}: applied",
+      "traits": "{{name}}: traits",
+      "rowDamage_one": "{{count}} damage",
+      "rowDamage_other": "{{count}} damage",
+      "group": {
+        "heroes": "Heroes",
+        "ownSide": "Its own side"
+      }
     }
   }
 }

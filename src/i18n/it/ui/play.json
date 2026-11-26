@@ -114,8 +114,9 @@
       "changeOne": "Puoi cambiare 1 incantesimo.",
       "changeAny": "Puoi cambiare quelli che vuoi.",
       "keepPrepared": "Tieni così",
-      "cantripTitle": "Dopo il Riposo Lungo",
+      "afterTitle": "Dopo il Riposo Lungo",
       "cantripSwap": "{{source}}: cambia il trucchetto, se vuoi",
+      "formSwap": "Cambia una forma conosciuta (facoltativo)",
       "diceSpent_one": "{{count}} dado → +{{hp}} PF",
       "diceSpent_other": "{{count}} dadi → +{{hp}} PF"
     },
@@ -365,7 +366,9 @@
         "spellbook_one": "{{count}} incantesimo per il libro",
         "spellbook_other": "{{count}} incantesimi per il libro",
         "expertise_one": "{{count}} abilità per la Maestria",
-        "expertise_other": "{{count}} abilità per la Maestria"
+        "expertise_other": "{{count}} abilità per la Maestria",
+        "wildShapeForms_one": "{{count}} forma per Forma Selvatica",
+        "wildShapeForms_other": "{{count}} forme per Forma Selvatica"
       },
       "spellbookTitle_one": "Aggiungi {{count}} incantesimo al tuo libro: resta non preparato",
       "spellbookTitle_other": "Aggiungi {{count}} incantesimi al tuo libro: restano non preparati"
