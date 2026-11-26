@@ -16,6 +16,7 @@ import {
   type FightLook,
 } from "@/lib/play/fight-condition-ends";
 import { soloRepeatSavesDue } from "@/lib/play/solo-repeat-saves";
+import { standingEffectsForTargets } from "@/lib/play/standing-effects";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
 import { resolveActions } from "@/lib/smart-tracker";
 import { localizeAction } from "@/lib/views/combat-action-view";
@@ -208,6 +209,70 @@ describe("the solo strip: a spell effect on the sheet", () => {
         ability: "WIS",
         at: "target-turn-end",
         dc: 15,
+      },
+    ]);
+  });
+});
+
+describe("a shared fight: Ray of Enfeeblement on a Goblin that failed its save", () => {
+  // SRD 5.2.1: "The target must make a Constitution saving throw. ... On a failed
+  // save, the target has Disadvantage on Strength-based D20 Tests for the duration.
+  // ... The target repeats the save at the end of each of its turns, ending the spell
+  // on a success." Concentration, up to 1 minute.
+  const doc = makeCharacterDoc({
+    classes: [{ classId: "wizard", level: 5 }],
+    spells: [{ srdId: "ray-of-enfeeblement" }],
+  });
+  const cast = resolveActions(doc, "spellbook")
+    .map((row) => localizeAction(row, "en"))
+    .find((a) => a.spellId === "ray-of-enfeeblement");
+  if (!cast) throw new Error("no Ray of Enfeeblement cast row");
+  const standing = combatResolutionSpec(cast).standingEffect;
+  if (!standing) throw new Error("the cast leaves no state");
+  const written = standingEffectsForTargets({
+    spec: standing,
+    caster,
+    targets: [{ kind: "monster", combatantId: "goblin-a" }],
+    position: {
+      round: 1,
+      currentCombatantId: "pc-me",
+      phase: "turn-start",
+      order: ["pc-me", "goblin-a", "goblin-b"],
+    },
+    saveDc: cast.summary.saveDC,
+    newId: () => "ray-a",
+  });
+  const rayOps = written.map(apply);
+
+  it("writes one effect on the target, held by the caster's Concentration", () => {
+    expect(written).toHaveLength(1);
+    expect(written[0]).toMatchObject({
+      target: { combatantId: "goblin-a" },
+      payload: { kind: "grant-group", activeKey: "spell-ray-of-enfeeblement" },
+      duration: {
+        kind: "concentration",
+        actorId: "pc-me",
+        sourceId: "ray-of-enfeeblement",
+      },
+      bindings: { saveDc: cast.summary.saveDC },
+    });
+  });
+
+  it("asks the Goblin's CON save at the end of its turn", () => {
+    const { ended, saves } = fightConditionEnds(
+      rayOps,
+      look("goblin-a"),
+      look("goblin-b")
+    );
+    expect(ended).toEqual([]);
+    expect(saves).toEqual([
+      {
+        id: "ray-a",
+        targetId: "goblin-a",
+        ability: "CON",
+        dc: cast.summary.saveDC,
+        at: "target-turn-end",
+        actorId: "pc-me",
       },
     ]);
   });

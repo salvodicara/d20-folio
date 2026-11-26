@@ -83,7 +83,7 @@ describe("Ray of Enfeeblement: a failed save weakens the target", () => {
     expect(state?.grants).toEqual(WEAKENED.grants);
   });
 
-  it("the cast carries no hit or turn-start rider", () => {
+  it("the cast row has no attack bonus to roll", () => {
     const doc = makeCharacterDoc({
       classes: [{ classId: "wizard", level: 5 }],
       spells: [{ srdId: "ray-of-enfeeblement" }],
@@ -92,8 +92,6 @@ describe("Ray of Enfeeblement: a failed save weakens the target", () => {
       (a) => a.spellId === "ray-of-enfeeblement"
     );
     expect(cast).toBeDefined();
-    expect(cast?.summary.hitEffects).toBeUndefined();
-    expect(cast?.summary.saveFailedEffects).toBeUndefined();
     expect(cast?.summary.attackBonus).toBeUndefined();
   });
 });
