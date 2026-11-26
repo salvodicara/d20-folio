@@ -97,7 +97,12 @@
           "off_one": "Now an enemy: {{count}} creature",
           "off_other": "Now enemies: {{count}} creatures"
         }
-      }
+      },
+      "initTitle": "Initiative: {{name}}",
+      "initGroup_one": "The whole line moves: {{count}} creature.",
+      "initGroup_other": "The whole line moves: {{count}} creatures.",
+      "initHelp": "The list re-sorts by the new number, even mid-fight.",
+      "initDone": "{{name}} now at initiative {{value}}"
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {

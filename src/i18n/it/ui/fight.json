@@ -97,7 +97,12 @@
           "off_one": "Ora nemica: {{count}} creatura",
           "off_other": "Ora nemiche: {{count}} creature"
         }
-      }
+      },
+      "initTitle": "Iniziativa: {{name}}",
+      "initGroup_one": "Si sposta tutta la riga: {{count}} creatura.",
+      "initGroup_other": "Si sposta tutta la riga: {{count}} creature.",
+      "initHelp": "L'elenco si riordina col nuovo numero, anche a scontro avviato.",
+      "initDone": "{{name}} ora a iniziativa {{value}}"
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {
