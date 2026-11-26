@@ -38,6 +38,7 @@ export function DmHitDialog({
   onShow,
   onTempHp,
   onRemove,
+  onCard,
   onClose,
 }: {
   targets: readonly DmTarget[];
@@ -50,6 +51,8 @@ export function DmHitDialog({
   onTempHp?: (monsters: readonly DmTarget[], amount: number) => void;
   /** Take the chosen monsters out of the fight (one undo). */
   onRemove?: (monsters: readonly DmTarget[]) => void;
+  /** A lone monster's card: its stat block, name, AC and notes. */
+  onCard?: (target: DmTarget) => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -93,6 +96,11 @@ export function DmHitDialog({
             </Chip>
           ))}
         </div>
+        {onCard && only?.kind === "monster" && (
+          <Button kind="quiet" icon="u-edit" onClick={() => onCard(only)}>
+            {t("fight.dm.card")}
+          </Button>
+        )}
       </div>
       <div className="f-ask">
         <Field

@@ -112,7 +112,9 @@
       "removeDone_one": "Tolta dallo scontro: {{count}} creatura",
       "removeDone_other": "Tolte dallo scontro: {{count}} creature",
       "tempDone_one": "{{amount}} PF temporanei a {{count}} creatura",
-      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature"
+      "tempDone_other": "{{amount}} PF temporanei a {{count}} creature",
+      "card": "Scheda del mostro",
+      "cardDone": "Scheda salvata: {{name}}"
     },
     "rollWaiting": "Leggo i bonus del gruppo…",
     "refused": {
