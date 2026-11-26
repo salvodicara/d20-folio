@@ -3,11 +3,13 @@
  * a tap on any number (Armor Class, Initiative, Speed, an ability, a save, a skill)
  * opens its pane: the number, where it comes from, and «Customize» with an override.
  *
- * - The number large, «Impostato a mano» when it is hand-set.
+ * - The number large, tagged «Valore fisso» when a fixed value replaces the computed
+ *   one, or «Con correzione» for max HP, stored as a correction (#1315).
  * - The rule the number follows, in one plain sentence from the glossary (DDB's pane
  *   opens with it); rule words inside it open their own explanation.
- * - Where it comes from, a line each (the same lines the classic sheet's tips show;
- *   a hand-set number keeps them and adds «Correzione manuale»).
+ * - Where it comes from, a line each (the same lines the classic sheet's tips show).
+ *   A fixed value lists the computed lines and «Valore calcolato», what «Usa il
+ *   calcolo» brings back; max HP lists its «Correzione manuale», which it stores.
  * - «Personalizza»: a fixed value replaces the computed one, «Usa il calcolo» puts
  *   the computed one back. Both undoable. Speed is typed in the player's units (metres
  *   in Italian) and stored in feet. A read-only sheet shows the number alone.
@@ -52,15 +54,16 @@ export function PlayNumberPane({
   const toInput = (v: number) => (speed ? speedToLocaleValue(v, locale) : String(v));
   const [draft, setDraft] = useState(view.stored === null ? "" : toInput(view.stored));
   const name = numberName(numberKey, t);
-  const shown =
+  const format = (n: number) =>
     numberKey.kind === "ac" ||
     numberKey.kind === "ability" ||
     numberKey.kind === "maxHp" ||
     numberKey.kind === "passive"
-      ? String(view.total)
+      ? String(n)
       : speed
-        ? localeDistance(view.total, locale)
-        : signed(view.total);
+        ? localeDistance(n, locale)
+        : signed(n);
+  const shown = format(view.total);
   const parsed = parseDraft(draft, speed, locale);
   // Max HP is stored as a correction over the derived max (#1315), not a fixed value:
   // the pane says so, with the correction the typed max would save.
@@ -92,7 +95,7 @@ export function PlayNumberPane({
           <b>{shown}</b>
           {view.stored !== null && (
             <span className="f-num-tag">
-              {t(maxHp ? "play.number.maxHpTag" : "play.number.handSet")}
+              {t(maxHp ? "play.number.maxHpTag" : "play.number.override")}
             </span>
           )}
         </p>
@@ -109,6 +112,12 @@ export function PlayNumberPane({
                 <b>{speed ? speedLine(line.value, locale) : line.value}</b>
               </li>
             ))}
+            {view.computed !== null && (
+              <li className="f-num-computed">
+                <span>{t("play.number.computed")}</span>
+                <b>{format(view.computed)}</b>
+              </li>
+            )}
           </ul>
         )}
         {!readonly && (
@@ -124,7 +133,12 @@ export function PlayNumberPane({
               }
               help={
                 !maxHp
-                  ? t("play.number.overrideHelp")
+                  ? view.computed !== null
+                    ? t("play.number.fixedHelp", {
+                        value: shown,
+                        computed: format(view.computed),
+                      })
+                    : t("play.number.overrideHelp")
                   : correction !== null && correction !== 0
                     ? t("play.number.maxHpHelp", { bonus: signed(correction) })
                     : t("play.number.maxHpHelpPlain")
