@@ -1820,4 +1820,51 @@ describe("useCharacterSubscription — a level-up the server never acknowledged 
     act(() => snapshotCb()(sent));
     expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull();
   });
+
+  it("offline, a level-up then a play write that settles at once keep both safety copies until the server answers", async () => {
+    const { readUnackedSave, readUnackedPlay } = await import("@/lib/local-draft");
+    // Offline: the level-up and the first play write wait in the queue. The second play
+    // write settles at once, as a patch with nothing to write does.
+    let ackLevelUp: () => void = () => {};
+    sendWholeSheetMock.mockImplementation((_sheet, _source, callbacks) => {
+      callbacks?.onSend?.(5);
+      return new Promise<void>((resolve) => (ackLevelUp = resolve));
+    });
+    let ackPlay: () => void = () => {};
+    writeCombatStateMock
+      .mockImplementationOnce(
+        () =>
+          new Promise<void>((resolve) => {
+            ackPlay = resolve;
+          })
+      )
+      .mockImplementationOnce(() => Promise.resolve());
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const writer = useCharacterStore.getState().wholeSheetWriter;
+    if (!writer) throw new Error("no whole-sheet writer");
+    const levelled = { ...doc().character, quote: "level 2" };
+    const written = writer({ character: levelled, session: doc().session }, source);
+    act(() => useCharacterStore.getState().setHP(10));
+    await flushPlayWrite();
+    act(() => useCharacterStore.getState().setHP(9));
+    await flushPlayWrite();
+    await flushPlayWrite();
+    // Nothing acknowledged yet: both copies stay.
+    expect(readUnackedSave("u1", "char1")).toMatchObject({ revision: 5, whole: true });
+    expect(
+      (readUnackedPlay("u1", "char1")?.session as { hp: { current: number } } | undefined)
+        ?.hp.current
+    ).toBe(9);
+    // The queue drains in order: each copy goes only with its own acknowledgement.
+    ackLevelUp();
+    await written;
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    expect(readUnackedPlay("u1", "char1")).not.toBeNull();
+    await act(async () => {
+      ackPlay();
+      await Promise.resolve();
+    });
+    expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
 });
