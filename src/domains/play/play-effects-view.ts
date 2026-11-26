@@ -5,6 +5,8 @@
  * clock (an ally's Bless, Warding Bond), each with who cast it. Conditions have their
  * own panel; areas (zones) the initiative panel.
  */
+import i18n from "i18next";
+
 import { getSpellById } from "@/data/spells";
 import type { SpellSchool } from "@/data/types";
 import { hasSrd, localizeSrd } from "@/i18n/resolver";
@@ -41,6 +43,18 @@ const spellOf = (e: ActiveCombatEffect) => {
 };
 
 const gistOf = (e: ActiveCombatEffect, locale: Locale) => {
+  // A state the spell leaves on a target that saved (Ray of Enfeeblement: Disadvantage
+  // on its next attack roll) is not the spell's effect: its own line, never the gist.
+  const spell = e.source.kind === "spell" ? getSpellById(e.source.id) : undefined;
+  const activeKey = e.payload.kind === "grant-group" ? e.payload.activeKey : undefined;
+  if (activeKey && spell?.targetStates?.some((s) => s.activeKey === activeKey)) {
+    const rider = spell.effects?.find(
+      (x) => "activeKey" in x && x.activeKey === activeKey
+    );
+    return rider?.kind === "next-attack-disadvantage"
+      ? i18n.getFixedT(locale)(`combat.damageTray.savedLeaves.${rider.kind}`)
+      : null;
+  }
   const kind = e.source.kind === "spell" ? "spell" : "class-feature";
   return hasSrd(kind, e.source.id, "gist", locale)
     ? localizeSrd(kind, e.source.id, "gist", locale) || null
