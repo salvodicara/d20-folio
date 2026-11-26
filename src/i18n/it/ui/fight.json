@@ -7,6 +7,7 @@
     "down": "A terra",
     "feedTitle": "In questo scontro",
     "feedEmpty": "Ancora niente: le azioni compaiono qui mentre si gioca.",
+    "feedLineMenu": "Cosa fare con: {{line}}",
     "roundLine": "Round {{n}} · {{line}}",
     "idleTitle": "Nessuno scontro in corso",
     "idleHelp": "Parte da solo quando il primo giocatore tira l’iniziativa dalla sua scheda. Chi arriva dopo entra lo stesso.",

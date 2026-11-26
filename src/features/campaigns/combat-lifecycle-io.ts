@@ -540,6 +540,25 @@ export async function changeMonsterHp(
     })) === true;
 }
 
+/** The DM's undo on a monster's line in the fight's feed: the beat is reversed through
+ *  the engine, by the same planner as the move's own undo, so the two never give the
+ *  same HP back twice. True when it was undone. */
+export async function undoFeedBeat(
+  campaignId: string,
+  input: { uid: string; beatId: string }
+): Promise<boolean> {
+  return (
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planUndoBeats(campaign, {
+        uid: input.uid,
+        campaignId,
+        eventIds: [input.beatId],
+      });
+      return patch && { patch, result: true };
+    })) === true
+  );
+}
+
 /** The DM toggles a condition on a monster in the fight; the undo inverts it. */
 export async function setMonsterConditionMove(
   campaignId: string,

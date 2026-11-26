@@ -7,6 +7,7 @@
     "down": "Down",
     "feedTitle": "In this fight",
     "feedEmpty": "Nothing yet: actions show up here as you play.",
+    "feedLineMenu": "What to do with: {{line}}",
     "roundLine": "Round {{n}} · {{line}}",
     "idleTitle": "No fight running",
     "idleHelp": "It starts by itself when the first player rolls initiative from their sheet. Anyone who comes later joins anyway.",
