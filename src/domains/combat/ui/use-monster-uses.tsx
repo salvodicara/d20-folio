@@ -11,13 +11,18 @@ import { getMonster } from "@/data/monsters";
 import { monsterUsesView, type MonsterUseRow } from "@/domains/combat/monster-uses-view";
 import { MonsterUses } from "@/domains/combat/ui/MonsterUses";
 import type { Toaster } from "@/domains/combat/ui/fight-moves";
-import { cryptoD20, monsterUseMove } from "@/features/campaigns/combat-lifecycle-io";
+import {
+  cryptoD20,
+  monsterUseMove,
+  spendMonsterBardicDieMove,
+} from "@/features/campaigns/combat-lifecycle-io";
 import type { MonsterUseChange } from "@/features/campaigns/combat-lifecycle";
 import { useLazySrdKind } from "@/hooks/useLazySrdKind";
 import { localizeSrd } from "@/i18n/resolver";
 import { srdKey } from "@/i18n/srd-key";
 import type { Locale } from "@/lib/locale";
-import type { EncounterState } from "@/types/campaign";
+import type { EncounterMonster, EncounterState } from "@/types/campaign";
+import { Chip } from "@/ui";
 
 /** A d6 from the same fair source as the app's d20 (1–20 → 1–6 would bias it). */
 function cryptoD6(): number {
@@ -41,10 +46,45 @@ export function useMonsterUses(
     "monster",
     encounter.combatants.some((c) => c.kind === "monster" && c.srdId !== undefined)
   );
+  // A Bardic Inspiration die a bard gave the creature: the DM spends it (the classic
+  // monster card's button), with the undo in the toast.
+  const spendDie = (monster: EncounterMonster, die: string) => {
+    void spendMonsterBardicDieMove(campaignId, { uid, monsterId: monster.id })
+      .then((undo) => {
+        if (!undo) {
+          onToast(t("fight.moved"));
+          return;
+        }
+        onToast(t("fight.uses.bardicSpent", { die, name: monster.name }), () => {
+          void undo().then((ok) => {
+            if (!ok) onToast(t("fight.tooLate"));
+          });
+        });
+      })
+      .catch(() => onToast(t("fight.failed")));
+  };
   const stripFor = (ids: readonly string[]) => {
-    if (!named || ids.length !== 1) return null;
+    if (ids.length !== 1) return null;
     const monster = encounter.combatants.find((c) => c.id === ids[0]);
-    if (monster?.kind !== "monster" || !monster.srdId) return null;
+    if (monster?.kind !== "monster") return null;
+    const die = monster.bardicInspirationDie;
+    const dieChip = die ? (
+      <div className="f-uses">
+        <Chip pressed={false} onClick={() => spendDie(monster, die)}>
+          {t("campaignHub.encounterSpendBardicInspiration", { die })}
+        </Chip>
+      </div>
+    ) : null;
+    const uses = named && monster.srdId ? usesFor(monster) : null;
+    return dieChip || uses ? (
+      <>
+        {dieChip}
+        {uses}
+      </>
+    ) : null;
+  };
+  const usesFor = (monster: EncounterMonster) => {
+    if (!monster.srdId) return null;
     const block = getMonster(monster.srdId);
     if (!block) return null;
     const labelOf = (use: MonsterUseRow) => {

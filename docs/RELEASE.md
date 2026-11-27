@@ -89,6 +89,8 @@ after it ran (a pack-only merge), re-verify first: `gh workflow run verify.yml -
 **The next version's draft** lives in `docs/release/vX.Y.Z-draft.md` (now `v0.26.2-draft.md`): the
 player-facing notes and the "Dati e compatibilità" list (migrations, writers held off until old
 clients are gone, what an old client sees). Sessions add to it through PRs; the release starts from it.
+The deploy's commands in order, with their expected output, sit beside it in
+`docs/release/vX.Y.Z-deploy-checklist.md` (now `v0.26.2-deploy-checklist.md`).
 
 **Pending migrations: none (2026-11-13).** `deploy.yml` runs four read-only checks after composing
 the pack: `migrate-custom-identity.ts`, `migrate-character-parents.ts`, `migrate-item-resources.ts`
