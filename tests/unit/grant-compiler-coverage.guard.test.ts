@@ -59,7 +59,7 @@ const NOT_COMPILED_YET = [
   "damage-die-reduction",
   "damage-penetration",
   "damage-retaliation",
-  "damage-rider",
+  "damage-rider", // active: some riders spend a tracker use (Sneak Attack), M2
   "damage-transfer",
   "defense-note",
   "ends-concentration",

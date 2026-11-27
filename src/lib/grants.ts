@@ -37,6 +37,7 @@ import {
   AC_BONUS_CONDITIONS,
   compileGrant,
   foldRules,
+  isRollTimeRule,
   rollClauseRows,
   ruleConditional,
   ruleFlag,
@@ -1322,7 +1323,13 @@ function sameEffectsDontStack(
     sources.map((source) => [source.id, effectIdentity(source)])
   );
   const sourcesOf = new Map<string, Set<string>>();
-  for (const id of new Set(ruleSourceIds)) {
+  // A source that gives only roll-time rules joins no group: those rules are not
+  // stacked numbers, and before they compiled the source gave no rule at all.
+  const stackingIds = ruleSourceIds.filter((_, i) => {
+    const rule = rules[i];
+    return rule !== undefined && !isRollTimeRule(rule);
+  });
+  for (const id of new Set(stackingIds)) {
     const identity = identityOf.get(id);
     if (identity === undefined) continue;
     const ids = sourcesOf.get(identity) ?? new Set<string>();

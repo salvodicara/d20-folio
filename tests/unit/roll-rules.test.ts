@@ -189,3 +189,21 @@ describe("roll rules: the evaluator's clause rows come from the compiled rules",
     ]);
   });
 });
+
+describe("roll rules: a clause never makes a source count for same-effect stacking", () => {
+  it("a same-name source with only a clause leaves the other's bonuses summed", () => {
+    const charm = (id: string, grants: GrantSource["grants"]): GrantSource => ({
+      id,
+      name: { en: "Charm", it: "Amuleto" },
+      grants,
+    });
+    const out = evaluateGrants([
+      charm("a", [
+        { type: "ac-bonus", amount: 1 },
+        { type: "ac-bonus", amount: 1 },
+      ]),
+      charm("b", [{ type: "advantage-on", rollType: "save", vs: "poisoned" }]),
+    ]);
+    expect(out.acBonus).toBe(2);
+  });
+});

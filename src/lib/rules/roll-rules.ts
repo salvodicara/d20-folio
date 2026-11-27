@@ -85,6 +85,11 @@ export function compileRollGrant(grant: RollGrant): RollClauseRule[] {
   }
 }
 
+/** Whether a rule is one of this module's roll-time rules (never a stacked number). */
+export function isRollTimeRule(rule: { op: string }): boolean {
+  return rule.op === "clause";
+}
+
 /** What the evaluator knows about one compiled clause. */
 export interface ClauseContext<Text> {
   sourceId: string;
