@@ -183,7 +183,10 @@ Two grammars:
   the reader passes the facts it knows. Ability terms (`{ ability, min? }`) stay unresolved.
 - A `clause` (`src/lib/rules/roll-rules.ts`) is a roll-time rule on `roll:<roll>:<what>`:
   `advantage` / `disadvantage` (also `roll:incoming-attack:*`), `roll:d20:reroll`,
-  `roll:<roll>:floor`, `roll:<roll>:die`, `roll:concentration:damage-proof`. It is never
+  `roll:<roll>:floor`, `roll:<roll>:die`, `roll:concentration:damage-proof`,
+  `roll:damage:die-modifier`, `roll:damage:round1-double`, `roll:save:damage-rule`,
+  `roll:incoming-damage:die-reduction`. Ignoring Resistance is a plain flag,
+  `damage:ignore-resistance:<spell|any>:<type>`. A clause is never
   folded: it is kept per source, in grant order, and `rollRows` turns the compiled clauses into
   the aggregate's roll rows, with the source and the `while-active` state the evaluator knows.
 - Kinds not compiled to rules keep their own evaluator branch in `grants.ts`.

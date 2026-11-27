@@ -26,7 +26,11 @@
 import type { AbilityCode } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 import type { DetectionTarget } from "./detection-targets";
-import { compileRollGrant, type RollClauseRule } from "./roll-rules";
+import {
+  compileRollGrant,
+  type IgnoreResistanceTarget,
+  type RollClauseRule,
+} from "./roll-rules";
 
 /** The sense kinds, in display order (the i18n coverage guard reads this list). */
 export const SENSE_KINDS = [
@@ -134,7 +138,9 @@ export type RuleTarget =
   | "block:healing"
   | "block:turn-economy"
   | "trait:heroic-inspiration-at-turn-start"
-  | "trait:heroic-inspiration-on-long-rest";
+  | "trait:heroic-inspiration-on-long-rest"
+  /** Damage of a type that ignores Resistance (`./roll-rules`). */
+  | IgnoreResistanceTarget;
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1" | AcBonusCondition;
@@ -472,6 +478,11 @@ export function compileGrant(grant: Grant): Rule[] | null {
     case "roll-floor":
     case "roll-die-adjustment":
     case "concentration-damage-proof":
+    case "damage-die-modifier":
+    case "damage-die-reduction":
+    case "damage-penetration":
+    case "round1-damage-double":
+    case "save-damage-rule":
       return compileRollGrant(grant);
     default:
       return null;

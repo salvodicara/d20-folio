@@ -17,6 +17,7 @@
  */
 import type { Grant } from "@/lib/grant-schema";
 import type { AbilityCode, LocaleText } from "@/data/types";
+import type { DamageType } from "@/types/damage";
 
 type GrantOf<K extends Grant["type"]> = Extract<Grant, { type: K }>;
 type VerdictGrant = GrantOf<"advantage-on" | "disadvantage-on">;
@@ -87,12 +88,66 @@ export interface ConcentrationProofClauseRule {
   alsoWhileIncapacitated?: true;
 }
 
+type DieModifierGrant = GrantOf<"damage-die-modifier">;
+
+/** A change to the weapon's own damage dice when rolled (Great Weapon Fighting). */
+export interface DieModifierClauseRule {
+  op: "clause";
+  target: "roll:damage:die-modifier";
+  mode: DieModifierGrant["mode"];
+  appliesTo: DieModifierGrant["appliesTo"];
+  floorBelow?: number;
+  floorTo?: number;
+  oncePerTurn?: boolean;
+  baseDie?: string;
+  unburdenedDie?: string;
+  grappleDie?: string;
+  abilityMod?: AbilityCode;
+  damageType?: DamageType;
+}
+
+/** Incoming damage of these types is reduced by a rolled die (Resistance). */
+export interface DieReductionClauseRule {
+  op: "clause";
+  target: "roll:incoming-damage:die-reduction";
+  dice: string;
+  damageTypes: readonly DamageType[];
+  oncePerTurn: boolean;
+}
+
+/** A round-1 save-gated damage doubler note (shown, never applied). */
+export interface Round1DoubleClauseRule {
+  op: "clause";
+  target: "roll:damage:round1-double";
+  saveAbility: AbilityCode;
+  saveDcAbility: AbilityCode;
+}
+
+/** How a save's damage resolves (Evasion: none on a success, half on a failure). */
+export interface SaveDamageClauseRule {
+  op: "clause";
+  target: "roll:save:damage-rule";
+  ability: AbilityCode;
+  requiresDamageOnSuccess: "half";
+  onSuccess: "none";
+  onFailure: "half";
+}
+
 export type RollClauseRule =
   | VerdictClauseRule
   | RerollClauseRule
   | FloorClauseRule
   | DieClauseRule
-  | ConcentrationProofClauseRule;
+  | ConcentrationProofClauseRule
+  | DieModifierClauseRule
+  | DieReductionClauseRule
+  | Round1DoubleClauseRule
+  | SaveDamageClauseRule;
+
+/** Damage of this type ignores Resistance: from spells only, or from any roll. */
+export type IgnoreResistanceTarget =
+  `damage:ignore-resistance:${"spell" | "any"}:${string}`;
+type IgnoreResistanceRule = { op: "flag"; target: IgnoreResistanceTarget };
 
 type RollGrant = GrantOf<
   | "advantage-on"
@@ -103,13 +158,20 @@ type RollGrant = GrantOf<
   | "roll-floor"
   | "roll-die-adjustment"
   | "concentration-damage-proof"
+  | "damage-die-modifier"
+  | "damage-die-reduction"
+  | "damage-penetration"
+  | "round1-damage-double"
+  | "save-damage-rule"
 >;
 
 const textOf = (description: LocaleText | undefined) =>
   description ? { description } : {};
 
 /** Compile one roll-time Grant. A bare stub (only `type`) compiles without throwing. */
-export function compileRollGrant(grant: RollGrant): RollClauseRule[] {
+export function compileRollGrant(
+  grant: RollGrant
+): Array<RollClauseRule | IgnoreResistanceRule> {
   switch (grant.type) {
     case "incoming-attack-advantage":
     case "incoming-attack-disadvantage": {
@@ -172,12 +234,80 @@ export function compileRollGrant(grant: RollGrant): RollClauseRule[] {
           ...(grant.alsoWhileIncapacitated ? { alsoWhileIncapacitated: true } : {}),
         },
       ];
+    case "damage-die-modifier": {
+      // Every field travels unresolved (the weapon and the scores are the reader's).
+      const optional = {
+        floorBelow: grant.floorBelow,
+        floorTo: grant.floorTo,
+        oncePerTurn: grant.oncePerTurn,
+        baseDie: grant.baseDie,
+        unburdenedDie: grant.unburdenedDie,
+        grappleDie: grant.grappleDie,
+        abilityMod: grant.abilityMod,
+        damageType: grant.damageType,
+      };
+      return [
+        {
+          op: "clause",
+          target: "roll:damage:die-modifier",
+          mode: grant.mode,
+          appliesTo: grant.appliesTo,
+          ...Object.fromEntries(
+            Object.entries(optional).filter(([, value]) => value !== undefined)
+          ),
+        },
+      ];
+    }
+    case "damage-die-reduction":
+      return [
+        {
+          op: "clause",
+          target: "roll:incoming-damage:die-reduction",
+          dice: grant.dice,
+          damageTypes: grant.damageTypes,
+          oncePerTurn: grant.oncePerTurn ?? false,
+        },
+      ];
+    case "damage-penetration":
+      // A roll of any kind includes spells. (A bare stub has no types: no flags.)
+      return ((grant.damageTypes as readonly DamageType[] | undefined) ?? []).flatMap(
+        (type): IgnoreResistanceRule[] => [
+          { op: "flag", target: `damage:ignore-resistance:spell:${type}` },
+          ...(grant.appliesTo === "any"
+            ? [{ op: "flag", target: `damage:ignore-resistance:any:${type}` } as const]
+            : []),
+        ]
+      );
+    case "round1-damage-double":
+      return [
+        {
+          op: "clause",
+          target: "roll:damage:round1-double",
+          saveAbility: grant.saveAbility,
+          saveDcAbility: grant.saveDcAbility,
+        },
+      ];
+    case "save-damage-rule":
+      // `suppressedByConditions` is gating: the evaluator drops the grant first.
+      return [
+        {
+          op: "clause",
+          target: "roll:save:damage-rule",
+          ability: grant.ability,
+          requiresDamageOnSuccess: grant.requiresDamageOnSuccess,
+          onSuccess: grant.onSuccess,
+          onFailure: grant.onFailure,
+        },
+      ];
   }
 }
 
 /** Whether a rule is one of this module's roll-time rules (never a stacked number). */
-export function isRollTimeRule(rule: { op: string }): boolean {
-  return rule.op === "clause";
+export function isRollTimeRule(rule: { op: string; target?: string }): boolean {
+  return (
+    rule.op === "clause" ||
+    (rule.op === "flag" && rule.target?.startsWith("damage:ignore-resistance:") === true)
+  );
 }
 
 /** What the evaluator knows about one compiled clause. */
@@ -228,6 +358,23 @@ export type ConcentrationProofRow = { sourceId: string } & Omit<
   "op" | "target"
 >;
 
+export type DieModifierRow = { sourceId: string } & Omit<
+  DieModifierClauseRule,
+  "op" | "target"
+>;
+export type DieReductionRow = { sourceId: string } & Omit<
+  DieReductionClauseRule,
+  "op" | "target"
+>;
+export type Round1DoubleRow = { sourceId: string } & Omit<
+  Round1DoubleClauseRule,
+  "op" | "target"
+>;
+export type SaveDamageRow = { sourceId: string } & Omit<
+  SaveDamageClauseRule,
+  "op" | "target"
+>;
+
 export interface RollRows<Text> {
   advantages: ClauseRow<Text>[];
   disadvantages: ClauseRow<Text>[];
@@ -237,9 +384,21 @@ export interface RollRows<Text> {
   d20Rerolls: RerollRow[];
   rollDieAdjustments: DieRow[];
   concentrationDamageProof: ConcentrationProofRow[];
+  damageDieModifiers: DieModifierRow[];
+  damageDieReductions: DieReductionRow[];
+  round1DamageDoubles: Round1DoubleRow[];
+  saveDamageRules: SaveDamageRow[];
 }
 
-const ROLL_TARGET = /^roll:([a-z0-9-]+):([a-z-]+)$/;
+/** The clause's own fields, without the rule's `op` and `target`. */
+function fieldsOf<R extends RollClauseRule>(rule: R): Omit<R, "op" | "target"> {
+  const fields: Record<string, unknown> = { ...rule };
+  delete fields.op;
+  delete fields.target;
+  return fields as Omit<R, "op" | "target">;
+}
+
+const ROLL_TARGET = /^roll:([a-z0-9-]+):([a-z0-9-]+)$/;
 
 /**
  * The readers' roll rows, from the compiled rules in grant order. `contextOf(i)` is
@@ -258,6 +417,10 @@ export function rollRows<Text>(
     d20Rerolls: [],
     rollDieAdjustments: [],
     concentrationDamageProof: [],
+    damageDieModifiers: [],
+    damageDieReductions: [],
+    round1DamageDoubles: [],
+    saveDamageRules: [],
   };
   rules.forEach((rule, index) => {
     if (rule.op !== "clause") return;
@@ -266,7 +429,27 @@ export function rollRows<Text>(
     if (!roll || !what) return;
     const { sourceId, description, whileActiveKey } = contextOf(index);
     const active = whileActiveKey ? { whileActiveKey } : {};
-    if ("faces" in clause) {
+    if (what === "die-modifier")
+      rows.damageDieModifiers.push({
+        sourceId,
+        ...fieldsOf(clause as DieModifierClauseRule),
+      });
+    else if (what === "die-reduction")
+      rows.damageDieReductions.push({
+        sourceId,
+        ...fieldsOf(clause as DieReductionClauseRule),
+      });
+    else if (what === "round1-double")
+      rows.round1DamageDoubles.push({
+        sourceId,
+        ...fieldsOf(clause as Round1DoubleClauseRule),
+      });
+    else if (what === "damage-rule")
+      rows.saveDamageRules.push({
+        ...fieldsOf(clause as SaveDamageClauseRule),
+        sourceId,
+      });
+    else if ("faces" in clause) {
       rows.d20Rerolls.push({ sourceId, faces: clause.faces });
     } else if ("floor" in clause) {
       rows.rollFloors.push({
@@ -278,14 +461,15 @@ export function rollRows<Text>(
         description,
         ...active,
       });
-    } else if ("dice" in clause) {
+    } else if (what === "die") {
+      const die = clause as DieClauseRule;
       rows.rollDieAdjustments.push({
         sourceId,
         rollType: roll as DieRoll,
-        operation: clause.operation,
-        dice: clause.dice,
-        consume: clause.consume,
-        ...(clause.appliesTo ? { appliesTo: clause.appliesTo } : {}),
+        operation: die.operation,
+        dice: die.dice,
+        consume: die.consume,
+        ...(die.appliesTo ? { appliesTo: die.appliesTo } : {}),
       });
     } else if (what === "damage-proof") {
       const proof = clause as ConcentrationProofClauseRule;

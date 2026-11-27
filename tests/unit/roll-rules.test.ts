@@ -345,3 +345,215 @@ describe("roll rules: rerolls, floors and dice on a roll compile to roll clauses
     ]);
   });
 });
+
+describe("roll rules: damage riders on the character's own rolls and on incoming damage", () => {
+  it("a die modifier on the weapon's own damage dice is a damage clause", () => {
+    expect(
+      compileGrant({
+        type: "damage-die-modifier",
+        mode: "floor",
+        appliesTo: "two-handed-melee",
+        floorBelow: 2,
+        floorTo: 3,
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:damage:die-modifier",
+        mode: "floor",
+        appliesTo: "two-handed-melee",
+        floorBelow: 2,
+        floorTo: 3,
+      },
+    ]);
+  });
+
+  it("a rolled reduction of incoming damage is a clause on incoming damage", () => {
+    expect(
+      compileGrant({ type: "damage-die-reduction", damageTypes: ["fire"], dice: "1d4" })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:incoming-damage:die-reduction",
+        damageTypes: ["fire"],
+        dice: "1d4",
+        oncePerTurn: false,
+      },
+    ]);
+  });
+
+  it("ignoring resistance is one flag per damage type, spells always included", () => {
+    expect(
+      compileGrant({
+        type: "damage-penetration",
+        appliesTo: "any",
+        damageTypes: ["poison", "acid"],
+        ignores: "resistance",
+      })
+    ).toEqual([
+      { op: "flag", target: "damage:ignore-resistance:spell:poison" },
+      { op: "flag", target: "damage:ignore-resistance:any:poison" },
+      { op: "flag", target: "damage:ignore-resistance:spell:acid" },
+      { op: "flag", target: "damage:ignore-resistance:any:acid" },
+    ]);
+    expect(
+      compileGrant({
+        type: "damage-penetration",
+        appliesTo: "spell",
+        damageTypes: ["fire"],
+        ignores: "resistance",
+      })
+    ).toEqual([{ op: "flag", target: "damage:ignore-resistance:spell:fire" }]);
+  });
+
+  it("a round-1 damage doubler and a save-damage rule are clauses on their roll", () => {
+    expect(
+      compileGrant({
+        type: "round1-damage-double",
+        saveAbility: "CON",
+        saveDcAbility: "DEX",
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:damage:round1-double",
+        saveAbility: "CON",
+        saveDcAbility: "DEX",
+      },
+    ]);
+    expect(
+      compileGrant({
+        type: "save-damage-rule",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:save:damage-rule",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+      },
+    ]);
+  });
+
+  it("the evaluator's damage rows come from the compiled rules", () => {
+    const out = evaluateGrants(
+      [
+        source("gwf", [
+          {
+            type: "damage-die-modifier",
+            mode: "reroll-keep-higher",
+            appliesTo: "weapon",
+          },
+        ]),
+        source("resistance", [
+          {
+            type: "damage-die-reduction",
+            damageTypes: ["cold"],
+            dice: "1d4",
+            oncePerTurn: true,
+          },
+        ]),
+        source("penetrator", [
+          {
+            type: "damage-penetration",
+            appliesTo: "spell",
+            damageTypes: ["fire"],
+            ignores: "resistance",
+          },
+          {
+            type: "damage-penetration",
+            appliesTo: "any",
+            damageTypes: ["poison"],
+            ignores: "resistance",
+          },
+        ]),
+        source("doubler", [
+          { type: "round1-damage-double", saveAbility: "CON", saveDcAbility: "DEX" },
+        ]),
+        source("evasion", [
+          {
+            type: "save-damage-rule",
+            ability: "DEX",
+            requiresDamageOnSuccess: "half",
+            onSuccess: "none",
+            onFailure: "half",
+            suppressedByConditions: ["incapacitated"],
+          },
+        ]),
+      ],
+      new Set()
+    );
+    expect(out.damageDieModifiers).toEqual([
+      { sourceId: "gwf", mode: "reroll-keep-higher", appliesTo: "weapon" },
+    ]);
+    expect(out.damageDieReductions).toEqual([
+      { sourceId: "resistance", damageTypes: ["cold"], dice: "1d4", oncePerTurn: true },
+    ]);
+    expect([...out.spellResistancePenetration]).toEqual(["fire", "poison"]);
+    expect([...out.resistancePenetration]).toEqual(["poison"]);
+    expect(out.round1DamageDoubles).toEqual([
+      { sourceId: "doubler", saveAbility: "CON", saveDcAbility: "DEX" },
+    ]);
+    expect(out.saveDamageRules).toEqual([
+      {
+        sourceId: "evasion",
+        ability: "DEX",
+        requiresDamageOnSuccess: "half",
+        onSuccess: "none",
+        onFailure: "half",
+      },
+    ]);
+  });
+
+  it("a save-damage rule its condition suppresses is not compiled", () => {
+    const out = evaluateGrants(
+      [
+        source("evasion", [
+          {
+            type: "save-damage-rule",
+            ability: "DEX",
+            requiresDamageOnSuccess: "half",
+            onSuccess: "none",
+            onFailure: "half",
+            suppressedByConditions: ["incapacitated"],
+          },
+        ]),
+      ],
+      new Set(),
+      new Map(),
+      { conditions: new Set(["incapacitated"]) }
+    );
+    expect(out.saveDamageRules).toEqual([]);
+  });
+});
+
+describe("roll rules: resistance penetration never makes a source count for stacking", () => {
+  it("a same-name source that only ignores resistance leaves the other's bonuses summed", () => {
+    const charm = (id: string, grants: GrantSource["grants"]): GrantSource => ({
+      id,
+      name: { en: "Charm", it: "Amuleto" },
+      grants,
+    });
+    const out = evaluateGrants([
+      charm("a", [
+        { type: "ac-bonus", amount: 1 },
+        { type: "ac-bonus", amount: 1 },
+      ]),
+      charm("b", [
+        {
+          type: "damage-penetration",
+          appliesTo: "spell",
+          damageTypes: ["fire"],
+          ignores: "resistance",
+        },
+      ]),
+    ]);
+    expect(out.acBonus).toBe(2);
+  });
+});

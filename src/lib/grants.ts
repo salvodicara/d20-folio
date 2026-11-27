@@ -2645,11 +2645,8 @@ export function evaluateGrants(
   );
 
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
-  const damageDieReductions: DamageDieReductionClause[] = [];
-  const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
   // Movement (speeds fold through `lib/rules`)
-  const round1DamageDoubles: AggregatedGrants["round1DamageDoubles"][number][] = [];
 
   // Derived stats (AC bonus, HP per level, crit ranges, extra attack, attunement,
   // exhaustion recovery and ability floors/item bonuses fold through `lib/rules`)
@@ -2710,9 +2707,6 @@ export function evaluateGrants(
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
   const companionMods: CompanionMod[] = [];
   const actionOutcomeRiders: ActionOutcomeRider[] = [];
-  const damageDieModifiers: DamageDieModifierEntry[] = [];
-  const spellResistancePenetration = new Set<DamageType>();
-  const resistancePenetration = new Set<DamageType>();
 
   // Spell grants
   const alwaysPrepared: string[] = [];
@@ -2914,23 +2908,13 @@ export function evaluateGrants(
           sourceId,
         });
         break;
+      // Damage clauses on rolls compile to roll rules (`lib/rules/roll-rules`).
       case "damage-die-reduction":
-        damageDieReductions.push({
-          sourceId,
-          dice: g.dice,
-          damageTypes: g.damageTypes,
-          oncePerTurn: g.oncePerTurn ?? false,
-        });
+        pushClauses(g, gref, activeKey);
         break;
       case "save-damage-rule":
         if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
-        saveDamageRules.push({
-          ability: g.ability,
-          requiresDamageOnSuccess: g.requiresDamageOnSuccess,
-          onSuccess: g.onSuccess,
-          onFailure: g.onFailure,
-          sourceId,
-        });
+        pushClauses(g, gref, activeKey);
         break;
 
       // ── Movement ────────────────────────────────────────────────────
@@ -3394,33 +3378,14 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+
+      // Resistance penetration is a flag per damage type; the weapon's own dice
+      // (Great Weapon Fighting, Savage Attacker) are a roll clause.
       case "damage-penetration":
-        for (const type of g.damageTypes) {
-          spellResistancePenetration.add(type);
-          if (g.appliesTo === "any") resistancePenetration.add(type);
-        }
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "damage-die-modifier":
-        // Manipulation of a weapon's own damage dice (Great Weapon Fighting
-        // floor / Savage Attacker reroll / Two-Weapon Fighting off-hand mod /
-        // Unarmed Fighting Unarmed Strike). Collected as a list; the attack-row
-        // consumer applies the relevant `mode` to the matching weapon rows.
-        // Carry every field through unresolved (the evaluator has no weapon /
-        // ability scores); spread optional keys only when present so the
-        // aggregate stays minimal and parity tests can use `toEqual`.
-        damageDieModifiers.push({
-          sourceId,
-          mode: g.mode,
-          appliesTo: g.appliesTo,
-          ...(g.floorBelow !== undefined ? { floorBelow: g.floorBelow } : {}),
-          ...(g.floorTo !== undefined ? { floorTo: g.floorTo } : {}),
-          ...(g.oncePerTurn !== undefined ? { oncePerTurn: g.oncePerTurn } : {}),
-          ...(g.baseDie !== undefined ? { baseDie: g.baseDie } : {}),
-          ...(g.unburdenedDie !== undefined ? { unburdenedDie: g.unburdenedDie } : {}),
-          ...(g.grappleDie !== undefined ? { grappleDie: g.grappleDie } : {}),
-          ...(g.abilityMod !== undefined ? { abilityMod: g.abilityMod } : {}),
-          ...(g.damageType !== undefined ? { damageType: g.damageType } : {}),
-        });
+        pushClauses(g, gref, activeKey);
         break;
 
       // ── Spell grants ────────────────────────────────────────────────
@@ -3567,16 +3532,8 @@ export function evaluateGrants(
       case "d20-reroll":
       case "concentration-damage-proof":
       case "roll-die-adjustment":
-        pushClauses(g, gref, activeKey);
-        break;
       case "round1-damage-double":
-        // Round-1 save-gated damage-doubler note (Death Strike) — carry the ability
-        // pair; the consumer resolves the DC + the UI shows it only in combat round 1.
-        round1DamageDoubles.push({
-          sourceId,
-          saveAbility: g.saveAbility,
-          saveDcAbility: g.saveDcAbility,
-        });
+        pushClauses(g, gref, activeKey);
         break;
       case "hit-die-floor":
         if (!hitDieFloor || g.floorTo > hitDieFloor.floorTo)
@@ -4210,8 +4167,8 @@ export function evaluateGrants(
       ruleFlagIds(values, "defense:resist-source:") as DamageSource[]
     ),
     flatDamageReductions,
-    damageDieReductions,
-    saveDamageRules,
+    damageDieReductions: clauses.damageDieReductions,
+    saveDamageRules: clauses.saveDamageRules,
     // Projections of the folded rules, kept until their readers move to `values`.
     speedBonusFt: ruleNumber(values, "speed:walk"),
     conditionalSpeedBonusFt:
@@ -4219,7 +4176,7 @@ export function evaluateGrants(
         ? {}
         : { "no-heavy-armor": ruleConditional(values, "speed:walk", "no-heavy-armor") },
     round1SpeedBonusFt: ruleConditional(values, "speed:walk", "round-1"),
-    round1DamageDoubles,
+    round1DamageDoubles: clauses.round1DamageDoubles,
     flySpeed: nonWalkingSpeed(values, "fly"),
     swimSpeed: nonWalkingSpeed(values, "swim"),
     climbSpeed: nonWalkingSpeed(values, "climb"),
@@ -4336,9 +4293,13 @@ export function evaluateGrants(
     weaponAttackBonuses,
     companionMods,
     actionOutcomeRiders,
-    damageDieModifiers,
-    spellResistancePenetration,
-    resistancePenetration,
+    damageDieModifiers: clauses.damageDieModifiers,
+    spellResistancePenetration: new Set(
+      ruleFlagIds(values, "damage:ignore-resistance:spell:") as DamageType[]
+    ),
+    resistancePenetration: new Set(
+      ruleFlagIds(values, "damage:ignore-resistance:any:") as DamageType[]
+    ),
     alwaysPrepared,
     ritualSpells,
     ritualAnyClasses,
