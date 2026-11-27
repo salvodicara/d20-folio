@@ -70,7 +70,11 @@ const {
       charId: string,
       cb: (
         d: import("@/types/character").CharacterDoc | null,
-        meta: { hasPendingWrites: boolean; attached?: boolean }
+        meta: {
+          hasPendingWrites: boolean;
+          attached?: boolean;
+          baseWriteId?: string | null;
+        }
       ) => void,
       onError?: (err: Error) => void
     ) => () => void
@@ -250,7 +254,9 @@ function doc(): CharacterDoc {
 /** Latest captured Firestore snapshot callback, wrapped to supply the snapshot
  *  metadata (defaults to a SERVER snapshot — `hasPendingWrites: false`). */
 function snapshotCb(
-  meta: { hasPendingWrites: boolean } = { hasPendingWrites: false }
+  meta: { hasPendingWrites: boolean; baseWriteId?: string | null } = {
+    hasPendingWrites: false,
+  }
 ): (d: CharacterDoc | null) => void {
   const cb = subscribeMock.mock.calls.at(-1)?.[2];
   if (!cb) throw new Error("subscription callback not captured");
@@ -1643,6 +1649,116 @@ describe("useCharacterSubscription — the shape gate before the sheet has loade
     expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
       "early edit"
     );
+  });
+});
+
+// #1414 — a tab closed offline, reopened online: its queued save is replayed and refused
+// with no event the app can hear. A stored sheet that reached the save's generation is
+// no proof it landed (another device's save looks the same); only the save's own
+// writeId is.
+describe("useCharacterSubscription — a closed tab's edit after another device saved (#1414)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  async function traceOf(quote: string, writeId: string): Promise<void> {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: { ...doc().character, quote },
+      session: doc().session,
+      revision: 5,
+      writeId,
+    });
+  }
+
+  it("the stored sheet at that generation is another device's: the edit is offered", async () => {
+    await traceOf("closed tab edit", "a1");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "b1" }));
+    await vi.waitFor(() =>
+      expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+        "closed tab edit"
+      )
+    );
+    // The copy keeps the write's id, so the next load's proof stays exact.
+    expect(readRescue1320("u1", "char1", Date.now())?.writeId).toBe("a1");
+  });
+
+  it("the stored sheet carries this save's writeId: it landed, nothing to offer", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    await traceOf("landed edit", "a1");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "a1" }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("the stored sheet was built on this save: it landed, nothing to offer", async () => {
+    await traceOf("built on", "a1");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => {
+      snapshotCb({ hasPendingWrites: false, baseWriteId: "a1" })({
+        ...doc(),
+        revision: 6,
+        writeId: "b2",
+      });
+      combatCb()(sessionToCombatState(doc().session));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a save leaving records its writeId in the trace", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "traced" },
+      })
+    );
+    const [queued, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    const sent = { ...(queued as CharacterDoc), revision: 5, writeId: "a9" };
+    act(() => callbacks?.onSend?.(sent));
+    expect(readUnackedSave("u1", "char1")?.writeId).toBe("a9");
+  });
+
+  it("a copy kept from a lost save stays when the stored write is another device's", async () => {
+    const { keepRescueCopy } = await import("@/lib/local-draft");
+    keepRescueCopy("u1", "char1", {
+      part: "build",
+      revision: 5,
+      writeId: "a1",
+      savedAt: Date.now() - 1000,
+      schema: 3,
+      playVersion: 1,
+      build: { kept: true },
+      state: {},
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "b1" }));
+    expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull();
+  });
+
+  it("a copy kept from a lost save is dropped when its own write is stored", async () => {
+    const { keepRescueCopy } = await import("@/lib/local-draft");
+    keepRescueCopy("u1", "char1", {
+      part: "build",
+      revision: 5,
+      writeId: "a1",
+      savedAt: Date.now() - 1000,
+      schema: 3,
+      playVersion: 1,
+      build: { kept: true },
+      state: {},
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "a1" }));
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
   });
 });
 
