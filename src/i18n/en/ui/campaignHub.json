@@ -233,6 +233,8 @@
     "partySummary": "Party at a glance",
     "partySummaryHero": "Hero",
     "partySummaryBest": "Best in the party",
+    "partySummaryLegend": "In gold: the highest value in the party",
+    "partySummaryProfLegend": "proficient save",
     "partySummaryEmpty": "No hero attached yet. Players link their character on the Live tab.",
     "partySummaryLoading_one": "{{count}} hero still loading…",
     "partySummaryLoading_other": "{{count}} heroes still loading…"

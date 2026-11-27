@@ -68,12 +68,12 @@ the row; rows with the same slice ship together.
 
 ### B. The party (Gruppo tab)
 
-| #   | Capability                                                                                   | Classic               | New UI                     | Headless                        | Pattern                       | Size | Slice |
-| --- | -------------------------------------------------------------------------------------------- | --------------------- | -------------------------- | ------------------------------- | ----------------------------- | ---- | ----- |
-| 26  | One row per hero: HP, AC, passive Perception, conditions, concentration                      | `Party.tsx` cards     | done                       | —                               | DDB app Characters tab        | —    | —     |
-| 27  | Open a hero's sheet read-only                                                                | `MemberSheetView.tsx` | done (`MemberSheetScreen`) | —                               | DDB campaign page             | —    | —     |
-| 28  | Party table: Insight and Investigation passives, speed, senses, six saves, best value marked | `PartySummary.tsx`    | partial (Perception only)  | partial (`party-summary.ts`)    | FVTT-G (party sheet), DDB app | M    | S9    |
-| 29  | The DM plays a character too (attach a DMPC)                                                 | DmpcAttachControl     | missing                    | partial (`attach-character.ts`) | — (classic precedent)         | S    | S10   |
+| #   | Capability                                                                                   | Classic               | New UI                                      | Headless                        | Pattern                       | Size | Slice |
+| --- | -------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------- | ------------------------------- | ----------------------------- | ---- | ----- |
+| 26  | One row per hero: HP, AC, passive Perception, conditions, concentration                      | `Party.tsx` cards     | done                                        | —                               | DDB app Characters tab        | —    | —     |
+| 27  | Open a hero's sheet read-only                                                                | `MemberSheetView.tsx` | done (`MemberSheetScreen`)                  | —                               | DDB campaign page             | —    | —     |
+| 28  | Party table: Insight and Investigation passives, speed, senses, six saves, best value marked | `PartySummary.tsx`    | done (S9: the DM's table on the Gruppo tab) | partial (`party-summary.ts`)    | FVTT-G (party sheet), DDB app | M    | S9    |
+| 29  | The DM plays a character too (attach a DMPC)                                                 | DmpcAttachControl     | missing                                     | partial (`attach-character.ts`) | — (classic precedent)         | S    | S10   |
 
 ### C. Running the campaign
 
