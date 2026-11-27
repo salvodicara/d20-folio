@@ -11,6 +11,7 @@
     "chest": "Shared chest",
     "fightIdle": "No combat in progress. It starts on its own when someone rolls Initiative.",
     "fightRunning": "Combat in progress · round {{round}}",
+    "openFight": "Open combat",
     "loading": "Loading the campaign",
     "notFound": "Campaign not found. You may no longer be part of it.",
     "tableRules": {

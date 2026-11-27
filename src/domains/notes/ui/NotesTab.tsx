@@ -89,6 +89,7 @@ export function NotesTab({
         <Field
           label={t("campaignNotes.search")}
           type="search"
+          placeholder={t("campaignNotes.searchHint")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />

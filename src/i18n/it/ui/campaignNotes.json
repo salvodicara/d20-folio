@@ -7,6 +7,7 @@
     "mine": "Solo le mie",
     "newNote": "Nuova nota",
     "search": "Cerca nelle note",
+    "searchHint": "Titolo, testo, #luogo, @nome",
     "hidden": "Solo il Master la vede",
     "text": "Testo",
     "textHelp": "Scrivi @nome per una persona e #luogo per un posto: la nota finisce nei filtri giusti.",

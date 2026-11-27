@@ -10,7 +10,7 @@
 import { FolioMagicItemIcon } from "@/components/shared/folio-icons";
 import { SRD_MAGIC_ITEMS } from "@/data/magic-items";
 import { itemArtUrl } from "@/data/item-art";
-import { cn } from "@/lib/utils";
+import { cn, formatModifier } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import { parseMagicItemAcBonus, parseMagicItemCharges } from "@/lib/magic-item-utils";
 import { addEquipmentRef } from "@/lib/equipment-add";
@@ -218,7 +218,7 @@ export const magicItemSpec: CompendiumPickerSpec<SrdMagicItemData> = {
     if (acBonus !== undefined)
       meta.push({
         label: t("character.armorClassShort"),
-        value: acBonus > 0 ? `+${acBonus}` : String(acBonus),
+        value: acBonus === 0 ? "0" : formatModifier(acBonus),
       });
     return {
       eyebrow: (

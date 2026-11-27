@@ -7,6 +7,7 @@
  * move with its undo. A group line and a homebrew creature show none yet; Regeneration's
  * one-tap heal stays in the classic hub for now.
  */
+import { formatModifier } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -44,7 +45,7 @@ function numbersLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): s
     .join(" + ");
   const check =
     action.toHit !== undefined
-      ? `${action.toHit >= 0 ? "+" : ""}${String(action.toHit)}`
+      ? formatModifier(action.toHit)
       : action.save
         ? t("combat.cunningStrikeSave", {
             ability: t(`abilities.${action.save.ability}_short`),

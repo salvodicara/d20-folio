@@ -53,7 +53,7 @@ import { sessionAfterLongRestReduction } from "@/lib/play/rests";
 import { FADING_PENALTIES } from "@/lib/play/fading-penalties";
 import { localizeSrd } from "@/i18n/resolver";
 import { useLocale } from "@/hooks/useLocale";
-import { cn } from "@/lib/utils";
+import { cn, formatModifier } from "@/lib/utils";
 import { InfoCard } from "@/components/shared/InfoCard";
 import { ModalShell } from "@/components/shared/ModalShell";
 import { ModalBody } from "@/components/ui/modal-head";
@@ -530,10 +530,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             <div className="rest-heal-preview">
               <div className="rest-short-status">
                 <span>{t("rest.conAdded")}</span>
-                <span>
-                  {conMod >= 0 ? "+" : ""}
-                  {hitDiceToSpend * conMod}
-                </span>
+                <span>{formatModifier(hitDiceToSpend * conMod)}</span>
               </div>
               <div className="rest-short-status">
                 <span>{t("rest.hpAfterRest")}</span>
@@ -803,7 +800,7 @@ function RestFlow({ onClose }: { onClose: () => void }) {
             <li>
               <Heart className="h-3.5 w-3.5" />
               {t("rest.shortRestHealPerDie", {
-                conMod: conMod >= 0 ? `+${conMod}` : `${conMod}`,
+                conMod: formatModifier(conMod),
                 die: hitDiceLabel(hitDice, 1).dice ?? hitDieSizes,
               })}
             </li>

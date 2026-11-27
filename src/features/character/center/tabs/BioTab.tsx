@@ -79,7 +79,7 @@ import { PortraitCropModal } from "@/components/shared/PortraitCropModal";
 import { PortraitLightbox } from "@/components/shared/PortraitLightbox";
 import { PortraitEditMenu } from "@/components/shared/PortraitEditMenu";
 import { Camera, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatModifier } from "@/lib/utils";
 import { Spinner } from "@/components/ui/spinner";
 import { RunicEmptyState } from "@/components/ui/runic-empty-state";
 import { Button } from "@/components/ui/button";
@@ -271,7 +271,7 @@ export function BioTab() {
     if (summary.hpMaxDelta !== 0) {
       out.push(
         t("bio.confirmReset.details.hp", {
-          delta: `${summary.hpMaxDelta > 0 ? "+" : ""}${summary.hpMaxDelta}`,
+          delta: summary.hpMaxDelta === 0 ? "0" : formatModifier(summary.hpMaxDelta),
         })
       );
     }
