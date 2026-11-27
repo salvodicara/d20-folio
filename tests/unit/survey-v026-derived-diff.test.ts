@@ -349,9 +349,9 @@ describe("the corpus export for the derived-sheet harness", () => {
   it("reports counts only", () => {
     expect(
       exportSummary([
-        { path: "users/u/characters/a", data: {} },
-        { path: "users/u/characters/a/combat/state", data: {} },
-        { path: "users/u/characters/b", data: {} },
+        { path: "users/u/characters/a" },
+        { path: "users/u/characters/a/combat/state" },
+        { path: "users/u/characters/b" },
       ])
     ).toBe("exported 3 documents: 2 characters, 1 combat states");
   });
