@@ -2,8 +2,9 @@
  * The new sheet's markup after the design reset «BG3 craft» (slice 7):
  * - «Danni» and «Cura» are an equal pair in the markup (danger + heal), never a lit
  *   primary, on the header, on the phone strip and in «Danni e cure»;
- * - during a fight the rests leave the header (D&D Beyond and Foundry keep resting out
- *   of combat; a dead button never holds a prime spot), and come back after it;
+ * - during a fight the rests leave the header (resting is out of combat in D&D Beyond and
+ *   Foundry, and BG3 closes its camp; a dead button never holds a prime spot), and
+ *   come back after it;
  * - the headings never skip a level, on a laptop and on a phone.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -125,6 +126,7 @@ describe("the rests during a fight", () => {
     startFight();
     expect(within(band()).queryByRole("button", { name: "Short rest" })).toBeNull();
     expect(within(band()).queryByRole("button", { name: "Long rest" })).toBeNull();
+    expect(within(band()).queryByRole("button", { name: "Level up" })).toBeNull();
     // the row they leave is never drawn empty
     const row = band().querySelector(".f-char-acts");
     expect(row === null || row.children.length > 0).toBe(true);
