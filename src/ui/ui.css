@@ -7525,7 +7525,8 @@
   }
   /* the initiative column holds two tabular digits clear of the portrait */
   .fui .f-fight {
-    grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) 76px;
+    /* the HP column fits its widest value («256/256 PF»), never past the row edge */
+    grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) minmax(76px, max-content);
   }
 }
 /* the «Danni» / «Cura» pair keeps the family's hover and press (its colours come later in
@@ -7880,5 +7881,53 @@
     right: 24px;
     transform: none;
     max-width: min(480px, calc(100vw - 48px));
+  }
+}
+/* on a phone the name column is too narrow for the Multiattack note: a cut sentence says
+   nothing, so the row drops it; the monster card keeps it whole */
+@media (max-width: 640px) {
+  .fui .f-monster-multi {
+    display: none;
+  }
+}
+
+/* a fight row on a phone: the HP sits top-right beside the name, and the row's chips and
+   actions use the full width under it (no 4-line chips in a narrow column); the current
+   row is marked by its gold bar and band, its «Ora» kept for screen readers */
+@media (max-width: 640px) {
+  .fui .f-fight {
+    grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) auto;
+    align-items: start;
+  }
+  .fui .f-fight > .f-init,
+  .fui .f-fight > .f-act-slot {
+    align-self: start;
+  }
+  /* the name block's lines join the row grid: the name and its state beside the HP, the
+     chips and actions under both, across the full width */
+  .fui .f-fight > .f-row-main {
+    display: contents;
+  }
+  .fui .f-fight > .f-row-main > * {
+    grid-column: 3 / -1;
+  }
+  .fui .f-fight > .f-row-main > :is(.f-row-t, .f-row-s) {
+    grid-column: 3;
+  }
+  .fui .f-fight > .f-init,
+  .fui .f-fight > .f-act-slot,
+  .fui .f-fight > .f-fight-hpcol {
+    grid-row: 1 / span 2;
+  }
+  .fui .f-fight > .f-fight-hpcol {
+    grid-column: 4;
+    align-self: start;
+  }
+  .fui .f-fight > .f-fight-state {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
   }
 }
