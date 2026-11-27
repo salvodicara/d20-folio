@@ -7583,3 +7583,200 @@
 .fui dialog.f-dlg .f-bd :is(p, .f-help) {
   font-size: var(--fs-text);
 }
+
+/* ---------- fight and campaign (design reset «BG3 craft», slice 5b) ---------- */
+/* one lit action per screen: a panel header's own action is the framed secondary */
+.fui .f-pnh .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
+  --top: var(--sec-top);
+  --peak: var(--sec-peak);
+  --after: var(--sec-after);
+  --bot: var(--sec-bot);
+  border: 1px solid var(--rim-brass);
+  box-shadow: none;
+  font-weight: 400;
+}
+/* a header action keeps its words on a phone; the header wraps instead */
+@media (max-width: 400px) {
+  .fui .f-pn > .f-pnh .f-btn[aria-label]:has(.f-ic) {
+    padding: 0 12px;
+  }
+  .fui .f-pn > .f-pnh .f-btn[aria-label]:has(.f-ic) .f-btn-lab {
+    display: inline;
+  }
+}
+/* a header's aside sits on the title's line, clear of the top edge */
+.fui .f-pnh {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+@media (max-width: 640px) {
+  /* a 44 px phone action fits the 56 px header on the 4 px grid */
+  .fui .f-pnh {
+    padding-top: 4px;
+    padding-bottom: 8px;
+  }
+}
+@media (max-width: 640px) {
+  /* a header's hint takes its own line under the title, flush left */
+  .fui .f-pn > .f-pnh > .f-x:not(:has(.f-btn)) {
+    flex-basis: 100%;
+    margin-left: 0;
+    font-size: var(--fs-nav);
+    color: var(--muted);
+  }
+}
+
+/* Gruppo: the stat columns share one width; their labels read in their own case */
+.fui .f-row-end > .f-stat {
+  min-width: 72px;
+}
+.fui .f-row-end > .f-stat > .f-lbl {
+  text-transform: none;
+  letter-spacing: 0;
+}
+/* the treasury's coins stay on one line */
+.fui .f-coins {
+  flex-wrap: nowrap;
+  column-gap: 12px;
+}
+
+/* Diario: a fight's heading in the log reads as a sentence, not tracked capitals */
+.fui .f-tl-block > h4.f-lbl {
+  font-size: var(--fs-nav);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* Note: on a phone the action goes under its note, never squeezing the text */
+@media (max-width: 640px) {
+  .fui .f-note-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .fui .f-note-row > .f-btn {
+    align-self: flex-start;
+  }
+}
+/* Regole: explanations at the reading size, the intro at a readable measure, the footer
+   counter centred on its button */
+.fui .f-rule .f-row-s,
+.fui .f-rules > .f-pnb > .f-help {
+  font-size: var(--fs-nav);
+}
+.fui .f-rules > .f-pnb > .f-help {
+  max-width: 70ch;
+}
+.fui .f-rules > .f-pn-foot {
+  align-items: center;
+}
+
+/* a field's label is a phrase («Quanti punti ferita?», «Il tuo racconto dello scontro»):
+   its own case at the label weight; capitals stay on the short section labels */
+.fui .f-field > .f-lbl {
+  font-size: var(--fs-nav);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+/* the fight's footer on a phone: the lit action across, the two secondaries side by side,
+   the quiet action centred under them */
+@media (max-width: 640px) {
+  .fui .f-pn > .f-pn-foot:has(> .f-btn.f-wide[data-kind="primary"]) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .fui
+    .f-pn
+    > .f-pn-foot:has(> .f-btn.f-wide[data-kind="primary"])
+    > :is(.f-btn.f-wide, .f-btn[data-kind="quiet"]) {
+    grid-column: 1 / -1;
+  }
+  .fui .f-pn > .f-pn-foot:has(> .f-btn.f-wide[data-kind="primary"]) > .f-btn {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 6px 10px;
+    white-space: normal;
+    line-height: 1.2;
+    text-align: center;
+  }
+}
+/* a dialog's footer on a laptop: one row ending on the lit action */
+@media (min-width: 641px) {
+  .fui dialog.f-dlg .f-pn-foot {
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+  }
+  .fui dialog.f-dlg .f-pn-foot > .f-btn.f-wide {
+    width: auto;
+    flex: none;
+  }
+}
+
+/* the action tray: target groups read as section labels */
+.fui .f-target-group > .f-quiet {
+  font: 600 var(--fs-xs) / 1.3 var(--font-label);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+/* «Aggiungi mostri»: the count steppers are the family's framed buttons */
+.fui .f-dm-step {
+  border: 1px solid var(--rim-brass);
+  border-radius: var(--btn-r);
+  background: linear-gradient(
+    180deg,
+    var(--sec-top) 0%,
+    var(--sec-peak) 44%,
+    var(--sec-after) 50%,
+    var(--sec-after) 70%,
+    var(--sec-bot) 100%
+  );
+  color: var(--cream);
+}
+@media (hover: hover) {
+  .fui .f-dm-step:hover {
+    border-color: var(--rim);
+    color: var(--white);
+  }
+}
+/* the end-of-fight write-up: the log lines at the reading size */
+.fui .f-endlines li {
+  font-size: var(--fs-nav);
+}
+
+/* the monster card's stat block (the codex's, inside the new UI): our face, the name in
+   the title weight, the creature type in its own case, the ability table across the card */
+.fui .mon-ref,
+.fui .beast-ref {
+  font-family: var(--font-text);
+}
+.fui .mon-head strong,
+.fui .beast-ref-head strong {
+  font: 600 var(--fs-lg) / 1.2 var(--font-title);
+}
+.fui .beast-ref-meta {
+  font: 400 var(--fs-nav) var(--font-text);
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--muted);
+}
+.fui .mon-abilities {
+  font-family: var(--font-num);
+}
+/* the header rule runs under the whole row, the label column included */
+.fui .mon-abilities thead tr {
+  border-bottom: 1px solid var(--frame);
+}
+.fui .mon-abilities thead th {
+  border-bottom: 0;
+}
+.fui .mon-abilities :is(td, th) {
+  font-size: var(--fs-nav);
+}
+.fui .mon-abilities th {
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
+}
