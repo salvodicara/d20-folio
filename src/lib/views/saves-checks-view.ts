@@ -245,12 +245,7 @@ export function deriveSavesAndChecks(
     charData.skills
   );
   const checkBonusFor = (skillId: string, ability: AbilityCode): number =>
-    resolveAbilityCheckBonus(
-      fullAggregate.abilityCheckBonuses,
-      skillId,
-      ability,
-      effectiveScores
-    );
+    resolveAbilityCheckBonus(fullAggregate.values, skillId, ability, effectiveScores);
   const autoFail = autoFailByAbility(
     conditions,
     conditionFactsFor({ character: charData, session })
@@ -316,7 +311,7 @@ export function deriveSavesAndChecks(
     const ability = effectiveSkillAbility(
       skill.id,
       skill.ability,
-      fullAggregate.skillAbilityOptions,
+      fullAggregate.values,
       effectiveScores
     );
     const proficiency: ProficiencyTier = displayedSkills[skill.id] ?? null;

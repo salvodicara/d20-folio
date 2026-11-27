@@ -21,14 +21,15 @@ import { compileGrant } from "@/lib/rules";
 type GrantKind = Grant["type"];
 
 /**
- * Kinds without a compiler case today (2026-11-26: 99 of 161). Each one is still read by
+ * Kinds without a compiler case today (2026-11-27: 96 of 161). Each one is still read by
  * bespoke code (`AggregatedGrants` fields, choice collectors, actions, resources,
  * statuses). This list may only shrink: never add a kind here, give it a case in
- * `compileGrant` instead.
+ * `compileGrant` instead. A trailing comment says why a classified kind is still here:
+ * `grammar` (today's Rule cannot hold its value), `context` (it needs more than the
+ * grant), `per-item`, or `active` (an Activity, not a passive Rule).
  */
 const NOT_COMPILED_YET = [
-  "ability-check-bonus",
-  "ac-formula",
+  "ac-formula", // grammar: a candidate formula record, highest wins (#1431)
   "action-outcome-rider",
   "advantage-on",
   "always-prepared-spell",
@@ -62,35 +63,35 @@ const NOT_COMPILED_YET = [
   "damage-retaliation",
   "damage-rider",
   "damage-transfer",
-  "defense-note",
+  "defense-note", // grammar: prose per grant (#1431)
   "disadvantage-on",
   "ends-concentration",
   "extra-action",
   "familiar-enhancement",
   "familiar-forms",
-  "flat-damage-reduction",
+  "flat-damage-reduction", // grammar: a proficiency-bonus amount on a type list (#1431)
   "form-attack",
   "form-casting",
   "free-cast-from-list",
   "free-cast-spell",
   "granted-action",
   "heal-bonus",
-  "hit-die-floor",
-  "hp-flat",
+  "hit-die-floor", // grammar: a paired floor-below and floor-to (#1431)
+  "hp-flat", // context: the cast level or the world's exact delta (#1431)
   "incoming-attack-advantage",
   "incoming-attack-disadvantage",
-  "incoming-damage-scale",
+  "incoming-damage-scale", // active: exists only under a lit toggle (#1431)
   "initiative-tracker-topup",
-  "item-bound-bonus",
+  "item-bound-bonus", // per-item: rides only its own weapon (#1431)
   "item-bound-damage-rider",
   "manifested-weapon",
   "maximize-spell-healing",
-  "medium-armor-dex-cap",
+  "medium-armor-dex-cap", // grammar: a paired cap and minimum DEX (#1431)
   "metamagic-per-spell",
   "on-crit-movement-rider",
   "pact-weapon",
   "pact-weapon-rider",
-  "permanent-ability-increase",
+  "permanent-ability-increase", // active: a one-time write when the book is studied (#1431)
   "regen-at-turn-start",
   "replace-attack-with-cast",
   "resource",
@@ -104,7 +105,6 @@ const NOT_COMPILED_YET = [
   "save-damage-rule",
   "scoped-extra-spell-slot",
   "self-heal-on-other",
-  "skill-ability-option",
   "spell-damage-bonus",
   "spell-damage-outcome",
   "spell-damage-type-override",
@@ -114,16 +114,15 @@ const NOT_COMPILED_YET = [
   "temp-hp",
   "tracker-alt-recovery",
   "trigger",
-  "unarmed-strike-damage-type-option",
-  "unarmed-strike-die",
+  "unarmed-strike-die", // grammar: a record (die, damage type, abilities) (#1431)
   "upkeep-waiver",
-  "weapon-attack-ability",
-  "weapon-attack-bonus",
+  "weapon-attack-ability", // grammar: a record (scope, magic only, die upgrade) (#1431)
+  "weapon-attack-bonus", // context: the breakdown marks its toggle (#1431)
   "weapon-attack-cantrip",
   "weapon-binding",
   "weapon-bonus-attack",
-  "weapon-damage-bonus",
-  "weapon-reach-bonus",
+  "weapon-damage-bonus", // context: the toggle marker, a proficiency-bonus amount (#1431)
+  "weapon-reach-bonus", // grammar: a record (which weapons, extra masteries) (#1431)
   "while-active",
   "zero-hp-floor",
 ] as const satisfies readonly GrantKind[];

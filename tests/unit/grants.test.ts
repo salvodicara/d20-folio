@@ -15,6 +15,7 @@ import {
   type Grant,
   type GrantSource,
 } from "@/lib/grants";
+import { ruleFlagIds, ruleNumber } from "@/lib/rules";
 
 const make = (id: string, grants: Grant[]): GrantSource => ({
   id,
@@ -413,8 +414,8 @@ describe("evaluateGrants — exhaustiveness: every Grant kind lands in the aggre
     expect(out.spellSaveDcBonus).toHaveLength(1);
     expect(out.spellAttackBonus).toHaveLength(1);
     expect(out.saveBonusAbilities).toHaveLength(1);
-    expect(out.abilityCheckBonuses).toHaveLength(1);
-    expect(out.skillAbilityOptions).toEqual([{ skills: ["stealth"], ability: "STR" }]);
+    expect(ruleNumber(out.values, "check:all-checks")).toBe(1);
+    expect(ruleFlagIds(out.values, "skill:ability-option:")).toEqual(["stealth@STR"]);
     expect(out.initiativeBonusFlat).toBe(2);
     expect(out.damageRiders).toHaveLength(1);
     expect(out.spellDamageBonuses).toHaveLength(1);

@@ -37,7 +37,7 @@ import { resolveGrantSourcesForSpells } from "@/lib/resolve-grant-sources";
 import { concentrationValue } from "@/lib/concentration";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { advanceEffectTimers, resolveActions } from "@/lib/smart-tracker";
-import { ruleValue } from "@/lib/rules";
+import { ruleNumberIds, ruleValue } from "@/lib/rules";
 import type { CharacterDoc } from "@/types/character";
 import EN_SPELLS from "@/i18n/en/srd/spells.json";
 import IT_SPELLS from "@/i18n/it/srd/spells.json";
@@ -305,8 +305,8 @@ function factsOf(agg: AggregatedGrants): Required<LitFacts> {
     immune: [...agg.conditionImmunities].sort(),
     adv: sorted(agg.advantages),
     dis: sorted(agg.disadvantages),
-    checkBonus: agg.abilityCheckBonuses.map(
-      (b) => [b.appliesTo, typeof b.value === "number" ? b.value : 0] as const
+    checkBonus: ruleNumberIds(agg.values, "check:").map(
+      (scope) => [scope, ruleValue(agg.values, `check:${scope}`) ?? 0] as const
     ),
     incomingDis: agg.incomingAttackDisadvantages.length,
     notes: agg.defenseNotes.length,

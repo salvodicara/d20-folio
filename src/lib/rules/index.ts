@@ -26,6 +26,7 @@
 import type { AbilityCode } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 import type { DetectionTarget } from "./detection-targets";
+import { compileSheetNumberGrant, type SheetNumberTarget } from "./sheet-number-kinds";
 
 /** The sense kinds, in display order (the i18n coverage guard reads this list). */
 export const SENSE_KINDS = [
@@ -44,6 +45,7 @@ export type MoveMode = "fly" | "swim" | "climb" | "burrow";
 
 /** What a rule modifies. Grows one family at a time. */
 export type RuleTarget =
+  | SheetNumberTarget
   | `sense:${SenseKind}`
   /** The sense works at any distance the character can see (See Invisibility). */
   | `sense:${SenseKind}:unlimited`
@@ -460,6 +462,10 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "add", target: `spell:save-dc:${grant.scope}`, value: grant.amount }];
     case "spell-attack-bonus":
       return [{ op: "add", target: `spell:attack:${grant.scope}`, value: grant.amount }];
+    case "ability-check-bonus":
+    case "skill-ability-option":
+    case "unarmed-strike-damage-type-option":
+      return compileSheetNumberGrant(grant);
     default:
       return null;
   }
