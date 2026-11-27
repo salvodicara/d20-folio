@@ -233,6 +233,7 @@
     "partySummary": "Il gruppo a colpo d'occhio",
     "partySummaryHero": "Personaggio",
     "partySummaryBest": "Il migliore del gruppo",
+    "partySummaryLegend": "In oro: il valore più alto del gruppo",
     "partySummaryEmpty": "Nessun personaggio collegato. I giocatori collegano il loro personaggio dalla scheda Live.",
     "partySummaryLoading_one": "{{count}} personaggio ancora in caricamento…",
     "partySummaryLoading_other": "{{count}} personaggi ancora in caricamento…"

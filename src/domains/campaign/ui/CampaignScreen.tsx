@@ -211,40 +211,43 @@ function PartyTab({
   );
   const encounter = campaign.encounter;
   return (
-    <div className="f-split">
-      <div className="f-stack">
-        <Panel
-          color="grp"
-          title={t("campaignHub.party")}
-          aside={rows.length > 0 && t("campaignScreen.partyHint")}
-        >
-          {rows.length === 0 && (
-            <p className="f-note">{t("campaignScreen.noCharacters")}</p>
-          )}
-          {rows.map((row) => (
-            <PartyLine
-              key={row.uid}
-              row={row}
-              href={`/campaigns/${campaign.id}/sheets/${row.uid}`}
-            />
-          ))}
-        </Panel>
-        {isDm && (table.rows.length > 0 || table.loading > 0) && (
-          <Panel color="grp" title={t("campaignHub.partySummary")}>
-            <PartyTable view={table} locale={locale} />
+    <div className="f-stack">
+      <div className="f-split">
+        <div className="f-stack">
+          <Panel
+            color="grp"
+            title={t("campaignHub.party")}
+            aside={rows.length > 0 && t("campaignScreen.partyHint")}
+          >
+            {rows.length === 0 && (
+              <p className="f-note">{t("campaignScreen.noCharacters")}</p>
+            )}
+            {rows.map((row) => (
+              <PartyLine
+                key={row.uid}
+                row={row}
+                href={`/campaigns/${campaign.id}/sheets/${row.uid}`}
+              />
+            ))}
           </Panel>
-        )}
-        <Panel color="tes" title={t("campaignScreen.chest")}>
-          <Coins treasury={campaign.treasury} />
+          <Panel color="tes" title={t("campaignScreen.chest")}>
+            <Coins treasury={campaign.treasury} />
+          </Panel>
+        </div>
+        <Panel color="ini" title={t("campaignScreen.tabFight")}>
+          <p>
+            {encounter
+              ? t("campaignScreen.fightRunning", { round: encounter.round })
+              : t("campaignScreen.fightIdle")}
+          </p>
         </Panel>
       </div>
-      <Panel color="ini" title={t("campaignScreen.tabFight")}>
-        <p>
-          {encounter
-            ? t("campaignScreen.fightRunning", { round: encounter.round })
-            : t("campaignScreen.fightIdle")}
-        </p>
-      </Panel>
+      {/* the DM's whole-party table, the screen's full width: every column fits */}
+      {isDm && (table.rows.length > 0 || table.loading > 0) && (
+        <Panel color="grp" title={t("campaignHub.partySummary")}>
+          <PartyTable view={table} locale={locale} />
+        </Panel>
+      )}
     </div>
   );
 }

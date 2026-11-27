@@ -7717,30 +7717,21 @@
 }
 
 /* the DM's party table on the Gruppo tab (the classic «Il gruppo a colpo d'occhio»):
-   the hero column stays, the numbers scroll sideways on a phone */
-.fui .f-ptable-scroll {
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-.fui .f-ptable-scroll:focus-visible {
-  outline: 2px solid var(--gold-hi);
-  outline-offset: 2px;
-}
+   a table that fills the panel on a wide screen, one card per hero on a phone */
 .fui .f-ptable {
-  border-collapse: separate;
-  border-spacing: 0;
+  width: 100%;
+  border-collapse: collapse;
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 .fui .f-ptable th,
 .fui .f-ptable td {
   padding: 6px;
   border-bottom: 1px solid var(--line);
   text-align: center;
+  white-space: nowrap;
 }
 .fui .f-ptable thead th {
-  white-space: normal;
   font: 600 var(--fs-xs) var(--font-label);
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -7750,23 +7741,15 @@
   color: var(--text);
 }
 .fui .f-ptable .f-ptable-hero {
-  position: sticky;
-  left: 0;
-  z-index: 1;
-  /* a long name wraps: the numbers keep the width */
-  min-width: 12ch;
-  max-width: 18ch;
-  white-space: normal;
   text-align: left;
-  background: var(--panel);
-  border-right: 1px solid var(--line);
 }
-.fui .f-ptable thead .f-ptable-hero {
-  white-space: nowrap;
+/* the table scrolls inside its panel only if a screen is narrower than its columns */
+.fui .f-ptable-wrap {
+  overflow-x: auto;
 }
-.fui .f-ptable tbody .f-ptable-hero {
-  display: flex;
-  flex-direction: column;
+/* the name on its line, «Liv 9» under it */
+.fui .f-ptable tbody .f-ptable-hero > span {
+  display: block;
 }
 .fui .f-ptable-name {
   color: var(--strong);
@@ -7776,18 +7759,91 @@
   color: var(--muted);
   font-size: var(--fs-xs);
 }
-/* the best of a column: gold and bold, and said in words for a screen reader */
-.fui .f-ptable td[data-best] {
+/* the best of a column: gold and bold, said in words, explained by the legend */
+.fui .f-ptable td[data-best],
+.fui .f-pcard-grid > [data-best] dd {
   color: var(--gold-hi);
 }
+.fui .f-ptable-legend {
+  margin: 8px 0 0;
+}
 /* a proficient save: a dot before the number */
-.fui .f-ptable td[data-prof]::before {
+.fui .f-ptable td[data-prof]::before,
+.fui .f-pcard-saves > [data-prof]::before {
   content: "•";
   margin-right: 4px;
   color: var(--gold);
 }
 .fui .f-ptable-senses {
   white-space: normal;
-  min-width: 9ch;
   text-align: left;
+}
+.fui .f-pcards {
+  display: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+@media (max-width: 640px) {
+  .fui .f-ptable {
+    display: none;
+  }
+  .fui .f-pcards {
+    display: grid;
+    gap: 12px;
+  }
+}
+.fui .f-pcard {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.fui .f-pcard-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.fui .f-pcard-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin: 0;
+}
+.fui .f-pcard-grid > div {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+}
+.fui .f-pcard-grid dt {
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fui .f-pcard-grid dd {
+  margin: 0;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.fui .f-pcard-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: var(--fs-sm);
+}
+.fui .f-pcard-saves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  font-variant-numeric: tabular-nums;
+}
+.fui .f-pcard-saves i {
+  margin-right: 4px;
+  font-style: normal;
+  color: var(--muted);
 }

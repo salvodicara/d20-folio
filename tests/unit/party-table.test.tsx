@@ -11,6 +11,7 @@ vi.mock("@/lib/firebase", () => ({ db: {} }));
 
 import { PartyTable } from "@/domains/campaign/ui/PartyTable";
 import { partySummary } from "@/features/campaigns/party-summary";
+import { formatModifier } from "@/lib/utils";
 import type { PartyMemberStats } from "@/features/campaigns/party-stats";
 
 const stats = (extra: Partial<PartyMemberStats>): PartyMemberStats =>
@@ -72,6 +73,44 @@ describe("the DM's party table", () => {
     );
     expect(within(bo).getByText("15").closest("[data-best]")).not.toBeNull();
     expect(within(ana).queryAllByText("Best in the party")).toHaveLength(1);
+  });
+
+  it("a plain legend says what gold means", () => {
+    render(<PartyTable view={view} locale="en" />);
+    expect(screen.getAllByText("In gold: the highest value in the party")).toHaveLength(
+      1
+    );
+  });
+
+  it("a negative save reads through the shared formatter", () => {
+    const low = {
+      ...partySummary([
+        {
+          uid: "c",
+          name: "Cy",
+          stats: stats({
+            saves: (["STR", "DEX", "CON", "INT", "WIS", "CHA"] as const).map((code) => ({
+              code,
+              bonus: code === "STR" ? -1 : 0,
+              proficient: false,
+            })),
+          }),
+        },
+      ]),
+      loading: 0,
+    };
+    render(<PartyTable view={low} locale="en" />);
+    const cy = screen.getByRole("row", { name: /Cy/ });
+    expect(within(cy).getByText(formatModifier(-1))).toBeInTheDocument();
+  });
+
+  it("on a phone, one card per hero with every number labelled", () => {
+    render(<PartyTable view={view} locale="en" />);
+    const card = screen.getByRole("listitem", { name: /Ana/ });
+    expect(within(card).getByText("AC")).toBeInTheDocument();
+    expect(within(card).getByText("Insight")).toBeInTheDocument();
+    expect(within(card).getByText("18").closest("[data-best]")).not.toBeNull();
+    expect(card).toHaveTextContent("Darkvision");
   });
 
   it("a proficient save says so", () => {
