@@ -8,6 +8,8 @@
  * fails here and names the element and the property. Where the owner has since moved the
  * look on («Lume», 2026-11-03: a hairline and a lit edge instead of the filigree and the
  * 3 px caps; the critique's text scale), the value is the new one and says so.
+ * The design reset «BG3 craft» (2026-11-26) re-pins the type scale and the button family
+ * (one serif, BG3's lit and framed glass); titles, caps and chips move with later slices.
  * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
@@ -32,7 +34,7 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["name", ".f-char-id h1", "font-weight", "700"],
   ["ability modifier", ".f-ability dd b", "font-size", "26px"],
   ["ability modifier", ".f-ability dd b", "font-weight", "700"],
-  ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "font-size", "34px"],
+  ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "font-size", "24px"],
   ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "color", "rgb(255, 255, 255)"],
   [
     "hex value",
@@ -40,7 +42,7 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "font-size",
     "24px",
   ],
-  ["Hit Points", ".f-char-hp-v b", "font-size", "64px"],
+  ["Hit Points", ".f-char-hp-v b", "font-size", "52px"],
   ["Hit Points", ".f-char-hp-v b", "font-weight", "700"],
   // the prototype's 0.533 alpha, written as a token to two places
   ["Hit Points", ".f-char-hp-v b", "text-shadow", "rgba(70, 240, 74, 0.53) 0px 0px 14px"],
@@ -81,10 +83,10 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "row button",
     ".f-act > .f-btn",
     "background-image",
-    "linear-gradient(rgb(37, 30, 23), rgb(33, 27, 21))",
+    "linear-gradient(rgb(45, 35, 24) 0%, rgb(62, 48, 32) 44%, rgb(55, 43, 28) 50%, rgb(55, 43, 28) 70%, rgb(43, 34, 25) 100%)",
   ],
-  ["row button", ".f-act > .f-btn", "border-top-color", "rgb(106, 81, 48)"],
-  ["row button", ".f-act > .f-btn", "font-weight", "700"],
+  ["row button", ".f-act > .f-btn", "border-top-color", "rgb(173, 121, 71)"],
+  ["row button", ".f-act > .f-btn", "font-weight", "400"],
   ["action slot", ".f-act-slot", "width", "46px"],
 ];
 
