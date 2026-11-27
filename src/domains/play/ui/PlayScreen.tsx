@@ -225,45 +225,38 @@ export function PlaySheet({
     );
   }
   const view = playHeaderView(doc, locale);
-  // The rest row, in the header on a laptop and on a phone (D&D Beyond's phone header
-  // keeps Short / Long Rest one tap away). A table that
-  // levels by milestone gets «Sali di livello» first, always at hand (D&D Beyond's
-  // milestone header); an XP table gets the note under the header instead.
-  const milestoneLevelUp = !!levelUp && view.levelUpCue === "milestone";
-  // a fight with no milestone level-up leaves the row empty: it is not drawn at all
-  const rests = (milestoneLevelUp || !inFight) && (
+  // The header's between-fights row, on a laptop and on a phone (D&D Beyond's phone
+  // header keeps Short / Long Rest one tap away). A table that levels by milestone gets
+  // «Sali di livello» first (D&D Beyond's milestone header); an XP table gets the note
+  // under the header instead. In a fight the whole row leaves: no rest, no passing time
+  // (the rounds keep it) and no levelling until it ends, as BG3 closes its camp in combat;
+  // a dead button never holds the header's prime spot. The ⋯ menu keeps «Sali di livello».
+  const rests = !inFight && (
     <>
-      {levelUp && milestoneLevelUp && (
+      {levelUp && view.levelUpCue === "milestone" && (
         <Button icon="g-create" onClick={levelUp}>
           {t("levelUp.screen.levelUp")}
         </Button>
       )}
-      {/* No rest and no passing time in a fight: the rounds keep the time, and the rests
-          come back when it ends (D&D Beyond and Foundry rest out of combat; a dead button
-          never holds the header's prime spot). */}
-      {!inFight && (
-        <>
-          <Button
-            icon="g-rest-short"
-            data-rest=""
-            aria-haspopup="dialog"
-            onClick={() => setResting("short")}
-          >
-            {t("play.rest.short")}
-          </Button>
-          <Button
-            icon="g-rest-long"
-            data-rest=""
-            aria-haspopup="dialog"
-            onClick={() => setResting("long")}
-          >
-            {t("play.rest.long")}
-          </Button>
-          <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
-            {t("play.time.title")}
-          </Button>
-        </>
-      )}
+      <Button
+        icon="g-rest-short"
+        data-rest=""
+        aria-haspopup="dialog"
+        onClick={() => setResting("short")}
+      >
+        {t("play.rest.short")}
+      </Button>
+      <Button
+        icon="g-rest-long"
+        data-rest=""
+        aria-haspopup="dialog"
+        onClick={() => setResting("long")}
+      >
+        {t("play.rest.long")}
+      </Button>
+      <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
+        {t("play.time.title")}
+      </Button>
     </>
   );
   // D&D Beyond's phone sections, in its order: actions, resources and skills, features

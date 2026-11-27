@@ -3831,12 +3831,12 @@
     display: none;
   }
 }
-/* Danni and Cura carry their colour in the icon */
+/* Danni and Cura carry their colour in the icon, the same strength on both (every screen) */
 .fui .f-btn[data-kind="danger"] > .f-ic {
-  color: var(--danger);
+  color: var(--hp-hi);
 }
 .fui .f-btn[data-kind="heal"] > .f-ic {
-  color: var(--heal-icon);
+  color: var(--heal);
 }
 .fui .f-secbar > button > .f-ic {
   width: 24px;
@@ -7057,12 +7057,6 @@
   .fui .f-sheet .f-char {
     position: relative;
   }
-}
-.fui .f-sheet .f-btn[data-kind="danger"] > .f-ic {
-  color: var(--hp-hi);
-}
-.fui .f-sheet .f-btn[data-kind="heal"] > .f-ic {
-  color: var(--heal);
 }
 .fui .f-sheet .f-char-hp-acts .f-ic {
   width: 18px;

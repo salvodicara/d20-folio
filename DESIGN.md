@@ -695,9 +695,9 @@ base.
 Focus on every kind: a light-gold rim and a 2 px outline. «Danni» and «Cura» are one pair of equal
 verbs, `danger` and `heal` in the markup, each with its heart icon, neither lit: on the sheet's
 header, the phone strip and both «Danni e cure» dialogs. A callout's own button is secondary: a
-screen keeps one lit action. During a fight the sheet's header drops «Riposo breve», «Riposo lungo»
-and «Passa il tempo»; they come back when the fight ends (D&D Beyond and Foundry rest out of
-combat). Interface strings write the ellipsis as «…», never «...». The classic UI's buttons below stay until each screen is rebuilt.
+screen keeps one lit action. During a fight the sheet's header drops its between-fights row («Sali di
+livello», «Riposo breve», «Riposo lungo», «Passa il tempo»), as BG3 closes its camp in combat; the
+row comes back when the fight ends, and the ⋯ menu keeps «Sali di livello». Interface strings write the ellipsis as «…», never «...». The classic UI's buttons below stay until each screen is rebuilt.
 
 **Classic UI:**
 
