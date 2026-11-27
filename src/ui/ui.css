@@ -1792,6 +1792,31 @@
 .fui .f-tl > span:first-of-type {
   flex: 1;
 }
+/* a feed line the reader may act on: its «⋯» (the Play screen's menu), a touch size */
+.fui .f-tl-more {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -8px 0;
+  padding-inline: 8px;
+  color: var(--muted);
+}
+/* «Chi ha colpito?» on an open hit, under its line */
+.fui .f-tl-ask {
+  display: block;
+  margin-top: 4px;
+}
+/* the feed's note: the field and «Aggiungi» side by side */
+.fui .f-feed-note {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+.fui .f-feed-note > :first-child {
+  flex: 1;
+  min-width: 0;
+}
 .fui .f-tl-amt {
   flex: none;
   margin-left: auto;
