@@ -166,6 +166,22 @@ describe("the comparison", () => {
     expect(survey.byFix).toEqual({ "#1097": 1 });
   });
 
+  it("a moved max HP is named by the max-HP fixes (#1314, #1329, #1331, #1351); a moved AC stays unexpected", () => {
+    const survey = surveyDerivedDiff(
+      [
+        { ok: true, stats: { ac: 14, hpMax: 30 } },
+        { ok: true, stats: { ac: 14, hpMax: 30 } },
+      ],
+      [
+        { ok: true, stats: { ac: 14, hpMax: 33 } },
+        { ok: true, stats: { ac: 15, hpMax: 30 } },
+      ]
+    );
+    expect(survey.byFix).toEqual({ "#1314 #1329 #1331 #1351": 1 });
+    expect(survey.byField.hpMax).toEqual({ changed: { expected: 1, unexpected: 0 } });
+    expect(survey.withUnexpectedChange).toBe(1);
+  });
+
   it("a free row's other new field stays unexpected", () => {
     const survey = surveyDerivedDiff(
       [{ ok: true, stats: { ac: 14 } }],
