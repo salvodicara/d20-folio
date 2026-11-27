@@ -142,6 +142,13 @@ export function ManageCampaignDialog({
               { name: confirm.name }
             )}
           </p>
+          <p className="f-ask f-quiet">
+            {t(
+              confirm.kind === "yield"
+                ? "campaignScreen.yieldNoUndo"
+                : "campaignScreen.removeNoUndo"
+            )}
+          </p>
         </Dialog>
       )}
     </Dialog>

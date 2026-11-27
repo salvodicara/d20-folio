@@ -1345,6 +1345,41 @@ describe("campaign-io — roster management (remove member + lock joins)", () =>
     });
   });
 
+  it("removing a player never deletes or edits their character: only its campaign pointer goes", async () => {
+    // The new screen's «Rimuovi» and the classic remove share this one write. The
+    // character stays under its owner (users/<uid>/characters/<id>), is never set,
+    // replaced or deleted, and loses exactly one field: the pointer to this campaign.
+    const update = vi.fn();
+    const set = vi.fn();
+    const del = vi.fn();
+    runTransactionMock.mockImplementation(async (_db, fn) =>
+      fn({
+        get: () =>
+          Promise.resolve({
+            data: () => ({ memberDetails: { u2: { characterId: "char-2" } } }),
+          }),
+        update,
+        set,
+        delete: del,
+      })
+    );
+
+    await removeMember("c1", "u2");
+
+    expect(set).not.toHaveBeenCalled();
+    expect(del).not.toHaveBeenCalled();
+    const characterWrites = update.mock.calls.filter(([ref]) =>
+      JSON.stringify(ref).includes('"characters"')
+    );
+    expect(characterWrites).toHaveLength(1);
+    expect(characterWrites[0]?.[0]).toEqual({
+      __doc: [{ __db: true }, "users", "u2", "characters", "char-2"],
+    });
+    expect(Object.keys(characterWrites[0]?.[1] as object)).toEqual([
+      "attachedCampaignId",
+    ]);
+  });
+
   it("B03 — removeMember PRUNES the removed member's pc-<uid> combatant from a running encounter", async () => {
     // A gathering encounter seeded with two PCs; the DM removes u2 mid-fight. BEFORE the
     // fix removeMember never touched the encounter, so pc-u2 orphaned in combatants/order

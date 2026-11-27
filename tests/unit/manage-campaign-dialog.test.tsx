@@ -17,6 +17,7 @@ vi.mock("@/features/campaigns/campaign-io", async (importOriginal) => ({
 
 import { ManageCampaignDialog } from "@/domains/campaign/ui/ManageCampaignDialog";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { useToastStore } from "@/stores/toastStore";
 import type { CampaignDoc } from "@/types/campaign";
 
 const campaign = {
@@ -64,10 +65,24 @@ describe("managing the campaign", () => {
     ).toBeInTheDocument();
   });
 
+  it("locking joins can be undone from its toast", () => {
+    open();
+    fireEvent.click(screen.getByRole("button", { name: /Lock new members/ }));
+    const toast = useToastStore.getState().toasts.at(-1);
+    expect(toast?.onUndo).toBeDefined();
+    toast?.onUndo?.();
+    expect(store()?.joinsLocked).toBe(false);
+  });
+
   it("handing the DM role over asks first", async () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: /Hand over the DM role: Ana/ }));
     expect(store()?.dmUid).toBe("dm");
+    expect(
+      screen.getByText(
+        "You can't undo this yourself: only the new DM can hand the role back."
+      )
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Make DM" }));
     await vi.waitFor(() => expect(store()?.dmUid).toBe("ana"));
   });
@@ -76,6 +91,11 @@ describe("managing the campaign", () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: /Remove: Ana/ }));
     expect(store()?.memberDetails.ana).toBeDefined();
+    expect(
+      screen.getByText(
+        "This can't be undone here: to come back, the player joins again with the invite link and attaches their character. Their character is not deleted."
+      )
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Remove member" }));
     await vi.waitFor(() => expect(store()?.memberDetails.ana).toBeUndefined());
   });

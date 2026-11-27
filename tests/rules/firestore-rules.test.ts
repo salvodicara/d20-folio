@@ -1301,6 +1301,49 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
+  // ── handing over the DM role (the new screen's «Rendi DM», the classic yield) ───
+  // The DM's unconstrained update branch allows it; a regular member is held by
+  // `rosterAndOwnerUnchanged()` (dmUid pinned); an outsider or a removed member has no
+  // update branch at all. No rules change: these tests pin the existing behaviour.
+  const handOver = (to: string, from: string) => ({
+    dmUid: to,
+    [`memberDetails.${to}.role`]: "dm",
+    [`memberDetails.${from}.role`]: "player",
+  });
+
+  it("the DM may hand the DM role to a member", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(
+      updateDoc(doc(dm, "campaigns", "camp1"), handOver("member", "dm"))
+    );
+  });
+
+  it("a regular member CANNOT take the DM role", async () => {
+    const db = testEnv.authenticatedContext("member").firestore();
+    await assertFails(updateDoc(doc(db, "campaigns", "camp1"), handOver("member", "dm")));
+  });
+
+  it("a non-member CANNOT take or hand over the DM role", async () => {
+    const db = testEnv.authenticatedContext("outsider").firestore();
+    await assertFails(
+      updateDoc(doc(db, "campaigns", "camp1"), handOver("outsider", "dm"))
+    );
+    await assertFails(updateDoc(doc(db, "campaigns", "camp1"), handOver("member", "dm")));
+  });
+
+  it("a removed member can neither take the DM role nor lock joins", async () => {
+    const dm = testEnv.authenticatedContext("dm").firestore();
+    await assertSucceeds(
+      updateDoc(doc(dm, "campaigns", "camp1"), {
+        members: arrayRemove("member"),
+        "memberDetails.member": deleteField(),
+      })
+    );
+    const gone = testEnv.authenticatedContext("member").firestore();
+    await assertFails(updateDoc(doc(gone, "campaigns", "camp1"), { dmUid: "member" }));
+    await assertFails(updateDoc(doc(gone, "campaigns", "camp1"), { joinsLocked: true }));
+  });
+
   it("a self-join is DENIED when joins are locked (the leaked-link kill switch)", async () => {
     // Lock the campaign out-of-band, then a non-member's controlled self-join — the
     // exact shape that succeeds on an OPEN campaign — must now be denied.
