@@ -9,7 +9,8 @@
  * look on («Lume», 2026-11-03: a hairline and a lit edge instead of the filigree and the
  * 3 px caps; the critique's text scale), the value is the new one and says so.
  * The design reset «BG3 craft» (2026-11-26) re-pins the type scale and the button family
- * (one serif, BG3's lit and framed glass); titles, caps and chips move with later slices.
+ * (one serif, BG3's lit and framed glass) and removes the decorative halos (surfaces);
+ * titles, caps and chips move with later slices.
  * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
@@ -44,8 +45,8 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ],
   ["Hit Points", ".f-char-hp-v b", "font-size", "52px"],
   ["Hit Points", ".f-char-hp-v b", "font-weight", "700"],
-  // the prototype's 0.533 alpha, written as a token to two places
-  ["Hit Points", ".f-char-hp-v b", "text-shadow", "rgba(70, 240, 74, 0.53) 0px 0px 14px"],
+  // the design reset's surfaces (2026-11-27): the figure carries its colour, no halo
+  ["Hit Points", ".f-char-hp-v b", "text-shadow", "none"],
   // panels: opaque with depth, the header band's padding
   ["panel", ".f-play .f-pn", "box-shadow", "rgba(0, 0, 0, 0.45) 0px 8px 20px 0px"],
   // the owner's panel material (2026-11-06): a lit top fading down, in place of the flat fill
