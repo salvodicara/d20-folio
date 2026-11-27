@@ -26,6 +26,11 @@
 import type { AbilityCode } from "@/data/types";
 import type { Grant } from "@/lib/grant-schema";
 import type { DetectionTarget } from "./detection-targets";
+import {
+  compileRollGrant,
+  type IgnoreResistanceTarget,
+  type RollClauseRule,
+} from "./roll-rules";
 
 /** The sense kinds, in display order (the i18n coverage guard reads this list). */
 export const SENSE_KINDS = [
@@ -39,6 +44,7 @@ export const SENSE_KINDS = [
 export type SenseKind = (typeof SENSE_KINDS)[number];
 
 export { DETECTION_TARGETS, type DetectionTarget } from "./detection-targets";
+export * from "./roll-rules";
 
 export type MoveMode = "fly" | "swim" | "climb" | "burrow";
 
@@ -132,7 +138,9 @@ export type RuleTarget =
   | "block:healing"
   | "block:turn-economy"
   | "trait:heroic-inspiration-at-turn-start"
-  | "trait:heroic-inspiration-on-long-rest";
+  | "trait:heroic-inspiration-on-long-rest"
+  /** Damage of a type that ignores Resistance (`./roll-rules`). */
+  | IgnoreResistanceTarget;
 
 /** A fact a conditional rule depends on; the reader decides whether it holds. */
 export type RuleFact = "no-heavy-armor" | "round-1" | AcBonusCondition;
@@ -162,7 +170,9 @@ export type Rule =
       stack?: string;
       when?: RuleFact;
     }
-  | { op: "flag"; target: RuleTarget };
+  | { op: "flag"; target: RuleTarget }
+  /** A roll-time clause, kept per source and never folded (`./roll-rules`). */
+  | RollClauseRule;
 
 /** Folded rule results as plain data (deep-comparable, serializable). Keys are the
  *  target, or `target?fact` for a contribution that holds only when the fact does. */
@@ -460,6 +470,27 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "add", target: `spell:save-dc:${grant.scope}`, value: grant.amount }];
     case "spell-attack-bonus":
       return [{ op: "add", target: `spell:attack:${grant.scope}`, value: grant.amount }];
+    case "advantage-on":
+    case "disadvantage-on":
+    case "incoming-attack-advantage":
+    case "incoming-attack-disadvantage":
+    case "d20-reroll":
+    case "roll-floor":
+    case "roll-die-adjustment":
+    case "concentration-damage-proof":
+    case "damage-die-modifier":
+    case "damage-die-reduction":
+    case "damage-penetration":
+    case "round1-damage-double":
+    case "save-damage-rule":
+    case "spell-damage-bonus":
+    case "spell-damage-type-override":
+    case "spell-die-augment":
+    case "cantrip-damage-bonus":
+    case "cantrip-range-bonus":
+    case "heal-bonus":
+    case "maximize-spell-healing":
+      return compileRollGrant(grant);
     default:
       return null;
   }
@@ -470,6 +501,7 @@ export function foldRules(rules: readonly Rule[]): RuleValues {
   const terms: Record<string, AbilityTerm[]> = {};
   const flags = new Set<RuleTarget>();
   for (const rule of rules) {
+    if (rule.op === "clause") continue;
     if (rule.op === "flag") {
       flags.add(rule.target);
       continue;
@@ -527,7 +559,8 @@ export function ruleParts(
   type Pick = { source?: RuleOrigin["source"]; value: number };
   const buckets = new Map<string, Pick[]>();
   for (const { rule, source } of origins) {
-    if (rule.op === "flag" || typeof rule.value !== "number") continue;
+    if (rule.op === "flag" || rule.op === "clause" || typeof rule.value !== "number")
+      continue;
     const key = keyOf(rule.target, rule.when);
     if (!keys.has(key)) continue;
     const id = `${key}|${rule.stack ?? rule.op}`;
