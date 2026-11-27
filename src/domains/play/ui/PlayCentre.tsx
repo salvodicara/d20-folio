@@ -231,6 +231,8 @@ export function PlayCentre({
   const shown = items.some((i) => i.id === tab) ? tab : "actions";
   return (
     <section className="f-pn f-centre" data-c="act" aria-label={t("combat.actions")}>
+      {/* the tabs title the panel on screen; the outline needs its h2 (the groups are h3) */}
+      <h2 className="f-sr">{items.find((i) => i.id === shown)?.label}</h2>
       <Tabs label={t("combat.actions")} items={items} value={shown} onChange={setTab} />
       <div className="f-pnb f-stack">
         <TurnStrip doc={doc} locale={locale} campaign={campaign} />

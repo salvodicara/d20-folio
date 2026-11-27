@@ -125,7 +125,8 @@ export function PlayHp({
       )}
       <div className="f-hp-acts f-ask">
         <Button
-          kind={healing ? "ghost" : "danger"}
+          kind="danger"
+          icon="g-hp-damage"
           wide
           disabled={!amount || hp.dead}
           onClick={() => {
@@ -139,7 +140,8 @@ export function PlayHp({
           {t("mechanics.cast.optionDamage")}
         </Button>
         <Button
-          kind={healing ? "primary" : "ghost"}
+          kind="heal"
+          icon="g-hp-heal"
           wide
           disabled={!amount || hp.dead}
           onClick={() => {

@@ -1,7 +1,7 @@
 {
   "lore": {
     "backstory": "Storia",
-    "backstoryPlaceholder": "La storia del tuo personaggio...",
+    "backstoryPlaceholder": "La storia del tuo personaggio…",
     "traits": "Tratti della Personalità",
     "ideals": "Ideali",
     "bonds": "Legami",
@@ -34,7 +34,7 @@
       "chaotic-evil": "Caotico Malvagio",
       "unaligned": "Non Allineato"
     },
-    "alignmentPlaceholder": "Seleziona allineamento...",
+    "alignmentPlaceholder": "Seleziona allineamento…",
     "lineageNotChosen": "Nessuna stirpe scelta: passa alla Modifica per sceglierne una"
   }
 }

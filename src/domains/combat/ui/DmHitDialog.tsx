@@ -137,6 +137,7 @@ export function DmHitDialog({
       <div className="f-hp-acts f-ask">
         <Button
           kind="danger"
+          icon="g-hp-damage"
           wide
           disabled={!amount || chosen.length === 0}
           onClick={() =>
@@ -146,7 +147,8 @@ export function DmHitDialog({
           {t("mechanics.cast.optionDamage")}
         </Button>
         <Button
-          kind="primary"
+          kind="heal"
+          icon="g-hp-heal"
           wide
           disabled={!amount || !healable}
           onClick={() => amount && commit({ kind: "heal", amount })}

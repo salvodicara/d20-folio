@@ -152,7 +152,7 @@ export function blockHeading(title: string, span: boolean): RegExp {
 export async function journalBlocks(dm: Page): Promise<ReportSection[]> {
   const raw = await dm.locator("section.f-tl-block").evaluateAll((blocks) =>
     blocks.map((block) => ({
-      heading: block.querySelector("h4")?.textContent ?? "",
+      heading: block.querySelector("h3, h4")?.textContent ?? "",
       lines: [...block.querySelectorAll("p.f-tl")].map((p) => p.textContent),
     }))
   );

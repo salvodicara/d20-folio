@@ -229,38 +229,40 @@ export function PlaySheet({
   // keeps Short / Long Rest one tap away). A table that
   // levels by milestone gets «Sali di livello» first, always at hand (D&D Beyond's
   // milestone header); an XP table gets the note under the header instead.
-  const rests = (
+  const milestoneLevelUp = !!levelUp && view.levelUpCue === "milestone";
+  // a fight with no milestone level-up leaves the row empty: it is not drawn at all
+  const rests = (milestoneLevelUp || !inFight) && (
     <>
-      {levelUp && view.levelUpCue === "milestone" && (
+      {levelUp && milestoneLevelUp && (
         <Button icon="g-create" onClick={levelUp}>
           {t("levelUp.screen.levelUp")}
         </Button>
       )}
-      <Button
-        icon="g-rest-short"
-        data-rest=""
-        aria-haspopup="dialog"
-        disabled={inFight}
-        title={inFight ? t("play.rest.inFight") : undefined}
-        onClick={() => setResting("short")}
-      >
-        {t("play.rest.short")}
-      </Button>
-      <Button
-        icon="g-rest-long"
-        data-rest=""
-        aria-haspopup="dialog"
-        disabled={inFight}
-        title={inFight ? t("play.rest.inFight") : undefined}
-        onClick={() => setResting("long")}
-      >
-        {t("play.rest.long")}
-      </Button>
-      {/* In a fight the rounds keep the time (prototype: exploration only). */}
+      {/* No rest and no passing time in a fight: the rounds keep the time, and the rests
+          come back when it ends (D&D Beyond and Foundry rest out of combat; a dead button
+          never holds the header's prime spot). */}
       {!inFight && (
-        <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
-          {t("play.time.title")}
-        </Button>
+        <>
+          <Button
+            icon="g-rest-short"
+            data-rest=""
+            aria-haspopup="dialog"
+            onClick={() => setResting("short")}
+          >
+            {t("play.rest.short")}
+          </Button>
+          <Button
+            icon="g-rest-long"
+            data-rest=""
+            aria-haspopup="dialog"
+            onClick={() => setResting("long")}
+          >
+            {t("play.rest.long")}
+          </Button>
+          <Button icon="u-time" aria-haspopup="dialog" onClick={() => setPassing(true)}>
+            {t("play.time.title")}
+          </Button>
+        </>
       )}
     </>
   );
@@ -344,7 +346,7 @@ export function PlaySheet({
               doc={doc}
               locale={locale}
               campaign={campaign}
-              onShortRest={readonly ? undefined : () => setResting("short")}
+              onShortRest={readonly || inFight ? undefined : () => setResting("short")}
               tab={centreTab}
               onTab={setCentreTab}
             />
@@ -486,7 +488,7 @@ function PlayHeader({
             {(tiny ? view.identityShort : view.identity).join(" · ")}
           </p>
           {/* D&D Beyond's header buttons: the rests, the campaign. */}
-          {(!readonly || campaign) && (
+          {((!readonly && rests) || campaign) && (
             <div className="f-char-acts">
               {!readonly && rests}
               {campaign && (
@@ -601,6 +603,7 @@ function PlayHeader({
             {/* D&D Beyond's two buttons under the Hit Points; both open «Danni e cure». */}
             <div className="f-char-hp-acts">
               <Button
+                kind="danger"
                 icon="g-hp-damage"
                 aria-haspopup="dialog"
                 onClick={() => setHpOpen("damage")}
@@ -608,6 +611,7 @@ function PlayHeader({
                 {t("mechanics.cast.optionDamage")}
               </Button>
               <Button
+                kind="heal"
                 icon="g-hp-heal"
                 aria-haspopup="dialog"
                 onClick={() => setHpOpen("heal")}
@@ -745,6 +749,7 @@ function PlayHeader({
           {!readonly && (
             <span className="f-strip-acts">
               <Button
+                kind="danger"
                 icon="g-hp-damage"
                 aria-haspopup="dialog"
                 onClick={() => setHpOpen("damage")}
@@ -752,6 +757,7 @@ function PlayHeader({
                 {t("mechanics.cast.optionDamage")}
               </Button>
               <Button
+                kind="heal"
                 icon="g-hp-heal"
                 aria-haspopup="dialog"
                 onClick={() => setHpOpen("heal")}
