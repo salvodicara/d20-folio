@@ -4,7 +4,7 @@
  * The level shows at once and its save lands a moment later. A reload or a closed tab
  * in that moment must not drop it: either Firestore's queue still delivers it, or the
  * next load finds the level-up's trace, sees the stored sheet never reached it, and
- * offers it back («Unsaved changes … were kept on this device — Apply»).
+ * offers it back («Unsaved changes …, kept on this device — Apply»).
  */
 import { expect, test, type Page } from "@playwright/test";
 import { ownerCharacterIds, quickBuild, storedLevel, storedRevision } from "./helpers";

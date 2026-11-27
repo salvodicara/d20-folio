@@ -15,8 +15,8 @@
     },
     "rescue": {
       "label": "Modifiche non salvate",
-      "kept": "Le modifiche non salvate del {{date}} sono conservate su questo dispositivo.",
-      "cannotApply": "Le modifiche non salvate del {{date}} sono conservate su questo dispositivo, ma non si possono applicare a questa versione della scheda.",
+      "kept": "Modifiche non salvate del {{date}}, tenute su questo dispositivo.",
+      "cannotApply": "Modifiche non salvate del {{date}}, tenute su questo dispositivo: questa versione della scheda non può applicarle.",
       "failed": "Non è stato possibile applicare le modifiche conservate. Restano su questo dispositivo.",
       "discard": "Scarta"
     }

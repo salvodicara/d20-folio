@@ -1,5 +1,5 @@
 /**
- * After the reload (#1320): «Unsaved changes from <date> were kept on this device —
+ * After the reload (#1320): «Unsaved changes from <date>, kept on this device —
  * Apply / Discard», on the owner's open sheet. Apply goes through the whole-sheet
  * ceremony with a snapshot first (`rescue-apply`); a copy this version cannot bring
  * forward offers Discard only and says why. Pattern source: Google Docs' «recover
@@ -72,9 +72,13 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
   }, [shown]);
 
   if (!copy) return null;
+  // A copy lives 30 days at most: the day, the month and the time say which one, and
+  // the strip stays short on a phone («26 nov, 18:30»).
   const date = new Intl.DateTimeFormat(language, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(copy.savedAt);
   const applicable = upgradeRescueCopy(copy) !== null;
 

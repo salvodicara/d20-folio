@@ -122,7 +122,7 @@ describe("the rescue banner", () => {
     open();
     render(<RescueBanner />);
     expect(screen.getByRole("region", { name: /unsaved changes/i })).toHaveTextContent(
-      /can.t be applied/i
+      /can.t apply them/i
     );
     expect(screen.queryByRole("button", { name: /^apply$/i })).toBeNull();
     expect(screen.getByRole("button", { name: /^discard$/i })).toBeInTheDocument();

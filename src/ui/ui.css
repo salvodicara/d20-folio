@@ -7733,3 +7733,13 @@
   color: var(--text);
   font: 400 var(--fs-nav) / 1.4 var(--font-text);
 }
+/* on the new sheet's phone the docked strips (the rescue strip, the new-version bar)
+   sit above «Sezioni», and the page keeps room for them under its last line */
+@media (max-width: 960px) {
+  body:has(.fui .f-sheet .f-secbar) .pwa-dock {
+    bottom: 56px;
+  }
+  .fui .f-sheet {
+    padding-bottom: calc(72px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
+  }
+}
