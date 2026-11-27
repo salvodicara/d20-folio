@@ -3058,6 +3058,52 @@
   /* the prototype's hero is 34 px 56 px; 32 keeps the 8 px grid */
   padding: 32px 56px;
 }
+/* laptop and tablet: the header's actions (the rests, «Fai passare il tempo», the campaign)
+   are their own row under the identity, the abilities and the numbers, on one line from the
+   name's edge (D&D Beyond's sheet header keeps its actions in one row, apart from the
+   stats). Squeezed into the name's column they stacked in two or three rows beside the AC
+   shield. */
+@media (min-width: 801px) {
+  .fui .f-sheet .f-char {
+    grid-template-areas:
+      "medal name stats hp"
+      "medal sub stats hp"
+      "medal chips stats hp"
+      "medal abil stats hp"
+      "medal acts acts acts";
+    row-gap: 12px;
+  }
+  .fui .f-sheet .f-char-id {
+    display: contents;
+  }
+  .fui .f-sheet .f-char-id h1 {
+    grid-area: name;
+  }
+  .fui .f-sheet .f-char-id .f-hero-sub {
+    grid-area: sub;
+  }
+  .fui .f-sheet .f-char-id > .f-char-chips {
+    grid-area: chips;
+  }
+  .fui .f-sheet .f-char-acts {
+    grid-area: acts;
+    margin-top: 4px;
+  }
+}
+/* tablet: the numbers and Hit Points share a row under the identity; the portrait keeps
+   its own narrow column */
+@media (min-width: 801px) and (max-width: 1100px) {
+  .fui .f-sheet .f-char {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "medal name name"
+      "medal sub sub"
+      "medal chips chips"
+      "medal abil abil"
+      "stats stats hp"
+      "acts acts acts";
+  }
+}
 .fui .f-sheet .f-char-id h1 {
   font: 600 var(--fs-name)/1 var(--font-title);
   color: var(--text);
