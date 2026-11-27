@@ -12,8 +12,7 @@ export type SheetNumberTarget =
   /** An Unarmed Strike may deal this damage type instead of its normal one. */
   `unarmed:damage-type:${DamageType}`;
 
-export const SHEET_NUMBER_KINDS = ["unarmed-strike-damage-type-option"] as const;
-type SheetNumberGrant = Extract<Grant, { type: (typeof SHEET_NUMBER_KINDS)[number] }>;
+type SheetNumberGrant = Extract<Grant, { type: "unarmed-strike-damage-type-option" }>;
 
 export function compileSheetNumberGrant(grant: SheetNumberGrant): Rule[] {
   // One kind today; the family grows into a switch on `grant.type`.
