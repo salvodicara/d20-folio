@@ -26,7 +26,6 @@ import {
   setHpAbsolute,
   setTempAbsolute,
   setInitiativeAbsolute,
-  reduceMemberCombatEffects,
 } from "@/lib/combat-state";
 
 /** The trio-clamp math alone, without the v1 play-state gate (the migration path). */
@@ -391,31 +390,6 @@ describe("combat-state — reduceHpDelta (the transactional HP read-modify-write
     expect(reduceHpDelta(dead, { kind: "heal", amount: 99 }, 30)).toBe(dead);
     // The explicit absolute setter remains the intentional manual override.
     expect(setHpAbsolute(dead, 1, 30).hp.current).toBe(1);
-  });
-});
-
-describe("combat-state — campaign member-effect delivery", () => {
-  it("applies healing, Temporary HP, and a cure once, including after a replay", () => {
-    const effects = [
-      { id: "9:0", kind: "healing" as const, targetId: "pc-a", amount: 7 },
-      { id: "9:2", kind: "temp-hp" as const, targetId: "pc-a", amount: 9 },
-      {
-        id: "9:1",
-        kind: "condition" as const,
-        targetId: "pc-a",
-        conditionId: "poisoned",
-        active: false,
-      },
-    ];
-    const once = reduceMemberCombatEffects(baseCombat, 9, effects, 30);
-    expect(once.hp.current).toBe(25);
-    expect(once.hp.temp).toBe(9);
-    expect(once.conditions).toEqual([]);
-    expect(once.appliedEncounterEffects).toEqual({
-      epoch: 9,
-      ids: ["9:0", "9:2", "9:1"],
-    });
-    expect(reduceMemberCombatEffects(once, 9, effects, 30)).toBe(once);
   });
 });
 

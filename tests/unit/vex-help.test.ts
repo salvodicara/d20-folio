@@ -2,7 +2,7 @@
  * Vex and Help (edge-case M17): a state on the enemy that one creature's next attack
  * spends. Vex: the attacker that hit. Help: the ally the helper named.
  */
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { loadCampaignIo, writesSettled } from "./__helpers__/campaign-io-writes";
 
 const io = vi.hoisted(() => ({
@@ -39,11 +39,9 @@ beforeEach(() => {
     } as never,
   });
 });
-afterEach(() => vi.unstubAllEnvs());
 
 describe("Vex", () => {
   it("a hit leaves Advantage for the attacker's next attack against that creature only", () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const write = vexWriter(
       { id: "weapon-rapier", masteryRiders: [{ id: "vex" }] },
       "c1"
@@ -67,23 +65,16 @@ describe("Vex", () => {
     });
   });
 
-  it("no Vex state from a weapon without it, or before the v0.26.0 rules", () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+  it("no Vex state from a weapon without it", () => {
     expect(
       vexWriter({ id: "w", masteryRiders: [{ id: "topple" }] }, "c1")
     ).toBeUndefined();
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
-    expect(vexWriter({ id: "w", masteryRiders: [{ id: "vex" }] }, "c1")).toBeUndefined();
   });
 });
 
 describe("Vex on the sheet or on the creature", () => {
-  it("in a fight on the v0.26.0 rules Vex is the creature's state; elsewhere the sheet's next attack", () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+  it("in a fight Vex is the creature's state; elsewhere the sheet's next attack", () => {
     expect(vexIsTargeted()).toBe(true);
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
-    expect(vexIsTargeted()).toBe(false);
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     useCombatStatusStore.setState({ status: null });
     expect(vexIsTargeted()).toBe(false);
   });
@@ -120,8 +111,7 @@ describe("Help", () => {
     expect(effectIdsConsumedByAttack(ops, "goblin", "wolf", sideOf)).toEqual(["help-1"]);
   });
 
-  it("giveHelp writes it in a fight on the v0.26.0 rules, and its undo takes it back", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
+  it("giveHelp writes it in a fight, and its undo takes it back", async () => {
     const undo = giveHelp("goblin", "c1");
     expect(undo).not.toBeNull();
     await writesSettled();
@@ -135,7 +125,5 @@ describe("Help", () => {
     undo?.();
     await writesSettled();
     expect(io.revokePersistentCombatEffect).toHaveBeenCalled();
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "");
-    expect(giveHelp("goblin", "c1")).toBeNull();
   });
 });

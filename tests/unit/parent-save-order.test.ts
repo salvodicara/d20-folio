@@ -6,7 +6,7 @@
  */
 import { describe, expect, it, vi } from "vitest";
 import type { CharacterDoc } from "@/types/character";
-import { makeCharacterDoc } from "@tests/unit/_helpers";
+import { makeCharacterDoc, stampAt } from "@tests/unit/_helpers";
 
 const h = vi.hoisted(() => ({
   commits: [] as Array<{ revision: unknown; content: string }>,
@@ -64,7 +64,7 @@ import { createDebouncedSave } from "@/lib/firestore";
 describe("a cold build write is never overtaken (#1275)", () => {
   it("a newer write made while the older one waits for the modules leaves after it", async () => {
     let cursor = 4;
-    const pending = createDebouncedSave("u1", "c1", 500, () => ++cursor);
+    const pending = createDebouncedSave("u1", "c1", 500, () => stampAt(++cursor));
     const base: CharacterDoc = { ...makeCharacterDoc(), id: "c1" };
     const edit = (quote: string): CharacterDoc => ({
       ...base,

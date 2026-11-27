@@ -813,7 +813,8 @@
   position: fixed;
   z-index: 60;
   left: 50%;
-  bottom: 32px;
+  /* above a bottom dock (the PWA bar, the rescue strip), which publishes its height */
+  bottom: calc(32px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
   transform: translateX(-50%);
   display: flex;
   align-items: center;
@@ -835,7 +836,7 @@
   .fui .f-toast {
     left: 16px;
     right: 16px;
-    bottom: 16px;
+    bottom: calc(16px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
     width: auto;
     transform: none;
   }
@@ -1790,6 +1791,31 @@
 }
 .fui .f-tl > span:first-of-type {
   flex: 1;
+}
+/* a feed line the reader may act on: its «⋯» (the Play screen's menu), a touch size */
+.fui .f-tl-more {
+  flex: none;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -8px 0;
+  padding-inline: 8px;
+  color: var(--muted);
+}
+/* «Chi ha colpito?» on an open hit, under its line */
+.fui .f-tl-ask {
+  display: block;
+  margin-top: 4px;
+}
+/* the feed's note: the field and «Aggiungi» side by side */
+.fui .f-feed-note {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  width: 100%;
+}
+.fui .f-feed-note > :first-child {
+  flex: 1;
+  min-width: 0;
 }
 .fui .f-tl-amt {
   flex: none;
@@ -6563,8 +6589,8 @@
 .fui .f-dm-step {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   background: none;
@@ -7089,12 +7115,12 @@
 /* the toast sits above a bottom bar, never over it («Sezioni», the level-up bar) */
 @media (max-width: 960px) {
   .fui.f-app:has(.f-secbar) .f-toast {
-    bottom: 72px;
+    bottom: calc(72px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
   }
 }
 @media (max-width: 760px) {
   .fui.f-app:has(.f-lvl-bar) .f-toast {
-    bottom: 88px;
+    bottom: calc(88px + var(--pwa-banner-h, 0px) + var(--rescue-dock-h, 0px));
   }
 }
 
@@ -7331,5 +7357,57 @@
 .fui .f-card-fields {
   display: grid;
   grid-template-columns: 1fr 5.5rem;
+  gap: 12px;
+}
+
+/* the DM's limited uses under a monster line (Scontro): a row of chips, set in from the
+   line's art column */
+.fui .f-uses {
+  margin: 0;
+}
+.fui .f-uses > .f-chips {
+  display: contents;
+}
+
+/* the DM's monster actions and traits under its line (Scontro) */
+.fui .f-monster-acts {
+  display: grid;
+  gap: 6px;
+}
+/* the Multiattack note stays one line on the row; the card has it whole */
+.fui .f-monster-multi {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.fui .f-target-groups {
+  display: grid;
+  gap: 8px;
+}
+.fui .f-target-group {
+  display: grid;
+  gap: 4px;
+}
+
+/* a line's action and use chips stay inside the name column: a long label wraps */
+.fui .f-monster-acts .f-chip,
+.fui .f-uses .f-chip {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* the DM's own monster rows in «Aggiungi mostri»: edit and delete beside the count */
+.fui .f-dm-own {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+/* two short numbers side by side (the DM's own monster: AC and max HP) */
+.fui .f-two-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }

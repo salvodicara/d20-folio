@@ -1,0 +1,82 @@
+[
+  {
+    "path": "users/fixtures/characters/fighter-5-armoured",
+    "data": {
+      "schema": 3,
+      "build": {
+        "name": "Fixture Fighter",
+        "race": "human",
+        "classes": [
+          {
+            "classId": "fighter",
+            "level": 5
+          }
+        ],
+        "background": "soldier",
+        "alignment": "neutral-good",
+        "abilities": {
+          "STR": 16,
+          "DEX": 14,
+          "CON": 14,
+          "INT": 10,
+          "WIS": 12,
+          "CHA": 8
+        },
+        "speed": "30 ft",
+        "skills": {
+          "athletics": "proficient",
+          "perception": "proficient"
+        },
+        "weapons": [
+          {
+            "srdId": "longsword",
+            "quantity": 1
+          },
+          {
+            "srdId": "light-crossbow",
+            "quantity": 1
+          }
+        ],
+        "equipment": [
+          {
+            "srdId": "chain-mail",
+            "quantity": 1,
+            "equipped": true
+          },
+          {
+            "srdId": "shield",
+            "quantity": 1,
+            "equipped": true
+          }
+        ]
+      },
+      "state": {},
+      "revision": 0,
+      "playStateVersion": 1
+    }
+  },
+  {
+    "path": "users/fixtures/characters/fighter-5-armoured/combat/state",
+    "data": {
+      "hp": {
+        "current": 30,
+        "temp": 5
+      },
+      "conditions": ["poisoned"],
+      "initiativeRoll": null,
+      "deathSaves": {
+        "successes": 0,
+        "failures": 0
+      },
+      "bardicInspirationDie": "",
+      "heroicInspiration": false,
+      "round": 1,
+      "playState": {
+        "version": 1,
+        "state": {
+          "exhaustion": 1
+        }
+      }
+    }
+  }
+]

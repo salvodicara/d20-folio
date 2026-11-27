@@ -53,7 +53,6 @@ import { selfMoveFeet } from "@/lib/play/self-move";
 import { localeDistance } from "@/lib/utils";
 import { sheetNumbers } from "@/lib/views/sheet-numbers";
 import { RAW_TABLE_RULES } from "@/lib/table-rules";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import {
   combineWriters,
   hitStateWriter,
@@ -1752,8 +1751,7 @@ export function TurnEconomyProvider({
     const uid = useAuthStore.getState().user?.uid;
     const doc = useCharacterStore.getState().character;
     if (!status) return leaveStandingsOnClock(action, castLevel, targets);
-    if (!uid || !doc || status.characterId !== doc.id || !combatEffectsV26On())
-      return null;
+    if (!uid || !doc || status.characterId !== doc.id) return null;
     const spec = standingAtCommit(action, castLevel);
     if (!spec) return null;
     const others = targets.filter((id) => id !== status.myId);
@@ -1816,8 +1814,7 @@ export function TurnEconomyProvider({
     const party = usePartyRosterStore.getState().party;
     const uid = useAuthStore.getState().user?.uid;
     const doc = useCharacterStore.getState().character;
-    if (!party || !uid || !doc || party.characterId !== doc.id || !combatEffectsV26On())
-      return null;
+    if (!party || !uid || !doc || party.characterId !== doc.id) return null;
     const spec = standingAtCommit(action, castLevel);
     if (!spec) return null;
     const named = party.members.filter(({ ref }) => targets.includes(ref.combatantId));
@@ -1880,15 +1877,7 @@ export function TurnEconomyProvider({
     const spell = action.spellId ? getSpellById(action.spellId) : undefined;
     const status = useCombatStatusStore.getState().status;
     const uid = useAuthStore.getState().user?.uid;
-    // A player's zone needs the v0.26.0 rules (deployed-rules); before them the
-    // write would be refused.
-    if (
-      !spell?.zone ||
-      !status ||
-      !uid ||
-      status.characterId !== character?.id ||
-      !combatEffectsV26On()
-    ) {
+    if (!spell?.zone || !status || !uid || status.characterId !== character?.id) {
       return null;
     }
     const effect = zoneEffectForCast({
@@ -3506,7 +3495,7 @@ export function TurnEconomyProvider({
     };
     // Out of a fight in a campaign: the party, for a state left on its recipient.
     const party = !status ? usePartyRosterStore.getState().party : null;
-    if (party && doc && party.characterId === doc.id && combatEffectsV26On()) {
+    if (party && doc && party.characterId === doc.id) {
       return {
         selfId: party.selfId,
         selfName,

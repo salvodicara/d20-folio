@@ -49,7 +49,6 @@ import { offerAmmunitionRecovery } from "@/features/character/ammo-recovery-offe
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import {
-  deliverQueuedMemberEffects,
   revokePersistentCombatEffect,
   revokePersistentCombatEffectsBySource,
   subscribeToSharedCampaigns,
@@ -114,7 +113,6 @@ import {
   type CampaignEffectDoc,
   type ConcentrationMemo,
 } from "@/lib/play/campaign-effects";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { concentrationTimerKey } from "@/lib/spell-duration";
 import type { CombatEffectOp, EncounterPosition } from "@/types/combat-effect";
 import { diagnosticsLog } from "@/lib/diagnostics";
@@ -153,7 +151,6 @@ export function GlobalCombatMount(): null {
   const [campaignsSettled, setCampaignsSettled] = useState(false);
   // This player's fight markers in the session log, with the DM's page closed too.
   useFightMarkers(campaigns, uid);
-  const deliveringEffects = useRef<string | null>(null);
   const observedConcentration = useRef<{
     scope: string;
     sourceId: string;
@@ -400,7 +397,7 @@ export function GlobalCombatMount(): null {
   }, [campaigns, openCharacterId, uid, setTableRules]);
 
   // The campaign clock (`lib/play/clock.ts`): the open character reads its time of
-  // day and countdowns from its campaign's clock, with this release's rules deployed.
+  // day and countdowns from its campaign's clock.
   // Re-projected when a reload drops it; the owner's sheet then catches up to it.
   const clockCampaign =
     openCharacterId && uid
@@ -418,8 +415,7 @@ export function GlobalCombatMount(): null {
   // The campaign's effects out of a fight (lib/play/campaign-effects.ts): what others
   // left on my character that lasts on the game clock, read at the campaign minute.
   // One identity with the fight: the fight's effects are joined, never copied.
-  const effectsCampaignId =
-    clockCampaign && combatEffectsV26On() ? clockCampaign.id : null;
+  const effectsCampaignId = clockCampaign ? clockCampaign.id : null;
   const clockMinute = clockCampaign?.gameClock?.minute ?? 0;
   const [storeRead, setStoreRead] = useState<{
     campaignId: string;
@@ -905,30 +901,6 @@ export function GlobalCombatMount(): null {
       showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
     });
   }, [status, live, openCharacterId, concentration, showToast, t, locale]);
-
-  // Transitional drain for effects queued by the previous deployed owner-client model.
-  // New actions write the target's narrow combat subdoc directly and never depend on
-  // this client being online; this only preserves already-running encounter data.
-  useEffect(() => {
-    if (!uid || !status || !live || live.myMaxHp <= 0) return;
-    const pending = (live.encounter.memberEffects ?? []).filter(
-      (effect) => effect.targetId === status.myId
-    );
-    if (pending.length === 0) return;
-    const key = `${live.encounter.epoch}:${pending.map((effect) => effect.id).join(",")}`;
-    if (deliveringEffects.current === key) return;
-    deliveringEffects.current = key;
-    void deliverQueuedMemberEffects({
-      campaignId: status.campaignId,
-      uid,
-      characterId: status.characterId,
-      targetId: status.myId,
-      maxHp: live.myMaxHp,
-    }).catch(() => {
-      deliveringEffects.current = null;
-      showToast({ message: t("combat.declareApplyFailed"), duration: 6000 });
-    });
-  }, [uid, status, live, showToast, t]);
 
   // The pip model — the dev seed wins; otherwise every active encounter reduced to a
   // PipState, each row carrying ITS OWN doc-derived roll-state.

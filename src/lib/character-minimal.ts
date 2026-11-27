@@ -187,6 +187,8 @@ const OPTIONAL_EMPTY_KEYS: ReadonlyArray<keyof CharacterData> = [
   "customLanguages",
   "toolProficiencyIds",
   "customToolProficiencies",
+  // The Druid's known Wild Shape forms: `[]` is none chosen, left absent.
+  "wildShapeForms",
 ];
 
 /** The srdIds the engine DERIVES into `features[]` (class + subclass, every entry)

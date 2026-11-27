@@ -161,3 +161,12 @@ export function makeCharacterDoc(
     },
   };
 }
+
+/** A write-chain stamp at `revision` (#1413), for tests that drive the saver allocator. */
+export function stampAt(revision: number): {
+  revision: number;
+  writeId: string;
+  baseWriteId: string | null;
+} {
+  return { revision, writeId: `w${String(revision)}`, baseWriteId: null };
+}

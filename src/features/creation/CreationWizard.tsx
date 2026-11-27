@@ -15,6 +15,11 @@
  *   from the class's ready-made build (`data/quickbuild.ts`) with a Randomize
  *   reroll; the live preview card closes the single centred column.
  * - Guided Wizard: step-by-step for new players (Class → Race → Background → … → Review).
+ *
+ * Neither path asks the class's own picks (Weapon Mastery, a Fighting Style,
+ * invocations, Expertise), and «Create» never chooses them for the player: the new
+ * sheet owes them and «Scelte da completare» asks them (D&D Beyond's pattern). Only
+ * a ready-made request (the new screen's, «Creazione rapida») fills them.
  */
 
 import { useState, useMemo, useCallback, useEffect, type ReactNode } from "react";

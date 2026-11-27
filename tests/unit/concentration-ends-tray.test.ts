@@ -102,7 +102,6 @@ const ogreHolds: CombatEffectOp = {
 
 describe("a state that ends Concentration, through the tray", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     vi.clearAllMocks();
     useUndoStore.setState({ characterId: null, past: [], future: [] });
     useCharacterStore.setState({ character: bard, readonly: false });

@@ -47,11 +47,17 @@ export function conditionEndsOf(
 }
 
 /** How a spell's own effect on a target ends early when it imposes no condition
- *  (Slow's WIS repeat save): the spell's `effectEnds`. */
+ *  (Slow's WIS repeat save): the spell's `effectEnds`. A state the spell puts on a
+ *  target that saved (`targetStates`: Ray of Enfeeblement's next-attack Disadvantage)
+ *  is not that effect, and asks no repeat save. */
 export function effectEndsOf(
-  source: Pick<ActiveCombatEffect["source"], "kind" | "id">
+  source: Pick<ActiveCombatEffect["source"], "kind" | "id">,
+  activeKey?: string
 ): ReadonlyArray<ConditionEnd> {
-  return source.kind === "spell" ? (getSpellById(source.id)?.effectEnds ?? []) : [];
+  if (source.kind !== "spell") return [];
+  const spell = getSpellById(source.id);
+  if (activeKey && spell?.targetStates?.some((s) => s.activeKey === activeKey)) return [];
+  return spell?.effectEnds ?? [];
 }
 
 /** The fight's condition effects that can end early or ask for a repeat save, and
@@ -66,7 +72,7 @@ export function sourcedFightConditions(
       conditionId !== undefined
         ? conditionEndsOf(effect.source, conditionId)
         : effect.payload.kind === "grant-group"
-          ? effectEndsOf(effect.source)
+          ? effectEndsOf(effect.source, effect.payload.activeKey)
           : [];
     if (ends.length === 0) return [];
     return [

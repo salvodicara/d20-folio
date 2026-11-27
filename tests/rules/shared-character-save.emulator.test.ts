@@ -138,14 +138,30 @@ describe("a shared character saves through the app's own writes", () => {
       name: assertNonEmptyString("Bren the Levelled"),
     };
 
+    // The sheet on screen re-reads the shared parent, write chain included (#1413): the
+    // level-up builds on the sharing publish's write, not on the stale pre-share sheet.
+    const writeId = (await stored(parentPath()))?.writeId as string;
     await expect(
       replaceCharacterState(OWNER, hero.id, levelled, hero.session, 1, {
         ...hero,
         shared: true,
+        writeId,
       })
     ).resolves.toBeUndefined();
 
     expect((await stored(parentPath()))?.revision).toBe(2);
     expect(JSON.stringify(await stored(sheetPath()))).toContain("Bren the Levelled");
+  });
+
+  it("a whole-sheet write built on a stale sheet's write is refused (#1413)", async () => {
+    await setCharacterSharing(OWNER, hero, true);
+    // The pre-share sheet names no write; the stored sheet now names the publish's.
+    await expect(
+      replaceCharacterState(OWNER, hero.id, hero.character, hero.session, 1, {
+        ...hero,
+        shared: true,
+      })
+    ).rejects.toThrow();
+    expect((await stored(parentPath()))?.revision).toBe(1);
   });
 });

@@ -22,13 +22,11 @@ import type { User } from "firebase/auth";
 import { makeCharacterDoc } from "./_helpers";
 
 afterEach(() => {
-  vi.unstubAllEnvs();
   useCombatStatusStore.setState({ status: null });
 });
 
 describe("standingOutcomeWriter", () => {
   it("puts Bane's state on a target that failed its save", () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const doc = makeCharacterDoc({
       classId: "cleric",
       level: 5,

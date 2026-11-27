@@ -640,6 +640,16 @@ export interface CharacterDoc {
    * leave it untouched. Firestore metadata, never part of the portable v3 codec.
    */
   revision: number;
+  /**
+   * The write chain (#1413): the id of the build write that stored this generation
+   * (null on a sheet never chained). A revision number alone cannot tell whose
+   * generation a queued offline write builds on, so each build write names the stored
+   * `writeId` it builds on (`baseWriteId`) and the rules refuse a wrong base. Firestore
+   * metadata, never part of the portable codec; `baseWriteId` exists only on a write
+   * being sent (set by the allocator), never on a stored sheet.
+   */
+  writeId?: string | null;
+  baseWriteId?: string | null;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 
@@ -839,6 +849,15 @@ export interface CharacterData {
    * Optional + empty-default: absent / `{}` means "no tool choice" (existing docs).
    */
   toolChoices?: Record<string, string[]>;
+  /**
+   * The Druid's known Wild Shape forms (SRD 5.2.1 Beast Shapes «Known Forms»: 4 at
+   * Druid 2, 6 at 4, 8 at 8), as beast ids. Optional: absent or `[]` means none
+   * chosen, and the form picker then offers every eligible beast. Stored at the build
+   * root (`build.wildShapeForms`), not on the class entry: an older app keeps an
+   * unknown root key verbatim, while an unknown class-entry key would reach the
+   * roster cache and break the shared sheet's equality check.
+   */
+  wildShapeForms?: string[];
   abilityBudget: number;
   proficiencyBonusOverride: number | null;
   levelUpChecklist: LevelUpChecklistItem[] | null;

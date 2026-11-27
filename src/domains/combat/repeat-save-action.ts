@@ -8,7 +8,6 @@ import {
   reinstatePersistentCombatEffect,
   revokePersistentCombatEffect,
 } from "@/features/campaigns/campaign-io";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { useCharacterStore } from "@/stores/characterStore";
 import { useCombatStore } from "@/stores/combatStore";
 import { registerUndoableToast } from "@/stores/undoStore";
@@ -29,8 +28,7 @@ export function repeatSaveActionId(saveId: string): string {
 /**
  * Take the Action and record the attempt; a success ends the condition on the
  * encounter. `label` is the toast. Nothing happens when the Action is already spent.
- * A success before the v0.26 rules deploy is restored on undo by the caller's path
- * of old (re-appending a copy); this act only reinstates on v0.26.
+ * Undo reinstates a success's ended condition.
  */
 export function takeRepeatSaveAction(input: {
   campaignId: string;
@@ -39,8 +37,6 @@ export function takeRepeatSaveAction(input: {
   label: string;
   /** The action's name in the turn tracker. */
   name?: string;
-  /** Before v0.26: put the ended condition back another way. */
-  restoreLegacy?: () => void;
 }): void {
   const { campaignId, save, passed } = input;
   const actionId = repeatSaveActionId(save.id);
@@ -68,13 +64,9 @@ export function takeRepeatSaveAction(input: {
       }
       return () => {
         if (passed) {
-          if (combatEffectsV26On()) {
-            void reinstatePersistentCombatEffect(campaignId, save.id).catch(
-              () => undefined
-            );
-          } else {
-            input.restoreLegacy?.();
-          }
+          void reinstatePersistentCombatEffect(campaignId, save.id).catch(
+            () => undefined
+          );
         }
         if (logId) useCharacterStore.getState().removeLogEntry(logId);
         useCombatStore.getState().deselectAction(actionId);

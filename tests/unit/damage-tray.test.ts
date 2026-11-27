@@ -436,11 +436,26 @@ describe("Hit · Miss · Critical on attacks", () => {
     expect(rowConditions(setAttackOutcome(row, "miss", p))).toEqual([]);
   });
 
-  it("an attack with nothing else to apply still asks its result (Ray of Enfeeblement)", () => {
-    const p = plan(action("spell-ray-of-enfeeblement"));
+  it("an attack with nothing else to apply still asks its result", () => {
+    // No SRD attack is left without damage or a rider: Fire Bolt with its damage
+    // taken away stands in for one.
+    const bolt = action("spell-fire-bolt");
+    const bare: ResolvedAction = {
+      ...bolt,
+      summary: { ...bolt.summary, damage: undefined },
+    };
+    const p = plan(bare);
     expect(p).toMatchObject({ effect: null, targets: [FOE] });
     expect(p.attack).toBeDefined();
-    expect(damageTrayPlan(action("spell-ray-of-enfeeblement"), [], ME)).toBeNull();
+    expect(damageTrayPlan(bare, [], ME)).toBeNull();
+  });
+
+  it("Ray of Enfeeblement asks the target's Constitution save, never a hit", () => {
+    // SRD 5.2.1: "The target must make a Constitution saving throw."
+    const p = plan(action("spell-ray-of-enfeeblement"));
+    expect(p).toMatchObject({ effect: null, targets: [FOE] });
+    expect(p.attack).toBeUndefined();
+    expect(p.save).toBeDefined();
   });
 
   it("the rows become per-target outcome receipts and one shared result", () => {

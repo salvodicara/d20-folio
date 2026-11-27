@@ -105,6 +105,7 @@
     "dealt": "{{amount}} danni",
     "upcast": "(slot di {{level}}° livello)",
     "upcastPact": "(slot di Magia del Patto, {{level}}° livello)",
-    "levelUp": "{{actor}} sale al livello {{level}} ({{class}})"
+    "levelUp": "{{actor}} sale al livello {{level}} ({{class}})",
+    "byDm": "{{line}} (segnato dal master)"
   }
 }

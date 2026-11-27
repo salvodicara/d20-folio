@@ -39,6 +39,7 @@ export function DmHitDialog({
   onTempHp,
   onRemove,
   onCard,
+  onDeathSave,
   onClose,
 }: {
   targets: readonly DmTarget[];
@@ -53,6 +54,8 @@ export function DmHitDialog({
   onRemove?: (monsters: readonly DmTarget[]) => void;
   /** A lone monster's card: its stat block, name, AC and notes. */
   onCard?: (target: DmTarget) => void;
+  /** A lone hero at 0 HP: the DM ticks a death save for them (additive). */
+  onDeathSave?: (target: DmTarget, outcome: "success" | "failure") => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
@@ -213,6 +216,32 @@ export function DmHitDialog({
           >
             {t("fight.dm.remove")}
           </Button>
+        </div>
+      )}
+      {onDeathSave && only?.kind === "pc" && only.hp.current === 0 && (
+        <div className="f-ask">
+          <span className="f-lbl">{t("fight.dm.deathSaves")}</span>
+          <p className="f-quiet">
+            {t("fight.dm.deathSaveMarks", {
+              successes: only.deathSaves?.successes ?? 0,
+              failures: only.deathSaves?.failures ?? 0,
+            })}
+          </p>
+          <div className="f-chips">
+            {(["success", "failure"] as const).map((outcome) =>
+              (outcome === "success"
+                ? (only.deathSaves?.successes ?? 0)
+                : (only.deathSaves?.failures ?? 0)) < 3 ? (
+                <Chip
+                  key={outcome}
+                  pressed={false}
+                  onClick={() => onDeathSave(only, outcome)}
+                >
+                  {t(`fight.dm.deathSaveTick.${outcome}`)}
+                </Chip>
+              ) : null
+            )}
+          </div>
         </div>
       )}
     </Dialog>

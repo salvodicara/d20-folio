@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CharacterDoc } from "@/types/character";
-import { makeCharacterDoc } from "@tests/unit/_helpers";
+import { makeCharacterDoc, stampAt } from "@tests/unit/_helpers";
 import { serializeCharacterEnvelope } from "@/lib/character-codec";
 import { sessionToCombatState } from "@/lib/combat-state";
 import { combatStateWriteData } from "@/lib/combat-state-io";
@@ -255,7 +255,7 @@ describe("character parent persistence (v1: the child owns the play session)", (
     try {
       // The hook's allocator: a cursor seeded at the last acknowledged server value.
       let cursor = 4;
-      const pending = createDebouncedSave("u1", "c1", 2000, () => ++cursor);
+      const pending = createDebouncedSave("u1", "c1", 2000, () => stampAt(++cursor));
       const base = { ...makeCharacterDoc(), id: "c1" };
       const sent: number[] = [];
       const outcomes = { onSend: (d: CharacterDoc) => sent.push(d.revision) };
@@ -689,7 +689,7 @@ describe("a whole-sheet write takes its generation in queue order (#1276)", () =
     harness.commits.mockImplementation(() => new Promise<void>(() => undefined));
     try {
       let cursor = 4;
-      const saver = createDebouncedSave("u1", "c1", 500, () => ++cursor);
+      const saver = createDebouncedSave("u1", "c1", 500, () => stampAt(++cursor));
       const doc = { ...makeCharacterDoc(), id: "c1", revision: 4 };
       saver.save({ ...doc, character: { ...doc.character, quote: "edit" } });
       void saver.flush(); // offline: never acknowledged
@@ -706,7 +706,7 @@ describe("a whole-sheet write takes its generation in queue order (#1276)", () =
   it("supersedes the pending autosave it carries, and is handed over at once", async () => {
     await preloadParentWrite();
     let cursor = 7;
-    const saver = createDebouncedSave("u1", "c1", 500, () => ++cursor);
+    const saver = createDebouncedSave("u1", "c1", 500, () => stampAt(++cursor));
     const doc = { ...makeCharacterDoc(), id: "c1", revision: 7 };
     const onCancelled = vi.fn();
     saver.save(doc, { onCancelled });
@@ -722,7 +722,7 @@ describe("a whole-sheet write takes its generation in queue order (#1276)", () =
   // leaves with, so a reload before the acknowledgement can still find it.
   it("tells the caller its generation before the batch is handed to the SDK", async () => {
     await preloadParentWrite();
-    const saver = createDebouncedSave("u1", "c1", 500, () => 12);
+    const saver = createDebouncedSave("u1", "c1", 500, () => stampAt(12));
     const doc = { ...makeCharacterDoc(), id: "c1", revision: 11 };
     const seen: Array<[number, number]> = [];
     void saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc, {
@@ -737,10 +737,159 @@ describe("a whole-sheet write takes its generation in queue order (#1276)", () =
     harness.commits.mockImplementationOnce(() =>
       Promise.reject(Object.assign(new Error("denied"), { code: "permission-denied" }))
     );
-    const saver = createDebouncedSave("u1", "c1", 500, () => 9);
+    const saver = createDebouncedSave("u1", "c1", 500, () => stampAt(9));
     const doc = { ...makeCharacterDoc(), id: "c1", revision: 8 };
     await expect(
       saver.sendWholeSheet({ character: doc.character, session: doc.session }, doc)
     ).rejects.toThrow("denied");
+  });
+});
+
+// Forward compatibility of a build key a newer app writes (the Druid's known Wild Shape
+// forms, `build.wildShapeForms`): an older tab reads the stored character and saves it
+// through the real write path. The key must come back verbatim on the parent, and the
+// public sheet must still equal the parent (the rules compare `build` and `cache`), so a
+// shared Druid's save is not refused. `aNewerBuildKey` keeps the unknown-key path proven
+// once this version knows `wildShapeForms`.
+describe("an older tab keeps a newer build key through read and save", () => {
+  it.each([
+    ["wildShapeForms", ["wolf", "giant-badger"]],
+    ["aNewerBuildKey", { kept: true }],
+  ] as const)(
+    "%s survives, and the public sheet still equals the parent",
+    async (key, value) => {
+      vi.useFakeTimers();
+      try {
+        const full = makeCharacterDoc({ classId: "druid", level: 4 });
+        const parent = parentData(full);
+        parent.build = { ...(parent.build as Record<string, unknown>), [key]: value };
+        const child = combatStateWriteData(sessionToCombatState(full.session));
+        harness.getDoc.mockImplementation((ref: { path: string }) =>
+          Promise.resolve(
+            ref.path.endsWith("/combat/state")
+              ? snapshot("state", child)
+              : snapshot("c1", parent)
+          )
+        );
+        const read = await getFullCharacter("u1", "c1");
+        if (!read) throw new Error("the stored character did not read");
+
+        const pending = createDebouncedSave("u1", "c1");
+        pending.save({ ...read, id: "c1", shared: true });
+        await vi.advanceTimersByTimeAsync(2_000);
+        await pending.flush();
+
+        const written = harness.operations.find(
+          ({ path }) => path === "users/u1/characters/c1"
+        )?.data;
+        const sheet = harness.operations.find(
+          ({ path }) => path === "users/u1/characters/c1/public/sheet"
+        )?.data;
+        expect((written?.build as Record<string, unknown>)[key]).toEqual(value);
+        expect(sheet?.build).toEqual(written?.build);
+        expect(sheet?.cache).toEqual(written?.cache);
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+  );
+});
+
+// #1413 — the write chain: every build write names the write it builds on, so the rules
+// can refuse a queued offline save whose base another device overwrote.
+describe("the write chain (#1413)", () => {
+  const parentOp = () =>
+    harness.operations.find(({ path }) => path === "users/u1/characters/c1")?.data;
+
+  it("the autosave sends the allocator's writeId and baseWriteId with its generation", async () => {
+    const pending = createDebouncedSave("u1", "c1", 500, () => ({
+      revision: 5,
+      writeId: "a1",
+      baseWriteId: "s0",
+    }));
+    pending.save({ ...makeCharacterDoc(), id: "c1" });
+    await pending.flush();
+    expect(parentOp()).toMatchObject({ revision: 5, writeId: "a1", baseWriteId: "s0" });
+  });
+
+  it("a whole-sheet write through the saver joins the chain", async () => {
+    const saver = createDebouncedSave("u1", "c1", 500, () => ({
+      revision: 8,
+      writeId: "a2",
+      baseWriteId: "a1",
+    }));
+    const full = makeCharacterDoc();
+    await saver.sendWholeSheet(
+      { character: full.character, session: full.session },
+      { shared: false, status: "active", portraitUrl: null, portraitCrop: null }
+    );
+    expect(parentOp()).toMatchObject({ revision: 8, writeId: "a2", baseWriteId: "a1" });
+  });
+
+  it("a restore builds on the writeId of the sheet on screen", async () => {
+    const full = { ...makeCharacterDoc(), id: "c1", writeId: "s1" };
+    await restoreCharacterSnapshot(
+      "u1",
+      "c1",
+      { character: full.character, session: full.session },
+      6,
+      full
+    );
+    const data = parentOp();
+    expect(data).toMatchObject({ revision: 7, baseWriteId: "s1" });
+    expect(typeof data?.writeId).toBe("string");
+    expect(data?.writeId).not.toBe("s1");
+  });
+
+  it("a restore of a sheet never chained builds on no write", async () => {
+    const full = { ...makeCharacterDoc(), id: "c1" };
+    await restoreCharacterSnapshot(
+      "u1",
+      "c1",
+      { character: full.character, session: full.session },
+      6,
+      full
+    );
+    expect(parentOp()).toMatchObject({ revision: 7, baseWriteId: null });
+  });
+
+  it("the sharing publish builds on the writeId it reads in its transaction", async () => {
+    const full = { ...makeCharacterDoc(), id: "c1", shared: false, revision: 6 };
+    harness.getDoc.mockResolvedValue(
+      snapshot("c1", { ...parentData(full), writeId: "s9" })
+    );
+    await setCharacterSharing("u1", full, true);
+    const data = parentOp();
+    expect(data).toMatchObject({ revision: 7, baseWriteId: "s9" });
+    expect(typeof data?.writeId).toBe("string");
+    expect(data?.writeId).not.toBe("s9");
+  });
+
+  it("a metadata write never carries the chain, even from a sheet that holds one", async () => {
+    const full = { ...makeCharacterDoc(), shared: false };
+    harness.getDoc.mockResolvedValue(snapshot("c1", parentData(full)));
+    await updateCharacter("u1", "c1", {
+      status: "retired",
+      writeId: "stale",
+      baseWriteId: "stale-base",
+    });
+    expect(parentOp()).toEqual({ status: "retired", updatedAt: "server-ts" });
+  });
+
+  it("a stored sheet reads its writeId; one never chained reads null", async () => {
+    const full = makeCharacterDoc();
+    const child = combatStateWriteData(sessionToCombatState(full.session));
+    const read = (parent: Record<string, unknown>) => {
+      harness.getDoc.mockImplementation((ref: { path: string }) =>
+        Promise.resolve(
+          ref.path.endsWith("/combat/state")
+            ? snapshot("state", child)
+            : snapshot("c1", parent)
+        )
+      );
+      return getFullCharacter("u1", "c1");
+    };
+    expect((await read({ ...parentData(full), writeId: "s3" }))?.writeId).toBe("s3");
+    expect((await read(parentData(full)))?.writeId).toBeNull();
   });
 });

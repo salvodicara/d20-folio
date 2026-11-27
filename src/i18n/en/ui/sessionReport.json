@@ -105,6 +105,7 @@
     "dealt": "{{amount}} damage",
     "upcast": "(level {{level}} slot)",
     "upcastPact": "(Pact Magic slot, level {{level}})",
-    "levelUp": "{{actor}} reaches level {{level}} ({{class}})"
+    "levelUp": "{{actor}} reaches level {{level}} ({{class}})",
+    "byDm": "{{line}} (marked by the DM)"
   }
 }

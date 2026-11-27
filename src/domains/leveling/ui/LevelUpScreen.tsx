@@ -85,6 +85,7 @@ const ROW_INFO: Partial<Record<string, InfoKind>> = {
   weaponMasteries: "weapon",
   expertise: "skill",
   mcSkills: "skill",
+  wildShapeForms: "beast",
 };
 /** Questions whose options are skills: chips, like the sheet's skill list. */
 const SKILL_ROWS = new Set(["expertise", "mcSkills"]);
@@ -95,6 +96,7 @@ const ROW_ART: Partial<Record<string, ArtKind>> = {
   fightingStyleRemove: "feat",
   fightingStyleReplace: "feat",
   weaponMasteries: "equipment",
+  wildShapeForms: "monster",
 };
 
 export function LevelUpScreen({

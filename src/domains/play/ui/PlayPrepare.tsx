@@ -7,11 +7,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
-import { canFlipInStep, type LongRestChange } from "@/domains/play/long-rest-change";
+import {
+  canFlipInStep,
+  prepareSheetTitle,
+  type LongRestChange,
+} from "@/domains/play/long-rest-change";
 
 import { prepareList } from "@/domains/play/play-spells-view";
 import { ActionGlyph } from "@/domains/play/ui/ActionIcon";
 import { PlayCantripSwap } from "@/domains/play/ui/PlayCantripSwap";
+import { PlayFormSwap } from "@/domains/play/ui/PlayFormSwap";
 import { spellPickRows } from "@/domains/spells/spell-pick-rows";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import type { Locale } from "@/lib/locale";
@@ -34,13 +39,21 @@ export function PlayPrepare({
   onClose: () => void;
   /** After a Long Rest: «Cambia incantesimi preparati», within the class's limit. */
   longRest?: LongRestChange;
-  /** The step after a Long Rest: also a cantrip the lineage lets you replace. */
+  /** The step after a Long Rest: also a cantrip the lineage lets you replace, and a
+   *  Druid's known Wild Shape form. */
   afterLongRest?: boolean;
 }) {
   const { t } = useTranslation();
   const list = prepareList(doc, locale);
   // D&D Beyond's «Manage Spells»: prepare and add in one window (not in a rest step)
   const canAdd = !longRest && !afterLongRest;
+  // «Prepared spells», or «After the Long Rest» when the sheet holds more than spells:
+  // then each change has its own section heading (D&D Beyond's Long Rest dialog).
+  const title = prepareSheetTitle(doc, {
+    ...(longRest ? { longRest } : {}),
+    ...(afterLongRest ? { afterLongRest } : {}),
+  });
+  const sections = title === "play.rest.afterTitle";
   const [tab, setTab] = useState<"prepared" | "add">("prepared");
   // the homebrew spell form is open: its own add and back are the only way on
   const [customOpen, setCustomOpen] = useState(false);
@@ -89,13 +102,7 @@ export function PlayPrepare({
       open
       onClose={onClose}
       color="res"
-      title={t(
-        longRest
-          ? "create.screen.preparedSpells"
-          : afterLongRest
-            ? "play.rest.cantripTitle"
-            : "play.spells.manage"
-      )}
+      title={t(title)}
       closeLabel={t("common.close")}
       actions={
         tab === "add" && customOpen ? undefined : (
@@ -138,6 +145,10 @@ export function PlayPrepare({
     return (
       <>
         {afterLongRest && <PlayCantripSwap doc={doc} locale={locale} />}
+        {afterLongRest && <PlayFormSwap doc={doc} locale={locale} />}
+        {sections && list.levels.length > 0 && (
+          <h3 className="f-act-gh">{t("create.screen.preparedSpells")}</h3>
+        )}
         {/* the limit, then the count against the most (the level-up's «1/1») */}
         {list.levels.length > 0 && (
           <div className="f-pick-title f-prep-head" role="status">

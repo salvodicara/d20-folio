@@ -243,6 +243,33 @@ export function effectIdsConsumedByRoll(
   ];
 }
 
+/** One state on a creature that changes its OWN next attack roll and is spent by
+ *  it (Sap, Vicious Mockery, Ray of Enfeeblement's success). */
+export interface NextAttackMode {
+  effect: ActiveCombatEffect;
+  sourceKind: ActiveCombatEffect["source"]["kind"];
+  sourceId: string;
+  mode: "advantage" | "disadvantage";
+}
+
+/** The one-shot states on `attackerId` its next attack roll spends, one per effect
+ *  (a lasting mode, such as a failed Ray of Enfeeblement's, is the sheet's). */
+export function nextAttackModes(
+  operations: ReadonlyArray<CombatEffectOp> | undefined,
+  attackerId: string
+): NextAttackMode[] {
+  const seen = new Set<string>();
+  return activeRollModeAdjustments(effectsForTarget(operations, attackerId), "attack")
+    .filter((adjustment) => adjustment.consume === "next")
+    .flatMap(({ effect, mode }) => {
+      if (seen.has(effect.id)) return [];
+      seen.add(effect.id);
+      return [
+        { effect, sourceKind: effect.source.kind, sourceId: effect.source.id, mode },
+      ];
+    });
+}
+
 /** Attack-roll mode imposed by effects on the selected target, whoever attacks
  *  (see {@link incomingAttackModes} for one attacker, with what it spends). */
 export function activeIncomingAttackModeAdjustments(
