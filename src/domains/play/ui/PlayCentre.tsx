@@ -68,7 +68,7 @@ import {
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { useMarkCountered } from "@/features/character/center/use-mark-countered";
 import { counterableCasts } from "@/lib/play/countered";
-import { compactRange } from "@/lib/views/compact-range";
+import { compactRange, rangeCellText } from "@/lib/views/compact-range";
 import { localizeText } from "@/lib/views/srd-i18n";
 import { resolveReplaceAttackWithCast } from "@/lib/smart-tracker";
 import {
@@ -1060,7 +1060,7 @@ function ActionLine({
               : null,
           ]
             .filter(Boolean)
-            .join(" ")
+            .join(" ")
         : "";
   // a dice expression never breaks at its minus («1d6‑1» keeps a non-breaking hyphen)
   const effect = row.damage
@@ -1069,7 +1069,9 @@ function ActionLine({
         row.damageType ? t(`srd.damage_${row.damageType}`) : null,
       ]
         .filter(Boolean)
-        .join(" ")
+        // an ordinary space: in a narrow column the type wraps under the dice
+        // («1d4‑1 / Contundente») instead of running into the row's button
+        .join(" ")
     : row.healing
       ? t("play.healing", { amount: row.healing })
       : "";
@@ -1245,8 +1247,7 @@ function RangeCell({ range }: { range: string | undefined }) {
   const compact = range ? compactRange(range) : "";
   return (
     <span className="f-act-c" title={range && compact !== range ? range : undefined}>
-      {/* a short range («1,5 m / 6/18 m») is one unit: it never wraps mid-way */}
-      {compact.length <= 18 ? compact.replace(/ /g, "\u00a0") : compact}
+      {rangeCellText(compact)}
     </span>
   );
 }
