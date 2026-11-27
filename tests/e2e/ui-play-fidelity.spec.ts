@@ -10,6 +10,7 @@
  * 3 px caps; the critique's text scale), the value is the new one and says so.
  * The design reset «BG3 craft» (2026-11-26) re-pins the type scale and the button family
  * (one serif, BG3's lit and framed glass); titles, caps and chips move with later slices.
+ * Slice 3 (type) re-pins the titles to title case at 20 px, names at 32 px, weights at 600.
  * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
@@ -30,10 +31,10 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ],
   ["header", ".f-char", "border-top-width", "1px"],
   ["header", ".f-char", "border-top-color", "rgba(169, 130, 80, 0.5)"],
-  ["name", ".f-char-id h1", "font-size", "36px"],
-  ["name", ".f-char-id h1", "font-weight", "700"],
-  ["ability modifier", ".f-ability dd b", "font-size", "26px"],
-  ["ability modifier", ".f-ability dd b", "font-weight", "700"],
+  ["name", ".f-char-id h1", "font-size", "32px"],
+  ["name", ".f-char-id h1", "font-weight", "600"],
+  ["ability modifier", ".f-ability dd b", "font-size", "24px"],
+  ["ability modifier", ".f-ability dd b", "font-weight", "600"],
   ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "font-size", "24px"],
   ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "color", "rgb(255, 255, 255)"],
   [
@@ -43,7 +44,7 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "24px",
   ],
   ["Hit Points", ".f-char-hp-v b", "font-size", "52px"],
-  ["Hit Points", ".f-char-hp-v b", "font-weight", "700"],
+  ["Hit Points", ".f-char-hp-v b", "font-weight", "600"],
   // the prototype's 0.533 alpha, written as a token to two places
   ["Hit Points", ".f-char-hp-v b", "text-shadow", "rgba(70, 240, 74, 0.53) 0px 0px 14px"],
   // panels: opaque with depth, the header band's padding
@@ -56,15 +57,15 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "linear-gradient(rgba(33, 26, 19, 0.97), rgba(17, 13, 10, 0.97))",
   ],
   ["panel title", ".f-play .f-pnh", "padding-top", "12px"],
-  ["resource name", ".f-res-t", "font-weight", "700"],
+  ["resource name", ".f-res-t", "font-weight", "600"],
   ["resource name", ".f-res-t", "color", "rgb(255, 255, 255)"],
   // the centre: the Cinzel tab band, the turn strip, the advice line
   ["tab band", ".f-centre > .f-tabs", "border-top-width", "0px"],
   ["tab band", ".f-centre > .f-tabs", "min-height", "56px"],
-  ["tab", ".f-centre > .f-tabs > button", "text-transform", "uppercase"],
-  ["tab", ".f-centre > .f-tabs > button", "font-size", "14px"],
-  ["turn title", ".f-turn-t", "font-weight", "900"],
-  ["turn title", ".f-turn-t", "font-size", "18px"],
+  ["tab", ".f-centre > .f-tabs > button", "text-transform", "none"],
+  ["tab", ".f-centre > .f-tabs > button", "font-size", "16px"],
+  ["turn title", ".f-turn-t", "font-weight", "600"],
+  ["turn title", ".f-turn-t", "font-size", "20px"],
   ["advice", ".f-playbook-h", "font-weight", "400"],
   ["advice", ".f-playbook-h", "color", "rgb(201, 187, 163)"],
   // filters as underlined tabs, group headers, rows, the row button, the slot
@@ -76,8 +77,8 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ],
   ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "0px"],
   ["group header", ".f-act-gh", "font-size", "16px"],
-  ["group header", ".f-act-gh", "text-transform", "uppercase"],
-  ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "700"],
+  ["group header", ".f-act-gh", "text-transform", "none"],
+  ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "600"],
   ["action name", ".f-act:not(.f-act-head) .f-row-t", "color", "rgb(255, 255, 255)"],
   [
     "row button",

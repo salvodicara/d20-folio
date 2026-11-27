@@ -120,6 +120,8 @@
   --fs-title-bar: 20px;
   --fs-xl: 24px;
   --fs-hp: 52px;
+  --fs-name: 32px;
+  --fs-hero: 44px;
 
   --r-sm: 2px;
   --r: 4px;
@@ -137,7 +139,7 @@
 
   background: var(--bg);
   color: var(--text);
-  font: 16px/1.5 var(--font-text);
+  font: var(--fs-md)/1.5 var(--font-text);
   /* every number in one face: lining and tabular figures */
   font-variant-numeric: lining-nums tabular-nums;
   font-feature-settings:
@@ -298,9 +300,9 @@
       color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
       transparent
     );
-  font: 700 18px/1.2 var(--font-label);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: 600 var(--fs-lg) / 1.2 var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--white);
 }
 .fui .f-pnh > .f-x {
@@ -308,7 +310,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 400 14px var(--font-text);
+  font: 400 var(--fs-nav) var(--font-text);
   letter-spacing: 0;
   text-transform: none;
   color: var(--text);
@@ -328,7 +330,7 @@
   .fui .f-pnh {
     padding: 4px 16px 8px;
     font-size: var(--fs-md);
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
   }
   .fui .f-pnb {
     padding: 16px;
@@ -430,7 +432,7 @@
     var(--bot) 100%
   );
   color: var(--cream);
-  font: 400 16px / 1 var(--font-text);
+  font: 400 var(--fs-md) / 1 var(--font-text);
   letter-spacing: 0;
   text-transform: none;
   text-shadow: 0 1px 0 var(--btn-text-shade);
@@ -622,7 +624,7 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font: var(--fw-name) 15px var(--font-text);
+  font: var(--fw-name) var(--fs-nav) var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -648,7 +650,7 @@
   border-radius: var(--r-pill);
   background: none;
   color: var(--text);
-  font: var(--fw-name) 14px var(--font-text);
+  font: var(--fw-name) var(--fs-nav) var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -676,7 +678,7 @@
   border-color: var(--temp);
   background: var(--buff-bg);
   color: var(--white);
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-chip[data-kind="buff"] {
   border-color: var(--buff);
@@ -696,8 +698,8 @@
   gap: 8px;
 }
 .fui .f-lbl {
-  font: 700 12px var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -709,7 +711,7 @@
   border-radius: var(--r-sm);
   background: var(--sunk);
   color: var(--strong);
-  font: 400 16px var(--font-text);
+  font: 400 var(--fs-md) var(--font-text);
 }
 .fui .f-in::placeholder {
   color: var(--faint);
@@ -1167,7 +1169,7 @@
 }
 .fui .f-hero h1 {
   margin: 0;
-  font: 500 36px/1.1 var(--font-title);
+  font: 500 var(--fs-name)/1.1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-hero-sub {
@@ -1294,7 +1296,7 @@
   text-align: center;
 }
 .fui .f-stat-v {
-  font: 700 20px/1.2 var(--font-num);
+  font: 600 var(--fs-lg)/1.2 var(--font-num);
   color: var(--strong);
 }
 .fui .f-stat-v[data-hp="ok"] {
@@ -1347,7 +1349,7 @@
   --coin: var(--coin-cp);
 }
 .fui .f-coin b {
-  font: 600 20px var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 
@@ -1418,9 +1420,9 @@
   display: flex;
   align-items: center;
   padding: 0 16px;
-  font: 700 var(--fs-nav) var(--font-label);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 400 var(--fs-md) var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--muted);
   text-decoration: none;
 }
@@ -1509,7 +1511,7 @@
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   color: var(--muted);
-  font: 600 var(--fs-sm) / 20px var(--font-text);
+  font: 600 var(--fs-sm) / var(--fs-lg) var(--font-text);
 }
 /* ⌘K holds its height while the hits change (no jumping sheet); the field stays on top
    while the hits scroll under it; on a phone the search is a full-height sheet */
@@ -2074,8 +2076,8 @@
   border-radius: var(--r-pill);
   background: var(--turn);
   color: var(--bg);
-  font: 700 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .fui .f-row-s[data-band="bloodied"] {
@@ -2099,8 +2101,8 @@
   border: 1px solid var(--hp-y);
   border-radius: var(--r-pill);
   color: var(--hp-y);
-  font: 700 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .fui .f-toast > span {
@@ -2111,8 +2113,8 @@
 /* ---------- notes ---------- */
 /* a note's kind: a small coloured word over its title */
 .fui .f-kind {
-  font: 700 var(--fs-xs) / 1.4 var(--font-label);
-  letter-spacing: 0.06em;
+  font: 600 var(--fs-xs) / 1.4 var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -2306,7 +2308,7 @@
   stroke-width: 1;
 }
 .fui .f-badge-frame b small {
-  font: 700 var(--fs-sm) var(--font-text);
+  font: 600 var(--fs-sm) var(--font-text);
   color: var(--muted);
 }
 .fui .f-badge-frame b {
@@ -2520,9 +2522,9 @@
   background: var(--sunk);
 }
 .fui .f-turn-t {
-  font: 700 var(--fs-md) var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-md) var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--strong);
 }
 .fui .f-turn-slots {
@@ -2857,18 +2859,18 @@
 /* state chips: bold, tighter */
 .fui .f-sheet .f-chip {
   padding: 0 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* resources: the name white and bold, the count a small label */
 .fui .f-sheet .f-res-t {
   font-size: var(--fs-text);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--white);
 }
 .fui .f-sheet .f-res-n {
   text-align: right;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   color: var(--label);
 }
 /* One table, one set of columns: the header, each group and each row share the
@@ -2922,7 +2924,7 @@
   color: var(--row-meta);
 }
 .fui .f-sheet .f-char-temp {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--temp-quiet);
 }
 /* the header (prototype .hero), framed as every hero is («Lume») */
@@ -2933,16 +2935,16 @@
   padding: 32px 56px;
 }
 .fui .f-sheet .f-char-id h1 {
-  font: 700 36px/1 var(--font-title);
+  font: 600 var(--fs-name)/1 var(--font-title);
   color: var(--text);
 }
 /* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
 .fui .f-sheet .f-ability > dd > .f-ab-open > b {
-  font: 700 26px/1.15 var(--font-title);
+  font: 600 var(--fs-xl)/1.15 var(--font-title);
   color: var(--text);
 }
 .fui .f-sheet .f-ability > dd > .f-ab-open > span {
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   color: var(--muted);
 }
 .fui .f-sheet .f-char-stats {
@@ -2960,7 +2962,7 @@
   }
 }
 .fui .f-sheet .f-badge-frame b {
-  font: 700 24px/1 var(--font-title);
+  font: 600 var(--fs-xl)/1 var(--font-title);
   color: var(--text);
 }
 /* the prototype's .badge__shape: a 58 × 64 shield drawn at 1.25 (shared .badge-wrap);
@@ -2988,11 +2990,11 @@
   }
 }
 .fui .f-sheet .f-char-hp-v {
-  font: 700 22px var(--font-title);
+  font: 600 var(--fs-xl) var(--font-title);
 }
 .fui .f-sheet .f-char-hp-v b {
   /* a <b> is "bolder" than its 700 parent (900): the prototype's figure is 700 */
-  font-weight: 700;
+  font-weight: 600;
   font-size: var(--fs-hp-big);
   text-shadow: 0 0 14px var(--glow-hp);
 }
@@ -3067,9 +3069,9 @@
 .fui .f-sheet .f-centre > .f-tabs > button {
   gap: 8px;
   padding: 16px 16px 12px;
-  font: 700 14px var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 var(--fs-md) var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--muted);
 }
 .fui .f-sheet .f-centre > .f-tabs > button[aria-selected="true"] {
@@ -3085,13 +3087,13 @@
   border-bottom: 1px solid var(--line-soft);
   border-radius: 0;
   background: none;
-  font: 700 18px var(--font-text);
+  font: 600 var(--fs-lg) var(--font-text);
   color: var(--white);
 }
 .fui .f-sheet .f-turn-t {
-  font: 900 18px var(--font-label);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font: 600 var(--fs-lg) var(--font-label);
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--white);
 }
 .fui .f-sheet .f-turn-slots {
@@ -3099,7 +3101,7 @@
 }
 .fui .f-sheet .f-turn-slots li {
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--white);
 }
 /* «Cosa ti conviene fare»: a quiet line, not a title */
@@ -3107,7 +3109,7 @@
   gap: 12px;
   min-height: 48px;
   padding: 4px 0;
-  font: 400 16px/1.45 var(--font-text);
+  font: 400 var(--fs-md)/1.45 var(--font-text);
   color: var(--advice);
 }
 /* filters: underlined tabs with the type shapes */
@@ -3123,7 +3125,7 @@
   border: 0;
   border-radius: 0;
   background: none;
-  font: 700 14px/1.45 var(--font-text);
+  font: 600 var(--fs-nav)/1.45 var(--font-text);
   color: var(--label, var(--muted));
 }
 .fui .f-filters > .f-chip[aria-pressed="true"] {
@@ -3154,8 +3156,8 @@
   text-align: center;
 }
 .fui .f-act-head > span {
-  font: 700 12px/1.2 var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs)/1.2 var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--label, var(--muted));
   white-space: nowrap;
@@ -3168,9 +3170,9 @@
   padding: 8px 0;
   border-bottom: 2px solid
     color-mix(in srgb, var(--gc, var(--line-strong)) 40%, transparent);
-  font: 700 16px/1.45 var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-md)/1.45 var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--white);
 }
 .fui .f-act-group[data-group="actions"] {
@@ -3188,7 +3190,7 @@
   border-bottom-color: var(--row-rule);
 }
 .fui .f-sheet .f-act .f-row-t {
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   color: var(--white);
 }
@@ -3196,7 +3198,7 @@
   font-size: var(--fs-sm);
 }
 .fui .f-sheet .f-act-c {
-  font: 700 var(--fs-md)/1 var(--font-text);
+  font: 600 var(--fs-md)/1 var(--font-text);
   color: var(--plate-text);
 }
 @media (min-width: 641px) {
@@ -3261,7 +3263,7 @@
   }
   .fui .f-sheet .f-char-stats .f-lbl,
   .fui .f-sheet .f-ability > dt {
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
   }
 }
 /* the HP ring's medal (prototype .medal): gradient arcs that glow, gold rims */
@@ -3366,7 +3368,7 @@
   .fui .f-strip-hp b,
   .fui .f-strip-ac b {
     font-size: var(--fs-phone-num);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--white);
   }
   .fui .f-strip-hp b[data-hp="ok"] {
@@ -3380,11 +3382,11 @@
   }
   .fui .f-strip .f-lbl {
     margin: 0;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--phone-label);
   }
   .fui .f-strip .f-char-temp {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--temp);
   }
   .fui .f-strip-acts {
@@ -3484,7 +3486,7 @@
     padding: 0 24px;
     border: 0;
     background: none;
-    font: 700 var(--fs-md) var(--font-text);
+    font: 600 var(--fs-md) var(--font-text);
     color: var(--strong);
     cursor: pointer;
   }
@@ -3591,7 +3593,7 @@
     display: none;
   }
   .fui .f-sheet .f-char-temp {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--temp);
   }
   .fui .f-sheet .f-char-hp-v {
@@ -3634,7 +3636,7 @@
   }
   .fui .f-sheet .f-char-stats .f-lbl {
     margin: 0;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--phone-label);
   }
   .fui .f-sheet .f-char-abil {
@@ -3646,7 +3648,7 @@
   }
   .fui .f-sheet .f-ability > dt {
     order: 2;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--phone-label);
   }
   .fui .f-sheet .f-ability > dd > .f-ab-open > b {
@@ -3757,9 +3759,9 @@
       color-mix(in srgb, var(--c-act-band) 55%, var(--shade)) 0%,
       color-mix(in srgb, var(--c-act-band) 26%, var(--shade)) 100%
     );
-    font: 700 var(--fs-md) var(--font-label);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font: 600 var(--fs-md) var(--font-label);
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--white);
   }
   .fui .f-sheet .f-menu-head::before {
@@ -3771,7 +3773,7 @@
     border: 1px solid var(--line);
     border-radius: var(--r-card);
     background: var(--card-bg);
-    font: 700 var(--fs-text) var(--font-text);
+    font: 600 var(--fs-text) var(--font-text);
     color: var(--strong);
   }
   .fui .f-sheet dialog.f-menu .f-menu-it .f-ic {
@@ -3792,7 +3794,7 @@
   background: var(--chip-n, var(--text));
   color: var(--shade);
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 .fui .f-chip[data-kind="buff"] {
@@ -3828,7 +3830,7 @@
     gap: 8px;
   }
   .fui .f-sheet .f-turn-t {
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
   }
   .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
     padding: 8px 12px;
@@ -3874,7 +3876,7 @@
   padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
-  font: 700 var(--fs-md) var(--font-text);
+  font: 600 var(--fs-md) var(--font-text);
   color: var(--text);
 }
 .fui .f-ir[data-current] {
@@ -3890,7 +3892,7 @@
   flex: none;
   width: 28px;
   text-align: center;
-  font: 700 var(--fs-lg) var(--font-label);
+  font: 600 var(--fs-lg) var(--font-label);
   color: var(--gold);
 }
 .fui .f-ir-tok {
@@ -3903,7 +3905,7 @@
   border: 2px solid var(--frame);
   border-radius: 50%;
   background: var(--ir-token-bg);
-  font: 700 var(--fs-sm) var(--font-title);
+  font: 600 var(--fs-sm) var(--font-title);
   color: var(--strong);
 }
 .fui .f-ir-tok > img {
@@ -3927,7 +3929,7 @@
 /* a group's count (×3) beside its name, never split from it */
 .fui .f-ir-x {
   flex: none;
-  font: 700 var(--fs-sm) var(--font-label);
+  font: 600 var(--fs-sm) var(--font-label);
   color: var(--phone-label);
 }
 .fui .f-ir-now {
@@ -3937,8 +3939,8 @@
   padding: 0 8px;
   border: 1px solid var(--ir-tag);
   border-radius: var(--r-tag);
-  font: 700 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--text);
 }
@@ -4100,7 +4102,7 @@
   border: 0;
   background: none;
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--strong);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -4124,7 +4126,7 @@
 /* «Incantesimi» (prototype x-play-spells): the casting numbers, a level's slots in its head */
 .fui .f-spell-sum {
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--strong);
 }
 .fui .f-gh-slots {
@@ -4132,7 +4134,7 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  font: 700 var(--fs-sm) var(--font-text);
+  font: 600 var(--fs-sm) var(--font-text);
   letter-spacing: 0;
   text-transform: none;
   color: var(--muted);
@@ -4231,7 +4233,7 @@
   margin: 0;
 }
 .fui .f-num-total > b {
-  font: 700 40px/1 var(--font-title);
+  font: 600 var(--fs-hero)/1 var(--font-title);
   color: var(--strong);
 }
 /* «Danni e cure»: the max HP row opens its number pane (DDB's HP manager) */
@@ -4251,7 +4253,7 @@
 }
 .fui button.f-hp-max > b {
   margin-left: auto;
-  font: 700 20px/1 var(--font-title);
+  font: 600 var(--fs-lg)/1 var(--font-title);
   color: var(--strong);
 }
 /* a chevron says the row opens its pane */
@@ -4278,7 +4280,7 @@
 .fui .f-num-tag {
   color: var(--muted);
   font: 600 var(--fs-sm) var(--font-label);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 .fui .f-num-custom {
   padding-top: 16px;
@@ -4322,7 +4324,7 @@
   margin: 0;
 }
 .fui .f-coin > b {
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--white);
 }
 .fui .f-sheet .f-act.f-item {
@@ -4369,7 +4371,7 @@
   .fui .f-sheet .f-centre > .f-tabs > button {
     flex: none;
     padding-inline: 12px;
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
   }
 }
 /* the zones on the field (M9), under the initiative: a rule, then one line each */
@@ -4535,7 +4537,7 @@
 }
 .fui .f-ph h1 {
   margin: 0;
-  font: 600 36px/1.1 var(--font-title);
+  font: 600 var(--fs-name)/1.1 var(--font-title);
   color: var(--strong);
   text-shadow:
     0 2px 12px var(--shade),
@@ -4965,7 +4967,7 @@
   border-color: var(--gold-line);
   background: color-mix(in srgb, var(--gold) 18%, transparent);
   color: var(--white);
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-rule-head {
   display: flex;
@@ -5078,7 +5080,7 @@
   color: var(--strong);
 }
 .fui .f-class-name {
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-medal {
   display: inline-grid;
@@ -5212,7 +5214,7 @@
   background: var(--panel-2);
 }
 .fui .f-abil-mod {
-  font: 700 var(--fs-xl) / 1 var(--font-title);
+  font: 600 var(--fs-xl) / 1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-abil-sum {
@@ -5402,7 +5404,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  font: 700 var(--fs-sm) / 1 var(--font-title);
+  font: 600 var(--fs-sm) / 1 var(--font-title);
   background: var(--panel-2);
   color: var(--muted);
 }
@@ -5431,7 +5433,7 @@
 }
 .fui .f-lvl-hero h1 {
   margin: 0;
-  font: 700 44px/1.05 var(--font-title);
+  font: 600 var(--fs-hero)/1.05 var(--font-title);
   color: var(--strong);
   text-shadow: 0 2px 12px var(--shade);
 }
@@ -5501,7 +5503,7 @@
   color: var(--hp-r);
 }
 .fui .f-lvl-ic-v {
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
 }
 /* a spell slot: the same violet diamond the resources panel draws */
@@ -5516,7 +5518,7 @@
   display: flex;
   align-items: baseline;
   white-space: nowrap;
-  font: 700 26px/1.1 var(--font-title);
+  font: 600 var(--fs-xl)/1.1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-gain-v s {
@@ -5533,8 +5535,8 @@
   border-radius: var(--r-pill);
   background: var(--ok-bg);
   color: var(--ok-text);
-  font: 700 var(--fs-sm) var(--font-label);
-  letter-spacing: 0.06em;
+  font: 600 var(--fs-sm) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .fui .f-lvl-sec {
@@ -5551,7 +5553,7 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  font: 700 var(--fs-lg) / 1.2 var(--font-title);
+  font: 600 var(--fs-lg) / 1.2 var(--font-title);
   color: var(--strong);
   text-wrap: balance;
 }
@@ -5575,7 +5577,7 @@
   min-height: 44px;
   display: flex;
   align-items: center;
-  font: 700 var(--fs-md) / 1.3 var(--font-title);
+  font: 600 var(--fs-md) / 1.3 var(--font-title);
   color: var(--strong);
   cursor: pointer;
 }
@@ -5617,14 +5619,14 @@
 }
 .fui .f-lvl-count {
   margin-left: auto;
-  font: 700 var(--fs-md) var(--font-title);
+  font: 600 var(--fs-md) var(--font-title);
   color: var(--danger);
 }
 .fui .f-lvl-count[data-state="done"] {
   color: var(--ok-text);
 }
 .fui .f-lvl-hp-n {
-  font: 700 var(--fs-xl) var(--font-title);
+  font: 600 var(--fs-xl) var(--font-title);
 }
 .fui .f-lvl-roll {
   display: flex;
@@ -5693,7 +5695,7 @@
   border-radius: var(--r-frame);
   background: var(--shade-80);
   color: var(--gold-hi);
-  font: 700 var(--fs-sm) / 20px var(--font-label);
+  font: 600 var(--fs-sm) / var(--fs-lg) var(--font-label);
 }
 .fui .f-lvl-tick {
   position: absolute;
@@ -5706,7 +5708,7 @@
   border-radius: 50%;
   background: var(--gold-hi);
   color: var(--raised);
-  font: 800 var(--fs-sm) / 1 var(--font-title);
+  font: 600 var(--fs-sm) / 1 var(--font-title);
 }
 .fui .f-lvl-opt-n {
   text-wrap: balance;
@@ -5746,7 +5748,7 @@
 .fui .f-slotrow-l {
   padding-top: 16px;
   color: var(--gold);
-  font: 700 var(--fs-md) / 1 var(--font-title);
+  font: 600 var(--fs-md) / 1 var(--font-title);
   text-align: center;
 }
 .fui .f-slotrow-l > svg {
@@ -5821,7 +5823,7 @@
   border-radius: var(--r-frame);
   background: var(--shade-80);
   color: var(--strong);
-  font: 700 var(--fs-sm) / 18px var(--font-label);
+  font: 600 var(--fs-sm) / var(--fs-lg) var(--font-label);
 }
 .fui .f-slot-tick {
   position: absolute;
@@ -5834,7 +5836,7 @@
   border-radius: 50%;
   background: var(--gold-hi);
   color: var(--bg);
-  font: 800 var(--fs-xs) / 1 var(--font-title);
+  font: 600 var(--fs-xs) / 1 var(--font-title);
 }
 .fui .f-slot-n {
   display: none;
@@ -5860,7 +5862,7 @@
 }
 .fui .f-slot-tip > b {
   display: block;
-  font: 700 var(--fs-md) / 1.25 var(--font-text);
+  font: 600 var(--fs-md) / 1.25 var(--font-text);
 }
 .fui .f-slot-tip > small {
   display: block;
@@ -5870,7 +5872,7 @@
 .fui .f-slot-tip > em {
   display: block;
   color: var(--gold-hi);
-  font: 700 var(--fs-md) var(--font-text);
+  font: 600 var(--fs-md) var(--font-text);
   font-style: normal;
 }
 .fui .f-slot:hover > .f-slot-tip,
@@ -6004,13 +6006,13 @@
 }
 .fui .f-lvl-inspect h3 {
   margin: 0;
-  font: 700 var(--fs-xl) / 1.15 var(--font-title);
+  font: 600 var(--fs-xl) / 1.15 var(--font-title);
   color: var(--strong);
   text-wrap: balance;
 }
 .fui .f-lvl-effect {
   margin: 8px 0;
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
 }
 .fui .f-lvl-gist {
@@ -6057,7 +6059,7 @@
 }
 .fui .f-lvl-sum-h b {
   display: block;
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-sum-h span {
@@ -6076,12 +6078,12 @@
   background: var(--bg);
 }
 .fui .f-lvl-abil dt {
-  font: 700 var(--fs-xs) var(--font-label);
+  font: 600 var(--fs-xs) var(--font-label);
   color: var(--muted);
 }
 .fui .f-lvl-abil dd {
   margin: 0;
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-badges {
@@ -6101,7 +6103,7 @@
   font-size: var(--fs-sm);
 }
 .fui .f-lvl-badges b {
-  font: 700 var(--fs-xl) var(--font-title);
+  font: 600 var(--fs-xl) var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-badges svg {
@@ -6126,14 +6128,14 @@
   border: 1px dashed var(--danger);
   border-radius: var(--r-sm);
   color: var(--danger);
-  font: 700 var(--fs-md) var(--font-title);
+  font: 600 var(--fs-md) var(--font-title);
 }
 .fui .f-lvl-owed {
   /* a status line, not a button: what is missing reads in its colour above the
      Confirm it holds back (D&D Beyond's builder: «2 choices remaining» as text) */
   margin: 0;
   color: var(--danger-text);
-  font: 700 var(--fs-md) var(--font-text);
+  font: 600 var(--fs-md) var(--font-text);
   text-align: center;
 }
 .fui .f-lvl-bar {
@@ -6245,7 +6247,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font: 700 var(--fs-md) var(--font-text);
+    font: 600 var(--fs-md) var(--font-text);
   }
   .fui .f-lvl-bar b > svg {
     width: 18px;
@@ -6382,7 +6384,7 @@
   display: block;
 }
 .fui .f-cmp-row .f-row-t {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--white);
 }
 .fui .f-cmp-row .f-row-s {
@@ -6560,7 +6562,7 @@
 .fui .f-prep-eff {
   margin-left: auto;
   flex: none;
-  font: 700 var(--fs-sm) var(--font-text);
+  font: 600 var(--fs-sm) var(--font-text);
   color: var(--gold-hi);
   text-align: right;
 }
@@ -6700,8 +6702,8 @@
 /* dead: the verdict in place of the tracker (BG3's skull, D&D Beyond's death saves) */
 .fui .f-down-verdict {
   margin: 0;
-  font: 700 var(--fs-lg) var(--font-label);
-  letter-spacing: 0.04em;
+  font: 600 var(--fs-lg) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--hp-r);
 }
@@ -6891,7 +6893,7 @@
   border-radius: var(--r-panel);
 }
 .fui .f-sheet .f-pnh {
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 /* resources (.res) */
 .fui .f-sheet .f-res {
@@ -6933,14 +6935,14 @@
   font-weight: 600;
 }
 .fui .f-sheet .f-turn-t {
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
 }
 .fui .f-sheet .f-turn .f-turn-slots li {
   gap: 4px;
 }
 /* «Cosa ti conviene fare» (.tip): no rule under it, 48 px */
 .fui .f-sheet .f-playbook-h > span {
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-sheet .f-playbook {
   padding-bottom: 0;
@@ -6979,7 +6981,7 @@
   padding: 0 4px;
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.03em;
 }
 .fui .f-sheet .f-ir .f-ir-s {
   font-weight: 600;
@@ -7075,7 +7077,7 @@
   .fui .f-sheet .f-ability > dt,
   .fui .f-sheet .f-char-stats .f-lbl {
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
   }
 }
 
@@ -7121,8 +7123,8 @@
     background: none;
     border: 0;
     color: var(--muted);
-    font: 700 12px var(--font-label);
-    letter-spacing: 0.08em;
+    font: 600 var(--fs-xs) var(--font-label);
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     cursor: pointer;
   }
@@ -7254,7 +7256,7 @@
   gap: 12px;
 }
 .fui .f-legal dt {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--strong);
 }
 .fui .f-legal-links {
@@ -7281,7 +7283,7 @@
 .fui .f-legal-doc > summary > .f-legal-open,
 .fui .f-legal-doc > summary > .f-legal-close {
   color: var(--gold);
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-legal-doc[open] > summary > .f-legal-open,
 .fui .f-legal-doc:not([open]) > summary > .f-legal-close {
@@ -7320,7 +7322,7 @@
   gap: 8px;
   min-height: 44px;
   color: var(--gold);
-  font-weight: 700;
+  font-weight: 600;
 }
 @media (max-width: 640px) {
   .fui .f-crumb {
@@ -7551,4 +7553,14 @@
 .fui .f-must,
 .fui .f-kind {
   font-size: var(--fs-xs);
+}
+
+/* a log line fills its column (no balanced half-width lines) */
+.fui .f-tl,
+.fui .f-tl > span {
+  text-wrap: pretty;
+}
+/* a bold run inside text uses the face's strong weight (600), never a synthetic 700 */
+.fui :is(b, strong) {
+  font-weight: 600;
 }
