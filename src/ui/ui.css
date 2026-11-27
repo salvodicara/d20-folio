@@ -7715,3 +7715,15 @@
 .fui dialog.f-dlg .f-bd :is(p, .f-help) {
   font-size: var(--fs-text);
 }
+
+/* An island of the new UI inside a classic surface (the rescue strip): it carries the
+   tokens and the button family to its children but draws no box, background or height. */
+.fui.f-island {
+  display: contents;
+}
+.fui .f-rescue-acts {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}

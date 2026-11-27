@@ -4,11 +4,13 @@
  * ceremony with a snapshot first (`rescue-apply`); a copy this version cannot bring
  * forward offers Discard only and says why. Pattern source: Google Docs' «recover
  * unsaved changes» bar and the browser's restore-session bar, drawn as our own
- * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner).
+ * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner). Its buttons are the new
+ * UI's family (design reset «BG3 craft», slice 8): «Scarta» the quiet one, «Applica» the
+ * lit primary ending the row, in the family's own case, on the classic sheet too.
  */
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui";
 import {
   applyRescueCopy,
   discardRescueCopy,
@@ -104,15 +106,18 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
             ? t("pwa.rescue.failed")
             : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
         </span>
-        <div className="flex shrink-0 items-center gap-2">
-          {applicable && (
-            <Button size="sm" onClick={() => void apply()} disabled={busy}>
-              {t("combat.apply")}
+        {/* the family's rules live under `.fui`: an island that adds no box of its own */}
+        <div className="fui f-island">
+          <div className="f-rescue-acts">
+            <Button kind="quiet" onClick={discard} disabled={busy}>
+              {t("pwa.rescue.discard")}
             </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={discard} disabled={busy}>
-            {t("pwa.rescue.discard")}
-          </Button>
+            {applicable && (
+              <Button kind="primary" onClick={() => void apply()} busy={busy}>
+                {t("combat.apply")}
+              </Button>
+            )}
+          </div>
         </div>
       </section>
     </div>
