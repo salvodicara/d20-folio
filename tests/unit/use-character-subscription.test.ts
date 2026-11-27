@@ -894,6 +894,9 @@ describe("useCharacterSubscription — T4 DM-sheet fan-out", () => {
  * every snapshot of EITHER — so a sibling snapshot clobbered a still-unwritten local edit.
  */
 describe("useCharacterSubscription — per-domain reconciliation replays (audit F7)", () => {
+  // #1403 — a conflict now keeps a rescue copy on the device: no test inherits one.
+  beforeEach(() => localStorage.clear());
+
   /** The live character, or a loud failure (the replays are meaningless without it). */
   function openCharacter(): CharacterDoc {
     const current = useCharacterStore.getState().character;
@@ -1154,7 +1157,7 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
   // #1203: a save the rules refuse as a conflict (another device saved first) is
   // dropped for the server's copy; the player is told once. A transient failure
   // (offline, unavailable) keeps the edit pending and says nothing.
-  async function refusedSave(error: unknown): Promise<void> {
+  async function refusedSave(error: unknown): Promise<CharacterDoc> {
     renderHook(() => useCharacterSubscription("char1"));
     await act(async () => {
       snapshotCb()(doc());
@@ -1170,24 +1173,118 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     const { callbacks } = lastSave();
     const sent = sendLastSave();
     act(() => callbacks.onRejected?.(sent, error));
+    return sent;
   }
 
-  it("a conflict refusal tells the player once that the last change was not saved", async () => {
+  const denied = (): Error =>
+    Object.assign(new Error("Missing or insufficient permissions."), {
+      code: "permission-denied",
+    });
+
+  /** The server's sheet after the refusal: another device stored `revision`. */
+  async function serverSheet(revision: number): Promise<void> {
+    await act(async () => {
+      snapshotCb()({
+        ...doc(),
+        revision,
+        character: { ...doc().character, quote: "other device" },
+      });
+      for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
+
+  // #1403 — the refused edit is kept on this device and offered back by the strip.
+  it("a conflict refusal keeps the edit as a build-only rescue copy and says so once", async () => {
     useToastStore.setState({ toasts: [] });
-    await refusedSave(
-      Object.assign(new Error("Missing or insufficient permissions."), {
-        code: "permission-denied",
-      })
-    );
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
     expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
-      { kind: "edit-not-saved" },
+      { kind: "edit-not-saved", kept: true },
+    ]);
+    const copy = readRescueCopy("u1", "char1", Date.now());
+    expect(copy?.part).toBe("build");
+    // No generation: a stored sheet at it is the OTHER device's (the lost-save proof
+    // must never drop this copy).
+    expect(copy?.revision).toBeUndefined();
+    expect(JSON.stringify(copy?.build)).toContain("local");
+  });
+
+  it("a refusal the server's sheet does not prove a conflict keeps nothing: «not saved»", async () => {
+    useToastStore.setState({ toasts: [] });
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    await refusedSave(denied());
+    await serverSheet(4); // still below the refused generation
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved", kept: false },
+    ]);
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a refused save on a sheet the player can no longer read keeps nothing", async () => {
+    useToastStore.setState({ toasts: [] });
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    await refusedSave(denied());
+    act(() => parentErrorCb()(denied()));
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved", kept: false },
+    ]);
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a copy already on the device is never overwritten: «not saved»", async () => {
+    useToastStore.setState({ toasts: [] });
+    const { keepRescueCopy, readRescueCopy } = await import("@/lib/local-draft");
+    const earlier = {
+      part: "build" as const,
+      savedAt: Date.now() - 60_000,
+      schema: 3,
+      playVersion: 1,
+      build: { earlier: true },
+      state: {},
+    };
+    keepRescueCopy("u1", "char1", earlier);
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
+    expect(readRescueCopy("u1", "char1", Date.now())).toEqual(earlier);
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved", kept: false },
     ]);
   });
 
-  it("a transient failure (offline) says nothing: the edit is still pending", async () => {
+  it("the copy follows the rescue store: gone after 30 days and on sign-out", async () => {
+    const { readRescueCopy, clearAccountDrafts } = await import("@/lib/local-draft");
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
+    expect(readRescueCopy("u1", "char1", Date.now())).not.toBeNull();
+    expect(readRescueCopy("u1", "char1", Date.now() + 31 * 24 * 3600 * 1000)).toBeNull();
+    const again = await refusedSave(denied());
+    await serverSheet(again.revision);
+    expect(readRescueCopy("u1", "char1", Date.now())).not.toBeNull();
+    clearAccountDrafts("u1");
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("the kept copy survives a reload that finds the other device's sheet", async () => {
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
+    const { unmount } = renderHook(() => useCharacterSubscription("char1"));
+    unmount();
+    renderHook(() => useCharacterSubscription("char1"));
+    await serverSheet(sent.revision + 1);
+    expect(readRescueCopy("u1", "char1", Date.now())).not.toBeNull();
+  });
+
+  it("a transient failure (offline) says nothing and keeps nothing: the edit is still pending", async () => {
     useToastStore.setState({ toasts: [] });
-    await refusedSave(Object.assign(new Error("offline"), { code: "unavailable" }));
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    const sent = await refusedSave(
+      Object.assign(new Error("offline"), { code: "unavailable" })
+    );
+    await serverSheet(sent.revision);
     expect(useToastStore.getState().toasts).toEqual([]);
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
   });
 
   it("a rejected parent write surfaces SaveStatus=error and republishes the remote", async () => {

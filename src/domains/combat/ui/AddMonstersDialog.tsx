@@ -4,6 +4,8 @@
  * its row (− takes one back), and the fight's difficulty updates as you pick (the word
  * in its colour and the XP). The DM's own creatures come first. «Aggiungi» puts them
  * all in the fight, with an undo; each group rolls its initiative as it enters.
+ * «Nuovo mostro» keeps one of the DM's own in the library (D&D Beyond's manual entry);
+ * each of the DM's own rows has its edit and its delete (after a confirmation).
  */
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -23,7 +25,11 @@ import type { Locale } from "@/lib/locale";
 import { matchesSearch } from "@/lib/search";
 import { fmtXp, formatCr } from "@/lib/utils";
 import type { CampaignDoc } from "@/types/campaign";
-import { Button, Chip, Dialog, Field } from "@/ui";
+import { Button, Chip, Dialog, Field, Icon } from "@/ui";
+import { CustomMonsterDialog } from "@/domains/combat/ui/CustomMonsterDialog";
+import { deleteCustomMonster, saveCustomMonster } from "@/domains/combat/custom-monsters";
+import type { CustomMonster } from "@/types/campaign";
+import { useToastStore } from "@/stores/toastStore";
 import { MonsterFace } from "@/domains/combat/ui/FightLine";
 
 const BANDS = [
@@ -49,11 +55,14 @@ interface Row {
 export function AddMonstersDialog({
   campaign,
   locale,
+  uid,
   onAdd,
   onClose,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
+  /** The DM, whose library keeps their own monsters. */
+  uid: string;
   onAdd: (monsters: MonsterInput[], label: string) => void;
   onClose: () => void;
 }) {
@@ -62,6 +71,15 @@ export function AddMonstersDialog({
   const [q, setQ] = useState("");
   const [band, setBand] = useState<Band>("all");
   const [picked, setPicked] = useState<ReadonlyMap<string, number>>(new Map());
+  // The DM's own monster being made (null: none) or edited (its library id).
+  const [editing, setEditing] = useState<{ id: string | null } | null>(null);
+  const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
+  const toast = (message: string) =>
+    useToastStore.getState().showToast({ message, duration: 3000 });
+  const ownOf = (id: string): CustomMonster | undefined => {
+    const entry = library.find((e) => e.id === id);
+    return entry?.kind === "monster" ? entry.item : undefined;
+  };
   const rows = useMemo<Row[]>(
     () => [
       ...homebrewPickerMonsters(library).map((m) => ({
@@ -140,6 +158,11 @@ export function AddMonstersDialog({
       }
     >
       <div className="f-ask">
+        <Button icon="u-add" onClick={() => setEditing({ id: null })}>
+          {t("fight.custom.new")}
+        </Button>
+      </div>
+      <div className="f-ask">
         <Field
           label={t("fight.dm.search")}
           autoComplete="off"
@@ -175,6 +198,26 @@ export function AddMonstersDialog({
                     .filter(Boolean)
                     .join(" · ")}
                 </div>
+                {r.kind === "homebrew" && (
+                  <div className="f-dm-own">
+                    <button
+                      type="button"
+                      className="f-dm-step"
+                      aria-label={t("fight.custom.edit", { name: r.name })}
+                      onClick={() => setEditing({ id: r.id })}
+                    >
+                      <Icon name="u-edit" />
+                    </button>
+                    <button
+                      type="button"
+                      className="f-dm-step"
+                      aria-label={t("fight.custom.delete", { name: r.name })}
+                      onClick={() => setDeleting({ id: r.id, name: r.name })}
+                    >
+                      <Icon name="u-delete" />
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="f-dm-count">
                 {n > 0 && (
@@ -205,6 +248,53 @@ export function AddMonstersDialog({
         })}
         {found.length === 0 && <p className="f-quiet">{t("fight.dm.none")}</p>}
       </div>
+      {editing && (
+        <CustomMonsterDialog
+          {...(editing.id ? { initial: ownOf(editing.id) } : {})}
+          onClose={() => setEditing(null)}
+          onSave={(monster) => {
+            if (editing.id)
+              useLibraryStore
+                .getState()
+                .updateEntry(editing.id, { kind: "monster", item: monster });
+            else if (!saveCustomMonster(monster, null, uid, t)) return;
+            toast(t("fight.custom.savedDone", { name: monster.name }));
+          }}
+        />
+      )}
+      {deleting && (
+        <Dialog
+          open
+          onClose={() => setDeleting(null)}
+          color="ini"
+          title={t("common.deleteTitle", { name: deleting.name })}
+          closeLabel={t("common.close")}
+          actions={
+            <>
+              <Button kind="ghost" onClick={() => setDeleting(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                kind="danger"
+                onClick={() => {
+                  deleteCustomMonster(deleting.id);
+                  setPicked((now) => {
+                    const next = new Map(now);
+                    next.delete(`h:${deleting.id}`);
+                    return next;
+                  });
+                  toast(t("fight.custom.deletedDone", { name: deleting.name }));
+                  setDeleting(null);
+                }}
+              >
+                {t("common.delete")}
+              </Button>
+            </>
+          }
+        >
+          <p className="f-ask">{t("fight.custom.deleteBody")}</p>
+        </Dialog>
+      )}
     </Dialog>
   );
 }
