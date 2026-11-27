@@ -199,13 +199,14 @@ window.__audit = (opts) => {
     )
       add("radius", rad + " " + label(e));
     // c10 gold borders outside identity/primary. The button family's gold and brass rims are
-    // part of every kind (design reset «C · BG3 craft», owner 2026-11-27).
+    // part of every kind, and the fight row's «now» tag is a gold-line tag (design reset
+    // «C · BG3 craft», owner 2026-11-27).
     const bc = cs.borderTopColor + " " + cs.borderLeftColor;
     if (
       (parseFloat(cs.borderTopWidth) || parseFloat(cs.borderLeftWidth)) &&
       gold.test(bc) &&
       !e.matches(
-        ".btn.primary,.f-btn,.b1,.btn--primary,.crest,.av,.f-av,.medal,.medal *,.hero,.hero *,[data-identity],[data-identity] *,.cc.on,.f-lvl-opt[aria-pressed=true],.stp *,.tile,.wpanel,.welcome *"
+        ".btn.primary,.f-btn,.f-now,.f-ir-now,.b1,.btn--primary,.crest,.av,.f-av,.medal,.medal *,.hero,.hero *,[data-identity],[data-identity] *,.cc.on,.f-lvl-opt[aria-pressed=true],.stp *,.tile,.wpanel,.welcome *"
       ) &&
       !e.closest("[data-identity],.hero,.frz")
     )

@@ -690,6 +690,33 @@ action. The classic UI's buttons below stay until each screen is rebuilt.
 
 ### Chips / Badges
 
+**New UI (`.fui .f-chip`, design reset «C · BG3 craft», slice 2, 2026-11-27):** one family after BG3's
+in-game UI, drawn by one block in `src/ui/ui.css` («chips: one family»). A screen may place a chip
+(margin, flex, width, wrapping) but never restyle it; `tests/unit/chip-family.guard.test.ts` fails on
+a fork. Colours are today's tokens; the picked line and glow are the family's own tokens
+(`--pick-*`). The markup decides the family: `aria-pressed` makes a selectable chip, `data-kind` or a
+chip that is not a button (`Chip` with no `onClick`) makes a status chip.
+
+| Variant                                                                       | Rest                                                                                                                                                                                                                                                                                                        | Hover (real hover only)              | Picked (`aria-pressed="true"`)                                                    | Disabled                                   |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------ |
+| Selectable (a choice, a filter, a damage type)                                | dark pill (`--chip-fill`), bronze line (`--frame`), tan words (`--muted`), 400, 15 px, 34 px                                                                                                                                                                                                                | brass line, faint wash, cream        | BG3's selected tile: pale-gold line, amber glow, warm fill, cream words           | dark fill, dark-tan words, no opacity wash |
+| Compact (a monster's actions and limited uses in a fight row)                 | the selectable look at the status size: 28 px, 13 px; an action is one line, its name and roll («Scimitarra +4», «Soffio di fuoco CD 21»), the whole line in its title; a narrow column cuts the name, never the roll; a use still available has a brass line and strong words, no glow (ready, not chosen) | as selectable                        | as selectable                                                                     | as selectable                              |
+| Status (`conc`, `cond`, `buff`, `form`, `insp`, or a fact such as «Nascosto») | 4 px info chip, 28 px, 13 px: the meaning colour as a 65 % line and a 14 % tint, words mixed toward light; smaller than any button, so a row reads its actions first                                                                                                                                        | the line at full strength, 22 % tint | (a chip that opens its panel) the line at full strength, 22 % tint, an inner glow | as above                                   |
+| Fight-row tag (`.f-now`, `.f-ir-now`; `.f-must` in the bloodied yellow)       | gold line, dark fill, gold words, 4 px                                                                                                                                                                                                                                                                      | —                                    | —                                                                                 | —                                          |
+
+Pressed sinks with a dark fill and an inset shadow; focus is the page's 2 px gold ring. A count
+inside a chip (`.f-chip-n`) is a small disc in the words' colour. Filters (`Filters`, the compendium
+facets, the level-up spell levels) are selectable pills, never underlined tabs; on a phone a `Filters` row
+(the sheet's actions, a spell pick's levels) is one line that scrolls sideways. Wrapped rows of chips
+sit 12 px apart on a phone, so neighbouring hit areas never overlap. On a phone a selectable chip is 36 px high, a status
+chip that opens a panel and a compact chip 32 px, and each reaches 44 px through an invisible hit area
+above and below; a row that scrolls sideways keeps at least 4 px of block padding so the hit area is
+not clipped. The sheet's status chips keep their own width on a phone (never stretched into
+button-wide bars). The glyph icons in the status chips (◉ ⚠ ✧ ✦) move to the SVG `Icon` in a later
+slice. The classic UI's badges below stay until each screen is rebuilt.
+
+**Classic UI:**
+
 - **Style:** one atom parameterized by `--bd-c` (the hue). Background is a 14% tint of the hue over the
   surface; border is the full `--bd-c`; label is `--bd-ink` (the AA-safe variant) for domain colors.
   Mono uppercase, 11px, 4px facet radius.
