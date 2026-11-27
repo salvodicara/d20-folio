@@ -7931,3 +7931,34 @@
     clip: rect(0 0 0 0);
   }
 }
+/* the HP column on a laptop fits three-digit hit points on every row («256/256 PF») */
+@media (min-width: 641px) {
+  .fui .f-fight {
+    grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) auto minmax(
+        112px,
+        max-content
+      );
+  }
+}
+/* a tall fight row keeps its initiative and portrait level with the name (every width) */
+.fui .f-fight {
+  align-items: start;
+}
+.fui .f-fight > :is(.f-init, .f-act-slot) {
+  align-self: start;
+}
+/* a monster's limited uses are counters, not actions: on a phone they sit side by side as
+   compact pills, one line where they fit, after the full-width attack chips */
+@media (max-width: 640px) {
+  .fui .f-fight .f-uses {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .fui .f-fight .f-uses .f-chip {
+    min-height: 32px;
+    padding-block: 4px;
+    font-size: var(--fs-xs);
+    white-space: nowrap;
+  }
+}
