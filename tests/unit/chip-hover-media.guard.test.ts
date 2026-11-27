@@ -1,5 +1,5 @@
 /**
- * The gold hover lift of the Play sheet's chips and buttons is for a real hover only
+ * The hover light of the chips and buttons is for a real hover only
  * (#1333 review): on a touch screen a tap leaves `:hover` stuck where the finger was,
  * and when the layout shifts under it an unselected chip («Trattieni il respiro»)
  * glows gold as if it were picked. The look of a pick is `aria-pressed` alone.
@@ -33,7 +33,10 @@ function enclosing(index: number): string[] {
 
 describe("chip and button hover", () => {
   const rules = [
-    '.fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover',
+    // the chip family's hovers (design reset «BG3 craft», slice 2, 2026-11-27): one rule for
+    // every page, and one for a status chip that is a button
+    '.fui .f-chip:is(button):not([aria-disabled="true"]):not([aria-pressed="true"]):hover',
+    '.fui .f-chip[data-kind]:is(button):not([aria-disabled="true"]):hover',
     // the button family's hover (design reset «BG3 craft», 2026-11-26): one rule for every page
     '.fui .f-btn:not([aria-disabled="true"]):hover',
   ];

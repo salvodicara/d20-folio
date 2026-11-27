@@ -78,9 +78,6 @@
   --danger-bg: #3a1410;
   --danger-text: #ffd9d2;
   --error-text: #ffb3a8;
-  --conc-bg: #2a1a3e;
-  --cond-bg: #3a0f26;
-  --buff-bg: #0f2a36;
   --ring-track: #120a07;
   --scrim: rgb(4 3 2 / 0.72);
   --hero-top: #241b12;
@@ -640,57 +637,225 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+
+/* ---------- chips: one family after BG3's in-game UI (design reset «BG3 craft», 2026-11-27) ----------
+   Every chip's look lives here; a screen may place a chip, never restyle it
+   (tests/unit/chip-family.guard.test.ts). DESIGN.md holds the variant table.
+   - Selectable (a choice, a filter, a damage type): a dark pill, a bronze line, tan words.
+     Picked (`aria-pressed="true"`) is BG3's selected tile: a pale-gold line, an amber glow,
+     a warm fill, cream words.
+   - Status (`data-kind`, or a chip that is not a button: a fact such as «Nascosto»): BG3's
+     4 px info chip, its meaning colour as a thin line and a low tint, the words light.
+   - The «now» tag (`.f-now`, `.f-ir-now`): a gold-line tag.
+   Hover lights the line (a real hover only, #1333); pressed sinks; disabled keeps the shape
+   with dark-tan words (no opacity wash); focus is the page's gold ring. On a phone a
+   button-chip is 36 px and reaches 44 px through an invisible hit area. */
+.fui {
+  --chip-h: 34px;
+  --chip-h-status: 28px;
+  --chip-fill: rgb(0 0 0 / 0.3);
+  --pick-line: #eed1a7;
+  --pick-fill: rgb(238 209 167 / 0.12);
+  --pick-glow: rgb(190 120 20 / 0.45);
+  --pick-glow-in: rgb(190 120 20 / 0.35);
+}
 .fui .f-chip {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  padding: 0 16px;
-  border: 1px solid var(--line-strong);
+  gap: 6px;
+  min-height: var(--chip-h);
+  padding: 0 12px;
+  border: 1px solid var(--frame);
   border-radius: var(--r-pill);
-  background: none;
-  color: var(--text);
-  font: var(--fw-name) var(--fs-nav) var(--font-text);
+  background: var(--chip-fill);
+  color: var(--muted);
+  font: 400 var(--fs-nav) / 1.2 var(--font-text);
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    border-color 0.12s,
+    background-color 0.12s,
+    box-shadow 0.12s,
+    color 0.12s;
 }
-.fui .f-chip[aria-disabled="true"] {
-  opacity: 0.45;
-  cursor: not-allowed;
+@media (hover: hover) {
+  .fui .f-chip:is(button):not([aria-disabled="true"]):not([aria-pressed="true"]):hover {
+    border-color: var(--rim-brass);
+    background: var(--hover);
+    color: var(--cream);
+  }
+}
+.fui .f-chip:is(button):not([aria-disabled="true"]):active {
+  background: var(--btn-press-shade);
+  box-shadow: inset 0 2px 4px var(--btn-press-shade);
 }
 .fui .f-chip[aria-pressed="true"] {
-  border-color: var(--text);
-  background: var(--glass);
-  color: var(--white);
+  border-color: var(--pick-line);
+  background: var(--pick-fill);
+  box-shadow:
+    0 0 0 0.5px var(--pick-line),
+    0 0 6px var(--pick-glow),
+    inset 0 0 6px var(--pick-glow-in);
+  color: var(--cream);
+}
+/* status: a fact, never mistaken for a pick */
+.fui .f-chip:is([data-kind], :not(button)) {
+  --k: var(--muted);
+  gap: 4px;
+  min-height: var(--chip-h-status);
+  padding: 0 8px;
+  font-size: var(--fs-xs);
+  border-color: color-mix(in srgb, var(--k) 65%, transparent);
+  border-radius: var(--btn-r);
+  background: color-mix(in srgb, var(--k) 14%, var(--chip-fill));
+  color: color-mix(in srgb, var(--k) 35%, var(--strong));
+}
+.fui .f-chip:not(button) {
+  cursor: default;
 }
 .fui .f-chip[data-kind="conc"] {
-  border-color: var(--conc);
-  background: var(--conc-bg);
-  color: var(--white);
+  --k: var(--conc);
 }
 .fui .f-chip[data-kind="cond"] {
-  border-color: var(--cond);
-  background: var(--cond-bg);
-  color: var(--white);
+  --k: var(--cond);
+}
+.fui .f-chip[data-kind="buff"] {
+  --k: var(--buff);
 }
 /* in a form (Wild Shape, Polymorph): the beast arrives as temporary HP, so its colour */
 .fui .f-chip[data-kind="form"] {
-  border-color: var(--temp);
-  background: var(--buff-bg);
-  color: var(--white);
-  font-weight: 600;
-}
-.fui .f-chip[data-kind="buff"] {
-  border-color: var(--buff);
-  background: var(--buff-bg);
-  color: var(--white);
+  --k: var(--temp);
 }
 /* Inspiration held (BG3's gold status icon) */
 .fui .f-chip[data-kind="insp"] {
-  border-color: var(--gold);
-  background: color-mix(in srgb, var(--gold) 14%, transparent);
-  color: var(--gold-hi);
+  --k: var(--gold);
 }
+@media (hover: hover) {
+  .fui .f-chip[data-kind]:is(button):not([aria-disabled="true"]):hover {
+    border-color: var(--k);
+    background: color-mix(in srgb, var(--k) 22%, var(--chip-fill));
+    color: var(--strong);
+  }
+}
+/* a status chip that opens its panel: the meaning line at full strength while open */
+.fui .f-chip[data-kind][aria-pressed="true"] {
+  border-color: var(--k);
+  background: color-mix(in srgb, var(--k) 22%, var(--chip-fill));
+  box-shadow: inset 0 0 6px color-mix(in srgb, var(--k) 40%, transparent);
+  color: var(--strong);
+}
+/* a choice that cannot be taken now: the shape stays, the words dim (no opacity wash) */
+.fui .f-chip[aria-disabled="true"] {
+  border-color: var(--disabled-rim);
+  background: var(--disabled-fill);
+  box-shadow: none;
+  color: var(--disabled-text);
+  cursor: not-allowed;
+}
+/* a count in a chip or a filter button (prototype .sg .n): a small disc in the words' colour */
+.fui .f-chip-n {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, currentColor 22%, transparent);
+  color: inherit;
+  font: 400 var(--fs-xs) / 1 var(--font-num);
+}
+/* a compact chip in a monster's row (its actions and limited uses, Foundry's and D&D
+   Beyond's encounter rows): the status size, so the row reads its name and HP first */
+.fui .f-monster-acts .f-chip,
+.fui .f-uses .f-chip {
+  max-width: 100%;
+  min-height: var(--chip-h-status);
+  padding: 0 10px;
+  font-size: var(--fs-xs);
+}
+/* an action: one line; a narrow column cuts the name with an ellipsis, never the roll (the
+   whole line is its title) */
+.fui .f-chip-t {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fui .f-chip-roll {
+  flex: none;
+}
+/* a use still available: ready, not chosen (a brass line and strong words, no glow), so the
+   row reads its name and HP first */
+.fui .f-uses .f-chip[aria-pressed="true"] {
+  border-color: var(--rim-brass);
+  background: var(--chip-fill);
+  box-shadow: none;
+  color: var(--strong);
+}
+/* a use: a label too long for the column wraps, with a soft corner, not a stretched pill */
+.fui .f-uses .f-chip {
+  padding-block: 4px;
+  border-radius: var(--r-lg);
+  white-space: normal;
+  text-align: left;
+}
+/* a fight row's tag: the current turn, in the DM's list and the player's initiative, is one
+   gold-line tag; «must roll» is the same tag in the bloodied yellow */
+.fui .f-now,
+.fui .f-ir-now,
+.fui .f-must {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  padding: 2px 8px;
+  border: 1px solid var(--gold);
+  border-radius: var(--btn-r);
+  background: var(--chip-fill);
+  color: var(--gold-hi);
+  font: 600 var(--fs-xs) / 1.2 var(--font-label);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.fui .f-must {
+  border-color: var(--hp-y);
+  color: var(--hp-y);
+}
+/* a button-chip's hit area reaches past its line above and below (it is placed from the
+   padding box, inside the 1 px line): 40 px on a desktop, as every control */
+.fui .f-chip:is(button) {
+  position: relative;
+}
+.fui .f-chip:is(button)::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+.fui .f-chip[data-kind]:is(button)::after,
+.fui .f-monster-acts .f-chip::after,
+.fui .f-uses .f-chip::after {
+  inset: -7px 0;
+}
+/* the finger's 44 px on a phone (PRODUCT.md; Apple's HIG, WCAG 2.5.5): a selectable chip is
+   36 px; a status chip that opens its panel and a monster's compact chip stay smaller than a
+   button (32 px) and reach the same 44 px */
+@media (max-width: 640px) {
+  .fui .f-chip:is(button) {
+    min-height: 36px;
+  }
+  .fui .f-chip:is(button)::after {
+    inset: -5px 0;
+  }
+  .fui .f-chip[data-kind]:is(button),
+  .fui .f-monster-acts .f-chip,
+  .fui .f-uses .f-chip {
+    min-height: 32px;
+  }
+  .fui .f-chip[data-kind]:is(button)::after,
+  .fui .f-monster-acts .f-chip::after,
+  .fui .f-uses .f-chip::after {
+    inset: -7px 0;
+  }
+}
+/* ---------- end of the chip family ---------- */
 
 /* ---------- fields ---------- */
 .fui .f-field {
@@ -2070,16 +2235,6 @@
   color: var(--muted);
   font-weight: 400;
 }
-.fui .f-now {
-  flex: none;
-  padding: 4px 8px;
-  border-radius: var(--r-pill);
-  background: var(--turn);
-  color: var(--bg);
-  font: 600 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
 .fui .f-row-s[data-band="bloodied"] {
   color: var(--hp-y);
 }
@@ -2095,16 +2250,6 @@
   gap: 8px 16px;
 }
 /* a character who hasn't rolled initiative yet: never hidden, marked to roll */
-.fui .f-must {
-  flex: none;
-  padding: 4px 8px;
-  border: 1px solid var(--hp-y);
-  border-radius: var(--r-pill);
-  color: var(--hp-y);
-  font: 600 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
 .fui .f-toast > span {
   /* never one word alone on the last line (owner, 2026-11-10) */
   text-wrap: pretty;
@@ -2791,15 +2936,12 @@
   --btn-top: #251e17;
   --btn-bottom: #211b15;
   --btn-rim-hi: rgb(255 240 210 / 0.06);
-  --glow-gold-rim: rgb(240 194 78 / 0.4);
-  --glow-gold: rgb(240 194 78 / 0.67);
   --row-meta: #b3a58c;
   --temp-quiet: #9fb7c9;
   --glow-ac: rgb(212 175 102 / 0.53);
   --glow-hp: rgb(70 240 74 / 0.53);
   --band-quiet: rgb(255 255 255 / 0.024);
   --advice: #c9bba3;
-  --rule-quiet: rgb(255 255 255 / 0.07);
   --row-rule: rgb(255 255 255 / 0.06);
   --plate-text: #ece3d0;
   --row-hover-text: #ffe7a8;
@@ -2813,7 +2955,6 @@
   --muted: #bcae93;
   --label: #a89a82;
   --frame: #6a5130;
-  --hover-gold: #f0c24e;
   font-size: var(--fs-md);
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
@@ -2839,28 +2980,8 @@
 /* Only a real hover lights: a tap on a touch screen leaves `:hover` stuck where the
    finger was, and a chip shifted under it looked picked (#1333). A pick is
    `aria-pressed`. */
-@media (hover: hover) {
-  .fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover {
-    border-color: var(--hover-gold);
-    box-shadow:
-      0 0 0 1px var(--glow-gold-rim),
-      0 0 16px -2px var(--glow-gold);
-    transform: translateY(-1px);
-    filter: brightness(1.18);
-  }
-}
-.fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):active {
-  transform: translateY(1px) scale(0.98);
-  filter: brightness(0.82);
-  box-shadow: inset 0 2px 6px var(--shade);
-}
 /* A dialog's confirm, the creation step's «Avanti» and a save's reroll are the family's lit
    primary (the owner's 2026-11-10 blue BG3 button, drawn by the button family above). */
-/* state chips: bold, tighter */
-.fui .f-sheet .f-chip {
-  padding: 0 12px;
-  font-weight: 600;
-}
 /* resources: the name white and bold, the count a small label */
 .fui .f-sheet .f-res-t {
   font-size: var(--fs-text);
@@ -3112,35 +3233,12 @@
   font: 400 var(--fs-md)/1.45 var(--font-text);
   color: var(--advice);
 }
-/* filters: underlined tabs with the type shapes */
+/* filters: a row of the family's pills, with the type shapes (D&D Beyond's action filters);
+   on a phone one line that scrolls sideways (below) */
 .fui .f-filters {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
-  border-bottom: 1px solid var(--rule-quiet);
-}
-.fui .f-filters > .f-chip {
-  min-height: 40px;
-  padding: 8px 12px;
-  border: 0;
-  border-radius: 0;
-  background: none;
-  font: 600 var(--fs-nav)/1.45 var(--font-text);
-  color: var(--label, var(--muted));
-}
-.fui .f-filters > .f-chip[aria-pressed="true"] {
-  background: none;
-  color: var(--white);
-  box-shadow: inset 0 -2px 0 var(--text);
-}
-.fui .f-sheet .f-filters > .f-chip:not([aria-disabled="true"]):hover {
-  border-color: transparent;
-  box-shadow: none;
-  transform: none;
-  color: var(--white);
-}
-.fui .f-sheet .f-filters > .f-chip[aria-pressed="true"]:hover {
-  box-shadow: inset 0 -2px 0 var(--text);
+  gap: 8px;
 }
 /* the table: column names, then each group under its coloured rule */
 .fui .f-act-head {
@@ -3574,9 +3672,6 @@
     flex-wrap: wrap;
     gap: 8px;
   }
-  .fui .f-sheet .f-char-chips .f-chip {
-    border-radius: var(--r-pill);
-  }
   .fui .f-sheet .f-char-hp-open {
     grid-area: hp;
     margin-top: 16px;
@@ -3783,26 +3878,6 @@
     border-color: var(--text);
   }
 }
-/* a state pill's count (prototype .sg .n): a small disc in the pill's colour */
-.fui .f-chip-n {
-  display: inline-grid;
-  place-items: center;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 4px;
-  border-radius: var(--r-pill);
-  background: var(--chip-n, var(--text));
-  color: var(--shade);
-  font-size: var(--fs-sm);
-  font-weight: 600;
-  line-height: 1;
-}
-.fui .f-chip[data-kind="buff"] {
-  --chip-n: var(--buff);
-}
-.fui .f-chip[data-kind="cond"] {
-  --chip-n: var(--cond);
-}
 .fui .f-tb-back > .f-ic {
   width: 20px;
   height: 20px;
@@ -3862,10 +3937,8 @@
 .fui .f-sheet {
   --ir-now-bg: #1d2a33;
   --ir-now-glow: rgb(42 141 176 / 0.27);
-  --ir-tag: rgb(232 220 196 / 0.4);
   --ir-token-bg: #2a1a12;
   --r-slot: 2px;
-  --r-tag: 4px;
 }
 .fui .f-ir {
   display: flex;
@@ -3931,18 +4004,6 @@
   flex: none;
   font: 600 var(--fs-sm) var(--font-label);
   color: var(--phone-label);
-}
-.fui .f-ir-now {
-  display: inline-flex;
-  align-items: center;
-  min-height: 20px;
-  padding: 0 8px;
-  border: 1px solid var(--ir-tag);
-  border-radius: var(--r-tag);
-  font: 600 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-  color: var(--text);
 }
 .fui .f-ir[data-current] .f-ir-s,
 .fui .f-ir[data-current] .f-ir-x {
@@ -4960,14 +5021,6 @@
   gap: 8px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line-soft);
-}
-/* a table rule's current choice reads at a glance (a filled, gold-framed chip, as
-   D&D Beyond's selected option): among four quiet chips, the one in force is lit */
-.fui .f-rule .f-chip[aria-pressed="true"] {
-  border-color: var(--gold-line);
-  background: color-mix(in srgb, var(--gold) 18%, transparent);
-  color: var(--white);
-  font-weight: 600;
 }
 .fui .f-rule-head {
   display: flex;
@@ -6758,6 +6811,12 @@
 .fui .f-char-chips > .f-chips {
   display: contents;
 }
+/* on a phone the rows of state chips sit 12 px apart, so their 44 px hit areas never overlap */
+@media (max-width: 640px) {
+  .fui .f-char-chips {
+    row-gap: 12px;
+  }
+}
 
 /* Play parity with the approved prototype (x-play), from its computed styles */
 /* «Fine turno ›»: the label, then the chevron (.ft) */
@@ -6952,7 +7011,7 @@
 /* filters (.pills) and the table (.atable) */
 .fui .f-sheet .f-centre .f-filters {
   margin: 0 0 8px;
-  padding: 12px 20px 12px 0;
+  padding: 12px 0;
 }
 .fui .f-sheet .f-act-group > .f-act-gh:first-child {
   margin-top: 16px;
@@ -6976,12 +7035,7 @@
   font-weight: 600;
 }
 .fui .f-sheet .f-ir-now {
-  min-height: 0;
   margin-left: 4px;
-  padding: 0 4px;
-  border-radius: var(--r-sm);
-  font-size: var(--fs-sm);
-  letter-spacing: 0.03em;
 }
 .fui .f-sheet .f-ir .f-ir-s {
   font-weight: 600;
@@ -7019,20 +7073,6 @@
   .fui .f-sheet .f-char-id h1 {
     font-size: var(--fs-title-phone);
     line-height: normal;
-  }
-  .fui .f-sheet .f-char-chips > .f-chips {
-    flex: 1 1 100%;
-  }
-  .fui .f-sheet .f-char-chips > .f-chips > * {
-    flex: 1 1 0;
-    justify-content: center;
-  }
-  .fui .f-sheet .f-char-chips .f-chip {
-    justify-content: center;
-    padding: 4px 12px;
-  }
-  .fui .f-sheet .f-char-chips .f-condwrap > .f-chip {
-    width: 100%;
   }
   /* the phone's ⋯ is the top bar's */
   .fui .f-sheet .f-char-more {
@@ -7142,15 +7182,6 @@
   .fui .f-in,
   .fui .f-srch {
     min-height: 44px;
-  }
-  /* a chip keeps its 40 px pill; its touch area grows 2 px above and below */
-  .fui .f-chip:is(button) {
-    position: relative;
-  }
-  .fui .f-chip:is(button)::after {
-    content: "";
-    position: absolute;
-    inset: -2px 0;
   }
   .fui .f-burger,
   .fui .f-av,
@@ -7424,7 +7455,14 @@
 /* the DM's limited uses under a monster line (Scontro): a row of chips, set in from the
    line's art column */
 .fui .f-uses {
-  margin: 0;
+  margin: 6px 0 0;
+}
+/* on a phone stacked chips sit 12 px apart, so their 44 px hit areas never overlap */
+@media (max-width: 640px) {
+  .fui .f-monster-acts > .f-chips,
+  .fui .f-uses {
+    row-gap: 12px;
+  }
 }
 .fui .f-uses > .f-chips {
   display: contents;
@@ -7433,6 +7471,8 @@
 /* the DM's monster actions and traits under its line (Scontro) */
 .fui .f-monster-acts {
   display: grid;
+  /* bounded by the name column: a long action chip ends in an ellipsis, never under the HP */
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
 }
 /* the Multiattack note stays one line on the row; the card has it whole */
@@ -7448,16 +7488,6 @@
 .fui .f-target-group {
   display: grid;
   gap: 4px;
-}
-
-/* a line's action and use chips stay inside the name column: a long label wraps */
-.fui .f-monster-acts .f-chip,
-.fui .f-uses .f-chip {
-  max-width: 100%;
-  white-space: normal;
-  text-align: left;
-  padding-top: 6px;
-  padding-bottom: 6px;
 }
 
 /* the DM's own monster rows in «Aggiungi mostri»: edit and delete beside the count */
@@ -7546,11 +7576,10 @@
   --peak: var(--after);
   box-shadow: inset 0 2px 4px var(--btn-press-shade);
 }
-/* small capitals keep an 8 px cap height in the serif: the capital labels and tags at 13 px */
+/* small capitals keep an 8 px cap height in the serif: the capital labels and tags at 13 px
+   (the fight row's tags take theirs from the chip family) */
 .fui .f-lbl,
 .fui .f-act-head > span,
-.fui .f-now,
-.fui .f-must,
 .fui .f-kind {
   font-size: var(--fs-xs);
 }

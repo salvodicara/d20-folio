@@ -4,7 +4,7 @@
  * missing name (frames, 2026-11-26: «missing SRD string monster:…scimitar.name#it»).
  */
 import { describe, expect, it, vi } from "vitest";
-import { renderHook } from "@testing-library/react";
+import { render, renderHook, screen } from "@testing-library/react";
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
 const lazy = vi.hoisted(() => ({ ready: false }));
@@ -52,5 +52,21 @@ describe("useMonsterActions and the lazy monster catalogue", () => {
       useMonsterActions("camp", fight, [], "dm", "it", () => {})
     );
     expect(result.current.stripFor(["monster-1"])).not.toBeNull();
+  });
+
+  // Coordinator review, 2026-11-27: on a phone the chips wrapped to three lines and
+  // outweighed the monster's row. A chip is one line, the name and the roll (Foundry's and
+  // D&D Beyond's encounter rows); the damage is in its title and in the tray it opens.
+  it("draws each action as one compact chip: the name and the roll, the damage in its title", () => {
+    lazy.ready = true;
+    const { result } = renderHook(() =>
+      useMonsterActions("camp", fight, [], "dm", "it", () => {})
+    );
+    render(<>{result.current.stripFor(["monster-1"])}</>);
+    const chip = screen.getAllByRole("button", { pressed: false })[0];
+    if (!chip) throw new Error("no action chip");
+    expect(chip.textContent).toBe("Scimitar +4");
+    expect(chip.getAttribute("title")).toMatch(/^Scimitar \+4\u00a0· 1d6\+2 /);
+    expect(chip.getAttribute("aria-label")).toBe(chip.getAttribute("title"));
   });
 });

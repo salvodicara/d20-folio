@@ -69,14 +69,16 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["turn title", ".f-turn-t", "font-size", "20px"],
   ["advice", ".f-playbook-h", "font-weight", "400"],
   ["advice", ".f-playbook-h", "color", "rgb(201, 187, 163)"],
-  // filters as underlined tabs, group headers, rows, the row button, the slot
+  // filters as the chip family's pills (design reset «BG3 craft», slice 2): the picked one is
+  // BG3's selected tile, a pale-gold line; then group headers, rows, the row button, the slot
   [
     "filter on",
     '.f-filters .f-chip[aria-pressed="true"]',
-    "box-shadow",
-    "rgb(232, 220, 196) 0px -2px 0px 0px inset",
+    "border-top-color",
+    "rgb(238, 209, 167)",
   ],
-  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "0px"],
+  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "20px"],
+  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "color", "rgb(244, 240, 234)"],
   ["group header", ".f-act-gh", "font-size", "16px"],
   ["group header", ".f-act-gh", "text-transform", "none"],
   ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "400"],
