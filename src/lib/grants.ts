@@ -37,6 +37,8 @@ import {
   AC_BONUS_CONDITIONS,
   compileGrant,
   foldRules,
+  isRollTimeRule,
+  rollRows,
   ruleConditional,
   ruleFlag,
   ruleFlagIds,
@@ -864,19 +866,6 @@ export function grantField(ref: GrantRef, field: string, lit?: LocaleText): LocT
 const EMPTY_LOCALE_TEXT = Object.fromEntries(LOCALES.map((l) => [l, ""])) as LocaleText;
 
 /**
- * PS-J — the `scope` slice an adv/dis clause carries into the aggregate: present
- * ONLY when the clause is an ATTACK clause narrower than "every attack roll"
- * ({@link AdvantageClause.scope}). `"all"` is dropped so a consumer testing
- * `scope === undefined` reads exactly one thing: this clause nets into the
- * card's verdict.
- */
-function narrowedScope(g: Extract<Grant, { type: "advantage-on" | "disadvantage-on" }>): {
-  scope?: AttackClauseScope;
-} {
-  return g.rollType === "attack" && g.scope !== "all" ? { scope: g.scope } : {};
-}
-
-/**
  * The catalogue ref of a source's top-level grant at `index` — the same
  * `<sourceKey>.grants.<seg>` the evaluator computes. Exported so the (deliberate)
  * second bundle-collector (`feature-choices.collectGrantBundles`) keys its labels
@@ -1334,7 +1323,13 @@ function sameEffectsDontStack(
     sources.map((source) => [source.id, effectIdentity(source)])
   );
   const sourcesOf = new Map<string, Set<string>>();
-  for (const id of new Set(ruleSourceIds)) {
+  // A source that gives only roll-time rules joins no group: those rules are not
+  // stacked numbers, and before they compiled the source gave no rule at all.
+  const stackingIds = ruleSourceIds.filter((_, i) => {
+    const rule = rules[i];
+    return rule !== undefined && !isRollTimeRule(rule);
+  });
+  for (const id of new Set(stackingIds)) {
     const identity = identityOf.get(id);
     if (identity === undefined) continue;
     const ids = sourcesOf.get(identity) ?? new Set<string>();
@@ -2650,11 +2645,8 @@ export function evaluateGrants(
   );
 
   const flatDamageReductions: AggregatedGrants["flatDamageReductions"][number][] = [];
-  const damageDieReductions: DamageDieReductionClause[] = [];
-  const saveDamageRules: AggregatedGrants["saveDamageRules"][number][] = [];
 
   // Movement (speeds fold through `lib/rules`)
-  const round1DamageDoubles: AggregatedGrants["round1DamageDoubles"][number][] = [];
 
   // Derived stats (AC bonus, HP per level, crit ranges, extra attack, attunement,
   // exhaustion recovery and ability floors/item bonuses fold through `lib/rules`)
@@ -2715,9 +2707,6 @@ export function evaluateGrants(
   const weaponAttackBonuses: WeaponAttackBonusEntry[] = [];
   const companionMods: CompanionMod[] = [];
   const actionOutcomeRiders: ActionOutcomeRider[] = [];
-  const damageDieModifiers: DamageDieModifierEntry[] = [];
-  const spellResistancePenetration = new Set<DamageType>();
-  const resistancePenetration = new Set<DamageType>();
 
   // Spell grants
   const alwaysPrepared: string[] = [];
@@ -2739,19 +2728,13 @@ export function evaluateGrants(
     if (countTopLevelFreeCasts(src.grants) >= 2) multiFreeCastSourceIds.add(src.id);
   }
 
-  // Advantage / disadvantage chips
-  const advantages: AdvantageClause[] = [];
-  const disadvantages: AdvantageClause[] = [];
-  const rollFloors: RollFloorClause[] = [];
-  const d20Rerolls: D20RerollClause[] = [];
-  const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
+  // Roll-time clauses compile to rules (`lib/rules/roll-rules`); the evaluator keeps
+  // what only it knows about each one, by rule index.
+  const clauseContexts: Array<{ description: LocText; whileActiveKey?: string }> = [];
   let hitDieFloor: { floorBelow: number; floorTo: number } | undefined;
   const concentrationSaveSchoolBonuses: Array<
     AggregatedGrants["concentrationSaveSchoolBonuses"][number]
   > = [];
-  const rollDieAdjustments: RollDieAdjustmentClause[] = [];
-  const incomingAttackAdvantages: IncomingAttackClause[] = [];
-  const incomingAttackDisadvantages: IncomingAttackClause[] = [];
   const defenseNotes: IncomingAttackClause[] = [];
 
   // PRIM batch (2026-06-10)
@@ -2837,6 +2820,21 @@ export function evaluateGrants(
     }
   }
 
+  function pushClauses(g: Grant, gref: GrantRef, activeKey: string | undefined): void {
+    const description = grantField(
+      gref,
+      "description",
+      "description" in g ? g.description : undefined
+    );
+    for (const rule of compileGrant(g) ?? []) {
+      clauseContexts[rules.length] = {
+        description,
+        ...(activeKey ? { whileActiveKey: activeKey } : {}),
+      };
+      rules.push(rule);
+    }
+  }
+
   function applyGrantRules(
     g: Grant,
     sourceId: string,
@@ -2910,23 +2908,13 @@ export function evaluateGrants(
           sourceId,
         });
         break;
+      // Damage clauses on rolls compile to roll rules (`lib/rules/roll-rules`).
       case "damage-die-reduction":
-        damageDieReductions.push({
-          sourceId,
-          dice: g.dice,
-          damageTypes: g.damageTypes,
-          oncePerTurn: g.oncePerTurn ?? false,
-        });
+        pushClauses(g, gref, activeKey);
         break;
       case "save-damage-rule":
         if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
-        saveDamageRules.push({
-          ability: g.ability,
-          requiresDamageOnSuccess: g.requiresDamageOnSuccess,
-          onSuccess: g.onSuccess,
-          onFailure: g.onFailure,
-          sourceId,
-        });
+        pushClauses(g, gref, activeKey);
         break;
 
       // ── Movement ────────────────────────────────────────────────────
@@ -3390,33 +3378,14 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+
+      // Resistance penetration is a flag per damage type; the weapon's own dice
+      // (Great Weapon Fighting, Savage Attacker) are a roll clause.
       case "damage-penetration":
-        for (const type of g.damageTypes) {
-          spellResistancePenetration.add(type);
-          if (g.appliesTo === "any") resistancePenetration.add(type);
-        }
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "damage-die-modifier":
-        // Manipulation of a weapon's own damage dice (Great Weapon Fighting
-        // floor / Savage Attacker reroll / Two-Weapon Fighting off-hand mod /
-        // Unarmed Fighting Unarmed Strike). Collected as a list; the attack-row
-        // consumer applies the relevant `mode` to the matching weapon rows.
-        // Carry every field through unresolved (the evaluator has no weapon /
-        // ability scores); spread optional keys only when present so the
-        // aggregate stays minimal and parity tests can use `toEqual`.
-        damageDieModifiers.push({
-          sourceId,
-          mode: g.mode,
-          appliesTo: g.appliesTo,
-          ...(g.floorBelow !== undefined ? { floorBelow: g.floorBelow } : {}),
-          ...(g.floorTo !== undefined ? { floorTo: g.floorTo } : {}),
-          ...(g.oncePerTurn !== undefined ? { oncePerTurn: g.oncePerTurn } : {}),
-          ...(g.baseDie !== undefined ? { baseDie: g.baseDie } : {}),
-          ...(g.unburdenedDie !== undefined ? { unburdenedDie: g.unburdenedDie } : {}),
-          ...(g.grappleDie !== undefined ? { grappleDie: g.grappleDie } : {}),
-          ...(g.abilityMod !== undefined ? { abilityMod: g.abilityMod } : {}),
-          ...(g.damageType !== undefined ? { damageType: g.damageType } : {}),
-        });
+        pushClauses(g, gref, activeKey);
         break;
 
       // ── Spell grants ────────────────────────────────────────────────
@@ -3549,97 +3518,26 @@ export function evaluateGrants(
         });
         break;
 
-      // ── Advantage / disadvantage clauses ────────────────────────────
+      // ── Roll-time clauses ───────────────────────────────────────────
+      // Compiled to roll clauses; `activeKey` (a `while-active` block: Rage's STR
+      // advantage, Reckless Attack, Blur) marks the chip "· active".
       case "advantage-on":
         if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
-        // `activeKey` (set when this clause arrived through a `while-active`
-        // block) marks the chip as a conditional, currently-active source —
-        // mirrors `weapon-damage-bonus` (Rage's STR advantage · active).
-        advantages.push({
-          sourceId,
-          rollType: g.rollType,
-          vs: g.vs,
-          description: grantField(gref, "description", g.description),
-          ...(g.round1 ? { round1: true } : {}),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-          ...narrowedScope(g),
-        });
+        pushClauses(g, gref, activeKey);
         break;
       case "disadvantage-on":
-        disadvantages.push({
-          sourceId,
-          rollType: g.rollType,
-          vs: g.vs,
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-          ...(g.consume ? { consume: g.consume } : {}),
-          ...narrowedScope(g),
-        });
-        break;
-      case "round1-damage-double":
-        // Round-1 save-gated damage-doubler note (Death Strike) — carry the ability
-        // pair; the consumer resolves the DC + the UI shows it only in combat round 1.
-        round1DamageDoubles.push({
-          sourceId,
-          saveAbility: g.saveAbility,
-          saveDcAbility: g.saveDcAbility,
-        });
-        break;
+      case "incoming-attack-advantage":
+      case "incoming-attack-disadvantage":
       case "roll-floor":
-        rollFloors.push({
-          sourceId,
-          rollType: g.rollType,
-          floor: g.floor,
-          appliesTo: g.appliesTo,
-          ...(g.ability ? { ability: g.ability } : {}),
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-        });
-        break;
       case "d20-reroll":
-        d20Rerolls.push({ sourceId, faces: g.faces });
+      case "concentration-damage-proof":
+      case "roll-die-adjustment":
+      case "round1-damage-double":
+        pushClauses(g, gref, activeKey);
         break;
       case "hit-die-floor":
         if (!hitDieFloor || g.floorTo > hitDieFloor.floorTo)
           hitDieFloor = { floorBelow: g.floorBelow, floorTo: g.floorTo };
-        break;
-      case "concentration-damage-proof":
-        concentrationDamageProof.push({
-          sourceId,
-          ...(g.spellId !== undefined ? { spellId: g.spellId } : {}),
-          ...(g.spells !== undefined ? { spells: g.spells } : {}),
-          ...(g.alsoWhileIncapacitated ? { alsoWhileIncapacitated: true as const } : {}),
-        });
-        break;
-      case "roll-die-adjustment":
-        rollDieAdjustments.push({
-          sourceId,
-          rollType: g.rollType,
-          operation: g.operation,
-          dice: g.dice,
-          consume: g.consume,
-          ...(g.appliesTo ? { appliesTo: g.appliesTo } : {}),
-        });
-        break;
-      case "incoming-attack-advantage":
-        // SELF-side downside (Reckless Attack): when it arrives through a
-        // `while-active` block, `activeKey` marks it "· active" — same as the
-        // advantage chips it mirrors.
-        incomingAttackAdvantages.push({
-          sourceId,
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-        });
-        break;
-      case "incoming-attack-disadvantage":
-        // SELF-side BENEFIT (Blur): attacks against you have Disadvantage. When it
-        // arrives through a `while-active` block (Blur is a Concentration spell),
-        // `activeKey` marks it "· active" — the mirror of the downside above.
-        incomingAttackDisadvantages.push({
-          sourceId,
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-        });
         break;
       case "defense-note":
         // SELF-side defensive reminder line (Warding Bond's shared-damage /
@@ -4224,6 +4122,10 @@ export function evaluateGrants(
 
   const policed = sameEffectsDontStack(rules, ruleSourceIds, sources);
   const values = foldRules(policed);
+  const clauses = rollRows(policed, (i) => ({
+    sourceId: ruleSourceIds[i] ?? "",
+    ...(clauseContexts[i] ?? { description: litText(EMPTY_LOCALE_TEXT) }),
+  }));
   const ruleOrigins: RuleOrigin[] = policed.map((rule, i) => {
     const source = ruleSources[i];
     return source ? { rule, source } : { rule };
@@ -4265,8 +4167,8 @@ export function evaluateGrants(
       ruleFlagIds(values, "defense:resist-source:") as DamageSource[]
     ),
     flatDamageReductions,
-    damageDieReductions,
-    saveDamageRules,
+    damageDieReductions: clauses.damageDieReductions,
+    saveDamageRules: clauses.saveDamageRules,
     // Projections of the folded rules, kept until their readers move to `values`.
     speedBonusFt: ruleNumber(values, "speed:walk"),
     conditionalSpeedBonusFt:
@@ -4274,7 +4176,7 @@ export function evaluateGrants(
         ? {}
         : { "no-heavy-armor": ruleConditional(values, "speed:walk", "no-heavy-armor") },
     round1SpeedBonusFt: ruleConditional(values, "speed:walk", "round-1"),
-    round1DamageDoubles,
+    round1DamageDoubles: clauses.round1DamageDoubles,
     flySpeed: nonWalkingSpeed(values, "fly"),
     swimSpeed: nonWalkingSpeed(values, "swim"),
     climbSpeed: nonWalkingSpeed(values, "climb"),
@@ -4391,9 +4293,13 @@ export function evaluateGrants(
     weaponAttackBonuses,
     companionMods,
     actionOutcomeRiders,
-    damageDieModifiers,
-    spellResistancePenetration,
-    resistancePenetration,
+    damageDieModifiers: clauses.damageDieModifiers,
+    spellResistancePenetration: new Set(
+      ruleFlagIds(values, "damage:ignore-resistance:spell:") as DamageType[]
+    ),
+    resistancePenetration: new Set(
+      ruleFlagIds(values, "damage:ignore-resistance:any:") as DamageType[]
+    ),
     alwaysPrepared,
     ritualSpells,
     ritualAnyClasses,
@@ -4401,15 +4307,15 @@ export function evaluateGrants(
     freeCastFromList,
     atWillCasts,
     scopedExtraSlots,
-    advantages,
-    disadvantages,
-    rollFloors,
-    d20Rerolls,
-    concentrationDamageProof,
+    advantages: clauses.advantages,
+    disadvantages: clauses.disadvantages,
+    rollFloors: clauses.rollFloors,
+    d20Rerolls: clauses.d20Rerolls,
+    concentrationDamageProof: clauses.concentrationDamageProof,
     ...(hitDieFloor ? { hitDieFloor } : {}),
-    rollDieAdjustments,
-    incomingAttackAdvantages,
-    incomingAttackDisadvantages,
+    rollDieAdjustments: clauses.rollDieAdjustments,
+    incomingAttackAdvantages: clauses.incomingAttackAdvantages,
+    incomingAttackDisadvantages: clauses.incomingAttackDisadvantages,
     defenseNotes,
     auras,
     spellDieAugments,

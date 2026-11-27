@@ -77,7 +77,7 @@ describe("the digest of the fixture sheets", () => {
   it("covers every fixture, readable, with every section", async () => {
     const digest = await digestDocuments(await fixtures(), false);
     const sheets = Object.values(digest.sheets);
-    expect(sheets).toHaveLength(5);
+    expect(sheets).toHaveLength(6);
     for (const sheet of sheets) {
       if ("unreadable" in sheet) throw new Error(`unreadable: ${sheet.unreadable}`);
       expect(Object.keys(sheet.sections)).toEqual([...SECTIONS]);
@@ -123,6 +123,24 @@ describe("the comparison names the sheet and the section", () => {
     expect(namedReport(comparison)).toContain(
       "changed      users/fixtures/characters/fighter-5-armoured: ac, breakdowns"
     );
+  });
+
+  it("a roll-time rule the sheet never shows moves the rolls section, nothing else", async () => {
+    const documents = await fixtures();
+    const before = await digestDocuments(documents, false);
+    const copy = structuredClone(documents);
+    const rogue = copy.find((d) => d.path.endsWith("/rogue-7-halfling-rolls"));
+    if (!rogue) throw new Error("no rogue fixture");
+    const build = rogue.data.build as {
+      customs: { features: Array<{ grants: Array<{ type: string }> }> };
+    };
+    const feature = build.customs.features[0];
+    if (!feature) throw new Error("no homebrew feature");
+    feature.grants = feature.grants.filter((g) => g.type !== "incoming-attack-advantage");
+    const comparison = compareDigests(before, await digestDocuments(copy, false));
+    expect(comparison.changed).toEqual({
+      "users/fixtures/characters/rogue-7-halfling-rolls": ["rolls"],
+    });
   });
 
   it("a sheet on one side only, and a sheet that stops reading", async () => {
@@ -179,7 +197,7 @@ describe("the counts-only report for live sheets", () => {
       false
     );
     const report = countsReport(compareDigests(before, after));
-    expect(report).toMatchObject({ sheets: 5, compared: 5, unchanged: 4, changed: 1 });
+    expect(report).toMatchObject({ sheets: 6, compared: 6, unchanged: 5, changed: 1 });
     expect(report.bySection.ac).toBe(1);
     expect(report.bySection.spells).toBe(0);
     expect(Object.keys(report.bySection)).toEqual([...SECTIONS]);
