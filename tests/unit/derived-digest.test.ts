@@ -125,6 +125,45 @@ describe("the comparison names the sheet and the section", () => {
     );
   });
 
+  it("a language learned moves only the languages section", async () => {
+    const documents = await fixtures();
+    const before = await digestDocuments(documents, false);
+    const after = await digestDocuments(
+      editFighterBuild(documents, (build) => {
+        build.languageIds = ["common", "dwarvish"];
+      }),
+      false
+    );
+    expect(compareDigests(before, after).changed).toEqual({
+      "users/fixtures/characters/fighter-5-armoured": ["languages"],
+    });
+  });
+
+  it("a tool learned and an armour training removed move the proficiencies", async () => {
+    const documents = await fixtures();
+    const before = await digestDocuments(documents, false);
+    const tool = await digestDocuments(
+      editFighterBuild(documents, (build) => {
+        build.toolProficiencyIds = ["smiths-tools"];
+      }),
+      false
+    );
+    expect(compareDigests(before, tool).changed).toEqual({
+      "users/fixtures/characters/fighter-5-armoured": ["proficiencies"],
+    });
+    const armor = await digestDocuments(
+      editFighterBuild(documents, (build) => {
+        build.overrides = { armorProficiencies: { shields: false } };
+      }),
+      false
+    );
+    expect(
+      compareDigests(before, armor).changed[
+        "users/fixtures/characters/fighter-5-armoured"
+      ]
+    ).toContain("proficiencies");
+  });
+
   it("a sheet on one side only, and a sheet that stops reading", async () => {
     const documents = await fixtures();
     const before = await digestDocuments(documents, false);

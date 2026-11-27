@@ -127,6 +127,23 @@ function parentDomainKey(doc: CharacterDoc): unknown {
 }
 
 /**
+ * #1414 — whether a server-confirmed sheet shows that a traced write (a save trace, or
+ * a copy kept from a lost save) landed. With the write's id (the write chain, #1413):
+ * the sheet carries it, or was built directly on it (`baseWriteId`). A sheet that only
+ * reached the write's generation is no proof: another device's save looks the same.
+ * Without an id (a trace or copy from an older build): the generation, as before.
+ */
+function writeLanded(
+  doc: CharacterDoc,
+  baseWriteId: string | null,
+  traced: { revision?: number; writeId?: string }
+): boolean {
+  if (traced.writeId !== undefined)
+    return doc.writeId === traced.writeId || baseWriteId === traced.writeId;
+  return traced.revision !== undefined && doc.revision >= traced.revision;
+}
+
+/**
  * The rules' compare-and-set refusal — the ONLY rejection that invalidates the local
  * payload (another writer advanced `revision`, or access changed). Firestore reports it
  * as `code: "permission-denied"`; a transport that surfaces only a message is matched on
@@ -530,13 +547,14 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       };
       return saver
         .sendWholeSheet(sheet, source, {
-          onSend: (revision) => {
+          onSend: (revision, writeId) => {
             sentAt = revision;
             sentSinceLoadRef.current = true;
             keepUnackedSave(user.uid, characterId, {
               character: sheet.character,
               session: sheet.session,
               revision,
+              writeId,
               at: Date.now(),
               whole: true,
             });
@@ -884,6 +902,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             // A level-up rewrote the play state too; a build save did not.
             part: lost.whole ? "all" : "build",
             revision: lost.revision,
+            ...(lost.writeId !== undefined ? { writeId: lost.writeId } : {}),
             savedAt: lost.at ?? Date.now(),
             schema: CHARACTER_SCHEMA,
             playVersion: PLAY_STATE_VERSION,
@@ -917,26 +936,32 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         if (quarantined) return;
         lastPendingRef.current.parent = meta.hasPendingWrites;
         pendingParentRef.current = meta.hasPendingWrites ? doc : null;
-        // A SERVER-confirmed sheet at or past the traced save's generation has taken it
-        // (the tab's own optimistic echo carries the new generation too, and proves
-        // nothing).
+        // A SERVER-confirmed sheet that shows the traced save landed retires its trace
+        // (the tab's own optimistic echo proves nothing). #1414: a sheet that merely
+        // reached the save's generation is no proof, since another device's save looks
+        // the same; the save's own id is.
         const trace = readUnackedSave(user.uid, characterId);
-        if (!meta.hasPendingWrites && doc && trace && doc.revision >= trace.revision)
+        if (
+          !meta.hasPendingWrites &&
+          doc &&
+          trace &&
+          writeLanded(doc, meta.baseWriteId, trace)
+        )
           dropUnackedSave(user.uid, characterId);
         if (!meta.hasPendingWrites && doc && !loadChecked) {
           loadChecked = true;
-          if (trace && doc.revision < trace.revision) rescueLostSave(trace);
+          if (trace && !writeLanded(doc, meta.baseWriteId, trace)) rescueLostSave(trace);
         }
         // The same proof for a copy kept from a lost save (another tab of this device
         // still had it in flight): it landed after all. Once this tab has sent its own
-        // write, that generation proves nothing.
+        // write, an older copy's generation proves nothing.
         const kept = doc ? readRescueCopy(user.uid, characterId, Date.now()) : null;
         if (
           !meta.hasPendingWrites &&
           !sentSinceLoadRef.current &&
           doc &&
-          kept?.revision !== undefined &&
-          doc.revision >= kept.revision
+          kept &&
+          writeLanded(doc, meta.baseWriteId, kept)
         )
           dropRescueCopy(user.uid, characterId);
         // A server snapshot in a shape this client knows: a held refusal was an ordinary
@@ -1146,6 +1171,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
                   character: sent.character,
                   session: sent.session,
                   revision: sent.revision,
+                  ...(typeof sent.writeId === "string" ? { writeId: sent.writeId } : {}),
                   at: Date.now(),
                 });
             },

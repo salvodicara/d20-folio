@@ -33,6 +33,7 @@ import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import { partyBonuses } from "@/domains/combat/party-bonuses";
 import { FightFeed } from "@/domains/combat/ui/FightFeed";
+import { useTurnAdvanceShortcut } from "@/hooks/useTurnAdvanceShortcut";
 import {
   dmMoves,
   moves,
@@ -197,6 +198,13 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
+  // The DM's arrow keys pass the turn (→) and step it back (←), as on the classic screen.
+  useTurnAdvanceShortcut({
+    enabled: isDm && controls.pass,
+    empty: encounter.combatants.length === 0,
+    onNext: actions.pass,
+    onPrev: controls.back ? actions.back : () => {},
+  });
   const dm = useDmTools(
     campaign,
     encounter,

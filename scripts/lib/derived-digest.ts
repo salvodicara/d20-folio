@@ -25,8 +25,30 @@ import { join } from "node:path";
 type RawMap = Record<string, unknown>;
 /** The stored character as the read path returns it (`CharacterDoc`). */
 interface StoredSheet {
-  character: { classes: ReadonlyArray<{ classId: string }> };
+  character: {
+    classes: ReadonlyArray<{ classId: string }>;
+    languageIds?: readonly string[];
+    customLanguages?: readonly string[];
+    toolProficiencyIds?: readonly string[];
+    customToolProficiencies?: readonly string[];
+    armorProficiencyOverrides?: Record<string, boolean>;
+    weaponProficiencyOverrides?: Record<string, boolean>;
+  };
+  session: unknown;
 }
+/** The grant aggregate's proficiency and language sets (`AggregatedGrants`). */
+interface GrantedTraining {
+  armorProficiencies: ReadonlySet<string>;
+  weaponProficiencies: ReadonlySet<string>;
+  toolProficiencies: ReadonlySet<string>;
+  languages: ReadonlySet<string>;
+}
+type TokensOf = (
+  ids: readonly string[],
+  custom: readonly string[],
+  aggregate: GrantedTraining,
+  locale: string
+) => unknown;
 interface Engine {
   hydrateStoredCharacter: (
     id: string,
@@ -43,11 +65,25 @@ interface Engine {
     locale: string,
     isEdit: boolean
   ) => unknown;
+  aggregateCharacterGrants: (
+    character: StoredSheet["character"],
+    session: unknown
+  ) => GrantedTraining;
+  getClassTable: (
+    classId: string
+  ) => { armorProficiencies?: string[]; weaponProficiencies?: string[] } | undefined;
+  applySetOverride: (
+    computed: Iterable<string>,
+    override: Record<string, boolean> | undefined
+  ) => string[];
+  effectiveToolTokens: TokensOf;
+  effectiveLanguageTokens: TokensOf;
 }
 
+/** `file` is relative to `src/`, without the extension. */
 async function engineFunction(file: string, name: string): Promise<unknown> {
   const module = (await import(
-    new URL(`../../src/lib/${file}.ts`, import.meta.url).href
+    new URL(`../../src/${file}.ts`, import.meta.url).href
   )) as RawMap;
   if (typeof module[name] !== "function") throw new TypeError(`${file} has no ${name}`);
   return module[name];
@@ -59,29 +95,49 @@ let engine: Promise<Engine> | undefined;
 export function loadEngine(): Promise<Engine> {
   engine ??= (async () => ({
     hydrateStoredCharacter: (await engineFunction(
-      "character-read",
+      "lib/character-read",
       "hydrateStoredCharacter"
     )) as Engine["hydrateStoredCharacter"],
     deriveCharacter: (await engineFunction(
-      "views/derive-character",
+      "lib/views/derive-character",
       "deriveCharacter"
     )) as Engine["deriveCharacter"],
     resolveTrackers: (await engineFunction(
-      "smart-tracker",
+      "lib/smart-tracker",
       "resolveTrackers"
     )) as Engine["resolveTrackers"],
     resolveActions: (await engineFunction(
-      "smart-tracker",
+      "lib/smart-tracker",
       "resolveActions"
     )) as Engine["resolveActions"],
     sheetNumbers: (await engineFunction(
-      "views/sheet-numbers",
+      "lib/views/sheet-numbers",
       "sheetNumbers"
     )) as Engine["sheetNumbers"],
     buildSpellsViewModel: (await engineFunction(
-      "views/spells-view",
+      "lib/views/spells-view",
       "buildSpellsViewModel"
     )) as Engine["buildSpellsViewModel"],
+    aggregateCharacterGrants: (await engineFunction(
+      "lib/aggregate-character",
+      "aggregateCharacterGrants"
+    )) as Engine["aggregateCharacterGrants"],
+    getClassTable: (await engineFunction(
+      "data/classes",
+      "getClassTable"
+    )) as Engine["getClassTable"],
+    applySetOverride: (await engineFunction(
+      "lib/views/sheet-view",
+      "applySetOverride"
+    )) as Engine["applySetOverride"],
+    effectiveToolTokens: (await engineFunction(
+      "lib/views/sheet-view",
+      "effectiveToolTokens"
+    )) as Engine["effectiveToolTokens"],
+    effectiveLanguageTokens: (await engineFunction(
+      "lib/views/sheet-view",
+      "effectiveLanguageTokens"
+    )) as Engine["effectiveLanguageTokens"],
   }))();
   return engine;
 }
@@ -95,6 +151,8 @@ export const SECTIONS = [
   "abilities",
   "saves",
   "skills",
+  "proficiencies",
+  "languages",
   "passives",
   "ac",
   "hp",
@@ -257,7 +315,56 @@ export function derivedSections(
   sections.actions.rows = actions.filter((a) => !isAttack(a));
   for (const { classId } of doc.character.classes)
     sections.spells[classId] = engine.buildSpellsViewModel(doc, classId, "en", false);
+  Object.assign(sections, training(engine, doc));
   return sections;
+}
+
+/**
+ * Armour, weapon and tool proficiencies and languages: each class's training with the
+ * player's overrides, the grant aggregate's sets, and the merged tool and language
+ * tokens the sheet shows (by id; their labels are display text).
+ */
+function training(
+  engine: Engine,
+  doc: StoredSheet
+): Pick<Record<Section, RawMap>, "proficiencies" | "languages"> {
+  const cd = doc.character;
+  const granted = engine.aggregateCharacterGrants(cd, doc.session);
+  const tables = cd.classes.map(({ classId }) => engine.getClassTable(classId));
+  const fromClasses = (key: "armorProficiencies" | "weaponProficiencies") =>
+    tables.flatMap((table) => table?.[key] ?? []);
+  return {
+    proficiencies: {
+      armor: {
+        classes: engine.applySetOverride(
+          fromClasses("armorProficiencies"),
+          cd.armorProficiencyOverrides
+        ),
+        granted: granted.armorProficiencies,
+      },
+      weapons: {
+        classes: engine.applySetOverride(
+          fromClasses("weaponProficiencies"),
+          cd.weaponProficiencyOverrides
+        ),
+        granted: granted.weaponProficiencies,
+      },
+      tools: engine.effectiveToolTokens(
+        cd.toolProficiencyIds ?? [],
+        cd.customToolProficiencies ?? [],
+        granted,
+        "en"
+      ),
+    },
+    languages: {
+      tokens: engine.effectiveLanguageTokens(
+        cd.languageIds ?? [],
+        cd.customLanguages ?? [],
+        granted,
+        "en"
+      ),
+    },
+  };
 }
 
 /** The stable reason a family could not be read: a short code, never a message. */

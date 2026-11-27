@@ -80,6 +80,37 @@
                 }
               ],
               "instanceId": "custom-owl-sight"
+            },
+            {
+              "custom": true,
+              "title": "Field Training",
+              "emoji": "*",
+              "source": "Homebrew",
+              "tags": [],
+              "contentBlocks": [],
+              "grants": [
+                {
+                  "type": "ability-check-bonus",
+                  "appliesTo": "stealth",
+                  "value": 2
+                },
+                {
+                  "type": "ability-check-bonus",
+                  "appliesTo": "WIS-checks",
+                  "ability": "INT",
+                  "min": 1
+                },
+                {
+                  "type": "skill-ability-option",
+                  "skills": ["athletics"],
+                  "ability": "INT"
+                },
+                {
+                  "type": "unarmed-strike-damage-type-option",
+                  "toType": "force"
+                }
+              ],
+              "instanceId": "custom-field-training"
             }
           ]
         }
