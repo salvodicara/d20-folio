@@ -1060,7 +1060,7 @@
   display: grid;
   gap: 12px;
   padding: 12px 16px;
-  /* a tonal well inside its panel, no second frame */
+  border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--sunk);
 }
@@ -2665,7 +2665,7 @@
   align-items: center;
   gap: 12px 24px;
   padding: 16px;
-  /* a tonal band, not a framed box inside the panel */
+  border: 1px solid var(--line);
   border-radius: var(--r);
   background: var(--sunk);
 }
@@ -5271,6 +5271,7 @@
   gap: 4px;
   padding: 12px 8px;
   background: var(--sunk);
+  border: 1px solid var(--line);
   border-radius: var(--r);
   text-align: center;
 }
@@ -6049,14 +6050,13 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  border: 1px solid var(--line-strong);
+  /* the reading pane is a tonal well inside its section's frame, not a second card */
   border-radius: var(--r);
   background: linear-gradient(180deg, var(--panel-2), var(--sunk));
 }
+/* before a pick is hovered, the same well holds the hint */
 .fui .f-pick-hint {
   margin: 0;
-  border-style: dashed;
-  background: none;
   color: var(--muted);
   text-wrap: balance;
 }
@@ -7419,8 +7419,8 @@
   margin: 4px 0 0;
   padding: 8px;
   list-style: none;
+  border: 1px solid var(--line);
   border-radius: var(--r-sm);
-  background: var(--sunk);
 }
 .fui .f-endlines li {
   display: flex;
