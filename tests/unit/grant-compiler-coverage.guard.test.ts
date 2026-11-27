@@ -21,7 +21,7 @@ import { compileGrant } from "@/lib/rules";
 type GrantKind = Grant["type"];
 
 /**
- * Kinds without a compiler case today (2026-11-27: 95 of 161). Each one is still read by
+ * Kinds without a compiler case today (2026-11-27: 91 of 161). Each one is still read by
  * bespoke code (`AggregatedGrants` fields, choice collectors, actions, resources,
  * statuses). This list may only shrink: never add a kind here, give it a case in
  * `compileGrant` instead.
@@ -50,10 +50,8 @@ const NOT_COMPILED_YET = [
   "choice-tool-proficiency",
   "companion-mod",
   "component-waiver",
-  "concentration-damage-proof",
   "copy-to-2nd-target",
   "cunning-strike-option",
-  "d20-reroll",
   "damage-absorb-pool",
   "damage-die-modifier",
   "damage-die-reduction",
@@ -94,8 +92,6 @@ const NOT_COMPILED_YET = [
   "rest-expertise",
   "ritual-casting",
   "ritual-casting-any",
-  "roll-die-adjustment",
-  "roll-floor",
   "round1-damage-double",
   "save-damage-rule",
   "scoped-extra-spell-slot",

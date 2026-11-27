@@ -38,7 +38,7 @@ import {
   compileGrant,
   foldRules,
   isRollTimeRule,
-  rollClauseRows,
+  rollRows,
   ruleConditional,
   ruleFlag,
   ruleFlagIds,
@@ -2734,17 +2734,13 @@ export function evaluateGrants(
     if (countTopLevelFreeCasts(src.grants) >= 2) multiFreeCastSourceIds.add(src.id);
   }
 
-  // Advantage / disadvantage clauses compile to rules (`lib/rules/roll-rules`); the
-  // evaluator keeps what only it knows about each one, by rule index.
+  // Roll-time clauses compile to rules (`lib/rules/roll-rules`); the evaluator keeps
+  // what only it knows about each one, by rule index.
   const clauseContexts: Array<{ description: LocText; whileActiveKey?: string }> = [];
-  const rollFloors: RollFloorClause[] = [];
-  const d20Rerolls: D20RerollClause[] = [];
-  const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
   let hitDieFloor: { floorBelow: number; floorTo: number } | undefined;
   const concentrationSaveSchoolBonuses: Array<
     AggregatedGrants["concentrationSaveSchoolBonuses"][number]
   > = [];
-  const rollDieAdjustments: RollDieAdjustmentClause[] = [];
   const defenseNotes: IncomingAttackClause[] = [];
 
   // PRIM batch (2026-06-10)
@@ -3557,7 +3553,7 @@ export function evaluateGrants(
         });
         break;
 
-      // ── Advantage / disadvantage clauses ────────────────────────────
+      // ── Roll-time clauses ───────────────────────────────────────────
       // Compiled to roll clauses; `activeKey` (a `while-active` block: Rage's STR
       // advantage, Reckless Attack, Blur) marks the chip "· active".
       case "advantage-on":
@@ -3567,6 +3563,10 @@ export function evaluateGrants(
       case "disadvantage-on":
       case "incoming-attack-advantage":
       case "incoming-attack-disadvantage":
+      case "roll-floor":
+      case "d20-reroll":
+      case "concentration-damage-proof":
+      case "roll-die-adjustment":
         pushClauses(g, gref, activeKey);
         break;
       case "round1-damage-double":
@@ -3578,41 +3578,9 @@ export function evaluateGrants(
           saveDcAbility: g.saveDcAbility,
         });
         break;
-      case "roll-floor":
-        rollFloors.push({
-          sourceId,
-          rollType: g.rollType,
-          floor: g.floor,
-          appliesTo: g.appliesTo,
-          ...(g.ability ? { ability: g.ability } : {}),
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-        });
-        break;
-      case "d20-reroll":
-        d20Rerolls.push({ sourceId, faces: g.faces });
-        break;
       case "hit-die-floor":
         if (!hitDieFloor || g.floorTo > hitDieFloor.floorTo)
           hitDieFloor = { floorBelow: g.floorBelow, floorTo: g.floorTo };
-        break;
-      case "concentration-damage-proof":
-        concentrationDamageProof.push({
-          sourceId,
-          ...(g.spellId !== undefined ? { spellId: g.spellId } : {}),
-          ...(g.spells !== undefined ? { spells: g.spells } : {}),
-          ...(g.alsoWhileIncapacitated ? { alsoWhileIncapacitated: true as const } : {}),
-        });
-        break;
-      case "roll-die-adjustment":
-        rollDieAdjustments.push({
-          sourceId,
-          rollType: g.rollType,
-          operation: g.operation,
-          dice: g.dice,
-          consume: g.consume,
-          ...(g.appliesTo ? { appliesTo: g.appliesTo } : {}),
-        });
         break;
       case "defense-note":
         // SELF-side defensive reminder line (Warding Bond's shared-damage /
@@ -4197,7 +4165,7 @@ export function evaluateGrants(
 
   const policed = sameEffectsDontStack(rules, ruleSourceIds, sources);
   const values = foldRules(policed);
-  const clauses = rollClauseRows(policed, (i) => ({
+  const clauses = rollRows(policed, (i) => ({
     sourceId: ruleSourceIds[i] ?? "",
     ...(clauseContexts[i] ?? { description: litText(EMPTY_LOCALE_TEXT) }),
   }));
@@ -4380,11 +4348,11 @@ export function evaluateGrants(
     scopedExtraSlots,
     advantages: clauses.advantages,
     disadvantages: clauses.disadvantages,
-    rollFloors,
-    d20Rerolls,
-    concentrationDamageProof,
+    rollFloors: clauses.rollFloors,
+    d20Rerolls: clauses.d20Rerolls,
+    concentrationDamageProof: clauses.concentrationDamageProof,
     ...(hitDieFloor ? { hitDieFloor } : {}),
-    rollDieAdjustments,
+    rollDieAdjustments: clauses.rollDieAdjustments,
     incomingAttackAdvantages: clauses.incomingAttackAdvantages,
     incomingAttackDisadvantages: clauses.incomingAttackDisadvantages,
     defenseNotes,

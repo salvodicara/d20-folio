@@ -207,3 +207,141 @@ describe("roll rules: a clause never makes a source count for same-effect stacki
     expect(out.acBonus).toBe(2);
   });
 });
+
+describe("roll rules: rerolls, floors and dice on a roll compile to roll clauses", () => {
+  it("a face-triggered reroll is a clause on every d20 roll", () => {
+    expect(compileGrant({ type: "d20-reroll", faces: [1] })).toEqual([
+      { op: "clause", target: "roll:d20:reroll", faces: [1] },
+    ]);
+  });
+
+  it("a floor is a clause on its roll, with its reach", () => {
+    expect(
+      compileGrant({
+        type: "roll-floor",
+        rollType: "check",
+        floor: 10,
+        appliesTo: "proficient",
+        ability: "CHA",
+        description: NOTE,
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:check:floor",
+        floor: 10,
+        appliesTo: "proficient",
+        ability: "CHA",
+        description: NOTE,
+      },
+    ]);
+  });
+
+  it("a die added to or taken from a roll is a clause on that roll", () => {
+    expect(
+      compileGrant({
+        type: "roll-die-adjustment",
+        rollType: "check",
+        operation: "add",
+        dice: "1d4",
+        consume: "next",
+        appliesTo: "stealth",
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:check:die",
+        operation: "add",
+        dice: "1d4",
+        consume: "next",
+        appliesTo: "stealth",
+      },
+    ]);
+  });
+
+  it("damage that cannot break concentration is a clause on the concentration save", () => {
+    expect(
+      compileGrant({
+        type: "concentration-damage-proof",
+        spells: { school: "abjuration" },
+        alsoWhileIncapacitated: true,
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:concentration:damage-proof",
+        spells: { school: "abjuration" },
+        alsoWhileIncapacitated: true,
+      },
+    ]);
+  });
+
+  it("the evaluator's rows come from the compiled clauses, with source and state", () => {
+    const out = evaluateGrants(
+      [
+        source("luck", [{ type: "d20-reroll", faces: [1] }]),
+        source("talent", [
+          { type: "roll-floor", rollType: "check", floor: 10, appliesTo: "proficient" },
+        ]),
+        source("bless", [
+          {
+            type: "while-active",
+            activeKey: "blessed",
+            grants: [
+              {
+                type: "roll-die-adjustment",
+                rollType: "save",
+                operation: "add",
+                dice: "1d4",
+                consume: "each",
+              },
+              {
+                type: "roll-floor",
+                rollType: "save",
+                floor: 5,
+                appliesTo: "all",
+                ability: "WIS",
+              },
+            ],
+          },
+        ]),
+        source("steady-mind", [
+          { type: "concentration-damage-proof", spellId: "shield" },
+        ]),
+      ],
+      new Set(["blessed"])
+    );
+    const text: unknown = expect.anything();
+    expect(out.d20Rerolls).toEqual([{ sourceId: "luck", faces: [1] }]);
+    expect(out.rollFloors).toEqual([
+      {
+        sourceId: "talent",
+        rollType: "check",
+        floor: 10,
+        appliesTo: "proficient",
+        description: text,
+      },
+      {
+        sourceId: "bless",
+        rollType: "save",
+        floor: 5,
+        appliesTo: "all",
+        ability: "WIS",
+        description: text,
+        whileActiveKey: "blessed",
+      },
+    ]);
+    expect(out.rollDieAdjustments).toEqual([
+      {
+        sourceId: "bless",
+        rollType: "save",
+        operation: "add",
+        dice: "1d4",
+        consume: "each",
+      },
+    ]);
+    expect(out.concentrationDamageProof).toEqual([
+      { sourceId: "steady-mind", spellId: "shield" },
+    ]);
+  });
+});

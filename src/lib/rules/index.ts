@@ -468,6 +468,10 @@ export function compileGrant(grant: Grant): Rule[] | null {
     case "disadvantage-on":
     case "incoming-attack-advantage":
     case "incoming-attack-disadvantage":
+    case "d20-reroll":
+    case "roll-floor":
+    case "roll-die-adjustment":
+    case "concentration-damage-proof":
       return compileRollGrant(grant);
     default:
       return null;
