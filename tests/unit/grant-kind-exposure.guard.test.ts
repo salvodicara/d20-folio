@@ -357,7 +357,7 @@ const EXPOSURE: Record<string, Exposure> = {
     consumer: "src/lib/smart-tracker.ts",
   },
   "unarmed-strike-damage-type-option": {
-    via: "unarmedStrikeDamageTypeOptions",
+    via: "unarmed:damage-type:",
     consumer: "src/lib/smart-tracker.ts",
   },
   // ATTACK-PIPS — Extra Attack is LIVE in the economy: the provider derives

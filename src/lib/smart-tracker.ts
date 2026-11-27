@@ -64,6 +64,7 @@ import {
 import {
   ruleConditional,
   ruleFlag,
+  ruleFlagIds,
   ruleNumber,
   ruleParts,
   type RuleFact,
@@ -5497,9 +5498,9 @@ function resolveUnarmedAttackSummary(
     undefined,
     spellAbility
   );
-  const altTypes = aggregate.unarmedStrikeDamageTypeOptions.filter(
-    (type) => type !== profile.damageType
-  );
+  const altTypes = (
+    ruleFlagIds(aggregate.values, "unarmed:damage-type:") as DamageType[]
+  ).filter((type) => type !== profile.damageType);
   const extraDamage = resolveAttackDamageRiders(
     aggregate.damageRiders,
     { kind: "unarmed", damageType: profile.damageType },
