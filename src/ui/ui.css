@@ -7564,3 +7564,22 @@
 .fui :is(b, strong) {
   font-weight: 600;
 }
+/* the strong weight is for names, titles, the primary and numbers: list rows and the turn
+   legend read at the text weight */
+.fui .f-row-t,
+.fui .f-sheet .f-res-t,
+.fui .f-turn-slots li,
+.fui .f-sheet .f-turn-slots li,
+.fui .f-sheet .f-act:not(.f-act-head) .f-row-t {
+  font-weight: 400;
+}
+/* «/ 66» beside the Hit Points: the large step at the text weight, on every screen */
+.fui .f-char-hp-v,
+.fui .f-sheet .f-char-hp-v {
+  font-size: var(--fs-lg);
+  font-weight: 400;
+}
+/* a dialog's instructions and counts read at the text size, not the label size */
+.fui dialog.f-dlg .f-bd :is(p, .f-help) {
+  font-size: var(--fs-text);
+}
