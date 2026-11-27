@@ -37,6 +37,7 @@ import {
   AC_BONUS_CONDITIONS,
   compileGrant,
   foldRules,
+  rollClauseRows,
   ruleConditional,
   ruleFlag,
   ruleFlagIds,
@@ -862,19 +863,6 @@ export function grantField(ref: GrantRef, field: string, lit?: LocaleText): LocT
 
 /** Fallback LocaleText for a synthetic grant that carries neither a `ref` nor inline text. */
 const EMPTY_LOCALE_TEXT = Object.fromEntries(LOCALES.map((l) => [l, ""])) as LocaleText;
-
-/**
- * PS-J — the `scope` slice an adv/dis clause carries into the aggregate: present
- * ONLY when the clause is an ATTACK clause narrower than "every attack roll"
- * ({@link AdvantageClause.scope}). `"all"` is dropped so a consumer testing
- * `scope === undefined` reads exactly one thing: this clause nets into the
- * card's verdict.
- */
-function narrowedScope(g: Extract<Grant, { type: "advantage-on" | "disadvantage-on" }>): {
-  scope?: AttackClauseScope;
-} {
-  return g.rollType === "attack" && g.scope !== "all" ? { scope: g.scope } : {};
-}
 
 /**
  * The catalogue ref of a source's top-level grant at `index` — the same
@@ -2739,9 +2727,9 @@ export function evaluateGrants(
     if (countTopLevelFreeCasts(src.grants) >= 2) multiFreeCastSourceIds.add(src.id);
   }
 
-  // Advantage / disadvantage chips
-  const advantages: AdvantageClause[] = [];
-  const disadvantages: AdvantageClause[] = [];
+  // Advantage / disadvantage clauses compile to rules (`lib/rules/roll-rules`); the
+  // evaluator keeps what only it knows about each one, by rule index.
+  const clauseContexts: Array<{ description: LocText; whileActiveKey?: string }> = [];
   const rollFloors: RollFloorClause[] = [];
   const d20Rerolls: D20RerollClause[] = [];
   const concentrationDamageProof: ConcentrationDamageProofClause[] = [];
@@ -2750,8 +2738,6 @@ export function evaluateGrants(
     AggregatedGrants["concentrationSaveSchoolBonuses"][number]
   > = [];
   const rollDieAdjustments: RollDieAdjustmentClause[] = [];
-  const incomingAttackAdvantages: IncomingAttackClause[] = [];
-  const incomingAttackDisadvantages: IncomingAttackClause[] = [];
   const defenseNotes: IncomingAttackClause[] = [];
 
   // PRIM batch (2026-06-10)
@@ -2834,6 +2820,21 @@ export function evaluateGrants(
     for (let i = from; i < rules.length; i++) {
       if (ruleSources[i] === undefined && sourceRef) ruleSources[i] = sourceRef;
       ruleSourceIds[i] ??= sourceId;
+    }
+  }
+
+  function pushClauses(g: Grant, gref: GrantRef, activeKey: string | undefined): void {
+    const description = grantField(
+      gref,
+      "description",
+      "description" in g ? g.description : undefined
+    );
+    for (const rule of compileGrant(g) ?? []) {
+      clauseContexts[rules.length] = {
+        description,
+        ...(activeKey ? { whileActiveKey: activeKey } : {}),
+      };
+      rules.push(rule);
     }
   }
 
@@ -3550,31 +3551,16 @@ export function evaluateGrants(
         break;
 
       // ── Advantage / disadvantage clauses ────────────────────────────
+      // Compiled to roll clauses; `activeKey` (a `while-active` block: Rage's STR
+      // advantage, Reckless Attack, Blur) marks the chip "· active".
       case "advantage-on":
         if (g.suppressedByConditions?.some((id) => context.conditions?.has(id))) break;
-        // `activeKey` (set when this clause arrived through a `while-active`
-        // block) marks the chip as a conditional, currently-active source —
-        // mirrors `weapon-damage-bonus` (Rage's STR advantage · active).
-        advantages.push({
-          sourceId,
-          rollType: g.rollType,
-          vs: g.vs,
-          description: grantField(gref, "description", g.description),
-          ...(g.round1 ? { round1: true } : {}),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-          ...narrowedScope(g),
-        });
+        pushClauses(g, gref, activeKey);
         break;
       case "disadvantage-on":
-        disadvantages.push({
-          sourceId,
-          rollType: g.rollType,
-          vs: g.vs,
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-          ...(g.consume ? { consume: g.consume } : {}),
-          ...narrowedScope(g),
-        });
+      case "incoming-attack-advantage":
+      case "incoming-attack-disadvantage":
+        pushClauses(g, gref, activeKey);
         break;
       case "round1-damage-double":
         // Round-1 save-gated damage-doubler note (Death Strike) — carry the ability
@@ -3619,26 +3605,6 @@ export function evaluateGrants(
           dice: g.dice,
           consume: g.consume,
           ...(g.appliesTo ? { appliesTo: g.appliesTo } : {}),
-        });
-        break;
-      case "incoming-attack-advantage":
-        // SELF-side downside (Reckless Attack): when it arrives through a
-        // `while-active` block, `activeKey` marks it "· active" — same as the
-        // advantage chips it mirrors.
-        incomingAttackAdvantages.push({
-          sourceId,
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
-        });
-        break;
-      case "incoming-attack-disadvantage":
-        // SELF-side BENEFIT (Blur): attacks against you have Disadvantage. When it
-        // arrives through a `while-active` block (Blur is a Concentration spell),
-        // `activeKey` marks it "· active" — the mirror of the downside above.
-        incomingAttackDisadvantages.push({
-          sourceId,
-          description: grantField(gref, "description", g.description),
-          ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
       case "defense-note":
@@ -4224,6 +4190,10 @@ export function evaluateGrants(
 
   const policed = sameEffectsDontStack(rules, ruleSourceIds, sources);
   const values = foldRules(policed);
+  const clauses = rollClauseRows(policed, (i) => ({
+    sourceId: ruleSourceIds[i] ?? "",
+    ...(clauseContexts[i] ?? { description: litText(EMPTY_LOCALE_TEXT) }),
+  }));
   const ruleOrigins: RuleOrigin[] = policed.map((rule, i) => {
     const source = ruleSources[i];
     return source ? { rule, source } : { rule };
@@ -4401,15 +4371,15 @@ export function evaluateGrants(
     freeCastFromList,
     atWillCasts,
     scopedExtraSlots,
-    advantages,
-    disadvantages,
+    advantages: clauses.advantages,
+    disadvantages: clauses.disadvantages,
     rollFloors,
     d20Rerolls,
     concentrationDamageProof,
     ...(hitDieFloor ? { hitDieFloor } : {}),
     rollDieAdjustments,
-    incomingAttackAdvantages,
-    incomingAttackDisadvantages,
+    incomingAttackAdvantages: clauses.incomingAttackAdvantages,
+    incomingAttackDisadvantages: clauses.incomingAttackDisadvantages,
     defenseNotes,
     auras,
     spellDieAugments,
