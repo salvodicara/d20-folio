@@ -1,0 +1,213 @@
+[
+  {
+    "path": "users/fixtures/characters/rogue-7-halfling-rolls",
+    "data": {
+      "schema": 3,
+      "build": {
+        "name": "Fixture Rogue",
+        "race": "halfling",
+        "classes": [
+          {
+            "classId": "rogue",
+            "level": 7
+          }
+        ],
+        "background": "soldier",
+        "alignment": "neutral-good",
+        "abilities": {
+          "STR": 10,
+          "DEX": 17,
+          "CON": 14,
+          "INT": 12,
+          "WIS": 13,
+          "CHA": 10
+        },
+        "speed": "30 ft",
+        "spells": [
+          {
+            "srdId": "fire-bolt"
+          }
+        ],
+        "weapons": [
+          {
+            "srdId": "shortsword",
+            "quantity": 1
+          },
+          {
+            "srdId": "shortbow",
+            "quantity": 1
+          }
+        ],
+        "customs": {
+          "features": [
+            {
+              "custom": true,
+              "title": "Roll Lab",
+              "emoji": "*",
+              "source": "Homebrew",
+              "tags": [],
+              "contentBlocks": [],
+              "grants": [
+                {
+                  "type": "advantage-on",
+                  "rollType": "check",
+                  "vs": "stealth"
+                },
+                {
+                  "type": "advantage-on",
+                  "rollType": "attack",
+                  "scope": "marked",
+                  "vs": "hunters-mark-target",
+                  "round1": true
+                },
+                {
+                  "type": "advantage-on",
+                  "rollType": "save",
+                  "vs": "poisoned",
+                  "suppressedByConditions": ["incapacitated"]
+                },
+                {
+                  "type": "disadvantage-on",
+                  "rollType": "check",
+                  "vs": "perception"
+                },
+                {
+                  "type": "disadvantage-on",
+                  "rollType": "attack",
+                  "scope": "strength",
+                  "vs": "strength-attacks",
+                  "consume": "each"
+                },
+                {
+                  "type": "incoming-attack-advantage"
+                },
+                {
+                  "type": "incoming-attack-disadvantage"
+                },
+                {
+                  "type": "roll-die-adjustment",
+                  "rollType": "save",
+                  "operation": "add",
+                  "dice": "1d4",
+                  "consume": "each"
+                },
+                {
+                  "type": "roll-die-adjustment",
+                  "rollType": "check",
+                  "operation": "add",
+                  "dice": "1d4",
+                  "consume": "next",
+                  "appliesTo": "stealth"
+                },
+                {
+                  "type": "concentration-damage-proof",
+                  "spells": "any"
+                },
+                {
+                  "type": "damage-rider",
+                  "appliesTo": "weapon",
+                  "damageType": "fire",
+                  "dice": "1d6"
+                },
+                {
+                  "type": "damage-die-modifier",
+                  "mode": "floor",
+                  "appliesTo": "weapon",
+                  "floorBelow": 2,
+                  "floorTo": 3
+                },
+                {
+                  "type": "damage-die-reduction",
+                  "damageTypes": ["fire"],
+                  "dice": "1d4",
+                  "oncePerTurn": true
+                },
+                {
+                  "type": "damage-penetration",
+                  "appliesTo": "any",
+                  "damageTypes": ["poison"],
+                  "ignores": "resistance"
+                },
+                {
+                  "type": "round1-damage-double",
+                  "saveAbility": "CON",
+                  "saveDcAbility": "DEX"
+                },
+                {
+                  "type": "save-damage-rule",
+                  "ability": "DEX",
+                  "onFailure": "half",
+                  "onSuccess": "none",
+                  "requiresDamageOnSuccess": "half"
+                },
+                {
+                  "type": "spell-damage-bonus",
+                  "damageTypes": ["fire"],
+                  "ability": "INT",
+                  "value": "modifier",
+                  "min": 1
+                },
+                {
+                  "type": "spell-damage-type-override",
+                  "toType": "cold"
+                },
+                {
+                  "type": "spell-die-augment",
+                  "spellId": "fire-bolt",
+                  "fromDie": 10,
+                  "toDie": 12
+                },
+                {
+                  "type": "cantrip-damage-bonus",
+                  "spellId": "fire-bolt",
+                  "value": 2
+                },
+                {
+                  "type": "cantrip-range-bonus",
+                  "spellId": "fire-bolt",
+                  "bonusPerLevel": 30,
+                  "scalesWith": "rogue"
+                },
+                {
+                  "type": "heal-bonus",
+                  "amount": 2,
+                  "perSpellLevel": true
+                },
+                {
+                  "type": "maximize-spell-healing",
+                  "minSpellLevel": 1
+                }
+              ],
+              "instanceId": "custom-roll-lab"
+            }
+          ]
+        }
+      },
+      "state": {},
+      "revision": 0,
+      "playStateVersion": 1
+    }
+  },
+  {
+    "path": "users/fixtures/characters/rogue-7-halfling-rolls/combat/state",
+    "data": {
+      "hp": {
+        "current": 40,
+        "temp": 0
+      },
+      "conditions": [],
+      "initiativeRoll": null,
+      "deathSaves": {
+        "successes": 0,
+        "failures": 0
+      },
+      "bardicInspirationDie": "",
+      "heroicInspiration": false,
+      "round": 1,
+      "playState": {
+        "version": 1,
+        "state": {}
+      }
+    }
+  }
+]
