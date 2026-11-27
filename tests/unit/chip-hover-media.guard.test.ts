@@ -34,7 +34,8 @@ function enclosing(index: number): string[] {
 describe("chip and button hover", () => {
   const rules = [
     '.fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover',
-    '.fui .f-sheet .f-btn:not([aria-disabled="true"]):hover',
+    // the button family's hover (design reset «BG3 craft», 2026-11-26): one rule for every page
+    '.fui .f-btn:not([aria-disabled="true"]):hover',
   ];
   it.each(rules)("%s lights only on a device that can hover", (selector) => {
     const at = css.indexOf(selector);

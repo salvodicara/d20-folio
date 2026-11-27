@@ -32,6 +32,7 @@ import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import { partyBonuses } from "@/domains/combat/party-bonuses";
+import { FightFeed } from "@/domains/combat/ui/FightFeed";
 import {
   dmMoves,
   moves,
@@ -40,30 +41,19 @@ import {
   type Toaster,
 } from "@/domains/combat/ui/fight-moves";
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
-import { useReportNames } from "@/domains/chronicle/ui/report-names";
-import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { isAttached, missingRollers } from "@/features/campaigns/combat-lifecycle";
 import { encounterRollFor } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
 import { useMemberCharacterDocs } from "@/features/campaigns/useMemberCharacterDocs";
 import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
-import { useSessionLog } from "@/features/campaigns/useSessionLog";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import type { Locale } from "@/lib/locale";
-import {
-  buildReport,
-  encounterFeed,
-  foldSession,
-  hideCombatants,
-} from "@/lib/session-log";
-import { localizePlayEvent } from "@/lib/views/session-report-view";
+import { buildReport, foldSession } from "@/lib/session-log";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import { Button, Panel } from "@/ui";
-
-const FEED_LINES = 8;
 
 // The add-monsters sheet carries the bestiary: it loads when the DM opens it.
 const AddMonstersDialog = lazy(() =>
@@ -367,12 +357,13 @@ function LiveFight({
         {isDm && acts.dialog}
         {writeUp.dialog}
       </div>
-      <Feed
+      <FightFeed
         campaign={campaign}
         encounter={encounter}
         isDm={isDm}
         uid={uid}
         locale={locale}
+        onToast={onToast}
       />
     </div>
   );
@@ -652,59 +643,6 @@ function useParty(
     );
     return { pcs, concentration, ready };
   }, [refs, docs, states, encounterInit, locale, effectsOn]);
-}
-
-/** What has happened in this fight, newest first: the same feed every member reads. */
-function Feed({
-  campaign,
-  encounter,
-  isDm,
-  uid,
-  locale,
-}: {
-  campaign: CampaignDoc;
-  encounter: EncounterState;
-  isDm: boolean;
-  uid: string | undefined;
-  locale: Locale;
-}) {
-  const { t } = useTranslation();
-  const names = useReportNames(campaign, locale, usePartyNames(campaign));
-  const log = useSessionLog(campaign.id, uid, campaign.dmUid, encounter.epoch);
-  const encounterId = String(encounter.epoch);
-  const lines = useMemo(() => {
-    const all = encounterFeed(log.entries, encounterId);
-    if (isDm) return all;
-    return hideCombatants(
-      all,
-      new Set(encounter.combatants.filter((c) => c.hidden).map((c) => c.id))
-    );
-  }, [log.entries, encounterId, isDm, encounter.combatants]);
-  const foes = useMemo(() => {
-    const start = log.entries.find(
-      (e) => e.event.kind === "encounter-start" && e.event.encounterId === encounterId
-    );
-    return start?.event.kind === "encounter-start" ? (start.event.names ?? {}) : {};
-  }, [log.entries, encounterId]);
-  const who = (id: string | undefined): string =>
-    (id && (foes[id] ?? names.pc(id))) || t("combatChronicle.someone");
-  const shown = lines.slice(-FEED_LINES).reverse();
-  return (
-    <Panel color="log" title={t("fight.feedTitle")}>
-      {shown.length === 0 && <p className="f-quiet">{t("fight.feedEmpty")}</p>}
-      {shown.map((line) => {
-        const text = localizePlayEvent(line.event, t, who, names);
-        if (!text) return null;
-        return (
-          <p key={line.id} className="f-tl">
-            <span>
-              {line.round ? t("fight.roundLine", { n: line.round, line: text }) : text}
-            </span>
-          </p>
-        );
-      })}
-    </Panel>
-  );
 }
 
 function IdleFight({
