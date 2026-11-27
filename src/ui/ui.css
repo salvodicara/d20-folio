@@ -7471,13 +7471,67 @@
   gap: 12px;
 }
 
-/* the wider serif keeps the sheet's header actions on one laptop row (the turn strip's
-   line waits for the type slice, which retires its tracked capitals) */
+/* The wider serif keeps its rows (design reset «BG3 craft», slice 1). */
+/* the turn banner reads in its own case, like BG3's titles: no tracked capitals */
+.fui .f-turn-t,
+.fui .f-sheet .f-turn-t {
+  letter-spacing: 0;
+  text-transform: none;
+}
 @media (min-width: 641px) {
+  /* the sheet's header actions on one row */
   .fui .f-sheet .f-char-acts {
     flex-wrap: nowrap;
   }
   .fui .f-sheet .f-char-acts > .f-btn {
     padding: 0 12px;
   }
+  /* the turn strip on one line: the round, its slots (wrapping inside), «Fine turno» and
+     «Fine scontro» */
+  .fui .f-sheet .f-turn {
+    flex-wrap: nowrap;
+  }
+  .fui .f-sheet .f-turn .f-turn-slots {
+    flex-wrap: wrap;
+    min-width: 0;
+    white-space: normal;
+  }
+  .fui .f-sheet .f-turn .f-btn {
+    flex: none;
+  }
+  /* a footer's lit action is a button that ends its row, not a full-width bar (BG3's
+     «Proceed» is never wider than its label) */
+  .fui .f-pn > .f-pn-foot > .f-btn.f-wide[data-kind="primary"] {
+    order: 9;
+    width: auto;
+    flex: none;
+  }
+}
+@media (max-width: 640px) {
+  /* the rests pair up; any other header action takes the whole row */
+  .fui .f-sheet .f-char-acts > .f-btn:not([data-rest]) {
+    grid-column: 1 / -1;
+  }
+  /* the initiative column holds two tabular digits clear of the portrait */
+  .fui .f-fight {
+    grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) 76px;
+  }
+}
+/* the «Danni» / «Cura» pair keeps the family's hover and press (its colours come later in
+   the file, so its states are restated here) */
+@media (hover: hover) {
+  .fui .f-char-hp-acts > .f-btn:first-child:not([aria-disabled="true"]):hover {
+    --peak: #6e251b;
+    border-color: var(--danger-rim-hover);
+  }
+  .fui .f-char-hp-acts > .f-btn:last-child:not([aria-disabled="true"]):hover,
+  .fui .f-hp-acts > .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover {
+    --peak: #285e33;
+    border-color: var(--heal);
+  }
+}
+.fui .f-char-hp-acts > .f-btn:not([aria-disabled="true"]):active,
+.fui .f-hp-acts > .f-btn:not([aria-disabled="true"]):active {
+  --peak: var(--after);
+  box-shadow: inset 0 2px 4px var(--btn-press-shade);
 }
