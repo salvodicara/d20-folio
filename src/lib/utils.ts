@@ -24,10 +24,11 @@ export function slugify(text: string): string {
 }
 
 /**
- * Format a D&D modifier (e.g. +2, -1)
+ * Format a D&D modifier: +2, +0, −1. A negative value takes the true minus sign (U+2212),
+ * as printed rulebooks and D&D Beyond do, never a hyphen.
  */
 export function formatModifier(mod: number): string {
-  return mod >= 0 ? `+${mod}` : `${mod}`;
+  return mod >= 0 ? `+${mod}` : `\u2212${Math.abs(mod)}`;
 }
 
 /**

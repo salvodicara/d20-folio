@@ -45,7 +45,7 @@ describe("localizeToastIntent", () => {
         advantage: false,
       })
     ).toBe('combat.concentrationSaveToast {"spell":"⟨hex⟩","dc":12,"save":"+7"}');
-    // Negative saves keep their sign (no "+-2").
+    // Negative saves keep their sign, a true minus (no "+-2", no hyphen).
     expect(
       localize({
         kind: "concentration-save",
@@ -54,7 +54,7 @@ describe("localizeToastIntent", () => {
         saveBonus: -2,
         advantage: false,
       })
-    ).toBe('combat.concentrationSaveToast {"spell":"⟨hex⟩","dc":12,"save":"-2"}');
+    ).toBe('combat.concentrationSaveToast {"spell":"⟨hex⟩","dc":12,"save":"\u22122"}');
   });
 
   // RA-15 — a War Caster / Eldritch Mind concentrator routes to the Advantage

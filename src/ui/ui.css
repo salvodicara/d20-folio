@@ -7859,3 +7859,39 @@
     padding: 0 4px;
   }
 }
+
+/* a search field: the magnifier inside the box, the hint as its placeholder (#1436) */
+.fui .f-in-search {
+  position: relative;
+  display: block;
+}
+.fui .f-in-search > .f-ic {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.fui .f-in-search > .f-in {
+  padding-left: 40px;
+}
+/* Gruppo's running fight: its line and the action that opens it; on a phone the card
+   leads the page (#1434) */
+.fui .f-camp-live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+}
+.fui .f-camp-live > p {
+  margin: 0;
+}
+@media (max-width: 640px) {
+  .fui .f-split > .f-pn:has(.f-camp-live) {
+    order: -1;
+  }
+}

@@ -58,6 +58,7 @@
     "dm": {
       "addMonsters": "Add monsters",
       "search": "Search for a monster",
+      "searchHint": "Name, for example goblin",
       "yours": "Made by you",
       "crLabel": "Challenge Rating",
       "cr": {

@@ -16,6 +16,7 @@
  * `t`/`localizeSrd` are injected, never imported.
  */
 
+import { formatModifier } from "@/lib/utils";
 import type { SessionDefenseKind } from "@/types/character";
 import type { ToastIntent } from "@/types/toast";
 
@@ -104,7 +105,7 @@ export function localizeToastIntent(
       return t(intent.advantage ? "combat.concentrationSaveAdvantageToast" : key, {
         spell: resolveSpellName(intent.spell),
         dc: intent.dc,
-        save: intent.saveBonus >= 0 ? `+${intent.saveBonus}` : String(intent.saveBonus),
+        save: formatModifier(intent.saveBonus),
       });
     case "concentration-replaced":
       return t(key, {

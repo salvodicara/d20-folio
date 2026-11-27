@@ -11,6 +11,7 @@
     "chest": "Cassa comune",
     "fightIdle": "Nessuno scontro in corso. Parte da solo quando qualcuno tira l’iniziativa.",
     "fightRunning": "Scontro in corso · round {{round}}",
+    "openFight": "Apri scontro",
     "loading": "Carico la campagna",
     "notFound": "Campagna non trovata. Forse non ne fai più parte.",
     "tableRules": {

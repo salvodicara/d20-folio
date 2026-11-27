@@ -23,7 +23,7 @@ test("the DM runs a fight: add monsters, damage a group, set a condition, end", 
   await test.step("the DM adds two goblins", async () => {
     await page.getByRole("button", { name: "Add monsters" }).first().click();
     const dialog = page.locator("dialog[open]");
-    await dialog.getByRole("textbox", { name: /search for a monster/i }).fill("goblin");
+    await dialog.getByRole("searchbox", { name: /search for a monster/i }).fill("goblin");
     const more = dialog.getByRole("button", { name: /^One more: Goblin/ }).first();
     await more.click();
     await more.click();

@@ -11,14 +11,14 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { useLocale } from "@/hooks/useLocale";
-import { cn, localeDistance } from "@/lib/utils";
+import { cn, localeDistance, formatModifier } from "@/lib/utils";
 import { SectionPanel } from "@/features/campaigns/SectionPanel";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
 import { useMemberCharacterDocs } from "@/features/campaigns/useMemberCharacterDocs";
 import { type SummaryColumn } from "@/features/campaigns/party-summary";
 import { partyMemberRefs, partySummaryView } from "@/domains/campaign/party-summary-view";
 
-const signed = (n: number): string => (n >= 0 ? `+${n}` : `${n}`);
+const signed = formatModifier;
 
 export function PartySummary() {
   const { t } = useTranslation();

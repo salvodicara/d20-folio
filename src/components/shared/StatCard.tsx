@@ -22,12 +22,7 @@ import { useTranslation } from "react-i18next";
 import { MagicMark } from "@/components/ui/folio-marks";
 import type { BreakdownLine } from "@/lib/value-breakdown";
 import { renderBreakdownLineLabel } from "@/components/shared/breakdown-line";
-import { cn } from "@/lib/utils";
-
-/** Format a signed modifier as the folio convention (−1, +0, +3). */
-function formatModifier(mod: number): string {
-  return mod >= 0 ? `+${mod}` : `−${Math.abs(mod)}`;
-}
+import { cn, formatModifier } from "@/lib/utils";
 
 export interface StatCardProps {
   /** Short ability label, e.g. "STR" / "FOR" (bilingual copy injected by caller). */
