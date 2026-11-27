@@ -741,6 +741,11 @@
 .fui .f-note[data-c] {
   --nc: var(--c);
 }
+/* a callout's text keeps a reading measure on a wide page (design reset slice 5a) */
+.fui .f-note > p {
+  max-width: 68ch;
+  text-wrap: pretty;
+}
 
 /* ---------- choices: one option of a pick-one question (approved prototype cast-bless) ---------- */
 .fui .f-choices {
