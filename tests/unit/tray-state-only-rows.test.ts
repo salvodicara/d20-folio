@@ -55,7 +55,6 @@ describe("a tray whose outcome is only a state", () => {
   });
 
   it("writes Bane's state on the target that failed, not on the one that saved", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const plan = {
       effect: null,
       save: { ability: "CHA", dc: 13, onSave: "none" },
@@ -89,7 +88,6 @@ describe("a tray whose outcome is only a state", () => {
   });
 
   it("writes a hit's state even when the attack deals nothing", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const plan = {
       effect: null,
       attack: { onMiss: "none" },
@@ -123,7 +121,6 @@ describe("a tray whose outcome is only a state", () => {
   });
 
   it("a willing ally makes no save and takes the state", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const plan = {
       effect: null,
       willing: true,

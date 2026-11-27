@@ -60,6 +60,10 @@ import { MOCK_CHARACTER, MOCK_COMBAT_ROUND } from "@/lib/mock";
 import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
 import { closeShapeGate, settleShapeGateRescue } from "@/lib/shape-gate";
+import {
+  createConflictRescue,
+  type ConflictRescue,
+} from "@/features/character/conflict-rescue";
 import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import {
   dropRescueCopy,
@@ -228,6 +232,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
   // #1276 — whether this tab has sent a build write since the sheet loaded: until then a
   // stored sheet reaching a kept copy's generation can only be that lost write landing.
   const sentSinceLoadRef = useRef(false);
+  // #1403 — a build save refused as a revision conflict is kept as a rescue copy. Owned
+  // by the subscription effect (it sees the server's sheet); the autosave reports to it.
+  const conflictRescueRef = useRef<ConflictRescue | null>(null);
 
   /**
    * True while setCharacter() is being called from an incoming Firestore
@@ -448,6 +455,36 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       sentRevisionCursor = acknowledgedRevision();
     };
     resetRevisionCursorRef.current = resetRevisionCursor;
+
+    // #1403 — keep a conflict-refused build edit as a build-only rescue copy (no
+    // `revision`: a stored sheet at that generation is the OTHER device's, so the
+    // lost-save proof below must never drop it).
+    conflictRescueRef.current = createConflictRescue({
+      keep: async (payload) => {
+        if (readRescueCopy(user.uid, characterId, Date.now())) return null;
+        const { serializeCharacterEnvelope } = await import("@/lib/character-codec");
+        const envelope = serializeCharacterEnvelope(payload);
+        const savedAt = Date.now();
+        const kept = keepRescueCopy(user.uid, characterId, {
+          part: "build",
+          savedAt,
+          schema: CHARACTER_SCHEMA,
+          playVersion: PLAY_STATE_VERSION,
+          build: envelope.build,
+          state: envelope.state,
+        });
+        return kept ? savedAt : null;
+      },
+      drop: (savedAt) => {
+        if (readRescueCopy(user.uid, characterId, Date.now())?.savedAt === savedAt)
+          dropRescueCopy(user.uid, characterId);
+      },
+      notify: (notice) =>
+        useToastStore.getState().showToast({
+          intent: { kind: "edit-not-saved", kept: notice === "kept" },
+          duration: 8000,
+        }),
+    });
 
     // Create debounced save for auto-persistence
     debouncedSaveRef.current = createDebouncedSave(
@@ -890,7 +927,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         )
           dropRescueCopy(user.uid, characterId);
         // A server snapshot in a shape this client knows: a held refusal was an ordinary
-        // conflict (#1203), not a newer shape.
+        // conflict (#1203), not a newer shape. Whether it is kept is decided here (#1403).
+        conflictRescueRef.current?.snapshot(doc, meta.hasPendingWrites);
         if (!meta.hasPendingWrites) refusedPayloadRef.current = null;
         // Whether this character is in a campaign (#1217): solo play never waits for a
         // campaigns read that keeps failing.
@@ -904,6 +942,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // A12 — surface subscription errors (permission denied, network) instead
         // of silently leaving the sheet stuck on "loading".
         console.error("Character subscription error", err);
+        conflictRescueRef.current?.listenerFailed();
         quarantine(err.message);
       },
       tooNew
@@ -996,6 +1035,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       reconcilerRef.current = null;
       republishRef.current = () => {};
       resetRevisionCursorRef.current = () => {};
+      conflictRescueRef.current = null;
       setCharacter(null);
       setDiagnosticsContext({ characterId: undefined });
     };
@@ -1084,6 +1124,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             onSend: (sent) => {
               sentSinceLoadRef.current = true;
               reconcilerRef.current?.markParentPending(sent);
+              conflictRescueRef.current?.sent(sent);
               // #1320 — the trace of a save the server has not taken yet: if this tab
               // closes and a newer shape refuses it, it is the rescue copy.
               const owner = useAuthStore.getState().user?.uid;
@@ -1097,6 +1138,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             },
             onResolved: (sent) => {
               reconcilerRef.current?.acknowledgeParentWrite(sent);
+              conflictRescueRef.current?.landed(sent);
               const owner = useAuthStore.getState().user?.uid;
               const trace = owner ? readUnackedSave(owner, sent.id) : null;
               if (owner && trace && trace.revision <= sent.revision)
@@ -1123,11 +1165,16 @@ export function useCharacterSubscription(characterId: string | undefined): void 
               // change): drop the local payload and republish what the server holds.
               reconcilerRef.current?.rejectParentWrite(sent);
               republishRef.current();
-              // Say it (#1203): the badge alone read as a stuck save.
-              useToastStore.getState().showToast({
-                intent: { kind: "edit-not-saved" },
-                duration: 8000,
-              });
+              // Say it (#1203): the badge alone read as a stuck save. #1403 — and keep the
+              // edit as a rescue copy when the server's sheet proves another device took
+              // this generation; the notice says which.
+              const rescue = conflictRescueRef.current;
+              if (rescue) rescue.refused(sent);
+              else
+                useToastStore.getState().showToast({
+                  intent: { kind: "edit-not-saved" },
+                  duration: 8000,
+                });
             },
             // Only the restore / level-up ceremony cancels a queued save. It publishes
             // its own whole-document state and its batch echoes back, so republishing the

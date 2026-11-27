@@ -17,6 +17,11 @@ import { MemoryRouter, Route, Routes } from "react-router";
 
 vi.mock("@/lib/dev-bypass", () => ({ DEV_BYPASS_AUTH: false }));
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+// The campaign's effects out of a fight are read live; this test needs none.
+vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/campaigns/campaign-effects-io")>()),
+  subscribeCampaignEffects: () => () => undefined,
+}));
 vi.mock("@/hooks/useCharacterSubscription", () => ({
   useCharacterSubscription: () => {},
 }));

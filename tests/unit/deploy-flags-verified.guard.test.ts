@@ -2,8 +2,8 @@
 /**
  * Guard: the e2e runs that gate a deploy test the build players get.
  *
- * deploy.yml builds with feature flags on (VITE_PEER_SPENDS_LEDGER,
- * VITE_COMBAT_EFFECTS_V26), and the deploy only promotes a SHA whose Verify run is
+ * deploy.yml builds with feature flags on (VITE_PEER_SPENDS_LEDGER), and the deploy
+ * only promotes a SHA whose Verify run is
  * green. Until 2026-11-10 Verify's e2e matrix ran with those flags off, so the
  * shipped configuration never ran end to end. This guard reads every flag deploy.yml
  * sets to a fixed value and fails when Verify's e2e matrix, or CI's fight smoke,
@@ -57,11 +57,8 @@ describe("the deploy's feature flags are the ones its gating e2e runs use", () =
     expect(read("deploy.yml")).not.toMatch(/^\s+new_ui:/m);
   });
 
-  it("deploy.yml turns the v0.26 writers on", () => {
-    expect(deployFlags).toMatchObject({
-      VITE_PEER_SPENDS_LEDGER: "true",
-      VITE_COMBAT_EFFECTS_V26: "true",
-    });
+  it("deploy.yml turns the peer-spends ledger writer on", () => {
+    expect(deployFlags).toMatchObject({ VITE_PEER_SPENDS_LEDGER: "true" });
   });
 
   it.each([

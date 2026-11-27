@@ -1,6 +1,6 @@
 /**
  * A repeat save waiting on its target's card: «Saved: end it» revokes the condition
- * effect with an undo that puts it back (under a fresh id) and the prompt with it;
+ * effect with an undo that reinstates it and the prompt with it;
  * «Failed: it stays» only closes the prompt.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,8 +20,6 @@ vi.mock("@/lib/firebase", () => ({
   functions: {},
   storage: {},
 }));
-const rules = vi.hoisted(() => ({ v26: false }));
-vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }));
 
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
 import {
@@ -50,7 +48,6 @@ describe("RepeatSavePrompts", () => {
     io.revokePersistentCombatEffect.mockClear();
     io.appendPersistentCombatEffect.mockClear();
     io.reinstatePersistentCombatEffect.mockClear();
-    rules.v26 = false;
     useRepeatSaveStore.setState({ saves: [save] });
     useToastStore.setState({ toasts: [] });
   });
@@ -102,19 +99,7 @@ describe("RepeatSavePrompts", () => {
     ).toBeTruthy();
   });
 
-  it("with the v0.26 rules, undo reinstates the same effect and its prompt", async () => {
-    rules.v26 = true;
-    render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
-    fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
-    useToastStore.getState().toasts[0]?.onUndo?.();
-    await waitFor(() =>
-      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith("c1", "e1")
-    );
-    expect(io.appendPersistentCombatEffect).not.toHaveBeenCalled();
-    expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["e1"]);
-  });
-
-  it("before the v0.26 rules, a success ends the condition; undo puts a copy back with its prompt", async () => {
+  it("a success ends the condition; undo reinstates the same effect and its prompt", async () => {
     render(<RepeatSavePrompts targetIds={["m1"]} locale="en" />);
     fireEvent.click(screen.getByRole("button", { name: "Saved: end it" }));
     await waitFor(() =>
@@ -124,13 +109,11 @@ describe("RepeatSavePrompts", () => {
     const toast = useToastStore.getState().toasts[0];
     expect(toast?.message).toBe("Frightened ends: Goblin");
     toast?.onUndo?.();
-    await waitFor(() => expect(io.appendPersistentCombatEffect).toHaveBeenCalledOnce());
-    const [, effect] = io.appendPersistentCombatEffect.mock.calls[0] as unknown as [
-      string,
-      { id: string },
-    ];
-    expect(effect.id).not.toBe("e1");
-    expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual([effect.id]);
+    await waitFor(() =>
+      expect(io.reinstatePersistentCombatEffect).toHaveBeenCalledWith("c1", "e1")
+    );
+    expect(io.appendPersistentCombatEffect).not.toHaveBeenCalled();
+    expect(useRepeatSaveStore.getState().saves.map((s) => s.id)).toEqual(["e1"]);
   });
 
   it("a success ends every condition of the same cast on the target", async () => {
@@ -177,7 +160,6 @@ describe("a repeat save that ends a spell effect", () => {
   beforeEach(() => {
     io.revokePersistentCombatEffect.mockClear();
     io.reinstatePersistentCombatEffect.mockClear();
-    rules.v26 = true;
     useRepeatSaveStore.setState({ saves: [slow] });
     useToastStore.setState({ toasts: [] });
   });

@@ -75,7 +75,6 @@ function apply(castLogId: string, saved: [boolean, boolean]): void {
 
 describe("a save spell's result on its cast line", () => {
   beforeEach(() => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     useCharacterStore.setState({ character: druid, readonly: false });
     useCombatStatusStore.setState({
       status: {

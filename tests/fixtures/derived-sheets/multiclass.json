@@ -1,0 +1,304 @@
+[
+  {
+    "path": "users/fixtures/characters/multiclass",
+    "data": {
+      "schema": 3,
+      "build": {
+        "name": "Fixture Multiclass",
+        "race": "elf",
+        "classes": [
+          {
+            "classId": "bard",
+            "subclassId": "college-of-lore",
+            "level": 7
+          },
+          {
+            "classId": "wizard",
+            "subclassId": "evoker",
+            "level": 2
+          }
+        ],
+        "background": "criminal",
+        "alignment": "chaotic-good",
+        "abilities": {
+          "STR": 8,
+          "DEX": 16,
+          "CON": 14,
+          "INT": 14,
+          "WIS": 10,
+          "CHA": 20
+        },
+        "spellcasting": {
+          "ability": "CHA",
+          "preparedCaster": true,
+          "preparedMax": 14,
+          "saveDCOverride": null,
+          "attackBonusOverride": null
+        },
+        "speciesSpellAbility": "CHA",
+        "languageIds": ["common", "elvish", "draconic", "thieves-cant"],
+        "toolProficiencyIds": ["lute", "viol", "flute", "thieves-tools"],
+        "skills": {
+          "deception": "expertise",
+          "performance": "expertise",
+          "persuasion": "expertise",
+          "acrobatics": "proficient",
+          "history": "proficient",
+          "insight": "proficient",
+          "perception": "proficient",
+          "stealth": "proficient"
+        },
+        "spells": [
+          {
+            "srdId": "vicious-mockery"
+          },
+          {
+            "srdId": "minor-illusion"
+          },
+          {
+            "srdId": "mage-hand"
+          },
+          {
+            "srdId": "prestidigitation"
+          },
+          {
+            "srdId": "healing-word",
+            "prepared": true
+          },
+          {
+            "srdId": "thunderwave",
+            "prepared": true
+          },
+          {
+            "srdId": "sleep",
+            "prepared": true
+          },
+          {
+            "srdId": "bane",
+            "prepared": true
+          },
+          {
+            "srdId": "charm-person",
+            "prepared": false
+          },
+          {
+            "srdId": "shatter",
+            "prepared": true
+          },
+          {
+            "srdId": "suggestion",
+            "prepared": true
+          },
+          {
+            "srdId": "misty-step",
+            "prepared": true
+          },
+          {
+            "srdId": "detect-thoughts",
+            "prepared": false
+          },
+          {
+            "srdId": "hypnotic-pattern",
+            "prepared": true
+          },
+          {
+            "srdId": "counterspell",
+            "prepared": true
+          },
+          {
+            "srdId": "fear",
+            "prepared": true
+          },
+          {
+            "srdId": "dimension-door",
+            "prepared": true
+          },
+          {
+            "srdId": "polymorph",
+            "prepared": true
+          },
+          {
+            "srdId": "hold-monster",
+            "prepared": true
+          }
+        ],
+        "weapons": [
+          {
+            "srdId": "rapier",
+            "quantity": 1
+          },
+          {
+            "srdId": "dagger",
+            "quantity": 2,
+            "notes": "One silver-tipped, one poisoned (antitoxin in pouch)"
+          },
+          {
+            "srdId": "shortbow",
+            "quantity": 1,
+            "notes": "Kept slung for emergencies"
+          },
+          {
+            "srdId": "quarterstaff",
+            "quantity": 1,
+            "notes": "Walking staff, oak with silver caps"
+          }
+        ],
+        "equipment": [
+          {
+            "srdId": "potion-of-healing",
+            "quantity": 3
+          },
+          {
+            "srdId": "crowbar",
+            "quantity": 1
+          },
+          {
+            "srdId": "dungeoneers-pack",
+            "quantity": 1
+          },
+          {
+            "srdId": "brooch-of-shielding",
+            "quantity": 1
+          },
+          {
+            "custom": true,
+            "name": "Cael's Antidote Vial",
+            "description": "Advantage on saving throws against poison for 1 hour.",
+            "emoji": "⚗️",
+            "tracked": true,
+            "quantity": 2,
+            "recovery": "manual",
+            "instanceId": "mock-cael-antidote-vial"
+          },
+          {
+            "custom": true,
+            "name": "Cael's Last Letter",
+            "description": "A water-damaged letter in her brother's handwriting, half-legible. The last word is clearly 'run'.",
+            "emoji": "📜",
+            "tracked": false,
+            "instanceId": "mock-cael-last-letter"
+          }
+        ],
+        "combatAlgorithm": [
+          {
+            "emoji": "control",
+            "title": "Battlefield Control",
+            "steps": [
+              {
+                "question": "Are 2+ enemies within 90 ft, not immune to charm?",
+                "bullets": [
+                  "YES → Hypnotic Pattern (concentration, 30-ft cube, up to 10 enemies incapacitated)",
+                  "NO → Continue to single-target options"
+                ]
+              },
+              {
+                "question": "Is a dangerous spell being cast?",
+                "indent": true,
+                "bullets": [
+                  "YES → Counterspell (reaction, 60 ft)",
+                  "NO → Vicious Mockery (psychic damage + disadvantage on next attack)"
+                ]
+              }
+            ]
+          },
+          {
+            "emoji": "support",
+            "title": "Support & Healing",
+            "steps": [
+              {
+                "question": "Is an ally at 0 HP?",
+                "bullets": [
+                  "YES → Healing Word (bonus action, 60 ft) keeps your main action free",
+                  "NO → Bardic Inspiration (bonus action, 60 ft) to the ally most likely to attack"
+                ]
+              },
+              {
+                "question": "Maintaining concentration on Hypnotic Pattern?",
+                "bullets": [
+                  "YES → Stay at range, cantrips only: Vicious Mockery, Minor Illusion for positioning",
+                  "NO → Misty Step to reposition if threatened; Shatter for clustered melee enemies"
+                ]
+              }
+            ]
+          },
+          {
+            "emoji": "melee",
+            "title": "Last Resort: Melee",
+            "steps": [
+              {
+                "question": "Cornered in melee with no slots?",
+                "bullets": [
+                  "Action Surge + Rapier attack: expend Action Surge before going down",
+                  "Uncanny Dodge (reaction) to halve damage on one hit while retreating",
+                  "Second Wind (bonus action) for emergency d10+9 healing if bloodied"
+                ]
+              }
+            ]
+          }
+        ],
+        "overrides": {
+          "ac": 17
+        },
+        "features": [
+          {
+            "srdId": "fighter-second-wind"
+          },
+          {
+            "srdId": "fighter-action-surge"
+          },
+          {
+            "srdId": "rogue-uncanny-dodge"
+          }
+        ],
+        "customs": {
+          "conditions": ["Heroism Active"]
+        }
+      },
+      "state": {},
+      "revision": 0,
+      "playStateVersion": 1
+    }
+  },
+  {
+    "path": "users/fixtures/characters/multiclass/combat/state",
+    "data": {
+      "hp": {
+        "current": 38,
+        "temp": 5
+      },
+      "conditions": ["frightened"],
+      "initiativeRoll": 12,
+      "deathSaves": {
+        "successes": 2,
+        "failures": 1
+      },
+      "bardicInspirationDie": "",
+      "heroicInspiration": true,
+      "round": 1,
+      "playState": {
+        "version": 1,
+        "state": {
+          "usedHitDice": 2,
+          "trackers": {
+            "bard-bardic-inspiration": 2,
+            "fighter-second-wind": 1
+          },
+          "usedSlots": {
+            "1": 2,
+            "3": 2
+          },
+          "currency": {
+            "gp": 340,
+            "ep": 5,
+            "sp": 22,
+            "cp": 8
+          },
+          "concentration": "hypnotic-pattern",
+          "grantBundleChoices": {
+            "elf-lineage": "high-elf"
+          }
+        }
+      }
+    }
+  }
+]

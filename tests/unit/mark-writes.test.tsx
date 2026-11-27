@@ -39,7 +39,6 @@ import { makeCharacterDoc } from "./_helpers";
 afterEach(() => {
   revokePersistentCombatEffect.mockClear();
   usePlayPromptStore.setState({ open: {} });
-  vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
   useCombatStatusStore.setState({ status: null });
   useUndoStore.getState().clear(null);
@@ -51,7 +50,6 @@ describe("a mark cast in a fight", () => {
     "Hunter's Mark lands on the enemy it names, and the undo takes it back",
     { timeout: 20000 },
     async () => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       const doc = makeCharacterDoc({
         classId: "ranger",
         level: 5,

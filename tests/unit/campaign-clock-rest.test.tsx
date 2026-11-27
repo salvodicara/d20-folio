@@ -5,7 +5,7 @@
  */
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { User } from "firebase/auth";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const io = vi.hoisted(() => ({
   stepCampaignClock: vi.fn(() => Promise.resolve(null)),
@@ -68,12 +68,10 @@ function open(campaign: boolean) {
 }
 
 beforeEach(() => {
-  vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
   vi.clearAllMocks();
   useAuthStore.setState({ user: { uid: "u1" } as User });
   useToastStore.setState({ toasts: [], timers: {} });
 });
-afterEach(() => vi.unstubAllEnvs());
 
 describe("a rest on the campaign clock", () => {
   it("a Long Rest steps the campaign 8 hours and the sheet catches up to it", async () => {
