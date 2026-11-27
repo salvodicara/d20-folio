@@ -21,7 +21,7 @@ const STATUS_CONFIG: Record<
 > = {
   saved: { colorClass: "text-success", labelKey: "save.saved", fallback: "Saved" },
   pending: { colorClass: "text-warning", labelKey: "save.pending", fallback: "Unsaved" },
-  saving: { colorClass: "text-info", labelKey: "save.saving", fallback: "Saving..." },
+  saving: { colorClass: "text-info", labelKey: "save.saving", fallback: "Saving…" },
   error: { colorClass: "text-error", labelKey: "save.error", fallback: "Error" },
   offline: {
     colorClass: "text-text-secondary",
