@@ -15,9 +15,13 @@ import { commitLevelUp, type LevelUpPicks } from "@/lib/level-up-commit";
 import { levelUpPlan } from "@/lib/level-up-plan";
 import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import { emptySwapChoice } from "@/lib/spell-swap";
-import { applyOwedClassPicks, owedClassPicks } from "@/lib/owed-class-picks";
+import { applyOwedClassPicks, owedClassPicks as owedAll } from "@/lib/owed-class-picks";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
+
+/** The level table's picks: the owed subclass has its own cases (owed-subclass.test.ts). */
+const owedClassPicks = (...args: Parameters<typeof owedAll>) =>
+  owedAll(...args).filter((o) => o.pick !== "subclass");
 
 const interim = { subclassId: null, asiChoice: emptyAsiChoice(), fightingStyle: null };
 const NO_SLOTS = {

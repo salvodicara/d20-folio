@@ -8,20 +8,23 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 
 import { asRaceId } from "@/data/srd-names";
 import { PlaySpeciesChoices } from "@/domains/play/ui/PlaySpeciesChoices";
-import { buildDevScenario } from "@/lib/dev-scenarios";
+import { buildDevScenario, buildScenario } from "@/lib/dev-scenarios";
 import { owedClassPicks } from "@/lib/owed-class-picks";
 import { preparedLevelledCount } from "@/lib/wizard-spellbook";
 import { useCharacterStore } from "@/stores/characterStore";
+import { useUndoStore } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
 import { DISCOVERIES, loreBardDoc } from "./_lore-bard";
 
-// Every Weapon Mastery the Fighter 5 has, so only the species' choices are owed.
+// Every Weapon Mastery the Fighter 5 has, and its subclass, so only the species'
+// choices are owed.
 const MASTERED = {
   classes: [
     {
       classId: "fighter",
       level: 5,
+      subclassId: "champion",
       weaponMasteries: ["longsword", "greatsword", "longbow", "handaxe"],
     },
   ],
@@ -140,7 +143,7 @@ describe("PlaySpeciesChoices", () => {
   it("asks the cantrips a Wizard 4 owes (4 at L4) and stores them as the level-up does", () => {
     const base = makeCharacterDoc({
       race: asRaceId("dwarf"),
-      classes: [{ classId: "wizard", level: 4 }],
+      classes: [{ classId: "wizard", level: 4, subclassId: "evoker" }],
       // A full book (12 at Wizard 4), so only the cantrips are owed.
       spells: [{ srdId: "fire-bolt" }, { srdId: "light" }, ...BOOK],
     });
@@ -148,7 +151,7 @@ describe("PlaySpeciesChoices", () => {
     render(<Banner />);
     expect(
       screen.getByRole("group", { name: "Choices to finish" }).textContent
-    ).toContain("Your class lets you choose more: 2 cantrips (Wizard).");
+    ).toContain("Missing: 2 cantrips (Wizard).");
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     expect(screen.getByText("Pick 2 Wizard Cantrips")).toBeTruthy();
     // A cantrip already known isn't offered again.
@@ -178,7 +181,7 @@ describe("PlaySpeciesChoices: a Druid's Wild Shape known forms", () => {
     render(<Banner />);
     expect(
       screen.getByRole("group", { name: "Choices to finish" }).textContent
-    ).toContain("Your class lets you choose more: 1 Wild Shape form (Druid).");
+    ).toContain("Missing: 1 Wild Shape form (Druid).");
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     expect(screen.getByText("Choose 1 known form for Wild Shape")).toBeTruthy();
     // A known form isn't offered again; a CR 1/2 beast waits for Druid 4.
@@ -202,7 +205,7 @@ describe("PlaySpeciesChoices: a long owed list can be searched", () => {
   it("narrows the weapons by name and stores the two picked", () => {
     const base = makeCharacterDoc({
       race: asRaceId("dwarf"),
-      classes: [{ classId: "paladin", level: 5 }],
+      classes: [{ classId: "paladin", level: 5, subclassId: "oath-of-devotion" }],
     });
     useCharacterStore.getState().setCharacter(base);
     render(<Banner />);
@@ -313,30 +316,125 @@ describe("PlaySpeciesChoices: the four kinds the live survey found owed (#1397)"
     expect(owedNow()).toEqual([]);
   }, 15_000);
 
-  it("a Wizard 5 adds 5 spells to the book, unprepared, and owes none", () => {
+  it("a Wizard 5 (Evoker) adds 8 spells to the book, unprepared, and owes none", () => {
     const dialog = open("wizard-book-short");
+    // Five short of the book's fourteen, plus the Evoker's three Savant spells.
     expect(
-      within(dialog).getByText("Add 5 spells to your spellbook: they stay unprepared")
+      within(dialog).getByText("Add 8 spells to your spellbook: they stay unprepared")
     ).toBeTruthy();
     // The long list opens on one spell level: show them all, then search each.
     fireEvent.click(within(dialog).getByRole("button", { name: "All" }));
     const search = within(dialog).getByRole("searchbox", { name: "Search spells" });
-    const added = ["Burning Hands", "Charm Person", "Feather Fall", "Thunderwave"];
-    for (const name of [...added, "Invisibility"]) {
+    const added = [
+      "Burning Hands",
+      "Charm Person",
+      "Feather Fall",
+      "Thunderwave",
+      "Invisibility",
+      "Shatter",
+      "Scorching Ray",
+      "Lightning Bolt",
+    ];
+    for (const name of added) {
       fireEvent.change(search, { target: { value: name } });
       pick(dialog, name);
     }
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     const spells = useCharacterStore.getState().character?.character.spells ?? [];
-    expect(spells.slice(-5)).toEqual(
-      [
-        "burning-hands",
-        "charm-person",
-        "feather-fall",
-        "thunderwave",
-        "invisibility",
-      ].map((srdId) => ({ srdId, prepared: false }))
+    expect(spells.slice(-8)).toEqual(
+      added.map((name) => ({
+        srdId: name.toLowerCase().replace(/ /g, "-"),
+        prepared: false,
+      }))
     );
     expect(owedNow()).toEqual([]);
   }, 15_000);
+});
+
+describe("PlaySpeciesChoices: a subclass never chosen (#1393)", () => {
+  const rogue6 = (readonlyDoc = false) => {
+    const doc = buildScenario({
+      name: "Late Thief",
+      raceId: "halfling",
+      background: "",
+      classId: "rogue",
+      level: 6,
+      abilityScores: { STR: 10, DEX: 16, CON: 14, INT: 12, WIS: 12, CHA: 10 },
+      skills: { stealth: "proficient", perception: "proficient" },
+    });
+    useCharacterStore.getState().setCharacter({ ...doc, id: "late-thief" });
+    if (readonlyDoc)
+      useCharacterStore.getState().loadReadonly({ ...doc, id: "late-thief" });
+  };
+
+  it("names it, shows what the Thief brings, and picks it on Save, with an undo", () => {
+    useUndoStore.getState().clear(null);
+    rogue6();
+    render(<Banner />);
+    expect(
+      screen.getByRole("group", { name: "Choices to finish" }).textContent
+    ).toContain("Missing: Rogue subclass.");
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    expect(
+      screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")
+    ).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: /^Thief/ }));
+    // What the pick brings, from level 3 on.
+    expect(screen.getByText("Fast Hands")).toBeTruthy();
+    expect(screen.getByText("Second-Story Work")).toBeTruthy();
+    // Nothing written before Save.
+    expect(
+      useCharacterStore.getState().character?.character.classes[0]?.subclassId ?? ""
+    ).toBe("");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    const after = useCharacterStore.getState().character;
+    expect(after?.character.classes[0]?.subclassId).toBe("thief");
+    expect(
+      after?.character.features.some(
+        (f) => !("custom" in f) && f.srdId === "rogue-thief-fast-hands"
+      )
+    ).toBe(true);
+    expect(screen.queryByRole("group", { name: "Choices to finish" })).toBeNull();
+    // One undo puts the sheet back.
+    useUndoStore.getState().undo();
+    expect(
+      useCharacterStore.getState().character?.character.classes[0]?.subclassId ?? ""
+    ).toBe("");
+  });
+
+  it("a College of Lore asks its skills before it can be saved", () => {
+    const doc = buildScenario({
+      name: "Late Lore",
+      raceId: "halfling",
+      background: "",
+      classId: "bard",
+      level: 6,
+      abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 16 },
+      // Its cantrips owed too: another pick made doesn't let the open subclass by.
+      owesClassPicks: true,
+    });
+    useCharacterStore.getState().setCharacter({ ...doc, id: "late-lore" });
+    render(<Banner />);
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    fireEvent.click(screen.getByRole("button", { name: /^College of Lore/ }));
+    // Named in what the pick brings, and over its question.
+    expect(screen.getAllByText("Bonus Proficiencies")).toHaveLength(2);
+    // One of the class's own cantrips picked.
+    fireEvent.click(screen.getByRole("button", { name: /^Vicious Mockery/ }));
+    expect(
+      screen.getByRole("button", { name: "Save" }).getAttribute("aria-disabled")
+    ).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    expect(
+      useCharacterStore.getState().character?.character.classes[0]?.subclassId ?? ""
+    ).toBe("");
+  });
+
+  it("writes nothing on a read-only sheet", () => {
+    rogue6(true);
+    expect(useCharacterStore.getState().resolveSubclass("rogue", "thief")).toBeNull();
+    expect(
+      useCharacterStore.getState().character?.character.classes[0]?.subclassId ?? ""
+    ).toBe("");
+  });
 });

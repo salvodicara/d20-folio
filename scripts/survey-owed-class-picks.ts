@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * READ-ONLY survey: how many stored characters owe class picks their level table
- * gives (Eldritch Invocations, cantrips, Metamagic, maneuvers, Weapon Mastery) —
- * the classic level-up asked a Warlock's invocations only at level 1, for one. It
+ * gives (a missing subclass, Eldritch Invocations, cantrips, Metamagic, maneuvers,
+ * Weapon Mastery) — the classic level-up asked a Warlock's invocations only at
+ * level 1, for one, and a build could pass its subclass level without one. It
  * reads each character's build and play state and asks the engine's own
  * `unresolvedBuildChoices` — the list the sheet's «Scelte da completare» banner
  * shows — so the counts match what players will be asked. It never writes.

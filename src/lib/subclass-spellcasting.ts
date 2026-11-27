@@ -104,6 +104,35 @@ export function subclassSpellcastingState(
 }
 
 /**
+ * What a third caster learns at a class level, from its subclass's own table: the
+ * cantrips and spells it knows, the highest spell level its slots reach, and the
+ * list (and schools) it learns them from. Null for a subclass that doesn't cast,
+ * or a level below the threshold. The level-up asks
+ * them and «Scelte da completare» counts them (`owedClassPicks`) from here.
+ */
+export function thirdCasterKnown(
+  classId: string,
+  subclassId: string | null | undefined,
+  level: number
+): {
+  cantrips: number;
+  spells: number;
+  maxSpellLevel: number;
+  spellList: ClassId;
+  schools?: string[];
+} | null {
+  const state = subclassSpellcastingState(classId, subclassId, level);
+  if (!state) return null;
+  return {
+    cantrips: state.cantripsMax,
+    spells: state.preparedMax,
+    maxSpellLevel: Math.max(0, ...state.spellSlots.map((s) => s.level)),
+    spellList: state.spellList,
+    ...(state.schools ? { schools: state.schools } : {}),
+  };
+}
+
+/**
  * Apply a third-caster subclass's spellcasting to a character at a level:
  * sets the persisted spell slots and (first time) the `spellcasting` block,
  * refreshing `preparedMax` each level. A no-op when the subclass doesn't cast

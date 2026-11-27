@@ -13,6 +13,7 @@ import type { TableRules } from "@/lib/table-rules";
 import { applySpeciesChoices, pendingSpeciesChoices } from "@/lib/species-choices";
 import { applyOwedClassPicks, type ClassPickAnswer } from "@/lib/owed-class-picks";
 import { learnWildShapeForms } from "@/lib/wild-shape-forms";
+import { resolveOwedSubclass, type SubclassAnswers } from "@/lib/subclass-pick";
 import { markDiscoveries } from "@/lib/magical-discoveries";
 import { reconcileBuildChoices } from "@/lib/reconcile-build";
 import type { ChoicePicks } from "@/lib/feature-choices";
@@ -751,6 +752,17 @@ interface CharacterState {
    * form not yet known, never past the count. Writes nothing on a read-only sheet.
    */
   learnWildShapeForms: (ids: readonly string[]) => void;
+  /**
+   * The subclass a class past its subclass level never chose, picked on the sheet
+   * with the choices its features ask (`resolveOwedSubclass`, the level-up's own
+   * step). One undoable change; null when nothing was written (not owed, or a
+   * choice unanswered).
+   */
+  resolveSubclass: (
+    classId: string,
+    subclassId: string,
+    answers?: SubclassAnswers
+  ) => (() => boolean) | null;
   /**
    * The player's confirm of a Lore Bard's Magical Discoveries: `spellIds` (from the
    * candidates the sheet flagged) get the always-prepared mark, freeing the Bard's
@@ -3622,6 +3634,15 @@ const createCharacterState: StateCreator<CharacterState> = (set, get) => ({
     if (!character) return;
     const next = learnWildShapeForms(character, ids);
     if (next !== character) set({ character: next });
+  },
+
+  resolveSubclass: (classId, subclassId, answers) => {
+    if (get().readonly) return null;
+    const { character } = get();
+    if (!character) return null;
+    const next = resolveOwedSubclass(character, classId, subclassId, answers);
+    if (next === character) return null;
+    return get().editCharacter(next);
   },
 
   confirmDiscoveries: (spellIds) => {

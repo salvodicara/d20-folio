@@ -60,7 +60,7 @@ describe("the forms «Scelte da completare» offers", () => {
       undefined,
       owed ? [owed.label] : []
     );
-    expect(line).toBe("Your class lets you choose more: 4 Wild Shape forms (Druid).");
+    expect(line).toBe("Missing: 4 Wild Shape forms (Druid).");
   });
 });
 

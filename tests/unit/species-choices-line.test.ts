@@ -7,6 +7,7 @@ import { describe, expect, it } from "vitest";
 import i18n from "@/i18n";
 import { MOCK_CHARACTER } from "@/lib/mock";
 import { speciesChoicesLine } from "@/lib/views/species-choices-view";
+import { owedClassPickLabel } from "@/lib/views/owed-class-picks-view";
 
 const character = MOCK_CHARACTER.character;
 
@@ -30,6 +31,46 @@ describe("the owed-choices sentence", () => {
       expect(line).not.toMatch(/Carisma|Charisma/);
     }
   );
+
+  // The class picks read like D&D Beyond's required-choice badge: short, one label.
+  it.each([
+    ["it", "Manca: Sottoclasse del Ladro · 2 Padronanze d'Armi (Paladino)."],
+    ["en", "Missing: Rogue subclass · 2 Weapon Masteries (Paladin)."],
+  ] as const)("%s: names the missing class picks short", async (locale, says) => {
+    await i18n.loadLanguages(locale);
+    const t = i18n.getFixedT(locale);
+    const line = speciesChoicesLine(
+      [
+        {
+          kind: "class-pick",
+          classId: "rogue",
+          pick: "subclass",
+          owed: 1,
+          label: owedClassPickLabel("subclass", 1, "rogue", locale),
+        },
+        {
+          kind: "class-pick",
+          classId: "paladin",
+          pick: "weaponMasteries",
+          owed: 2,
+          label: owedClassPickLabel("weaponMasteries", 2, "paladin", locale),
+        },
+      ],
+      t,
+      locale,
+      character
+    );
+    expect(line).toBe(says);
+  });
+
+  it.each([
+    ["sorcerer", "Sottoclasse dello Stregone"],
+    ["cleric", "Sottoclasse del Chierico"],
+    ["warlock", "Sottoclasse del Warlock"],
+  ] as const)("it: the %s subclass agrees with its class", async (classId, says) => {
+    await i18n.loadLanguages("it");
+    expect(owedClassPickLabel("subclass", 1, classId, "it")).toBe(says);
+  });
 
   it.each([
     ["it", /Il Talento: scegli la caratteristica \(\+1 non ancora applicato\)/],

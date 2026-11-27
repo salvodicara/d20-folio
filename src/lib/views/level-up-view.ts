@@ -26,8 +26,9 @@
  * §1.3 + §3.3). Raw NUMBERS (costs, picks-needed, HP, slot counts) stay raw; the
  * UI formats them at the edge via `t`.
  */
-import { getClassTable, getFeaturesAtLevel, classFeatureIndex } from "@/data/classes";
+import { getClassTable, classFeatureIndex } from "@/data/classes";
 import { getExpandedSpellsThroughLevel } from "@/lib/expanded-spells";
+import { subclassFeaturesThrough } from "@/lib/subclass-pick";
 import type { Locale } from "@/lib/locale";
 import type { ProficiencyToken } from "@/types/ids";
 import { proseCorpus } from "@/lib/search";
@@ -223,7 +224,7 @@ export interface SubclassRevealFeature {
 
 /**
  * The chosen subclass's REVEAL — everything it grants at the unlock level, for
- * the level-up hero altar (detail on selected, §2.7.2): its features at `level`
+ * the level-up hero altar (detail on selected, §2.7.2): its features up to `level`
  * (localized name + full reading prose) and its always-prepared bonus spells
  * granted THROUGH `level` (localized names). Features resolve from the class's
  * own feature rows (D6 — the owning-class level), spells from the subclass's
@@ -235,14 +236,15 @@ export function subclassReveal(
   level: number,
   locale: Locale
 ): { features: SubclassRevealFeature[]; spells: string[] } {
-  const sub = subclassId.toLowerCase();
-  const features = getFeaturesAtLevel(classId.toLowerCase(), level)
-    .filter((f) => f.subclass && f.subclass.toLowerCase() === sub)
-    .map((f) => ({
-      id: f.id,
-      name: localizeSrd("class-feature", f.id, "name", locale),
-      description: localizeSrd("class-feature", f.id, "description", locale),
-    }));
+  // Every feature the pick brings up to `level` (`subclassFeaturesThrough`, the
+  // pick's own list): a late pick (a Rogue 6 with none) brings its level-3 ones too.
+  const features = subclassFeaturesThrough(classId.toLowerCase(), subclassId, level).map(
+    ({ srdId: id }) => ({
+      id,
+      name: localizeSrd("class-feature", id, "name", locale),
+      description: localizeSrd("class-feature", id, "description", locale),
+    })
+  );
   const spells = getExpandedSpellsThroughLevel(classId, subclassId, level).map((id) =>
     spellName(id, locale)
   );

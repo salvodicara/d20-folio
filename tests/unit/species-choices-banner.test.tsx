@@ -14,12 +14,14 @@ import { useUndoStore } from "@/stores/undoStore";
 import { makeCharacterDoc } from "./_helpers";
 import { DISCOVERIES, loreBardDoc } from "./_lore-bard";
 
-// Every Weapon Mastery the Fighter 5 has, so only the species' choices are owed.
+// Every Weapon Mastery the Fighter 5 has, and its subclass, so only the species'
+// choices are owed.
 const MASTERED = {
   classes: [
     {
       classId: "fighter",
       level: 5,
+      subclassId: "champion",
       weaponMasteries: ["longsword", "greatsword", "longbow", "handaxe"],
     },
   ],
@@ -138,7 +140,7 @@ describe("SpeciesChoicesBanner", () => {
       render(<SpeciesChoicesBanner />);
       expect(
         screen.getByRole("group", { name: "Choices to finish" }).textContent
-      ).toContain("Your class lets you choose more: 2 Eldritch Invocations (Warlock).");
+      ).toContain("Missing: 2 Eldritch Invocations (Warlock).");
       fireEvent.click(screen.getByRole("button", { name: "Finish" }));
       expect(screen.getByText("Choose 2 Eldritch Invocations")).toBeTruthy();
       for (const name of [/^Devil.s Sight$/, /^Eldritch Mind$/]) {

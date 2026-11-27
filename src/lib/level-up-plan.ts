@@ -35,7 +35,10 @@ import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import {
   getAlwaysPreparedFromGrants,
   getExpandedSpellsAtLevel,
+  getExpandedSpellsThroughLevel,
 } from "@/lib/expanded-spells";
+import { subclassFeaturesThrough } from "@/lib/subclass-pick";
+import { thirdCasterKnown } from "@/lib/subclass-spellcasting";
 import { isFightingStylePlaceholder } from "@/lib/fighting-style";
 import {
   isExpertisePlaceholder,
@@ -105,6 +108,37 @@ export function levelUpPlan(
     classTable != null &&
     newClassLevel >= classTable.subclassLevel &&
     !(advancingEntry?.subclassId ?? "");
+  // The subclass picked on this level (at its level, or late).
+  const subclassPicked = needsSubclass && subclassChoice ? subclassChoice : null;
+  // A third caster (a class that doesn't cast, whose subclass does) learns from its
+  // subclass's own table: a subclass picked now asks all of it up to the new level
+  // (at its level, or late), a held one only what this level adds.
+  const thirdNew = thirdCasterKnown(
+    classId,
+    subclassPicked ?? advancingSubclassId,
+    newClassLevel
+  );
+  const thirdPrev = subclassPicked
+    ? null
+    : thirdCasterKnown(classId, advancingSubclassId, currentClassLevel);
+  // The features this level brings: the class's own at the new level and the
+  // subclass's — a subclass picked now brings every one up to the new level
+  // (`subclassFeaturesThrough`, shared with the sheet's owed pick), a held one only
+  // this level's. Their choices, bundles and always-prepared spells are asked here.
+  const gainedRefs: SrdFeatureRef[] = (() => {
+    const effectiveSubclass = (subclassChoice ?? advancingSubclassId).toLowerCase();
+    const refs: SrdFeatureRef[] = [];
+    for (const f of getFeaturesAtLevel(classId, newClassLevel)) {
+      if (!f.subclass) refs.push({ srdId: f.id });
+      else if (!subclassPicked && f.subclass.toLowerCase() === effectiveSubclass) {
+        refs.push({ srdId: f.id });
+      }
+    }
+    if (subclassPicked) {
+      refs.push(...subclassFeaturesThrough(classId, subclassPicked, newClassLevel));
+    }
+    return refs;
+  })();
 
   const needsFightingStyle = (() => {
     if (!charData) return false;
@@ -151,6 +185,8 @@ export function levelUpPlan(
   // level-up (Lore picked at L3 widens the L6 Discoveries, etc.).
   const widenedSpellLists = (() => {
     if (!charData || !classId) return new Set<string>();
+    // A third caster learns its subclass's list.
+    if (thirdNew) return new Set<string>([thirdNew.spellList]);
     return widenedSpellListsAtLevel(
       classId,
       newClassLevel,
@@ -211,19 +247,23 @@ export function levelUpPlan(
   // A Wizard's level-up adds to the spellbook (6 at its first Wizard level, then 2),
   // not the Prepared Spells increase: the higher limit is filled from the book.
   const spellbookPicks = classId === "wizard" && levelData?.spellsKnown != null;
-  const spellsKnownDiff = spellbookPicks
-    ? isNewClass
-      ? WIZARD_BOOK_START
-      : WIZARD_BOOK_PER_LEVEL
-    : levelData?.spellsKnown != null && prevSpellsKnown != null
-      ? Math.max(0, levelData.spellsKnown - prevSpellsKnown)
-      : 0;
-  const cantripsKnownDiff =
-    levelData?.cantripsKnown != null && prevCantripsKnown != null
+  const spellsKnownDiff = thirdNew
+    ? Math.max(0, thirdNew.spells - (thirdPrev?.spells ?? 0))
+    : spellbookPicks
+      ? isNewClass
+        ? WIZARD_BOOK_START
+        : WIZARD_BOOK_PER_LEVEL
+      : levelData?.spellsKnown != null && prevSpellsKnown != null
+        ? Math.max(0, levelData.spellsKnown - prevSpellsKnown)
+        : 0;
+  const cantripsKnownDiff = thirdNew
+    ? Math.max(0, thirdNew.cantrips - (thirdPrev?.cantrips ?? 0))
+    : levelData?.cantripsKnown != null && prevCantripsKnown != null
       ? Math.max(0, levelData.cantripsKnown - prevCantripsKnown)
       : 0;
 
   const maxSpellLevel = (() => {
+    if (thirdNew) return thirdNew.maxSpellLevel;
     if (!levelData?.spellSlots) return 0;
     for (let i = levelData.spellSlots.length - 1; i >= 0; i--) {
       if ((levelData.spellSlots[i] ?? 0) > 0) return i + 1;
@@ -244,10 +284,7 @@ export function levelUpPlan(
   // a pick spent on one adds nothing and leaves the prepared list one short.
   const alwaysPreparedGained = (() => {
     const subclass = subclassChoice ?? advancingSubclassId;
-    const effectiveSubclass = subclass.toLowerCase();
-    const gained = getFeaturesAtLevel(classId, newClassLevel)
-      .filter((f) => !f.subclass || f.subclass.toLowerCase() === effectiveSubclass)
-      .map((f) => ({ srdId: f.id }));
+    const gained = gainedRefs;
     // A feature already held whose spells unlock at a later level, through the option
     // the player chose (Circle of the Land, Arid: Blight at Druid 7).
     const held = resolveGrantSourcesForFeatures(
@@ -266,7 +303,9 @@ export function levelUpPlan(
     const heldBefore = new Set(heldAt(currentClassLevel));
     return new Set([
       ...heldAt(newClassLevel).filter((id) => !heldBefore.has(id)),
-      ...getExpandedSpellsAtLevel(classId, subclass, newClassLevel),
+      ...(subclassPicked
+        ? getExpandedSpellsThroughLevel(classId, subclassPicked, newClassLevel)
+        : getExpandedSpellsAtLevel(classId, subclass, newClassLevel)),
       ...getAlwaysPreparedFromGrants(resolveGrantSourcesForFeatures(gained), {
         level: newClassLevel,
       }).map((entry) => (typeof entry === "string" ? entry : entry.spellId)),
@@ -301,17 +340,7 @@ export function levelUpPlan(
       newRows: {} as Record<string, ReadonlyArray<number>>,
     };
     if (!charData) return empty;
-    const effectiveSubclass = (subclassChoice ?? advancingSubclassId).toLowerCase();
-    const refs: SrdFeatureRef[] = [];
-    for (const f of getFeaturesAtLevel(classId, newClassLevel)) {
-      if (f.subclass) {
-        if (effectiveSubclass && f.subclass.toLowerCase() === effectiveSubclass) {
-          refs.push({ srdId: f.id });
-        }
-      } else {
-        refs.push({ srdId: f.id });
-      }
-    }
+    const refs: SrdFeatureRef[] = [...gainedRefs];
     if (asiChoice.mode === "feat" && asiChoice.featId) {
       refs.push({ srdId: asiChoice.featId });
     }
@@ -390,13 +419,7 @@ export function levelUpPlan(
   const sessionBundleChoices = character?.session.grantBundleChoices;
   const levelUpBundles = (() => {
     if (!charData) return [];
-    const effectiveSubclass = (subclassChoice ?? advancingSubclassId).toLowerCase();
-    const refs: SrdFeatureRef[] = [];
-    for (const f of getFeaturesAtLevel(classId, newClassLevel)) {
-      if (!f.subclass || f.subclass.toLowerCase() === effectiveSubclass) {
-        refs.push({ srdId: f.id });
-      }
-    }
+    const refs: SrdFeatureRef[] = [...gainedRefs];
     for (const f of charData.features) {
       if ("srdId" in f) refs.push({ srdId: f.srdId });
     }
@@ -489,6 +512,10 @@ export function levelUpPlan(
     spellsKnownDiff,
     spellbookPicks,
     cantripsKnownDiff,
+    /** The list the new cantrips come from: the class's, a third caster's subclass's. */
+    cantripListId: thirdNew?.spellList ?? classId,
+    /** A third caster's schools, when its subclass names any. */
+    spellSchools: thirdNew?.schools ?? null,
     maxSpellLevel,
     existingSpellIds,
     alwaysPreparedGained,

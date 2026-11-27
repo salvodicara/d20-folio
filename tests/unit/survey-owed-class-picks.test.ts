@@ -56,7 +56,13 @@ describe("surveyOwedClassPicks", () => {
       format: "d20-folio-owed-class-picks-survey-v1",
       characters: 2,
       owingAny: 1,
-      byClass: { warlock: { invocations: { characters: 1, picks: 4 } } },
+      // A Warlock 5 with no subclass owes one too (#1393).
+      byClass: {
+        warlock: {
+          subclass: { characters: 1, picks: 1 },
+          invocations: { characters: 1, picks: 4 },
+        },
+      },
       unreadable: { "invalid-envelope": 1 },
       masteryPathsElsewhere: {},
     });

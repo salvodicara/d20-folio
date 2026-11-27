@@ -147,6 +147,12 @@ function SpeciesChoicesModal({
         ids: classPicks[row.key] ?? [],
       }))
     );
+    // An owed subclass goes through the level-up's own step. One whose features ask
+    // choices is answered on the new Play screen: here it writes nothing.
+    for (const row of classRows) {
+      const id = row.pick === "subclass" ? classPicks[row.key]?.[0] : undefined;
+      if (id) store.resolveSubclass(row.classId, id);
+    }
     // Last, so its one undo restores only this mark.
     if (discoveryPicks.length > 0) {
       registerUndoableToast(

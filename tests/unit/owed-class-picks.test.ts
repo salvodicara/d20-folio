@@ -23,12 +23,16 @@ import { EMPTY_CHOICE_PICKS } from "@/lib/feature-choices";
 import { emptySwapChoice } from "@/lib/spell-swap";
 import {
   applyOwedClassPicks,
-  owedClassPicks,
+  owedClassPicks as owedAll,
   type OwedClassPick,
 } from "@/lib/owed-class-picks";
 import { unresolvedBuildChoices } from "@/lib/unresolved-build-choices";
 import type { CharacterData, ClassEntry, SrdSpellRef } from "@/types/character";
 import { makeCharacterDoc } from "./_helpers";
+
+/** The level table's picks: the owed subclass has its own cases (owed-subclass.test.ts). */
+const owedClassPicks = (...args: Parameters<typeof owedAll>) =>
+  owedAll(...args).filter((o) => o.pick !== "subclass");
 
 const INVOCATIONS = [
   "agonizing-blast",
