@@ -175,12 +175,29 @@ export function cacheToRosterDoc(
   // live overlay supplies the authoritative value. The roster card's HP stays gated by
   // `hpReady` until that subdoc lands, so this baseline is never shown as a fact.
   const { session } = applyCombatToSession(sanitizeSession({}), null, cache.hpMax);
-  return {
+  const row: RosterCharacterDoc = {
     id,
     ...meta,
     character: cacheToRosterCharacter(cache, storedBackground(data.build)),
     session,
   };
+  rosterParents.set(row, data);
+  return row;
+}
+
+/**
+ * #1451 — the stored parent each roster row was read from, kept beside the row (never
+ * on it, so the row stays the narrow SRD-free shape). The card derives its max HP from
+ * it through the sheet's read path, lazily (`roster-max-hp`), since the cached max is
+ * the one stamped at the last save.
+ */
+const rosterParents = new WeakMap<RosterCharacterDoc, Record<string, unknown>>();
+
+/** The stored parent a roster row was read from (absent for a projected dev row). */
+export function rosterParentData(
+  row: RosterCharacterDoc
+): Record<string, unknown> | undefined {
+  return rosterParents.get(row);
 }
 
 /**

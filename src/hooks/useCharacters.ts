@@ -24,7 +24,11 @@ import { subscribeToCharacters } from "@/lib/firestore";
 import { subscribeCombatState } from "@/lib/combat-state-io";
 import { DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER } from "@/lib/mock";
-import { applyCombatToRosterDoc, type RosterCharacterDoc } from "@/lib/character-cache";
+import {
+  applyCombatToRosterDoc,
+  rosterParentData,
+  type RosterCharacterDoc,
+} from "@/lib/character-cache";
 import { applyCombatToSession, sessionToCombatState } from "@/lib/combat-state";
 import type { CombatState } from "@/types/combat-state";
 
@@ -200,9 +204,20 @@ export function useCharacters(): UseCharactersResult {
   // the mock/fixtures render their session HP directly (the same values a real subdoc
   // would carry); in prod it gives the roster live HP updates on every tap.
   const combatStates = useRosterCombatStates(user?.uid, characters);
+  // #1451 — the card's max HP is the sheet's (derived), not the one cached at the last
+  // save; current HP clamps to it. `undefined` = still deriving, `null` = the cache.
+  const derivedMax = useRosterDerivedMax(characters, combatStates);
   const hydrated = useMemo(
-    () => characters.map((c) => applyCombatToRosterDoc(c, combatStates[c.id])),
-    [characters, combatStates]
+    () =>
+      characters.map((c) => {
+        const max = derivedMax[c.id];
+        const card =
+          typeof max === "number"
+            ? { ...c, character: { ...c.character, hp: { ...c.character.hp, max } } }
+            : c;
+        return applyCombatToRosterDoc(card, combatStates[c.id]);
+      }),
+    [characters, combatStates, derivedMax]
   );
   // Per-tile HP-hydration bit — `true` once the tile's `combat/state` subdoc has
   // SETTLED (`combatStates[id] !== undefined`: present OR confirmed-absent), so its
@@ -217,12 +232,55 @@ export function useCharacters(): UseCharactersResult {
     const out: Record<string, boolean> = {};
     for (const c of characters) {
       const combat = combatStates[c.id];
-      out[c.id] = syncReady || combat?.playState?.version === 1;
+      // The HP waits for the derived max too, so a stale cached max never paints.
+      const maxReady = !rosterParentData(c) || derivedMax[c.id] !== undefined;
+      out[c.id] = syncReady || (combat?.playState?.version === 1 && maxReady);
     }
     return out;
-  }, [characters, combatStates, syncReady]);
+  }, [characters, combatStates, derivedMax, syncReady]);
 
   return { characters: hydrated, loading, error, hpReady };
+}
+
+/**
+ * #1451 — each card's derived max HP (the sheet's read path, `roster-max-hp`, loaded
+ * with `import()` so the roster's first paint stays off the engine). Recomputed when
+ * the character or its combat child changes; the parse is memoised per character and
+ * revision. A row with no stored parent (a projected dev row) keeps its cached max.
+ */
+function useRosterDerivedMax(
+  docs: readonly RosterCharacterDoc[],
+  combatStates: Record<string, CombatState | null | undefined>
+): Record<string, number | null | undefined> {
+  const [derived, setDerived] = useState<Record<string, number | null>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const work = docs.flatMap((doc) => {
+      const data = rosterParentData(doc);
+      const combat = combatStates[doc.id];
+      if (!data || combat === undefined) return [];
+      return [{ id: doc.id, data, combat }];
+    });
+    if (work.length === 0) return;
+    void import("@/lib/roster-max-hp").then(async ({ rosterDerivedMaxHp }) => {
+      const results = await Promise.all(
+        work.map(
+          async ({ id, data, combat }) =>
+            [id, combat ? await rosterDerivedMaxHp(id, data, combat) : null] as const
+        )
+      );
+      if (cancelled) return;
+      setDerived((prev) => {
+        const next = { ...prev };
+        for (const [id, max] of results) next[id] = max;
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [docs, combatStates]);
+  return derived;
 }
 
 /**
