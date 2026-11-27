@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from "vitest";
 import { evaluateGrants, type GrantSource } from "@/lib/grants";
+import { ruleFlagIds } from "@/lib/rules";
 import { classFeatureIndex } from "@/data/classes";
 
 const empowered: GrantSource = {
@@ -19,19 +20,21 @@ const empowered: GrantSource = {
   grants: [{ type: "unarmed-strike-damage-type-option", toType: "force" }],
 };
 
+/** The Unarmed Strike's alternative damage types, from the folded rules. */
+const optionsOf = (...args: Parameters<typeof evaluateGrants>) =>
+  ruleFlagIds(evaluateGrants(...args).values, "unarmed:damage-type:");
+
 describe("evaluateGrants — unarmed-strike-damage-type-option aggregation", () => {
   it("records the Force option", () => {
-    expect(evaluateGrants([empowered]).unarmedStrikeDamageTypeOptions).toEqual(["force"]);
+    expect(optionsOf([empowered])).toEqual(["force"]);
   });
 
   it("is empty by default", () => {
-    expect(evaluateGrants([]).unarmedStrikeDamageTypeOptions).toEqual([]);
+    expect(optionsOf([])).toEqual([]);
   });
 
   it("dedupes repeated options", () => {
-    expect(evaluateGrants([empowered, empowered]).unarmedStrikeDamageTypeOptions).toEqual(
-      ["force"]
-    );
+    expect(optionsOf([empowered, empowered])).toEqual(["force"]);
   });
 
   it("merges through a while-active wrapper only when toggled on", () => {
@@ -47,10 +50,8 @@ describe("evaluateGrants — unarmed-strike-damage-type-option aggregation", () 
         },
       ],
     };
-    expect(evaluateGrants([toggled]).unarmedStrikeDamageTypeOptions).toEqual([]);
-    expect(
-      evaluateGrants([toggled], new Set(["z"])).unarmedStrikeDamageTypeOptions
-    ).toEqual(["force"]);
+    expect(optionsOf([toggled])).toEqual([]);
+    expect(optionsOf([toggled], new Set(["z"]))).toEqual(["force"]);
   });
 });
 

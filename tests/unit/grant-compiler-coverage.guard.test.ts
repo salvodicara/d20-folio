@@ -21,7 +21,7 @@ import { compileGrant } from "@/lib/rules";
 type GrantKind = Grant["type"];
 
 /**
- * Kinds without a compiler case today (2026-11-26: 99 of 161). Each one is still read by
+ * Kinds without a compiler case today (2026-11-27: 98 of 161). Each one is still read by
  * bespoke code (`AggregatedGrants` fields, choice collectors, actions, resources,
  * statuses). This list may only shrink: never add a kind here, give it a case in
  * `compileGrant` instead.
@@ -103,8 +103,8 @@ const NOT_COMPILED_YET = [
   "round1-damage-double",
   "save-damage-rule",
   "scoped-extra-spell-slot",
-  "self-heal-on-other",
   "skill-ability-option",
+  "self-heal-on-other",
   "spell-damage-bonus",
   "spell-damage-outcome",
   "spell-damage-type-override",
@@ -114,7 +114,6 @@ const NOT_COMPILED_YET = [
   "temp-hp",
   "tracker-alt-recovery",
   "trigger",
-  "unarmed-strike-damage-type-option",
   "unarmed-strike-die",
   "upkeep-waiver",
   "weapon-attack-ability",

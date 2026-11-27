@@ -1988,12 +1988,6 @@ export interface AggregatedGrants {
    */
   spellDamageTypeOverrides: ReadonlyArray<SpellDamageTypeOverrideEntry>;
   /**
-   * Alternate damage types the character's Unarmed Strike may deal at the player's
-   * choice (Monk Empowered Strikes → Force). The smart-tracker folds these into
-   * the Unarmed Strike row's damage-type choice chip.
-   */
-  unarmedStrikeDamageTypeOptions: ReadonlyArray<DamageType>;
-  /**
    * Component waivers (Great Old One Psychic Spells: cast Enchantment/Illusion
    * Warlock spells without V/S). The consumer (`resolveComponentWaiver`) returns
    * the components a given spell may drop; the smart-tracker marks them.
@@ -2428,7 +2422,6 @@ export function emptyAggregate(): AggregatedGrants {
     selfHealOnOther: [],
     maximizeSpellHealing: [],
     spellDamageTypeOverrides: [],
-    unarmedStrikeDamageTypeOptions: [],
     componentWaivers: [],
     cantripDamageBonuses: [],
     cantripEffectRiders: [],
@@ -2697,7 +2690,6 @@ export function evaluateGrants(
   const selfHealOnOther: SelfHealOnOtherEntry[] = [];
   const maximizeSpellHealing: MaximizeSpellHealingEntry[] = [];
   const spellDamageTypeOverrides: SpellDamageTypeOverrideEntry[] = [];
-  const unarmedStrikeDamageTypeOptions: DamageType[] = [];
   const componentWaivers: ComponentWaiverEntry[] = [];
   const cantripDamageBonuses: CantripDamageBonusEntry[] = [];
   const cantripEffectRiders: CantripEffectRiderEntry[] = [];
@@ -3260,10 +3252,9 @@ export function evaluateGrants(
           scope: g.scope ?? "all",
         });
         break;
+      // Migrated to the generic rules grammar (`rules/sheet-number-kinds`).
       case "unarmed-strike-damage-type-option":
-        if (!unarmedStrikeDamageTypeOptions.includes(g.toType)) {
-          unarmedStrikeDamageTypeOptions.push(g.toType);
-        }
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "component-waiver":
         componentWaivers.push({
@@ -4369,7 +4360,6 @@ export function evaluateGrants(
     selfHealOnOther,
     maximizeSpellHealing,
     spellDamageTypeOverrides,
-    unarmedStrikeDamageTypeOptions,
     componentWaivers,
     cantripDamageBonuses,
     cantripEffectRiders,
