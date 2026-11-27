@@ -133,7 +133,84 @@ export interface SaveDamageClauseRule {
   onFailure: "half";
 }
 
+type SpellScope = NonNullable<GrantOf<"spell-damage-bonus">["scope"]>;
+
+/** Extra damage on the character's spells of these damage types. */
+export interface SpellDamageBonusClauseRule {
+  op: "clause";
+  target: "roll:spell-damage:bonus";
+  damageTypes: readonly DamageType[];
+  ability?: AbilityCode;
+  value: "modifier" | number;
+  min: number;
+  scope: SpellScope;
+  cantripOnly?: true;
+  oncePerTurn?: true;
+  schools?: readonly string[];
+}
+
+/** The character's spell damage changes to this type. */
+export interface SpellDamageTypeClauseRule {
+  op: "clause";
+  target: "roll:spell-damage:type-override";
+  toType: DamageType;
+  scope: SpellScope;
+}
+
+/** One spell's damage die grows (the largest `toDie` wins per spell). */
+export interface SpellDieAugmentClauseRule {
+  op: "clause";
+  target: "roll:spell-damage:die-augment";
+  spellId: string;
+  fromDie: number;
+  toDie: number;
+}
+
+/** Extra damage on one cantrip (the picked one, resolved before compiling). */
+export interface CantripDamageClauseRule {
+  op: "clause";
+  target: "roll:cantrip-damage:bonus";
+  spellId: string;
+  ability?: AbilityCode;
+  value: "modifier" | number;
+  min: number;
+}
+
+/** One cantrip's range grows with a class level. */
+export interface CantripRangeClauseRule {
+  op: "clause";
+  target: "roll:cantrip:range-bonus";
+  spellId: string;
+  bonusPerLevel: number;
+  scalesWith: GrantOf<"cantrip-range-bonus">["scalesWith"];
+}
+
+/** Extra healing on the character's healing spells. */
+export interface HealBonusClauseRule {
+  op: "clause";
+  target: "roll:spell-heal:bonus";
+  amount: number;
+  perSpellLevel: boolean;
+  minSpellLevel: number;
+  scope: SpellScope;
+}
+
+/** The character's healing spells heal their maximum. */
+export interface MaximizeHealingClauseRule {
+  op: "clause";
+  target: "roll:spell-heal:maximize";
+  minSpellLevel: number;
+  scope: SpellScope;
+}
+
 export type RollClauseRule =
+  | SpellDamageBonusClauseRule
+  | SpellDamageTypeClauseRule
+  | SpellDieAugmentClauseRule
+  | CantripDamageClauseRule
+  | CantripRangeClauseRule
+  | HealBonusClauseRule
+  | MaximizeHealingClauseRule
   | VerdictClauseRule
   | RerollClauseRule
   | FloorClauseRule
@@ -163,6 +240,13 @@ type RollGrant = GrantOf<
   | "damage-penetration"
   | "round1-damage-double"
   | "save-damage-rule"
+  | "spell-damage-bonus"
+  | "spell-damage-type-override"
+  | "spell-die-augment"
+  | "cantrip-damage-bonus"
+  | "cantrip-range-bonus"
+  | "heal-bonus"
+  | "maximize-spell-healing"
 >;
 
 const textOf = (description: LocaleText | undefined) =>
@@ -287,6 +371,88 @@ export function compileRollGrant(
           saveDcAbility: grant.saveDcAbility,
         },
       ];
+    case "spell-damage-bonus":
+      return [
+        {
+          op: "clause",
+          target: "roll:spell-damage:bonus",
+          damageTypes: grant.damageTypes,
+          ...(grant.ability ? { ability: grant.ability } : {}),
+          value: grant.value ?? "modifier",
+          min: grant.min ?? 0,
+          scope: grant.scope ?? "all",
+          ...(grant.cantripOnly ? { cantripOnly: true } : {}),
+          ...(grant.oncePerTurn ? { oncePerTurn: true } : {}),
+          ...(grant.schools ? { schools: grant.schools } : {}),
+        },
+      ];
+    case "spell-damage-type-override":
+      return [
+        {
+          op: "clause",
+          target: "roll:spell-damage:type-override",
+          toType: grant.toType,
+          scope: grant.scope ?? "all",
+        },
+      ];
+    case "spell-die-augment":
+      return [
+        {
+          op: "clause",
+          target: "roll:spell-damage:die-augment",
+          spellId: grant.spellId,
+          fromDie: grant.fromDie,
+          toDie: grant.toDie,
+        },
+      ];
+    case "cantrip-damage-bonus": {
+      // The evaluator puts the player's pick in `spellId`; else the default.
+      const spellId = grant.spellId ?? grant.defaultSpellId;
+      if (!spellId) return [];
+      return [
+        {
+          op: "clause",
+          target: "roll:cantrip-damage:bonus",
+          spellId,
+          ...(grant.ability ? { ability: grant.ability } : {}),
+          value: grant.value ?? "modifier",
+          min: grant.min ?? 0,
+        },
+      ];
+    }
+    case "cantrip-range-bonus": {
+      const spellId = grant.spellId ?? grant.defaultSpellId;
+      if (!spellId) return [];
+      return [
+        {
+          op: "clause",
+          target: "roll:cantrip:range-bonus",
+          spellId,
+          bonusPerLevel: grant.bonusPerLevel,
+          scalesWith: grant.scalesWith,
+        },
+      ];
+    }
+    case "heal-bonus":
+      return [
+        {
+          op: "clause",
+          target: "roll:spell-heal:bonus",
+          amount: grant.amount,
+          perSpellLevel: grant.perSpellLevel ?? false,
+          minSpellLevel: grant.minSpellLevel ?? 0,
+          scope: grant.scope ?? "all",
+        },
+      ];
+    case "maximize-spell-healing":
+      return [
+        {
+          op: "clause",
+          target: "roll:spell-heal:maximize",
+          minSpellLevel: grant.minSpellLevel ?? 0,
+          scope: grant.scope ?? "all",
+        },
+      ];
     case "save-damage-rule":
       // `suppressedByConditions` is gating: the evaluator drops the grant first.
       return [
@@ -375,6 +541,8 @@ export type SaveDamageRow = { sourceId: string } & Omit<
   "op" | "target"
 >;
 
+type Fields<R extends RollClauseRule> = Omit<R, "op" | "target">;
+
 export interface RollRows<Text> {
   advantages: ClauseRow<Text>[];
   disadvantages: ClauseRow<Text>[];
@@ -388,7 +556,25 @@ export interface RollRows<Text> {
   damageDieReductions: DieReductionRow[];
   round1DamageDoubles: Round1DoubleRow[];
   saveDamageRules: SaveDamageRow[];
+  spellDamageBonuses: Fields<SpellDamageBonusClauseRule>[];
+  spellDamageTypeOverrides: Fields<SpellDamageTypeClauseRule>[];
+  /** One row per spell: the largest die wins, in the place the spell first appeared. */
+  spellDieAugments: Fields<SpellDieAugmentClauseRule>[];
+  cantripDamageBonuses: Fields<CantripDamageClauseRule>[];
+  cantripRangeBonuses: Fields<CantripRangeClauseRule>[];
+  healBonuses: Fields<HealBonusClauseRule>[];
+  maximizeSpellHealing: Fields<MaximizeHealingClauseRule>[];
 }
+
+/** Where each spell-target clause lands, by its `roll:<roll>:<what>` pair. */
+const SPELL_ROWS = {
+  "spell-damage:bonus": "spellDamageBonuses",
+  "spell-damage:type-override": "spellDamageTypeOverrides",
+  "cantrip-damage:bonus": "cantripDamageBonuses",
+  "cantrip:range-bonus": "cantripRangeBonuses",
+  "spell-heal:bonus": "healBonuses",
+  "spell-heal:maximize": "maximizeSpellHealing",
+} as const satisfies Record<string, keyof RollRows<unknown>>;
 
 /** The clause's own fields, without the rule's `op` and `target`. */
 function fieldsOf<R extends RollClauseRule>(rule: R): Omit<R, "op" | "target"> {
@@ -421,6 +607,13 @@ export function rollRows<Text>(
     damageDieReductions: [],
     round1DamageDoubles: [],
     saveDamageRules: [],
+    spellDamageBonuses: [],
+    spellDamageTypeOverrides: [],
+    spellDieAugments: [],
+    cantripDamageBonuses: [],
+    cantripRangeBonuses: [],
+    healBonuses: [],
+    maximizeSpellHealing: [],
   };
   rules.forEach((rule, index) => {
     if (rule.op !== "clause") return;
@@ -429,6 +622,19 @@ export function rollRows<Text>(
     if (!roll || !what) return;
     const { sourceId, description, whileActiveKey } = contextOf(index);
     const active = whileActiveKey ? { whileActiveKey } : {};
+    const key = `${roll}:${what}`;
+    if (key in SPELL_ROWS) {
+      const spellRow = SPELL_ROWS[key as keyof typeof SPELL_ROWS];
+      (rows[spellRow] as unknown[]).push(fieldsOf(clause));
+      return;
+    }
+    if (what === "die-augment") {
+      const augment = fieldsOf(clause as SpellDieAugmentClauseRule);
+      const existing = rows.spellDieAugments.find((e) => e.spellId === augment.spellId);
+      if (!existing) rows.spellDieAugments.push(augment);
+      else if (augment.toDie > existing.toDie) Object.assign(existing, augment);
+      return;
+    }
     if (what === "die-modifier")
       rows.damageDieModifiers.push({
         sourceId,

@@ -2683,17 +2683,11 @@ export function evaluateGrants(
   const skillAbilityOptions: AggregatedGrants["skillAbilityOptions"][number][] = [];
   const damageRiders: AggregatedGrants["damageRiders"][number][] = [];
   const weaponDamageBonuses: AggregatedGrants["weaponDamageBonuses"][number][] = [];
-  const spellDamageBonuses: SpellDamageBonusEntry[] = [];
   const spellDamageOutcomes: SpellDamageOutcomeEntry[] = [];
-  const healBonuses: HealBonusEntry[] = [];
   const selfHealOnOther: SelfHealOnOtherEntry[] = [];
-  const maximizeSpellHealing: MaximizeSpellHealingEntry[] = [];
-  const spellDamageTypeOverrides: SpellDamageTypeOverrideEntry[] = [];
   const unarmedStrikeDamageTypeOptions: DamageType[] = [];
   const componentWaivers: ComponentWaiverEntry[] = [];
-  const cantripDamageBonuses: CantripDamageBonusEntry[] = [];
   const cantripEffectRiders: CantripEffectRiderEntry[] = [];
-  const cantripRangeBonuses: CantripRangeBonusEntry[] = [];
   const weaponAttackCantrips: WeaponAttackCantripEntry[] = [];
 
   // Proficiencies
@@ -2739,7 +2733,6 @@ export function evaluateGrants(
 
   // PRIM batch (2026-06-10)
   const auras: AuraClause[] = [];
-  const spellDieAugments: SpellDieAugmentEntry[] = [];
   const copyToTargets: CopyToTargetClause[] = [];
   const resourceConversions: ResourceConversionEntry[] = [];
 
@@ -3200,18 +3193,23 @@ export function evaluateGrants(
           ...(activeKey ? { whileActiveKey: activeKey } : {}),
         });
         break;
+      // Spell and cantrip modifiers compile to roll clauses (`lib/rules/roll-rules`).
       case "spell-damage-bonus":
-        spellDamageBonuses.push({
-          damageTypes: g.damageTypes,
-          ...(g.ability ? { ability: g.ability } : {}),
-          value: g.value ?? "modifier",
-          min: g.min ?? 0,
-          scope: g.scope ?? "all",
-          ...(g.cantripOnly ? { cantripOnly: true } : {}),
-          ...(g.oncePerTurn ? { oncePerTurn: true } : {}),
-          ...(g.schools ? { schools: g.schools } : {}),
-        });
+      case "heal-bonus":
+      case "maximize-spell-healing":
+      case "spell-damage-type-override":
+      case "spell-die-augment":
+        pushClauses(g, gref, activeKey);
         break;
+      case "cantrip-damage-bonus":
+      case "cantrip-range-bonus": {
+        // The player's pick (`grantBundleChoices[choiceKey]`) is the evaluator's to
+        // resolve; an explicit `spellId` wins, the compiler falls back to the default.
+        const picked =
+          g.spellId ?? (g.choiceKey ? bundleChoices.get(g.choiceKey) : undefined);
+        pushClauses(picked ? { ...g, spellId: picked } : g, gref, activeKey);
+        break;
+      }
       case "spell-damage-outcome":
         spellDamageOutcomes.push({
           scope: g.scope ?? "all",
@@ -3220,31 +3218,11 @@ export function evaluateGrants(
           ...(g.damageOnSave ? { damageOnSave: g.damageOnSave } : {}),
         });
         break;
-      case "heal-bonus":
-        healBonuses.push({
-          amount: g.amount,
-          perSpellLevel: g.perSpellLevel ?? false,
-          minSpellLevel: g.minSpellLevel ?? 0,
-          scope: g.scope ?? "all",
-        });
-        break;
       case "self-heal-on-other":
         selfHealOnOther.push({
           amount: g.amount,
           perSpellLevel: g.perSpellLevel ?? false,
           minSpellLevel: g.minSpellLevel ?? 0,
-          scope: g.scope ?? "all",
-        });
-        break;
-      case "maximize-spell-healing":
-        maximizeSpellHealing.push({
-          minSpellLevel: g.minSpellLevel ?? 0,
-          scope: g.scope ?? "all",
-        });
-        break;
-      case "spell-damage-type-override":
-        spellDamageTypeOverrides.push({
-          toType: g.toType,
           scope: g.scope ?? "all",
         });
         break;
@@ -3260,25 +3238,6 @@ export function evaluateGrants(
           scope: g.scope ?? "all",
         });
         break;
-      case "cantrip-damage-bonus": {
-        // Resolve which cantrip the bonus targets: an explicit `spellId` wins;
-        // else the player's pick (`grantBundleChoices[choiceKey]`); else the
-        // fact's `defaultSpellId` fallback (Eldritch Blast for Agonizing Blast).
-        const chosen =
-          g.spellId ??
-          (g.choiceKey ? bundleChoices.get(g.choiceKey) : undefined) ??
-          g.defaultSpellId;
-        // No target resolvable → the grant contributes nothing (defensive).
-        if (chosen) {
-          cantripDamageBonuses.push({
-            spellId: chosen,
-            ...(g.ability ? { ability: g.ability } : {}),
-            value: g.value ?? "modifier",
-            min: g.min ?? 0,
-          });
-        }
-        break;
-      }
       case "cantrip-effect-rider": {
         // Resolve the targeted cantrip exactly like `cantrip-damage-bonus`: an
         // explicit `spellId` wins; else the player's pick
@@ -3295,26 +3254,6 @@ export function evaluateGrants(
             direction: g.direction,
             distanceFt: g.distanceFt,
             maxTargetSize: g.maxTargetSize,
-          });
-        }
-        break;
-      }
-      case "cantrip-range-bonus": {
-        // Resolve the targeted cantrip exactly like `cantrip-effect-rider`: an
-        // explicit `spellId` wins; else the player's pick
-        // (`grantBundleChoices[choiceKey]`); else the `defaultSpellId` fallback
-        // (Eldritch Blast for Eldritch Spear). No target → contributes nothing.
-        // The class-level scaling is recorded (bonusPerLevel × scalesWith level)
-        // and resolved per cantrip at render by `resolveCantripRangeBonus`.
-        const chosen =
-          g.spellId ??
-          (g.choiceKey ? bundleChoices.get(g.choiceKey) : undefined) ??
-          g.defaultSpellId;
-        if (chosen) {
-          cantripRangeBonuses.push({
-            spellId: chosen,
-            bonusPerLevel: g.bonusPerLevel,
-            scalesWith: g.scalesWith,
           });
         }
         break;
@@ -3563,23 +3502,6 @@ export function evaluateGrants(
           }),
         });
         break;
-      case "spell-die-augment": {
-        // Largest `toDie` wins when two sources target the same spell.
-        const existing = spellDieAugments.find((e) => e.spellId === g.spellId);
-        if (existing) {
-          if (g.toDie > existing.toDie) {
-            existing.toDie = g.toDie;
-            existing.fromDie = g.fromDie;
-          }
-        } else {
-          spellDieAugments.push({
-            spellId: g.spellId,
-            fromDie: g.fromDie,
-            toDie: g.toDie,
-          });
-        }
-        break;
-      }
       case "copy-to-2nd-target":
         copyToTargets.push({
           sourceId,
@@ -4265,17 +4187,17 @@ export function evaluateGrants(
     initiativeBonusFlat: ruleNumber(values, "initiative:bonus"),
     damageRiders,
     weaponDamageBonuses,
-    spellDamageBonuses,
+    spellDamageBonuses: clauses.spellDamageBonuses,
     spellDamageOutcomes,
-    healBonuses,
+    healBonuses: clauses.healBonuses,
     selfHealOnOther,
-    maximizeSpellHealing,
-    spellDamageTypeOverrides,
+    maximizeSpellHealing: clauses.maximizeSpellHealing,
+    spellDamageTypeOverrides: clauses.spellDamageTypeOverrides,
     unarmedStrikeDamageTypeOptions,
     componentWaivers,
-    cantripDamageBonuses,
+    cantripDamageBonuses: clauses.cantripDamageBonuses,
     cantripEffectRiders,
-    cantripRangeBonuses,
+    cantripRangeBonuses: clauses.cantripRangeBonuses,
     weaponAttackCantrips,
     saveProficiencies: new Set(ruleFlagIds(values, "prof:save:") as AbilityCode[]),
     skillProficiencies: new Set(ruleFlagIds(values, "prof:skill:")),
@@ -4318,7 +4240,7 @@ export function evaluateGrants(
     incomingAttackDisadvantages: clauses.incomingAttackDisadvantages,
     defenseNotes,
     auras,
-    spellDieAugments,
+    spellDieAugments: clauses.spellDieAugments,
     copyToTargets,
     resourceConversions,
     activatableGroups,

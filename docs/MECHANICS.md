@@ -185,7 +185,9 @@ Two grammars:
   `advantage` / `disadvantage` (also `roll:incoming-attack:*`), `roll:d20:reroll`,
   `roll:<roll>:floor`, `roll:<roll>:die`, `roll:concentration:damage-proof`,
   `roll:damage:die-modifier`, `roll:damage:round1-double`, `roll:save:damage-rule`,
-  `roll:incoming-damage:die-reduction`. Ignoring Resistance is a plain flag,
+  `roll:incoming-damage:die-reduction`, and the spell ones (`roll:spell-damage:*`,
+  `roll:cantrip-damage:bonus`, `roll:cantrip:range-bonus`, `roll:spell-heal:*`; a picked
+  cantrip is resolved by the evaluator before compiling). Ignoring Resistance is a plain flag,
   `damage:ignore-resistance:<spell|any>:<type>`. A clause is never
   folded: it is kept per source, in grant order, and `rollRows` turns the compiled clauses into
   the aggregate's roll rows, with the source and the `while-active` state the evaluator knows.

@@ -21,7 +21,7 @@ import { compileGrant } from "@/lib/rules";
 type GrantKind = Grant["type"];
 
 /**
- * Kinds without a compiler case today (2026-11-27: 86 of 161). Each one is still read by
+ * Kinds without a compiler case today (2026-11-27: 79 of 161). Each one is still read by
  * bespoke code (`AggregatedGrants` fields, choice collectors, actions, resources,
  * statuses). This list may only shrink: never add a kind here, give it a case in
  * `compileGrant` instead.
@@ -34,9 +34,7 @@ const NOT_COMPILED_YET = [
   "at-will-cast-spell",
   "at-zero-hp-interrupt",
   "aura",
-  "cantrip-damage-bonus",
   "cantrip-effect-rider",
-  "cantrip-range-bonus",
   "choice-ability-score",
   "choice-cantrip",
   "choice-expertise",
@@ -67,7 +65,6 @@ const NOT_COMPILED_YET = [
   "free-cast-from-list",
   "free-cast-spell",
   "granted-action",
-  "heal-bonus",
   "hit-die-floor",
   "hp-flat",
   "incoming-damage-scale",
@@ -75,7 +72,6 @@ const NOT_COMPILED_YET = [
   "item-bound-bonus",
   "item-bound-damage-rider",
   "manifested-weapon",
-  "maximize-spell-healing",
   "medium-armor-dex-cap",
   "metamagic-per-spell",
   "on-crit-movement-rider",
@@ -92,10 +88,7 @@ const NOT_COMPILED_YET = [
   "scoped-extra-spell-slot",
   "self-heal-on-other",
   "skill-ability-option",
-  "spell-damage-bonus",
   "spell-damage-outcome",
-  "spell-damage-type-override",
-  "spell-die-augment",
   "spell-slot-tracker-recovery",
   "state-condition",
   "temp-hp",

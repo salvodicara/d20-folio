@@ -483,6 +483,13 @@ export function compileGrant(grant: Grant): Rule[] | null {
     case "damage-penetration":
     case "round1-damage-double":
     case "save-damage-rule":
+    case "spell-damage-bonus":
+    case "spell-damage-type-override":
+    case "spell-die-augment":
+    case "cantrip-damage-bonus":
+    case "cantrip-range-bonus":
+    case "heal-bonus":
+    case "maximize-spell-healing":
       return compileRollGrant(grant);
     default:
       return null;

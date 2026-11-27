@@ -557,3 +557,145 @@ describe("roll rules: resistance penetration never makes a source count for stac
     expect(out.acBonus).toBe(2);
   });
 });
+
+describe("roll rules: spell and cantrip damage and healing compile to clauses", () => {
+  it("each spell modifier is a clause with the grant's defaults filled in", () => {
+    expect(compileGrant({ type: "spell-damage-bonus", damageTypes: ["fire"] })).toEqual([
+      {
+        op: "clause",
+        target: "roll:spell-damage:bonus",
+        damageTypes: ["fire"],
+        value: "modifier",
+        min: 0,
+        scope: "all",
+      },
+    ]);
+    expect(compileGrant({ type: "spell-damage-type-override", toType: "cold" })).toEqual([
+      {
+        op: "clause",
+        target: "roll:spell-damage:type-override",
+        toType: "cold",
+        scope: "all",
+      },
+    ]);
+    expect(
+      compileGrant({
+        type: "spell-die-augment",
+        spellId: "fire-bolt",
+        fromDie: 10,
+        toDie: 12,
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:spell-damage:die-augment",
+        spellId: "fire-bolt",
+        fromDie: 10,
+        toDie: 12,
+      },
+    ]);
+    expect(compileGrant({ type: "heal-bonus", amount: 2, scope: "cleric" })).toEqual([
+      {
+        op: "clause",
+        target: "roll:spell-heal:bonus",
+        amount: 2,
+        perSpellLevel: false,
+        minSpellLevel: 0,
+        scope: "cleric",
+      },
+    ]);
+    expect(compileGrant({ type: "maximize-spell-healing", minSpellLevel: 1 })).toEqual([
+      {
+        op: "clause",
+        target: "roll:spell-heal:maximize",
+        minSpellLevel: 1,
+        scope: "all",
+      },
+    ]);
+  });
+
+  it("a cantrip modifier compiles only once its cantrip is known", () => {
+    expect(
+      compileGrant({ type: "cantrip-damage-bonus", spellId: "eldritch-blast", value: 2 })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:cantrip-damage:bonus",
+        spellId: "eldritch-blast",
+        value: 2,
+        min: 0,
+      },
+    ]);
+    expect(
+      compileGrant({
+        type: "cantrip-range-bonus",
+        spellId: "eldritch-blast",
+        bonusPerLevel: 30,
+        scalesWith: "warlock",
+      })
+    ).toEqual([
+      {
+        op: "clause",
+        target: "roll:cantrip:range-bonus",
+        spellId: "eldritch-blast",
+        bonusPerLevel: 30,
+        scalesWith: "warlock",
+      },
+    ]);
+    // A pick the evaluator could not resolve contributes nothing.
+    expect(compileGrant({ type: "cantrip-damage-bonus", choiceKey: "pick" })).toEqual([]);
+  });
+
+  it("the evaluator resolves the picked cantrip, then reads the compiled rows", () => {
+    const out = evaluateGrants(
+      [
+        source("invocation", [
+          { type: "cantrip-damage-bonus", choiceKey: "blast-pick", defaultSpellId: "x" },
+          {
+            type: "cantrip-range-bonus",
+            defaultSpellId: "eldritch-blast",
+            bonusPerLevel: 30,
+            scalesWith: "warlock",
+          },
+        ]),
+        source("elemental", [
+          { type: "spell-damage-bonus", damageTypes: ["fire"], ability: "CHA", min: 1 },
+          { type: "spell-damage-type-override", toType: "cold", scope: "sorcerer" },
+        ]),
+        source("disciple", [
+          { type: "heal-bonus", amount: 2, perSpellLevel: true, minSpellLevel: 1 },
+          { type: "maximize-spell-healing" },
+        ]),
+        source("augment-a", [
+          { type: "spell-die-augment", spellId: "fire-bolt", fromDie: 10, toDie: 12 },
+        ]),
+        source("augment-b", [
+          { type: "spell-die-augment", spellId: "ray", fromDie: 8, toDie: 10 },
+          { type: "spell-die-augment", spellId: "fire-bolt", fromDie: 8, toDie: 20 },
+          { type: "spell-die-augment", spellId: "ray", fromDie: 6, toDie: 8 },
+        ]),
+      ],
+      new Set(),
+      new Map([["blast-pick", "eldritch-blast"]])
+    );
+    expect(out.cantripDamageBonuses).toEqual([
+      { spellId: "eldritch-blast", value: "modifier", min: 0 },
+    ]);
+    expect(out.cantripRangeBonuses).toEqual([
+      { spellId: "eldritch-blast", bonusPerLevel: 30, scalesWith: "warlock" },
+    ]);
+    expect(out.spellDamageBonuses).toEqual([
+      { damageTypes: ["fire"], ability: "CHA", value: "modifier", min: 1, scope: "all" },
+    ]);
+    expect(out.spellDamageTypeOverrides).toEqual([{ toType: "cold", scope: "sorcerer" }]);
+    expect(out.healBonuses).toEqual([
+      { amount: 2, perSpellLevel: true, minSpellLevel: 1, scope: "all" },
+    ]);
+    expect(out.maximizeSpellHealing).toEqual([{ minSpellLevel: 0, scope: "all" }]);
+    // The largest die wins per spell, in the place the spell first appeared.
+    expect(out.spellDieAugments).toEqual([
+      { spellId: "fire-bolt", fromDie: 8, toDie: 20 },
+      { spellId: "ray", fromDie: 8, toDie: 10 },
+    ]);
+  });
+});
