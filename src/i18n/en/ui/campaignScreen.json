@@ -110,6 +110,7 @@
           }
         }
       }
-    }
+    },
+    "dmpcDetach": "Detach {{name}}"
   }
 }

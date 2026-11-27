@@ -110,6 +110,7 @@
           }
         }
       }
-    }
+    },
+    "dmpcDetach": "Scollega {{name}}"
   }
 }
