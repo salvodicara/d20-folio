@@ -21,7 +21,7 @@ import { compileGrant } from "@/lib/rules";
 type GrantKind = Grant["type"];
 
 /**
- * Kinds without a compiler case today (2026-11-27: 98 of 161). Each one is still read by
+ * Kinds without a compiler case today (2026-11-27: 96 of 161). Each one is still read by
  * bespoke code (`AggregatedGrants` fields, choice collectors, actions, resources,
  * statuses). This list may only shrink: never add a kind here, give it a case in
  * `compileGrant` instead. A trailing comment says why a classified kind is still here:
@@ -29,7 +29,6 @@ type GrantKind = Grant["type"];
  * grant), `per-item`, or `active` (an Activity, not a passive Rule).
  */
 const NOT_COMPILED_YET = [
-  "ability-check-bonus",
   "ac-formula", // grammar: a candidate formula record, highest wins (#1431)
   "action-outcome-rider",
   "advantage-on",
@@ -105,7 +104,6 @@ const NOT_COMPILED_YET = [
   "round1-damage-double",
   "save-damage-rule",
   "scoped-extra-spell-slot",
-  "skill-ability-option",
   "self-heal-on-other",
   "spell-damage-bonus",
   "spell-damage-outcome",

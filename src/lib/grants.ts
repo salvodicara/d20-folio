@@ -1349,7 +1349,10 @@ function sameEffectsDontStack(
       rule.op !== "add" ||
       typeof rule.value !== "number" ||
       identity === undefined ||
-      (sourcesOf.get(identity)?.size ?? 0) < 2
+      (sourcesOf.get(identity)?.size ?? 0) < 2 ||
+      // Ability-check bonuses kept their bespoke stacking when they moved to the
+      // rules (#1431, a pure refactor): the same effect twice still adds.
+      rule.target.startsWith("check:")
     )
       return rule;
     // The most potent: the largest bonus, or the deepest penalty.
@@ -1859,25 +1862,6 @@ export interface AggregatedGrants {
     ability?: AbilityCode;
     min: number;
     amount: number;
-  }>;
-  /**
-   * Scoped ability-check bonuses. Each entry rides a `appliesTo` scope (a skill
-   * id, `"<ABILITY>-checks"`, or `"all-checks"`); `value` is `"modifier"` (add
-   * `ability`'s modifier, floored at `min`) or a flat number. The Skills
-   * consumer (`skillBonus` + `resolveAbilityCheckBonus`) resolves and sums the
-   * matching entries per skill. Fey Wanderer's Otherworldly Glamour:
-   * `{ appliesTo: "CHA-checks", ability: "WIS", value: "modifier", min: 1 }`.
-   */
-  abilityCheckBonuses: ReadonlyArray<{
-    appliesTo: string;
-    ability?: AbilityCode;
-    value: "modifier" | number;
-    min: number;
-  }>;
-  /** Optional alternate abilities for named skill checks. */
-  skillAbilityOptions: ReadonlyArray<{
-    skills: ReadonlyArray<string>;
-    ability: AbilityCode;
   }>;
   /** Ability modifiers added to Initiative (consumer resolves each). */
   initiativeBonusAbilities: ReadonlyArray<AbilityCode>;
@@ -2410,8 +2394,6 @@ export function emptyAggregate(): AggregatedGrants {
     concentrationSaveBonusAbilities: [],
     concentrationSaveBonusFlat: 0,
     concentrationSaveSchoolBonuses: [],
-    abilityCheckBonuses: [],
-    skillAbilityOptions: [],
     initiativeBonusAbilities: [],
     initiativeBonusFlat: 0,
     damageRiders: [],
@@ -2675,13 +2657,6 @@ export function evaluateGrants(
   const restExpertise: AggregatedGrants["restExpertise"][number][] = [];
   const extraActions: AggregatedGrants["extraActions"][number][] = [];
   // Save, concentration, initiative and spell DC/attack bonuses fold through `lib/rules`.
-  const abilityCheckBonuses: {
-    appliesTo: string;
-    ability?: AbilityCode;
-    value: "modifier" | number;
-    min: number;
-  }[] = [];
-  const skillAbilityOptions: AggregatedGrants["skillAbilityOptions"][number][] = [];
   const damageRiders: AggregatedGrants["damageRiders"][number][] = [];
   const weaponDamageBonuses: AggregatedGrants["weaponDamageBonuses"][number][] = [];
   const spellDamageBonuses: SpellDamageBonusEntry[] = [];
@@ -3145,18 +3120,11 @@ export function evaluateGrants(
       case "spell-attack-bonus":
         rules.push(...(compileGrant(g) ?? []));
         break;
+      // Migrated to the generic rules grammar (`rules/sheet-number-kinds`): a flat
+      // check bonus folds its own floor at compile time; the reader adds the terms.
       case "ability-check-bonus":
-        // Stays bespoke: each flat entry carries its own floor (`max(value, min)`),
-        // which does not add up across entries.
-        abilityCheckBonuses.push({
-          appliesTo: g.appliesTo,
-          ...(g.ability ? { ability: g.ability } : {}),
-          value: g.value ?? "modifier",
-          min: g.min ?? 0,
-        });
-        break;
       case "skill-ability-option":
-        skillAbilityOptions.push({ skills: g.skills, ability: g.ability });
+        rules.push(...(compileGrant(g) ?? []));
         break;
       case "damage-rider": {
         const damageTypeChoices = g.damageTypeChoices;
@@ -4348,8 +4316,6 @@ export function evaluateGrants(
     concentrationSaveBonusAbilities: abilityTerms(values, "save:concentration"),
     concentrationSaveBonusFlat: ruleNumber(values, "save:concentration"),
     concentrationSaveSchoolBonuses,
-    abilityCheckBonuses,
-    skillAbilityOptions,
     initiativeBonusAbilities: ruleTerms(values, "initiative:bonus").map((t) => t.ability),
     initiativeBonusFlat: ruleNumber(values, "initiative:bonus"),
     damageRiders,

@@ -49,7 +49,13 @@ import type {
 } from "@/data/types";
 import { resolveScalar, SCALAR_BINDINGS, type Scalar } from "@/lib/scalar";
 import type { ProficiencyToken } from "@/types/ids";
-import type { AcBonusCondition } from "@/lib/rules";
+import {
+  ruleFlagIds,
+  ruleNumber,
+  ruleTerms,
+  type AcBonusCondition,
+  type RuleValues,
+} from "@/lib/rules";
 
 /**
  * Calculate ability modifier from ability score (`floor((score - 10) / 2)`).
@@ -124,21 +130,21 @@ export function exhaustionSpeedReductionFt(exhaustion: Exhaustion): number {
   return clampExhaustion(level, rules) * -rules.exhaustion.speedFtPerLevel;
 }
 
-/** Resolve an optional alternate ability for a skill check. Optional rules use
- * the better modifier; ties keep the skill's ordinary ability. */
+/** Resolve an optional alternate ability for a skill check (the compiled
+ * `skill-ability-option` flags). Optional rules use the better modifier; ties keep
+ * the skill's ordinary ability. */
 export function effectiveSkillAbility(
   skillId: string,
   base: AbilityCode,
-  options: ReadonlyArray<{ skills: ReadonlyArray<string>; ability: AbilityCode }>,
+  values: RuleValues,
   scores: Readonly<Record<AbilityCode, number>>
 ): AbilityCode {
-  return options.reduce(
-    (best, option) =>
-      option.skills.includes(skillId) && scores[option.ability] > scores[best]
-        ? option.ability
-        : best,
-    base
-  );
+  const offered = `${skillId}@`;
+  return ruleFlagIds(values, "skill:ability-option:").reduce<AbilityCode>((best, id) => {
+    if (!id.startsWith(offered)) return best;
+    const ability = id.slice(offered.length) as AbilityCode;
+    return scores[ability] > scores[best] ? ability : best;
+  }, base);
 }
 
 /**
@@ -1328,17 +1334,15 @@ export function skillBonus(
 /**
  * Resolve the total grant-derived ability-check bonus that applies to one skill.
  *
- * Each `entry.appliesTo` scope is matched against the skill three ways:
- *   - exact skill id (e.g. `"stealth"`) → that one skill only;
- *   - `"<ABILITY>-checks"` (e.g. `"CHA-checks"`) → every skill using that
+ * The compiled `ability-check-bonus` rules (`check:<scope>`) are read three ways:
+ *   - exact skill id (e.g. `check:stealth`) → that one skill only;
+ *   - `check:<ABILITY>-checks` (e.g. `check:CHA-checks`) → every skill using that
  *     ability;
- *   - `"all-checks"` → every skill.
- * For each matching entry the bonus is either a flat number (`value` is a
- * number) or an ability modifier (`value === "modifier"`, add
- * `abilityModifier(scores[entry.ability])`), floored at `entry.min`. The
- * resolved bonuses sum additively. Pure — no override handling (the consumer
- * skips this entirely when a manual override is set). With no matching entries,
- * returns 0 (behavior-preserving).
+ *   - `check:all-checks` → every skill.
+ * Each target is its flat part (each entry's floor already folded in) plus its
+ * ability terms, each `max(modifier, min)`. Pure — no override handling (the
+ * consumer skips this entirely when a manual override is set). With no rule,
+ * returns 0.
  *
  * Fey Wanderer Otherworldly Glamour →
  * `{ appliesTo: "CHA-checks", ability: "WIS", value: "modifier", min: 1 }`:
@@ -1346,28 +1350,20 @@ export function skillBonus(
  * gains +WIS mod, minimum +1.
  */
 export function resolveAbilityCheckBonus(
-  entries: ReadonlyArray<{
-    appliesTo: string;
-    ability?: AbilityCode;
-    value: "modifier" | number;
-    min: number;
-  }>,
+  values: RuleValues,
   skillId: string,
   skillAbility: AbilityCode,
   abilityScores: Record<AbilityCode, number>
 ): number {
   let total = 0;
-  for (const entry of entries) {
-    const matches =
-      entry.appliesTo === "all-checks" ||
-      entry.appliesTo === skillId ||
-      entry.appliesTo === `${skillAbility}-checks`;
-    if (!matches) continue;
-    if (typeof entry.value === "number") {
-      total += Math.max(entry.value, entry.min);
-    } else if (entry.ability) {
-      total += Math.max(abilityModifier(abilityScores[entry.ability]), entry.min);
-    }
+  for (const target of [
+    "check:all-checks",
+    `check:${skillId}`,
+    `check:${skillAbility}-checks`,
+  ] as const) {
+    total += ruleNumber(values, target);
+    for (const { ability, min = 0 } of ruleTerms(values, target))
+      total += Math.max(abilityModifier(abilityScores[ability]), min);
   }
   return total;
 }

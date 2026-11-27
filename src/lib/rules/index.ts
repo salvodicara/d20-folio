@@ -462,6 +462,8 @@ export function compileGrant(grant: Grant): Rule[] | null {
       return [{ op: "add", target: `spell:save-dc:${grant.scope}`, value: grant.amount }];
     case "spell-attack-bonus":
       return [{ op: "add", target: `spell:attack:${grant.scope}`, value: grant.amount }];
+    case "ability-check-bonus":
+    case "skill-ability-option":
     case "unarmed-strike-damage-type-option":
       return compileSheetNumberGrant(grant);
     default:
