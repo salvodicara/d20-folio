@@ -7478,11 +7478,20 @@
   letter-spacing: 0;
   text-transform: none;
 }
+/* the sheet's header actions wrap inside their own column: they never run under the stats
+   beside it (a forced single row pushed «Riposo lungo» under the AC shield at 1280 px) */
+.fui .f-sheet .f-char-id {
+  min-width: 0;
+}
+.fui .f-sheet .f-char-acts {
+  flex-wrap: wrap;
+}
+/* a badge's frame is ornament: it never takes a click from a control */
+.fui .f-badge-frame > svg,
+.fui svg[data-orn] {
+  pointer-events: none;
+}
 @media (min-width: 641px) {
-  /* the sheet's header actions on one row */
-  .fui .f-sheet .f-char-acts {
-    flex-wrap: nowrap;
-  }
   .fui .f-sheet .f-char-acts > .f-btn {
     padding: 0 12px;
   }
