@@ -5,6 +5,7 @@
     "saving": "Salvataggio...",
     "error": "Errore salvataggio",
     "offline": "Offline",
-    "editNotSaved": "La tua ultima modifica non è stata salvata: la scheda è cambiata su un altro dispositivo."
+    "editNotSaved": "La tua ultima modifica non è stata salvata: la scheda è cambiata su un altro dispositivo.",
+    "editKept": "La scheda è cambiata su un altro dispositivo. La tua ultima modifica è conservata su questo dispositivo: applicala o scartala qui sotto."
   }
 }
