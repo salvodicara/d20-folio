@@ -573,10 +573,12 @@ export function subscribeToCharacter(
   uid: string,
   charId: string,
   /** `meta.attached`: the document names a campaign (`attachedCampaignId`, the lock the
-   *  rules keep), so «campaigns read» may matter to this character (#1217). */
+   *  rules keep), so «campaigns read» may matter to this character (#1217).
+   *  `meta.baseWriteId`: the stored write this one was built on (#1414): a sheet built
+   *  directly on a traced write proves that write landed. */
   callback: (
     doc: CharacterDoc | null,
-    meta: { hasPendingWrites: boolean; attached: boolean }
+    meta: { hasPendingWrites: boolean; attached: boolean; baseWriteId: string | null }
   ) => void,
   onError?: (err: Error) => void,
   /** #1320 — the stored parent has a newer `schema` than this client knows: it is
@@ -594,12 +596,12 @@ export function subscribeToCharacter(
     { includeMetadataChanges: true },
     (snap) => {
       const my = ++token;
-      const attachedTo: unknown = snap.exists()
-        ? snap.data().attachedCampaignId
-        : undefined;
+      const raw = snap.exists() ? snap.data() : undefined;
+      const attachedTo: unknown = raw?.attachedCampaignId;
       const meta = {
         hasPendingWrites: snap.metadata.hasPendingWrites,
         attached: typeof attachedTo === "string" && attachedTo !== "",
+        baseWriteId: typeof raw?.baseWriteId === "string" ? raw.baseWriteId : null,
       };
       if (!snap.exists()) {
         callback(null, meta);
@@ -730,7 +732,7 @@ export interface DebouncedSaveHandle {
 /** `onSend` gets the generation the whole sheet leaves with, synchronously, before the
  *  batch reaches the SDK (the caller's trace of a write not yet acknowledged, #1276). */
 export interface WholeSheetCallbacks {
-  onSend?: (revision: number) => void;
+  onSend?: (revision: number, writeId: string) => void;
 }
 
 const pendingParentSaveCancellers = new Map<string, () => void>();
@@ -916,7 +918,7 @@ export function createDebouncedSave(
           );
         }
         const stamp = allocateRevision();
-        callbacks?.onSend?.(stamp.revision);
+        callbacks?.onSend?.(stamp.revision, stamp.writeId);
         saveStatusCallbacks.onSaving();
         let sent: Promise<void>;
         try {
