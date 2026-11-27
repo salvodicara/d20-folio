@@ -1790,6 +1790,73 @@ describe("firestore.rules — character parents: access matrix, revision CAS, DM
       await assertSucceeds(updateDoc(ref, { status: "dead", revision: 4 }));
     });
 
+    // Coordinator proof 1: a tab left open at deploy time runs TODAY's client (no chain
+    // fields). It keeps saving, on a never-chained sheet and on one a new tab chained,
+    // and is never refused.
+    it("today's client keeps saving under the new rules: builds, metadata, sharing-shaped", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      for (const id of ["char-member", "char-chained"] as const) {
+        const ref = doc(owner, "users", "member", "characters", id);
+        for (const revision of [4, 5, 6]) {
+          await assertSucceeds(
+            updateDoc(ref, { build: { name: `Old tab ${String(revision)}` }, revision })
+          );
+        }
+        await assertSucceeds(updateDoc(ref, { status: "retired" }));
+        await assertSucceeds(updateDoc(ref, { status: "active", revision: 7 }));
+        await assertSucceeds(
+          updateDoc(ref, {
+            build: { name: "Old tab again" },
+            status: "dead",
+            revision: 8,
+          })
+        );
+      }
+    });
+
+    // Coordinator proof 2: a live-shaped sheet (no writeId) takes its first chained save,
+    // then the next one; an old tab's save in between leaves the chain where it was.
+    it("a live sheet: first chained save, an old tab's save, the next chained save", async () => {
+      const owner = testEnv.authenticatedContext("member").firestore();
+      const ref = doc(owner, "users", "member", "characters", "char-private");
+      await assertSucceeds(
+        updateDoc(ref, {
+          build: { name: "New 1" },
+          revision: 4,
+          writeId: "n1",
+          baseWriteId: null,
+        })
+      );
+      await assertSucceeds(
+        updateDoc(ref, {
+          build: { name: "New 2" },
+          revision: 5,
+          writeId: "n2",
+          baseWriteId: "n1",
+        })
+      );
+      // An old tab (it read revision 5) saves: no chain fields, the stored writeId stays n2.
+      await assertSucceeds(updateDoc(ref, { build: { name: "Old" }, revision: 6 }));
+      // The new tab read revision 6 (still writeId n2): it builds on n2.
+      await assertSucceeds(
+        updateDoc(ref, {
+          build: { name: "New 3" },
+          revision: 7,
+          writeId: "n3",
+          baseWriteId: "n2",
+        })
+      );
+      // A new tab that never read the old tab's save is still refused by the revision.
+      await assertFails(
+        updateDoc(ref, {
+          build: { name: "Stale" },
+          revision: 7,
+          writeId: "n4",
+          baseWriteId: "n3",
+        })
+      );
+    });
+
     it("the DM's detach still passes on a chained sheet", async () => {
       await testEnv.withSecurityRulesDisabled(async (ctx) => {
         await updateDoc(
