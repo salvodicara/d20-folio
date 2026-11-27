@@ -111,8 +111,8 @@
         "abilities": "f50e6f0732d0915f",
         "ac": "328db7ec96779994",
         "actions": "5e637851f408a489",
-        "attacks": "1a5aa80a878d168b",
-        "breakdowns": "51e9ce87ced66cb7",
+        "attacks": "14952cb6938d77ef",
+        "breakdowns": "d79cb6c9d0d581c3",
         "conditions": "d4bcf287f9044942",
         "defenses": "9b46f1e6aad7f70d",
         "hp": "30ece12e65a2d63a",
@@ -120,17 +120,17 @@
         "languages": "9ee12b34bcf7cf0f",
         "level": "3dba933aefc728c4",
         "other": "44136fa355b3678a",
-        "passives": "86d9c8784e25dd78",
+        "passives": "d09489f46fdab7d3",
         "proficiencies": "3246c713d5d1a5cf",
         "resources": "197a1b9624787ee7",
         "saves": "7fa0081c8ea9e980",
         "senses": "046488f6dc4c2f7c",
-        "skills": "0937505a831c94ff",
+        "skills": "5c64c5e6ac0a2ab4",
         "speed": "7c6c82c7d53a255b",
         "spellcasting": "1feb736fd32fbbf8",
         "spells": "89b497e6f3f0aab0"
       },
-      "sheet": "e0533f037a272b36"
+      "sheet": "0fcfd9c1482e8478"
     }
   }
 }
