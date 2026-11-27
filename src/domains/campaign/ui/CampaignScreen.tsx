@@ -26,6 +26,8 @@ import { partyRows, type PartyRow } from "../party-rows-view";
 import { useLiveDocs } from "./use-party";
 import { PartyTable } from "./PartyTable";
 import { partySummaryView } from "../party-summary-view";
+import { NextSessionDialog } from "./NextSessionDialog";
+import { saveNextSession } from "@/domains/chronicle/session-moves";
 
 type Tab = "party" | "fight" | "journal" | "treasure" | "notes" | "rules";
 
@@ -77,6 +79,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
           campaign={campaign}
           locale={locale}
           onCopyInvite={copyInvite}
+          isDm={uid === campaign.dmUid}
           compact={tab !== "party"}
         />
         <Tabs
@@ -126,11 +129,14 @@ export function Header({
   campaign,
   locale,
   onCopyInvite,
+  isDm = false,
   compact = false,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
   onCopyInvite: () => void;
+  /** The DM sets, changes or clears the next session; players only read it. */
+  isDm?: boolean;
   /** A tab page past the landing one: on a phone the header shrinks to the crest and
    *  the name, so the tab's content starts on the first screen (a working page). */
   compact?: boolean;
@@ -142,6 +148,7 @@ export function Header({
   ).length;
   // a date already past is not a next session: it reads «da decidere» until a new one
   const [now] = useState(Date.now);
+  const [dating, setDating] = useState(false);
   const next =
     campaign.nextSessionAt && campaign.nextSessionAt > now
       ? new Date(campaign.nextSessionAt).toLocaleString(intlTag(locale), {
@@ -172,7 +179,21 @@ export function Header({
         <div className="f-kv">
           <span className="f-lbl">{t("campaignHub.nextSession")}</span>
           <b>{next ?? t("campaignScreen.noNextSession")}</b>
+          {isDm && (
+            <Button kind="quiet" icon="u-time" onClick={() => setDating(true)}>
+              {next
+                ? t("campaignHub.nextSessionChange")
+                : t("campaignHub.nextSessionSet")}
+            </Button>
+          )}
         </div>
+        {dating && (
+          <NextSessionDialog
+            at={next ? (campaign.nextSessionAt ?? null) : null}
+            onSave={saveNextSession}
+            onClose={() => setDating(false)}
+          />
+        )}
       </div>
       <div className="f-hero-acts">
         <Button icon="u-link" onClick={onCopyInvite}>
