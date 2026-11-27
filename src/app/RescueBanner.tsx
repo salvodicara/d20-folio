@@ -101,13 +101,14 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
         aria-label={t("pwa.rescue.label")}
         className="rescue-strip accent-alert pointer-events-auto justify-between gap-3 md:mx-auto md:mb-3 md:w-full md:max-w-2xl"
       >
-        <span className="min-w-0 flex-1 text-xs font-medium text-text-primary">
-          {failed
-            ? t("pwa.rescue.failed")
-            : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
-        </span>
-        {/* the family's rules live under `.fui`: an island that adds no box of its own */}
+        {/* the new UI's type and button family live under `.fui`: an island that adds no
+            box of its own, so the strip reads in one face on either sheet */}
         <div className="fui f-island">
+          <span className="f-rescue-msg">
+            {failed
+              ? t("pwa.rescue.failed")
+              : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
+          </span>
           <div className="f-rescue-acts">
             <Button kind="quiet" onClick={discard} disabled={busy}>
               {t("pwa.rescue.discard")}
