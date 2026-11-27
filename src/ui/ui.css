@@ -4881,6 +4881,10 @@
   width: min(360px, calc(100vw - 32px));
   max-height: min(640px, calc(100vh - 160px));
   overflow: auto;
+  /* an overlay is opaque, as every dialog is: the panel's lit material (97 %) sits on the
+     solid panel colour, so the sheet behind never shows through */
+  border-radius: var(--r-frame);
+  background: var(--panel);
   box-shadow: 0 20px 60px var(--shade);
 }
 .fui .f-condpop .f-pn {
