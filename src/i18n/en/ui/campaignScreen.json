@@ -120,6 +120,12 @@
     "joinsOpenState": "Anyone with the link can join.",
     "joinsLockedState": "The link lets nobody new in; the players here stay.",
     "yieldNoUndo": "You can't undo this yourself.",
-    "removeNoUndo": "This can't be undone here. Their character is not deleted: when they rejoin, they attach it again."
+    "removeNoUndo": "This can't be undone here. Their character is not deleted: when they rejoin, they attach it again.",
+    "crestPreview": "Preview of the campaign crest",
+    "removeBanner": "Remove the picture",
+    "bannerSection": "Campaign picture",
+    "bannerAdd": "Add a picture",
+    "bannerChange": "Change the picture",
+    "bannerReframe": "Reframe"
   }
 }

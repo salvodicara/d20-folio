@@ -15,6 +15,8 @@ import {
   setInviteLocked,
 } from "@/domains/campaign/campaign-admin";
 import { useCampaignStore } from "@/features/campaigns/campaignStore";
+import { useCampaignBannerCrop } from "@/features/campaigns/useCampaignBannerCrop";
+import { BannerCropDialog } from "@/domains/campaign/ui/BannerCropDialog";
 import { Button, Dialog, Field } from "@/ui";
 
 type Confirm = { kind: "yield" | "remove"; uid: string; name: string };
@@ -32,6 +34,20 @@ export function ManageCampaignDialog({
   const campaign = useCampaignStore((s) => s.campaign);
   const [name, setName] = useState(campaign?.name ?? "");
   const [confirm, setConfirm] = useState<Confirm | null>(null);
+  // The campaign picture: the classic flow's upload, compression, storage and crop
+  // write (`useCampaignBannerCrop`); only the cropper is new.
+  const {
+    fileInputRef,
+    cropSrc,
+    uploading,
+    initialCropArea,
+    openFilePickerForNew,
+    onFileChange,
+    onConfirm,
+    onCancel,
+    openRecrop,
+    removeBanner,
+  } = useCampaignBannerCrop();
   if (!campaign) return null;
   const view = campaignAdminView(campaign, uid, isAdmin, t);
   const trimmed = name.trim();
@@ -77,6 +93,39 @@ export function ManageCampaignDialog({
             : t("campaignHub.lockJoins")}
         </Button>
       </div>
+      <div className="f-ask">
+        <div className="f-lbl">{t("campaignScreen.bannerSection")}</div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={(e) => void onFileChange(e)}
+        />
+        <div className="f-chips">
+          <Button icon="u-add" busy={uploading} onClick={openFilePickerForNew}>
+            {campaign.bannerUrl
+              ? t("campaignScreen.bannerChange")
+              : t("campaignScreen.bannerAdd")}
+          </Button>
+          {campaign.bannerUrl && (
+            <>
+              <Button onClick={openRecrop}>{t("campaignScreen.bannerReframe")}</Button>
+              <Button kind="quiet" icon="u-delete" onClick={() => void removeBanner()}>
+                {t("campaignScreen.removeBanner")}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+      {cropSrc && (
+        <BannerCropDialog
+          src={cropSrc}
+          initialCrop={initialCropArea}
+          onSave={(crop) => void onConfirm(crop)}
+          onCancel={onCancel}
+        />
+      )}
       {view.members.length > 0 && (
         <div className="f-ask">
           <div className="f-lbl">{t("campaignScreen.playersSection")}</div>

@@ -120,6 +120,12 @@
     "joinsOpenState": "Chi ha il link può entrare.",
     "joinsLockedState": "Il link non fa entrare nessuno di nuovo; chi c’è resta.",
     "yieldNoUndo": "Non puoi annullarlo tu.",
-    "removeNoUndo": "Non si può annullare da qui. Il personaggio non viene cancellato: al rientro, il giocatore lo ricollega."
+    "removeNoUndo": "Non si può annullare da qui. Il personaggio non viene cancellato: al rientro, il giocatore lo ricollega.",
+    "crestPreview": "Anteprima dello stemma della campagna",
+    "removeBanner": "Togli l'immagine",
+    "bannerSection": "Immagine della campagna",
+    "bannerAdd": "Aggiungi un'immagine",
+    "bannerChange": "Cambia l'immagine",
+    "bannerReframe": "Riposiziona"
   }
 }

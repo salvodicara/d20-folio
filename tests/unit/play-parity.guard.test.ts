@@ -123,10 +123,8 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "Campaign art": {
     classic: "src/features/campaigns/CampaignArtControl.tsx",
-    answer: {
-      model: "src/features/campaigns/useCampaignBannerCrop.ts",
-      pending: "direction: the control on screen",
-    },
+    // «Gestisci»: add, change, reframe or remove the picture (gap map row 34).
+    answer: { covered: "src/domains/campaign/ui/BannerCropDialog.tsx" },
   },
   "Attach a character": {
     classic: "src/features/campaigns/Party.tsx",

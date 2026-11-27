@@ -25,6 +25,7 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 import { partyRows, type PartyRow } from "../party-rows-view";
 import { useLiveDocs } from "./use-party";
 import { ManageCampaignDialog } from "./ManageCampaignDialog";
+import { crestImageStyle } from "../banner-crop";
 
 type Tab = "party" | "fight" | "journal" | "treasure" | "notes" | "rules";
 
@@ -158,11 +159,15 @@ export function Header({
       : null;
   return (
     <section className="f-hero" data-identity data-compact={compact || undefined}>
-      <img
-        className="f-crest"
-        src={campaign.bannerUrl ?? "/assets/backgrounds/room-war-room.webp"}
-        alt=""
-      />
+      <span className="f-crest">
+        <img
+          src={campaign.bannerUrl ?? "/assets/backgrounds/room-war-room.webp"}
+          alt=""
+          style={
+            campaign.bannerUrl ? crestImageStyle(campaign.bannerCrop ?? null) : undefined
+          }
+        />
+      </span>
       <div className="f-hero-id">
         <h1>{campaign.name}</h1>
         <div className="f-hero-sub">
