@@ -152,6 +152,8 @@ export function PickGrid({
           className="f-slot"
           aria-pressed={on}
           aria-label={o.label}
+          // the row the card reads (BG3's highlighted entry), told apart from a pick
+          data-inspected={(kind && !inPicked && o.id === inspectedId) || undefined}
           onClick={() => toggle(o.id)}
           {...reads(o.id)}
         >
@@ -173,7 +175,7 @@ export function PickGrid({
           )}
           {/* the name at every width (critique D7): never an icon alone */}
           <span className="f-slot-n" aria-hidden="true">
-            {tieLast(o.label).replace(/\//g, "/\u200b")}
+            {o.label.replace(/\//g, "/\u200b")}
           </span>
         </button>
         {!wide && !inPicked && o.id === inspectedId && inspectCard}

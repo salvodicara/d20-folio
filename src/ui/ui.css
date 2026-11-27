@@ -5968,7 +5968,8 @@
    the inspect card beside the list (wide) or under the tile (phone) reads the option. */
 .fui .f-slots-run {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  /* two named columns beside the inspect card on a laptop, one on a phone */
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 184px), 1fr));
   gap: 8px;
 }
 .fui .f-slots-run > .f-lvl-inspect {
@@ -6020,6 +6021,11 @@
   border-color: var(--gold-hi);
   outline: 2px solid var(--gold-hi);
   outline-offset: 2px;
+}
+/* the row the inspect card reads: a quiet gold rim, no glow (a pick has the frame) */
+.fui .f-slot[data-inspected]:not([aria-pressed="true"]) {
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 5%, transparent);
 }
 .fui .f-slot[aria-pressed="true"] {
   padding: 2px 11px 2px 2px;
