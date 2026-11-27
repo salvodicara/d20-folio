@@ -126,6 +126,7 @@
     "bannerSection": "Campaign picture",
     "bannerAdd": "Add a picture",
     "bannerChange": "Change the picture",
-    "bannerReframe": "Reframe"
+    "bannerReframe": "Reframe",
+    "crestPreviewShort": "Preview"
   }
 }

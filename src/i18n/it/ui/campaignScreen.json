@@ -126,6 +126,7 @@
     "bannerSection": "Immagine della campagna",
     "bannerAdd": "Aggiungi un'immagine",
     "bannerChange": "Cambia l'immagine",
-    "bannerReframe": "Riposiziona"
+    "bannerReframe": "Riposiziona",
+    "crestPreviewShort": "Anteprima"
   }
 }

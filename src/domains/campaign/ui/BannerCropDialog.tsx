@@ -140,13 +140,18 @@ export function BannerCropDialog({
             onChange={(e) => zoomTo(Number(e.target.value))}
           />
         </label>
-        <span
-          className="f-bcrop-preview"
-          role="img"
-          aria-label={t("campaignScreen.crestPreview")}
-        >
-          <img src={src} alt="" style={crestImageStyle(crop)} />
-        </span>
+        <div className="f-bcrop-prev">
+          <span
+            className="f-bcrop-preview"
+            role="img"
+            aria-label={t("campaignScreen.crestPreview")}
+          >
+            <img src={src} alt="" style={crestImageStyle(crop)} />
+          </span>
+          <span className="f-lbl" aria-hidden="true">
+            {t("campaignScreen.crestPreviewShort")}
+          </span>
+        </div>
       </div>
       {onRemove && (
         <div className="f-ask">

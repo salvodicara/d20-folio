@@ -7792,3 +7792,8 @@
   height: 100%;
   object-fit: cover;
 }
+.fui .f-bcrop-prev {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
