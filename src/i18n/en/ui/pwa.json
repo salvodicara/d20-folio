@@ -15,8 +15,8 @@
     },
     "rescue": {
       "label": "Unsaved changes",
-      "kept": "Unsaved changes from {{date}} were kept on this device.",
-      "cannotApply": "Unsaved changes from {{date}} were kept on this device, but they can't be applied to this version of the sheet.",
+      "kept": "Unsaved changes from {{date}}, kept on this device.",
+      "cannotApply": "Unsaved changes from {{date}}, kept on this device: this version of the sheet can't apply them.",
       "failed": "The kept changes could not be applied. They are still on this device.",
       "discard": "Discard"
     }

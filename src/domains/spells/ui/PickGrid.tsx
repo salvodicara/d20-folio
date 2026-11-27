@@ -119,7 +119,10 @@ export function PickGrid({
       : options;
   const levelName = (n: number) =>
     n === 0 ? t("spells.cantrip") : t("spells.level", { level: n });
-  const inspectedId = focus ?? picked[0] ?? null;
+  // A wide screen's side card is never empty: before a pick or a hover it reads the
+  // first option (BG3's inspect panel opens on the highlighted entry), no hover needed.
+  const inspectedId =
+    focus ?? picked[0] ?? (wide && kind ? (shown[0]?.id ?? null) : null);
   const card = kind && inspectedId ? optionInfo(kind, inspectedId, locale) : null;
   // Hover reads an option on a wide screen (BG3's tooltip); a tap reads it on a phone.
   const reads = (id: string) => ({
@@ -137,7 +140,7 @@ export function PickGrid({
         .sort((a, b) => a - b)
         .map((lv) => [lv, shown.filter((o) => (byId.get(o.id)?.level ?? 0) === lv)])
     : [[null, [...shown]]];
-  /** One square icon slot: the art edge to edge, a tooltip on hover, gold when picked. */
+  /** One named tile: the art, its name beside it, BG3's selected frame when picked. */
   const slot = (o: { id: string; label: string }, inPicked = false) => {
     const on = picked.includes(o.id);
     const spell = byId.get(o.id);
@@ -149,6 +152,8 @@ export function PickGrid({
           className="f-slot"
           aria-pressed={on}
           aria-label={o.label}
+          // the row the card reads (BG3's highlighted entry), told apart from a pick
+          data-inspected={(kind && !inPicked && o.id === inspectedId) || undefined}
           onClick={() => toggle(o.id)}
           {...reads(o.id)}
         >
@@ -168,18 +173,9 @@ export function PickGrid({
               <Icon name="u-check" />
             </span>
           )}
-          {/* BG3's tooltip at the icon (wide screen); the name under it on a phone. */}
-          <span className="f-slot-tip" aria-hidden="true">
-            <b>{o.label}</b>
-            {spell && (
-              <small>
-                {levelName(spell.level)} · {spell.school}
-              </small>
-            )}
-            {spell?.effect && <em>{spell.effect}</em>}
-          </span>
+          {/* the name at every width (critique D7): never an icon alone */}
           <span className="f-slot-n" aria-hidden="true">
-            {tieLast(o.label).replace(/\//g, "/\u200b")}
+            {o.label.replace(/\//g, "/\u200b")}
           </span>
         </button>
         {!wide && !inPicked && o.id === inspectedId && inspectCard}
@@ -302,9 +298,6 @@ export function PickGrid({
           </div>
         )}
         {(wide || chips) && inspectCard}
-        {wide && kind && !inspectCard && (
-          <p className="f-lvl-inspect f-pick-hint">{t("levelUp.screen.hoverHint")}</p>
-        )}
       </div>
     </>
   );

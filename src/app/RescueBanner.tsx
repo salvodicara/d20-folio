@@ -1,14 +1,16 @@
 /**
- * After the reload (#1320): «Unsaved changes from <date> were kept on this device —
+ * After the reload (#1320): «Unsaved changes from <date>, kept on this device —
  * Apply / Discard», on the owner's open sheet. Apply goes through the whole-sheet
  * ceremony with a snapshot first (`rescue-apply`); a copy this version cannot bring
  * forward offers Discard only and says why. Pattern source: Google Docs' «recover
  * unsaved changes» bar and the browser's restore-session bar, drawn as our own
- * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner).
+ * «new version» strip (`pwa-dock` + `accent-alert`, PWABanner). Its buttons are the new
+ * UI's family (design reset «BG3 craft», slice 8): «Scarta» the quiet one, «Applica» the
+ * lit primary ending the row, in the family's own case, on the classic sheet too.
  */
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/ui";
 import {
   applyRescueCopy,
   discardRescueCopy,
@@ -70,9 +72,13 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
   }, [shown]);
 
   if (!copy) return null;
+  // A copy lives 30 days at most: the day, the month and the time say which one, and
+  // the strip stays short on a phone («26 nov, 18:30»).
   const date = new Intl.DateTimeFormat(language, {
-    dateStyle: "medium",
-    timeStyle: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(copy.savedAt);
   const applicable = upgradeRescueCopy(copy) !== null;
 
@@ -99,20 +105,24 @@ function RescueOffer({ uid, sheet }: { uid: string; sheet: CharacterDoc }) {
         aria-label={t("pwa.rescue.label")}
         className="rescue-strip accent-alert pointer-events-auto justify-between gap-3 md:mx-auto md:mb-3 md:w-full md:max-w-2xl"
       >
-        <span className="min-w-0 flex-1 text-xs font-medium text-text-primary">
-          {failed
-            ? t("pwa.rescue.failed")
-            : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
-        </span>
-        <div className="flex shrink-0 items-center gap-2">
-          {applicable && (
-            <Button size="sm" onClick={() => void apply()} disabled={busy}>
-              {t("combat.apply")}
+        {/* the new UI's type and button family live under `.fui`: an island that adds no
+            box of its own, so the strip reads in one face on either sheet */}
+        <div className="fui f-island">
+          <span className="f-rescue-msg">
+            {failed
+              ? t("pwa.rescue.failed")
+              : t(applicable ? "pwa.rescue.kept" : "pwa.rescue.cannotApply", { date })}
+          </span>
+          <div className="f-rescue-acts">
+            <Button kind="quiet" onClick={discard} disabled={busy}>
+              {t("pwa.rescue.discard")}
             </Button>
-          )}
-          <Button size="sm" variant="ghost" onClick={discard} disabled={busy}>
-            {t("pwa.rescue.discard")}
-          </Button>
+            {applicable && (
+              <Button kind="primary" onClick={() => void apply()} busy={busy}>
+                {t("combat.apply")}
+              </Button>
+            )}
+          </div>
         </div>
       </section>
     </div>

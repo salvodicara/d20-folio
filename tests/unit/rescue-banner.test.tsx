@@ -72,6 +72,21 @@ describe("the rescue banner", () => {
     expect(h.applied).toBe(1);
   });
 
+  it("draws the new UI's button family: Apply is the lit primary, Discard the quiet one", () => {
+    keepRescueCopy("u1", "c1", copy());
+    open();
+    render(<RescueBanner />);
+    const apply = screen.getByRole("button", { name: /^apply$/i });
+    const discard = screen.getByRole("button", { name: /^discard$/i });
+    expect([apply, discard].map((b) => b.getAttribute("data-kind"))).toEqual([
+      "primary",
+      "quiet",
+    ]);
+    // the family's rules are scoped to `.fui`, on the classic sheet too
+    expect(apply.closest(".fui")).not.toBeNull();
+    expect(apply.classList.contains("btn")).toBe(false);
+  });
+
   it("Discard drops it", () => {
     keepRescueCopy("u1", "c1", copy());
     open();
@@ -107,7 +122,7 @@ describe("the rescue banner", () => {
     open();
     render(<RescueBanner />);
     expect(screen.getByRole("region", { name: /unsaved changes/i })).toHaveTextContent(
-      /can.t be applied/i
+      /can.t apply them/i
     );
     expect(screen.queryByRole("button", { name: /^apply$/i })).toBeNull();
     expect(screen.getByRole("button", { name: /^discard$/i })).toBeInTheDocument();
