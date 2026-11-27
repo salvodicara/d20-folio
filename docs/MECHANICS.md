@@ -181,6 +181,10 @@ Two grammars:
   by its op (highest, lowest, sum) and the buckets add. Darkvision = highest base + every bonus.
 - `when` keeps a conditional contribution apart (`no-heavy-armor`, `round-1`, armor states);
   the reader passes the facts it knows. Ability terms (`{ ability, min? }`) stay unresolved.
+- A `clause` (`src/lib/rules/roll-rules.ts`) is a roll-time rule on `roll:<roll>:advantage` /
+  `:disadvantage` (or `roll:incoming-attack:*`). It is never folded: it is kept per source, in
+  grant order, and `rollClauseRows` turns the compiled clauses into the aggregate's advantage
+  rows, with the source and the `while-active` state the evaluator knows.
 - Kinds not compiled to rules keep their own evaluator branch in `grants.ts`.
 
 ### Stacking: the same effect applies once

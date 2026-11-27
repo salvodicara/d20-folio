@@ -26,6 +26,7 @@ type RawMap = Record<string, unknown>;
 /** The stored character as the read path returns it (`CharacterDoc`). */
 interface StoredSheet {
   character: { classes: ReadonlyArray<{ classId: string }> };
+  session: unknown;
 }
 interface Engine {
   hydrateStoredCharacter: (
@@ -34,6 +35,14 @@ interface Engine {
     combat: unknown
   ) => Promise<StoredSheet>;
   deriveCharacter: (doc: StoredSheet) => RawMap;
+  aggregateCharacterGrants: (
+    character: StoredSheet["character"],
+    session: StoredSheet["session"]
+  ) => RawMap;
+  deriveSavesAndChecks: (
+    character: StoredSheet["character"],
+    session: StoredSheet["session"]
+  ) => unknown;
   sheetNumbers: (doc: StoredSheet) => RawMap;
   resolveTrackers: (doc: StoredSheet) => unknown[];
   resolveActions: (doc: StoredSheet) => Array<{ summary: RawMap }>;
@@ -66,6 +75,14 @@ export function loadEngine(): Promise<Engine> {
       "views/derive-character",
       "deriveCharacter"
     )) as Engine["deriveCharacter"],
+    aggregateCharacterGrants: (await engineFunction(
+      "aggregate-character",
+      "aggregateCharacterGrants"
+    )) as Engine["aggregateCharacterGrants"],
+    deriveSavesAndChecks: (await engineFunction(
+      "views/saves-checks-view",
+      "deriveSavesAndChecks"
+    )) as Engine["deriveSavesAndChecks"],
     resolveTrackers: (await engineFunction(
       "smart-tracker",
       "resolveTrackers"
@@ -108,6 +125,7 @@ export const SECTIONS = [
   "attacks",
   "actions",
   "spells",
+  "rolls",
   "breakdowns",
   "other",
 ] as const;
@@ -136,6 +154,36 @@ const SHEET_SECTION: Readonly<Partial<Record<string, Section>>> = {
   conditionImmunities: "defenses",
   sourceConditionImmunities: "defenses",
 };
+
+/**
+ * The roll-time rows every roll and damage reader takes from the character's
+ * aggregate (advantage clauses, rerolls, floors, dice on a roll, damage and spell
+ * riders). The sheet sections above never show them, so a moved roll rule shows here.
+ */
+const ROLL_ROWS = [
+  "advantages",
+  "disadvantages",
+  "incomingAttackAdvantages",
+  "incomingAttackDisadvantages",
+  "d20Rerolls",
+  "rollFloors",
+  "rollDieAdjustments",
+  "concentrationDamageProof",
+  "damageRiders",
+  "damageDieModifiers",
+  "damageDieReductions",
+  "spellResistancePenetration",
+  "resistancePenetration",
+  "round1DamageDoubles",
+  "saveDamageRules",
+  "spellDamageBonuses",
+  "spellDamageTypeOverrides",
+  "spellDieAugments",
+  "cantripDamageBonuses",
+  "cantripRangeBonuses",
+  "healBonuses",
+  "maximizeSpellHealing",
+] as const;
 
 export type SheetDigest =
   | { sheet: string; sections: Record<Section, string> }
@@ -251,6 +299,12 @@ export function derivedSections(
   // Each number's explanation (the parts the sheet shows), carrying capacity, jumps.
   sections.breakdowns.numbers = engine.sheetNumbers(doc);
   sections.resources.trackers = engine.resolveTrackers(doc);
+  const aggregate = engine.aggregateCharacterGrants(doc.character, doc.session);
+  for (const row of ROLL_ROWS) {
+    if (!(row in aggregate)) throw new TypeError(`the aggregate has no ${row}`);
+    sections.rolls[row] = aggregate[row];
+  }
+  sections.rolls.savesAndChecks = engine.deriveSavesAndChecks(doc.character, doc.session);
   const actions = engine.resolveActions(doc);
   const isAttack = (a: { summary: RawMap }) => typeof a.summary.attackBonus === "number";
   sections.attacks.rows = actions.filter(isAttack);
