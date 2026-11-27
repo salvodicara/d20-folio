@@ -77,13 +77,13 @@ the row; rows with the same slice ship together.
 
 ### C. Running the campaign
 
-| #   | Capability                                                          | Classic                                   | New UI                                           | Headless                    | Pattern                              | Size | Slice |
-| --- | ------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------ | --------------------------- | ------------------------------------ | ---- | ----- |
-| 30  | Copy the invite link                                                | CampaignInvite                            | done (header)                                    | —                           | DDB campaign page                    | —    | —     |
-| 31  | Delete the campaign                                                 | DmTools                                   | done (⋮ on the campaigns list)                   | —                           | DDB                                  | —    | —     |
-| 32  | Set, change or clear the next session date                          | `LastTime.tsx`                            | partial (the header shows it; nobody can set it) | ready (`session-moves.ts`)  | DDB campaign page (unverified)       | S    | S10   |
-| 33  | Hand the DM role to a player; remove a player; lock the invite link | `DmTools.tsx`, CampaignInvite             | missing                                          | ready (`campaign-admin.ts`) | DDB campaign management (unverified) | M    | S11   |
-| 34  | Rename the campaign; set or crop its banner                         | CampaignHubPage, `CampaignArtControl.tsx` | missing                                          | partial                     | DDB campaign page                    | S    | S11   |
+| #   | Capability                                                          | Classic                                   | New UI                                                                        | Headless                    | Pattern                              | Size | Slice |
+| --- | ------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------- | --------------------------- | ------------------------------------ | ---- | ----- |
+| 30  | Copy the invite link                                                | CampaignInvite                            | done (header)                                                                 | —                           | DDB campaign page                    | —    | —     |
+| 31  | Delete the campaign                                                 | DmTools                                   | done (⋮ on the campaigns list)                                                | —                           | DDB                                  | —    | —     |
+| 32  | Set, change or clear the next session date                          | `LastTime.tsx`                            | partial (the header shows it; nobody can set it)                              | ready (`session-moves.ts`)  | DDB campaign page (unverified)       | S    | S10   |
+| 33  | Hand the DM role to a player; remove a player; lock the invite link | `DmTools.tsx`, CampaignInvite             | done (S11: «Gestisci» in the header: hand over, remove, lock)                 | ready (`campaign-admin.ts`) | DDB campaign management (unverified) | M    | S11   |
+| 34  | Rename the campaign; set or crop its banner                         | CampaignHubPage, `CampaignArtControl.tsx` | done (S11: rename in «Gestisci»; S11b: the picture, its crop and its removal) | partial                     | DDB campaign page                    | S    | S11   |
 
 ### D. Journal, notes, treasure
 

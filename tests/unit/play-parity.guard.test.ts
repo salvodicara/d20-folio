@@ -87,17 +87,13 @@ const SELECTORS: Record<string, Answer> = {
 const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   "Invite: share the link, lock joins": {
     classic: "src/features/campaigns/CampaignInvite.tsx",
-    answer: {
-      model: "src/domains/campaign/campaign-admin.ts",
-      pending: "direction: the control on screen",
-    },
+    // «Copia invito» in the header; the lock in «Gestisci» (gap map row 33).
+    answer: { covered: "src/domains/campaign/ui/ManageCampaignDialog.tsx" },
   },
   "Hand over the DM role, remove a member, delete the campaign": {
     classic: "src/features/campaigns/DmTools.tsx",
-    answer: {
-      model: "src/domains/campaign/campaign-admin.ts",
-      pending: "direction: the control on screen",
-    },
+    // «Gestisci» hands over and removes (row 33); delete is on the campaigns list (row 31).
+    answer: { covered: "src/domains/campaign/ui/ManageCampaignDialog.tsx" },
   },
   "The DM's party summary": {
     classic: "src/features/campaigns/PartySummary.tsx",
@@ -122,17 +118,13 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "Rename the campaign": {
     classic: "src/features/campaigns/CampaignHubPage.tsx",
-    answer: {
-      // The shared store (its rename action is ready) feeds every campaign control.
-      pending: "direction: the control on screen",
-    },
+    // The name in «Gestisci» (gap map row 34).
+    answer: { covered: "src/domains/campaign/ui/ManageCampaignDialog.tsx" },
   },
   "Campaign art": {
     classic: "src/features/campaigns/CampaignArtControl.tsx",
-    answer: {
-      model: "src/features/campaigns/useCampaignBannerCrop.ts",
-      pending: "direction: the control on screen",
-    },
+    // «Gestisci»: add, change, reframe or remove the picture (gap map row 34).
+    answer: { covered: "src/domains/campaign/ui/BannerCropDialog.tsx" },
   },
   "Attach a character": {
     classic: "src/features/campaigns/Party.tsx",
