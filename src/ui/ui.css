@@ -7535,3 +7535,11 @@
   --peak: var(--after);
   box-shadow: inset 0 2px 4px var(--btn-press-shade);
 }
+/* small capitals keep an 8 px cap height in the serif: the capital labels and tags at 13 px */
+.fui .f-lbl,
+.fui .f-act-head > span,
+.fui .f-now,
+.fui .f-must,
+.fui .f-kind {
+  font-size: var(--fs-xs);
+}
