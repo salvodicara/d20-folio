@@ -3965,6 +3965,20 @@
     border-color: var(--text);
   }
 }
+/* a status chip's mark is a sprite icon at the button icons' 16 px, in the chip's meaning
+   colour (BG3's coloured status icons): the mark reads first, the words keep the chip's colour */
+.fui .f-chip > .f-ic {
+  color: var(--k, var(--muted));
+}
+/* the ticks on a picked tile and a done step: the check icon inside their small disc */
+.fui .f-slot-tick > .f-ic {
+  width: 12px;
+  height: 12px;
+}
+.fui .f-lvl-mark > .f-ic {
+  width: 14px;
+  height: 14px;
+}
 .fui .f-tb-back > .f-ic {
   width: 20px;
   height: 20px;

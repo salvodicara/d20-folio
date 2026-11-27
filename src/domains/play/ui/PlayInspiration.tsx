@@ -16,7 +16,7 @@ import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableToast } from "@/stores/undoStore";
 import type { CharacterDoc } from "@/types/character";
-import { Art, Button, Chip, Panel } from "@/ui";
+import { Art, Button, Chip, Icon, Panel } from "@/ui";
 import { ActionGlyph } from "./ActionIcon";
 
 export function PlayInspiration({ doc }: { doc: CharacterDoc }) {
@@ -75,7 +75,8 @@ export function PlayInspiration({ doc }: { doc: CharacterDoc }) {
         pressed={open}
         onClick={() => setOpen((o) => !o)}
       >
-        {`✧ ${t("character.inspiration")}`}
+        <Icon name="g-inspiration" />
+        {t("character.inspiration")}
         {view.count > 0 && <span className="f-chip-n">{view.count}</span>}
       </Chip>
       {open && (

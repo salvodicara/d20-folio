@@ -165,7 +165,7 @@ export function PickGrid({
           </span>
           {on && (
             <span className="f-slot-tick" aria-hidden="true">
-              ✓
+              <Icon name="u-check" />
             </span>
           )}
           {/* BG3's tooltip at the icon (wide screen); the name under it on a phone. */}

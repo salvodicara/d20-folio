@@ -60,7 +60,7 @@ import { className } from "@/lib/views/level-up-view";
 import { useAuthStore } from "@/stores/authStore";
 import { useToastStore } from "@/stores/toastStore";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Choice, Dialog, Room, Stepper, type ArtKind } from "@/ui";
+import { Button, Chip, Choice, Dialog, Icon, Room, Stepper, type ArtKind } from "@/ui";
 
 import type { InfoKind } from "@/domains/spells/option-info";
 import { PickGrid } from "@/domains/spells/ui/PickGrid";
@@ -455,7 +455,7 @@ export function LevelUpScreen({
 function StepMark({ state }: { state: LevelUpStep["state"] }) {
   return (
     <span className="f-lvl-mark" data-state={state} aria-hidden="true">
-      {state === "done" ? "✓" : state === "owed" ? "!" : "–"}
+      {state === "done" ? <Icon name="u-check" /> : state === "owed" ? "!" : "–"}
     </span>
   );
 }
