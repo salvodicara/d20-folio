@@ -829,7 +829,8 @@ window.__audit = (opts) => {
     )
       bad.push("height " + Math.round(r.height));
     const fs = parseFloat(cs.fontSize);
-    if (![15, 16, 18].includes(Math.round(fs))) bad.push("font " + fs);
+    // the title step: 20 px (design reset «C · BG3 craft», 2026-11-27); 16 on a phone header
+    if (![15, 16, 18, 20].includes(Math.round(fs))) bad.push("font " + fs);
     {
       const p = h.parentElement;
       const q = p.getBoundingClientRect();
