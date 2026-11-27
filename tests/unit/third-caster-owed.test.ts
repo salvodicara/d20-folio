@@ -137,9 +137,13 @@ describe("a third caster picked late on the sheet", () => {
     expect(spells.every((id) => getSpellById(id)?.level === 1)).toBe(true);
     expect(spells.every((id) => getSpellById(id)?.classes.includes("wizard"))).toBe(true);
     const rows = owedClassPickRows(doc.character, "en");
-    expect(rows.find((r) => r.pick === "spells")?.options.map((o) => o.id)).toEqual(
-      spells
-    );
+    // The same spells, in the row's display-name order.
+    expect(
+      rows
+        .find((r) => r.pick === "spells")
+        ?.options.map((o) => o.id)
+        .sort()
+    ).toEqual([...spells].sort());
     expect(rows.find((r) => r.pick === "cantrips")?.options.map((o) => o.id)).toContain(
       "fire-bolt"
     );
