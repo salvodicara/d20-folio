@@ -75,9 +75,16 @@ describe("the DM's party table", () => {
     expect(within(ana).queryAllByText("Best in the party")).toHaveLength(1);
   });
 
+  it("the legend also says what the dot on a save means", () => {
+    render(<PartyTable view={view} locale="en" />);
+    expect(screen.getByText(/proficient save/).closest("p")).toHaveTextContent(
+      "• proficient save"
+    );
+  });
+
   it("a plain legend says what gold means", () => {
     render(<PartyTable view={view} locale="en" />);
-    expect(screen.getAllByText("In gold: the highest value in the party")).toHaveLength(
+    expect(screen.getAllByText(/In gold: the highest value in the party/)).toHaveLength(
       1
     );
   });

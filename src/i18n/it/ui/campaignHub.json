@@ -234,6 +234,7 @@
     "partySummaryHero": "Personaggio",
     "partySummaryBest": "Il migliore del gruppo",
     "partySummaryLegend": "In oro: il valore più alto del gruppo",
+    "partySummaryProfLegend": "competenza nel tiro salvezza",
     "partySummaryEmpty": "Nessun personaggio collegato. I giocatori collegano il loro personaggio dalla scheda Live.",
     "partySummaryLoading_one": "{{count}} personaggio ancora in caricamento…",
     "partySummaryLoading_other": "{{count}} personaggi ancora in caricamento…"

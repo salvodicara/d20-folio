@@ -26,6 +26,7 @@ export function PartyTable({ view, locale }: { view: PartySummaryView; locale: L
   const { t } = useTranslation();
   const { rows, best, loading } = view;
   const isBest = (uid: string, column: SummaryColumn) => best[column].has(uid);
+  const anyProf = rows.some(({ stats }) => stats.saves.some((s) => s.proficient));
   const anyBest = rows.some(({ uid }) =>
     (Object.keys(best) as SummaryColumn[]).some((c) => isBest(uid, c))
   );
@@ -168,8 +169,18 @@ export function PartyTable({ view, locale }: { view: PartySummaryView; locale: L
           </li>
         ))}
       </ul>
-      {anyBest && (
-        <p className="f-quiet f-ptable-legend">{t("campaignHub.partySummaryLegend")}</p>
+      {(anyBest || anyProf) && (
+        <p className="f-quiet f-ptable-legend">
+          {anyBest && <span>{t("campaignHub.partySummaryLegend")}</span>}
+          {anyProf && (
+            <span>
+              <b className="f-ptable-dot" aria-hidden="true">
+                •
+              </b>{" "}
+              {t("campaignHub.partySummaryProfLegend")}
+            </span>
+          )}
+        </p>
       )}
       {loading > 0 && (
         <p className="f-quiet">

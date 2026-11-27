@@ -7765,7 +7765,13 @@
   color: var(--gold-hi);
 }
 .fui .f-ptable-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
   margin: 8px 0 0;
+}
+.fui .f-ptable-dot {
+  color: var(--gold);
 }
 /* a proficient save: a dot before the number */
 .fui .f-ptable td[data-prof]::before,
