@@ -39,9 +39,9 @@ import type {
 } from "@/types/combat-effect";
 import type { CombatConditionLifetime } from "@/data/types";
 import { useAuthStore } from "@/stores/authStore";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import {
   effectIdsConsumedByAttack,
+  nextAttackModes,
   foldCombatEffectOps,
   turnBoundaryAfter,
 } from "@/lib/combat-effects";
@@ -143,8 +143,9 @@ function consumedByAttacks(
   const status = useCombatStatusStore.getState().status;
   if (!status) return [];
   const live = foldCombatEffectOps(status.encounter.effectOps);
-  const ids = new Set(
-    targets.flatMap((target, index) =>
+  const attacked = targets.some((_, index) => rows[index]?.attack);
+  const ids = new Set([
+    ...targets.flatMap((target, index) =>
       rows[index]?.attack
         ? effectIdsConsumedByAttack(
             status.encounter.effectOps,
@@ -153,21 +154,18 @@ function consumedByAttacks(
             fightSideOf(status.view.rows)
           )
         : []
-    )
-  );
+    ),
+    // And my own next attack roll's state (Sap, Ray of Enfeeblement's success).
+    ...(attacked
+      ? nextAttackModes(status.encounter.effectOps, status.myId).map((m) => m.effect.id)
+      : []),
+  ]);
   return live.filter((effect) => ids.has(effect.id));
 }
 
-/** Undo a revoke: the same occurrence back (`reinstate`, same id) once the v0.26.0
- *  rules accept it; before them, a fresh copy as before. */
+/** Undo a revoke: the same occurrence back (`reinstate`, same id). */
 function undoRevoke(campaignId: string, effect: ActiveCombatEffect, t: T): void {
-  writeFightEffect(
-    campaignId,
-    combatEffectsV26On()
-      ? { reinstate: effect.id }
-      : { append: { ...effect, id: crypto.randomUUID() } },
-    t
-  );
+  writeFightEffect(campaignId, { reinstate: effect.id }, t);
 }
 
 /** The sourced condition effects a tray apply writes in a fight: each condition on
@@ -213,8 +211,8 @@ function sourcedConditionEffects(
         target: ref,
         source: { kind: source.kind, id: source.id, actionId: offer.actionId },
         payload: { kind: "condition", conditionId },
-        // The repeat save's DC, once the deployed rules accept it.
-        ...(dc !== undefined && combatEffectsV26On() ? { bindings: { saveDc: dc } } : {}),
+        // The repeat save's DC.
+        ...(dc !== undefined ? { bindings: { saveDc: dc } } : {}),
         duration: conditionDuration(lifetimes?.[conditionId], status.myId, position),
       })
     );

@@ -42,6 +42,11 @@ import i18n from "@/i18n";
 import type { CampaignDoc, MemberCharacterSnapshot } from "@/types/campaign";
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+// The campaign's effects out of a fight are read live; this test needs none.
+vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/campaigns/campaign-effects-io")>()),
+  subscribeCampaignEffects: () => () => undefined,
+}));
 // Party now opens a live `combat/state` listener per attached member (the in-hub live
 // read); mock it absent so this pure render test never touches Firestore.
 vi.mock("@/lib/combat-state-io", () => ({

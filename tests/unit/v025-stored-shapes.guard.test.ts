@@ -61,6 +61,36 @@ describe("v0.26 reads what v0.25.0 stored, unchanged", () => {
     expect(changedPaths(v025.campaign, campaign)).toEqual([]);
   });
 
+  // #1215: the drain that delivered `encounter.memberEffects` is gone (v0.23.1 was the
+  // last client to append there), but a campaign or a kept fight (`combat/ended`) that
+  // still stores a queue must load.
+  it("a campaign whose fight still holds a queued memberEffects loads as stored", () => {
+    const stored = {
+      ...v025.campaign,
+      encounter: {
+        ...v025.campaign.encounter,
+        memberEffects: [
+          { id: "1000:0", targetId: "pc-a", kind: "damage", amount: 4 },
+          {
+            id: "1000:1",
+            targetId: "pc-a",
+            kind: "condition",
+            conditionId: "poisoned",
+            active: true,
+          },
+        ],
+      },
+    };
+    const { id: _id, ...campaign } = toCampaignDoc("camp", stored);
+    void _id;
+    expect(changedPaths(stored, campaign)).toEqual([]);
+    expect(campaign.encounter?.memberEffects).toHaveLength(2);
+    // A kept fight is read by the encounter parser alone.
+    expect(changedPaths(stored.encounter, parseEncounterState(stored.encounter))).toEqual(
+      []
+    );
+  });
+
   it("the compatibility survey finds nothing to refuse or rewrite", async () => {
     const survey = await surveyV026Compat({
       documents: [
