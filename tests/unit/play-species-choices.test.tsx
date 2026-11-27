@@ -181,7 +181,7 @@ describe("PlaySpeciesChoices: a Druid's Wild Shape known forms", () => {
     render(<Banner />);
     expect(
       screen.getByRole("group", { name: "Choices to finish" }).textContent
-    ).toContain("Your class lets you choose more: 1 Wild Shape form (Druid).");
+    ).toContain("Missing: 1 Wild Shape form (Druid).");
     fireEvent.click(screen.getByRole("button", { name: "Finish" }));
     expect(screen.getByText("Choose 1 known form for Wild Shape")).toBeTruthy();
     // A known form isn't offered again; a CR 1/2 beast waits for Druid 4.
@@ -316,29 +316,36 @@ describe("PlaySpeciesChoices: the four kinds the live survey found owed (#1397)"
     expect(owedNow()).toEqual([]);
   }, 15_000);
 
-  it("a Wizard 5 adds 5 spells to the book, unprepared, and owes none", () => {
+  it("a Wizard 5 (Evoker) adds 8 spells to the book, unprepared, and owes none", () => {
     const dialog = open("wizard-book-short");
+    // Five short of the book's fourteen, plus the Evoker's three Savant spells.
     expect(
-      within(dialog).getByText("Add 5 spells to your spellbook: they stay unprepared")
+      within(dialog).getByText("Add 8 spells to your spellbook: they stay unprepared")
     ).toBeTruthy();
     // The long list opens on one spell level: show them all, then search each.
     fireEvent.click(within(dialog).getByRole("button", { name: "All" }));
     const search = within(dialog).getByRole("searchbox", { name: "Search spells" });
-    const added = ["Burning Hands", "Charm Person", "Feather Fall", "Thunderwave"];
-    for (const name of [...added, "Invisibility"]) {
+    const added = [
+      "Burning Hands",
+      "Charm Person",
+      "Feather Fall",
+      "Thunderwave",
+      "Invisibility",
+      "Shatter",
+      "Scorching Ray",
+      "Lightning Bolt",
+    ];
+    for (const name of added) {
       fireEvent.change(search, { target: { value: name } });
       pick(dialog, name);
     }
     fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
     const spells = useCharacterStore.getState().character?.character.spells ?? [];
-    expect(spells.slice(-5)).toEqual(
-      [
-        "burning-hands",
-        "charm-person",
-        "feather-fall",
-        "thunderwave",
-        "invisibility",
-      ].map((srdId) => ({ srdId, prepared: false }))
+    expect(spells.slice(-8)).toEqual(
+      added.map((name) => ({
+        srdId: name.toLowerCase().replace(/ /g, "-"),
+        prepared: false,
+      }))
     );
     expect(owedNow()).toEqual([]);
   }, 15_000);

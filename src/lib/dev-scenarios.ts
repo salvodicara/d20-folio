@@ -674,6 +674,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     name: "Pell, the Unpracticed",
     raceId: "dwarf",
     classId: "bard",
+    // Its subclass picked, so only the Expertise is owed.
+    subclassId: "college-of-lore",
     level: 9,
     background: "entertainer",
     abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 10, WIS: 12, CHA: 17 },
@@ -745,11 +747,13 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
   },
   "wizard-book-short": {
     // A Wizard 5 built before the spellbook (2026-11-12): its list holds the nine
-    // spells the old level-ups asked for, five short of the book's fourteen, so
-    // «Scelte da completare» owes the gap. Visit `/characters/scn-wizard-book-short`.
+    // spells the old level-ups asked for, five short of the book's fourteen, and
+    // none of its Evoker's three Savant spells, so «Scelte da completare» owes the gap. Visit `/characters/scn-wizard-book-short`.
     name: "Odo, the Thin-Booked",
     raceId: "human",
     classId: "wizard",
+    // Its subclass picked, so only the spellbook's gap is owed.
+    subclassId: "evoker",
     level: 5,
     background: "sage",
     abilityScores: { STR: 8, DEX: 14, CON: 14, INT: 18, WIS: 12, CHA: 10 },
@@ -772,7 +776,7 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     ],
     owesClassPicks: true,
     exercises:
-      "The Wizard's spellbook: «Scelte da completare» owes 5 book spells (levels 1–3), landing unprepared; the level-up to 6 asks 2 for the book, not the prepared count.",
+      "The Wizard's spellbook: «Scelte da completare» owes 8 book spells (5 + 3 Evocation Savant, levels 1–3), landing unprepared; the level-up to 6 asks 2 for the book, not the prepared count.",
   },
   "wizard-book-full": {
     // A Wizard 5 whose book holds all fourteen free picks and 400 gp: the Play
