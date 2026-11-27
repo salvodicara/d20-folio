@@ -638,6 +638,9 @@ elevation), not from a border on every box.
   the DM's list, blue on Play) with no side bar and no frame; the «Ora» tag names it.
 - **Rules, not boxes, for lists.** Row dividers, the tab baseline and a panel footer's rule stay;
   a panel header has no rule under it, because its light («Lume») ends it.
+- **The sheet header's actions are their own row** (D&D Beyond's sheet header): on a laptop and a
+  tablet the rests, the other header actions and the campaign sit on one line under the identity,
+  the abilities and the numbers, never in a narrow column beside the AC shield.
 - **No decorative halo.** A zero-offset glow lights only a state (hover, focus, a pick) or the one
   lit primary. The crest, the Hit Points figure, the AC shield and the current row have none.
   `tests/unit/surface-depth.guard.test.ts` holds this.
