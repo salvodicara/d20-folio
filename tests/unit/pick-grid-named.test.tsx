@@ -67,6 +67,18 @@ describe("PickGrid reads without a hover", () => {
     expect(cardName()).toBe("Stealth");
   });
 
+  it("marks the one row the card reads, apart from the picked frame", () => {
+    asWide(true);
+    const { container } = mount();
+    const marked = () =>
+      [...container.querySelectorAll(".f-slot[data-inspected]")].map((b) =>
+        b.getAttribute("aria-label")
+      );
+    expect(marked()).toEqual(["Acrobatics"]);
+    fireEvent.focus(screen.getByRole("button", { name: "History" }));
+    expect(marked()).toEqual(["History"]);
+  });
+
   it.each([true, false])("every option shows its name (wide: %s)", (wide) => {
     asWide(wide);
     const { container } = mount();
