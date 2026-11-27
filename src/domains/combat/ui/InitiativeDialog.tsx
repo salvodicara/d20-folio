@@ -5,11 +5,11 @@
  * the DM types the d20 a player rolled without the app (the classic InitVital), and the
  * total shows with the hero's bonus. «Su» / «Giù» move the line one place, for a tie.
  */
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { parseInitiative } from "@/domains/combat/initiative-edit";
-import { Button, Dialog, Field } from "@/ui";
+import { Button, Chip, Dialog, Field } from "@/ui";
 
 /** A d20 roll: a whole number from 1 to 20. */
 function parseD20(text: string): number | null {
@@ -27,6 +27,7 @@ export function InitiativeDialog({
   onSave,
   onUp,
   onDown,
+  alertSwap,
   onClose,
 }: {
   name: string;
@@ -39,10 +40,17 @@ export function InitiativeDialog({
   /** Move the line one place up or down (absent: nowhere to go). */
   onUp?: () => void;
   onDown?: () => void;
+  /** An Alert hero who has rolled: the willing allies to swap places with (the DM
+   *  performs the swap, as on the classic screen). */
+  alertSwap?: {
+    allies: ReadonlyArray<{ id: string; label: string }>;
+    onSwap: (allyId: string) => void;
+  };
   onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [text, setText] = useState(value === null ? "" : String(value));
+  const swapLabel = useId();
   const next = hero ? parseD20(text) : parseInitiative(text);
   const signed = (n: number) => (n >= 0 ? `+${String(n)}` : String(n));
   const ready = next !== null && next !== value;
@@ -117,6 +125,28 @@ export function InitiativeDialog({
               {t("common.moveDown")}
             </Button>
           )}
+        </div>
+      )}
+      {alertSwap && alertSwap.allies.length > 0 && (
+        <div className="f-ask">
+          <div className="f-lbl" id={swapLabel}>
+            {t("fight.dm.alertSwap")}
+          </div>
+          <p className="f-quiet">{t("fight.dm.alertSwapHelp")}</p>
+          <div className="f-chips" role="group" aria-labelledby={swapLabel}>
+            {alertSwap.allies.map((ally) => (
+              <Chip
+                key={ally.id}
+                pressed={false}
+                onClick={() => {
+                  alertSwap.onSwap(ally.id);
+                  onClose();
+                }}
+              >
+                {ally.label}
+              </Chip>
+            ))}
+          </div>
         </div>
       )}
     </Dialog>

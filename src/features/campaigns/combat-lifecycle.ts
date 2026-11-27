@@ -29,6 +29,8 @@ import {
   removeCombatant,
   restoreMonsterUse,
   rollMonsterRecharge,
+  clearInitiativeSwap,
+  setInitiativeSwap,
   setMonsterBardicInspirationDie,
   spendMonsterUse,
   reorderCombatant,
@@ -704,6 +706,53 @@ export type MonsterUseChange =
   | { kind: "recharge"; d6: number }
   | { kind: "regain" }
   | { kind: "set"; count: number };
+
+/** The order with the two places traded (unchanged when either is not in it). */
+function swapPlaces(order: readonly string[], a: string, b: string): string[] {
+  const i = order.indexOf(a);
+  const j = order.indexOf(b);
+  if (i < 0 || j < 0) return [...order];
+  const next = [...order];
+  next[i] = b;
+  next[j] = a;
+  return next;
+}
+
+/** The two trade places in the order; the turn stays on its place (whoever now holds
+ *  the turn holder's place has the turn). */
+function tradePlaces(state: EncounterState, a: string, b: string): EncounterState {
+  if (!state.order) return state;
+  const current = state.currentCombatantId;
+  const holder = current === a ? b : current === b ? a : current;
+  return { ...state, order: swapPlaces(state.order, a, b), currentCombatantId: holder };
+}
+
+/** The DM performs an Alert hero's Initiative Swap with a willing ally (the classic
+ *  screen's swap): the two trade places in the order, and the swap is recorded. Null for
+ *  anyone but the DM, a source that is not a hero, or a target off the heroes' side. */
+export function planAlertSwap(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; sourceId: string; targetId: string }
+): { patch: CombatPatch } | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const swapped = setInitiativeSwap(fight, input.sourceId, input.targetId);
+  if (swapped === fight) return null;
+  return { patch: { encounter: tradePlaces(swapped, input.sourceId, input.targetId) } };
+}
+
+/** The undo of {@link planAlertSwap}: the places traded back and the swap forgotten. */
+export function planAlertSwapUndo(
+  campaign: CombatFields & Pick<CampaignDoc, "dmUid">,
+  input: { uid: string; sourceId: string; targetId: string }
+): CombatPatch | null {
+  const fight = campaign.encounter;
+  if (!fight || input.uid !== campaign.dmUid) return null;
+  const swap = fight.initiativeSwaps?.find((s) => s.sourceId === input.sourceId);
+  if (swap?.targetId !== input.targetId) return null;
+  const cleared = clearInitiativeSwap(fight, input.sourceId);
+  return { encounter: tradePlaces(cleared, input.sourceId, input.targetId) };
+}
 
 /** The DM spends the Bardic Inspiration die a creature in the fight holds (`die` ""),
  *  or gives it back on undo (`die` the one it held). Null for anyone but the DM, or when
