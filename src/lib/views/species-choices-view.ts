@@ -198,7 +198,9 @@ export function speciesChoicesLine(
     ...moreClassPicks,
   ];
   if (owed.length > 0) {
-    parts.push(t("play.speciesChoices.classBody", { items: list(owed) }));
+    // A short badge, like D&D Beyond's required choice: «Manca: Sottoclasse del Ladro
+    // · 2 Padronanze d'Armi (Paladino)».
+    parts.push(t("play.speciesChoices.classBody", { items: owed.join(" · ") }));
   }
   const discoveries = items.find((item) => item.kind === "discovery-mark");
   if (discoveries) {

@@ -25,7 +25,7 @@
  * use it.
  */
 
-import type { ClassEntry } from "@/types/character";
+import type { CharacterData, ClassEntry } from "@/types/character";
 import { classNameById, subclassNameById } from "@/data/srd-names";
 
 /** The shape `getClasses` reads. `classes[]` is the SOLE source of truth. */
@@ -158,4 +158,29 @@ export function allEntryPicks(
     }
   }
   return out;
+}
+
+/**
+ * Merge a patch onto a class's entry of `classes[]` (the first entry when the
+ * class has none). Used by the level-up commit and the subclass pick.
+ * Returns a fresh CharacterData; never mutates. A key set to `undefined` is
+ * dropped (rebuild by inclusion — no dynamic delete).
+ */
+export function patchClassEntry(
+  c: CharacterData,
+  classId: string,
+  patch: Partial<ClassEntry>
+): CharacterData {
+  const classes = c.classes.map((e) => ({ ...e }));
+  const idx = classes.findIndex((e) => e.classId === classId);
+  const target = idx >= 0 ? idx : 0;
+  const base = classes[target];
+  if (!base) return c;
+  const merged = { ...base, ...patch } as Record<string, unknown>;
+  const next: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(merged)) {
+    if (v !== undefined) next[k] = v;
+  }
+  classes[target] = next as unknown as ClassEntry;
+  return { ...c, classes };
 }

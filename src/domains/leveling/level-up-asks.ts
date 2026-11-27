@@ -15,7 +15,7 @@
  * Mastery, Signature Spells): the classic wizard takes those levels.
  */
 import { SRD_FEATS } from "@/data/feats";
-import { spells as allSpells } from "@/data/spells";
+import { getSpellById, spells as allSpells } from "@/data/spells";
 import type { AbilityCode } from "@/data/types";
 import { localizeSrd } from "@/i18n/resolver";
 import i18n from "@/i18n";
@@ -518,7 +518,7 @@ export function levelUpAsks(
       picked: a.newCantrips,
       options: learnableSpellVMs(
         {
-          classId,
+          classId: plan.cantripListId,
           cantripsOnly: true,
           maxLevel: 0,
           // A cantrip a feature's own pick took (Thaumaturge's) is known already.
@@ -554,7 +554,14 @@ export function levelUpAsks(
           ]),
         },
         locale
-      ).map((s) => ({ id: s.id, label: s.name })),
+      )
+        // A third caster whose subclass names schools learns only those.
+        .filter((s) => {
+          const schools = plan.spellSchools;
+          const school = getSpellById(s.id)?.school;
+          return !schools || (school !== undefined && schools.includes(school));
+        })
+        .map((s) => ({ id: s.id, label: s.name })),
     });
   }
   if (plan.mcSkillNeeded > 0) {
