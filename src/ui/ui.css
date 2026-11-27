@@ -7872,3 +7872,13 @@
     padding-bottom: 96px;
   }
 }
+/* on a laptop the toast sits in the bottom-right corner (Linear, Vercel), clear of the
+   main column where the fight list and the sheet's rows live */
+@media (min-width: 641px) {
+  .fui .f-toast {
+    left: auto;
+    right: 24px;
+    transform: none;
+    max-width: min(480px, calc(100vw - 48px));
+  }
+}
