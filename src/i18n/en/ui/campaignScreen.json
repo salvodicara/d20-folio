@@ -119,7 +119,7 @@
     "removeWho": "Remove: {{name}}",
     "joinsOpenState": "Anyone with the link can join.",
     "joinsLockedState": "The link lets nobody new in; the players here stay.",
-    "yieldNoUndo": "You can't undo this yourself: only the new DM can hand the role back.",
-    "removeNoUndo": "This can't be undone here: to come back, the player joins again with the invite link and attaches their character. Their character is not deleted."
+    "yieldNoUndo": "You can't undo this yourself.",
+    "removeNoUndo": "This can't be undone here. Their character is not deleted: when they rejoin, they attach it again."
   }
 }

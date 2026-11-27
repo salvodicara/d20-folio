@@ -78,11 +78,7 @@ describe("managing the campaign", () => {
     open();
     fireEvent.click(screen.getByRole("button", { name: /Hand over the DM role: Ana/ }));
     expect(store()?.dmUid).toBe("dm");
-    expect(
-      screen.getByText(
-        "You can't undo this yourself: only the new DM can hand the role back."
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText("You can't undo this yourself.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Make DM" }));
     await vi.waitFor(() => expect(store()?.dmUid).toBe("ana"));
   });
@@ -93,7 +89,7 @@ describe("managing the campaign", () => {
     expect(store()?.memberDetails.ana).toBeDefined();
     expect(
       screen.getByText(
-        "This can't be undone here: to come back, the player joins again with the invite link and attaches their character. Their character is not deleted."
+        "This can't be undone here. Their character is not deleted: when they rejoin, they attach it again."
       )
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Remove member" }));

@@ -1301,7 +1301,7 @@ describe("firestore.rules — /campaigns access", () => {
     );
   });
 
-  // ── handing over the DM role (the new screen's «Rendi DM», the classic yield) ───
+  // ── handing over the DM role (the new screen's «Rendi Master», the classic yield) ───
   // The DM's unconstrained update branch allows it; a regular member is held by
   // `rosterAndOwnerUnchanged()` (dmUid pinned); an outsider or a removed member has no
   // update branch at all. No rules change: these tests pin the existing behaviour.
