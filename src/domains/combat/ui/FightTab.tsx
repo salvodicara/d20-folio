@@ -33,6 +33,9 @@ import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
 import { partyBonuses } from "@/domains/combat/party-bonuses";
 import { FightFeed } from "@/domains/combat/ui/FightFeed";
+import { alertSwapAllies, withSwappedInitiatives } from "@/domains/combat/alert-swap";
+import { alertSwapMove } from "@/features/campaigns/combat-lifecycle-io";
+import { characterHasFeat } from "@/lib/compute";
 import { useTurnAdvanceShortcut } from "@/hooks/useTurnAdvanceShortcut";
 import {
   dmMoves,
@@ -196,7 +199,13 @@ function LiveFight({
     () => buildEncounterView(encounter, party.pcs, isDm),
     [encounter, party.pcs, isDm]
   );
-  const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
+  // After an Alert swap each of the pair shows the other's number (the rule swaps them).
+  const rows = fightRows(
+    withSwappedInitiatives(view.rows, encounter.initiativeSwaps),
+    view.currentId,
+    party.concentration,
+    locale
+  );
   const suggest = controls.suggestEnd;
   // The DM's arrow keys pass the turn (→) and step it back (←), as on the classic screen.
   useTurnAdvanceShortcut({
@@ -215,7 +224,8 @@ function LiveFight({
     locale,
     onToast,
     // every hero's bonus: a typed d20 re-sorts them all before turns begin
-    partyBonuses(party.pcs)
+    partyBonuses(party.pcs),
+    party.alert
   );
   // The DM's limited uses (Recharge, N/Day, legendary) under each monster line.
   const uses = useMonsterUses(campaign.id, encounter, uid, locale, onToast);
@@ -393,7 +403,9 @@ function useDmTools(
   locale: Locale,
   onToast: Toaster,
   /** Every hero's initiative bonus (the planner re-sorts them all on a roll). */
-  bonuses: Readonly<Record<string, number>>
+  bonuses: Readonly<Record<string, number>>,
+  /** The heroes with the Alert feat. */
+  alert: ReadonlySet<string>
 ) {
   const { t } = useTranslation();
   const move = useFightMove(onToast);
@@ -406,6 +418,14 @@ function useDmTools(
   const hero =
     initFor?.kind === "pc" ? fighters.find((f) => f.id === initFor.ids[0]) : undefined;
   const settled = !encounter.clock || encounter.clock.turnsBegun;
+  // An Alert hero who has rolled may swap places with a willing ally (2024 rule).
+  const swapAllies =
+    hero && hero.initiative !== null && alert.has(hero.id)
+      ? alertSwapAllies(fighters, hero.id).flatMap((id) => {
+          const ally = fighters.find((f) => f.id === id);
+          return ally ? [ally] : [];
+        })
+      : [];
   const placeFor = (dir: "up" | "down") =>
     initFor && settled
       ? lineNeighbourPlace(encounter.order ?? [], lines, initFor.ids, dir)
@@ -538,6 +558,29 @@ function useDmTools(
           {...(hero ? { hero: { bonus: hero.initiativeBonus ?? 0 } } : {})}
           {...(up ? { onUp: () => reorder(up) } : {})}
           {...(down ? { onDown: () => reorder(down) } : {})}
+          {...(swapAllies.length > 0 && hero
+            ? {
+                alertSwap: {
+                  allies: swapAllies.map((ally) => ({
+                    id: ally.id,
+                    label: `${ally.name} · ${String(ally.initiative)}`,
+                  })),
+                  onSwap: (allyId: string) =>
+                    move(
+                      () =>
+                        alertSwapMove(campaign.id, {
+                          uid,
+                          sourceId: hero.id,
+                          targetId: allyId,
+                        }),
+                      t("fight.dm.alertSwapDone", {
+                        name: hero.name,
+                        ally: fighters.find((f) => f.id === allyId)?.name ?? "",
+                      })
+                    ),
+                },
+              }
+            : {})}
           onClose={() => setInitFor(null)}
           onSave={(value) =>
             hero?.memberUid
@@ -601,6 +644,8 @@ interface Party {
   concentration: Record<string, PartyChip[]>;
   /** Every character's sheet has been read (or failed to): the bonuses are known. */
   ready: boolean;
+  /** The heroes with the Alert feat (its Initiative Swap, which the DM performs). */
+  alert: ReadonlySet<string>;
 }
 
 /** Every character's live facts (the old hub's assembly: their sheet and combat state
@@ -629,6 +674,8 @@ function useParty(
   return useMemo(() => {
     const pcs: Record<string, PcLive> = {};
     const concentration: Record<string, PartyChip[]> = {};
+    // The heroes with the Alert feat (its Initiative Swap, which the DM performs).
+    const alert = new Set<string>();
     for (const ref of refs) {
       const st = docs[ref.uid];
       if (st?.status !== "ready") continue;
@@ -639,6 +686,15 @@ function useParty(
         effectsOn(ref.uid)
       );
       if (pc) pcs[`pc-${ref.uid}`] = pc;
+      const { character } = st.doc;
+      if (
+        characterHasFeat("alert", {
+          humanOriginFeat: character.humanOriginFeat,
+          bgFeat: character.bgFeat,
+          features: character.features,
+        })
+      )
+        alert.add(`pc-${ref.uid}`);
       // The same live doc the Gruppo panel reads (its combat state folded in).
       const spell = hydrateMemberDoc(st.doc, states[ref.uid])?.session.concentration;
       if (spell)
@@ -649,7 +705,7 @@ function useParty(
     const ready = refs.every(
       (ref) => docs[ref.uid] && docs[ref.uid]?.status !== "loading"
     );
-    return { pcs, concentration, ready };
+    return { pcs, concentration, ready, alert };
   }, [refs, docs, states, encounterInit, locale, effectsOn]);
 }
 

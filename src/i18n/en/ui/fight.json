@@ -131,7 +131,10 @@
       "deathSaveDone": {
         "success": "Death save success for {{name}}, marked by the DM",
         "failure": "Death save failure for {{name}}, marked by the DM"
-      }
+      },
+      "alertSwap": "Swap initiative (Alert)",
+      "alertSwapHelp": "With a willing ally who has rolled and isn't Incapacitated: you trade places.",
+      "alertSwapDone": "{{name}} swaps places with {{ally}}."
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {
