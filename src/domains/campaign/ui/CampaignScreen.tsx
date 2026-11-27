@@ -24,6 +24,7 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 
 import { partyRows, type PartyRow } from "../party-rows-view";
 import { useLiveDocs } from "./use-party";
+import { ManageCampaignDialog } from "./ManageCampaignDialog";
 
 type Tab = "party" | "fight" | "journal" | "treasure" | "notes" | "rules";
 
@@ -75,6 +76,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
           campaign={campaign}
           locale={locale}
           onCopyInvite={copyInvite}
+          isDm={uid === campaign.dmUid}
           compact={tab !== "party"}
         />
         <Tabs
@@ -124,11 +126,14 @@ export function Header({
   campaign,
   locale,
   onCopyInvite,
+  isDm = false,
   compact = false,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
   onCopyInvite: () => void;
+  /** The DM manages the campaign: its name, the invite lock, the players. */
+  isDm?: boolean;
   /** A tab page past the landing one: on a phone the header shrinks to the crest and
    *  the name, so the tab's content starts on the first screen (a working page). */
   compact?: boolean;
@@ -140,6 +145,7 @@ export function Header({
   ).length;
   // a date already past is not a next session: it reads «da decidere» until a new one
   const [now] = useState(Date.now);
+  const [managing, setManaging] = useState(false);
   const next =
     campaign.nextSessionAt && campaign.nextSessionAt > now
       ? new Date(campaign.nextSessionAt).toLocaleString(intlTag(locale), {
@@ -176,7 +182,15 @@ export function Header({
         <Button icon="u-link" onClick={onCopyInvite}>
           {t("campaignScreen.copyInvite")}
         </Button>
+        {isDm && (
+          <Button icon="u-settings" onClick={() => setManaging(true)}>
+            {t("campaignScreen.manage")}
+          </Button>
+        )}
       </div>
+      {managing && (
+        <ManageCampaignDialog uid={campaign.dmUid} onClose={() => setManaging(false)} />
+      )}
     </section>
   );
 }
