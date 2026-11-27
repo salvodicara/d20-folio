@@ -28,9 +28,14 @@ it is. Decisions behind this: `docs/strategy/2026-10-16-product-brief.md`.
 
 **Direction B, "BG3 fantasy ricco"** (owner, 2026-10-16; approved as a direction, each screen still
 needs the owner's yes): magical, premium, confident, legible. Dark stone, gold leaf, and one type
-family as Baldur's Gate 3 (owner, 2026-11-08): Alegreya for titles, names and every reading line
-(names and buttons at 500), Alegreya SC for label capitals and panel titles, never below 14px. One lit action per screen: End Turn on Play, in the turn's cyan "now" light (the colour
-of the current initiative row). One colour and shape per action type, as Baldur's Gate 3 marks
+family as Baldur's Gate 3 (owner, 2026-11-08), done with craft (design reset «C · BG3 craft», owner
+2026-11-27): **Source Serif 4** for titles, names, text, buttons and every number, with full-height
+tabular figures, weights 400 and 600, capitals only for short labels, 13 px the smallest text. One lit
+action per screen: End Turn on Play, in the turn's blue "now" light (the colour of the current
+initiative row), drawn as BG3's lit glass with a gold rim and cream text; one button family (lit
+primary, gold-framed secondary, gold-text ghost, red destructive) with one height and radius. The
+colours, the gold and the fantasy mood are unchanged; the owner delegates design details to best
+practice from 2026-11-27. One colour and shape per action type, as Baldur's Gate 3 marks
 them: Action a green circle, Bonus an orange triangle, Reaction a violet diamond, Movement a
 yellow bar. The only ornament is **Lume** (owner, 2026-11-03): one faint gold hairline,
 a lit top edge that fades at both ends, a warm light from above and a soft vignette below, the same
