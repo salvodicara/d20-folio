@@ -2,7 +2,8 @@ import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Icon } from "./Icon";
 import type { IconName } from "./icon-names";
 
-type Kind = "primary" | "ghost" | "quiet" | "danger";
+/** `danger` and `heal` are also the equal «Danni» / «Cura» pair (red and green, neither lit). */
+type Kind = "primary" | "ghost" | "quiet" | "danger" | "heal";
 
 /** The two button kinds (primary, ghost) plus quiet text actions and the danger confirm. */
 export function Button({

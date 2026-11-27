@@ -14,7 +14,7 @@ import {
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import type { Locale } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
-import { Button, Chip, Panel } from "@/ui";
+import { Button, Chip, Icon, Panel } from "@/ui";
 
 export function PlayConcentration({
   doc,
@@ -50,7 +50,8 @@ export function PlayConcentration({
     <div className="f-condwrap" ref={ref}>
       <Chip kind="conc" pressed={open} onClick={() => setOpen((o) => !o)}>
         {/* it says what it is: a beginner reads «Trama Ipnotica» alone as an effect */}
-        {`◉ ${t("combat.concentration")} · ${model.spell.name}`}
+        <Icon name="g-concentration" />
+        {`${t("combat.concentration")} · ${model.spell.name}`}
       </Chip>
       {open && (
         <div className="f-condpop" role="dialog" aria-label={model.spell.name}>

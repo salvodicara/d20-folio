@@ -62,6 +62,17 @@ describe("DmHitDialog", () => {
     return { onHit, onCondition, onShow, onTempHp, onRemove, onCard, onDeathSave };
   };
 
+  it("draws «Danni» and «Cura» as an equal pair with their heart icons, neither lit", () => {
+    open([goblin(1)]);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "5" } });
+    const pair = ["Damage", "Heal"].map((name) => screen.getByRole("button", { name }));
+    expect(pair.map((b) => b.getAttribute("data-kind"))).toEqual(["danger", "heal"]);
+    expect(pair.map((b) => b.querySelector("use")?.getAttribute("href"))).toEqual([
+      "/assets/ui-icons.svg#g-hp-damage",
+      "/assets/ui-icons.svg#g-hp-heal",
+    ]);
+  });
+
   it("hits the chosen creatures with the typed amount, leaving out a dropped one", () => {
     const { onHit } = open([goblin(1), goblin(2), mara]);
     fireEvent.click(screen.getByRole("button", { name: /Goblin 2/ }));

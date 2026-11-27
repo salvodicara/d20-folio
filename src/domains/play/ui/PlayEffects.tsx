@@ -19,7 +19,7 @@ import { registerUndoableToast } from "@/stores/undoStore";
 import type { Locale } from "@/lib/locale";
 import type { CharacterDoc } from "@/types/character";
 import { SpellArt } from "@/domains/spells/ui/SpellArt";
-import { Button, Chip, Panel } from "@/ui";
+import { Button, Chip, Icon, Panel } from "@/ui";
 import { effectRowAction, runEffectRowAction } from "@/domains/play/concentration-model";
 import { useSheetReadonly } from "@/hooks/useSheetReadonly";
 import { ActionGlyph } from "./ActionIcon";
@@ -83,7 +83,8 @@ export function PlayEffects({ doc, locale }: { doc: CharacterDoc; locale: Locale
   return (
     <div className="f-condwrap" ref={ref}>
       <Chip kind="buff" pressed={open} onClick={() => setOpen((o) => !o)}>
-        {`✦ ${t("play.effects")}`}
+        <Icon name="g-effect" />
+        {t("play.effects")}
         <span className="f-chip-n">{count}</span>
       </Chip>
       {open && (

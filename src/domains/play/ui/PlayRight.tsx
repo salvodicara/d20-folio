@@ -285,7 +285,13 @@ function Report({
         </Button>
       }
     >
-      <ReportBlocks blocks={blocks} names={names} players={players} locale={locale} />
+      <ReportBlocks
+        blocks={blocks}
+        names={names}
+        players={players}
+        locale={locale}
+        level={3}
+      />
     </Panel>
   );
 }
@@ -356,7 +362,13 @@ function OwnReport({
         </Button>
       }
     >
-      <ReportBlocks blocks={blocks} names={names} players={{}} locale={locale} />
+      <ReportBlocks
+        blocks={blocks}
+        names={names}
+        players={{}}
+        locale={locale}
+        level={3}
+      />
     </Panel>
   );
 }

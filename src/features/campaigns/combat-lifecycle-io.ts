@@ -54,6 +54,8 @@ import {
   planMonsterRevealed,
   planMonsterEdit,
   planMonsterSide,
+  planAlertSwap,
+  planAlertSwapUndo,
   planMonsterBardicDie,
   planMonsterUse,
   type MonsterUseChange,
@@ -558,6 +560,23 @@ export async function undoFeedBeat(
       return patch && { patch, result: true };
     })) === true
   );
+}
+
+/** The DM performs an Alert hero's Initiative Swap; the undo trades the places back. */
+export async function alertSwapMove(
+  campaignId: string,
+  input: { uid: string; sourceId: string; targetId: string }
+): Promise<CombatUndo | null> {
+  const done = await applyMove(campaignId, (campaign) => {
+    const planned = planAlertSwap(campaign, input);
+    return planned && { patch: planned.patch, result: true };
+  });
+  if (done === null) return null;
+  return async () =>
+    (await applyMove(campaignId, (campaign) => {
+      const patch = planAlertSwapUndo(campaign, input);
+      return patch && { patch, result: true };
+    })) === true;
 }
 
 /** The DM spends a creature's Bardic Inspiration die; the undo gives the same die back. */

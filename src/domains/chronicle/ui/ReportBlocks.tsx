@@ -18,13 +18,17 @@ export function ReportBlocks({
   names,
   players,
   locale,
+  level = 4,
 }: {
   blocks: readonly DiaryBlock[];
   names: SessionReportNames;
   players: Record<string, string>;
   locale: Locale;
+  /** The blocks' heading level: one under what holds them (a panel's h2 → 3). */
+  level?: 3 | 4;
 }) {
   const { t } = useTranslation();
+  const Heading = level === 3 ? "h3" : "h4";
   const time = (at: number) =>
     new Date(at).toLocaleTimeString(intlTag(locale), {
       hour: "2-digit",
@@ -34,7 +38,7 @@ export function ReportBlocks({
     <>
       {blocks.map((block) => (
         <section key={`${block.kind}-${String(block.at)}`} className="f-tl-block">
-          <h4 className="f-lbl">
+          <Heading className="f-lbl">
             {
               // the separator never starts a line
               [
@@ -46,7 +50,7 @@ export function ReportBlocks({
                   : time(block.at),
               ].join("\u00a0· ")
             }
-          </h4>
+          </Heading>
           {block.entries.map((entry) => (
             <TimelineLine
               key={entry.id}

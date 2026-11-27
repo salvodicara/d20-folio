@@ -690,10 +690,14 @@ base.
 | default / `ghost` (secondary) | brown pillow, brass rim, cream text                                                           | lighter pillow, gold rim                                      | the peak drops, inset shadow  | as above                                                     |
 | `quiet` (ghost)               | gold words, no plate; red when it deletes (trash icon)                                        | a faint gold wash                                             | —                             | dark-tan words                                               |
 | `danger`                      | red pillow, red rim                                                                           | brighter rim                                                  | inset shadow                  | as above                                                     |
+| `heal`                        | green pillow, green rim, pale-green text                                                      | brighter pillow, full green rim                               | inset shadow                  | as above                                                     |
 
 Focus on every kind: a light-gold rim and a 2 px outline. «Danni» and «Cura» are one pair of equal
-red and green pillows, neither lit. A callout's own button is secondary: a screen keeps one lit
-action. The classic UI's buttons below stay until each screen is rebuilt.
+verbs, `danger` and `heal` in the markup, each with its heart icon, neither lit: on the sheet's
+header, the phone strip and both «Danni e cure» dialogs. A callout's own button is secondary: a
+screen keeps one lit action. During a fight the sheet's header drops its between-fights row («Sali di
+livello», «Riposo breve», «Riposo lungo», «Passa il tempo»), as BG3 closes its camp in combat; the
+row comes back when the fight ends, and the ⋯ menu keeps «Sali di livello». Interface strings write the ellipsis as «…», never «...». The classic UI's buttons below stay until each screen is rebuilt.
 
 **Classic UI:**
 
