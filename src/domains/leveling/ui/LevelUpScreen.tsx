@@ -625,14 +625,12 @@ function KnownRow({
     <div className="f-lvl-known">
       <span className="f-lbl">{label}</span>
       <div>
-        {/* BG3 names every icon on hover; a tap names it on a phone. */}
+        {/* every icon carries its name at every width (critique D7): no hover to read it */}
         {known.map((s) => (
-          <button key={s.id} type="button" className="f-known" aria-label={s.name}>
+          <span key={s.id} className="f-known">
             <SpellArt id={s.id} school={s.school} size="sm" />
-            <span className="f-slot-tip" aria-hidden="true">
-              <b>{s.name}</b>
-            </span>
-          </button>
+            <span>{s.name}</span>
+          </span>
         ))}
         {owed && (
           <span className="f-lvl-missing" aria-hidden="true">
