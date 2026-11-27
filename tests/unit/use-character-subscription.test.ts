@@ -2241,3 +2241,59 @@ describe("useCharacterSubscription — a level-up the server never acknowledged 
     expect(readUnackedPlay("u1", "char1")).toBeNull();
   });
 });
+
+/**
+ * #1448 — a stored current HP above the derived max (a rules fix lowered the derive;
+ * the Fighter 5 here derives 44, its play state stored 50 and 3 temporary HP) loads
+ * showing and using min(current, max), as #1395 does in session: no write on load, and
+ * the next real edit saves the clamped value.
+ */
+describe("current HP above a lowered derived max, on load (#1448)", () => {
+  const storedAbove = () =>
+    sessionToCombatState({ ...v1Doc().session, hp: { current: 50, temp: 3 } });
+
+  function load(): void {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(storedAbove()));
+    act(() => snapshotCb()(v1Doc()));
+  }
+
+  it("the sheet shows the max: 44 / 44, the 3 temporary HP kept", () => {
+    load();
+    expect(useCharacterStore.getState().character?.session.hp).toEqual({
+      current: 44,
+      temp: 3,
+    });
+  });
+
+  it("loading sends no write", async () => {
+    load();
+    await flushPlayWrite();
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+    expect(debouncedSave).not.toHaveBeenCalled();
+  });
+
+  it("damage counts from the clamped value: 3 temporary, then 44 − 5 = 39", async () => {
+    load();
+    act(() => {
+      useCharacterStore.getState().applyDamage(8);
+    });
+    await flushPlayWrite();
+    expect(useCharacterStore.getState().character?.session.hp).toEqual({
+      current: 39,
+      temp: 0,
+    });
+    expect(writeCombatStateMock.mock.calls.at(-1)?.[2].hp).toEqual({
+      current: 39,
+      temp: 0,
+    });
+  });
+
+  it("the next real edit saves the clamped value: 44", async () => {
+    load();
+    act(() => useCharacterStore.getState().updateSession({ notes: "a note" }));
+    await flushPlayWrite();
+    expect(writeCombatStateMock).toHaveBeenCalledTimes(1);
+    expect(writeCombatStateMock.mock.calls[0]?.[2].hp).toEqual({ current: 44, temp: 3 });
+  });
+});
