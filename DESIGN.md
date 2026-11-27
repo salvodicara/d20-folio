@@ -625,6 +625,28 @@ content fix.
 
 ## 4. Elevation
 
+**New UI (`.fui`, `src/ui/ui.css`, design reset «C · BG3 craft», surfaces, owner 2026-11-27):**
+hierarchy comes from one frame per group and tonal steps inside it (BG3's panels; Linear's tonal
+elevation), not from a border on every box.
+
+- **One border budget, two levels.** Level 1 is the group frame: a panel, a dialog, the hero, a
+  callout, a level-up section. Level 2 is the rim of a control (button, chip, field, picked tile) —
+  BG3's double frame. A box between them (a strip, a read-only tile, a stat cell, an icon socket, a
+  well) takes a tonal fill and no border. A border never nests deeper than these two.
+- **Flat bands.** The Play turn strip spans its panel edge to edge in `--strip-fill`, square, one
+  step above the panel. The current initiative row is a square band in the turn's colour (gold for
+  the DM's list, blue on Play) with no side bar and no frame; the «Ora» tag names it.
+- **Rules, not boxes, for lists.** Row dividers, the tab baseline and a panel footer's rule stay;
+  a panel header has no rule under it, because its light («Lume») ends it.
+- **The sheet header's actions are their own row** (D&D Beyond's sheet header): on a laptop and a
+  tablet the rests, the other header actions and the campaign sit on one line under the identity,
+  the abilities and the numbers, never in a narrow column beside the AC shield.
+- **No decorative halo.** A zero-offset glow lights only a state (hover, focus, a pick) or the one
+  lit primary. The crest, the Hit Points figure, the AC shield and the current row have none.
+  `tests/unit/surface-depth.guard.test.ts` holds this.
+
+The rest of this section describes the classic UI.
+
 The system is the opposite of flat. Depth is the identity: every surface is either carved (inset
 shadow, receding into the page) or embossed (raised, with an inner top highlight). Six theme-tuned
 recipes carry it, each a stack of inset highlight + inset shadow + brass lip + contained drop. Inputs

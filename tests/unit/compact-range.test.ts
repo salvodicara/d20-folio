@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import { compactRange } from "@/lib/views/compact-range";
+import { compactRange, rangeCellText } from "@/lib/views/compact-range";
 
 describe("compactRange", () => {
   it("a range around the caster: Self and the size", () => {
@@ -32,5 +32,25 @@ describe("compactRange", () => {
     expect(compactRange("Se stessi")).toBe("Sé");
     expect(compactRange("Sé stessi")).toBe("Sé");
     expect(compactRange("Self")).toBe("Self");
+  });
+});
+
+/**
+ * The column's text (design reset slice 5a): each distance keeps its line, and a narrow
+ * column wraps only between distances, at « / » or « · ». A word range wraps freely.
+ */
+describe("rangeCellText", () => {
+  const NB = " ";
+  it("a distance never splits from its unit", () => {
+    expect(rangeCellText("18 m")).toBe(`18${NB}m`);
+    expect(rangeCellText("Sé · 4,5 m")).toBe(`Sé · 4,5${NB}m`);
+  });
+  it("a melee and thrown range wraps only at its slash", () => {
+    expect(rangeCellText("1,5 m / 6/18 m")).toBe(`1,5${NB}m / 6/18${NB}m`);
+  });
+  it("a long word range keeps its ordinary spaces", () => {
+    expect(rangeCellText("Illimitata sullo stesso piano")).toBe(
+      "Illimitata sullo stesso piano"
+    );
   });
 });

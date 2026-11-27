@@ -43,8 +43,10 @@
   --fs-prose: 16px;
   --hp-hi: #ee6a55;
   --heal: #6fcf8a;
-  /* the prototype's strip fill (.bn), initiative number and tab-band rule */
-  --strip-fill: rgb(255 255 255 / 0.024);
+  /* the prototype's initiative number and tab-band rule; the band is one tonal step above its
+     panel (design reset «BG3 craft», surfaces): the turn strip and a selected list row are a
+     flat band like BG3's, not a box inside the box */
+  --strip-fill: rgb(255 255 255 / 0.05);
   --gold-ini: #d4af66;
   --text-hi: #f4ead6;
   --text-3: #a89a82;
@@ -906,6 +908,11 @@
 .fui .f-note[data-c] {
   --nc: var(--c);
 }
+/* a callout's text keeps a reading measure on a wide page (design reset slice 5a) */
+.fui .f-note > p {
+  max-width: 68ch;
+  text-wrap: pretty;
+}
 
 /* ---------- choices: one option of a pick-one question (approved prototype cast-bless) ---------- */
 .fui .f-choices {
@@ -1324,9 +1331,8 @@
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid var(--gold-line);
-  box-shadow:
-    0 0 0 4px var(--hero-end),
-    0 0 18px color-mix(in srgb, var(--gold-line) 30%, transparent);
+  /* a dark mount ring, no halo: the hero's light already frames it */
+  box-shadow: 0 0 0 4px var(--hero-end);
 }
 .fui .f-hero-id {
   flex: 1;
@@ -2221,8 +2227,10 @@
   }
 }
 .fui .f-fight[data-current] {
+  /* BG3's selected list row: a flat band in the turn's gold, square, with no side bar;
+     the «Ora» tag names it */
+  border-radius: 0;
   background: color-mix(in srgb, var(--turn) 10%, transparent);
-  box-shadow: inset 3px 0 0 var(--turn);
 }
 .fui .f-init {
   flex: none;
@@ -2398,6 +2406,33 @@
 @media (max-width: 800px) {
   .fui .f-sheet .f-ab-save {
     order: 3;
+  }
+  /* 44 px targets (design reset, slice 5a). The modifier grows upward (its box ends on
+     the number); «TS» and an item's name grow by padding their margin hands back, so the
+     look does not move and the two targets of an ability never overlap. */
+  .fui .f-sheet .f-ability > dd > .f-ab-open {
+    min-width: 44px;
+    min-height: 44px;
+    align-content: end;
+  }
+  .fui .f-sheet .f-char-abil {
+    margin-top: 0;
+  }
+  .fui .f-sheet .f-ab-save > button {
+    padding-block: 14px;
+    margin-block: -14px;
+  }
+  .fui .f-sheet .f-ab-save > button::after {
+    content: none;
+  }
+  .fui .f-sheet .f-char-stats button.f-badge {
+    min-width: 44px;
+    min-height: 44px;
+    align-content: end;
+  }
+  .fui .f-sheet .f-act button.f-row-t {
+    padding-block: 13px;
+    margin-block: -13px;
   }
 }
 .fui .f-char-stats {
@@ -2793,6 +2828,11 @@
 .fui .f-act > .f-btn {
   width: 100%;
 }
+/* a row with two actions («Rituale» and «Lancia»): the second sits under the first, in
+   the action column, never under the row's picture */
+.fui .f-act > .f-btn ~ .f-btn {
+  grid-column: -2;
+}
 /* Extra Attack: swings left in the open Attack action */
 .fui .f-act > .f-btn[data-live] {
   border-color: var(--strong);
@@ -2938,14 +2978,14 @@
   --btn-rim-hi: rgb(255 240 210 / 0.06);
   --row-meta: #b3a58c;
   --temp-quiet: #9fb7c9;
-  --glow-ac: rgb(212 175 102 / 0.53);
-  --glow-hp: rgb(70 240 74 / 0.53);
   --band-quiet: rgb(255 255 255 / 0.024);
   --advice: #c9bba3;
   --row-rule: rgb(255 255 255 / 0.06);
   --plate-text: #ece3d0;
   --row-hover-text: #ffe7a8;
   --fs-text: 16px;
+  /* a panel body's side inset, so a band can span the panel edge to edge */
+  --pnb-x: 20px;
   --fs-ac: 24px;
   --fs-hp-big: 52px;
   --fs-title-phone: 26px;
@@ -2971,11 +3011,11 @@
 .fui .f-sheet .f-pnh {
   gap: 12px;
   padding: 12px 20px;
-  border-bottom: 1px solid var(--line-soft);
+  /* no rule under the header: its light («Lume») already ends it */
   line-height: normal;
 }
 .fui .f-sheet .f-pnb {
-  padding: 16px 20px;
+  padding: 16px var(--pnb-x);
 }
 /* Only a real hover lights: a tap on a touch screen leaves `:hover` stuck where the
    finger was, and a chip shifted under it looked picked (#1333). A pick is
@@ -3007,9 +3047,10 @@
        wraps inside its cell («1d6‑1 / Contundente») instead of pushing the row out */
     grid-template-columns:
       /* the name column is never narrower than its longest word: «Arma improvvisata»
-         wraps between words, never inside one */
-      var(--slot-size) minmax(min-content, 1fr) minmax(64px, 112px)
-      minmax(80px, 104px) minmax(96px, 176px) 96px;
+         wraps between words, never inside one; the first and last tracks carry the
+         row's 8 px inset (a subgrid's padding sits inside its edge tracks) */
+      calc(var(--slot-size) + 8px) minmax(min-content, 1fr) minmax(64px, 112px)
+      minmax(80px, 104px) minmax(96px, 176px) calc(96px + 8px);
     column-gap: clamp(8px, 1vw, 12px);
   }
   .fui .f-sheet .f-act-table > .f-act-group {
@@ -3055,6 +3096,52 @@
   /* the prototype's hero is 34 px 56 px; 32 keeps the 8 px grid */
   padding: 32px 56px;
 }
+/* laptop and tablet: the header's actions (the rests, «Fai passare il tempo», the campaign)
+   are their own row under the identity, the abilities and the numbers, on one line from the
+   name's edge (D&D Beyond's sheet header keeps its actions in one row, apart from the
+   stats). Squeezed into the name's column they stacked in two or three rows beside the AC
+   shield. */
+@media (min-width: 801px) {
+  .fui .f-sheet .f-char {
+    grid-template-areas:
+      "medal name stats hp"
+      "medal sub stats hp"
+      "medal chips stats hp"
+      "medal abil stats hp"
+      "medal acts acts acts";
+    row-gap: 12px;
+  }
+  .fui .f-sheet .f-char-id {
+    display: contents;
+  }
+  .fui .f-sheet .f-char-id h1 {
+    grid-area: name;
+  }
+  .fui .f-sheet .f-char-id .f-hero-sub {
+    grid-area: sub;
+  }
+  .fui .f-sheet .f-char-id > .f-char-chips {
+    grid-area: chips;
+  }
+  .fui .f-sheet .f-char-acts {
+    grid-area: acts;
+    margin-top: 4px;
+  }
+}
+/* tablet: the numbers and Hit Points share a row under the identity; the portrait keeps
+   its own narrow column */
+@media (min-width: 801px) and (max-width: 1100px) {
+  .fui .f-sheet .f-char {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "medal name name"
+      "medal sub sub"
+      "medal chips chips"
+      "medal abil abil"
+      "stats stats hp"
+      "acts acts acts";
+  }
+}
 .fui .f-sheet .f-char-id h1 {
   font: 600 var(--fs-name)/1 var(--font-title);
   color: var(--text);
@@ -3095,7 +3182,6 @@
     /* the scale draws 8 px past the box: room for it above the label */
     margin-bottom: 8px;
     transform: scale(1.25);
-    filter: drop-shadow(0 0 8px var(--glow-ac));
   }
 }
 .fui .f-sheet .f-badge[data-shape="shield"] .f-badge-frame b {
@@ -3117,7 +3203,6 @@
   /* a <b> is "bolder" than its 700 parent (900): the prototype's figure is 700 */
   font-weight: 600;
   font-size: var(--fs-hp-big);
-  text-shadow: 0 0 14px var(--glow-hp);
 }
 .fui .f-char-hp-open {
   display: grid;
@@ -3199,15 +3284,12 @@
   color: var(--white);
   box-shadow: inset 0 -3px 0 var(--c);
 }
-/* the turn strip (prototype .bn): a quiet band, the round in Cinzel, «Fine turno» lit */
+/* the turn strip (prototype .bn): the round, the four resources, «Fine turno» lit */
 .fui .f-sheet .f-turn {
   min-height: 72px;
   gap: 16px;
   padding: 16px 0;
   border: 0;
-  border-bottom: 1px solid var(--line-soft);
-  border-radius: 0;
-  background: none;
   font: 600 var(--fs-lg) var(--font-text);
   color: var(--white);
 }
@@ -3301,22 +3383,27 @@
 }
 @media (min-width: 641px) {
   .fui .f-sheet .f-act-c {
-    /* a grid, not flex: its narrowest width is its longest word, so a value wraps
-       («1d6‑1 / Contundente») before the table outgrows its pane */
-    display: grid;
-    align-content: center;
+    /* a flex line: its narrowest width is its longest word, and the text shrinks to the
+       cell and wraps between words («1d4‑1 / Contundente») instead of running into the
+       row's button */
+    display: flex;
+    align-items: center;
     justify-content: center;
     min-height: 40px;
     padding: 0 4px;
     text-align: center;
+    text-wrap: balance;
     white-space: normal;
   }
 }
-.fui .f-sheet .f-act:not(.f-act-head):hover {
-  background-color: var(--row-rule);
-}
-.fui .f-sheet .f-act:not(.f-act-head):hover .f-row-t {
-  color: var(--row-hover-text);
+/* a real hover only: a tap on a phone leaves :hover stuck on the row it touched */
+@media (hover: hover) {
+  .fui .f-sheet .f-act:not(.f-act-head):hover {
+    background-color: var(--row-rule);
+  }
+  .fui .f-sheet .f-act:not(.f-act-head):hover .f-row-t {
+    color: var(--row-hover-text);
+  }
 }
 @media (max-width: 640px) {
   .fui .f-act-head {
@@ -3898,9 +3985,6 @@
     flex-wrap: wrap;
     gap: 12px;
   }
-  .fui .f-sheet .f-turn {
-    padding: 16px;
-  }
   .fui .f-sheet .f-turn .f-turn-slots {
     gap: 8px;
   }
@@ -3936,7 +4020,6 @@
    gold, a round token, the name, how it looks on the right; the turn lit, the next dashed */
 .fui .f-sheet {
   --ir-now-bg: #1d2a33;
-  --ir-now-glow: rgb(42 141 176 / 0.27);
   --ir-token-bg: #2a1a12;
   --r-slot: 2px;
 }
@@ -3953,9 +4036,9 @@
   color: var(--text);
 }
 .fui .f-ir[data-current] {
-  border-color: var(--lit-hi);
+  /* BG3's selected list row: a flat band in the turn's blue, no frame and no halo;
+     the «Ora» tag names it */
   background: var(--ir-now-bg);
-  box-shadow: 0 0 10px var(--ir-now-glow);
 }
 /* who comes next: the number in gold, no box inside the box */
 .fui .f-ir[data-next] .f-ir-i {
@@ -4040,9 +4123,6 @@
 @media (max-width: 400px) {
   .fui .f-sheet .f-char-id h1 {
     font-size: var(--fs-title-bar-m);
-  }
-  .fui .f-sheet .f-turn {
-    padding: 16px;
   }
   .fui .f-sheet .f-turn-t {
     font-size: var(--fs-sm);
@@ -4148,8 +4228,18 @@
   list-style: none;
 }
 .fui .f-rest-lines > li {
-  padding-left: 16px;
-  border-left: 2px solid var(--line-strong);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+/* each line opens with a small bronze lozenge, not a coloured bar on its edge */
+.fui .f-rest-lines > li::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  transform: translateY(-2px) rotate(45deg);
+  background: var(--gold-line);
 }
 .fui .f-rest-dice {
   grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
@@ -4479,34 +4569,39 @@
     grid-template-columns: none;
   }
 }
-/* a long resource name keeps its line; many pips wrap into a second row instead */
+/* a pool is three columns (D&D Beyond's limited-use rows): the name wraps in its own,
+   the pips keep one line beside it, and every count ends on the same edge */
+.fui .f-sheet .f-res {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 4ch;
+  align-items: center;
+}
 .fui .f-sheet .f-res-t {
-  flex: 1 0 auto;
-  /* room left for the count (and the pips, when the pool has them) */
-  max-width: calc(100% - 40px);
-}
-.fui .f-sheet .f-res:has(> .f-pips) > .f-res-t {
-  max-width: calc(100% - 72px);
-}
-.fui .f-sheet .f-res > .f-res-n {
-  margin-left: auto;
+  grid-column: 1;
+  text-wrap: balance;
 }
 .fui .f-sheet .f-res > .f-pips {
-  flex: 0 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  min-width: 16px;
-}
-/* up to six pips stay on one row (a 3/5 pool never leaves its fifth below); the
-   name gives way and wraps instead */
-.fui .f-sheet .f-res > .f-pips:not(:has(> i:nth-child(7))) {
-  flex-shrink: 0;
+  grid-column: 2;
   flex-wrap: nowrap;
 }
-.fui .f-sheet .f-res:has(> .f-pips:not(:has(> i:nth-child(7)))) > .f-res-t {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: none;
+/* seven or eight pips fold into two rows of four, so the name keeps its room */
+.fui .f-sheet .f-res > .f-pips:has(> i:nth-child(7)) {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 64px;
+}
+.fui .f-sheet .f-res > .f-res-n {
+  grid-column: 3;
+}
+/* a pool's follow-up («Spendi uno slot → Ispirazione Bardica»): a quiet line under its
+   pool, from the name's edge, that wraps rather than running out of the panel */
+.fui .f-sheet .f-res + .f-btn[data-kind="quiet"] {
+  justify-content: flex-start;
+  max-width: 100%;
+  height: auto;
+  padding-inline: 0;
+  text-align: left;
+  white-space: normal;
 }
 /* the narrowest phones: the three centre tabs at 12 px, so all three fit */
 @media (max-width: 360px) {
@@ -4907,6 +5002,10 @@
   width: min(360px, calc(100vw - 32px));
   max-height: min(640px, calc(100vh - 160px));
   overflow: auto;
+  /* an overlay is opaque, as every dialog is: the panel's lit material (97 %) sits on the
+     solid panel colour, so the sheet behind never shows through */
+  border-radius: var(--r-frame);
+  background: var(--panel);
   box-shadow: 0 20px 60px var(--shade);
 }
 .fui .f-condpop .f-pn {
@@ -5416,9 +5515,8 @@
   border: 2px solid var(--gold-line);
   border-radius: 50%;
   background: radial-gradient(circle, var(--raised), var(--bg) 70%);
-  box-shadow:
-    0 0 0 6px var(--shade-80),
-    0 0 40px color-mix(in srgb, var(--gold) 20%, transparent);
+  /* a dark mount ring, no halo */
+  box-shadow: 0 0 0 6px var(--shade-80);
   color: var(--gold-hi);
 }
 .fui .f-crest-art[data-size="md"] {
@@ -5550,7 +5648,7 @@
   align-content: start;
   gap: 8px;
   padding: 16px 12px;
-  border: 1px solid var(--line-strong);
+  /* a read-only gain: a raised tonal tile, no frame (frames mark the groups and the picks) */
   border-radius: var(--r);
   background: linear-gradient(180deg, var(--panel-2), var(--panel));
   text-align: center;
@@ -5565,7 +5663,6 @@
   place-items: center;
   width: 46px;
   height: 46px;
-  border: 1px solid var(--line);
   border-radius: 50%;
   background: var(--bg);
   color: var(--gold);
@@ -5587,7 +5684,6 @@
   height: 14px;
   transform: rotate(45deg);
   background: var(--c-res);
-  box-shadow: 0 0 10px var(--c-res);
 }
 .fui .f-lvl-gain-v {
   display: flex;
@@ -6062,14 +6158,13 @@
   display: flex;
   gap: 16px;
   padding: 16px;
-  border: 1px solid var(--line-strong);
+  /* the reading pane is a tonal well inside its section's frame, not a second card */
   border-radius: var(--r);
   background: linear-gradient(180deg, var(--panel-2), var(--sunk));
 }
+/* before a pick is hovered, the same well holds the hint */
 .fui .f-pick-hint {
   margin: 0;
-  border-style: dashed;
-  background: none;
   color: var(--muted);
   text-wrap: balance;
 }
@@ -6171,7 +6266,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border: 1px solid var(--line);
+  /* a tonal cell like the ability cells beside it, no frame inside the summary's frame */
   border-radius: var(--r-sm);
   background: var(--bg);
   color: var(--muted);
@@ -6986,17 +7081,18 @@
   font-size: var(--fs-prose);
   line-height: 1.25;
 }
-/* the centre's tab band is a panel header like the others (.boxtabs) */
+/* the centre's tab band is a panel header like the others (.boxtabs); its light is a step
+   lower than a title's, because the unselected tabs sit in it and keep AA (4.5:1) */
 .fui .f-sheet .f-centre > .f-tabs {
   background:
     linear-gradient(90deg, transparent, var(--c) 30%, transparent) top / 100% 1px
       no-repeat,
     radial-gradient(
       70% 140% at 30% 0,
-      color-mix(in srgb, var(--c) 30%, transparent),
+      color-mix(in srgb, var(--c) 22%, transparent),
       transparent 75%
     ),
-    linear-gradient(180deg, color-mix(in srgb, var(--c) 14%, transparent), transparent);
+    linear-gradient(180deg, color-mix(in srgb, var(--c) 10%, transparent), transparent);
   border-bottom: 1px solid var(--line-soft);
 }
 .fui .f-sheet .f-centre > .f-tabs > button {
@@ -7006,13 +7102,14 @@
 .fui .f-sheet .f-centre > .f-tabs > button[aria-selected="true"] {
   color: var(--white);
 }
-/* the turn strip (.bn): a filled band with 8 px corners, 16 × 20 padding */
+/* the turn strip: a flat band across its panel, one tonal step up (BG3's banner bar),
+   not a rounded box inside the box; its text keeps the panel's inset, and the stack's gap
+   spaces it */
 .fui .f-sheet .f-turn {
-  margin: 16px 0;
-  padding: 16px 20px;
+  margin: 0 calc(-1 * var(--pnb-x));
+  padding: 16px var(--pnb-x);
   gap: 16px;
-  border-bottom: 0;
-  border-radius: var(--r-panel);
+  border-radius: 0;
   background: var(--strip-fill);
   font-weight: 600;
 }
@@ -7078,7 +7175,7 @@
 }
 @media (max-width: 640px) {
   .fui .f-sheet .f-turn {
-    padding: 12px 16px;
+    padding: 12px var(--pnb-x);
     gap: 8px 12px;
   }
   .fui .f-sheet .f-turn-t {

@@ -24,6 +24,16 @@ function distance(text: string): string | null {
   return unit ? `${m[1]} ${unit}` : null;
 }
 
+/** A compact range for its column: each distance («1,5 m», «Sé») keeps its line, so a
+ *  narrow column wraps only between distances, at « / » or « · ». A part longer than a
+ *  distance (a range in words) keeps its ordinary spaces and wraps freely. */
+export function rangeCellText(compact: string): string {
+  return compact
+    .split(/( \/ | · )/)
+    .map((part, i) => (i % 2 === 0 && part.length <= 12 ? part.replace(/ /g, " ") : part))
+    .join("");
+}
+
 export function compactRange(text: string): string {
   const self = /^s[eé] stessi\b/i.test(text)
     ? "Sé"
