@@ -50,7 +50,7 @@ const {
         uid: string,
         charId: string,
         delayMs?: number,
-        allocateRevision?: () => number
+        allocateRevision?: () => import("@/lib/firestore").WriteStamp
       ) => unknown
     >(),
   debouncedFlush: vi.fn(() => Promise.resolve()),
@@ -70,7 +70,11 @@ const {
       charId: string,
       cb: (
         d: import("@/types/character").CharacterDoc | null,
-        meta: { hasPendingWrites: boolean; attached?: boolean }
+        meta: {
+          hasPendingWrites: boolean;
+          attached?: boolean;
+          baseWriteId?: string | null;
+        }
       ) => void,
       onError?: (err: Error) => void
     ) => () => void
@@ -114,11 +118,12 @@ vi.mock("@/stores/authStore", () => ({
 }));
 vi.mock("@/lib/firestore", () => ({
   subscribeToCharacter: subscribeMock,
+  newWriteId: () => crypto.randomUUID(),
   createDebouncedSave: (
     uid: string,
     charId: string,
     delayMs?: number,
-    allocateRevision?: () => number
+    allocateRevision?: () => import("@/lib/firestore").WriteStamp
   ) => {
     createDebouncedSaveMock(uid, charId, delayMs, allocateRevision);
     return {
@@ -249,7 +254,9 @@ function doc(): CharacterDoc {
 /** Latest captured Firestore snapshot callback, wrapped to supply the snapshot
  *  metadata (defaults to a SERVER snapshot — `hasPendingWrites: false`). */
 function snapshotCb(
-  meta: { hasPendingWrites: boolean } = { hasPendingWrites: false }
+  meta: { hasPendingWrites: boolean; baseWriteId?: string | null } = {
+    hasPendingWrites: false,
+  }
 ): (d: CharacterDoc | null) => void {
   const cb = subscribeMock.mock.calls.at(-1)?.[2];
   if (!cb) throw new Error("subscription callback not captured");
@@ -894,6 +901,9 @@ describe("useCharacterSubscription — T4 DM-sheet fan-out", () => {
  * every snapshot of EITHER — so a sibling snapshot clobbered a still-unwritten local edit.
  */
 describe("useCharacterSubscription — per-domain reconciliation replays (audit F7)", () => {
+  // #1403 — a conflict now keeps a rescue copy on the device: no test inherits one.
+  beforeEach(() => localStorage.clear());
+
   /** The live character, or a loud failure (the replays are meaningless without it). */
   function openCharacter(): CharacterDoc {
     const current = useCharacterStore.getState().character;
@@ -912,8 +922,9 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     return { payload, callbacks };
   }
 
-  /** The hook's SEND-TIME revision allocator, handed to `createDebouncedSave`. */
-  function allocateRevision(): number {
+  /** The hook's SEND-TIME allocator, handed to `createDebouncedSave`: the generation
+   *  and the write chain (#1413). */
+  function allocateStamp(): import("@/lib/firestore").WriteStamp {
     const allocate = createDebouncedSaveMock.mock.calls.at(-1)?.[3];
     if (!allocate) throw new Error("revision allocator not captured");
     return allocate();
@@ -926,10 +937,74 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
    */
   function sendLastSave(): CharacterDoc {
     const { payload, callbacks } = lastSave();
-    const sent: CharacterDoc = { ...payload, revision: allocateRevision() };
+    const sent: CharacterDoc = { ...payload, ...allocateStamp() };
     act(() => callbacks.onSend?.(sent));
     return sent;
   }
+
+  // #1413 — the write chain: each save names the write it builds on.
+  describe("the write chain (#1413)", () => {
+    function edit(quote: string): void {
+      act(() => {
+        const cur = openCharacter();
+        useCharacterStore
+          .getState()
+          .setCharacter({ ...cur, character: { ...cur.character, quote } });
+      });
+    }
+
+    async function load(writeId: string | null): Promise<void> {
+      renderHook(() => useCharacterSubscription("char1"));
+      await act(async () => {
+        snapshotCb()({ ...doc(), writeId });
+        combatCb()(sessionToCombatState(doc().session));
+        await Promise.resolve();
+      });
+    }
+
+    it("the first save builds on the stored write; a never-chained sheet on none", async () => {
+      await load("s1");
+      edit("one");
+      expect(sendLastSave()).toMatchObject({ revision: 5, baseWriteId: "s1" });
+    });
+
+    it("a never-chained sheet: the first save builds on no write", async () => {
+      await load(null);
+      edit("one");
+      expect(sendLastSave()).toMatchObject({ revision: 5, baseWriteId: null });
+    });
+
+    it("saves queued offline chain on each other, each with a fresh id", async () => {
+      await load("s1");
+      edit("one");
+      const first = sendLastSave();
+      edit("two");
+      const second = sendLastSave();
+      expect(second).toMatchObject({ revision: 6, baseWriteId: first.writeId });
+      expect(new Set([first.writeId, second.writeId, "s1"]).size).toBe(3);
+    });
+
+    it("after a refusal the next save builds on the server's write again", async () => {
+      await load("s1");
+      edit("one");
+      const first = sendLastSave();
+      const { callbacks } = lastSave();
+      await act(async () => {
+        snapshotCb()({ ...doc(), revision: 5, writeId: "b1" });
+        await Promise.resolve();
+      });
+      act(() =>
+        callbacks.onRejected?.(
+          first,
+          Object.assign(new Error("Missing or insufficient permissions."), {
+            code: "permission-denied",
+          })
+        )
+      );
+      edit("again");
+      expect(sendLastSave()).toMatchObject({ revision: 6, baseWriteId: "b1" });
+    });
+  });
 
   function lastChildWrite(): import("@/types/combat-state").CombatState {
     const call = writeCombatStateMock.mock.calls.at(-1);
@@ -1154,7 +1229,7 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
   // #1203: a save the rules refuse as a conflict (another device saved first) is
   // dropped for the server's copy; the player is told once. A transient failure
   // (offline, unavailable) keeps the edit pending and says nothing.
-  async function refusedSave(error: unknown): Promise<void> {
+  async function refusedSave(error: unknown): Promise<CharacterDoc> {
     renderHook(() => useCharacterSubscription("char1"));
     await act(async () => {
       snapshotCb()(doc());
@@ -1170,24 +1245,118 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     const { callbacks } = lastSave();
     const sent = sendLastSave();
     act(() => callbacks.onRejected?.(sent, error));
+    return sent;
   }
 
-  it("a conflict refusal tells the player once that the last change was not saved", async () => {
+  const denied = (): Error =>
+    Object.assign(new Error("Missing or insufficient permissions."), {
+      code: "permission-denied",
+    });
+
+  /** The server's sheet after the refusal: another device stored `revision`. */
+  async function serverSheet(revision: number): Promise<void> {
+    await act(async () => {
+      snapshotCb()({
+        ...doc(),
+        revision,
+        character: { ...doc().character, quote: "other device" },
+      });
+      for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+  }
+
+  // #1403 — the refused edit is kept on this device and offered back by the strip.
+  it("a conflict refusal keeps the edit as a build-only rescue copy and says so once", async () => {
     useToastStore.setState({ toasts: [] });
-    await refusedSave(
-      Object.assign(new Error("Missing or insufficient permissions."), {
-        code: "permission-denied",
-      })
-    );
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
     expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
-      { kind: "edit-not-saved" },
+      { kind: "edit-not-saved", kept: true },
+    ]);
+    const copy = readRescueCopy("u1", "char1", Date.now());
+    expect(copy?.part).toBe("build");
+    // No generation: a stored sheet at it is the OTHER device's (the lost-save proof
+    // must never drop this copy).
+    expect(copy?.revision).toBeUndefined();
+    expect(JSON.stringify(copy?.build)).toContain("local");
+  });
+
+  it("a refusal the server's sheet does not prove a conflict keeps nothing: «not saved»", async () => {
+    useToastStore.setState({ toasts: [] });
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    await refusedSave(denied());
+    await serverSheet(4); // still below the refused generation
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved", kept: false },
+    ]);
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a refused save on a sheet the player can no longer read keeps nothing", async () => {
+    useToastStore.setState({ toasts: [] });
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    await refusedSave(denied());
+    act(() => parentErrorCb()(denied()));
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved", kept: false },
+    ]);
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a copy already on the device is never overwritten: «not saved»", async () => {
+    useToastStore.setState({ toasts: [] });
+    const { keepRescueCopy, readRescueCopy } = await import("@/lib/local-draft");
+    const earlier = {
+      part: "build" as const,
+      savedAt: Date.now() - 60_000,
+      schema: 3,
+      playVersion: 1,
+      build: { earlier: true },
+      state: {},
+    };
+    keepRescueCopy("u1", "char1", earlier);
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
+    expect(readRescueCopy("u1", "char1", Date.now())).toEqual(earlier);
+    expect(useToastStore.getState().toasts.map((x) => x.intent)).toEqual([
+      { kind: "edit-not-saved", kept: false },
     ]);
   });
 
-  it("a transient failure (offline) says nothing: the edit is still pending", async () => {
+  it("the copy follows the rescue store: gone after 30 days and on sign-out", async () => {
+    const { readRescueCopy, clearAccountDrafts } = await import("@/lib/local-draft");
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
+    expect(readRescueCopy("u1", "char1", Date.now())).not.toBeNull();
+    expect(readRescueCopy("u1", "char1", Date.now() + 31 * 24 * 3600 * 1000)).toBeNull();
+    const again = await refusedSave(denied());
+    await serverSheet(again.revision);
+    expect(readRescueCopy("u1", "char1", Date.now())).not.toBeNull();
+    clearAccountDrafts("u1");
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("the kept copy survives a reload that finds the other device's sheet", async () => {
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    const sent = await refusedSave(denied());
+    await serverSheet(sent.revision);
+    const { unmount } = renderHook(() => useCharacterSubscription("char1"));
+    unmount();
+    renderHook(() => useCharacterSubscription("char1"));
+    await serverSheet(sent.revision + 1);
+    expect(readRescueCopy("u1", "char1", Date.now())).not.toBeNull();
+  });
+
+  it("a transient failure (offline) says nothing and keeps nothing: the edit is still pending", async () => {
     useToastStore.setState({ toasts: [] });
-    await refusedSave(Object.assign(new Error("offline"), { code: "unavailable" }));
+    const { readRescueCopy } = await import("@/lib/local-draft");
+    const sent = await refusedSave(
+      Object.assign(new Error("offline"), { code: "unavailable" })
+    );
+    await serverSheet(sent.revision);
     expect(useToastStore.getState().toasts).toEqual([]);
+    expect(readRescueCopy("u1", "char1", Date.now())).toBeNull();
   });
 
   it("a rejected parent write surfaces SaveStatus=error and republishes the remote", async () => {
@@ -1384,6 +1553,83 @@ describe("useCharacterSubscription — the shape gate (#1320)", () => {
   });
 });
 
+describe("useCharacterSubscription — the shape gate's four guarantees (#1320)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  it("another reader closing the gate first does not cost the open sheet its unsaved edit", async () => {
+    const { closeShapeGate } = await import("@/lib/shape-gate");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "party view saw it first" },
+      })
+    );
+    // A reader with no handler of its own (the party's play states) saw the newer
+    // shape first: it knows of no unsaved edit.
+    act(() => closeShapeGate({ rescue: "none" }));
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "kept" });
+    expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+      "party view saw it first"
+    );
+  });
+
+  it("a rescue copy that cannot be built settles «failed»: the Reload button never stays disabled", async () => {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    // A trace left by an older build, unreadable by this one.
+    keepUnackedSave("u1", "char1", {
+      character: null,
+      session: null,
+      revision: 9,
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    act(() => tooNewCb("parent")({ hasPendingWrites: false }));
+    await settleRescue();
+    expect(gate1320()).toEqual({ closed: true, rescue: "failed" });
+  });
+
+  it("a save refused with permission-denied, the stored shape known: no block", async () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "stale revision" },
+      })
+    );
+    const [sent, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    act(() =>
+      callbacks?.onRejected?.(sent as CharacterDoc, { code: "permission-denied" })
+    );
+    // The server's copy arrives at the shape this client knows (another device saved).
+    act(() => snapshotCb()({ ...doc(), revision: 7 }));
+    await settleRescue();
+    expect(fenced1320()).toBe(false);
+    expect(gate1320()).toEqual({ closed: false });
+  });
+
+  it("a listener refused with permission-denied (signed out, share revoked): no block", () => {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const denied = Object.assign(new Error("Missing or insufficient permissions."), {
+      code: "permission-denied",
+    });
+    act(() => parentErrorCb()(denied));
+    act(() => combatErrorCb()(denied));
+    expect(fenced1320()).toBe(false);
+    expect(gate1320()).toEqual({ closed: false });
+  });
+});
+
 describe("useCharacterSubscription — the shape gate before the sheet has loaded (#1320)", () => {
   beforeEach(() => {
     resetGate1320();
@@ -1403,6 +1649,116 @@ describe("useCharacterSubscription — the shape gate before the sheet has loade
     expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
       "early edit"
     );
+  });
+});
+
+// #1414 — a tab closed offline, reopened online: its queued save is replayed and refused
+// with no event the app can hear. A stored sheet that reached the save's generation is
+// no proof it landed (another device's save looks the same); only the save's own
+// writeId is.
+describe("useCharacterSubscription — a closed tab's edit after another device saved (#1414)", () => {
+  beforeEach(() => {
+    resetGate1320();
+    localStorage.clear();
+  });
+
+  async function traceOf(quote: string, writeId: string): Promise<void> {
+    const { keepUnackedSave } = await import("@/lib/local-draft");
+    keepUnackedSave("u1", "char1", {
+      character: { ...doc().character, quote },
+      session: doc().session,
+      revision: 5,
+      writeId,
+    });
+  }
+
+  it("the stored sheet at that generation is another device's: the edit is offered", async () => {
+    await traceOf("closed tab edit", "a1");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "b1" }));
+    await vi.waitFor(() =>
+      expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
+        "closed tab edit"
+      )
+    );
+    // The copy keeps the write's id, so the next load's proof stays exact.
+    expect(readRescue1320("u1", "char1", Date.now())?.writeId).toBe("a1");
+  });
+
+  it("the stored sheet carries this save's writeId: it landed, nothing to offer", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    await traceOf("landed edit", "a1");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "a1" }));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readUnackedSave("u1", "char1")).toBeNull();
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("the stored sheet was built on this save: it landed, nothing to offer", async () => {
+    await traceOf("built on", "a1");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => {
+      snapshotCb({ hasPendingWrites: false, baseWriteId: "a1" })({
+        ...doc(),
+        revision: 6,
+        writeId: "b2",
+      });
+      combatCb()(sessionToCombatState(doc().session));
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+  });
+
+  it("a save leaving records its writeId in the trace", async () => {
+    const { readUnackedSave } = await import("@/lib/local-draft");
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter());
+    const loaded = useCharacterStore.getState().character as CharacterDoc;
+    act(() =>
+      useCharacterStore.getState().setCharacter({
+        ...loaded,
+        character: { ...loaded.character, quote: "traced" },
+      })
+    );
+    const [queued, callbacks] = debouncedSave.mock.calls.at(-1) ?? [];
+    const sent = { ...(queued as CharacterDoc), revision: 5, writeId: "a9" };
+    act(() => callbacks?.onSend?.(sent));
+    expect(readUnackedSave("u1", "char1")?.writeId).toBe("a9");
+  });
+
+  it("a copy kept from a lost save stays when the stored write is another device's", async () => {
+    const { keepRescueCopy } = await import("@/lib/local-draft");
+    keepRescueCopy("u1", "char1", {
+      part: "build",
+      revision: 5,
+      writeId: "a1",
+      savedAt: Date.now() - 1000,
+      schema: 3,
+      playVersion: 1,
+      build: { kept: true },
+      state: {},
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "b1" }));
+    expect(readRescue1320("u1", "char1", Date.now())).not.toBeNull();
+  });
+
+  it("a copy kept from a lost save is dropped when its own write is stored", async () => {
+    const { keepRescueCopy } = await import("@/lib/local-draft");
+    keepRescueCopy("u1", "char1", {
+      part: "build",
+      revision: 5,
+      writeId: "a1",
+      savedAt: Date.now() - 1000,
+      schema: 3,
+      playVersion: 1,
+      build: { kept: true },
+      state: {},
+    });
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => seedCharacter({ ...doc(), revision: 5, writeId: "a1" }));
+    expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
   });
 });
 
@@ -1431,6 +1787,23 @@ describe("useCharacterSubscription — a save the tab never saw acknowledged (#1
     expect(JSON.stringify(readRescue1320("u1", "char1", Date.now())?.build)).toContain(
       "closed tab edit"
     );
+  });
+
+  it("an unreadable trace (left by an older build) is retired on load, never thrown", async () => {
+    const { keepUnackedSave, readUnackedSave } = await import("@/lib/local-draft");
+    const unhandled = vi.fn();
+    process.on("unhandledRejection", unhandled);
+    try {
+      keepUnackedSave("u1", "char1", { character: null, session: null, revision: 9 });
+      renderHook(() => useCharacterSubscription("char1"));
+      act(() => seedCharacter()); // revision 4: the trace looks like a lost save
+      await vi.waitFor(() => expect(readUnackedSave("u1", "char1")).toBeNull());
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      expect(unhandled).not.toHaveBeenCalled();
+      expect(readRescue1320("u1", "char1", Date.now())).toBeNull();
+    } finally {
+      process.off("unhandledRejection", unhandled);
+    }
   });
 
   it("a stored sheet at the save's revision proves it landed: nothing to rescue", async () => {
@@ -1866,5 +2239,61 @@ describe("useCharacterSubscription — a level-up the server never acknowledged 
       await Promise.resolve();
     });
     expect(readUnackedPlay("u1", "char1")).toBeNull();
+  });
+});
+
+/**
+ * #1448 — a stored current HP above the derived max (a rules fix lowered the derive;
+ * the Fighter 5 here derives 44, its play state stored 50 and 3 temporary HP) loads
+ * showing and using min(current, max), as #1395 does in session: no write on load, and
+ * the next real edit saves the clamped value.
+ */
+describe("current HP above a lowered derived max, on load (#1448)", () => {
+  const storedAbove = () =>
+    sessionToCombatState({ ...v1Doc().session, hp: { current: 50, temp: 3 } });
+
+  function load(): void {
+    renderHook(() => useCharacterSubscription("char1"));
+    act(() => combatCb()(storedAbove()));
+    act(() => snapshotCb()(v1Doc()));
+  }
+
+  it("the sheet shows the max: 44 / 44, the 3 temporary HP kept", () => {
+    load();
+    expect(useCharacterStore.getState().character?.session.hp).toEqual({
+      current: 44,
+      temp: 3,
+    });
+  });
+
+  it("loading sends no write", async () => {
+    load();
+    await flushPlayWrite();
+    expect(writeCombatStateMock).not.toHaveBeenCalled();
+    expect(debouncedSave).not.toHaveBeenCalled();
+  });
+
+  it("damage counts from the clamped value: 3 temporary, then 44 − 5 = 39", async () => {
+    load();
+    act(() => {
+      useCharacterStore.getState().applyDamage(8);
+    });
+    await flushPlayWrite();
+    expect(useCharacterStore.getState().character?.session.hp).toEqual({
+      current: 39,
+      temp: 0,
+    });
+    expect(writeCombatStateMock.mock.calls.at(-1)?.[2].hp).toEqual({
+      current: 39,
+      temp: 0,
+    });
+  });
+
+  it("the next real edit saves the clamped value: 44", async () => {
+    load();
+    act(() => useCharacterStore.getState().updateSession({ notes: "a note" }));
+    await flushPlayWrite();
+    expect(writeCombatStateMock).toHaveBeenCalledTimes(1);
+    expect(writeCombatStateMock.mock.calls[0]?.[2].hp).toEqual({ current: 44, temp: 3 });
   });
 });

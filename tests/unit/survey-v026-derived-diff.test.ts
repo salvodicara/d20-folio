@@ -14,6 +14,8 @@ import { defenses, probeCorpus, type ProbeSource } from "../../scripts/lib/deriv
 import {
   fieldPattern,
   assertSameComposition,
+  exportSummary,
+  exportTarget,
   readOnlyFirestore,
   safeContentId,
   surveyDerivedDiff,
@@ -164,6 +166,22 @@ describe("the comparison", () => {
     );
     expect(survey.withUnexpected).toBe(0);
     expect(survey.byFix).toEqual({ "#1097": 1 });
+  });
+
+  it("a moved max HP is named by the max-HP fixes (#1314, #1329, #1331, #1351); a moved AC stays unexpected", () => {
+    const survey = surveyDerivedDiff(
+      [
+        { ok: true, stats: { ac: 14, hpMax: 30 } },
+        { ok: true, stats: { ac: 14, hpMax: 30 } },
+      ],
+      [
+        { ok: true, stats: { ac: 14, hpMax: 33 } },
+        { ok: true, stats: { ac: 15, hpMax: 30 } },
+      ]
+    );
+    expect(survey.byFix).toEqual({ "#1314 #1329 #1331 #1351": 1 });
+    expect(survey.byField.hpMax).toEqual({ changed: { expected: 1, unexpected: 0 } });
+    expect(survey.withUnexpectedChange).toBe(1);
   });
 
   it("a free row's other new field stays unexpected", () => {
@@ -321,5 +339,36 @@ describe("the probe reads the defenses", () => {
     });
     const [read] = await probeCorpus(family(dwarf, "users/u1/characters/d"));
     expect(read?.ok && read.stats["defenses.damageResistances.poison"]).toBe(1);
+  });
+});
+
+// The derived-sheet harness (`scripts/derived-digest.ts`) reads no Firestore: the same
+// read-only discovery writes its input, an owner-only file outside the repository.
+describe("the corpus export for the derived-sheet harness", () => {
+  const repo = "/work/d20-folio";
+
+  it("takes an absolute file outside the repository", () => {
+    expect(exportTarget(["--export", "/private/folio/live.json"], repo)).toBe(
+      "/private/folio/live.json"
+    );
+    expect(exportTarget(["--detail"], repo)).toBeUndefined();
+  });
+
+  it("refuses a relative path, a path inside the repository, or no path", () => {
+    expect(() => exportTarget(["--export", "live.json"], repo)).toThrow(/absolute/);
+    expect(() => exportTarget(["--export", `${repo}/tmp/live.json`], repo)).toThrow(
+      /outside the repository/
+    );
+    expect(() => exportTarget(["--export"], repo)).toThrow(/absolute/);
+  });
+
+  it("reports counts only", () => {
+    expect(
+      exportSummary([
+        { path: "users/u/characters/a" },
+        { path: "users/u/characters/a/combat/state" },
+        { path: "users/u/characters/b" },
+      ])
+    ).toBe("exported 3 documents: 2 characters, 1 combat states");
   });
 });

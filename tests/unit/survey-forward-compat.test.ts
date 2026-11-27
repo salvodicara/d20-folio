@@ -78,6 +78,19 @@ describe("the forward-compat check", () => {
     expect(survey.problems).toBe(0);
   });
 
+  it("writes a play document carrying a condition's origin (#1333), which the strict reader keeps", () => {
+    const cases = input.cases.filter((c) => c.list === "play keys");
+    expect(cases.map((c) => c.value)).toEqual(["conditionOrigins"]);
+    const doc = cases[0]?.doc as { playState: { state: Record<string, unknown> } };
+    expect(doc.playState.state.conditionOrigins).toEqual({
+      frightened: "fear",
+    });
+    // The strict reader's canonical round-trip refuses any key it would not write back.
+    expect(readCases(parseCombatState, cases)).toEqual([
+      { list: "play keys", value: "conditionOrigins", result: "accepted" },
+    ]);
+  });
+
   it("this tree's own reader reads its dev characters", () => {
     const characters = input.cases.filter((c) => c.list === "character");
     expect(
@@ -97,18 +110,29 @@ describe("the forward-compat check", () => {
   });
 
   it("writes a build carrying the max-HP inputs, watched on build.hp (#1315)", () => {
-    expect(input.builds.map((b) => [b.value, b.watch])).toEqual([["build.hp", ["hp"]]]);
+    expect(input.builds.map((b) => [b.value, b.watch])).toEqual([
+      ["build.hp", ["hp"]],
+      ["build.wildShapeForms", ["wildShapeForms"]],
+    ]);
     expect(input.builds[0]?.build.hp).toEqual({ rolled: 4, bonus: 2 });
   });
 
-  it("this tree's own codec keeps build.hp through a read and a write", () => {
+  it("writes a Druid build carrying its known Wild Shape forms", () => {
+    const build = input.builds.find((b) => b.value === "build.wildShapeForms")?.build;
+    expect(build?.wildShapeForms).toEqual(["wolf", "giant-badger"]);
+  });
+
+  it("this tree's own codec keeps each watched build key through a read and a write", () => {
     expect(
       readBuilds(
         parseCharacterEnvelope,
         serializeCharacterEnvelope as unknown as Parameters<typeof readBuilds>[1],
         input.builds
       )
-    ).toEqual([{ value: "build.hp", result: "kept" }]);
+    ).toEqual([
+      { value: "build.hp", result: "kept" },
+      { value: "build.wildShapeForms", result: "kept" },
+    ]);
   });
 
   it("a reader that drops build.hp on write is a problem, named by key", () => {
@@ -122,7 +146,7 @@ describe("the forward-compat check", () => {
           build: Object.fromEntries(Object.entries(build).filter(([k]) => k !== "hp")),
         };
       },
-      input.builds
+      input.builds.filter((b) => b.value === "build.hp")
     );
     expect(dropping).toEqual([{ value: "build.hp", result: "changed", where: "hp" }]);
     const allRead = readCases(() => ({ ok: true }), input.cases);

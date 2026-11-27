@@ -424,8 +424,9 @@ export interface EncounterState {
    * firestore.rules keep the whole `encounter` structure DM-write-only).
    */
   events?: CombatChronicleEvent[];
-  /** Reviewed effects aimed at a PC. The campaign carries delivery; the owning
-   * character client applies each id once to its authorized combat/state doc. */
+  /** Legacy queue of reviewed effects aimed at a PC (last appended by v0.23.1). No
+   * client reads or drains it any more (#1215); the key stays so a stored campaign that
+   * still holds one loads, and the Firestore rule keeps it append-only. */
   memberEffects?: MemberCombatEffect[];
   /** Append-only source of truth for standing, target-bound combat effects. */
   effectOps?: CombatEffectOp[];

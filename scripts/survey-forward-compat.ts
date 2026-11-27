@@ -188,6 +188,20 @@ export function buildInput<State>(
       base,
       notStored
     ),
+    // A play-state key newer than the live release (#1333): the release's strict reader
+    // must keep it through its canonical round-trip, or the document is refused.
+    {
+      list: "play keys",
+      value: "conditionOrigins",
+      doc: writtenDoc({
+        ...MOCK_CHARACTER,
+        session: {
+          ...MOCK_CHARACTER.session,
+          conditions: ["frightened"],
+          conditionOrigins: { frightened: "fear" },
+        },
+      }),
+    },
     { list: "character", value: "mock", doc: base },
     ...Object.keys(DEV_SCENARIOS).flatMap((id, index) => {
       const doc = buildDevScenario(id);
@@ -231,6 +245,19 @@ export function buildInput<State>(
         character: { ...MOCK_CHARACTER.character, hpRolled: 4, hpBonus: 2 },
       }).build,
       watch: ["hp"],
+    },
+    // The Druid's known Wild Shape forms ride a top-level build key too.
+    {
+      value: "build.wildShapeForms",
+      build: serializeCharacterEnvelope({
+        ...MOCK_CHARACTER,
+        character: {
+          ...MOCK_CHARACTER.character,
+          classes: [{ classId: "druid", level: 4 }],
+          wildShapeForms: ["wolf", "giant-badger"],
+        },
+      }).build,
+      watch: ["wildShapeForms"],
     },
   ];
   return { cases, lists, builds, notStored };

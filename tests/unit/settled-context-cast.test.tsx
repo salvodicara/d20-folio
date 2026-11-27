@@ -57,7 +57,6 @@ import { makeCharacterDoc } from "./_helpers";
 
 afterEach(() => {
   usePlayPromptStore.setState({ open: {} });
-  vi.unstubAllEnvs();
   useCharacterStore.setState({ character: null });
   useCombatStatusStore.setState({ status: null, pip: null });
   usePartyRosterStore.setState({
@@ -216,7 +215,6 @@ describe("a cast before this character's fight is read (settled-context gap)", (
     "%s: waits for the fight and lands the buff in the fight",
     { timeout: 20000 },
     async (_label, campaignsRead) => {
-      vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
       const choices = await castWardingBondInTheGap(campaignsRead);
       // Warding Bond takes a willing ally (never the goblin), from the fight's list:
       // the party member who is not in this fight is not offered.

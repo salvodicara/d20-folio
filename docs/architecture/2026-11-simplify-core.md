@@ -108,9 +108,8 @@ encounters hold `effectOps`):
     `sheet-view.ts:695–810` (move them to a locale-free module). The old-UI-only views
     (`combat-log-view`, `companion-row-view`, `creation-view`, `cunning-strike-view`, …) go with the
     old UI.
-15. **The `memberEffects` drain has no production writer** ("New actions never append here",
-    `campaign-io.ts:1039`). Delete the drain (about 200 lines) once a read-only query confirms that
-    no campaign holds a non-empty `encounter.memberEffects`. Keep the type and the codec key.
+15. **The `memberEffects` drain** is deleted (#1215): a read-only survey found no queued effect,
+    and v0.23.1 was the last client to append. The type, the stored key and its rule stay.
 16. **Mechanics world vs the legacy session.** In production the world only mirrors the legacy
     session, which wins (`rebasedOnStoredVitals`). Three steps, each needing snapshots of stored
     `session.world` / `encounter.world` and the owner's yes before anything stored changes:

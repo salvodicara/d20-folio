@@ -84,6 +84,11 @@ const {
 }));
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+// The campaign's effects out of a fight are read live; this test needs none.
+vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/campaigns/campaign-effects-io")>()),
+  subscribeCampaignEffects: () => () => undefined,
+}));
 // Pin dev-bypass OFF regardless of a local `.env.local` (VITE_DEV_BYPASS_AUTH=true):
 // under bypass `useMemberCharacterDocs` / `usePartyCombatStates` resolve dev fixtures
 // instead of the mocked `getFullCharacter` / `subscribeCombatState` below, so the live

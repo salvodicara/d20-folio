@@ -572,6 +572,18 @@ const EFFECT_CASES: Record<ActivityEffectKind, EffectCase> = {
   },
   "next-attack-advantage": { action: { ...base, grantsNextAttackAdvantage: true } },
   "speed-halved": { action: { ...base, effects: [{ kind: "speed-halved" }] } },
+  "next-attack-disadvantage": {
+    action: {
+      ...base,
+      effects: [
+        {
+          kind: "next-attack-disadvantage",
+          saveOutcome: "success",
+          until: { anchor: "actor", phase: "turn-start" },
+        },
+      ],
+    },
+  },
   "save-disadvantage": {
     action: {
       ...base,

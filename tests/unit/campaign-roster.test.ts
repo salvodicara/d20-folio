@@ -1,7 +1,6 @@
 /**
  * The creatures the DM keeps between fights (M19): entries read at the untrusted
- * boundary, bounded; the documents live under the campaign, by entry id, and nothing
- * is read or written before the v0.26 rules deploy.
+ * boundary, bounded; the documents live under the campaign, by entry id.
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -39,8 +38,6 @@ const fs = vi.hoisted(() => ({
 }));
 vi.mock("firebase/firestore", () => fs);
 vi.mock("@/lib/firebase", () => ({ db: {} }));
-const rules = vi.hoisted(() => ({ v26: true }));
-vi.mock("@/lib/deployed-rules", () => ({ combatEffectsV26On: () => rules.v26 }));
 
 import {
   readRoster,
@@ -76,7 +73,6 @@ describe("a roster entry read at the boundary", () => {
 
 describe("the roster documents", () => {
   beforeEach(() => {
-    rules.v26 = true;
     fs.setDoc.mockClear();
     fs.deleteDoc.mockClear();
     fs.onSnapshot.mockClear();
@@ -107,8 +103,6 @@ describe("the roster documents", () => {
     expect(await readRoster("c1")).toEqual({
       sildar: { name: "Sildar", hp: { current: 58, max: 58 } },
     });
-    rules.v26 = false;
-    expect(await readRoster("c1")).toEqual({});
   });
 
   it("the end-of-fight write-back changes only the Hit Points, never the whole entry", async () => {
@@ -135,17 +129,8 @@ describe("the roster documents", () => {
     expect(seen).toEqual([{ sildar: {}, nameless: {} }]);
   });
 
-  it("nothing before the rules deploy, and no malformed id", async () => {
+  it("no malformed id", async () => {
     expect(await writeDmRosterEntry("c1", "bad id", { notes: "x" })).toBe(false);
-    rules.v26 = false;
-    expect(await writeRosterEntry("c1", "sildar", { name: "Sildar" })).toBe(false);
-    const seen: unknown[] = [];
-    subscribeRoster(
-      "c1",
-      (docs) => seen.push(docs),
-      () => undefined
-    );
-    expect(seen).toEqual([{}]);
-    expect(fs.onSnapshot).not.toHaveBeenCalled();
+    expect(fs.setDoc).not.toHaveBeenCalled();
   });
 });

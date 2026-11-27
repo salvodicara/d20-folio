@@ -8,6 +8,10 @@
  * fails here and names the element and the property. Where the owner has since moved the
  * look on («Lume», 2026-11-03: a hairline and a lit edge instead of the filigree and the
  * 3 px caps; the critique's text scale), the value is the new one and says so.
+ * The design reset «BG3 craft» (2026-11-26) re-pins the type scale and the button family
+ * (one serif, BG3's lit and framed glass); titles, caps and chips move with later slices.
+ * Slice 3 (type) re-pins the titles to title case at 20 px, names at 32 px, display weights
+ * at 600 and list rows (resource and action names) at the text weight, 400.
  * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
@@ -28,11 +32,11 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ],
   ["header", ".f-char", "border-top-width", "1px"],
   ["header", ".f-char", "border-top-color", "rgba(169, 130, 80, 0.5)"],
-  ["name", ".f-char-id h1", "font-size", "36px"],
-  ["name", ".f-char-id h1", "font-weight", "700"],
-  ["ability modifier", ".f-ability dd b", "font-size", "26px"],
-  ["ability modifier", ".f-ability dd b", "font-weight", "700"],
-  ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "font-size", "34px"],
+  ["name", ".f-char-id h1", "font-size", "32px"],
+  ["name", ".f-char-id h1", "font-weight", "600"],
+  ["ability modifier", ".f-ability dd b", "font-size", "24px"],
+  ["ability modifier", ".f-ability dd b", "font-weight", "600"],
+  ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "font-size", "24px"],
   ["AC", '.f-badge[data-shape="shield"] .f-badge-frame b', "color", "rgb(255, 255, 255)"],
   [
     "hex value",
@@ -40,8 +44,8 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "font-size",
     "24px",
   ],
-  ["Hit Points", ".f-char-hp-v b", "font-size", "64px"],
-  ["Hit Points", ".f-char-hp-v b", "font-weight", "700"],
+  ["Hit Points", ".f-char-hp-v b", "font-size", "52px"],
+  ["Hit Points", ".f-char-hp-v b", "font-weight", "600"],
   // the prototype's 0.533 alpha, written as a token to two places
   ["Hit Points", ".f-char-hp-v b", "text-shadow", "rgba(70, 240, 74, 0.53) 0px 0px 14px"],
   // panels: opaque with depth, the header band's padding
@@ -54,37 +58,39 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "linear-gradient(rgba(33, 26, 19, 0.97), rgba(17, 13, 10, 0.97))",
   ],
   ["panel title", ".f-play .f-pnh", "padding-top", "12px"],
-  ["resource name", ".f-res-t", "font-weight", "700"],
+  ["resource name", ".f-res-t", "font-weight", "400"],
   ["resource name", ".f-res-t", "color", "rgb(255, 255, 255)"],
   // the centre: the Cinzel tab band, the turn strip, the advice line
   ["tab band", ".f-centre > .f-tabs", "border-top-width", "0px"],
   ["tab band", ".f-centre > .f-tabs", "min-height", "56px"],
-  ["tab", ".f-centre > .f-tabs > button", "text-transform", "uppercase"],
-  ["tab", ".f-centre > .f-tabs > button", "font-size", "14px"],
-  ["turn title", ".f-turn-t", "font-weight", "900"],
-  ["turn title", ".f-turn-t", "font-size", "18px"],
+  ["tab", ".f-centre > .f-tabs > button", "text-transform", "none"],
+  ["tab", ".f-centre > .f-tabs > button", "font-size", "16px"],
+  ["turn title", ".f-turn-t", "font-weight", "600"],
+  ["turn title", ".f-turn-t", "font-size", "20px"],
   ["advice", ".f-playbook-h", "font-weight", "400"],
   ["advice", ".f-playbook-h", "color", "rgb(201, 187, 163)"],
-  // filters as underlined tabs, group headers, rows, the row button, the slot
+  // filters as the chip family's pills (design reset «BG3 craft», slice 2): the picked one is
+  // BG3's selected tile, a pale-gold line; then group headers, rows, the row button, the slot
   [
     "filter on",
     '.f-filters .f-chip[aria-pressed="true"]',
-    "box-shadow",
-    "rgb(232, 220, 196) 0px -2px 0px 0px inset",
+    "border-top-color",
+    "rgb(238, 209, 167)",
   ],
-  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "0px"],
+  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "20px"],
+  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "color", "rgb(244, 240, 234)"],
   ["group header", ".f-act-gh", "font-size", "16px"],
-  ["group header", ".f-act-gh", "text-transform", "uppercase"],
-  ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "700"],
+  ["group header", ".f-act-gh", "text-transform", "none"],
+  ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "400"],
   ["action name", ".f-act:not(.f-act-head) .f-row-t", "color", "rgb(255, 255, 255)"],
   [
     "row button",
     ".f-act > .f-btn",
     "background-image",
-    "linear-gradient(rgb(37, 30, 23), rgb(33, 27, 21))",
+    "linear-gradient(rgb(45, 35, 24) 0%, rgb(62, 48, 32) 44%, rgb(55, 43, 28) 50%, rgb(55, 43, 28) 70%, rgb(43, 34, 25) 100%)",
   ],
-  ["row button", ".f-act > .f-btn", "border-top-color", "rgb(106, 81, 48)"],
-  ["row button", ".f-act > .f-btn", "font-weight", "700"],
+  ["row button", ".f-act > .f-btn", "border-top-color", "rgb(173, 121, 71)"],
+  ["row button", ".f-act > .f-btn", "font-weight", "400"],
   ["action slot", ".f-act-slot", "width", "46px"],
 ];
 

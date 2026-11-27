@@ -136,7 +136,6 @@ function open(concentration = "") {
 }
 
 beforeEach(() => {
-  vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
   h.campaignsCb = null;
   h.effectsCb = null;
   h.live = null;
@@ -149,7 +148,6 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
-  vi.unstubAllEnvs();
 });
 
 describe("a buff left on my character out of a fight", () => {

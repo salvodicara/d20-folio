@@ -31,6 +31,18 @@ describe("the shape gate", () => {
     expect(shapeGateState()).toEqual({ closed: true, rescue: "kept" });
   });
 
+  it("a close that knew of no edits gives way to one that has edits to keep", () => {
+    const listener = vi.fn();
+    subscribeShapeGate(listener);
+    closeShapeGate({ rescue: "none" }); // a reader with no handler of its own
+    closeShapeGate({ rescue: "saving" }); // the open sheet, with an unsaved edit
+    expect(shapeGateState()).toEqual({ closed: true, rescue: "saving" });
+    closeShapeGate({ rescue: "none" });
+    closeShapeGate({ rescue: "failed" });
+    expect(shapeGateState()).toEqual({ closed: true, rescue: "saving" });
+    expect(listener).toHaveBeenCalledTimes(2);
+  });
+
   it("a failed rescue is reported, never hidden", () => {
     closeShapeGate({ rescue: "failed" });
     expect(shapeGateState()).toEqual({ closed: true, rescue: "failed" });

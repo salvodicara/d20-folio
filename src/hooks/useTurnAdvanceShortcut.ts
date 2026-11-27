@@ -45,6 +45,9 @@ export function useTurnAdvanceShortcut({
       if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
       // Never hijack arrow-key text caret movement / select navigation.
       if (isTypingTarget(e.target)) return;
+      // Nor while a dialog or menu holds the focus (its own keys come first).
+      if (e.target instanceof Element && e.target.closest("dialog, [role=dialog]"))
+        return;
       e.preventDefault();
       if (e.key === "ArrowRight") onNext();
       else onPrev();

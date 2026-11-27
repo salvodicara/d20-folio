@@ -116,6 +116,6 @@ export function localizeToastIntent(
     case "condition-removed":
       return t(key, { condition: resolveConditionName(intent.conditionId) });
     case "edit-not-saved":
-      return t(key);
+      return t(intent.kept ? "save.editKept" : key);
   }
 }

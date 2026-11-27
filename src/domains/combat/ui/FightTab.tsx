@@ -19,8 +19,11 @@ import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
+import { NextAttackNotes } from "@/domains/combat/ui/NextAttackNote";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
+import { useMonsterUses } from "@/domains/combat/ui/use-monster-uses";
+import { useMonsterActions } from "@/domains/combat/ui/use-monster-actions";
 import { useEndFight } from "@/domains/combat/ui/use-end-fight";
 import { InitiativeDialog } from "@/domains/combat/ui/InitiativeDialog";
 import { initiativePlace, lineNeighbourPlace } from "@/domains/combat/initiative-edit";
@@ -28,6 +31,9 @@ import { useMonsterCard } from "@/domains/combat/ui/use-monster-card";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
+import { partyBonuses } from "@/domains/combat/party-bonuses";
+import { FightFeed } from "@/domains/combat/ui/FightFeed";
+import { useTurnAdvanceShortcut } from "@/hooks/useTurnAdvanceShortcut";
 import {
   dmMoves,
   moves,
@@ -36,30 +42,19 @@ import {
   type Toaster,
 } from "@/domains/combat/ui/fight-moves";
 import { sessionNumbers } from "@/domains/chronicle/diary-view";
-import { useReportNames } from "@/domains/chronicle/ui/report-names";
-import { usePartyNames } from "@/domains/campaign/ui/use-party";
 import { isAttached, missingRollers } from "@/features/campaigns/combat-lifecycle";
 import { encounterRollFor } from "@/lib/play/encounter";
 import { buildEncounterView, type PcLive } from "@/features/campaigns/encounter-view";
 import { derivePcLive, hydrateMemberDoc } from "@/features/campaigns/party-stats";
 import { useMemberCharacterDocs } from "@/features/campaigns/useMemberCharacterDocs";
 import { usePartyCombatStates } from "@/features/campaigns/usePartyCombatStates";
-import { useSessionLog } from "@/features/campaigns/useSessionLog";
 import { useSessionReports } from "@/features/campaigns/useSessionReports";
 import type { Locale } from "@/lib/locale";
-import {
-  buildReport,
-  encounterFeed,
-  foldSession,
-  hideCombatants,
-} from "@/lib/session-log";
-import { localizePlayEvent } from "@/lib/views/session-report-view";
+import { buildReport, foldSession } from "@/lib/session-log";
 import { concentrationLabel } from "@/lib/views/concentration-label";
 import { useAuthStore } from "@/stores/authStore";
 import type { CampaignDoc, EncounterState } from "@/types/campaign";
 import { Button, Panel } from "@/ui";
-
-const FEED_LINES = 8;
 
 // The add-monsters sheet carries the bestiary: it loads when the DM opens it.
 const AddMonstersDialog = lazy(() =>
@@ -101,9 +96,7 @@ export function FightTab({
     },
     now
   );
-  const bonuses = Object.fromEntries(
-    Object.entries(party.pcs).map(([id, pc]) => [id, pc.initiativeBonus])
-  );
+  const bonuses = partyBonuses(party.pcs);
   const roll = rolling && (
     <RollDialog
       // Null until the party's sheets are read: the roll orders the fight by everyone's
@@ -205,7 +198,29 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
-  const dm = useDmTools(campaign, encounter, view.rows, rows, uid, isDm, locale, onToast);
+  // The DM's arrow keys pass the turn (→) and step it back (←), as on the classic screen.
+  useTurnAdvanceShortcut({
+    enabled: isDm && controls.pass,
+    empty: encounter.combatants.length === 0,
+    onNext: actions.pass,
+    onPrev: controls.back ? actions.back : () => {},
+  });
+  const dm = useDmTools(
+    campaign,
+    encounter,
+    view.rows,
+    rows,
+    uid,
+    isDm,
+    locale,
+    onToast,
+    // every hero's bonus: a typed d20 re-sorts them all before turns begin
+    partyBonuses(party.pcs)
+  );
+  // The DM's limited uses (Recharge, N/Day, legendary) under each monster line.
+  const uses = useMonsterUses(campaign.id, encounter, uid, locale, onToast);
+  // ...and its printed actions and traits (the classic one-tap monster actions).
+  const acts = useMonsterActions(campaign.id, encounter, view.rows, uid, locale, onToast);
   // The DM ends with the write-up first (classic parity); anyone else ends at once.
   const writeUp = useEndFight(
     campaign,
@@ -278,25 +293,46 @@ function LiveFight({
               <FightLine
                 row={row}
                 dm={dm.line(row)}
+                // the line's own tools, under its name (Foundry's and D&D Beyond's
+                // encounter rows): the DM's printed actions and the limited uses, then the
+                // area spell on the monster's turn
                 action={
-                  monsterTurn &&
-                  row.ids.includes(monsterTurn.id) && (
-                    <MonsterZoneCast
-                      campaignId={campaign.id}
-                      monsterId={monsterTurn.id}
-                      monsterName={
-                        view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
-                      }
-                      defaultDc={monsterSpellDc(
-                        monsterStatBlockOf(encounter, monsterTurn.id)
+                  (isDm || monsterTurn) && (
+                    <>
+                      {isDm && acts.stripFor(row.ids)}
+                      {isDm && uses.stripFor(row.ids)}
+                      {monsterTurn && row.ids.includes(monsterTurn.id) && (
+                        <MonsterZoneCast
+                          campaignId={campaign.id}
+                          monsterId={monsterTurn.id}
+                          monsterName={
+                            view.rows.find((r) => r.id === monsterTurn.id)?.name ?? ""
+                          }
+                          defaultDc={monsterSpellDc(
+                            monsterStatBlockOf(encounter, monsterTurn.id)
+                          )}
+                          locale={locale}
+                          onToast={onToast}
+                        />
                       )}
-                      locale={locale}
-                      onToast={onToast}
-                    />
+                    </>
                   )
                 }
               />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* a monster's own next attack roll with Disadvantage (Ray of
+                  Enfeeblement on a success, Sap): the DM spends it when rolling */}
+              {isDm && (
+                <NextAttackNotes
+                  campaignId={campaign.id}
+                  effectOps={encounter.effectOps}
+                  targetIds={row.ids.filter(
+                    (id) => view.rows.find((r) => r.id === id)?.kind === "monster"
+                  )}
+                  nameOf={(id) => view.rows.find((r) => r.id === id)?.name ?? ""}
+                  locale={locale}
+                />
+              )}
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
                 <MonsterZoneHits
@@ -326,14 +362,16 @@ function LiveFight({
         </Panel>
         <p className="f-quiet">{t("fight.anyonePasses")}</p>
         {dm.dialogs}
+        {isDm && acts.dialog}
         {writeUp.dialog}
       </div>
-      <Feed
+      <FightFeed
         campaign={campaign}
         encounter={encounter}
         isDm={isDm}
         uid={uid}
         locale={locale}
+        onToast={onToast}
       />
     </div>
   );
@@ -353,7 +391,9 @@ function useDmTools(
   uid: string,
   isDm: boolean,
   locale: Locale,
-  onToast: Toaster
+  onToast: Toaster,
+  /** Every hero's initiative bonus (the planner re-sorts them all on a roll). */
+  bonuses: Readonly<Record<string, number>>
 ) {
   const { t } = useTranslation();
   const move = useFightMove(onToast);
@@ -413,6 +453,23 @@ function useDmTools(
             setHitting(null);
             card.open(target.id);
           }}
+          onDeathSave={(target, outcome) =>
+            target.memberUid &&
+            target.characterId &&
+            move(
+              dmMoves.deathSave(
+                campaign.id,
+                uid,
+                {
+                  memberUid: target.memberUid,
+                  characterId: target.characterId,
+                  maxHp: target.hp.max,
+                },
+                outcome
+              ),
+              t(`fight.dm.deathSaveDone.${outcome}`, { name: target.name })
+            )
+          }
           onHit={(chosenTargets, entry) => {
             move(
               dmMoves.hit(campaign.id, uid, planDmHit(chosenTargets, entry)),
@@ -490,7 +547,7 @@ function useDmTools(
                     uid,
                     hero.memberUid,
                     value,
-                    { [hero.id]: hero.initiativeBonus ?? 0 },
+                    bonuses,
                     // the new total re-sorts the line, as a monster's number does
                     initiativePlace(
                       encounter,
@@ -523,6 +580,7 @@ function useDmTools(
           <AddMonstersDialog
             campaign={campaign}
             locale={locale}
+            uid={uid}
             onClose={() => setAdding(false)}
             onAdd={(inputs, label) =>
               move(
@@ -593,59 +651,6 @@ function useParty(
     );
     return { pcs, concentration, ready };
   }, [refs, docs, states, encounterInit, locale, effectsOn]);
-}
-
-/** What has happened in this fight, newest first: the same feed every member reads. */
-function Feed({
-  campaign,
-  encounter,
-  isDm,
-  uid,
-  locale,
-}: {
-  campaign: CampaignDoc;
-  encounter: EncounterState;
-  isDm: boolean;
-  uid: string | undefined;
-  locale: Locale;
-}) {
-  const { t } = useTranslation();
-  const names = useReportNames(campaign, locale, usePartyNames(campaign));
-  const log = useSessionLog(campaign.id, uid, campaign.dmUid, encounter.epoch);
-  const encounterId = String(encounter.epoch);
-  const lines = useMemo(() => {
-    const all = encounterFeed(log.entries, encounterId);
-    if (isDm) return all;
-    return hideCombatants(
-      all,
-      new Set(encounter.combatants.filter((c) => c.hidden).map((c) => c.id))
-    );
-  }, [log.entries, encounterId, isDm, encounter.combatants]);
-  const foes = useMemo(() => {
-    const start = log.entries.find(
-      (e) => e.event.kind === "encounter-start" && e.event.encounterId === encounterId
-    );
-    return start?.event.kind === "encounter-start" ? (start.event.names ?? {}) : {};
-  }, [log.entries, encounterId]);
-  const who = (id: string | undefined): string =>
-    (id && (foes[id] ?? names.pc(id))) || t("combatChronicle.someone");
-  const shown = lines.slice(-FEED_LINES).reverse();
-  return (
-    <Panel color="log" title={t("fight.feedTitle")}>
-      {shown.length === 0 && <p className="f-quiet">{t("fight.feedEmpty")}</p>}
-      {shown.map((line) => {
-        const text = localizePlayEvent(line.event, t, who, names);
-        if (!text) return null;
-        return (
-          <p key={line.id} className="f-tl">
-            <span>
-              {line.round ? t("fight.roundLine", { n: line.round, line: text }) : text}
-            </span>
-          </p>
-        );
-      })}
-    </Panel>
-  );
 }
 
 function IdleFight({

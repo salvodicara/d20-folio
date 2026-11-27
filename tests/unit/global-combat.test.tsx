@@ -40,6 +40,11 @@ const h = vi.hoisted(() => {
 });
 
 vi.mock("@/lib/firebase", () => ({ db: {} }));
+// The campaign's effects out of a fight are read live; this test needs none.
+vi.mock("@/features/campaigns/campaign-effects-io", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/features/campaigns/campaign-effects-io")>()),
+  subscribeCampaignEffects: () => () => undefined,
+}));
 vi.mock("@/features/campaigns/campaign-io", () => ({
   revokePersistentCombatEffectsBySource: h.revokePersistentCombatEffectsBySource,
   revokePersistentCombatEffect: h.revokePersistentCombatEffect,

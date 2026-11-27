@@ -6,9 +6,30 @@
  * the limit: the sheet allows changes at any time.
  */
 import { classTables } from "@/data/classes";
+import { restCantripSwaps } from "@/lib/rest-cantrip-swap";
+import { canSwapFormOnRest } from "@/lib/wild-shape-forms";
 import type { CharacterDoc } from "@/types/character";
 
 export type LongRestChange = "one" | "any";
+
+/**
+ * The title of the prepare sheet, as an i18n key. After a Long Rest it names what the
+ * sheet holds (D&D Beyond's Long Rest dialog, one section per «you may change» item):
+ * spells only keep «Prepared spells»; anything else to change (a Druid's known Wild
+ * Shape form, a lineage cantrip) makes it «After the Long Rest». Outside a rest it is
+ * «Manage spells».
+ */
+export function prepareSheetTitle(
+  doc: CharacterDoc,
+  step: { longRest?: LongRestChange; afterLongRest?: boolean }
+): string {
+  const others =
+    step.afterLongRest === true &&
+    (restCantripSwaps(doc).length > 0 || canSwapFormOnRest(doc));
+  if (others) return "play.rest.afterTitle";
+  if (step.longRest) return "create.screen.preparedSpells";
+  return step.afterLongRest ? "play.rest.afterTitle" : "play.spells.manage";
+}
 
 export function longRestChange(doc: CharacterDoc): LongRestChange | null {
   const rules = doc.character.classes.map(

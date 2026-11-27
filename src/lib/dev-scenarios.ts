@@ -107,6 +107,8 @@ export interface ScenarioSpec {
    * character.
    */
   owesClassPicks?: boolean;
+  /** The Druid's known Wild Shape forms (beast ids). */
+  wildShapeForms?: string[];
   /** `while-active` feature keys to start toggled ON. */
   activeFeatures?: string[];
   /** Single-select `choice-grant-bundle` picks to start with, `bundleKey → optionId`
@@ -326,6 +328,7 @@ export function buildScenario(spec: ScenarioSpec): CharacterDoc {
     // The chosen tool ids land in `toolChoices` (the id-based home); the tool
     // PROFICIENCY is DERIVED from them at render (no baked free-text string).
     ...(toolKit?.toolChoices ? { toolChoices: toolKit.toolChoices } : {}),
+    ...(spec.wildShapeForms ? { wildShapeForms: [...spec.wildShapeForms] } : {}),
     features: spec.extraFeatures ? [...features, ...spec.extraFeatures] : features,
     combatAlgorithm: [],
     customConditions: [],
@@ -691,6 +694,33 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "Owed Expertise: the banner asks 4 Expertise skills (Bard) and offers the proficient skills; answering raises them.",
   },
+  "paladin-5-no-class-picks": {
+    // A Paladin 5 as the classic creation left one before #1397 (it asked no class
+    // picks): «Scelte da completare» owes two Weapon Masteries and the Fighting
+    // Style. Visit `/characters/scn-paladin-5-no-class-picks`.
+    name: "Ser Hale, Unsworn",
+    raceId: "human",
+    classId: "paladin",
+    subclassId: "oath-of-devotion",
+    level: 5,
+    background: "soldier",
+    abilityScores: { STR: 16, DEX: 10, CON: 14, INT: 8, WIS: 10, CHA: 16 },
+    weapons: [
+      { srdId: "longsword", quantity: 1 },
+      { srdId: "javelin", quantity: 6 },
+    ],
+    equipment: [
+      { srdId: "chain-mail", equipped: true },
+      { srdId: "shield", equipped: true },
+    ],
+    spells: [
+      { srdId: "bless", prepared: true },
+      { srdId: "cure-wounds", prepared: true },
+    ],
+    owesClassPicks: true,
+    exercises:
+      "Owed class picks: the banner asks 2 Weapon Masteries (the Longsword and Javelins first) and a Fighting Style; saving stores them and the banner goes.",
+  },
   "bard-8": {
     // A Bard 8 holding its two Expertise skills: the level-up to 9 asks two more.
     // Visit `/characters/scn-bard-8` and level up.
@@ -828,6 +858,42 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
     exercises:
       "High Elf: the Long Rest offers to replace the lineage cantrip (Prestidigitation) with another Wizard cantrip.",
   },
+  "druid-forms-owed": {
+    // A Druid 3 saved before known forms were stored: Wild Shape offers every beast
+    // up to CR 1/4, «Scelte da completare» owes 4 forms, and the level-up to 4 asks
+    // for 6. Visit `/characters/scn-druid-forms-owed`.
+    name: "Rowan, the Unsettled",
+    raceId: "halfling",
+    classId: "druid",
+    level: 3,
+    background: "sage",
+    abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 10, WIS: 16, CHA: 8 },
+    grantBundleChoices: { "druid-primal-order": "warden" },
+    spells: ["cure-wounds", "entangle", "faerie-fire", "moonbeam"].map((srdId) => ({
+      srdId,
+      prepared: true,
+    })),
+    exercises:
+      "Wild Shape known forms: none chosen, the picker offers every beast up to CR 1/4; «Scelte da completare» owes 4 forms; the level-up to 4 asks for 6.",
+  },
+  "druid-known-forms": {
+    // A Druid 4 with its six known forms: Wild Shape offers only those, and the Long
+    // Rest may swap one. Visit `/characters/scn-druid-known-forms`.
+    name: "Wren, the Six-Shaped",
+    raceId: "halfling",
+    classId: "druid",
+    level: 4,
+    background: "sage",
+    abilityScores: { STR: 10, DEX: 14, CON: 14, INT: 10, WIS: 17, CHA: 8 },
+    grantBundleChoices: { "druid-primal-order": "warden" },
+    spells: ["cure-wounds", "entangle", "faerie-fire", "moonbeam"].map((srdId) => ({
+      srdId,
+      prepared: true,
+    })),
+    wildShapeForms: ["wolf", "giant-badger", "panther", "ape", "black-bear", "crocodile"],
+    exercises:
+      "Wild Shape known forms: the picker offers the six known forms; after a Long Rest one may be swapped for another beast up to CR 1/2.",
+  },
   "xray-ring": {
     // The Ring of X-ray Vision worn and attuned: its Magic action lights 1 minute
     // of X-ray vision (30 ft) on the Senses rail. Visit `/characters/scn-xray-ring`.
@@ -950,6 +1016,8 @@ const PUBLIC_SCENARIOS: Record<string, ScenarioSpec> = {
       // A failed save's state (Slow) and a hit's (Ray of Frost) for the tray e2e.
       { srdId: "slow", prepared: true },
       { srdId: "ray-of-frost" },
+      // A single-target save whose failure weakens the target (Ray of Enfeeblement).
+      { srdId: "ray-of-enfeeblement", prepared: true },
       // An ally-or-enemy save state with a willing ally (Enlarge/Reduce).
       { srdId: "enlarge-reduce", prepared: true },
       // A buff that outlasts a fight, cast on the party out of one (Mage Armor).

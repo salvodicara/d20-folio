@@ -67,7 +67,6 @@ describe("sourced conditions from the tray", () => {
   });
 
   it("its Frightened is written to the fight on the monster", async () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     const plan = {
       effect: null,
       save: { ability: "WIS", dc: 15, onSave: "none" },
@@ -99,6 +98,5 @@ describe("sourced conditions from the tray", () => {
         bindings: { saveDc: 15 },
       }),
     ]);
-    vi.unstubAllEnvs();
   });
 });

@@ -26,7 +26,6 @@
  */
 import type { SessionState } from "@/types/character";
 import type { CombatState } from "@/types/combat-state";
-import type { MemberCombatEffect } from "@/types/campaign";
 import { applyDamage, applyHealing, clampHp, clampTemp } from "@/lib/combat-hp";
 import { diedInPlay } from "@/lib/character-status";
 import {
@@ -261,47 +260,6 @@ export function defaultCombatState(max: number): CombatState {
     // envelope decodes to the default session. Without it the write seam refuses the
     // document (`combat-state-io.combatStateWriteData`).
     playState: { version: 1, state: {} },
-  };
-}
-
-/** Apply campaign-delivered effects exactly once for one encounter epoch. */
-export function reduceMemberCombatEffects(
-  state: CombatState,
-  epoch: number,
-  effects: ReadonlyArray<MemberCombatEffect>,
-  maxHp: number
-): CombatState {
-  const prior =
-    state.appliedEncounterEffects?.epoch === epoch
-      ? state.appliedEncounterEffects.ids
-      : [];
-  const seen = new Set(prior);
-  let next = state;
-  for (const effect of effects) {
-    if (seen.has(effect.id)) continue;
-    if (effect.kind === "condition") {
-      next = reduceCondition(next, {
-        kind: effect.active ? "add" : "remove",
-        conditionId: effect.conditionId,
-      });
-    } else if (effect.kind === "temp-hp") {
-      next = {
-        ...next,
-        hp: { ...next.hp, temp: Math.max(next.hp.temp, effect.amount) },
-      };
-    } else {
-      next = reduceHpDelta(
-        next,
-        { kind: effect.kind === "healing" ? "heal" : "damage", amount: effect.amount },
-        maxHp
-      );
-    }
-    seen.add(effect.id);
-  }
-  if (seen.size === prior.length && prior.every((id) => seen.has(id))) return next;
-  return {
-    ...next,
-    appliedEncounterEffects: { epoch, ids: [...seen] },
   };
 }
 

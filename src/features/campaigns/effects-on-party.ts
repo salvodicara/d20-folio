@@ -7,7 +7,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { subscribeCampaignEffects } from "@/features/campaigns/campaign-effects-io";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { diagnosticsLog } from "@/lib/diagnostics";
 import type { CampaignEffectDoc } from "@/lib/play/campaign-effects";
 import { effectsOnTarget, type TargetEffectSources } from "@/lib/play/effective-doc";
@@ -38,11 +37,11 @@ export function campaignEffectSources(
   };
 }
 
-/** The campaign's effects out of a fight, live (none without this release's rules). */
+/** The campaign's effects out of a fight, live. */
 export function useCampaignEffectDocs(
   campaignId: string | null | undefined
 ): ReadonlyArray<CampaignEffectDoc> {
-  const id = campaignId && combatEffectsV26On() ? campaignId : null;
+  const id = campaignId || null;
   const [read, setRead] = useState<{ id: string; docs: CampaignEffectDoc[] } | null>(
     null
   );

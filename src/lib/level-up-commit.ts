@@ -50,7 +50,7 @@ import {
 import { resolveGrantSourcesForFeatures } from "@/lib/resolve-grant-sources";
 import { applySubclassSpellcasting } from "@/lib/subclass-spellcasting";
 import { hasFightingStyleFeat } from "@/lib/fighting-style";
-import { EXPERTISE_PICKS_PER_GRANT, applyExpertisePicks } from "@/lib/expertise-pick";
+import { applyExpertisePicks } from "@/lib/expertise-pick";
 import {
   applyAsiToScores,
   isAsiChoiceComplete,
@@ -61,6 +61,7 @@ import { applyFeatSpellChange } from "@/lib/feat-spell-change";
 import { classEntryLevel, getClasses, totalLevel } from "@/lib/classes";
 import type { MulticlassEntryGrants } from "@/lib/multiclass";
 import { preparedLevelledCount } from "@/lib/wizard-spellbook";
+import { learnWildShapeForms } from "@/lib/wild-shape-forms";
 
 /** What the level asks, as the player answered it (empty / null when not asked). */
 export interface LevelUpPicks {
@@ -99,6 +100,8 @@ export interface LevelUpPicks {
   fightingStyleSwap?: SpellSwapChoice;
   metamagicSwap?: SpellSwapChoice;
   invocationSwap?: SpellSwapChoice;
+  /** The Druid's Wild Shape forms this level adds; absent: none. */
+  wildShapeForms?: readonly string[];
   bundlePicks: Readonly<Record<string, string>>;
 }
 
@@ -162,7 +165,8 @@ export function applyClassPicks(
     }
   }
 
-  if (expertisePicks.length === EXPERTISE_PICKS_PER_GRANT) {
+  // Two per grant: a Bard created at 9 or a Rogue at 6 brings four at once.
+  if (expertisePicks.length > 0) {
     updated = {
       ...updated,
       skills: applyExpertisePicks(updated.skills, expertisePicks),
@@ -470,6 +474,14 @@ export function commitLevelUp(doc: CharacterDoc, picks: LevelUpPicks): Character
         spells: applySpellSwap(updated.spells, swap.removeId, swap.replaceId),
       };
     }
+  }
+
+  // Wild Shape's known forms this level adds (Beast Shapes «Known Forms»).
+  if (picks.wildShapeForms?.length) {
+    updated = learnWildShapeForms(
+      { ...doc, character: updated },
+      picks.wildShapeForms
+    ).character;
   }
 
   if (updated.levelUpChecklist && handledChecklistKeys.length > 0) {

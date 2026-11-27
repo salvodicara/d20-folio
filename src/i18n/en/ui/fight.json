@@ -7,6 +7,7 @@
     "down": "Down",
     "feedTitle": "In this fight",
     "feedEmpty": "Nothing yet: actions show up here as you play.",
+    "feedLineMenu": "What to do with: {{line}}",
     "roundLine": "Round {{n}} · {{line}}",
     "idleTitle": "No fight running",
     "idleHelp": "It starts by itself when the first player rolls initiative from their sheet. Anyone who comes later joins anyway.",
@@ -47,6 +48,12 @@
       "cast": "{{name}} casts {{spell}}",
       "inside": "Inside",
       "applied": "{{amount}} damage to {{name}}"
+    },
+    "nextAttack": {
+      "title": "Next attack roll",
+      "mine": "{{mode}} on your next attack roll ({{sources}}).",
+      "theirs": "{{name}}: {{mode}} on its next attack roll ({{sources}}).",
+      "usedToast": "Used: {{mode}}"
     },
     "dm": {
       "addMonsters": "Add monsters",
@@ -114,7 +121,17 @@
       "tempDone_one": "{{amount}} temporary HP on {{count}} creature",
       "tempDone_other": "{{amount}} temporary HP on {{count}} creatures",
       "card": "Monster card",
-      "cardDone": "Card saved: {{name}}"
+      "cardDone": "Card saved: {{name}}",
+      "deathSaves": "Death saving throws",
+      "deathSaveMarks": "Successes {{successes}}/3 · Failures {{failures}}/3",
+      "deathSaveTick": {
+        "success": "+1 success",
+        "failure": "+1 failure"
+      },
+      "deathSaveDone": {
+        "success": "Death save success for {{name}}, marked by the DM",
+        "failure": "Death save failure for {{name}}, marked by the DM"
+      }
     },
     "rollWaiting": "Reading the party's bonuses…",
     "refused": {
@@ -129,6 +146,38 @@
       "ally_one": "{{count}} ally",
       "ally_other": "{{count}} allies",
       "revealed": "{{count}} with HP shown"
+    },
+    "uses": {
+      "title": "Limited uses",
+      "rollRecharge": "Roll recharge: {{name}}",
+      "legendary": "Legendary actions {{left}}/{{max}}",
+      "regain": "Regain legendary actions",
+      "spentDone": "{{name}}: used",
+      "rechargeBack": "Recharge {{d6}}: {{name}} is back",
+      "rechargeMiss": "Recharge {{d6}}: {{name}} stays spent",
+      "regainDone": "Legendary actions regained: {{name}}",
+      "legendarySpent": "Legendary action used: {{name}}",
+      "bardicSpent": "Bardic Inspiration {{die}} spent: {{name}}"
+    },
+    "actions": {
+      "title": "{{name}}: actions",
+      "applied": "{{name}}: applied",
+      "traits": "{{name}}: traits",
+      "rowDamage_one": "{{count}} damage",
+      "rowDamage_other": "{{count}} damage",
+      "group": {
+        "heroes": "Heroes",
+        "ownSide": "Its own side"
+      }
+    },
+    "custom": {
+      "new": "New monster",
+      "crHelp": "0 to 30, or 1/8, 1/4, 1/2",
+      "edit": "Edit: {{name}}",
+      "delete": "Delete: {{name}}",
+      "deleteBody": "It leaves your monsters. Creatures already in a fight stay.",
+      "savedDone": "Saved to your monsters: {{name}}",
+      "deletedDone": "Deleted: {{name}}"
     }
   }
 }

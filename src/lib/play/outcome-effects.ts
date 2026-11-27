@@ -18,6 +18,7 @@ const STATE_KINDS = new Set([
   "speed-zero",
   "speed-halved",
   "next-attack-advantage",
+  "next-attack-disadvantage",
   "damage-roll-penalty",
   "save-disadvantage",
 ]);

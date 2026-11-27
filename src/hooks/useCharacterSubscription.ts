@@ -28,8 +28,10 @@ import { useUndoStore } from "@/stores/undoStore";
 import {
   subscribeToCharacter,
   createDebouncedSave,
+  newWriteId,
   saveStatusCallbacks,
   type DebouncedSaveHandle,
+  type WriteStamp,
 } from "@/lib/firestore";
 import {
   canonicalJsonEquals,
@@ -59,7 +61,11 @@ import { DEV_BYPASS_AUTH as IMPORTED_DEV_BYPASS_AUTH } from "@/lib/dev-bypass";
 import { MOCK_CHARACTER, MOCK_COMBAT_ROUND } from "@/lib/mock";
 import { isDevFixtureId, loadDevFixture } from "@/lib/dev-fixtures";
 import { isDevScenarioRouteId } from "@/lib/dev-scenario-id";
-import { closeShapeGate, settleShapeGateRescue, writesFenced } from "@/lib/shape-gate";
+import { closeShapeGate, settleShapeGateRescue } from "@/lib/shape-gate";
+import {
+  createConflictRescue,
+  type ConflictRescue,
+} from "@/features/character/conflict-rescue";
 import { CHARACTER_SCHEMA, PLAY_STATE_VERSION } from "@/lib/shape-numbers";
 import {
   dropRescueCopy,
@@ -118,6 +124,23 @@ function parentDomainKey(doc: CharacterDoc): unknown {
     shared: doc.shared,
     status: doc.status,
   };
+}
+
+/**
+ * #1414 — whether a server-confirmed sheet shows that a traced write (a save trace, or
+ * a copy kept from a lost save) landed. With the write's id (the write chain, #1413):
+ * the sheet carries it, or was built directly on it (`baseWriteId`). A sheet that only
+ * reached the write's generation is no proof: another device's save looks the same.
+ * Without an id (a trace or copy from an older build): the generation, as before.
+ */
+function writeLanded(
+  doc: CharacterDoc,
+  baseWriteId: string | null,
+  traced: { revision?: number; writeId?: string }
+): boolean {
+  if (traced.writeId !== undefined)
+    return doc.writeId === traced.writeId || baseWriteId === traced.writeId;
+  return traced.revision !== undefined && doc.revision >= traced.revision;
 }
 
 /**
@@ -228,6 +251,9 @@ export function useCharacterSubscription(characterId: string | undefined): void 
   // #1276 — whether this tab has sent a build write since the sheet loaded: until then a
   // stored sheet reaching a kept copy's generation can only be that lost write landing.
   const sentSinceLoadRef = useRef(false);
+  // #1403 — a build save refused as a revision conflict is kept as a rescue copy. Owned
+  // by the subscription effect (it sees the server's sheet); the autosave reports to it.
+  const conflictRescueRef = useRef<ConflictRescue | null>(null);
 
   /**
    * True while setCharacter() is being called from an incoming Firestore
@@ -438,16 +464,57 @@ export function useCharacterSubscription(characterId: string | undefined): void 
      * a snapshot from another device pulls the cursor forward through the `max` below.
      */
     let sentRevisionCursor = 0;
+    // The write chain (#1413), kept with the cursor and reset with it: the id of the
+    // last write this tab sent. While that write is ahead of the server's sheet, the
+    // next one builds on it; otherwise on the write the server's sheet names.
+    let lastSentWriteId: string | null = null;
     const acknowledgedRevision = (): number =>
       reconciler.current().parentRemote?.revision ?? 0;
-    const nextRevision = (): number => {
-      sentRevisionCursor = Math.max(sentRevisionCursor, acknowledgedRevision());
-      return ++sentRevisionCursor;
+    const nextRevision = (): WriteStamp => {
+      const acknowledged = acknowledgedRevision();
+      const baseWriteId =
+        sentRevisionCursor > acknowledged && lastSentWriteId !== null
+          ? lastSentWriteId
+          : (reconciler.current().parentRemote?.writeId ?? null);
+      sentRevisionCursor = Math.max(sentRevisionCursor, acknowledged);
+      lastSentWriteId = newWriteId();
+      return { revision: ++sentRevisionCursor, writeId: lastSentWriteId, baseWriteId };
     };
     const resetRevisionCursor = (): void => {
+      // Back on the server's generation, so the next write builds on the server's id.
       sentRevisionCursor = acknowledgedRevision();
     };
     resetRevisionCursorRef.current = resetRevisionCursor;
+
+    // #1403 — keep a conflict-refused build edit as a build-only rescue copy (no
+    // `revision`: a stored sheet at that generation is the OTHER device's, so the
+    // lost-save proof below must never drop it).
+    conflictRescueRef.current = createConflictRescue({
+      keep: async (payload) => {
+        if (readRescueCopy(user.uid, characterId, Date.now())) return null;
+        const { serializeCharacterEnvelope } = await import("@/lib/character-codec");
+        const envelope = serializeCharacterEnvelope(payload);
+        const savedAt = Date.now();
+        const kept = keepRescueCopy(user.uid, characterId, {
+          part: "build",
+          savedAt,
+          schema: CHARACTER_SCHEMA,
+          playVersion: PLAY_STATE_VERSION,
+          build: envelope.build,
+          state: envelope.state,
+        });
+        return kept ? savedAt : null;
+      },
+      drop: (savedAt) => {
+        if (readRescueCopy(user.uid, characterId, Date.now())?.savedAt === savedAt)
+          dropRescueCopy(user.uid, characterId);
+      },
+      notify: (notice) =>
+        useToastStore.getState().showToast({
+          intent: { kind: "edit-not-saved", kept: notice === "kept" },
+          duration: 8000,
+        }),
+    });
 
     // Create debounced save for auto-persistence
     debouncedSaveRef.current = createDebouncedSave(
@@ -480,13 +547,14 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       };
       return saver
         .sendWholeSheet(sheet, source, {
-          onSend: (revision) => {
+          onSend: (revision, writeId) => {
             sentAt = revision;
             sentSinceLoadRef.current = true;
             keepUnackedSave(user.uid, characterId, {
               character: sheet.character,
               session: sheet.session,
               revision,
+              writeId,
               at: Date.now(),
               whole: true,
             });
@@ -733,8 +801,12 @@ export function useCharacterSubscription(characterId: string | undefined): void 
 
     // #1320 — a document on the server is in a newer shape than this client knows: stop
     // every write and keep this tab's unsaved edits as a rescue copy on the device.
+    // Once per sheet, not once per gate: another reader (the party's play states) may
+    // have closed the gate first, knowing of no unsaved edit; this sheet still keeps its own.
+    let gateHandled = false;
     const tooNew = (): void => {
-      if (writesFenced()) return;
+      if (gateHandled) return;
+      gateHandled = true;
       const reconciliation = reconciler.current();
       const refused = refusedPayloadRef.current;
       const shown = useCharacterStore.getState().character;
@@ -771,8 +843,8 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         return;
       }
       closeShapeGate({ rescue: "saving" });
-      void import("@/lib/character-codec").then(
-        ({ serializeCharacterEnvelope }) => {
+      void import("@/lib/character-codec")
+        .then(({ serializeCharacterEnvelope }) => {
           const envelope = serializeCharacterEnvelope(local);
           const kept = keepRescueCopy(user.uid, characterId, {
             // Unsaved play edits only exist when the play document had writes pending.
@@ -794,9 +866,10 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             dropUnackedPlay(user.uid, characterId);
           }
           settleShapeGateRescue(kept ? "kept" : "failed");
-        },
-        () => settleShapeGateRescue("failed")
-      );
+        })
+        // A copy that cannot be built (an unreadable trace) or a chunk that cannot load:
+        // say so, never leave the Reload button waiting on «saving».
+        .catch(() => settleShapeGateRescue("failed"));
     };
 
     // #1276 — a save this device sent and never saw acknowledged, gone from the queue
@@ -806,37 +879,48 @@ export function useCharacterSubscription(characterId: string | undefined): void 
     // The trace stays until the copy is kept, so a shape gate closing meanwhile still
     // finds it.
     const rescueLostSave = (lost: UnackedSave): void => {
-      void import("@/lib/character-codec").then(({ serializeCharacterEnvelope }) => {
-        if (
-          quarantined ||
-          readUnackedSave(user.uid, characterId)?.revision !== lost.revision
-        )
-          return;
-        const retire = (): void => {
-          dropUnackedSave(user.uid, characterId);
-          if (lost.whole) dropUnackedPlay(user.uid, characterId);
-        };
-        if (readRescueCopy(user.uid, characterId, Date.now())) {
-          retire();
-          return;
-        }
-        const envelope = serializeCharacterEnvelope({
-          character: lost.character,
-          session: lost.session,
-        } as CharacterDoc);
-        const kept = keepRescueCopy(user.uid, characterId, {
-          // A level-up rewrote the play state too; a build save did not.
-          part: lost.whole ? "all" : "build",
-          revision: lost.revision,
-          savedAt: lost.at ?? Date.now(),
-          schema: CHARACTER_SCHEMA,
-          playVersion: PLAY_STATE_VERSION,
-          build: envelope.build,
-          state: envelope.state,
+      const retire = (): void => {
+        dropUnackedSave(user.uid, characterId);
+        if (lost.whole) dropUnackedPlay(user.uid, characterId);
+      };
+      void import("@/lib/character-codec")
+        .then(({ serializeCharacterEnvelope }) => {
+          if (
+            quarantined ||
+            readUnackedSave(user.uid, characterId)?.revision !== lost.revision
+          )
+            return;
+          if (readRescueCopy(user.uid, characterId, Date.now())) {
+            retire();
+            return;
+          }
+          const envelope = serializeCharacterEnvelope({
+            character: lost.character,
+            session: lost.session,
+          } as CharacterDoc);
+          const kept = keepRescueCopy(user.uid, characterId, {
+            // A level-up rewrote the play state too; a build save did not.
+            part: lost.whole ? "all" : "build",
+            revision: lost.revision,
+            ...(lost.writeId !== undefined ? { writeId: lost.writeId } : {}),
+            savedAt: lost.at ?? Date.now(),
+            schema: CHARACTER_SCHEMA,
+            playVersion: PLAY_STATE_VERSION,
+            build: envelope.build,
+            state: envelope.state,
+          });
+          // Kept: the trace has done its job. Not kept (storage full): it stays.
+          if (kept) retire();
+        })
+        // A trace this build cannot read (left by an older one) can never become a
+        // copy: retire it, so it does not throw again on every load.
+        .catch((err: unknown) => {
+          diagnosticsLog("warn", "character.unreadable-trace", {
+            message: err instanceof Error ? err.message : String(err),
+          });
+          if (readUnackedSave(user.uid, characterId)?.revision === lost.revision)
+            retire();
         });
-        // Kept: the trace has done its job. Not kept (storage full): it stays.
-        if (kept) retire();
-      });
     };
     // Only the FIRST server-confirmed sheet of this load decides: while the reopened
     // tab's queue still holds the save, its snapshots carry `hasPendingWrites`, and a
@@ -852,30 +936,37 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         if (quarantined) return;
         lastPendingRef.current.parent = meta.hasPendingWrites;
         pendingParentRef.current = meta.hasPendingWrites ? doc : null;
-        // A SERVER-confirmed sheet at or past the traced save's generation has taken it
-        // (the tab's own optimistic echo carries the new generation too, and proves
-        // nothing).
+        // A SERVER-confirmed sheet that shows the traced save landed retires its trace
+        // (the tab's own optimistic echo proves nothing). #1414: a sheet that merely
+        // reached the save's generation is no proof, since another device's save looks
+        // the same; the save's own id is.
         const trace = readUnackedSave(user.uid, characterId);
-        if (!meta.hasPendingWrites && doc && trace && doc.revision >= trace.revision)
+        if (
+          !meta.hasPendingWrites &&
+          doc &&
+          trace &&
+          writeLanded(doc, meta.baseWriteId, trace)
+        )
           dropUnackedSave(user.uid, characterId);
         if (!meta.hasPendingWrites && doc && !loadChecked) {
           loadChecked = true;
-          if (trace && doc.revision < trace.revision) rescueLostSave(trace);
+          if (trace && !writeLanded(doc, meta.baseWriteId, trace)) rescueLostSave(trace);
         }
         // The same proof for a copy kept from a lost save (another tab of this device
         // still had it in flight): it landed after all. Once this tab has sent its own
-        // write, that generation proves nothing.
+        // write, an older copy's generation proves nothing.
         const kept = doc ? readRescueCopy(user.uid, characterId, Date.now()) : null;
         if (
           !meta.hasPendingWrites &&
           !sentSinceLoadRef.current &&
           doc &&
-          kept?.revision !== undefined &&
-          doc.revision >= kept.revision
+          kept &&
+          writeLanded(doc, meta.baseWriteId, kept)
         )
           dropRescueCopy(user.uid, characterId);
         // A server snapshot in a shape this client knows: a held refusal was an ordinary
-        // conflict (#1203), not a newer shape.
+        // conflict (#1203), not a newer shape. Whether it is kept is decided here (#1403).
+        conflictRescueRef.current?.snapshot(doc, meta.hasPendingWrites);
         if (!meta.hasPendingWrites) refusedPayloadRef.current = null;
         // Whether this character is in a campaign (#1217): solo play never waits for a
         // campaigns read that keeps failing.
@@ -889,6 +980,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
         // A12 — surface subscription errors (permission denied, network) instead
         // of silently leaving the sheet stuck on "loading".
         console.error("Character subscription error", err);
+        conflictRescueRef.current?.listenerFailed();
         quarantine(err.message);
       },
       tooNew
@@ -981,6 +1073,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
       reconcilerRef.current = null;
       republishRef.current = () => {};
       resetRevisionCursorRef.current = () => {};
+      conflictRescueRef.current = null;
       setCharacter(null);
       setDiagnosticsContext({ characterId: undefined });
     };
@@ -1069,6 +1162,7 @@ export function useCharacterSubscription(characterId: string | undefined): void 
             onSend: (sent) => {
               sentSinceLoadRef.current = true;
               reconcilerRef.current?.markParentPending(sent);
+              conflictRescueRef.current?.sent(sent);
               // #1320 — the trace of a save the server has not taken yet: if this tab
               // closes and a newer shape refuses it, it is the rescue copy.
               const owner = useAuthStore.getState().user?.uid;
@@ -1077,11 +1171,13 @@ export function useCharacterSubscription(characterId: string | undefined): void 
                   character: sent.character,
                   session: sent.session,
                   revision: sent.revision,
+                  ...(typeof sent.writeId === "string" ? { writeId: sent.writeId } : {}),
                   at: Date.now(),
                 });
             },
             onResolved: (sent) => {
               reconcilerRef.current?.acknowledgeParentWrite(sent);
+              conflictRescueRef.current?.landed(sent);
               const owner = useAuthStore.getState().user?.uid;
               const trace = owner ? readUnackedSave(owner, sent.id) : null;
               if (owner && trace && trace.revision <= sent.revision)
@@ -1108,11 +1204,16 @@ export function useCharacterSubscription(characterId: string | undefined): void 
               // change): drop the local payload and republish what the server holds.
               reconcilerRef.current?.rejectParentWrite(sent);
               republishRef.current();
-              // Say it (#1203): the badge alone read as a stuck save.
-              useToastStore.getState().showToast({
-                intent: { kind: "edit-not-saved" },
-                duration: 8000,
-              });
+              // Say it (#1203): the badge alone read as a stuck save. #1403 — and keep the
+              // edit as a rescue copy when the server's sheet proves another device took
+              // this generation; the notice says which.
+              const rescue = conflictRescueRef.current;
+              if (rescue) rescue.refused(sent);
+              else
+                useToastStore.getState().showToast({
+                  intent: { kind: "edit-not-saved" },
+                  duration: 8000,
+                });
             },
             // Only the restore / level-up ceremony cancels a queued save. It publishes
             // its own whole-document state and its batch echoes back, so republishing the

@@ -78,6 +78,36 @@ function charDoc(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId);
 }
 
+/**
+ * The write chain (#1413). A build write's stamp: its generation, its own id, and the
+ * stored write it builds on (null on a sheet never chained). The rules refuse a write
+ * whose base is not the stored `writeId`, so a queued offline save cannot pass on top
+ * of another device's write just because the revision numbers line up.
+ */
+export interface WriteStamp {
+  revision: number;
+  writeId: string;
+  baseWriteId: string | null;
+}
+
+export function newWriteId(): string {
+  return crypto.randomUUID();
+}
+
+/** A chain step on top of `baseWriteId`: a fresh id that names its base. */
+function chainStep(
+  baseWriteId: string | null
+): Pick<WriteStamp, "writeId" | "baseWriteId"> {
+  return { writeId: newWriteId(), baseWriteId };
+}
+
+/** The chain fields of a payload the allocator stamped; none for an unstamped one. */
+function chainFields(data: CharacterDoc): Record<string, unknown> {
+  return data.baseWriteId === undefined || typeof data.writeId !== "string"
+    ? {}
+    : { writeId: data.writeId, baseWriteId: data.baseWriteId };
+}
+
 function publicCharacterProjectionRef(uid: string, charId: string) {
   return doc(db, "users", uid, "characters", charId, "public", "sheet");
 }
@@ -272,9 +302,17 @@ export async function updateCharacter(
     );
   }
   // A metadata write must leave the compare-and-set generation exactly as stored (the
-  // rules deny anything else), so it is never carried into the update.
-  const { revision: _revision, ...metadata } = rest;
+  // rules deny anything else), so it is never carried into the update — nor the write
+  // chain (#1413): a stale `writeId` written back would be a chain step with no build.
+  const {
+    revision: _revision,
+    writeId: _writeId,
+    baseWriteId: _baseWriteId,
+    ...metadata
+  } = rest;
   void _revision;
+  void _writeId;
+  void _baseWriteId;
   const payload = await toStoredPayload(metadata);
   const ref = charDoc(uid, charId);
   await runTransaction(db, async (transaction) => {
@@ -338,6 +376,8 @@ export async function setCharacterSharing(
       ...(stripUndefined(parentWrite) as Record<string, unknown>),
       shared,
       revision: source.revision + 1,
+      // The write chain (#1413): built on exactly the write this transaction read.
+      ...chainStep(typeof raw.writeId === "string" ? raw.writeId : null),
       updatedAt,
     });
     if (projection) {
@@ -378,6 +418,7 @@ function commitCharacterParent(
     // The caller (the subscription hook) already advanced the generation past the
     // observed base; the rules verify it equals `resource.revision + 1`.
     revision: data.revision,
+    ...chainFields(data),
     updatedAt,
   });
   queuePublicProjectionWith(modules, batch, uid, data, updatedAt);
@@ -532,10 +573,12 @@ export function subscribeToCharacter(
   uid: string,
   charId: string,
   /** `meta.attached`: the document names a campaign (`attachedCampaignId`, the lock the
-   *  rules keep), so «campaigns read» may matter to this character (#1217). */
+   *  rules keep), so «campaigns read» may matter to this character (#1217).
+   *  `meta.baseWriteId`: the stored write this one was built on (#1414): a sheet built
+   *  directly on a traced write proves that write landed. */
   callback: (
     doc: CharacterDoc | null,
-    meta: { hasPendingWrites: boolean; attached: boolean }
+    meta: { hasPendingWrites: boolean; attached: boolean; baseWriteId: string | null }
   ) => void,
   onError?: (err: Error) => void,
   /** #1320 — the stored parent has a newer `schema` than this client knows: it is
@@ -553,12 +596,12 @@ export function subscribeToCharacter(
     { includeMetadataChanges: true },
     (snap) => {
       const my = ++token;
-      const attachedTo: unknown = snap.exists()
-        ? snap.data().attachedCampaignId
-        : undefined;
+      const raw = snap.exists() ? snap.data() : undefined;
+      const attachedTo: unknown = raw?.attachedCampaignId;
       const meta = {
         hasPendingWrites: snap.metadata.hasPendingWrites,
         attached: typeof attachedTo === "string" && attachedTo !== "",
+        baseWriteId: typeof raw?.baseWriteId === "string" ? raw.baseWriteId : null,
       };
       if (!snap.exists()) {
         callback(null, meta);
@@ -689,7 +732,7 @@ export interface DebouncedSaveHandle {
 /** `onSend` gets the generation the whole sheet leaves with, synchronously, before the
  *  batch reaches the SDK (the caller's trace of a write not yet acknowledged, #1276). */
 export interface WholeSheetCallbacks {
-  onSend?: (revision: number) => void;
+  onSend?: (revision: number, writeId: string) => void;
 }
 
 const pendingParentSaveCancellers = new Map<string, () => void>();
@@ -718,13 +761,15 @@ export { preloadParentWrite, resetParentWriteForTests } from "@/lib/parent-write
  * stamping at queue time burned a number the server never saw, so the next write claimed
  * `resource.revision + 2` and the rules denied it — silently discarding the user's edits.
  * The client's offline queue preserves order, so consecutive sends carry consecutive
- * generations. Omitted (tests, callers with no reconciler) → the payload's own `revision`.
+ * generations. It stamps the write chain with them (#1413): the write's own id and the
+ * one it builds on. Omitted (tests, callers with no reconciler) → the payload's own
+ * `revision`, unchained.
  */
 export function createDebouncedSave(
   uid: string,
   charId: string,
   delayMs: number = PARENT_SAVE_DELAY_MS,
-  allocateRevision?: () => number
+  allocateRevision?: () => WriteStamp
 ): DebouncedSaveHandle {
   // The sheet is open: load the codec now, so the next save commits with no wait.
   void preloadParentWrite();
@@ -801,7 +846,7 @@ export function createDebouncedSave(
     // burned. The payload stays pending, so it is the rescue copy's unsaved edit.
     if (writesFenced()) return Promise.resolve();
     // Allocate the generation HERE — the write is actually going out now.
-    const data = allocateRevision ? { ...queued, revision: allocateRevision() } : queued;
+    const data = allocateRevision ? { ...queued, ...allocateRevision() } : queued;
     callbacks?.onSend?.(data);
     saveStatusCallbacks.onSaving();
     let sent: Promise<void>;
@@ -872,12 +917,12 @@ export function createDebouncedSave(
             new TypeError("A whole-sheet write needs the revision cursor")
           );
         }
-        const revision = allocateRevision();
-        callbacks?.onSend?.(revision);
+        const stamp = allocateRevision();
+        callbacks?.onSend?.(stamp.revision, stamp.writeId);
         saveStatusCallbacks.onSaving();
         let sent: Promise<void>;
         try {
-          sent = commitWholeSheet(modules, uid, charId, sheet, revision, source);
+          sent = commitWholeSheet(modules, uid, charId, sheet, stamp, source);
         } catch (err) {
           sent = Promise.reject(err instanceof Error ? err : new Error(String(err)));
         }
@@ -1096,7 +1141,7 @@ export async function listCharacterSnapshots(
  *  shared character is built from. */
 export type WholeSheetSource = Pick<
   CharacterDoc,
-  "shared" | "status" | "portraitUrl" | "portraitCrop"
+  "shared" | "status" | "portraitUrl" | "portraitCrop" | "writeId"
 >;
 
 export async function restoreCharacterSnapshot(
@@ -1117,7 +1162,9 @@ export async function restoreCharacterSnapshot(
   // Drop its same-tab debounced predecessor immediately before the atomic v1
   // replacement, so an older legacy payload cannot be enqueued after the cutover.
   const supersededPendingSave = cancelPendingParentSave(uid, charId);
-  await commitWholeSheet(modules, uid, charId, snapshot, baseRevision + 1, source);
+  // The write chain (#1413): built on the write of the sheet the caller observed.
+  const stamp = { revision: baseRevision + 1, ...chainStep(source.writeId ?? null) };
+  await commitWholeSheet(modules, uid, charId, snapshot, stamp, source);
   if (supersededPendingSave) saveStatusCallbacks.onSaved();
 }
 
@@ -1131,9 +1178,10 @@ function commitWholeSheet(
   uid: string,
   charId: string,
   sheet: { character: CharacterData; session: SessionState },
-  revision: number,
+  stamp: WriteStamp,
   source: WholeSheetSource
 ): Promise<void> {
+  const { revision } = stamp;
   const parent = storedPayloadWith(modules, {
     character: sheet.character,
     session: sheet.session,
@@ -1143,8 +1191,11 @@ function commitWholeSheet(
   batch.update(charDoc(uid, charId), {
     ...(stripUndefined(parent) as Record<string, unknown>),
     // A whole-state ceremony is a build write: it advances the generation past the
-    // document the caller observed, so a concurrent stale write is denied.
+    // document the caller observed, so a concurrent stale write is denied, and it joins
+    // the write chain (#1413).
     revision,
+    writeId: stamp.writeId,
+    baseWriteId: stamp.baseWriteId,
     updatedAt,
   });
   // A snapshot contains SessionState only; combat-only ledgers/history are
