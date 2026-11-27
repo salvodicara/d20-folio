@@ -75,7 +75,11 @@ describe("levelUpAsks", () => {
   }
 
   it("a Fighter reaching 4 is asked its boon, then the abilities for +2", () => {
-    const doc = makeCharacterDoc({ classId: "fighter", level: 3 });
+    const doc = makeCharacterDoc({
+      classId: "fighter",
+      subclassId: "champion",
+      level: 3,
+    });
     const keys = levelUpAsks(doc, "fighter", NO_ANSWERS, "en").rows.map((r) => r.key);
     expect(keys).toEqual(["asiMode", "asiPlusTwo", "weaponMasteries"]);
   });

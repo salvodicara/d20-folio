@@ -14,7 +14,7 @@ const interim = { subclassId: null, asiChoice: emptyAsiChoice(), fightingStyle: 
 describe("levelUpPlan", () => {
   it("a Fighter going to 4 owes an ASI and a new mastery, nothing else", () => {
     const plan = levelUpPlan(
-      makeCharacterDoc({ classId: "fighter", level: 3 }),
+      makeCharacterDoc({ classId: "fighter", subclassId: "champion", level: 3 }),
       "fighter",
       interim
     );
