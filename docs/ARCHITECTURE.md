@@ -270,8 +270,8 @@ Secrets come from Secret Manager (`defineSecret`). Rewrites: `firebase.json`.
 - **`deploy.yml`**, owner-dispatched only (`just deploy` dispatches it):
   1. waits for green CI and Verify on the exact SHA;
   2. deploys only the pack commit Verify composed (an explicit `pack_sha` must match it);
-  3. builds with explicit flags (`VITE_PEER_SPENDS_LEDGER=true`, `VITE_COMBAT_EFFECTS_V26=true`,
-     `VITE_NEW_UI=0`, `VITE_CONTENT_PACK=runtime` when `runtime_pack` is set) and
+  3. builds with explicit flags (`VITE_PEER_SPENDS_LEDGER=true`, `VITE_NEW_UI=0`,
+     `VITE_CONTENT_PACK=runtime` when `runtime_pack` is set) and
      runs the bundle budget (and `check-public-bundle` for the runtime pack);
   4. runs the read-only migration checks (`scripts/migrate-*.ts --check`), requires live billing
      and takes a Firestore export to `gs://d20-folio-backups/`;

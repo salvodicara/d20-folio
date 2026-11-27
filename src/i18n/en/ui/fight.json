@@ -48,6 +48,12 @@
       "inside": "Inside",
       "applied": "{{amount}} damage to {{name}}"
     },
+    "nextAttack": {
+      "title": "Next attack roll",
+      "mine": "{{mode}} on your next attack roll ({{sources}}).",
+      "theirs": "{{name}}: {{mode}} on its next attack roll ({{sources}}).",
+      "usedToast": "Used: {{mode}}"
+    },
     "dm": {
       "addMonsters": "Add monsters",
       "search": "Search for a monster",

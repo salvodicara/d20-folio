@@ -48,6 +48,12 @@
       "inside": "Dentro",
       "applied": "{{amount}} danni a {{name}}"
     },
+    "nextAttack": {
+      "title": "Tiro per colpire successivo",
+      "mine": "{{mode}} al tuo tiro per colpire successivo ({{sources}}).",
+      "theirs": "{{name}}: {{mode}} al suo tiro per colpire successivo ({{sources}}).",
+      "usedToast": "Usato: {{mode}}"
+    },
     "dm": {
       "addMonsters": "Aggiungi mostri",
       "search": "Cerca un mostro",

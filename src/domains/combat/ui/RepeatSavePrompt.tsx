@@ -16,7 +16,6 @@ import {
   type PendingRepeatSave,
 } from "@/features/campaigns/repeat-save-store";
 import { localizeSrd } from "@/i18n/resolver";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import type { Locale } from "@/lib/locale";
 import { repeatSaveDueCopy, repeatSaveSubject } from "@/domains/combat/repeat-save-copy";
 import {
@@ -41,33 +40,14 @@ import { Button } from "@/ui";
 
 const NO_TALLY: SaveTally = { successes: 0, failures: 0 };
 
-/** The ended occurrence back with its prompt: the same one (v0.26 rules); before that
- *  deploy, a copy under a fresh id (re-using the id would be ignored as a replay). */
+/** The ended occurrence back with its prompt: the same one, reinstated. */
 function restoreEnded(save: PendingRepeatSave): void {
-  const store = useRepeatSaveStore.getState();
-  if (combatEffectsV26On()) {
-    void reinstatePersistentCombatEffect(save.campaignId, save.id).catch(() => undefined);
-    for (const sibling of save.siblings ?? [])
-      void reinstatePersistentCombatEffect(save.campaignId, sibling.id).catch(
-        () => undefined
-      );
-    store.add(save);
-    return;
-  }
-  const siblings = (save.siblings ?? []).map((sibling) => ({
-    ...sibling,
-    id: `${sibling.id}~${String(Date.now())}`,
-  }));
-  for (const copy of siblings)
-    void appendPersistentCombatEffect(save.campaignId, copy).catch(() => undefined);
-  const effect = { ...save.effect, id: `${save.effect.id}~${String(Date.now())}` };
-  void appendPersistentCombatEffect(save.campaignId, effect).catch(() => undefined);
-  store.add({
-    ...save,
-    id: effect.id,
-    effect,
-    ...(siblings.length > 0 ? { siblings } : {}),
-  });
+  void reinstatePersistentCombatEffect(save.campaignId, save.id).catch(() => undefined);
+  for (const sibling of save.siblings ?? [])
+    void reinstatePersistentCombatEffect(save.campaignId, sibling.id).catch(
+      () => undefined
+    );
+  useRepeatSaveStore.getState().add(save);
 }
 
 /** The saves waiting for these combatants. */

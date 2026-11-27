@@ -4,7 +4,7 @@
  * steps the campaign's clock and marks the minute its sheet caught up to; the undo
  * takes the step back. A solo sheet moves its own clock and writes nothing.
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const io = vi.hoisted(() => ({
   stepCampaignClock: vi.fn(() => Promise.resolve(null)),
@@ -35,12 +35,10 @@ import { makeCharacterDoc } from "./_helpers";
 const store = () => useCharacterStore.getState();
 
 beforeEach(() => {
-  vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
   vi.clearAllMocks();
   useUndoStore.setState({ characterId: null, past: [], future: [] });
   useAuthStore.setState({ user: { uid: "u1" } as never });
 });
-afterEach(() => vi.unstubAllEnvs());
 
 describe("«Passa il tempo» on a campaign character", () => {
   it("steps the campaign clock, marks the sheet caught up, and the undo steps back", async () => {
@@ -186,13 +184,5 @@ describe("a viewer who isn't the owner reads the sheet at the campaign clock", (
       atCampaignClock(stored(), { id: "c1", gameClock: { minute: 420 } }).session
         .activeFeatures
     ).toContain("spell-mage-armor");
-  });
-
-  it("without this release's rules nothing is projected", () => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "false");
-    expect(projectedClock(nineHoursOn)).toBeNull();
-    expect(atCampaignClock(stored(), nineHoursOn).session.activeFeatures).toContain(
-      "spell-mage-armor"
-    );
   });
 });

@@ -148,7 +148,6 @@ describe("the tray writes it whether or not the target saves", () => {
   }
 
   beforeEach(() => {
-    vi.stubEnv("VITE_COMBAT_EFFECTS_V26", "true");
     io.appendPersistentCombatEffect.mockClear();
     useCharacterStore.setState({ character: withRider, readonly: false });
     useCombatStatusStore.setState({

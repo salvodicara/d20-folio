@@ -23,6 +23,12 @@ const localize = (intent: ToastIntent): string =>
   localizeToastIntent(intent, t, resolveConditionName, resolveSpellName);
 
 describe("localizeToastIntent", () => {
+  it("a refused edit says whether it was kept on this device (#1403)", () => {
+    expect(localize({ kind: "edit-not-saved" })).toBe("save.editNotSaved");
+    expect(localize({ kind: "edit-not-saved", kept: false })).toBe("save.editNotSaved");
+    expect(localize({ kind: "edit-not-saved", kept: true })).toBe("save.editKept");
+  });
+
   it("resolves the concentration spell id for concentration-dropped", () => {
     expect(localize({ kind: "concentration-dropped", spell: "bless" })).toBe(
       'combat.concentrationDroppedToast {"spell":"⟨bless⟩"}'

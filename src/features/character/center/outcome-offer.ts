@@ -6,7 +6,6 @@
  * (`outcomeRiders`). Absent outside a fight or when the action has none.
  */
 import { useCombatStatusStore } from "@/features/campaigns/global-combat-context";
-import { combatEffectsV26On } from "@/lib/deployed-rules";
 import { combatResolutionSpec } from "@/lib/combat-resolution";
 import { hitPointDiceContext } from "@/lib/play/hit-point-dice";
 import { effectEndsOf } from "@/lib/play/fight-condition-ends";
@@ -77,11 +76,7 @@ function stateWriter(
       const effects = stateEffectsFor(rider.effects, outcome);
       return effects.length > 0 ? [{ source: rider.source, effects }] : [];
     }),
-  ].filter(
-    // A feature's state on its target needs the v0.26.0 rules (deployed-rules); a
-    // spell's is accepted today.
-    (group) => group.source.kind !== "feature" || combatEffectsV26On()
-  );
+  ];
   const status = useCombatStatusStore.getState().status;
   if (groups.length === 0 || !status) return undefined;
   const uid = useAuthStore.getState().user?.uid ?? "";
@@ -119,7 +114,7 @@ function stateWriter(
 /** The weapon masteries that leave a state on the creature hit: Vex (Advantage on
  *  the attacker's next attack against it), Sap (Disadvantage on its next attack roll)
  *  and Slow (its Speed −10 ft), each until the attacker's next turn
- *  (`masteryHitEffects`). Out of a fight, or before the v0.26.0 rules, the sheet keeps
+ *  (`masteryHitEffects`). Out of a fight the sheet keeps
  *  its own next-attack flag for Vex instead, and Sap and Slow are the table's. */
 export function vexWriter(
   action: { id: string; masteryRiders?: ReadonlyArray<{ id: string }> },
@@ -130,7 +125,7 @@ export function vexWriter(
     return undefined;
   }
   const status = useCombatStatusStore.getState().status;
-  if (!status || !combatEffectsV26On()) return undefined;
+  if (!status) return undefined;
   const actor = selfRef(status, characterId);
   return (targetId) =>
     masteryHitEffects({
@@ -145,7 +140,7 @@ export function vexWriter(
 
 /** Whether a weapon's Vex is played on its target in this fight (`vexWriter`). */
 export function vexIsTargeted(): boolean {
-  return Boolean(useCombatStatusStore.getState().status) && combatEffectsV26On();
+  return Boolean(useCombatStatusStore.getState().status);
 }
 
 type Status = NonNullable<ReturnType<typeof useCombatStatusStore.getState>["status"]>;
@@ -206,12 +201,11 @@ export function helpEffect(help: {
 /**
  * Help in the live fight (the Help action's «Su chi?»): on an enemy, the effect
  * that lets an ally attack it with Advantage; on an ally, Advantage on its next
- * ability check. Writes the effect and returns its undo. Null outside a fight or
- * before the v0.26.0 rules.
+ * ability check. Writes the effect and returns its undo. Null outside a fight.
  */
 export function giveHelp(targetId: string, characterId: string): (() => void) | null {
   const status = useCombatStatusStore.getState().status;
-  if (!status || !combatEffectsV26On()) return null;
+  if (!status) return null;
   const helper = selfRef(status, characterId);
   const sideOf = fightSideOf(status.view.rows);
   const effect = helpEffect({
@@ -239,7 +233,7 @@ export function giveHelp(targetId: string, characterId: string): (() => void) | 
 /**
  * The state a use leaves only on a failed save or a hit (Bane, Faerie Fire, Ray of
  * Frost): one encounter effect on that target, with the caster's spellcasting
- * modifier frozen on it. Undefined outside a fight, before the v0.26.0 rules, or when
+ * modifier frozen on it. Undefined outside a fight, or when
  * the use's state lands at commit (`standingAtCommit`) or it leaves none.
  */
 export function standingOutcomeWriter(
@@ -250,7 +244,7 @@ export function standingOutcomeWriter(
   const resolution = combatResolutionSpec(action);
   const spec = resolution.standingEffect;
   const status = useCombatStatusStore.getState().status;
-  if (!spec || !status || !combatEffectsV26On()) return undefined;
+  if (!spec || !status) return undefined;
   const gated =
     outcome === "failed-save"
       ? resolution.kind === "save"

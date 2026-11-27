@@ -113,3 +113,15 @@ describe("the rescue banner", () => {
     expect(screen.getByRole("button", { name: /^discard$/i })).toBeInTheDocument();
   });
 });
+
+describe("the strip's lane (#1403)", () => {
+  it("publishes its height while shown, so toasts and the page clear it", () => {
+    const root = document.documentElement.style;
+    keepRescueCopy("u1", "c1", copy());
+    open();
+    render(<RescueBanner />);
+    expect(root.getPropertyValue("--rescue-dock-h")).toMatch(/px$/);
+    fireEvent.click(screen.getByRole("button", { name: /^discard$/i }));
+    expect(root.getPropertyValue("--rescue-dock-h")).toBe("");
+  });
+});

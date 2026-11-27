@@ -19,6 +19,7 @@ import { monsterSpellDc } from "@/domains/combat/monster-zones-view";
 import { MonsterZoneCast, MonsterZoneHits } from "@/domains/combat/ui/MonsterZones";
 import { getMonster } from "@/data/monsters";
 import { RepeatSavePrompts } from "@/domains/combat/ui/RepeatSavePrompt";
+import { NextAttackNotes } from "@/domains/combat/ui/NextAttackNote";
 import { FightLine, type FightLineDm } from "@/domains/combat/ui/FightLine";
 import { DmHitDialog } from "@/domains/combat/ui/DmHitDialog";
 import { useMonsterUses } from "@/domains/combat/ui/use-monster-uses";
@@ -30,6 +31,7 @@ import { useMonsterCard } from "@/domains/combat/ui/use-monster-card";
 import { dmTargets, planDmHit } from "@/domains/combat/dm-hit-plan";
 import type { FightRow } from "@/domains/combat/fight-rows-view";
 import { RollDialog } from "@/domains/combat/ui/FightActions";
+import { partyBonuses } from "@/domains/combat/party-bonuses";
 import {
   dmMoves,
   moves,
@@ -103,9 +105,7 @@ export function FightTab({
     },
     now
   );
-  const bonuses = Object.fromEntries(
-    Object.entries(party.pcs).map(([id, pc]) => [id, pc.initiativeBonus])
-  );
+  const bonuses = partyBonuses(party.pcs);
   const roll = rolling && (
     <RollDialog
       // Null until the party's sheets are read: the roll orders the fight by everyone's
@@ -207,7 +207,18 @@ function LiveFight({
   );
   const rows = fightRows(view.rows, view.currentId, party.concentration, locale);
   const suggest = controls.suggestEnd;
-  const dm = useDmTools(campaign, encounter, view.rows, rows, uid, isDm, locale, onToast);
+  const dm = useDmTools(
+    campaign,
+    encounter,
+    view.rows,
+    rows,
+    uid,
+    isDm,
+    locale,
+    onToast,
+    // every hero's bonus: a typed d20 re-sorts them all before turns begin
+    partyBonuses(party.pcs)
+  );
   // The DM's limited uses (Recharge, N/Day, legendary) under each monster line.
   const uses = useMonsterUses(campaign.id, encounter, uid, locale, onToast);
   // ...and its printed actions and traits (the classic one-tap monster actions).
@@ -311,6 +322,19 @@ function LiveFight({
                 }
               />
               <RepeatSavePrompts targetIds={row.ids} locale={locale} />
+              {/* a monster's own next attack roll with Disadvantage (Ray of
+                  Enfeeblement on a success, Sap): the DM spends it when rolling */}
+              {isDm && (
+                <NextAttackNotes
+                  campaignId={campaign.id}
+                  effectOps={encounter.effectOps}
+                  targetIds={row.ids.filter(
+                    (id) => view.rows.find((r) => r.id === id)?.kind === "monster"
+                  )}
+                  nameOf={(id) => view.rows.find((r) => r.id === id)?.name ?? ""}
+                  locale={locale}
+                />
+              )}
               {/* zones the DM's monsters cast: their turn questions, and casting one */}
               {isDm && (
                 <MonsterZoneHits
@@ -368,7 +392,9 @@ function useDmTools(
   uid: string,
   isDm: boolean,
   locale: Locale,
-  onToast: Toaster
+  onToast: Toaster,
+  /** Every hero's initiative bonus (the planner re-sorts them all on a roll). */
+  bonuses: Readonly<Record<string, number>>
 ) {
   const { t } = useTranslation();
   const move = useFightMove(onToast);
@@ -522,7 +548,7 @@ function useDmTools(
                     uid,
                     hero.memberUid,
                     value,
-                    { [hero.id]: hero.initiativeBonus ?? 0 },
+                    bonuses,
                     // the new total re-sorts the line, as a monster's number does
                     initiativePlace(
                       encounter,

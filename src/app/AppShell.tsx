@@ -104,7 +104,7 @@ export function AppShell() {
     // into the min-h-screen column, so short pages stay scroll-free. The realm
     // nav shows on EVERY route — the wizards included (owner fb3, 2026-06-11:
     // "the wizards are routes, not jails"); their pager cluster floats above it.
-    <div className="app-canvas flex min-h-screen flex-col text-text-primary pb-[calc(var(--m-nav-h)+var(--safe-bottom)+var(--pwa-banner-h,0px))] md:pb-[var(--pwa-banner-h,0px)]">
+    <div className="app-canvas flex min-h-screen flex-col text-text-primary pb-[calc(var(--m-nav-h)+var(--safe-bottom)+var(--pwa-banner-h,0px)+var(--rescue-dock-h,0px))] md:pb-[calc(var(--pwa-banner-h,0px)+var(--rescue-dock-h,0px))]">
       {/* Native-feeling cross-page scroll + focus restoration (renderless). */}
       <ScrollRestorer />
 
