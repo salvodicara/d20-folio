@@ -110,6 +110,16 @@
           }
         }
       }
-    }
+    },
+    "manage": "Gestisci",
+    "manageTitle": "Gestisci la campagna",
+    "playersSection": "Giocatori",
+    "unlockJoins": "Riapri i nuovi ingressi",
+    "yieldTo": "Cedi il ruolo di Master: {{name}}",
+    "removeWho": "Rimuovi: {{name}}",
+    "joinsOpenState": "Chi ha il link può entrare.",
+    "joinsLockedState": "Il link non fa entrare nessuno di nuovo; chi c’è resta.",
+    "yieldNoUndo": "Non puoi annullarlo tu.",
+    "removeNoUndo": "Non si può annullare da qui. Il personaggio non viene cancellato: al rientro, il giocatore lo ricollega."
   }
 }

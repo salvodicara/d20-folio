@@ -7715,3 +7715,27 @@
 .fui dialog.f-dlg .f-bd :is(p, .f-help) {
   font-size: var(--fs-text);
 }
+
+/* «Gestisci la campagna»: the name and its «Salva» side by side; one line per player */
+.fui .f-manage-name {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.fui .f-manage-name > :first-child {
+  flex: 1;
+  min-width: 0;
+}
+.fui .f-manage-member {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--line);
+}
+.fui .f-manage-name-t {
+  flex: 1;
+  min-width: 0;
+  color: var(--strong);
+  overflow-wrap: anywhere;
+}

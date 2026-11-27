@@ -61,7 +61,12 @@ export function setInviteLocked(locked: boolean, t: TFunction): void {
   if (!campaign) return;
   useCampaignStore.getState().setCampaign({ ...campaign, joinsLocked: locked });
   void setJoinsLocked(campaign.id, locked);
-  toast(t(locked ? "campaignHub.joinsLockedToast" : "campaignHub.joinsOpenedToast"));
+  useToastStore.getState().showToast({
+    message: t(locked ? "campaignHub.joinsLockedToast" : "campaignHub.joinsOpenedToast"),
+    duration: 5000,
+    // fully reversible: «Annulla» flips it back
+    onUndo: () => setInviteLocked(!locked, t),
+  });
 }
 
 /** Hand the DM role to `toUid`. False when nothing changed (refused, or no such member). */
