@@ -662,7 +662,7 @@
 .fui .f-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   min-height: var(--chip-h);
   padding: 0 12px;
   border: 1px solid var(--frame);
@@ -758,7 +758,7 @@
   place-items: center;
   min-width: 18px;
   height: 18px;
-  padding: 0 5px;
+  padding: 0 4px;
   border-radius: var(--r-pill);
   background: color-mix(in srgb, currentColor 22%, transparent);
   color: inherit;
@@ -770,7 +770,7 @@
 .fui .f-uses .f-chip {
   max-width: 100%;
   min-height: var(--chip-h-status);
-  padding: 0 10px;
+  padding: 0 12px;
   font-size: var(--fs-xs);
 }
 /* an action: one line; a narrow column cuts the name with an ellipsis, never the roll (the
@@ -806,7 +806,7 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  padding: 2px 8px;
+  padding: 4px 8px;
   border: 1px solid var(--gold);
   border-radius: var(--btn-r);
   background: var(--chip-fill);
