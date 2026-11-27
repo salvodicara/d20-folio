@@ -7,6 +7,7 @@
     "mine": "Only mine",
     "newNote": "New note",
     "search": "Search the notes",
+    "searchHint": "Title, text, #place, @name",
     "hidden": "Only the DM sees it",
     "text": "Text",
     "textHelp": "Write @name for a person and #place for a place: the note lands in the right filters.",

@@ -5,6 +5,7 @@
  * the DM types the d20 a player rolled without the app (the classic InitVital), and the
  * total shows with the hero's bonus. «Su» / «Giù» move the line one place, for a tie.
  */
+import { formatModifier } from "@/lib/utils";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -44,7 +45,7 @@ export function InitiativeDialog({
   const { t } = useTranslation();
   const [text, setText] = useState(value === null ? "" : String(value));
   const next = hero ? parseD20(text) : parseInitiative(text);
-  const signed = (n: number) => (n >= 0 ? `+${String(n)}` : String(n));
+  const signed = formatModifier;
   const ready = next !== null && next !== value;
   return (
     <Dialog

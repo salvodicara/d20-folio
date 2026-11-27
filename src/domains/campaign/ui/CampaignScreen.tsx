@@ -91,7 +91,11 @@ function Campaign({ campaignId }: { campaignId: string }) {
           onChange={setTab}
         />
         {tab === "party" ? (
-          <PartyTab campaign={campaign} locale={locale} />
+          <PartyTab
+            campaign={campaign}
+            locale={locale}
+            onOpenFight={() => setTab("fight")}
+          />
         ) : tab === "fight" ? (
           <FightTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : tab === "treasure" ? (
@@ -181,7 +185,15 @@ export function Header({
   );
 }
 
-function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale }) {
+function PartyTab({
+  campaign,
+  locale,
+  onOpenFight,
+}: {
+  campaign: CampaignDoc;
+  locale: Locale;
+  onOpenFight: () => void;
+}) {
   const { t } = useTranslation();
   const live = useLiveDocs(campaign);
   const rows = partyRows(campaign, live, locale);
@@ -209,14 +221,34 @@ function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale 
           <Coins treasury={campaign.treasury} />
         </Panel>
       </div>
-      <Panel color="ini" title={t("campaignScreen.tabFight")}>
-        <p>
-          {encounter
-            ? t("campaignScreen.fightRunning", { round: encounter.round })
-            : t("campaignScreen.fightIdle")}
-        </p>
-      </Panel>
+      <FightCard round={encounter ? encounter.round : null} onOpen={onOpenFight} />
     </div>
+  );
+}
+
+/** Gruppo's fight card (#1434): a running fight leads the page (on a phone it moves first)
+ *  with one action that opens it; with no fight it says how one starts. */
+export function FightCard({
+  round,
+  onOpen,
+}: {
+  round: number | null;
+  onOpen: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <Panel color="ini" title={t("campaignScreen.tabFight")}>
+      {round === null ? (
+        <p>{t("campaignScreen.fightIdle")}</p>
+      ) : (
+        <div className="f-camp-live" data-live="">
+          <p>{t("campaignScreen.fightRunning", { round })}</p>
+          <Button kind="primary" icon="u-next" onClick={onOpen}>
+            {t("campaignScreen.openFight")}
+          </Button>
+        </div>
+      )}
+    </Panel>
   );
 }
 

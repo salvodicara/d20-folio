@@ -165,6 +165,8 @@ export function AddMonstersDialog({
       <div className="f-ask">
         <Field
           label={t("fight.dm.search")}
+          type="search"
+          placeholder={t("fight.dm.searchHint")}
           autoComplete="off"
           autoFocus
           value={q}

@@ -64,8 +64,9 @@ describe("formatModifier", () => {
     expect(formatModifier(2)).toBe("+2");
   });
 
-  it("formats negative modifiers", () => {
-    expect(formatModifier(-1)).toBe("-1");
+  it("formats negative modifiers with a true minus sign (U+2212), never a hyphen", () => {
+    expect(formatModifier(-1)).toBe("\u22121");
+    expect(formatModifier(-12)).toBe("\u221212");
   });
 
   it("formats zero", () => {

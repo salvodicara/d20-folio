@@ -58,6 +58,7 @@
     "dm": {
       "addMonsters": "Aggiungi mostri",
       "search": "Cerca un mostro",
+      "searchHint": "Nome, per esempio goblin",
       "yours": "Creato da te",
       "crLabel": "Grado di Sfida",
       "cr": {

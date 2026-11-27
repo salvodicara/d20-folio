@@ -18,6 +18,7 @@
  * (`getMonster`) and the monster catalogue, so `party-encounter.tsx` reaches it only
  * through a dynamic `import()` paired with `ensureSrdKind("monster")`.
  */
+import { formatModifier } from "@/lib/utils";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -87,7 +88,7 @@ function damageLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): st
 function numbersLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): string {
   const check =
     action.toHit !== undefined
-      ? `${action.toHit >= 0 ? "+" : ""}${action.toHit}`
+      ? formatModifier(action.toHit)
       : action.save
         ? t("combat.cunningStrikeSave", {
             ability: t(`abilities.${action.save.ability}_short`),
@@ -244,7 +245,7 @@ function MonsterActionTray({
         monster.name,
         action.toHit !== undefined
           ? t("campaignHub.encounterActionToHit", {
-              bonus: `${action.toHit >= 0 ? "+" : ""}${action.toHit}`,
+              bonus: formatModifier(action.toHit),
             })
           : null,
         ...attackNotes,
