@@ -7962,3 +7962,14 @@
     white-space: nowrap;
   }
 }
+/* a monster's chips, its Multiattack line and its uses keep one 8 px rhythm */
+.fui .f-fight .f-monster-acts {
+  gap: 8px;
+}
+.fui .f-fight .f-monster-acts > .f-chips,
+.fui .f-fight .f-uses {
+  row-gap: 8px;
+}
+.fui .f-fight .f-uses {
+  margin-top: 4px;
+}
