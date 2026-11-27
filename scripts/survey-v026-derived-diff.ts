@@ -20,12 +20,18 @@
  * Run with (the baseline tree: `scripts/setup-deployed-baseline.sh <dir> <app-sha> <pack-sha>`):
  *   node --import ./scripts/alias-loader.mjs scripts/survey-v026-derived-diff.ts \
  *     --baseline-root /absolute/path/to/v025-baseline
+ *
+ * `--export <file>` instead writes the stored families it reads (each parent and its
+ * `combat/state` child, `{path, data}[]`) to `<file>`, owner-only, and prints counts
+ * only: the input of the derived-sheet harness (`scripts/derived-digest.ts digest`),
+ * which reads no Firestore. The file is private: an absolute path outside the
+ * repository and outside synced folders, never committed, deleted after the compare.
  */
 /// <reference types="node" />
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile, copyFile } from "node:fs/promises";
+import { chmod, mkdtemp, readFile, rm, writeFile, copyFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, relative, resolve } from "node:path";
 import process, { argv as processArgv } from "node:process";
 import { promisify } from "node:util";
 import { pathToFileURL } from "node:url";
@@ -293,6 +299,32 @@ export function readOnlyFirestore(db: {
   });
 }
 
+// ── The corpus export (the derived-sheet harness's input) ─────────────────────
+
+/** The `--export` file: absolute and outside the repository, or `undefined` when the
+ *  flag is absent. */
+export function exportTarget(
+  args: readonly string[],
+  repoRoot: string
+): string | undefined {
+  const index = args.indexOf("--export");
+  if (index < 0) return undefined;
+  const file = args[index + 1];
+  if (!file || !isAbsolute(file))
+    throw new Error("--export needs an absolute file path (outside the repository)");
+  const inside = relative(resolve(repoRoot), resolve(file));
+  if (!inside.startsWith("..") && !isAbsolute(inside))
+    throw new Error("--export must write outside the repository (the file is private)");
+  return file;
+}
+
+/** What an export prints: counts only, never a path, an id or a value. */
+export function exportSummary(documents: readonly { path: string }[]): string {
+  const states = documents.filter(({ path }) => CHILD.test(path)).length;
+  const characters = documents.filter(({ path }) => PARENT.test(path)).length;
+  return `exported ${documents.length} documents: ${characters} characters, ${states} combat states`;
+}
+
 // ── The run ───────────────────────────────────────────────────────────────────
 
 const run$ = promisify(execFile);
@@ -333,9 +365,10 @@ async function probeBaseline(
 }
 
 async function run(): Promise<void> {
+  const exportFile = exportTarget(processArgv, join(import.meta.dirname, ".."));
   const rootIndex = processArgv.indexOf("--baseline-root");
   const root = rootIndex > 0 ? processArgv[rootIndex + 1] : undefined;
-  if (!root)
+  if (!root && !exportFile)
     throw new Error("--baseline-root /absolute/path/to/the/deployed/release is required");
   const target = await readTargetConfiguration();
   const [{ initializeApp, applicationDefault, deleteApp }, { getFirestore }] =
@@ -347,6 +380,21 @@ async function run(): Promise<void> {
   console.log(
     `Target: ${target.projectId} (${target.emulator ? "explicit emulator" : "production read"})`
   );
+  if (exportFile) {
+    try {
+      const db = readOnlyFirestore(getFirestore(app)) as Parameters<
+        typeof discoverDocuments
+      >[0];
+      const sources = (await discoverDocuments(db, DISCOVERY)).map((d) => d.source);
+      await writeFile(exportFile, JSON.stringify(sources), { mode: 0o600 });
+      await chmod(exportFile, 0o600);
+      console.log(exportSummary(sources));
+    } finally {
+      await deleteApp(app);
+    }
+    return;
+  }
+  if (!root) return;
   const composition: Composition = {
     current: contentPackEnabled(),
     baseline: existsSync(join(resolve(root), "content-pack", "index.ts")),

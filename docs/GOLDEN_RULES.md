@@ -71,6 +71,13 @@ Abbreviazioni delle fonti. `GR#n @main` = `docs/GOLDEN_RULES.md` su `origin/main
     registro, senza che nessuno prenda appunti. Da quel registro l'app genera un resoconto
     deterministico (niente AI) di scontri e sessione, da copiare e dare a un'AI per il riassunto.
     _Perché:_ il DM oggi passa gli scontri a prendere note invece di divertirsi. — owner 2026-10-08
+17. **«C · BG3 craft»: lo stile di BG3, fatto bene.** Restano i colori, l'oro, l'atmosfera fantasy e
+    il pulsante blu acceso. Un solo carattere, Source Serif 4, per titoli, nomi, testo, pulsanti e
+    ogni numero (cifre piene e allineate, pesi 400 e 600, maiuscole solo nelle etichette corte). Una
+    sola famiglia di pulsanti come in BG3: blu acceso a vetro con bordo oro, cornice oro, testo oro,
+    rosso; stessa altezza e raggio, stati chiari. Da qui il proprietario delega i dettagli di design
+    alle migliori pratiche (impeccable, design-review, prodotti di riferimento), senza attendere
+    approvazioni; l'asticella è il livello professionale su ogni schermata. — owner 2026-11-27
 
 ## Modo di lavorare
 

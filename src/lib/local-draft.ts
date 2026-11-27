@@ -106,9 +106,12 @@ export interface RescueCopy {
    *  state is not newer than the server's), or the whole sheet (unsaved play edits too).
    *  Absent reads as "all" (the copy holds a whole sheet). */
   part?: "build" | "all";
-  /** The generation the lost write was sent at (#1276): a stored sheet at or past it
-   *  shows the write landed after all, and the copy is dropped. */
+  /** The generation the lost write was sent at (#1276). Without a `writeId` (an older
+   *  build's copy), a stored sheet at or past it counts as the write landing. */
   revision?: number;
+  /** The lost write's id in the write chain (#1414): only a stored sheet carrying it,
+   *  or built on it, shows the write landed after all, and the copy is dropped. */
+  writeId?: string;
   savedAt: number;
   schema: number;
   playVersion: number;
@@ -199,8 +202,12 @@ export function dropRescueCopy(uid: string, characterId: string): void {
 export interface UnackedSave {
   character: unknown;
   session: unknown;
-  /** The generation it was sent at: a stored sheet at or past it has taken it. */
+  /** The generation it was sent at. */
   revision: number;
+  /** The write's own id in the write chain (#1414): only a stored sheet carrying it (or
+   *  built on it) proves the write landed. A trace without it (an older build) falls
+   *  back to the generation. */
+  writeId?: string;
   /** When it was sent (compared with the play trace's time). */
   at?: number;
   /** A whole-sheet write (a level-up, its undo, #1276): build AND play state. */
@@ -227,6 +234,7 @@ export function readUnackedSave(uid: string, characterId: string): UnackedSave |
         character: s.character,
         session: s.session,
         revision: s.revision,
+        ...(typeof s.writeId === "string" ? { writeId: s.writeId } : {}),
         ...(typeof s.at === "number" ? { at: s.at } : {}),
         ...(s.whole === true ? { whole: true } : {}),
       }
