@@ -27,6 +27,9 @@ import { useLiveDocs } from "./use-party";
 import { PartyTable } from "./PartyTable";
 import { partySummaryView } from "../party-summary-view";
 import { NextSessionDialog } from "./NextSessionDialog";
+import { DmpcControl } from "./DmpcControl";
+import { attachCharacter } from "../attach-character";
+import { useCharacters } from "@/hooks/useCharacters";
 import { saveNextSession } from "@/domains/chronicle/session-moves";
 
 type Tab = "party" | "fight" | "journal" | "treasure" | "notes" | "rules";
@@ -96,7 +99,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
           onChange={setTab}
         />
         {tab === "party" ? (
-          <PartyTab campaign={campaign} locale={locale} isDm={uid === campaign.dmUid} />
+          <PartyTab campaign={campaign} locale={locale} uid={uid} />
         ) : tab === "fight" ? (
           <FightTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : tab === "treasure" ? (
@@ -207,13 +210,16 @@ export function Header({
 function PartyTab({
   campaign,
   locale,
-  isDm,
+  uid,
 }: {
   campaign: CampaignDoc;
   locale: Locale;
-  isDm: boolean;
+  uid: string | undefined;
 }) {
   const { t } = useTranslation();
+  const { characters: roster } = useCharacters();
+  const isDm = uid !== undefined && uid === campaign.dmUid;
+  const dm = isDm ? campaign.memberDetails[uid] : null;
   const live = useLiveDocs(campaign);
   const rows = partyRows(campaign, live, locale);
   // The DM's whole-party table, from the same live sheets as the rows above.
@@ -239,6 +245,19 @@ function PartyTab({
             color="grp"
             title={t("campaignHub.party")}
             aside={rows.length > 0 && t("campaignScreen.partyHint")}
+            foot={
+              dm &&
+              uid && (
+                // the DM plays a character too (the classic DM tile)
+                <DmpcControl
+                  characterId={dm.characterId}
+                  {...(dm.character?.name ? { name: dm.character.name } : {})}
+                  roster={roster}
+                  inCombat={Boolean(campaign.encounter)}
+                  onAttach={(id) => void attachCharacter(id, uid, roster, t)}
+                />
+              )
+            }
           >
             {rows.length === 0 && (
               <p className="f-note">{t("campaignScreen.noCharacters")}</p>

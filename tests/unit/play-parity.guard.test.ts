@@ -106,16 +106,18 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "Sessions: create, rename, delete": {
     classic: "src/features/campaigns/Sessions.tsx",
+    // The header sets the next session (gap map row 32); the sessions list is not here.
     answer: {
-      model: "src/domains/chronicle/session-moves.ts",
-      pending: "direction: the control on screen",
+      partial: "src/domains/campaign/ui/NextSessionDialog.tsx",
+      missing: "creating, renaming and deleting the evenings",
     },
   },
   "Next session and «Last time»": {
     classic: "src/features/campaigns/LastTime.tsx",
+    // The DM sets the next session from the header (gap map row 32).
     answer: {
-      model: "src/domains/chronicle/session-moves.ts",
-      pending: "direction: the control on screen",
+      partial: "src/domains/campaign/ui/NextSessionDialog.tsx",
+      missing: "«Last time»: the latest evening and its notes",
     },
   },
   "Rename the campaign": {
@@ -134,9 +136,10 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "Attach a character": {
     classic: "src/features/campaigns/Party.tsx",
+    // The DM's own character from the Gruppo panel (gap map row 29).
     answer: {
-      model: "src/domains/campaign/attach-character.ts",
-      pending: "direction: the control on screen",
+      partial: "src/domains/campaign/ui/DmpcControl.tsx",
+      missing: "a player attaching or changing their own character",
     },
   },
   "Hide a creature, reveal its HP, ally or enemy, reorder the turns": {

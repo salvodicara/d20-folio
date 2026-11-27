@@ -68,22 +68,22 @@ the row; rows with the same slice ship together.
 
 ### B. The party (Gruppo tab)
 
-| #   | Capability                                                                                   | Classic               | New UI                                      | Headless                        | Pattern                       | Size | Slice |
-| --- | -------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------- | ------------------------------- | ----------------------------- | ---- | ----- |
-| 26  | One row per hero: HP, AC, passive Perception, conditions, concentration                      | `Party.tsx` cards     | done                                        | —                               | DDB app Characters tab        | —    | —     |
-| 27  | Open a hero's sheet read-only                                                                | `MemberSheetView.tsx` | done (`MemberSheetScreen`)                  | —                               | DDB campaign page             | —    | —     |
-| 28  | Party table: Insight and Investigation passives, speed, senses, six saves, best value marked | `PartySummary.tsx`    | done (S9: the DM's table on the Gruppo tab) | partial (`party-summary.ts`)    | FVTT-G (party sheet), DDB app | M    | S9    |
-| 29  | The DM plays a character too (attach a DMPC)                                                 | DmpcAttachControl     | missing                                     | partial (`attach-character.ts`) | — (classic precedent)         | S    | S10   |
+| #   | Capability                                                                                   | Classic               | New UI                                                       | Headless                        | Pattern                       | Size | Slice |
+| --- | -------------------------------------------------------------------------------------------- | --------------------- | ------------------------------------------------------------ | ------------------------------- | ----------------------------- | ---- | ----- |
+| 26  | One row per hero: HP, AC, passive Perception, conditions, concentration                      | `Party.tsx` cards     | done                                                         | —                               | DDB app Characters tab        | —    | —     |
+| 27  | Open a hero's sheet read-only                                                                | `MemberSheetView.tsx` | done (`MemberSheetScreen`)                                   | —                               | DDB campaign page             | —    | —     |
+| 28  | Party table: Insight and Investigation passives, speed, senses, six saves, best value marked | `PartySummary.tsx`    | done (S9: the DM's table on the Gruppo tab)                  | partial (`party-summary.ts`)    | FVTT-G (party sheet), DDB app | M    | S9    |
+| 29  | The DM plays a character too (attach a DMPC)                                                 | DmpcAttachControl     | done (S10: the Gruppo panel's foot, the DM's own characters) | partial (`attach-character.ts`) | — (classic precedent)         | S    | S10   |
 
 ### C. Running the campaign
 
-| #   | Capability                                                          | Classic                                   | New UI                                           | Headless                    | Pattern                              | Size | Slice |
-| --- | ------------------------------------------------------------------- | ----------------------------------------- | ------------------------------------------------ | --------------------------- | ------------------------------------ | ---- | ----- |
-| 30  | Copy the invite link                                                | CampaignInvite                            | done (header)                                    | —                           | DDB campaign page                    | —    | —     |
-| 31  | Delete the campaign                                                 | DmTools                                   | done (⋮ on the campaigns list)                   | —                           | DDB                                  | —    | —     |
-| 32  | Set, change or clear the next session date                          | `LastTime.tsx`                            | partial (the header shows it; nobody can set it) | ready (`session-moves.ts`)  | DDB campaign page (unverified)       | S    | S10   |
-| 33  | Hand the DM role to a player; remove a player; lock the invite link | `DmTools.tsx`, CampaignInvite             | missing                                          | ready (`campaign-admin.ts`) | DDB campaign management (unverified) | M    | S11   |
-| 34  | Rename the campaign; set or crop its banner                         | CampaignHubPage, `CampaignArtControl.tsx` | missing                                          | partial                     | DDB campaign page                    | S    | S11   |
+| #   | Capability                                                          | Classic                                   | New UI                                                            | Headless                    | Pattern                              | Size | Slice |
+| --- | ------------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------- | --------------------------- | ------------------------------------ | ---- | ----- |
+| 30  | Copy the invite link                                                | CampaignInvite                            | done (header)                                                     | —                           | DDB campaign page                    | —    | —     |
+| 31  | Delete the campaign                                                 | DmTools                                   | done (⋮ on the campaigns list)                                    | —                           | DDB                                  | —    | —     |
+| 32  | Set, change or clear the next session date                          | `LastTime.tsx`                            | done (S10: «Fissa la prossima sessione» / «Cambia» in the header) | ready (`session-moves.ts`)  | DDB campaign page (unverified)       | S    | S10   |
+| 33  | Hand the DM role to a player; remove a player; lock the invite link | `DmTools.tsx`, CampaignInvite             | missing                                                           | ready (`campaign-admin.ts`) | DDB campaign management (unverified) | M    | S11   |
+| 34  | Rename the campaign; set or crop its banner                         | CampaignHubPage, `CampaignArtControl.tsx` | missing                                                           | partial                     | DDB campaign page                    | S    | S11   |
 
 ### D. Journal, notes, treasure
 
