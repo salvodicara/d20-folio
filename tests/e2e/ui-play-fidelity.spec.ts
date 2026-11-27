@@ -10,7 +10,8 @@
  * 3 px caps; the critique's text scale), the value is the new one and says so.
  * The design reset «BG3 craft» (2026-11-26) re-pins the type scale and the button family
  * (one serif, BG3's lit and framed glass); titles, caps and chips move with later slices.
- * Slice 3 (type) re-pins the titles to title case at 20 px, names at 32 px, weights at 600.
+ * Slice 3 (type) re-pins the titles to title case at 20 px, names at 32 px, display weights
+ * at 600 and list rows (resource and action names) at the text weight, 400.
  * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
@@ -57,7 +58,7 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
     "linear-gradient(rgba(33, 26, 19, 0.97), rgba(17, 13, 10, 0.97))",
   ],
   ["panel title", ".f-play .f-pnh", "padding-top", "12px"],
-  ["resource name", ".f-res-t", "font-weight", "600"],
+  ["resource name", ".f-res-t", "font-weight", "400"],
   ["resource name", ".f-res-t", "color", "rgb(255, 255, 255)"],
   // the centre: the Cinzel tab band, the turn strip, the advice line
   ["tab band", ".f-centre > .f-tabs", "border-top-width", "0px"],
@@ -78,7 +79,7 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "0px"],
   ["group header", ".f-act-gh", "font-size", "16px"],
   ["group header", ".f-act-gh", "text-transform", "none"],
-  ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "600"],
+  ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "400"],
   ["action name", ".f-act:not(.f-act-head) .f-row-t", "color", "rgb(255, 255, 255)"],
   [
     "row button",
