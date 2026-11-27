@@ -78,6 +78,19 @@ describe("the forward-compat check", () => {
     expect(survey.problems).toBe(0);
   });
 
+  it("writes a play document carrying a condition's origin (#1333), which the strict reader keeps", () => {
+    const cases = input.cases.filter((c) => c.list === "play keys");
+    expect(cases.map((c) => c.value)).toEqual(["conditionOrigins"]);
+    const doc = cases[0]?.doc as { playState: { state: Record<string, unknown> } };
+    expect(doc.playState.state.conditionOrigins).toEqual({
+      frightened: "fear",
+    });
+    // The strict reader's canonical round-trip refuses any key it would not write back.
+    expect(readCases(parseCombatState, cases)).toEqual([
+      { list: "play keys", value: "conditionOrigins", result: "accepted" },
+    ]);
+  });
+
   it("this tree's own reader reads its dev characters", () => {
     const characters = input.cases.filter((c) => c.list === "character");
     expect(

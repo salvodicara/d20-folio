@@ -86,6 +86,11 @@ export const EXPECTED: readonly ExpectedRule[] = [
     fix: "#1187",
     path: /^actions\.spell-(dancing-lights|faerie-fire|darkness|prestidigitation|detect-magic|misty-step|druidcraft|longstrider|pass-without-trace|minor-illusion|speak-with-animals|mending|thaumaturgy|poison-spray|ray-of-sickness|hold-person|chill-touch|false-life|ray-of-enfeeblement|fire-bolt|hellish-rebuke)\.(attackBonus|saveDC)$/,
   },
+  // Max HP is derived from the stored build on every read (#1314 reload by the book,
+  // #1329 a feature's per-level HP counts its class's levels, #1331 the effective CON,
+  // #1351 the first class takes the hit-die maximum). The fixes share the one field:
+  // compare `hpMax`'s count with the max-HP surveys (reload, first class, effective CON).
+  { fix: "#1314 #1329 #1331 #1351", path: /^hpMax$/ },
 ];
 
 // ── The pure comparison ───────────────────────────────────────────────────────

@@ -188,6 +188,20 @@ export function buildInput<State>(
       base,
       notStored
     ),
+    // A play-state key newer than the live release (#1333): the release's strict reader
+    // must keep it through its canonical round-trip, or the document is refused.
+    {
+      list: "play keys",
+      value: "conditionOrigins",
+      doc: writtenDoc({
+        ...MOCK_CHARACTER,
+        session: {
+          ...MOCK_CHARACTER.session,
+          conditions: ["frightened"],
+          conditionOrigins: { frightened: "fear" },
+        },
+      }),
+    },
     { list: "character", value: "mock", doc: base },
     ...Object.keys(DEV_SCENARIOS).flatMap((id, index) => {
       const doc = buildDevScenario(id);
