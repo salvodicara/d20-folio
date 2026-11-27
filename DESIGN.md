@@ -706,8 +706,9 @@ chip that is not a button (`Chip` with no `onClick`) makes a status chip.
 
 Pressed sinks with a dark fill and an inset shadow; focus is the page's 2 px gold ring. A count
 inside a chip (`.f-chip-n`) is a small disc in the words' colour. Filters (`Filters`, the compendium
-facets, the level-up spell levels) are selectable pills, never underlined tabs; on a phone the sheet's
-action filters are one row that scrolls sideways. On a phone a selectable chip is 36 px high, a status
+facets, the level-up spell levels) are selectable pills, never underlined tabs; on a phone a `Filters` row
+(the sheet's actions, a spell pick's levels) is one line that scrolls sideways. Wrapped rows of chips
+sit 12 px apart on a phone, so neighbouring hit areas never overlap. On a phone a selectable chip is 36 px high, a status
 chip that opens a panel and a compact chip 32 px, and each reaches 44 px through an invisible hit area
 above and below; a row that scrolls sideways keeps at least 4 px of block padding so the hit area is
 not clipped. The sheet's status chips keep their own width on a phone (never stretched into

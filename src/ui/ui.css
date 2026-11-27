@@ -3670,7 +3670,7 @@
   .fui .f-sheet .f-char-chips > .f-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 12px 8px;
   }
   .fui .f-sheet .f-char-hp-open {
     grid-area: hp;
@@ -4916,7 +4916,7 @@
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 8px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--line-soft);
 }
 .fui .f-cond-main {
@@ -4925,6 +4925,28 @@
   flex-direction: column;
   gap: 4px;
   min-width: 0;
+}
+/* a condition's own chip sits 8 px under its words; a question («Da cosa?») is a group of
+   its own, 16 px down, its label 8 px over its chips (proximity) */
+.fui .f-cond-main > .f-chips {
+  margin-top: 4px;
+}
+.fui .f-cond-row + .f-ask {
+  margin-top: 12px;
+}
+/* «Da cosa?» under its condition, across the panel: one group with its row (no rule between),
+   the rule after it */
+.fui .f-cond-row:has(+ .f-cond-ask) {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+.fui .f-cond-row + .f-cond-ask {
+  margin-top: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.fui .f-cond-ask:last-child {
+  border-bottom: 0;
 }
 .fui .f-cond-add {
   padding-top: 8px;
@@ -6811,9 +6833,10 @@
 .fui .f-char-chips > .f-chips {
   display: contents;
 }
-/* on a phone the rows of state chips sit 12 px apart, so their 44 px hit areas never overlap */
+/* on a phone wrapped rows of chips sit 12 px apart, so their 44 px hit areas never overlap */
 @media (max-width: 640px) {
-  .fui .f-char-chips {
+  .fui .f-char-chips,
+  .fui .f-chips {
     row-gap: 12px;
   }
 }
@@ -7078,13 +7101,17 @@
   .fui .f-sheet .f-char-more {
     display: none;
   }
-  /* the filters: one row that scrolls sideways, fading where it is cut (.pills.hmore) */
-  .fui .f-sheet .f-filters {
+  /* the filters (the sheet's actions, a spell pick's levels): one row that scrolls sideways,
+     fading where it is cut (.pills.hmore); 8 px of block padding keeps the chips' hit area
+     whole, and the row keeps its height inside a grid */
+  .fui .f-filters {
     flex-wrap: nowrap;
+    min-height: min-content;
+    padding-block: 8px;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .fui .f-sheet .f-filters > .f-chip {
+  .fui .f-filters > .f-chip {
     flex: none;
   }
   /* 32 px from the filters to the first group (x-play-m: 30) */
@@ -7094,7 +7121,7 @@
   .fui .f-sheet .f-act-head + .f-act-group > .f-act-gh {
     margin-top: 8px;
   }
-  .fui .f-sheet .f-filters[data-more="true"] {
+  .fui .f-filters[data-more="true"] {
     mask-image: linear-gradient(90deg, var(--shade) calc(100% - 56px), transparent);
   }
   /* «9 m»: the unit at the figure's size, as the phone mock sets it */

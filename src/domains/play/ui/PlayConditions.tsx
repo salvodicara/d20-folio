@@ -6,7 +6,7 @@
  * by hand ask «Da chi?» among the fight's other combatants (or skip). On a phone the
  * panel is a sheet from the bottom.
  */
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { asksSource, conditionsPanelView } from "@/domains/play/play-conditions-view";
@@ -180,66 +180,69 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
               </div>
             )}
             {view.rows.map((row) => (
-              <div key={row.id} className="f-cond-row">
-                <div className="f-cond-main">
-                  <span className="f-row-t">
-                    {row.source
-                      ? t("play.conditions.withSource", {
-                          name: row.name,
-                          source: row.source,
-                        })
-                      : row.name}
-                  </span>
-                  {row.effect && <span className="f-row-s">{row.effect}</span>}
-                  {row.ask && !readonly && (
-                    <div className="f-chips">
-                      <Chip
-                        pressed={row.ask.pressed}
-                        onClick={() =>
-                          store().dispatch({
-                            kind: "set-sees-source",
-                            key: row.ask?.key ?? "",
-                            sees: row.ask?.pressed ? null : false,
+              <Fragment key={row.id}>
+                <div className="f-cond-row">
+                  <div className="f-cond-main">
+                    <span className="f-row-t">
+                      {row.source
+                        ? t("play.conditions.withSource", {
+                            name: row.name,
+                            source: row.source,
                           })
-                        }
-                      >
-                        {t("play.conditions.cantSeeSource")}
-                      </Chip>
-                    </div>
-                  )}
-                  {/* «Da cosa?» (#1333): an optional note on the active condition; the
-                      named spell lets a solo End Turn ask its repeat save. */}
-                  {row.origin && !readonly && (
-                    <div className="f-ask">
-                      <span className="f-lbl">
-                        {t("play.conditions.fromWhat", { name: row.name })}
-                      </span>
+                        : row.name}
+                    </span>
+                    {row.effect && <span className="f-row-s">{row.effect}</span>}
+                    {row.ask && !readonly && (
                       <div className="f-chips">
-                        {row.origin.options.map((o) => (
-                          <Chip
-                            key={o.id}
-                            pressed={row.origin?.chosen === o.id}
-                            onClick={() => setOrigin(row.id, o.id)}
-                          >
-                            {o.name}
-                          </Chip>
-                        ))}
                         <Chip
-                          pressed={row.origin.chosen === null}
-                          onClick={() => setOrigin(row.id, null)}
+                          pressed={row.ask.pressed}
+                          onClick={() =>
+                            store().dispatch({
+                              kind: "set-sees-source",
+                              key: row.ask?.key ?? "",
+                              sees: row.ask?.pressed ? null : false,
+                            })
+                          }
                         >
-                          {t("report.types.other")}
+                          {t("play.conditions.cantSeeSource")}
                         </Chip>
                       </div>
-                    </div>
+                    )}
+                  </div>
+                  {!readonly && (
+                    <Button onClick={() => store().removeCondition(row.id)}>
+                      {t("common.remove")}
+                    </Button>
                   )}
                 </div>
-                {!readonly && (
-                  <Button onClick={() => store().removeCondition(row.id)}>
-                    {t("common.remove")}
-                  </Button>
+                {/* «Da cosa?» (#1333): an optional note on the active condition; the
+                    named spell lets a solo End Turn ask its repeat save. It sits under
+                    the row, across the panel; its label names the condition. */}
+                {row.origin && !readonly && (
+                  <div className="f-ask f-cond-ask">
+                    <span className="f-lbl">
+                      {t("play.conditions.fromWhat", { name: row.name })}
+                    </span>
+                    <div className="f-chips">
+                      {row.origin.options.map((o) => (
+                        <Chip
+                          key={o.id}
+                          pressed={row.origin?.chosen === o.id}
+                          onClick={() => setOrigin(row.id, o.id)}
+                        >
+                          {o.name}
+                        </Chip>
+                      ))}
+                      <Chip
+                        pressed={row.origin.chosen === null}
+                        onClick={() => setOrigin(row.id, null)}
+                      >
+                        {t("report.types.other")}
+                      </Chip>
+                    </div>
+                  </div>
                 )}
-              </div>
+              </Fragment>
             ))}
             {burning && (
               <div className="f-cond-row" data-fire="">

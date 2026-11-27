@@ -29,7 +29,7 @@ import { SpellArt } from "@/domains/spells/ui/SpellArt";
 import { useMediaQuery } from "@/hooks/useMediaQuery";
 import type { Locale } from "@/lib/locale";
 import { tieLast, tieTails } from "@/lib/text-ties";
-import { Art, Button, Chip, Icon, type ArtKind } from "@/ui";
+import { Art, Button, Chip, Filters, Icon, type ArtKind } from "@/ui";
 
 const SCHOOL = new Map(allSpells.map((s) => [s.id, s.school]));
 const ROMAN = ["", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
@@ -229,7 +229,8 @@ export function PickGrid({
             />
           </label>
           {levels.length > 1 && (
-            <div className="f-chips" role="group" aria-label={t("spells.pick.byLevel")}>
+            // one row that scrolls sideways on a phone (D&D Beyond's spell-level filter)
+            <Filters label={t("spells.pick.byLevel")}>
               <Chip pressed={level === null} onClick={() => setLevel(null)}>
                 {t("common.all")}
               </Chip>
@@ -242,7 +243,7 @@ export function PickGrid({
                   {levelName(n)}
                 </Chip>
               ))}
-            </div>
+            </Filters>
           )}
         </div>
       )}
