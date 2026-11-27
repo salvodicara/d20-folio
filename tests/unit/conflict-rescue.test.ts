@@ -133,6 +133,22 @@ describe("several saves queued offline", () => {
     expect(notices).toEqual(["kept"]);
   });
 
+  it("both refused while the other device saved once: the first refusal proves it, the newest is kept (#1413)", async () => {
+    // The write chain refuses the second save too (its base was the refused first one),
+    // so the server stays one generation below the newest refused save.
+    const r = make();
+    const a = sheet(5);
+    const b = sheet(6);
+    r.sent(a);
+    r.sent(b);
+    r.refused(a);
+    r.refused(b);
+    r.snapshot(sheet(5, "other device"), false);
+    await flush();
+    expect(kept).toEqual([b]);
+    expect(notices).toEqual(["kept"]);
+  });
+
   it("the first refused, a later one (carrying the same edit) lands: nothing kept, no notice", async () => {
     const r = make();
     const a = sheet(5);

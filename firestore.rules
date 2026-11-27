@@ -217,8 +217,22 @@ service cloud.firestore {
           || (('schema' in request.resource.data)
               && request.resource.data.schema >= resource.data.schema);
       }
+      // The write chain (#1413): a revision number alone cannot say whose generation a
+      // write builds on, so a queued offline save at R+2 passed after another device
+      // stored R+1. A write that sets a new `writeId` must name the stored one as its
+      // `baseWriteId` (both absent on a sheet never chained) and advance the
+      // generation. A write that leaves `writeId` alone (metadata, an old tab) is
+      // judged by the revision rule only; «a build write must chain» closes that,
+      // one release after every client chains.
+      function writeChainHolds() {
+        let changed = request.resource.data.diff(resource.data).affectedKeys();
+        return !changed.hasAny(['writeId'])
+          || (request.resource.data.revision == resource.data.revision + 1
+              && request.resource.data.get('baseWriteId', null)
+                   == resource.data.get('writeId', null));
+      }
       allow update: if isNotBlocked()
-        && ((request.auth.uid == uid && revisionAdvancesWithBuild())
+        && ((request.auth.uid == uid && revisionAdvancesWithBuild() && writeChainHolds())
             || isCampaignDmDetach())
         && parentStateEmptyAfter()
         && publicSheetMatchesAfter()

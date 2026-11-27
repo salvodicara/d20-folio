@@ -28,8 +28,10 @@ import { useUndoStore } from "@/stores/undoStore";
 import {
   subscribeToCharacter,
   createDebouncedSave,
+  newWriteId,
   saveStatusCallbacks,
   type DebouncedSaveHandle,
+  type WriteStamp,
 } from "@/lib/firestore";
 import {
   canonicalJsonEquals,
@@ -445,13 +447,24 @@ export function useCharacterSubscription(characterId: string | undefined): void 
      * a snapshot from another device pulls the cursor forward through the `max` below.
      */
     let sentRevisionCursor = 0;
+    // The write chain (#1413), kept with the cursor and reset with it: the id of the
+    // last write this tab sent. While that write is ahead of the server's sheet, the
+    // next one builds on it; otherwise on the write the server's sheet names.
+    let lastSentWriteId: string | null = null;
     const acknowledgedRevision = (): number =>
       reconciler.current().parentRemote?.revision ?? 0;
-    const nextRevision = (): number => {
-      sentRevisionCursor = Math.max(sentRevisionCursor, acknowledgedRevision());
-      return ++sentRevisionCursor;
+    const nextRevision = (): WriteStamp => {
+      const acknowledged = acknowledgedRevision();
+      const baseWriteId =
+        sentRevisionCursor > acknowledged && lastSentWriteId !== null
+          ? lastSentWriteId
+          : (reconciler.current().parentRemote?.writeId ?? null);
+      sentRevisionCursor = Math.max(sentRevisionCursor, acknowledged);
+      lastSentWriteId = newWriteId();
+      return { revision: ++sentRevisionCursor, writeId: lastSentWriteId, baseWriteId };
     };
     const resetRevisionCursor = (): void => {
+      // Back on the server's generation, so the next write builds on the server's id.
       sentRevisionCursor = acknowledgedRevision();
     };
     resetRevisionCursorRef.current = resetRevisionCursor;

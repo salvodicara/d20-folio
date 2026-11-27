@@ -50,7 +50,7 @@ const {
         uid: string,
         charId: string,
         delayMs?: number,
-        allocateRevision?: () => number
+        allocateRevision?: () => import("@/lib/firestore").WriteStamp
       ) => unknown
     >(),
   debouncedFlush: vi.fn(() => Promise.resolve()),
@@ -114,11 +114,12 @@ vi.mock("@/stores/authStore", () => ({
 }));
 vi.mock("@/lib/firestore", () => ({
   subscribeToCharacter: subscribeMock,
+  newWriteId: () => crypto.randomUUID(),
   createDebouncedSave: (
     uid: string,
     charId: string,
     delayMs?: number,
-    allocateRevision?: () => number
+    allocateRevision?: () => import("@/lib/firestore").WriteStamp
   ) => {
     createDebouncedSaveMock(uid, charId, delayMs, allocateRevision);
     return {
@@ -915,8 +916,9 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
     return { payload, callbacks };
   }
 
-  /** The hook's SEND-TIME revision allocator, handed to `createDebouncedSave`. */
-  function allocateRevision(): number {
+  /** The hook's SEND-TIME allocator, handed to `createDebouncedSave`: the generation
+   *  and the write chain (#1413). */
+  function allocateStamp(): import("@/lib/firestore").WriteStamp {
     const allocate = createDebouncedSaveMock.mock.calls.at(-1)?.[3];
     if (!allocate) throw new Error("revision allocator not captured");
     return allocate();
@@ -929,10 +931,74 @@ describe("useCharacterSubscription — per-domain reconciliation replays (audit 
    */
   function sendLastSave(): CharacterDoc {
     const { payload, callbacks } = lastSave();
-    const sent: CharacterDoc = { ...payload, revision: allocateRevision() };
+    const sent: CharacterDoc = { ...payload, ...allocateStamp() };
     act(() => callbacks.onSend?.(sent));
     return sent;
   }
+
+  // #1413 — the write chain: each save names the write it builds on.
+  describe("the write chain (#1413)", () => {
+    function edit(quote: string): void {
+      act(() => {
+        const cur = openCharacter();
+        useCharacterStore
+          .getState()
+          .setCharacter({ ...cur, character: { ...cur.character, quote } });
+      });
+    }
+
+    async function load(writeId: string | null): Promise<void> {
+      renderHook(() => useCharacterSubscription("char1"));
+      await act(async () => {
+        snapshotCb()({ ...doc(), writeId });
+        combatCb()(sessionToCombatState(doc().session));
+        await Promise.resolve();
+      });
+    }
+
+    it("the first save builds on the stored write; a never-chained sheet on none", async () => {
+      await load("s1");
+      edit("one");
+      expect(sendLastSave()).toMatchObject({ revision: 5, baseWriteId: "s1" });
+    });
+
+    it("a never-chained sheet: the first save builds on no write", async () => {
+      await load(null);
+      edit("one");
+      expect(sendLastSave()).toMatchObject({ revision: 5, baseWriteId: null });
+    });
+
+    it("saves queued offline chain on each other, each with a fresh id", async () => {
+      await load("s1");
+      edit("one");
+      const first = sendLastSave();
+      edit("two");
+      const second = sendLastSave();
+      expect(second).toMatchObject({ revision: 6, baseWriteId: first.writeId });
+      expect(new Set([first.writeId, second.writeId, "s1"]).size).toBe(3);
+    });
+
+    it("after a refusal the next save builds on the server's write again", async () => {
+      await load("s1");
+      edit("one");
+      const first = sendLastSave();
+      const { callbacks } = lastSave();
+      await act(async () => {
+        snapshotCb()({ ...doc(), revision: 5, writeId: "b1" });
+        await Promise.resolve();
+      });
+      act(() =>
+        callbacks.onRejected?.(
+          first,
+          Object.assign(new Error("Missing or insufficient permissions."), {
+            code: "permission-denied",
+          })
+        )
+      );
+      edit("again");
+      expect(sendLastSave()).toMatchObject({ revision: 6, baseWriteId: "b1" });
+    });
+  });
 
   function lastChildWrite(): import("@/types/combat-state").CombatState {
     const call = writeCombatStateMock.mock.calls.at(-1);
