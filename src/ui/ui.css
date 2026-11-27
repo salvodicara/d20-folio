@@ -2402,6 +2402,33 @@
   .fui .f-sheet .f-ab-save {
     order: 3;
   }
+  /* 44 px targets (design reset, slice 5a). The modifier grows upward (its box ends on
+     the number); «TS» and an item's name grow by padding their margin hands back, so the
+     look does not move and the two targets of an ability never overlap. */
+  .fui .f-sheet .f-ability > dd > .f-ab-open {
+    min-width: 44px;
+    min-height: 44px;
+    align-content: end;
+  }
+  .fui .f-sheet .f-char-abil {
+    margin-top: 0;
+  }
+  .fui .f-sheet .f-ab-save > button {
+    padding-block: 14px;
+    margin-block: -14px;
+  }
+  .fui .f-sheet .f-ab-save > button::after {
+    content: none;
+  }
+  .fui .f-sheet .f-char-stats button.f-badge {
+    min-width: 44px;
+    min-height: 44px;
+    align-content: end;
+  }
+  .fui .f-sheet .f-act button.f-row-t {
+    padding-block: 13px;
+    margin-block: -13px;
+  }
 }
 .fui .f-char-stats {
   display: flex;
@@ -2796,6 +2823,11 @@
 .fui .f-act > .f-btn {
   width: 100%;
 }
+/* a row with two actions («Rituale» and «Lancia»): the second sits under the first, in
+   the action column, never under the row's picture */
+.fui .f-act > .f-btn ~ .f-btn {
+  grid-column: -2;
+}
 /* Extra Attack: swings left in the open Attack action */
 .fui .f-act > .f-btn[data-live] {
   border-color: var(--strong);
@@ -3010,9 +3042,10 @@
        wraps inside its cell («1d6‑1 / Contundente») instead of pushing the row out */
     grid-template-columns:
       /* the name column is never narrower than its longest word: «Arma improvvisata»
-         wraps between words, never inside one */
-      var(--slot-size) minmax(min-content, 1fr) minmax(64px, 112px)
-      minmax(80px, 104px) minmax(96px, 176px) 96px;
+         wraps between words, never inside one; the first and last tracks carry the
+         row's 8 px inset (a subgrid's padding sits inside its edge tracks) */
+      calc(var(--slot-size) + 8px) minmax(min-content, 1fr) minmax(64px, 112px)
+      minmax(80px, 104px) minmax(96px, 176px) calc(96px + 8px);
     column-gap: clamp(8px, 1vw, 12px);
   }
   .fui .f-sheet .f-act-table > .f-act-group {
@@ -3345,22 +3378,27 @@
 }
 @media (min-width: 641px) {
   .fui .f-sheet .f-act-c {
-    /* a grid, not flex: its narrowest width is its longest word, so a value wraps
-       («1d6‑1 / Contundente») before the table outgrows its pane */
-    display: grid;
-    align-content: center;
+    /* a flex line: its narrowest width is its longest word, and the text shrinks to the
+       cell and wraps between words («1d4‑1 / Contundente») instead of running into the
+       row's button */
+    display: flex;
+    align-items: center;
     justify-content: center;
     min-height: 40px;
     padding: 0 4px;
     text-align: center;
+    text-wrap: balance;
     white-space: normal;
   }
 }
-.fui .f-sheet .f-act:not(.f-act-head):hover {
-  background-color: var(--row-rule);
-}
-.fui .f-sheet .f-act:not(.f-act-head):hover .f-row-t {
-  color: var(--row-hover-text);
+/* a real hover only: a tap on a phone leaves :hover stuck on the row it touched */
+@media (hover: hover) {
+  .fui .f-sheet .f-act:not(.f-act-head):hover {
+    background-color: var(--row-rule);
+  }
+  .fui .f-sheet .f-act:not(.f-act-head):hover .f-row-t {
+    color: var(--row-hover-text);
+  }
 }
 @media (max-width: 640px) {
   .fui .f-act-head {
@@ -4185,8 +4223,18 @@
   list-style: none;
 }
 .fui .f-rest-lines > li {
-  padding-left: 16px;
-  border-left: 2px solid var(--line-strong);
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+/* each line opens with a small bronze lozenge, not a coloured bar on its edge */
+.fui .f-rest-lines > li::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  transform: translateY(-2px) rotate(45deg);
+  background: var(--gold-line);
 }
 .fui .f-rest-dice {
   grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
@@ -4516,34 +4564,39 @@
     grid-template-columns: none;
   }
 }
-/* a long resource name keeps its line; many pips wrap into a second row instead */
+/* a pool is three columns (D&D Beyond's limited-use rows): the name wraps in its own,
+   the pips keep one line beside it, and every count ends on the same edge */
+.fui .f-sheet .f-res {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 4ch;
+  align-items: center;
+}
 .fui .f-sheet .f-res-t {
-  flex: 1 0 auto;
-  /* room left for the count (and the pips, when the pool has them) */
-  max-width: calc(100% - 40px);
-}
-.fui .f-sheet .f-res:has(> .f-pips) > .f-res-t {
-  max-width: calc(100% - 72px);
-}
-.fui .f-sheet .f-res > .f-res-n {
-  margin-left: auto;
+  grid-column: 1;
+  text-wrap: balance;
 }
 .fui .f-sheet .f-res > .f-pips {
-  flex: 0 1 auto;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  min-width: 16px;
-}
-/* up to six pips stay on one row (a 3/5 pool never leaves its fifth below); the
-   name gives way and wraps instead */
-.fui .f-sheet .f-res > .f-pips:not(:has(> i:nth-child(7))) {
-  flex-shrink: 0;
+  grid-column: 2;
   flex-wrap: nowrap;
 }
-.fui .f-sheet .f-res:has(> .f-pips:not(:has(> i:nth-child(7)))) > .f-res-t {
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: none;
+/* seven or eight pips fold into two rows of four, so the name keeps its room */
+.fui .f-sheet .f-res > .f-pips:has(> i:nth-child(7)) {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 64px;
+}
+.fui .f-sheet .f-res > .f-res-n {
+  grid-column: 3;
+}
+/* a pool's follow-up («Spendi uno slot → Ispirazione Bardica»): a quiet line under its
+   pool, from the name's edge, that wraps rather than running out of the panel */
+.fui .f-sheet .f-res + .f-btn[data-kind="quiet"] {
+  justify-content: flex-start;
+  max-width: 100%;
+  height: auto;
+  padding-inline: 0;
+  text-align: left;
+  white-space: normal;
 }
 /* the narrowest phones: the three centre tabs at 12 px, so all three fit */
 @media (max-width: 360px) {
