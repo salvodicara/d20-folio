@@ -6,7 +6,7 @@ import { NotesTab } from "@/domains/notes/ui/NotesTab";
 import { RulesTab } from "@/domains/campaign/ui/RulesTab";
 import { Coins } from "@/domains/treasury/ui/Coins";
 import { TreasuryTab } from "@/domains/treasury/ui/TreasuryTab";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, Navigate, useParams } from "react-router";
 
@@ -24,6 +24,8 @@ import { Button, Chip, HpRing, Panel, Tabs, Toast } from "@/ui";
 
 import { partyRows, type PartyRow } from "../party-rows-view";
 import { useLiveDocs } from "./use-party";
+import { PartyTable } from "./PartyTable";
+import { partySummaryView } from "../party-summary-view";
 
 type Tab = "party" | "fight" | "journal" | "treasure" | "notes" | "rules";
 
@@ -91,7 +93,7 @@ function Campaign({ campaignId }: { campaignId: string }) {
           onChange={setTab}
         />
         {tab === "party" ? (
-          <PartyTab campaign={campaign} locale={locale} />
+          <PartyTab campaign={campaign} locale={locale} isDm={uid === campaign.dmUid} />
         ) : tab === "fight" ? (
           <FightTab campaign={campaign} locale={locale} onToast={setToast} />
         ) : tab === "treasure" ? (
@@ -181,10 +183,32 @@ export function Header({
   );
 }
 
-function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale }) {
+function PartyTab({
+  campaign,
+  locale,
+  isDm,
+}: {
+  campaign: CampaignDoc;
+  locale: Locale;
+  isDm: boolean;
+}) {
   const { t } = useTranslation();
   const live = useLiveDocs(campaign);
   const rows = partyRows(campaign, live, locale);
+  // The DM's whole-party table, from the same live sheets as the rows above.
+  const table = useMemo(
+    () =>
+      partySummaryView(
+        campaign,
+        Object.fromEntries(
+          Object.entries(live).map(([uid, doc]) => [
+            uid,
+            doc ? { status: "ready" as const, doc } : { status: "loading" as const },
+          ])
+        )
+      ),
+    [campaign, live]
+  );
   const encounter = campaign.encounter;
   return (
     <div className="f-split">
@@ -205,6 +229,11 @@ function PartyTab({ campaign, locale }: { campaign: CampaignDoc; locale: Locale 
             />
           ))}
         </Panel>
+        {isDm && (table.rows.length > 0 || table.loading > 0) && (
+          <Panel color="grp" title={t("campaignHub.partySummary")}>
+            <PartyTable view={table} locale={locale} />
+          </Panel>
+        )}
         <Panel color="tes" title={t("campaignScreen.chest")}>
           <Coins treasury={campaign.treasury} />
         </Panel>

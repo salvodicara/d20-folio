@@ -7715,3 +7715,79 @@
 .fui dialog.f-dlg .f-bd :is(p, .f-help) {
   font-size: var(--fs-text);
 }
+
+/* the DM's party table on the Gruppo tab (the classic «Il gruppo a colpo d'occhio»):
+   the hero column stays, the numbers scroll sideways on a phone */
+.fui .f-ptable-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+.fui .f-ptable-scroll:focus-visible {
+  outline: 2px solid var(--gold-hi);
+  outline-offset: 2px;
+}
+.fui .f-ptable {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.fui .f-ptable th,
+.fui .f-ptable td {
+  padding: 6px;
+  border-bottom: 1px solid var(--line);
+  text-align: center;
+}
+.fui .f-ptable thead th {
+  white-space: normal;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.fui .f-ptable td {
+  color: var(--text);
+}
+.fui .f-ptable .f-ptable-hero {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  /* a long name wraps: the numbers keep the width */
+  min-width: 12ch;
+  max-width: 18ch;
+  white-space: normal;
+  text-align: left;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+}
+.fui .f-ptable thead .f-ptable-hero {
+  white-space: nowrap;
+}
+.fui .f-ptable tbody .f-ptable-hero {
+  display: flex;
+  flex-direction: column;
+}
+.fui .f-ptable-name {
+  color: var(--strong);
+  font-weight: 600;
+}
+.fui .f-ptable-lvl {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+/* the best of a column: gold and bold, and said in words for a screen reader */
+.fui .f-ptable td[data-best] {
+  color: var(--gold-hi);
+}
+/* a proficient save: a dot before the number */
+.fui .f-ptable td[data-prof]::before {
+  content: "•";
+  margin-right: 4px;
+  color: var(--gold);
+}
+.fui .f-ptable-senses {
+  white-space: normal;
+  min-width: 9ch;
+  text-align: left;
+}

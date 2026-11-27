@@ -101,10 +101,8 @@ const CAMPAIGN: Record<string, { classic: string; answer: Answer }> = {
   },
   "The DM's party summary": {
     classic: "src/features/campaigns/PartySummary.tsx",
-    answer: {
-      model: "src/domains/campaign/party-summary-view.ts",
-      pending: "direction: the control on screen",
-    },
+    // The DM's table on the Gruppo tab (gap map row 28).
+    answer: { covered: "src/domains/campaign/ui/PartyTable.tsx" },
   },
   "Sessions: create, rename, delete": {
     classic: "src/features/campaigns/Sessions.tsx",
