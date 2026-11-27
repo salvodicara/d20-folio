@@ -1,7 +1,8 @@
 /**
  * «Danni e cure» opens in the mode of the button that opened it (D&D Beyond's two
- * buttons under the Hit Points): from «Cura» the healing action is the filled one and
- * the header is green; from «Danni» or the Hit Points, damage leads in red.
+ * buttons under the Hit Points): from «Cura» the header is green, from «Danni» or the
+ * Hit Points it is red. The two actions stay one equal pair either way (red «Danni»,
+ * green «Cura», neither lit: design reset «BG3 craft»).
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
@@ -42,18 +43,18 @@ describe("PlayHp intent", () => {
     useCharacterStore.setState({ readonly: false });
   });
 
-  it("from «Heal», healing is the filled action and the header is green", () => {
+  it("from «Heal», the header is green and the pair stays equal", () => {
     const dialog = open("heal");
     expect(dialog.getAttribute("data-c")).toBe("cmp");
-    expect(kind("Heal")).toBe("primary");
-    expect(kind("Damage")).toBe("ghost");
+    expect(kind("Damage")).toBe("danger");
+    expect(kind("Heal")).toBe("heal");
   });
 
-  it("from «Damage» (the default), damage leads in red", () => {
+  it("from «Damage» (the default), the header is red and the pair stays equal", () => {
     const dialog = open();
     expect(dialog.getAttribute("data-c")).toBe("ini");
     expect(kind("Damage")).toBe("danger");
-    expect(kind("Heal")).toBe("ghost");
+    expect(kind("Heal")).toBe("heal");
   });
 
   it("the max HP row shows the sheet's max and opens its pane (DDB's HP manager)", () => {

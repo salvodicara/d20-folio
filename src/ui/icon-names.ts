@@ -1,4 +1,6 @@
 // Generated from game-icons.net (CC BY 3.0) and Phosphor (MIT); the sprite is public/assets/ui-icons.svg.
+// The four status marks (g-concentration, g-condition, g-effect, g-inspiration) are drawn
+// for Folio on the 256 grid at the Phosphor bold stroke, so they sit with the u- icons.
 // Icons are named by meaning: g- for game concepts, u- for interface commands.
 export const ICON_NAMES = [
   "g-campaign",
@@ -17,13 +19,17 @@ export const ICON_NAMES = [
   "g-class-wizard",
   "g-combat",
   "g-compass",
+  "g-concentration",
+  "g-condition",
   "g-create",
   "g-crossbow",
+  "g-effect",
   "g-error",
   "g-gem",
   "g-hp-damage",
   "g-hp-heal",
   "g-import",
+  "g-inspiration",
   "g-invite",
   "g-item",
   "g-journal",

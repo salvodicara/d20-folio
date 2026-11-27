@@ -14,8 +14,8 @@
  * starts a new sitting (`startNewSitting`), so the report holds only this spec's lines.
  *
  * The forgotten fight closes on an idle hour here, not on a rest: the new UI's sheet
- * refuses a rest while its campaign fight runs («No resting during a fight»,
- * PlayScreen). Bard's browser clock moves on 61 minutes (Playwright's clock), and the
+ * keeps no rest in its header while its campaign fight runs (the rests come back when
+ * it ends, PlayScreen). Bard's browser clock moves on 61 minutes (Playwright's clock), and the
  * next thing Bard does (a Bardic Inspiration spend) leaves the fight.
  */
 import {

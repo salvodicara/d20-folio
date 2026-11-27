@@ -1,7 +1,7 @@
 {
   "lore": {
     "backstory": "Backstory",
-    "backstoryPlaceholder": "Your character's backstory...",
+    "backstoryPlaceholder": "Your character's backstory…",
     "traits": "Personality Traits",
     "ideals": "Ideals",
     "bonds": "Bonds",
@@ -34,7 +34,7 @@
       "chaotic-evil": "Chaotic Evil",
       "unaligned": "Unaligned"
     },
-    "alignmentPlaceholder": "Select alignment...",
+    "alignmentPlaceholder": "Select alignment…",
     "lineageNotChosen": "No lineage chosen. Switch to Edit to pick one."
   }
 }

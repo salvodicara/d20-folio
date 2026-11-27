@@ -2,7 +2,7 @@
   "save": {
     "saved": "Saved",
     "pending": "Unsaved",
-    "saving": "Saving...",
+    "saving": "Saving…",
     "error": "Save error",
     "offline": "Offline",
     "editNotSaved": "Your last change was not saved: this sheet changed on another device.",

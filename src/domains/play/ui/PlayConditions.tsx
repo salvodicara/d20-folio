@@ -19,7 +19,7 @@ import { localeDistance } from "@/lib/utils";
 import { useCharacterStore } from "@/stores/characterStore";
 import { registerUndoableResult } from "@/stores/undoStore";
 import type { CharacterDoc, SessionState } from "@/types/character";
-import { Button, Chip, Panel, Stepper } from "@/ui";
+import { Button, Chip, Icon, Panel, Stepper } from "@/ui";
 
 export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Locale }) {
   const { t } = useTranslation();
@@ -136,7 +136,8 @@ export function PlayConditions({ doc, locale }: { doc: CharacterDoc; locale: Loc
         {/* one state is named on the chip (D&D Beyond's conditions bar): the player sees
             «Spaventato» or «In fiamme» without opening anything; more show their count.
             Burning counts as one more state on the character. */}
-        {`⚠ ${single ?? t("combat.effectReview.conditions")}`}
+        <Icon name="g-condition" />
+        {single ?? t("combat.effectReview.conditions")}
         {!single && total > 0 && <span className="f-chip-n">{total}</span>}
       </Chip>
       {open && (
