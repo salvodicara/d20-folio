@@ -1,10 +1,9 @@
 /* Folio design system (approved 2026-11-02, docs/design/prototype).
    Everything is scoped under .fui so the new UI cannot restyle a live screen.
-   Rules: 8 px grid, two button kinds, colour only with a meaning, text from 12 px with AA contrast,
-   40 px targets, one panel and header component, gold only on identity headers and the main button. */
-
-@import "@fontsource/cormorant-garamond/latin-600.css";
-@import "@fontsource/cormorant-garamond/latin-700.css";
+   Rules: 8 px grid, one button family (design reset «C · BG3 craft», owner 2026-11-27: lit
+   primary, gold-framed secondary, gold-text ghost, red destructive), one text serif for every
+   string and number, colour only with a meaning, text from 13 px with AA contrast, 40 px targets
+   (44 on a phone), one panel and header component. */
 
 /* ---------- tokens ---------- */
 .fui {
@@ -14,14 +13,14 @@
   --lit-deep: #0f3a4b;
   --lit-glow: rgb(42 141 176 / 0.53);
   --lit-glow-hi: #5fb3e6;
-  /* One family, as Baldur's Gate 3 (owner's pick, 2026-11-08): Alegreya for titles and
-     text, Alegreya SC for labels and panel titles, names and buttons at a lighter 500. */
-  /* the prototype's tokens (css/tokens.css), face for face */
-  --font-title: "Folio Title Figures", "Alegreya Variable", Georgia, serif;
-  --font-label: "Folio Label Figures", "Folio Label", "Alegreya SC", Georgia, serif;
-  --font-text: "Folio Text Figures", "Alegreya Variable", Georgia, serif;
-  --font-num: "Folio Title Text", "Alegreya Variable", Georgia, serif;
-  --fw-name: 500;
+  /* One family, as Baldur's Gate 3 (owner, 2026-11-08; design reset «BG3 craft»,
+     2026-11-26): one sturdy text serif, Source Serif 4, for titles, names, text, buttons and
+     every number. Its figures are full height and tabular, so a number never mixes faces. */
+  --font-title: "Source Serif 4", Georgia, serif;
+  --font-label: "Source Serif 4", Georgia, serif;
+  --font-text: "Source Serif 4", Georgia, serif;
+  --font-num: "Source Serif 4", Georgia, serif;
+  --fw-name: 400;
 
   --bg: #0b0907;
   --bar: #0d0a08;
@@ -41,7 +40,7 @@
   /* the prototype's shield edge, damage and heal icons */
   --gold-edge: #f0d391;
   /* the prototype's 15 px reading size (.res__name, .hp__actions, .log__entry) */
-  --fs-prose: 15px;
+  --fs-prose: 16px;
   --hp-hi: #ee6a55;
   --heal: #6fcf8a;
   /* the prototype's strip fill (.bn), initiative number and tab-band rule */
@@ -111,16 +110,18 @@
   --panel-bottom: rgb(17 13 10 / 0.97);
   --frame: #6a5130;
 
-  --fs-xs: 12px;
-  --fs-sm: 14px;
+  --fs-xs: 13px;
+  --fs-sm: 13px;
   --fs-md: 16px;
-  --fs-nav: 13px;
-  --fs-lg: 18px;
-  --fs-prose: 17px;
-  --fs-title-bar-m: 22px;
-  --fs-title-bar: 24px;
-  --fs-xl: 28px;
-  --fs-hp: 56px;
+  --fs-nav: 15px;
+  --fs-lg: 20px;
+  --fs-prose: 16px;
+  --fs-title-bar-m: 20px;
+  --fs-title-bar: 20px;
+  --fs-xl: 24px;
+  --fs-hp: 52px;
+  --fs-name: 32px;
+  --fs-hero: 44px;
 
   --r-sm: 2px;
   --r: 4px;
@@ -138,12 +139,13 @@
 
   background: var(--bg);
   color: var(--text);
-  font: 15px/1.5 var(--font-text);
-  font-variant-numeric: lining-nums;
-  /* The old app's body pins tabular figures and antialiased smoothing; the
-     prototype has neither (Play turns smoothing back on below). */
-  font-feature-settings: normal;
-  -webkit-font-smoothing: auto;
+  font: var(--fs-md)/1.5 var(--font-text);
+  /* every number in one face: lining and tabular figures */
+  font-variant-numeric: lining-nums tabular-nums;
+  font-feature-settings:
+    "lnum" 1,
+    "tnum" 1;
+  -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
   min-height: 100vh;
   position: relative;
@@ -298,9 +300,9 @@
       color-mix(in srgb, var(--c, var(--c-act)) 14%, transparent),
       transparent
     );
-  font: 700 18px/1.2 var(--font-label);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font: 600 var(--fs-lg) / 1.2 var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--white);
 }
 .fui .f-pnh > .f-x {
@@ -308,7 +310,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 400 14px var(--font-text);
+  font: 400 var(--fs-nav) var(--font-text);
   letter-spacing: 0;
   text-transform: none;
   color: var(--text);
@@ -328,7 +330,7 @@
   .fui .f-pnh {
     padding: 4px 16px 8px;
     font-size: var(--fs-md);
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
   }
   .fui .f-pnb {
     padding: 16px;
@@ -371,56 +373,194 @@
   --c: var(--c-ini);
 }
 
-/* ---------- buttons: two kinds (primary, ghost), plus quiet and danger ---------- */
+/* ---------- buttons: one family after BG3's in-game UI (design reset «BG3 craft», 2026-11-26) ----------
+   Every kind shares one height (40 px, 44 on a phone), one radius (4 px), 16 px icons and the
+   same text case. The plate is BG3's glass: a darker top, a peak at 44 %, a gloss break, a
+   darker base. Primary: our blue lit glass, a gold rim, cream text (4.9:1 on the peak).
+   Secondary (default and «ghost»): a brown pillow, a brass rim. Ghost («quiet»): gold words.
+   Destructive: a red pillow. Hover brightens the glass and lights the rim; pressed drops the
+   peak; disabled keeps the shape with a dark fill and dark-tan text; focus lights the rim. */
+.fui {
+  --btn-h: 40px;
+  --btn-r: 4px;
+  --lit-top: #124e69;
+  --lit-peak: #1a6f97;
+  --lit-after: #155f80;
+  --lit-bot: #0c3a4f;
+  --lit-peak-hover: #1f7da8;
+  --lit-after-hover: #1a6c90;
+  --lit-halo: rgb(95 200 230 / 0.35);
+  --rim: #c9a062;
+  --rim-hi: #f0d391;
+  --rim-brass: #ad7947;
+  --cream: #f4f0ea;
+  --sec-top: #2d2318;
+  --sec-peak: #3e3020;
+  --sec-after: #372b1c;
+  --sec-bot: #2b2219;
+  --sec-peak-hover: #4f3d25;
+  --disabled-fill: #1e1813;
+  --disabled-rim: #5a4a36;
+  --disabled-text: #857463;
+  /* the family's lights and shades, as tokens */
+  --btn-text-shade: rgb(0 0 0 / 0.6);
+  --btn-press-shade: rgb(0 0 0 / 0.4);
+  --lit-rest-glow: rgb(95 200 230 / 0.18);
+  --quiet-hover: rgb(244 211 138 / 0.08);
+  --danger-rim-hover: #e0574a;
+  --heal-text: #d4f6dc;
+}
 .fui .f-btn {
+  --top: var(--sec-top);
+  --peak: var(--sec-peak);
+  --after: var(--sec-after);
+  --bot: var(--sec-bot);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 40px;
+  min-height: var(--btn-h);
   padding: 0 16px;
-  border: 1px solid transparent;
-  border-radius: var(--r-sm);
-  background: none;
-  color: var(--text);
-  font: var(--fw-name) 15px var(--font-text);
+  border: 1px solid var(--rim-brass);
+  border-radius: var(--btn-r);
+  background: linear-gradient(
+    180deg,
+    var(--top) 0%,
+    var(--peak) 44%,
+    var(--after) 50%,
+    var(--after) 70%,
+    var(--bot) 100%
+  );
+  color: var(--cream);
+  font: 400 var(--fs-md) / 1 var(--font-text);
+  letter-spacing: 0;
+  text-transform: none;
+  text-shadow: 0 1px 0 var(--btn-text-shade);
   white-space: nowrap;
   cursor: pointer;
   transition:
-    background-color 0.12s,
     border-color 0.12s,
-    filter 0.12s,
-    transform 0.06s;
+    box-shadow 0.12s,
+    color 0.12s;
+}
+.fui .f-btn .f-ic {
+  width: 16px;
+  height: 16px;
 }
 .fui .f-btn[data-kind="primary"] {
-  background: var(--line-soft);
-  border-color: var(--gold-line);
-  color: var(--strong);
-}
-.fui .f-btn[data-kind="ghost"] {
-  border-color: var(--line-strong);
+  --top: var(--lit-top);
+  --peak: var(--lit-peak);
+  --after: var(--lit-after);
+  --bot: var(--lit-bot);
+  border: 1.5px solid var(--rim);
+  box-shadow: 0 0 8px var(--lit-rest-glow);
+  font-weight: 600;
 }
 .fui .f-btn[data-kind="quiet"] {
-  color: var(--gold-hi);
   padding: 0 12px;
+  border-color: transparent;
+  background: none;
+  color: var(--gold-hi);
+  text-shadow: none;
 }
 .fui .f-btn[data-kind="danger"] {
-  background: var(--danger-bg);
+  --top: #2e100c;
+  --peak: #461811;
+  --after: #38130d;
+  --bot: #2a0e0a;
   border-color: var(--danger-line);
   color: var(--danger-text);
 }
-.fui .f-btn:hover {
-  filter: brightness(1.18);
-  background-color: color-mix(in srgb, currentColor 6%, transparent);
+/* Only a real hover lights: a tap on a touch screen leaves `:hover` stuck (#1333) */
+@media (hover: hover) {
+  .fui .f-btn:not([aria-disabled="true"]):hover {
+    --peak: var(--sec-peak-hover);
+    border-color: var(--rim);
+    color: var(--white);
+  }
+  .fui .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover {
+    --peak: var(--lit-peak-hover);
+    --after: var(--lit-after-hover);
+    border-color: var(--rim-hi);
+    box-shadow: 0 0 14px var(--lit-halo);
+  }
+  .fui .f-btn[data-kind="quiet"]:not([aria-disabled="true"]):hover {
+    border-color: transparent;
+    background: var(--quiet-hover);
+    color: var(--gold-hi);
+  }
+  .fui .f-btn[data-kind="danger"]:not([aria-disabled="true"]):hover {
+    --peak: #6e251b;
+    border-color: var(--danger-rim-hover);
+    color: var(--danger-text);
+  }
 }
-.fui .f-btn:active {
-  transform: translateY(1px);
-  filter: brightness(0.92);
+.fui .f-btn:not([aria-disabled="true"]):active {
+  --peak: var(--after);
+  padding-top: 1px;
+  box-shadow: inset 0 2px 4px var(--btn-press-shade);
+  filter: brightness(0.9);
+}
+.fui .f-btn[data-kind="primary"]:not([aria-disabled="true"]):active {
+  --top: #08293a;
+  --peak: #0e4560;
+  --after: #0e4560;
+  --bot: #0a3448;
+  border-color: var(--rim);
+  box-shadow: inset 0 3px 6px var(--btn-text-shade);
+  filter: none;
 }
 .fui .f-btn[aria-disabled="true"] {
-  opacity: 0.45;
+  border-color: var(--disabled-rim);
+  background: var(--disabled-fill);
+  box-shadow: none;
+  color: var(--disabled-text);
+  text-shadow: none;
   cursor: not-allowed;
-  filter: none;
+}
+.fui .f-btn[data-kind="quiet"][aria-disabled="true"] {
+  border-color: transparent;
+  background: none;
+}
+.fui .f-btn:focus-visible {
+  border-color: var(--rim-hi);
+  outline: 2px solid var(--rim-hi);
+  outline-offset: 2px;
+}
+/* «Danni» and «Cura» are one pair of equal verbs, a red and a green pillow, neither lit:
+   the sheet's header pair and the «Danni e cure» pair */
+.fui .f-char-hp-acts > .f-btn:first-child {
+  --top: #2e100c;
+  --peak: #461811;
+  --after: #38130d;
+  --bot: #2a0e0a;
+  border-color: var(--danger-line);
+  color: var(--danger-text);
+}
+.fui .f-char-hp-acts > .f-btn:last-child,
+.fui .f-hp-acts > .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
+  --top: #0f2414;
+  --peak: #16331c;
+  --after: #122a17;
+  --bot: #0e2212;
+  border: 1px solid color-mix(in srgb, var(--heal) 55%, transparent);
+  box-shadow: none;
+  color: var(--heal-text);
+  font-weight: 400;
+}
+/* a quiet action that deletes (the trash icon) reads in the danger colour */
+.fui .f-btn[data-kind="quiet"]:has(use[href$="#u-delete"]) {
+  color: var(--danger);
+}
+/* a callout's own button is secondary: the screen keeps one lit action */
+.fui .f-note > .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
+  --top: var(--sec-top);
+  --peak: var(--sec-peak);
+  --after: var(--sec-after);
+  --bot: var(--sec-bot);
+  border: 1px solid var(--rim-brass);
+  box-shadow: none;
+  font-weight: 400;
 }
 .fui .f-btn.f-wide {
   width: 100%;
@@ -484,7 +624,7 @@
   border: 0;
   background: none;
   color: var(--muted);
-  font: var(--fw-name) 15px var(--font-text);
+  font: var(--fw-name) var(--fs-nav) var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -510,7 +650,7 @@
   border-radius: var(--r-pill);
   background: none;
   color: var(--text);
-  font: var(--fw-name) 14px var(--font-text);
+  font: var(--fw-name) var(--fs-nav) var(--font-text);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -538,7 +678,7 @@
   border-color: var(--temp);
   background: var(--buff-bg);
   color: var(--white);
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-chip[data-kind="buff"] {
   border-color: var(--buff);
@@ -558,8 +698,8 @@
   gap: 8px;
 }
 .fui .f-lbl {
-  font: 700 12px var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -571,7 +711,7 @@
   border-radius: var(--r-sm);
   background: var(--sunk);
   color: var(--strong);
-  font: 400 16px var(--font-text);
+  font: 400 var(--fs-md) var(--font-text);
 }
 .fui .f-in::placeholder {
   color: var(--faint);
@@ -1029,7 +1169,7 @@
 }
 .fui .f-hero h1 {
   margin: 0;
-  font: 500 36px/1.1 var(--font-title);
+  font: 500 var(--fs-name)/1.1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-hero-sub {
@@ -1156,7 +1296,7 @@
   text-align: center;
 }
 .fui .f-stat-v {
-  font: 700 20px/1.2 var(--font-num);
+  font: 600 var(--fs-lg)/1.2 var(--font-num);
   color: var(--strong);
 }
 .fui .f-stat-v[data-hp="ok"] {
@@ -1209,7 +1349,7 @@
   --coin: var(--coin-cp);
 }
 .fui .f-coin b {
-  font: 600 20px var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 
@@ -1280,9 +1420,9 @@
   display: flex;
   align-items: center;
   padding: 0 16px;
-  font: 700 var(--fs-nav) var(--font-label);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font: 400 var(--fs-md) var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--muted);
   text-decoration: none;
 }
@@ -1371,7 +1511,7 @@
   border: 1px solid var(--line);
   border-radius: var(--r-sm);
   color: var(--muted);
-  font: 600 var(--fs-sm) / 20px var(--font-text);
+  font: 600 var(--fs-sm) / var(--fs-lg) var(--font-text);
 }
 /* ⌘K holds its height while the hits change (no jumping sheet); the field stays on top
    while the hits scroll under it; on a phone the search is a full-height sheet */
@@ -1936,8 +2076,8 @@
   border-radius: var(--r-pill);
   background: var(--turn);
   color: var(--bg);
-  font: 700 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .fui .f-row-s[data-band="bloodied"] {
@@ -1961,8 +2101,8 @@
   border: 1px solid var(--hp-y);
   border-radius: var(--r-pill);
   color: var(--hp-y);
-  font: 700 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .fui .f-toast > span {
@@ -1973,8 +2113,8 @@
 /* ---------- notes ---------- */
 /* a note's kind: a small coloured word over its title */
 .fui .f-kind {
-  font: 700 var(--fs-xs) / 1.4 var(--font-label);
-  letter-spacing: 0.06em;
+  font: 600 var(--fs-xs) / 1.4 var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--muted);
 }
@@ -2168,7 +2308,7 @@
   stroke-width: 1;
 }
 .fui .f-badge-frame b small {
-  font: 700 var(--fs-sm) var(--font-text);
+  font: 600 var(--fs-sm) var(--font-text);
   color: var(--muted);
 }
 .fui .f-badge-frame b {
@@ -2382,9 +2522,9 @@
   background: var(--sunk);
 }
 .fui .f-turn-t {
-  font: 700 var(--fs-md) var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-md) var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--strong);
 }
 .fui .f-turn-slots {
@@ -2664,12 +2804,12 @@
   --plate-text: #ece3d0;
   --row-hover-text: #ffe7a8;
   --fs-text: 16px;
-  --fs-ac: 34px;
-  --fs-hp-big: 64px;
+  --fs-ac: 24px;
+  --fs-hp-big: 52px;
   --fs-title-phone: 26px;
-  --fs-name-m: 30px;
-  --fs-hp-phone: 46px;
-  --fs-phone-num: 22px;
+  --fs-name-m: 26px;
+  --fs-hp-phone: 44px;
+  --fs-phone-num: 20px;
   --muted: #bcae93;
   --label: #a89a82;
   --frame: #6a5130;
@@ -2696,31 +2836,10 @@
 .fui .f-sheet .f-pnb {
   padding: 16px 20px;
 }
-/* buttons: BG3's dark capsule with a bronze rim, a gold glow on hover, a press */
-.fui .f-sheet .f-btn {
-  font-weight: 700;
-  line-height: 1.45;
-  transition:
-    transform 0.12s ease,
-    box-shadow 0.12s ease,
-    background-color 0.12s ease,
-    border-color 0.12s ease,
-    filter 0.12s ease,
-    color 0.12s ease;
-}
-.fui .f-sheet .f-btn[data-kind="ghost"],
-.fui .f-sheet .f-btn[data-kind="primary"] {
-  border-color: var(--frame);
-  background: linear-gradient(180deg, var(--btn-top), var(--btn-bottom));
-  box-shadow: inset 0 1px 0 var(--btn-rim-hi);
-  color: var(--text);
-  font-size: var(--fs-sm);
-}
 /* Only a real hover lights: a tap on a touch screen leaves `:hover` stuck where the
    finger was, and a chip shifted under it looked picked (#1333). A pick is
    `aria-pressed`. */
 @media (hover: hover) {
-  .fui .f-sheet .f-btn:not([aria-disabled="true"]):hover,
   .fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):hover {
     border-color: var(--hover-gold);
     box-shadow:
@@ -2730,52 +2849,28 @@
     filter: brightness(1.18);
   }
 }
-.fui .f-sheet .f-btn:not([aria-disabled="true"]):active,
 .fui .f-sheet .f-chip:not([aria-disabled="true"]):is(button):active {
   transform: translateY(1px) scale(0.98);
   filter: brightness(0.82);
   box-shadow: inset 0 2px 6px var(--shade);
 }
-/* A dialog's confirm is the filled primary of its footer (BG3's lit confirm; the owner's
-   2026-11-10 choice of the blue BG3 button, as «Fine turno»): every dialog, through the
-   shared footer, and the creation step's «Avanti»; Cancel and «Indietro» stay outlined.
-   A failed save's reroll takes that weight in the body (BG3 shows the Inspiration
-   reroll as «Continue»), and that dialog's confirm steps down to outlined. */
-.fui dialog.f-dlg .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]),
-.fui dialog.f-dlg .f-reroll .f-btn[data-kind="primary"]:not([aria-disabled="true"]),
-.fui .f-create-step > .f-pn-foot .f-btn[data-kind="primary"]:not([aria-disabled="true"]) {
-  border: 2px solid var(--lit-hi);
-  background: radial-gradient(circle at 50% 35%, var(--lit-mid), var(--lit-deep) 78%);
-  box-shadow: 0 0 14px var(--lit-glow);
-  color: var(--white);
-}
-.fui
-  dialog.f-dlg
-  .f-pn-foot
-  .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover,
-.fui dialog.f-dlg .f-reroll .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover,
-.fui
-  .f-create-step
-  > .f-pn-foot
-  .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover {
-  border-color: var(--lit-hi);
-  filter: brightness(1.2);
-}
+/* A dialog's confirm, the creation step's «Avanti» and a save's reroll are the family's lit
+   primary (the owner's 2026-11-10 blue BG3 button, drawn by the button family above). */
 /* state chips: bold, tighter */
 .fui .f-sheet .f-chip {
   padding: 0 12px;
-  font-weight: 700;
+  font-weight: 600;
 }
 /* resources: the name white and bold, the count a small label */
 .fui .f-sheet .f-res-t {
   font-size: var(--fs-text);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.25;
   color: var(--white);
 }
 .fui .f-sheet .f-res-n {
   text-align: right;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   color: var(--label);
 }
 /* One table, one set of columns: the header, each group and each row share the
@@ -2829,7 +2924,7 @@
   color: var(--row-meta);
 }
 .fui .f-sheet .f-char-temp {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--temp-quiet);
 }
 /* the header (prototype .hero), framed as every hero is («Lume») */
@@ -2840,16 +2935,16 @@
   padding: 32px 56px;
 }
 .fui .f-sheet .f-char-id h1 {
-  font: 700 36px/1 var(--font-title);
+  font: 600 var(--fs-name)/1 var(--font-title);
   color: var(--text);
 }
 /* the display numbers: abilities, AC (the focal one), the hexes, Hit Points */
 .fui .f-sheet .f-ability > dd > .f-ab-open > b {
-  font: 700 26px/1.15 var(--font-title);
+  font: 600 var(--fs-xl)/1.15 var(--font-title);
   color: var(--text);
 }
 .fui .f-sheet .f-ability > dd > .f-ab-open > span {
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   color: var(--muted);
 }
 .fui .f-sheet .f-char-stats {
@@ -2867,7 +2962,7 @@
   }
 }
 .fui .f-sheet .f-badge-frame b {
-  font: 700 24px/1 var(--font-title);
+  font: 600 var(--fs-xl)/1 var(--font-title);
   color: var(--text);
 }
 /* the prototype's .badge__shape: a 58 × 64 shield drawn at 1.25 (shared .badge-wrap);
@@ -2895,11 +2990,11 @@
   }
 }
 .fui .f-sheet .f-char-hp-v {
-  font: 700 22px var(--font-title);
+  font: 600 var(--fs-xl) var(--font-title);
 }
 .fui .f-sheet .f-char-hp-v b {
   /* a <b> is "bolder" than its 700 parent (900): the prototype's figure is 700 */
-  font-weight: 700;
+  font-weight: 600;
   font-size: var(--fs-hp-big);
   text-shadow: 0 0 14px var(--glow-hp);
 }
@@ -2912,12 +3007,6 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 8px;
-}
-.fui .f-sheet .f-char-hp-acts > .f-btn {
-  font-size: var(--fs-text);
-  border-color: var(--line-strong);
-  background: var(--line-soft);
-  box-shadow: none;
 }
 /* the action types' colours and shapes (BG3), for the turn strip, filters and groups */
 .fui .f-sheet {
@@ -2980,9 +3069,9 @@
 .fui .f-sheet .f-centre > .f-tabs > button {
   gap: 8px;
   padding: 16px 16px 12px;
-  font: 700 14px var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 400 var(--fs-md) var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--muted);
 }
 .fui .f-sheet .f-centre > .f-tabs > button[aria-selected="true"] {
@@ -2998,13 +3087,13 @@
   border-bottom: 1px solid var(--line-soft);
   border-radius: 0;
   background: none;
-  font: 700 18px var(--font-text);
+  font: 600 var(--fs-lg) var(--font-text);
   color: var(--white);
 }
 .fui .f-sheet .f-turn-t {
-  font: 900 18px var(--font-label);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font: 600 var(--fs-lg) var(--font-label);
+  text-transform: none;
+  letter-spacing: 0;
   color: var(--white);
 }
 .fui .f-sheet .f-turn-slots {
@@ -3012,28 +3101,15 @@
 }
 .fui .f-sheet .f-turn-slots li {
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 600;
   color: var(--white);
-}
-.fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
-  min-height: 40px;
-  padding: 8px 16px;
-  border: 2px solid var(--lit-hi);
-  background: radial-gradient(circle at 50% 35%, var(--lit-mid), var(--lit-deep) 78%);
-  box-shadow: 0 0 14px var(--lit-glow);
-  color: var(--white);
-}
-.fui .f-sheet .f-turn .f-btn[data-kind="primary"]:hover {
-  border-color: var(--lit-hi);
-  box-shadow: 0 0 22px var(--lit-glow-hi);
-  filter: brightness(1.2);
 }
 /* «Cosa ti conviene fare»: a quiet line, not a title */
 .fui .f-sheet .f-playbook-h {
   gap: 12px;
   min-height: 48px;
   padding: 4px 0;
-  font: 400 16px/1.45 var(--font-text);
+  font: 400 var(--fs-md)/1.45 var(--font-text);
   color: var(--advice);
 }
 /* filters: underlined tabs with the type shapes */
@@ -3049,7 +3125,7 @@
   border: 0;
   border-radius: 0;
   background: none;
-  font: 700 14px/1.45 var(--font-text);
+  font: 600 var(--fs-nav)/1.45 var(--font-text);
   color: var(--label, var(--muted));
 }
 .fui .f-filters > .f-chip[aria-pressed="true"] {
@@ -3080,8 +3156,8 @@
   text-align: center;
 }
 .fui .f-act-head > span {
-  font: 700 12px/1.2 var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs)/1.2 var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--label, var(--muted));
   white-space: nowrap;
@@ -3094,9 +3170,9 @@
   padding: 8px 0;
   border-bottom: 2px solid
     color-mix(in srgb, var(--gc, var(--line-strong)) 40%, transparent);
-  font: 700 16px/1.45 var(--font-label);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font: 600 var(--fs-md)/1.45 var(--font-label);
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--white);
 }
 .fui .f-act-group[data-group="actions"] {
@@ -3114,7 +3190,7 @@
   border-bottom-color: var(--row-rule);
 }
 .fui .f-sheet .f-act .f-row-t {
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1.2;
   color: var(--white);
 }
@@ -3122,7 +3198,7 @@
   font-size: var(--fs-sm);
 }
 .fui .f-sheet .f-act-c {
-  font: 700 var(--fs-md)/1 var(--font-text);
+  font: 600 var(--fs-md)/1 var(--font-text);
   color: var(--plate-text);
 }
 @media (min-width: 641px) {
@@ -3187,7 +3263,7 @@
   }
   .fui .f-sheet .f-char-stats .f-lbl,
   .fui .f-sheet .f-ability > dt {
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
   }
 }
 /* the HP ring's medal (prototype .medal): gradient arcs that glow, gold rims */
@@ -3292,7 +3368,7 @@
   .fui .f-strip-hp b,
   .fui .f-strip-ac b {
     font-size: var(--fs-phone-num);
-    font-weight: 700;
+    font-weight: 600;
     color: var(--white);
   }
   .fui .f-strip-hp b[data-hp="ok"] {
@@ -3306,11 +3382,11 @@
   }
   .fui .f-strip .f-lbl {
     margin: 0;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--phone-label);
   }
   .fui .f-strip .f-char-temp {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--temp);
   }
   .fui .f-strip-acts {
@@ -3410,7 +3486,7 @@
     padding: 0 24px;
     border: 0;
     background: none;
-    font: 700 var(--fs-md) var(--font-text);
+    font: 600 var(--fs-md) var(--font-text);
     color: var(--strong);
     cursor: pointer;
   }
@@ -3517,7 +3593,7 @@
     display: none;
   }
   .fui .f-sheet .f-char-temp {
-    font-weight: 700;
+    font-weight: 600;
     color: var(--temp);
   }
   .fui .f-sheet .f-char-hp-v {
@@ -3560,7 +3636,7 @@
   }
   .fui .f-sheet .f-char-stats .f-lbl {
     margin: 0;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--phone-label);
   }
   .fui .f-sheet .f-char-abil {
@@ -3572,7 +3648,7 @@
   }
   .fui .f-sheet .f-ability > dt {
     order: 2;
-    font-weight: 700;
+    font-weight: 600;
     color: var(--phone-label);
   }
   .fui .f-sheet .f-ability > dd > .f-ab-open > b {
@@ -3683,9 +3759,9 @@
       color-mix(in srgb, var(--c-act-band) 55%, var(--shade)) 0%,
       color-mix(in srgb, var(--c-act-band) 26%, var(--shade)) 100%
     );
-    font: 700 var(--fs-md) var(--font-label);
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font: 600 var(--fs-md) var(--font-label);
+    letter-spacing: 0;
+    text-transform: none;
     color: var(--white);
   }
   .fui .f-sheet .f-menu-head::before {
@@ -3697,7 +3773,7 @@
     border: 1px solid var(--line);
     border-radius: var(--r-card);
     background: var(--card-bg);
-    font: 700 var(--fs-text) var(--font-text);
+    font: 600 var(--fs-text) var(--font-text);
     color: var(--strong);
   }
   .fui .f-sheet dialog.f-menu .f-menu-it .f-ic {
@@ -3718,7 +3794,7 @@
   background: var(--chip-n, var(--text));
   color: var(--shade);
   font-size: var(--fs-sm);
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
 }
 .fui .f-chip[data-kind="buff"] {
@@ -3754,7 +3830,7 @@
     gap: 8px;
   }
   .fui .f-sheet .f-turn-t {
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
   }
   .fui .f-sheet .f-turn .f-btn[data-kind="primary"] {
     padding: 8px 12px;
@@ -3800,7 +3876,7 @@
   padding: 4px 8px;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
-  font: 700 var(--fs-md) var(--font-text);
+  font: 600 var(--fs-md) var(--font-text);
   color: var(--text);
 }
 .fui .f-ir[data-current] {
@@ -3816,7 +3892,7 @@
   flex: none;
   width: 28px;
   text-align: center;
-  font: 700 var(--fs-lg) var(--font-label);
+  font: 600 var(--fs-lg) var(--font-label);
   color: var(--gold);
 }
 .fui .f-ir-tok {
@@ -3829,7 +3905,7 @@
   border: 2px solid var(--frame);
   border-radius: 50%;
   background: var(--ir-token-bg);
-  font: 700 var(--fs-sm) var(--font-title);
+  font: 600 var(--fs-sm) var(--font-title);
   color: var(--strong);
 }
 .fui .f-ir-tok > img {
@@ -3853,7 +3929,7 @@
 /* a group's count (×3) beside its name, never split from it */
 .fui .f-ir-x {
   flex: none;
-  font: 700 var(--fs-sm) var(--font-label);
+  font: 600 var(--fs-sm) var(--font-label);
   color: var(--phone-label);
 }
 .fui .f-ir-now {
@@ -3863,8 +3939,8 @@
   padding: 0 8px;
   border: 1px solid var(--ir-tag);
   border-radius: var(--r-tag);
-  font: 700 var(--fs-xs) var(--font-label);
-  letter-spacing: 0.08em;
+  font: 600 var(--fs-xs) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--text);
 }
@@ -4026,7 +4102,7 @@
   border: 0;
   background: none;
   font: inherit;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--strong);
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -4050,7 +4126,7 @@
 /* «Incantesimi» (prototype x-play-spells): the casting numbers, a level's slots in its head */
 .fui .f-spell-sum {
   margin: 0;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--strong);
 }
 .fui .f-gh-slots {
@@ -4058,7 +4134,7 @@
   align-items: center;
   gap: 8px;
   margin-left: auto;
-  font: 700 var(--fs-sm) var(--font-text);
+  font: 600 var(--fs-sm) var(--font-text);
   letter-spacing: 0;
   text-transform: none;
   color: var(--muted);
@@ -4157,7 +4233,7 @@
   margin: 0;
 }
 .fui .f-num-total > b {
-  font: 700 40px/1 var(--font-title);
+  font: 600 var(--fs-hero)/1 var(--font-title);
   color: var(--strong);
 }
 /* «Danni e cure»: the max HP row opens its number pane (DDB's HP manager) */
@@ -4177,7 +4253,7 @@
 }
 .fui button.f-hp-max > b {
   margin-left: auto;
-  font: 700 20px/1 var(--font-title);
+  font: 600 var(--fs-lg)/1 var(--font-title);
   color: var(--strong);
 }
 /* a chevron says the row opens its pane */
@@ -4204,7 +4280,7 @@
 .fui .f-num-tag {
   color: var(--muted);
   font: 600 var(--fs-sm) var(--font-label);
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 .fui .f-num-custom {
   padding-top: 16px;
@@ -4248,7 +4324,7 @@
   margin: 0;
 }
 .fui .f-coin > b {
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--white);
 }
 .fui .f-sheet .f-act.f-item {
@@ -4295,7 +4371,7 @@
   .fui .f-sheet .f-centre > .f-tabs > button {
     flex: none;
     padding-inline: 12px;
-    letter-spacing: 0.04em;
+    letter-spacing: 0;
   }
 }
 /* the zones on the field (M9), under the initiative: a rule, then one line each */
@@ -4461,7 +4537,7 @@
 }
 .fui .f-ph h1 {
   margin: 0;
-  font: 600 36px/1.1 var(--font-title);
+  font: 600 var(--fs-name)/1.1 var(--font-title);
   color: var(--strong);
   text-shadow:
     0 2px 12px var(--shade),
@@ -4891,7 +4967,7 @@
   border-color: var(--gold-line);
   background: color-mix(in srgb, var(--gold) 18%, transparent);
   color: var(--white);
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-rule-head {
   display: flex;
@@ -5004,7 +5080,7 @@
   color: var(--strong);
 }
 .fui .f-class-name {
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-medal {
   display: inline-grid;
@@ -5138,7 +5214,7 @@
   background: var(--panel-2);
 }
 .fui .f-abil-mod {
-  font: 700 var(--fs-xl) / 1 var(--font-title);
+  font: 600 var(--fs-xl) / 1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-abil-sum {
@@ -5328,7 +5404,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  font: 700 var(--fs-sm) / 1 var(--font-title);
+  font: 600 var(--fs-sm) / 1 var(--font-title);
   background: var(--panel-2);
   color: var(--muted);
 }
@@ -5357,7 +5433,7 @@
 }
 .fui .f-lvl-hero h1 {
   margin: 0;
-  font: 700 44px/1.05 var(--font-title);
+  font: 600 var(--fs-hero)/1.05 var(--font-title);
   color: var(--strong);
   text-shadow: 0 2px 12px var(--shade);
 }
@@ -5427,7 +5503,7 @@
   color: var(--hp-r);
 }
 .fui .f-lvl-ic-v {
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
 }
 /* a spell slot: the same violet diamond the resources panel draws */
@@ -5442,7 +5518,7 @@
   display: flex;
   align-items: baseline;
   white-space: nowrap;
-  font: 700 26px/1.1 var(--font-title);
+  font: 600 var(--fs-xl)/1.1 var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-gain-v s {
@@ -5459,8 +5535,8 @@
   border-radius: var(--r-pill);
   background: var(--ok-bg);
   color: var(--ok-text);
-  font: 700 var(--fs-sm) var(--font-label);
-  letter-spacing: 0.06em;
+  font: 600 var(--fs-sm) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
 }
 .fui .f-lvl-sec {
@@ -5477,7 +5553,7 @@
   align-items: center;
   gap: 12px;
   margin: 0;
-  font: 700 var(--fs-lg) / 1.2 var(--font-title);
+  font: 600 var(--fs-lg) / 1.2 var(--font-title);
   color: var(--strong);
   text-wrap: balance;
 }
@@ -5501,7 +5577,7 @@
   min-height: 44px;
   display: flex;
   align-items: center;
-  font: 700 var(--fs-md) / 1.3 var(--font-title);
+  font: 600 var(--fs-md) / 1.3 var(--font-title);
   color: var(--strong);
   cursor: pointer;
 }
@@ -5543,14 +5619,14 @@
 }
 .fui .f-lvl-count {
   margin-left: auto;
-  font: 700 var(--fs-md) var(--font-title);
+  font: 600 var(--fs-md) var(--font-title);
   color: var(--danger);
 }
 .fui .f-lvl-count[data-state="done"] {
   color: var(--ok-text);
 }
 .fui .f-lvl-hp-n {
-  font: 700 var(--fs-xl) var(--font-title);
+  font: 600 var(--fs-xl) var(--font-title);
 }
 .fui .f-lvl-roll {
   display: flex;
@@ -5619,7 +5695,7 @@
   border-radius: var(--r-frame);
   background: var(--shade-80);
   color: var(--gold-hi);
-  font: 700 var(--fs-sm) / 20px var(--font-label);
+  font: 600 var(--fs-sm) / var(--fs-lg) var(--font-label);
 }
 .fui .f-lvl-tick {
   position: absolute;
@@ -5632,7 +5708,7 @@
   border-radius: 50%;
   background: var(--gold-hi);
   color: var(--raised);
-  font: 800 var(--fs-sm) / 1 var(--font-title);
+  font: 600 var(--fs-sm) / 1 var(--font-title);
 }
 .fui .f-lvl-opt-n {
   text-wrap: balance;
@@ -5672,7 +5748,7 @@
 .fui .f-slotrow-l {
   padding-top: 16px;
   color: var(--gold);
-  font: 700 var(--fs-md) / 1 var(--font-title);
+  font: 600 var(--fs-md) / 1 var(--font-title);
   text-align: center;
 }
 .fui .f-slotrow-l > svg {
@@ -5747,7 +5823,7 @@
   border-radius: var(--r-frame);
   background: var(--shade-80);
   color: var(--strong);
-  font: 700 var(--fs-sm) / 18px var(--font-label);
+  font: 600 var(--fs-sm) / var(--fs-lg) var(--font-label);
 }
 .fui .f-slot-tick {
   position: absolute;
@@ -5760,7 +5836,7 @@
   border-radius: 50%;
   background: var(--gold-hi);
   color: var(--bg);
-  font: 800 var(--fs-xs) / 1 var(--font-title);
+  font: 600 var(--fs-xs) / 1 var(--font-title);
 }
 .fui .f-slot-n {
   display: none;
@@ -5786,7 +5862,7 @@
 }
 .fui .f-slot-tip > b {
   display: block;
-  font: 700 var(--fs-md) / 1.25 var(--font-text);
+  font: 600 var(--fs-md) / 1.25 var(--font-text);
 }
 .fui .f-slot-tip > small {
   display: block;
@@ -5796,7 +5872,7 @@
 .fui .f-slot-tip > em {
   display: block;
   color: var(--gold-hi);
-  font: 700 var(--fs-md) var(--font-text);
+  font: 600 var(--fs-md) var(--font-text);
   font-style: normal;
 }
 .fui .f-slot:hover > .f-slot-tip,
@@ -5930,13 +6006,13 @@
 }
 .fui .f-lvl-inspect h3 {
   margin: 0;
-  font: 700 var(--fs-xl) / 1.15 var(--font-title);
+  font: 600 var(--fs-xl) / 1.15 var(--font-title);
   color: var(--strong);
   text-wrap: balance;
 }
 .fui .f-lvl-effect {
   margin: 8px 0;
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--gold-hi);
 }
 .fui .f-lvl-gist {
@@ -5983,7 +6059,7 @@
 }
 .fui .f-lvl-sum-h b {
   display: block;
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-sum-h span {
@@ -6002,12 +6078,12 @@
   background: var(--bg);
 }
 .fui .f-lvl-abil dt {
-  font: 700 var(--fs-xs) var(--font-label);
+  font: 600 var(--fs-xs) var(--font-label);
   color: var(--muted);
 }
 .fui .f-lvl-abil dd {
   margin: 0;
-  font: 700 var(--fs-lg) var(--font-title);
+  font: 600 var(--fs-lg) var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-badges {
@@ -6027,7 +6103,7 @@
   font-size: var(--fs-sm);
 }
 .fui .f-lvl-badges b {
-  font: 700 var(--fs-xl) var(--font-title);
+  font: 600 var(--fs-xl) var(--font-title);
   color: var(--strong);
 }
 .fui .f-lvl-badges svg {
@@ -6052,14 +6128,14 @@
   border: 1px dashed var(--danger);
   border-radius: var(--r-sm);
   color: var(--danger);
-  font: 700 var(--fs-md) var(--font-title);
+  font: 600 var(--fs-md) var(--font-title);
 }
 .fui .f-lvl-owed {
   /* a status line, not a button: what is missing reads in its colour above the
      Confirm it holds back (D&D Beyond's builder: «2 choices remaining» as text) */
   margin: 0;
   color: var(--danger-text);
-  font: 700 var(--fs-md) var(--font-text);
+  font: 600 var(--fs-md) var(--font-text);
   text-align: center;
 }
 .fui .f-lvl-bar {
@@ -6171,7 +6247,7 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    font: 700 var(--fs-md) var(--font-text);
+    font: 600 var(--fs-md) var(--font-text);
   }
   .fui .f-lvl-bar b > svg {
     width: 18px;
@@ -6308,7 +6384,7 @@
   display: block;
 }
 .fui .f-cmp-row .f-row-t {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--white);
 }
 .fui .f-cmp-row .f-row-s {
@@ -6486,7 +6562,7 @@
 .fui .f-prep-eff {
   margin-left: auto;
   flex: none;
-  font: 700 var(--fs-sm) var(--font-text);
+  font: 600 var(--fs-sm) var(--font-text);
   color: var(--gold-hi);
   text-align: right;
 }
@@ -6626,8 +6702,8 @@
 /* dead: the verdict in place of the tracker (BG3's skull, D&D Beyond's death saves) */
 .fui .f-down-verdict {
   margin: 0;
-  font: 700 var(--fs-lg) var(--font-label);
-  letter-spacing: 0.04em;
+  font: 600 var(--fs-lg) var(--font-label);
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   color: var(--hp-r);
 }
@@ -6689,7 +6765,6 @@
   flex-direction: row-reverse;
   gap: 4px;
   padding: 8px 16px;
-  border-radius: var(--r-lg);
 }
 /* «Fine scontro», quiet, after it */
 .fui .f-sheet .f-turn .f-btn[data-end-turn] + .f-btn {
@@ -6755,9 +6830,6 @@
 /* ── Play parity, round 2 (owner, 2026-11-10): the approved prototype's spacing, sizes and
    type, read element by element from its computed styles. The «Lume» fade and the cyan
    «Fine turno» stay; the ornaments stay out. ── */
-.fui .f-sheet .f-btn {
-  border-radius: var(--r-lg);
-}
 @media (min-width: 641px) {
   /* header: abilities (.abils / .abil), badges (.badge), Hit Points buttons (.hp__actions) */
   .fui .f-sheet .f-char-abil {
@@ -6804,10 +6876,6 @@
     position: relative;
   }
 }
-.fui .f-sheet .f-char-hp-acts > .f-btn {
-  font-size: var(--fs-prose);
-  line-height: 1.45;
-}
 .fui .f-char-hp-acts > .f-btn:first-child .f-ic,
 .fui .f-strip-acts > .f-btn:first-child .f-ic {
   color: var(--hp-hi);
@@ -6825,7 +6893,7 @@
   border-radius: var(--r-panel);
 }
 .fui .f-sheet .f-pnh {
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
 }
 /* resources (.res) */
 .fui .f-sheet .f-res {
@@ -6867,14 +6935,14 @@
   font-weight: 600;
 }
 .fui .f-sheet .f-turn-t {
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
 }
 .fui .f-sheet .f-turn .f-turn-slots li {
   gap: 4px;
 }
 /* «Cosa ti conviene fare» (.tip): no rule under it, 48 px */
 .fui .f-sheet .f-playbook-h > span {
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-sheet .f-playbook {
   padding-bottom: 0;
@@ -6913,7 +6981,7 @@
   padding: 0 4px;
   border-radius: var(--r-sm);
   font-size: var(--fs-sm);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.03em;
 }
 .fui .f-sheet .f-ir .f-ir-s {
   font-weight: 600;
@@ -6932,13 +7000,6 @@
   line-height: 1.45;
 }
 @media (max-width: 640px) {
-  /* the phone (x-play-m): Danni and Cura outlined (.r3 .b) */
-  .fui .f-sheet .f-char-hp-acts > .f-btn {
-    padding: 12px;
-    border-color: var(--frame);
-    background: none;
-    color: var(--text-hi);
-  }
   .fui .f-sheet .f-turn {
     padding: 12px 16px;
     gap: 8px 12px;
@@ -7016,7 +7077,7 @@
   .fui .f-sheet .f-ability > dt,
   .fui .f-sheet .f-char-stats .f-lbl {
     font-weight: 600;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.03em;
   }
 }
 
@@ -7062,8 +7123,8 @@
     background: none;
     border: 0;
     color: var(--muted);
-    font: 700 12px var(--font-label);
-    letter-spacing: 0.08em;
+    font: 600 var(--fs-xs) var(--font-label);
+    letter-spacing: 0.03em;
     text-transform: uppercase;
     cursor: pointer;
   }
@@ -7195,7 +7256,7 @@
   gap: 12px;
 }
 .fui .f-legal dt {
-  font-weight: 700;
+  font-weight: 600;
   color: var(--strong);
 }
 .fui .f-legal-links {
@@ -7222,7 +7283,7 @@
 .fui .f-legal-doc > summary > .f-legal-open,
 .fui .f-legal-doc > summary > .f-legal-close {
   color: var(--gold);
-  font-weight: 700;
+  font-weight: 600;
 }
 .fui .f-legal-doc[open] > summary > .f-legal-open,
 .fui .f-legal-doc:not([open]) > summary > .f-legal-close {
@@ -7261,7 +7322,7 @@
   gap: 8px;
   min-height: 44px;
   color: var(--gold);
-  font-weight: 700;
+  font-weight: 600;
 }
 @media (max-width: 640px) {
   .fui .f-crumb {
@@ -7410,4 +7471,115 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
+}
+
+/* The wider serif keeps its rows (design reset «BG3 craft», slice 1). */
+/* the turn banner reads in its own case, like BG3's titles: no tracked capitals */
+.fui .f-turn-t,
+.fui .f-sheet .f-turn-t {
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* the sheet's header actions wrap inside their own column: they never run under the stats
+   beside it (a forced single row pushed «Riposo lungo» under the AC shield at 1280 px) */
+.fui .f-sheet .f-char-id {
+  min-width: 0;
+}
+.fui .f-sheet .f-char-acts {
+  flex-wrap: wrap;
+}
+/* a badge's frame is ornament: it never takes a click from a control */
+.fui .f-badge-frame > svg,
+.fui svg[data-orn] {
+  pointer-events: none;
+}
+@media (min-width: 641px) {
+  .fui .f-sheet .f-char-acts > .f-btn {
+    padding: 0 12px;
+  }
+  /* the turn strip on one line: the round, its slots (wrapping inside), «Fine turno» and
+     «Fine scontro» */
+  .fui .f-sheet .f-turn {
+    flex-wrap: nowrap;
+  }
+  .fui .f-sheet .f-turn .f-turn-slots {
+    flex-wrap: wrap;
+    min-width: 0;
+    white-space: normal;
+  }
+  .fui .f-sheet .f-turn .f-btn {
+    flex: none;
+  }
+  /* a footer's lit action is a button that ends its row, not a full-width bar (BG3's
+     «Proceed» is never wider than its label) */
+  .fui .f-pn > .f-pn-foot > .f-btn.f-wide[data-kind="primary"] {
+    order: 9;
+    width: auto;
+    flex: none;
+  }
+}
+@media (max-width: 640px) {
+  /* the rests pair up; any other header action takes the whole row */
+  .fui .f-sheet .f-char-acts > .f-btn:not([data-rest]) {
+    grid-column: 1 / -1;
+  }
+  /* the initiative column holds two tabular digits clear of the portrait */
+  .fui .f-fight {
+    grid-template-columns: 32px var(--slot-size) minmax(0, 1fr) 76px;
+  }
+}
+/* the «Danni» / «Cura» pair keeps the family's hover and press (its colours come later in
+   the file, so its states are restated here) */
+@media (hover: hover) {
+  .fui .f-char-hp-acts > .f-btn:first-child:not([aria-disabled="true"]):hover {
+    --peak: #6e251b;
+    border-color: var(--danger-rim-hover);
+  }
+  .fui .f-char-hp-acts > .f-btn:last-child:not([aria-disabled="true"]):hover,
+  .fui .f-hp-acts > .f-btn[data-kind="primary"]:not([aria-disabled="true"]):hover {
+    --peak: #285e33;
+    border-color: var(--heal);
+  }
+}
+.fui .f-char-hp-acts > .f-btn:not([aria-disabled="true"]):active,
+.fui .f-hp-acts > .f-btn:not([aria-disabled="true"]):active {
+  --peak: var(--after);
+  box-shadow: inset 0 2px 4px var(--btn-press-shade);
+}
+/* small capitals keep an 8 px cap height in the serif: the capital labels and tags at 13 px */
+.fui .f-lbl,
+.fui .f-act-head > span,
+.fui .f-now,
+.fui .f-must,
+.fui .f-kind {
+  font-size: var(--fs-xs);
+}
+
+/* a log line fills its column (no balanced half-width lines) */
+.fui .f-tl,
+.fui .f-tl > span {
+  text-wrap: pretty;
+}
+/* a bold run inside text uses the face's strong weight (600), never a synthetic 700 */
+.fui :is(b, strong) {
+  font-weight: 600;
+}
+/* the strong weight is for names, titles, the primary and numbers: list rows and the turn
+   legend read at the text weight */
+.fui .f-row-t,
+.fui .f-sheet .f-res-t,
+.fui .f-turn-slots li,
+.fui .f-sheet .f-turn-slots li,
+.fui .f-sheet .f-act:not(.f-act-head) .f-row-t {
+  font-weight: 400;
+}
+/* «/ 66» beside the Hit Points: the large step at the text weight, on every screen */
+.fui .f-char-hp-v,
+.fui .f-sheet .f-char-hp-v {
+  font-size: var(--fs-lg);
+  font-weight: 400;
+}
+/* a dialog's instructions and counts read at the text size, not the label size */
+.fui dialog.f-dlg .f-bd :is(p, .f-help) {
+  font-size: var(--fs-text);
 }

@@ -335,10 +335,22 @@ per-hue twins follow. BG3's stroke-twin pattern pairs each glow with a dark grou
 
 ## 3. Typography
 
-**The new UI (`.fui`, `src/ui/ui.css`) uses one family, as Baldur's Gate 3 (owner, 2026-11-08):**
-Alegreya for titles, names and text (names, tabs, buttons and chips at 500), Alegreya SC for labels
-and panel titles, Alegreya 700 for numbers; digits keep the full-height figure faces. The faces
-below describe the classic UI until each screen is rebuilt.
+**The new UI (`.fui`, `src/ui/ui.css`) uses one family, as Baldur's Gate 3 (owner, 2026-11-08;
+design reset «C · BG3 craft», owner 2026-11-27): Source Serif 4** for titles, names, text, labels,
+buttons and every number. BG3's game UI sets everything in one humanist text serif; Source Serif 4 is
+sturdy like its Quadraat and its figures are full height and tabular, so a number never mixes faces
+(the old «Folio … Figures» digit faces are gone; the bundled Alegreya only has old-style figures).
+
+- **Weights:** 400 for text, buttons and labels; 600 for names, titles, the primary button and numbers.
+  No 700.
+- **Scale (new UI):** 13 (labels, meta) · 15 / 16 (body, controls) · 20 (titles, large values) · 24
+  (stats) — about 1.2 a step — plus the hero sizes 26 / 32 (names, phone / laptop) and 44 / 52 (Hit
+  Points, phone / laptop).
+- **Figures:** `font-variant-numeric: lining-nums tabular-nums` on `.fui`, so columns of numbers align.
+- **Case:** titles, tabs, navigation and buttons in their own case, never forced capitals or tracking;
+  capitals only for the short 13 px labels (BG3's STR / DEX, its tags).
+
+The faces below describe the classic UI until each screen is rebuilt.
 
 **"The Gilded Plate"** (owner-ratified 2026-07-02, the BG3-identity epic) — four registers, three
 faces:
@@ -644,6 +656,24 @@ Every interactive component ships default, hover, focus-visible, active, disable
 applies) loading and error states. Affordances are consistent across every surface.
 
 ### Buttons
+
+**New UI (`.fui .f-btn`, design reset «C · BG3 craft», owner 2026-11-27):** one family after BG3's
+in-game UI. Every kind shares one height (40 px; 44 on a phone), one radius (4 px), 16 px icons and
+the same text case. The plate is BG3's glass: a darker top, a peak at 44 %, a gloss break, a darker
+base.
+
+| Kind (`data-kind`)            | Rest                                                                                          | Hover (real hover only)                                       | Pressed                       | Disabled                                                     |
+| ----------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------- | ------------------------------------------------------------ |
+| `primary`                     | our blue lit glass, 1.5 px gold rim, cream text at 600 (4.9:1 on the peak), a faint cyan glow | brighter glass, light-gold rim, cyan halo, white text (4.6:1) | dark flat glass, inset shadow | same shape, dark fill, dark-tan text (never an opacity wash) |
+| default / `ghost` (secondary) | brown pillow, brass rim, cream text                                                           | lighter pillow, gold rim                                      | the peak drops, inset shadow  | as above                                                     |
+| `quiet` (ghost)               | gold words, no plate; red when it deletes (trash icon)                                        | a faint gold wash                                             | —                             | dark-tan words                                               |
+| `danger`                      | red pillow, red rim                                                                           | brighter rim                                                  | inset shadow                  | as above                                                     |
+
+Focus on every kind: a light-gold rim and a 2 px outline. «Danni» and «Cura» are one pair of equal
+red and green pillows, neither lit. A callout's own button is secondary: a screen keeps one lit
+action. The classic UI's buttons below stay until each screen is rebuilt.
+
+**Classic UI:**
 
 - **Shape:** 2px radius (`--radius-md`); icon-only buttons are 32px square (28px sm, 40px lg).
 - **Primary (brass):** display font, 12px, a four-stop gold-leaf gradient with a metallic bevel (inset
