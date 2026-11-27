@@ -1,0 +1,5 @@
+---
+"d20-folio": patch
+---
+
+In level-up and «Scelte da completare» every option now shows its name next to its icon, on a computer too, so five identical icons never need a hover to tell apart. The card that explains an option is open from the start beside the list, instead of the hint to point at an option. A chosen option is framed in pale gold with a soft glow, the same in every choice. On a phone the ability modifiers and the «TS» saves are easier to tap.
