@@ -11,51 +11,15 @@
  * With FOLIO_SHOTS_DIR set, it also runs in Italian and at phone width and saves a
  * frame of the strip for each (the frames shown for review).
  */
-import { expect, test, type Browser, type Page } from "@playwright/test";
+import { expect, test, type Browser } from "@playwright/test";
 import {
   ownerBuildString,
   quickBuild,
+  savedLeft,
+  setQuote,
   storedRevision,
   waitForStoredCharacter,
 } from "./helpers";
-
-/** Set the open sheet's quote through the live store, as the sheet's editors do. */
-async function setQuote(page: Page, quote: string): Promise<void> {
-  await page.evaluate(async (next) => {
-    // The live store (the module URL the app loaded), as rehearsal 11 does.
-    const loadedUrl = performance
-      .getEntriesByType("resource")
-      .map((entry) => entry.name)
-      .find((name) => name.includes("/src/stores/characterStore.ts"));
-    const specifier = loadedUrl ?? "/src/stores/characterStore.ts";
-    const mod = (await import(
-      specifier
-    )) as typeof import("../../src/stores/characterStore");
-    const store = mod.useCharacterStore.getState();
-    const doc = store.character;
-    if (!doc) throw new Error("no character in store");
-    store.setCharacter({ ...doc, character: { ...doc.character, quote: next } });
-  }, quote);
-}
-
-/** The save carrying `quote` has left the tab (its trace is on the device). */
-async function savedLeft(page: Page, quote: string): Promise<void> {
-  await expect
-    .poll(
-      () =>
-        page.evaluate(
-          (text) =>
-            Object.keys(localStorage).some(
-              (key) =>
-                key.startsWith("folio.unacked.") &&
-                (localStorage.getItem(key) ?? "").includes(text)
-            ),
-          quote
-        ),
-      { timeout: 15_000 }
-    )
-    .toBe(true);
-}
 
 const VARIANTS = [
   {

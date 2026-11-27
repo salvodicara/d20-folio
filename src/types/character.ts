@@ -640,6 +640,16 @@ export interface CharacterDoc {
    * leave it untouched. Firestore metadata, never part of the portable v3 codec.
    */
   revision: number;
+  /**
+   * The write chain (#1413): the id of the build write that stored this generation
+   * (null on a sheet never chained). A revision number alone cannot tell whose
+   * generation a queued offline write builds on, so each build write names the stored
+   * `writeId` it builds on (`baseWriteId`) and the rules refuse a wrong base. Firestore
+   * metadata, never part of the portable codec; `baseWriteId` exists only on a write
+   * being sent (set by the allocator), never on a stored sheet.
+   */
+  writeId?: string | null;
+  baseWriteId?: string | null;
   /** Character lifecycle status */
   status: "active" | "retired" | "dead" | "archived";
 

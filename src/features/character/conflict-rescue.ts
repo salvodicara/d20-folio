@@ -51,6 +51,10 @@ interface Refusal {
   seq: number;
   /** The last save sent when it came back: saves in (seq, carriedUpTo] carry it. */
   carriedUpTo: number;
+  /** The generation of the FIRST refused save of this incident: the proof (#1413).
+   *  The write chain refuses every later save of the queue too, because each built on
+   *  the refused one, so the server can stand below the newest refused generation. */
+  proofRevision: number;
 }
 
 export function createConflictRescue(env: ConflictRescueEnv): ConflictRescue {
@@ -69,7 +73,7 @@ export function createConflictRescue(env: ConflictRescueEnv): ConflictRescue {
     const refusal = candidate;
     if (!refusal) return;
     candidate = null;
-    if (serverRevision === null || serverRevision < refusal.payload.revision) {
+    if (serverRevision === null || serverRevision < refusal.proofRevision) {
       env.notify("not-saved");
       return;
     }
@@ -107,13 +111,18 @@ export function createConflictRescue(env: ConflictRescueEnv): ConflictRescue {
     },
     refused(payload) {
       const seq = order.get(payload) ?? lastSent;
+      const proofRevision = Math.min(
+        candidate?.proofRevision ?? payload.revision,
+        payload.revision
+      );
       if (!candidate || seq > candidate.seq)
-        candidate = { payload, seq, carriedUpTo: lastSent };
+        candidate = { payload, seq, carriedUpTo: lastSent, proofRevision };
+      else candidate = { ...candidate, proofRevision };
       // The server's sheet may have arrived first, with the queue already drained.
       if (
         !lastPending &&
         typeof lastServerRevision === "number" &&
-        lastServerRevision >= payload.revision
+        lastServerRevision >= proofRevision
       )
         decide(lastServerRevision);
     },

@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CharacterDoc } from "@/types/character";
-import { makeCharacterDoc } from "@tests/unit/_helpers";
+import { makeCharacterDoc, stampAt } from "@tests/unit/_helpers";
 
 const h = vi.hoisted(() => ({
   commits: 0,
@@ -70,7 +70,7 @@ beforeEach(async () => {
 
 describe("writers while the shape gate is open", () => {
   it("send as usual (control)", async () => {
-    const saver = createDebouncedSave("u1", "c1", 500, () => 5);
+    const saver = createDebouncedSave("u1", "c1", 500, () => stampAt(5));
     saver.save(doc);
     await saver.flush();
     await writeCombatState("u1", "c1", sessionToCombatState(doc.session));
@@ -80,7 +80,7 @@ describe("writers while the shape gate is open", () => {
 
 describe("writers once the shape gate is closed", () => {
   it("the parent saver sends nothing and allocates no generation", async () => {
-    const allocate = vi.fn(() => 5);
+    const allocate = vi.fn(() => stampAt(5));
     const saver = createDebouncedSave("u1", "c1", 500, allocate);
     closeShapeGate({ rescue: "none" });
     saver.save(doc);
@@ -105,7 +105,7 @@ describe("writers once the shape gate is closed", () => {
   // #1276: a level-up and its undo go through the open sheet's ordered queue. Fenced,
   // it is refused, burns no generation, and keeps the pending edit (the rescue copy's).
   it("a whole-sheet write through the sheet's queue is refused and keeps the pending edit", async () => {
-    const allocate = vi.fn(() => 5);
+    const allocate = vi.fn(() => stampAt(5));
     const cancelled = vi.fn();
     const saver = createDebouncedSave("u1", "c1", 500, allocate);
     saver.save(doc, { onCancelled: cancelled });
