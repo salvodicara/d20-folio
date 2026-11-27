@@ -7780,3 +7780,82 @@
   font: 600 var(--fs-xs) var(--font-label);
   letter-spacing: 0.03em;
 }
+
+/* slice 5b, review round 2 */
+@media (max-width: 640px) {
+  /* a panel header on a phone: one line, the title centred in the band and free to take
+     two lines, the action beside it with its words */
+  .fui .f-pn > .f-pnh {
+    flex-wrap: nowrap;
+    align-items: center;
+    padding: 0 16px;
+  }
+  .fui .f-pn > .f-pnh > .f-ttl {
+    flex: 1;
+    min-width: 0;
+    text-wrap: balance;
+  }
+  .fui .f-pn > .f-pnh > .f-x {
+    flex: none;
+  }
+  /* a header's hint («tocca un personaggio…») is redundant on a touch list: hidden */
+  .fui .f-pn > .f-pnh > .f-x:not(:has(.f-btn)) {
+    display: none;
+  }
+  /* the fight's footer: one column, every action full width, the lit one first */
+  .fui .f-pn > .f-pn-foot:has(> .f-btn.f-wide[data-kind="primary"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fui .f-pn > .f-pn-foot:has(> .f-btn.f-wide[data-kind="primary"]) > .f-btn {
+    white-space: nowrap;
+  }
+  /* a note: its text, then its action at the start, no gap above */
+  .fui .f-note-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .fui .f-note-row > .f-btn {
+    margin: 0;
+  }
+}
+/* the stat block's numbers at the reading size, its ability table across the block */
+.fui .beast-ref-grid dd,
+.fui .mon-ref dd {
+  font-size: var(--fs-nav);
+}
+.fui .mon-abilities {
+  max-width: none;
+}
+/* a long label is a phrase: own case («Esito», «Il resoconto», «Resoconto automatico e note») */
+.fui dialog.f-dlg .f-bd .f-lbl,
+.fui .f-pnb > .f-lbl.f-lbl-gap,
+.fui .f-pnb .f-lbl.f-lbl-rule,
+.fui .f-pnb > div > .f-lbl.f-lbl-gap {
+  font-size: var(--fs-nav);
+  letter-spacing: 0;
+  text-transform: none;
+}
+/* the write-up's delete buttons read in the danger colour */
+.fui .f-endline-x {
+  color: var(--danger);
+}
+@media (max-width: 640px) {
+  /* the note's text keeps its own height in the column (no 160 px basis) */
+  .fui .f-note-row > .f-row-main {
+    flex: none;
+  }
+  .fui .f-note-row > .f-btn[data-kind="quiet"] {
+    padding-left: 0;
+  }
+  /* the header's title stays on one line beside a compact quiet action */
+  .fui .f-pn > .f-pnh {
+    column-gap: 8px;
+  }
+  .fui .f-pn > .f-pnh:has(> .f-x .f-btn[data-kind="quiet"]) > .f-ttl {
+    white-space: nowrap;
+  }
+  .fui .f-pn > .f-pnh .f-btn[data-kind="quiet"] {
+    padding: 0 4px;
+  }
+}
