@@ -12,6 +12,7 @@
  * (one serif, BG3's lit and framed glass); titles, caps and chips move with later slices.
  * Slice 3 (type) re-pins the titles to title case at 20 px, names at 32 px, display weights
  * at 600 and list rows (resource and action names) at the text weight, 400.
+ * Slice 4 (surfaces) removes the decorative halos: the Hit Points figure has no glow.
  * Runs on the VITE_NEW_UI preview
  * (the `new-ui` project), with the public mock character.
  */
@@ -46,8 +47,8 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ],
   ["Hit Points", ".f-char-hp-v b", "font-size", "52px"],
   ["Hit Points", ".f-char-hp-v b", "font-weight", "600"],
-  // the prototype's 0.533 alpha, written as a token to two places
-  ["Hit Points", ".f-char-hp-v b", "text-shadow", "rgba(70, 240, 74, 0.53) 0px 0px 14px"],
+  // the design reset's surfaces (2026-11-27): the figure carries its colour, no halo
+  ["Hit Points", ".f-char-hp-v b", "text-shadow", "none"],
   // panels: opaque with depth, the header band's padding
   ["panel", ".f-play .f-pn", "box-shadow", "rgba(0, 0, 0, 0.45) 0px 8px 20px 0px"],
   // the owner's panel material (2026-11-06): a lit top fading down, in place of the flat fill
@@ -69,14 +70,16 @@ const EXPECTED: ReadonlyArray<readonly [string, string, string, string]> = [
   ["turn title", ".f-turn-t", "font-size", "20px"],
   ["advice", ".f-playbook-h", "font-weight", "400"],
   ["advice", ".f-playbook-h", "color", "rgb(201, 187, 163)"],
-  // filters as underlined tabs, group headers, rows, the row button, the slot
+  // filters as the chip family's pills (design reset «BG3 craft», slice 2): the picked one is
+  // BG3's selected tile, a pale-gold line; then group headers, rows, the row button, the slot
   [
     "filter on",
     '.f-filters .f-chip[aria-pressed="true"]',
-    "box-shadow",
-    "rgb(232, 220, 196) 0px -2px 0px 0px inset",
+    "border-top-color",
+    "rgb(238, 209, 167)",
   ],
-  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "0px"],
+  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "border-radius", "20px"],
+  ["filter on", '.f-filters .f-chip[aria-pressed="true"]', "color", "rgb(244, 240, 234)"],
   ["group header", ".f-act-gh", "font-size", "16px"],
   ["group header", ".f-act-gh", "text-transform", "none"],
   ["action name", ".f-act:not(.f-act-head) .f-row-t", "font-weight", "400"],

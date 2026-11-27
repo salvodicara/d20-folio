@@ -1,7 +1,8 @@
 /**
  * The DM's monster actions and traits on each monster line of the Scontro tab (the
- * classic EncounterMonsterActions and trait chips): a chip per printed attack or save
- * («Scimitarra +4 · 1d6+2 Tagliente», «Soffio di fuoco TS DES · CD 21 · 17d6 Fuoco»),
+ * classic EncounterMonsterActions and trait chips): a compact chip per printed attack or
+ * save, its name and roll («Scimitarra +4», «Soffio di fuoco CD 21»), the whole line
+ * («Scimitarra +4 · 1d6+2 Tagliente») in its title and in the tray it opens,
  * the Multiattack line as reference text, and the traits that change a roll as plain
  * chips (Magic Resistance, Pack Tactics). A tap on an action opens its tray; Apply is one
  * move with its undo. A group line and a homebrew creature show none yet; Regeneration's
@@ -34,7 +35,19 @@ import { Chip } from "@/ui";
 
 type T = ReturnType<typeof useTranslation>["t"];
 
-/** «+4 · 1d6+2 Tagliente» or «TS DES · CD 21 · 17d6 Fuoco». */
+/** The roll: «+4» or «TS DES · CD 21»; `short`, the chip's «+4» or «CD 21». */
+function checkOf(action: MonsterAction, t: T, short = false): string {
+  if (action.toHit !== undefined)
+    return `${action.toHit >= 0 ? "+" : ""}${String(action.toHit)}`;
+  if (!action.save) return "";
+  if (short) return t("play.dc", { dc: action.save.dc });
+  return t("combat.cunningStrikeSave", {
+    ability: t(`abilities.${action.save.ability}_short`),
+    dc: action.save.dc,
+  });
+}
+
+/** «+4 · 1d6+2 Tagliente» or «TS DES · CD 21 · 17d6 Fuoco»; a separator never starts a line. */
 function numbersLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): string {
   const types = monsterActionDamageTypes(action);
   const damage = monsterActionDice(action, hp)
@@ -42,16 +55,7 @@ function numbersLine(action: MonsterAction, t: T, hp: EncounterMonster["hp"]): s
       [dice, ...(types[i] ?? []).map((type) => t(`srd.damage_${type}`))].join(" ").trim()
     )
     .join(" + ");
-  const check =
-    action.toHit !== undefined
-      ? `${action.toHit >= 0 ? "+" : ""}${String(action.toHit)}`
-      : action.save
-        ? t("combat.cunningStrikeSave", {
-            ability: t(`abilities.${action.save.ability}_short`),
-            dc: action.save.dc,
-          })
-        : "";
-  return [check, damage].filter(Boolean).join(" · ");
+  return [checkOf(action, t), damage].filter(Boolean).join("\u00a0· ");
 }
 
 export function useMonsterActions(
@@ -109,15 +113,30 @@ export function useMonsterActions(
             role="group"
             aria-label={t("fight.actions.title", { name: monster.name })}
           >
-            {actions.map((action) => (
-              <Chip
-                key={`${action.section}:${action.entryId}`}
-                pressed={false}
-                onClick={() => setOpen({ monsterId: monster.id, action })}
-              >
-                {`${name(action)} ${numbersLine(action, t, monster.hp)}`}
-              </Chip>
-            ))}
+            {actions.map((action) => {
+              // One compact line, the name and the roll (Foundry's and D&D Beyond's
+              // encounter rows); the damage is in the title and in the tray it opens.
+              const whole = `${name(action)} ${numbersLine(action, t, monster.hp)}`;
+              const roll = checkOf(action, t, true);
+              return (
+                <Chip
+                  key={`${action.section}:${action.entryId}`}
+                  pressed={false}
+                  title={whole}
+                  ariaLabel={whole}
+                  onClick={() => setOpen({ monsterId: monster.id, action })}
+                >
+                  {/* a narrow column cuts the name, never the roll */}
+                  <span className="f-chip-t">{name(action)}</span>
+                  {roll && (
+                    <>
+                      {" "}
+                      <span className="f-chip-roll">{roll}</span>
+                    </>
+                  )}
+                </Chip>
+              );
+            })}
           </div>
         )}
         {multiattack && (

@@ -244,7 +244,7 @@ describe("Fighter: replace the Fighting Style feat", () => {
 
   it("a level with nothing else to ask stays complete until a swap is half made", () => {
     const four = makeCharacterDoc({
-      classes: [{ classId: "fighter", level: 4 }],
+      classes: [{ classId: "fighter", subclassId: "champion", level: 4 }],
       features: [{ srdId: "fighter-fighting-style" }, { srdId: "archery" }],
     });
     expect(ask(four, "fighter").complete).toBe(true);

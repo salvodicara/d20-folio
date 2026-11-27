@@ -625,6 +625,28 @@ content fix.
 
 ## 4. Elevation
 
+**New UI (`.fui`, `src/ui/ui.css`, design reset «C · BG3 craft», surfaces, owner 2026-11-27):**
+hierarchy comes from one frame per group and tonal steps inside it (BG3's panels; Linear's tonal
+elevation), not from a border on every box.
+
+- **One border budget, two levels.** Level 1 is the group frame: a panel, a dialog, the hero, a
+  callout, a level-up section. Level 2 is the rim of a control (button, chip, field, picked tile) —
+  BG3's double frame. A box between them (a strip, a read-only tile, a stat cell, an icon socket, a
+  well) takes a tonal fill and no border. A border never nests deeper than these two.
+- **Flat bands.** The Play turn strip spans its panel edge to edge in `--strip-fill`, square, one
+  step above the panel. The current initiative row is a square band in the turn's colour (gold for
+  the DM's list, blue on Play) with no side bar and no frame; the «Ora» tag names it.
+- **Rules, not boxes, for lists.** Row dividers, the tab baseline and a panel footer's rule stay;
+  a panel header has no rule under it, because its light («Lume») ends it.
+- **The sheet header's actions are their own row** (D&D Beyond's sheet header): on a laptop and a
+  tablet the rests, the other header actions and the campaign sit on one line under the identity,
+  the abilities and the numbers, never in a narrow column beside the AC shield.
+- **No decorative halo.** A zero-offset glow lights only a state (hover, focus, a pick) or the one
+  lit primary. The crest, the Hit Points figure, the AC shield and the current row have none.
+  `tests/unit/surface-depth.guard.test.ts` holds this.
+
+The rest of this section describes the classic UI.
+
 The system is the opposite of flat. Depth is the identity: every surface is either carved (inset
 shadow, receding into the page) or embossed (raised, with an inner top highlight). Six theme-tuned
 recipes carry it, each a stack of inset highlight + inset shadow + brass lip + contained drop. Inputs
@@ -689,6 +711,33 @@ action. The classic UI's buttons below stay until each screen is rebuilt.
   full ring under reduced motion, never a frozen arc).
 
 ### Chips / Badges
+
+**New UI (`.fui .f-chip`, design reset «C · BG3 craft», slice 2, 2026-11-27):** one family after BG3's
+in-game UI, drawn by one block in `src/ui/ui.css` («chips: one family»). A screen may place a chip
+(margin, flex, width, wrapping) but never restyle it; `tests/unit/chip-family.guard.test.ts` fails on
+a fork. Colours are today's tokens; the picked line and glow are the family's own tokens
+(`--pick-*`). The markup decides the family: `aria-pressed` makes a selectable chip, `data-kind` or a
+chip that is not a button (`Chip` with no `onClick`) makes a status chip.
+
+| Variant                                                                       | Rest                                                                                                                                                                                                                                                                                                        | Hover (real hover only)              | Picked (`aria-pressed="true"`)                                                    | Disabled                                   |
+| ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ | --------------------------------------------------------------------------------- | ------------------------------------------ |
+| Selectable (a choice, a filter, a damage type)                                | dark pill (`--chip-fill`), bronze line (`--frame`), tan words (`--muted`), 400, 15 px, 34 px                                                                                                                                                                                                                | brass line, faint wash, cream        | BG3's selected tile: pale-gold line, amber glow, warm fill, cream words           | dark fill, dark-tan words, no opacity wash |
+| Compact (a monster's actions and limited uses in a fight row)                 | the selectable look at the status size: 28 px, 13 px; an action is one line, its name and roll («Scimitarra +4», «Soffio di fuoco CD 21»), the whole line in its title; a narrow column cuts the name, never the roll; a use still available has a brass line and strong words, no glow (ready, not chosen) | as selectable                        | as selectable                                                                     | as selectable                              |
+| Status (`conc`, `cond`, `buff`, `form`, `insp`, or a fact such as «Nascosto») | 4 px info chip, 28 px, 13 px: the meaning colour as a 65 % line and a 14 % tint, words mixed toward light; smaller than any button, so a row reads its actions first                                                                                                                                        | the line at full strength, 22 % tint | (a chip that opens its panel) the line at full strength, 22 % tint, an inner glow | as above                                   |
+| Fight-row tag (`.f-now`, `.f-ir-now`; `.f-must` in the bloodied yellow)       | gold line, dark fill, gold words, 4 px                                                                                                                                                                                                                                                                      | —                                    | —                                                                                 | —                                          |
+
+Pressed sinks with a dark fill and an inset shadow; focus is the page's 2 px gold ring. A count
+inside a chip (`.f-chip-n`) is a small disc in the words' colour. Filters (`Filters`, the compendium
+facets, the level-up spell levels) are selectable pills, never underlined tabs; on a phone a `Filters` row
+(the sheet's actions, a spell pick's levels) is one line that scrolls sideways. Wrapped rows of chips
+sit 12 px apart on a phone, so neighbouring hit areas never overlap. On a phone a selectable chip is 36 px high, a status
+chip that opens a panel and a compact chip 32 px, and each reaches 44 px through an invisible hit area
+above and below; a row that scrolls sideways keeps at least 4 px of block padding so the hit area is
+not clipped. The sheet's status chips keep their own width on a phone (never stretched into
+button-wide bars). The glyph icons in the status chips (◉ ⚠ ✧ ✦) move to the SVG `Icon` in a later
+slice. The classic UI's badges below stay until each screen is rebuilt.
+
+**Classic UI:**
 
 - **Style:** one atom parameterized by `--bd-c` (the hue). Background is a 14% tint of the hue over the
   surface; border is the full `--bd-c`; label is `--bd-ink` (the AA-safe variant) for domain colors.
